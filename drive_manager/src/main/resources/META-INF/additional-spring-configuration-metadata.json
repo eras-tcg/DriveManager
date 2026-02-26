@@ -1,0 +1,24 @@
+{
+  "properties": [
+    {
+      "name": "drive.service-account-credentials",
+      "type": "org.springframework.core.io.Resource",
+      "description": "Path to the Google Drive service account credentials JSON file."
+    },
+    {
+      "name": "drive.base-folder-id",
+      "type": "java.lang.String",
+      "description": "Google Drive base folder ID (the 'cartas' root folder)."
+    },
+    {
+      "name": "drive.webhook-url",
+      "type": "java.lang.String",
+      "description": "Public HTTPS URL Google will POST change notifications to (POST /api/drive/webhook)."
+    },
+    {
+      "name": "ngrok.auth-token",
+      "type": "java.lang.String",
+      "description": "ngrok auth token for local dev tunneling. Leave blank in production."
+    }
+  ]
+}

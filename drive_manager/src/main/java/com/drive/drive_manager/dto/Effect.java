@@ -15,45 +15,34 @@ import java.util.List;
 public class Effect {
 
     private String instance;
-    private String restriction;
-    private String trigger;
-    private String cost;
-    private String resolution;
+    private String ussageLimit;
+    private List<effectBlock> effectBlocks;
     private String kind;
     private List<String> tags;
 
     public String getPlainEffect(){
         StringBuilder plainEffect = new StringBuilder();
         if (instance != null) plainEffect.append("<").append(instance).append("> ");
-        if ("once per turn".equals(restriction)) plainEffect.append("[").append(restriction).append("] ");
-        if ("once per copies per turn".equals(restriction)) plainEffect.append("(1)").append(" ");
-        if (trigger != null) plainEffect.append(trigger).append(": ");
-        if (cost != null) plainEffect.append(cost).append("; ");
-        if (resolution != null) plainEffect.append(resolution).append(" ");
-        if (kind != null) plainEffect.append(kind).append(" ");
-        if (tags != null && !tags.isEmpty()) plainEffect.append(String.join(", ", tags));
+        if ("once per turn".equals(ussageLimit)) plainEffect.append("[").append(ussageLimit).append("] ");
+        if ("once per turn between copies".equals(ussageLimit)) plainEffect.append("(1)").append(" ");
+        if (effectBlocks != null) {
+            for (effectBlock block : effectBlocks) {
+                plainEffect.append(block.getPlainEffect()).append(" ");
+            }
+        }
         return plainEffect.toString().trim();
     }
 
-    private class subEffect {
-        private String instance;
-        private String restriction;
-        private String trigger;
+    private class effectBlock {
+        private String activationCondition;
         private String cost;
         private String resolution;
-        private String kind;
-        private List<String> tags;
 
         public String getPlainEffect(){
             StringBuilder plainEffect = new StringBuilder();
-            if (instance != null) plainEffect.append("<").append(instance).append("> ");
-            if ("once per turn".equals(restriction)) plainEffect.append("[").append(restriction).append("] ");
-            if ("once per copies per turn".equals(restriction)) plainEffect.append("(1)").append(" ");
-            if (trigger != null) plainEffect.append(trigger).append(": ");
+            if (activationCondition != null) plainEffect.append(activationCondition).append(": ");
             if (cost != null) plainEffect.append(cost).append("; ");
             if (resolution != null) plainEffect.append(resolution).append(" ");
-            if (kind != null) plainEffect.append(kind).append(" ");
-            if (tags != null && !tags.isEmpty()) plainEffect.append(String.join(", ", tags));
             return plainEffect.toString().trim();
         }
     }
