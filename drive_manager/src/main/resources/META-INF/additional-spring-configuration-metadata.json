@@ -19,6 +19,31 @@
       "name": "ngrok.auth-token",
       "type": "java.lang.String",
       "description": "ngrok auth token for local dev tunneling. Leave blank in production."
+    },
+    {
+      "name": "r2.account-id",
+      "type": "java.lang.String",
+      "description": "Cloudflare account ID (found in the dashboard right sidebar)."
+    },
+    {
+      "name": "r2.access-key-id",
+      "type": "java.lang.String",
+      "description": "R2 API token access key ID."
+    },
+    {
+      "name": "r2.secret-access-key",
+      "type": "java.lang.String",
+      "description": "R2 API token secret access key."
+    },
+    {
+      "name": "r2.bucket-name",
+      "type": "java.lang.String",
+      "description": "Name of the R2 bucket where card images are stored."
+    },
+    {
+      "name": "r2.public-url",
+      "type": "java.lang.String",
+      "description": "Public base URL for the R2 bucket (e.g. https://pub-xxx.r2.dev)."
     }
   ]
 }

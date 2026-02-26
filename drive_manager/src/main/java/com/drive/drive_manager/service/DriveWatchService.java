@@ -1,8 +1,8 @@
 package com.drive.drive_manager.service;
 
-import com.drive.drive_manager.dto.DriveCard;
+import com.drive.drive_manager.dto.StagedChange;
 import com.drive.drive_manager.dto.SyncState;
-import com.drive.drive_manager.repository.DriveCardRepository;
+import com.drive.drive_manager.repository.StagedChangeRepository;
 import com.drive.drive_manager.repository.SyncStateRepository;
 import com.github.alexdlaird.ngrok.NgrokClient;
 import com.github.alexdlaird.ngrok.conf.JavaNgrokConfig;
@@ -40,8 +40,8 @@ public class DriveWatchService implements ApplicationRunner, DisposableBean {
 
     private final DriveClientFactory driveClientFactory;
     private final DriveParser driveParser;
-    private final DriveCardRepository driveCardRepository;
     private final SyncStateRepository syncStateRepository;
+    private final StagedChangeRepository stagedChangeRepository;
 
     @Value("${drive.webhook-url:}")
     private String webhookUrl;
@@ -58,12 +58,12 @@ public class DriveWatchService implements ApplicationRunner, DisposableBean {
 
     public DriveWatchService(DriveClientFactory driveClientFactory,
                              DriveParser driveParser,
-                             DriveCardRepository driveCardRepository,
-                             SyncStateRepository syncStateRepository) {
+                             SyncStateRepository syncStateRepository,
+                             StagedChangeRepository stagedChangeRepository) {
         this.driveClientFactory = driveClientFactory;
         this.driveParser = driveParser;
-        this.driveCardRepository = driveCardRepository;
         this.syncStateRepository = syncStateRepository;
+        this.stagedChangeRepository = stagedChangeRepository;
     }
 
     // ── Startup ──────────────────────────────────────────────────────────────
@@ -100,12 +100,23 @@ public class DriveWatchService implements ApplicationRunner, DisposableBean {
         }
 
         SyncState state = syncStateRepository.findById(STATE_ID).orElse(null);
-        boolean needsRenewal = state == null
+
+        // In ngrok mode the public URL changes on every restart, so we must
+        // always re-register the channel — otherwise Google keeps posting to
+        // the dead URL from the previous session.
+        boolean ngrokMode = (webhookUrl == null || webhookUrl.isBlank())
+                && (ngrokAuthToken != null && !ngrokAuthToken.isBlank());
+
+        boolean needsRenewal = ngrokMode
+                || state == null
                 || state.getChannelId() == null
                 || state.getChannelExpiration() == null
                 || state.getChannelExpiration().isBefore(Instant.now().plus(2, ChronoUnit.DAYS));
 
         if (needsRenewal) {
+            if (ngrokMode && state != null && state.getChannelId() != null) {
+                logger.info("ngrok mode: forcing channel re-registration with new URL.");
+            }
             registerChannel(state, url);
         } else if (state != null) {
             logger.debug("Drive watch channel is valid until {}", state.getChannelExpiration());
@@ -145,6 +156,12 @@ public class DriveWatchService implements ApplicationRunner, DisposableBean {
         ngrokClient = new NgrokClient.Builder()
                 .withJavaNgrokConfig(config)
                 .build();
+
+        // Ensure ngrok is killed even if the JVM is force-terminated (IDE stop button, crash)
+        NgrokClient clientRef = ngrokClient;
+        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+            try { clientRef.kill(); } catch (Exception ignored) {}
+        }));
 
         Tunnel tunnel = ngrokClient.connect(
                 new CreateTunnel.Builder()
@@ -225,15 +242,21 @@ public class DriveWatchService implements ApplicationRunner, DisposableBean {
             return;
         }
 
+        logger.info("Processing Drive changes for channel: {}", incomingChannelId);
         try {
             Drive drive = driveClientFactory.create();
             String token = state.getPageToken();
             ChangeList result;
+            int totalChanges = 0;
 
             do {
                 result = drive.changes().list(token)
                         .setFields(CHANGES_FIELDS)
                         .execute();
+
+                int pageSize = result.getChanges() != null ? result.getChanges().size() : 0;
+                totalChanges += pageSize;
+                logger.info("Fetched {} change(s) from Drive (page token: {})", pageSize, token);
 
                 for (Change change : result.getChanges()) {
                     handleChange(drive, change);
@@ -247,7 +270,7 @@ public class DriveWatchService implements ApplicationRunner, DisposableBean {
 
             state.setPageToken(token);
             syncStateRepository.save(state);
-            logger.info("Drive changes processed. Page token advanced.");
+            logger.info("Drive changes processed. Total: {}. Page token advanced.", totalChanges);
 
         } catch (Exception e) {
             logger.error("Error processing Drive changes", e);
@@ -258,37 +281,44 @@ public class DriveWatchService implements ApplicationRunner, DisposableBean {
         String fileId = change.getFileId();
 
         if (Boolean.TRUE.equals(change.getRemoved())) {
-            if (driveCardRepository.existsById(fileId)) {
-                driveCardRepository.deleteById(fileId);
-                logger.info("Deleted DriveCard for removed file: {}", fileId);
-            }
+            StagedChange staged = new StagedChange(
+                    fileId, null, null, null, null, null, null, "delete", Instant.now());
+            stagedChangeRepository.save(staged);
+            logger.info("Staged DELETE for fileId: {}", fileId);
             return;
         }
 
         File file = change.getFile();
-        if (file == null || !isJpg(file)) return;
+        if (file == null) {
+            logger.info("Skipping change — file metadata is null for fileId: {}", fileId);
+            return;
+        }
+        if (!isJpg(file)) {
+            logger.info("Skipping non-JPG file in changes: {} (mime={})", file.getName(), file.getMimeType());
+            return;
+        }
 
         DriveParser.ParsedFileName parsed = driveParser.parseFileName(file.getName());
         if (parsed == null) {
-            logger.debug("Skipping non-matching file in changes: {}", file.getName());
+            logger.info("Skipping non-matching filename pattern: {}", file.getName());
             return;
         }
 
         String subEdition = resolveSubEdition(drive, file);
 
-        DriveCard card = new DriveCard(
-                file.getId(),
-                buildDownloadUrl(file),
+        StagedChange staged = new StagedChange(
+                fileId,
                 file.getName(),
                 parsed.name(),
                 parsed.number(),
                 parsed.color(),
                 parsed.edition(),
                 subEdition,
+                "upsert",
                 Instant.now()
         );
-        driveCardRepository.save(card);
-        logger.info("Upserted DriveCard: {}", file.getName());
+        stagedChangeRepository.save(staged);
+        logger.info("Staged UPSERT for: {}", file.getName());
     }
 
     /**
@@ -322,10 +352,4 @@ public class DriveWatchService implements ApplicationRunner, DisposableBean {
         return lower.endsWith(".jpg") || lower.endsWith(".jpeg");
     }
 
-    private String buildDownloadUrl(File file) {
-        if (file.getWebContentLink() != null && !file.getWebContentLink().isBlank()) {
-            return file.getWebContentLink();
-        }
-        return "https://drive.google.com/uc?export=download&id=" + file.getId();
-    }
 }
