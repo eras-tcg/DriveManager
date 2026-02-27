@@ -1,9 +1,12 @@
 package com.drive.drive_manager.controller;
 
+import com.drive.drive_manager.dto.DriveCard;
+import com.drive.drive_manager.repository.DriveCardRepository;
 import com.drive.drive_manager.service.DriveParser;
 import com.drive.drive_manager.service.DriveParser.CardsResponse;
 import com.drive.drive_manager.service.DriveParser.SyncResult;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -14,6 +17,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Map;
 
 /**
  * REST controller for Google Drive operations.
@@ -25,6 +29,12 @@ public class DriveController {
     @Autowired
     private DriveParser driveParser;
 
+    @Autowired
+    private DriveCardRepository driveCardRepository;
+
+    @Value("${r2.public-url}")
+    private String r2PublicUrl;
+
     /**
      * Health check endpoint.
      * GET /api/drive/health
@@ -32,6 +42,41 @@ public class DriveController {
     @GetMapping("/health")
     public ResponseEntity<String> healthCheck() {
         return ResponseEntity.ok("DriveController is healthy");
+    }
+
+    /**
+     * Query drive_cards saved in MongoDB (with R2 URLs).
+     * GET /api/drive/cards/db
+     * GET /api/drive/cards/db?edition=E1
+     * GET /api/drive/cards/db?edition=E1&color=B
+     * GET /api/drive/cards/db?edition=E1&color=B&subEdition=1
+     */
+    @GetMapping("/cards/db")
+    public ResponseEntity<List<Map<String, Object>>> getDbCards(
+            @RequestParam(required = false) String edition,
+            @RequestParam(required = false) String color,
+            @RequestParam(required = false) String subEdition) {
+
+        String baseUrl = r2PublicUrl.stripTrailing();
+
+        List<Map<String, Object>> result = driveCardRepository.findAll().stream()
+                .filter(c -> edition == null || edition.equalsIgnoreCase(c.getEdition()))
+                .filter(c -> color == null || color.equalsIgnoreCase(c.getColorIdentity()))
+                .filter(c -> subEdition == null || subEdition.equalsIgnoreCase(c.getSubEdition()))
+                .map(c -> Map.<String, Object>of(
+                        "id",             c.getId(),
+                        "image_url",      baseUrl + "/cards/" + c.getId() + ".jpg",
+                        "file_name",      c.getFileName() != null ? c.getFileName() : "",
+                        "name",           c.getName() != null ? c.getName() : "",
+                        "number",         c.getNumber() != null ? c.getNumber() : 0,
+                        "color_identity", c.getColorIdentity() != null ? c.getColorIdentity() : "",
+                        "edition",        c.getEdition() != null ? c.getEdition() : "",
+                        "sub_edition",    c.getSubEdition() != null ? c.getSubEdition() : "",
+                        "time_stamp",     c.getTimeStamp() != null ? c.getTimeStamp().toString() : ""
+                ))
+                .toList();
+
+        return ResponseEntity.ok(result);
     }
 
     /**

@@ -18,9 +18,6 @@ public class DriveCard {
     @Id
     private String id;
 
-    @Field("download_url")
-    private String downloadUrl;
-
     @Field("file_name")
     private String fileName;
 

@@ -2,6 +2,8 @@ package com.drive.drive_manager.controller;
 
 import com.drive.drive_manager.dto.StagedChange;
 import com.drive.drive_manager.service.StagedChangeService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -25,6 +27,8 @@ import java.util.Map;
 @RequestMapping("/api/drive/staged")
 public class StagedChangeController {
 
+    private static final Logger logger = LoggerFactory.getLogger(StagedChangeController.class);
+
     private final StagedChangeService stagedChangeService;
 
     public StagedChangeController(StagedChangeService stagedChangeService) {
@@ -37,24 +41,28 @@ public class StagedChangeController {
     }
 
     @PostMapping("/apply")
-    public ResponseEntity<Map<String, Integer>> applyAll() {
+    public ResponseEntity<Map<String, Object>> applyAll() {
         try {
             int count = stagedChangeService.applyAll();
             return ResponseEntity.ok(Map.of("applied", count));
         } catch (Exception e) {
-            return ResponseEntity.internalServerError().build();
+            logger.error("Failed to apply all staged changes", e);
+            return ResponseEntity.internalServerError()
+                    .body(Map.of("error", e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName()));
         }
     }
 
     @PostMapping("/apply/{fileId}")
-    public ResponseEntity<Void> applyOne(@PathVariable String fileId) {
+    public ResponseEntity<Map<String, Object>> applyOne(@PathVariable String fileId) {
         try {
             stagedChangeService.applyOne(fileId);
-            return ResponseEntity.ok().build();
+            return ResponseEntity.ok(Map.of("applied", fileId));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.notFound().build();
         } catch (Exception e) {
-            return ResponseEntity.internalServerError().build();
+            logger.error("Failed to apply staged change for fileId: {}", fileId, e);
+            return ResponseEntity.internalServerError()
+                    .body(Map.of("error", e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName()));
         }
     }
 

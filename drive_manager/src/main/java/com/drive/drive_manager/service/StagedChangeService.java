@@ -80,11 +80,10 @@ public class StagedChangeService {
                 .executeMediaAndDownloadTo(baos);
         byte[] bytes = baos.toByteArray();
 
-        String r2Url = r2Service.upload(fileId, new ByteArrayInputStream(bytes), bytes.length);
+        r2Service.upload(fileId, new ByteArrayInputStream(bytes), bytes.length);
 
         DriveCard card = new DriveCard(
                 fileId,
-                r2Url,
                 change.getFileName(),
                 change.getName(),
                 change.getNumber(),
@@ -95,6 +94,6 @@ public class StagedChangeService {
         );
         driveCardRepository.save(card);
         stagedChangeRepository.deleteById(fileId);
-        logger.info("Applied UPSERT for: {} → {}", change.getFileName(), r2Url);
+        logger.info("Applied UPSERT for: {}", change.getFileName());
     }
 }

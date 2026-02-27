@@ -149,6 +149,20 @@ public class DriveWatchService implements ApplicationRunner, DisposableBean {
     }
 
     private String startNgrokTunnel() {
+        // Kill any orphaned ngrok process left over from a previous session.
+        // The IDE stop button on Windows often skips JVM shutdown hooks, so
+        // we must proactively clean up before trying to start a new tunnel.
+        ProcessHandle.allProcesses()
+                .filter(p -> p.info().command()
+                        .map(cmd -> cmd.toLowerCase().contains("ngrok"))
+                        .orElse(false))
+                .forEach(p -> {
+                    logger.info("Killing orphaned ngrok process (pid {})", p.pid());
+                    p.destroyForcibly();
+                });
+        // Give the OS a moment to release the port and the ngrok session slot
+        try { Thread.sleep(2000); } catch (InterruptedException ignored) { Thread.currentThread().interrupt(); }
+
         JavaNgrokConfig config = new JavaNgrokConfig.Builder()
                 .withAuthToken(ngrokAuthToken)
                 .build();
@@ -157,7 +171,7 @@ public class DriveWatchService implements ApplicationRunner, DisposableBean {
                 .withJavaNgrokConfig(config)
                 .build();
 
-        // Ensure ngrok is killed even if the JVM is force-terminated (IDE stop button, crash)
+        // Ensure ngrok is killed even if the JVM is force-terminated again
         NgrokClient clientRef = ngrokClient;
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
             try { clientRef.kill(); } catch (Exception ignored) {}

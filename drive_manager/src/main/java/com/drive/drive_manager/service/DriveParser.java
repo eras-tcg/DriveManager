@@ -1,7 +1,7 @@
 package com.drive.drive_manager.service;
 
-import com.drive.drive_manager.dto.DriveCard;
-import com.drive.drive_manager.repository.DriveCardRepository;
+import com.drive.drive_manager.dto.StagedChange;
+import com.drive.drive_manager.repository.StagedChangeRepository;
 import com.google.api.services.drive.Drive;
 import com.google.api.services.drive.model.FileList;
 import org.slf4j.Logger;
@@ -44,16 +44,16 @@ public class DriveParser {
 
     private final DriveClientFactory driveClientFactory;
     private final String baseFolderId;
-    private final DriveCardRepository driveCardRepository;
+    private final StagedChangeRepository stagedChangeRepository;
 
     public DriveParser(
             DriveClientFactory driveClientFactory,
             @Value("${drive.base-folder-id}") String baseFolderId,
-            DriveCardRepository driveCardRepository
+            StagedChangeRepository stagedChangeRepository
     ) {
         this.driveClientFactory = driveClientFactory;
         this.baseFolderId = baseFolderId;
-        this.driveCardRepository = driveCardRepository;
+        this.stagedChangeRepository = stagedChangeRepository;
     }
 
     // ── Existing: full drive listing ─────────────────────────────────────────
@@ -84,7 +84,9 @@ public class DriveParser {
     // ── New: filtered sync with MongoDB persistence ───────────────────────────
 
     /**
-     * Fetches filtered cards from Google Drive and upserts them into MongoDB.
+     * Scans Google Drive and stages all matching files into staged_changes.
+     * No images are downloaded here — apply the staged changes afterwards to
+     * download from Drive, upload to R2, and write to drive_cards.
      *
      * @param editions    folder names to include, e.g. ["ST1","E1"]. Empty = all.
      * @param subEditions section names to include, e.g. ["MAIN","SUB1"]. Empty = all.
@@ -99,24 +101,24 @@ public class DriveParser {
             List<String> subs = normalize(subEditions);
             List<String> cols = normalize(colors);
 
-            // "if both are empty parse the whole drive"
             boolean noEditionFilter = eds.isEmpty() && subs.isEmpty();
 
-            List<DriveCard> cards = new ArrayList<>();
+            List<StagedChange> staged = new ArrayList<>();
             Instant now = Instant.now();
 
             boolean processStructures = noEditionFilter || eds.stream().anyMatch(e -> e.startsWith(STRUCTURES_PREFIX));
             if (processStructures) {
-                cards.addAll(syncStructures(drive, eds, cols, now));
+                staged.addAll(stageStructures(drive, eds, cols, now));
             }
 
             boolean processEditions = noEditionFilter || eds.stream().anyMatch(e -> e.startsWith(EDITION_PREFIX));
             if (processEditions) {
-                cards.addAll(syncEditions(drive, eds, subs, cols, now));
+                staged.addAll(stageEditions(drive, eds, subs, cols, now));
             }
 
-            driveCardRepository.saveAll(cards);
-            return new SyncResult(cards.size(), cards);
+            stagedChangeRepository.saveAll(staged);
+            logger.info("Staged {} file(s) from Drive bulk scan.", staged.size());
+            return new SyncResult(staged.size(), staged);
 
         } catch (GeneralSecurityException e) {
             throw new IOException("Security error creating Drive client", e);
@@ -124,11 +126,10 @@ public class DriveParser {
     }
 
     /**
-     * Processes STRUCTURES → ST* → .jpg files.
-     * Color subfolders do not exist here; color is read from the filename.
+     * Scans STRUCTURES → ST* → .jpg files and returns StagedChange entries.
      */
-    private List<DriveCard> syncStructures(Drive drive, List<String> editionFilter,
-                                           List<String> colorFilter, Instant timestamp) throws IOException {
+    private List<StagedChange> stageStructures(Drive drive, List<String> editionFilter,
+                                               List<String> colorFilter, Instant now) throws IOException {
         Map<String, FolderInfo> rootFolders = listChildFoldersByName(drive, baseFolderId);
         FolderInfo structuresFolder = rootFolders.get(STRUCTURES_FOLDER);
         if (structuresFolder == null) {
@@ -146,7 +147,7 @@ public class DriveParser {
             stFolders.removeIf(f -> !stFilter.contains(f.name));
         }
 
-        List<DriveCard> cards = new ArrayList<>();
+        List<StagedChange> staged = new ArrayList<>();
         for (FolderInfo stFolder : stFolders) {
             for (RawFile file : listRawFiles(drive, stFolder.id)) {
                 ParsedFileName parsed = parseFileName(file.name);
@@ -157,22 +158,22 @@ public class DriveParser {
                 if (!colorFilter.isEmpty() && !colorFilter.contains(parsed.color)) {
                     continue;
                 }
-                cards.add(new DriveCard(
-                        file.id, file.url, file.name,
+                staged.add(new StagedChange(
+                        file.id, file.name,
                         parsed.name, parsed.number, parsed.color,
-                        parsed.edition, null, timestamp
+                        parsed.edition, null, "upsert", now
                 ));
             }
         }
-        return cards;
+        return staged;
     }
 
     /**
-     * Processes E* → {MAIN,SUB1,SUB2,SUB3} → {B,G,P,R,W} → .jpg files.
+     * Scans E* → {MAIN,SUB1,SUB2,SUB3} → {B,G,P,R,W} → .jpg files and returns StagedChange entries.
      */
-    private List<DriveCard> syncEditions(Drive drive, List<String> editionFilter,
-                                         List<String> subEditionFilter, List<String> colorFilter,
-                                         Instant timestamp) throws IOException {
+    private List<StagedChange> stageEditions(Drive drive, List<String> editionFilter,
+                                             List<String> subEditionFilter, List<String> colorFilter,
+                                             Instant now) throws IOException {
         List<FolderInfo> rootFolders = listChildFolders(drive, baseFolderId);
         rootFolders.removeIf(f -> !f.name.startsWith(EDITION_PREFIX));
 
@@ -190,7 +191,7 @@ public class DriveParser {
                 ? EDITION_COLORS
                 : colorFilter.toArray(new String[0]);
 
-        List<DriveCard> cards = new ArrayList<>();
+        List<StagedChange> staged = new ArrayList<>();
         for (FolderInfo editionFolder : rootFolders) {
             Map<String, FolderInfo> sectionFolders = listChildFoldersByName(drive, editionFolder.id);
 
@@ -198,7 +199,6 @@ public class DriveParser {
                 FolderInfo sectionFolder = sectionFolders.get(section);
                 if (sectionFolder == null) continue;
 
-                // MAIN has no sub_edition; SUB1→"1", SUB2→"2", SUB3→"3"
                 String subEditionValue = section.equals("MAIN") ? null : section.replace("SUB", "");
                 Map<String, FolderInfo> colorFolders = listChildFoldersByName(drive, sectionFolder.id);
 
@@ -212,16 +212,16 @@ public class DriveParser {
                             logger.warn("Could not parse filename: {}", file.name);
                             continue;
                         }
-                        cards.add(new DriveCard(
-                                file.id, file.url, file.name,
+                        staged.add(new StagedChange(
+                                file.id, file.name,
                                 parsed.name, parsed.number, parsed.color,
-                                parsed.edition, subEditionValue, timestamp
+                                parsed.edition, subEditionValue, "upsert", now
                         ));
                     }
                 }
             }
         }
-        return cards;
+        return staged;
     }
 
     // ── Filename parsing ─────────────────────────────────────────────────────
@@ -463,5 +463,5 @@ public class DriveParser {
             Map<String, Map<String, Map<String, List<ImageDoc>>>> editions
     ) {}
 
-    public record SyncResult(int savedCount, List<DriveCard> cards) {}
+    public record SyncResult(int stagedCount, List<StagedChange> staged) {}
 }
