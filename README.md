@@ -4,7 +4,7 @@ This document describes the HTTP endpoints exposed by the Drive Manager microser
 
 > The attached PNG illustrates the high‑level workflow between users, the Spring Boot service, Google Drive, MongoDB, and R2 storage. 
 
-![API workflow](docs/api_flow.png)
+![API workflow](drive_manager/docs/api_flow.png)
 
 ---
 
