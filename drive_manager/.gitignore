@@ -34,3 +34,4 @@ build/
 ### Secrets ###
 src/main/resources/application.properties
 src/main/resources/drive-service-account.json
+.env

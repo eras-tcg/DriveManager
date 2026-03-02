@@ -8,6 +8,42 @@ This document describes the HTTP endpoints exposed by the Drive Manager microser
 
 ---
 
+## Setup & Credentials
+
+All credentials are managed via **environment variables** (not hardcoded in the repo).
+
+### Local Development
+
+1. Copy the template file:
+   ```bash
+   cp drive_manager/.env.example drive_manager/.env
+   ```
+
+2. Edit `drive_manager/.env` and fill in your actual credentials:
+   ```
+   MONGODB_URI=mongodb+srv://REDACTED:REDACTED@cluster.mongodb.net/database
+   DRIVE_BASE_FOLDER_ID=your-folder-id
+   R2_ACCESS_KEY_ID=your-key
+   # ... etc
+   ```
+
+3. Run the service:
+   ```bash
+   cd drive_manager && ./mvnw spring-boot:run
+   ```
+
+The `.env` file is **ignored by Git** and will never be committed.
+
+### Production Deployment
+
+Set environment variables in your deployment platform:
+- **Docker**: `docker run -e MONGODB_URI="..." -e R2_ACCESS_KEY_ID="..." ...`
+- **Kubernetes**: use Secrets objects
+- **Heroku**: `heroku config:set MONGODB_URI="..."`
+- **AWS/GCP/Azure**: use their secrets management services
+
+---
+
 ## Overview
 
 The service is built with Spring Boot and exposes REST APIs under the `/api` prefix.  There are four logical groups:
