@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(javap -p \"c:/Users/cespi/Escritorio/ERAS/DriveManager/drive_manager/target/classes/com/drive/drive_manager/config/DotenvConfig.class\")",
+      "Bash(mvn compile -q)",
+      "Bash(./mvnw compile -q)"
+    ]
+  }
+}
