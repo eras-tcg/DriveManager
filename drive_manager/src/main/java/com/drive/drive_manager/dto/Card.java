@@ -34,4 +34,7 @@ public class Card {
     private String regulation;
     private List<Effect> effects;
     private List<Effect> inheritEffects;
+    private Integer specialCost;
+    private String specialSummonKind;
+    private String requirement;
 }

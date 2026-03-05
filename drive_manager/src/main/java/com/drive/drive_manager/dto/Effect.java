@@ -33,7 +33,10 @@ public class Effect {
         return plainEffect.toString().trim();
     }
 
-    private class effectBlock {
+    @Data
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class effectBlock {
         private String activationCondition;
         private String cost;
         private String resolution;

@@ -59,12 +59,24 @@ public class DriveParser {
     // ── Existing: full drive listing ─────────────────────────────────────────
 
     public CardsResponse listCards(String folderUrl) throws IOException {
+        return listCards(folderUrl, List.of(), List.of(), List.of());
+    }
+
+    public CardsResponse listCards(String folderUrl, List<String> editions) throws IOException {
+        return listCards(folderUrl, editions, List.of(), List.of());
+    }
+
+    public CardsResponse listCards(String folderUrl, List<String> editions,
+                                   List<String> subEditions, List<String> colors) throws IOException {
         String rootFolderId = resolveFolderId(folderUrl);
+        List<String> eds  = normalize(editions);
+        List<String> subs = normalize(subEditions);
+        List<String> cols = normalize(colors);
         try {
             Drive drive = driveClientFactory.create();
-            Map<String, List<ImageDoc>> structures = buildStructures(drive, rootFolderId);
-            Map<String, Map<String, Map<String, List<ImageDoc>>>> editions = buildEditions(drive, rootFolderId);
-            return new CardsResponse(structures, editions);
+            Map<String, List<ImageDoc>> structures = buildStructures(drive, rootFolderId, eds, cols);
+            Map<String, Map<String, Map<String, List<ImageDoc>>>> editionsMap = buildEditions(drive, rootFolderId, eds, subs, cols);
+            return new CardsResponse(structures, editionsMap);
         } catch (GeneralSecurityException e) {
             throw new IOException("Security error creating Drive client", e);
         }
@@ -111,7 +123,7 @@ public class DriveParser {
                 staged.addAll(stageStructures(drive, eds, cols, now));
             }
 
-            boolean processEditions = noEditionFilter || eds.stream().anyMatch(e -> e.startsWith(EDITION_PREFIX));
+            boolean processEditions = noEditionFilter || eds.stream().anyMatch(e -> e.startsWith(EDITION_PREFIX)) || !subs.isEmpty();
             if (processEditions) {
                 staged.addAll(stageEditions(drive, eds, subs, cols, now));
             }
@@ -252,7 +264,17 @@ public class DriveParser {
 
     // ── Drive helpers ────────────────────────────────────────────────────────
 
-    private Map<String, List<ImageDoc>> buildStructures(Drive drive, String rootFolderId) throws IOException {
+    private Map<String, List<ImageDoc>> buildStructures(Drive drive, String rootFolderId,
+                                                        List<String> editionFilter,
+                                                        List<String> colorFilter) throws IOException {
+        Set<String> stFilter = editionFilter.stream()
+                .filter(e -> e.startsWith(STRUCTURES_PREFIX))
+                .collect(Collectors.toSet());
+
+        if (!editionFilter.isEmpty() && stFilter.isEmpty()) {
+            return Map.of();
+        }
+
         Map<String, FolderInfo> rootFolders = listChildFoldersByName(drive, rootFolderId);
         FolderInfo structuresFolder = rootFolders.get(STRUCTURES_FOLDER);
         if (structuresFolder == null) {
@@ -262,44 +284,78 @@ public class DriveParser {
 
         List<FolderInfo> structureFolders = listChildFolders(drive, structuresFolder.id);
         structureFolders.removeIf(folder -> !folder.name.startsWith(STRUCTURES_PREFIX));
+        if (!stFilter.isEmpty()) {
+            structureFolders.removeIf(folder -> !stFilter.contains(folder.name));
+        }
         structureFolders.sort(Comparator.comparing(folder -> folder.name));
 
+        Set<String> cols = new java.util.HashSet<>(colorFilter);
         Map<String, List<ImageDoc>> structures = new LinkedHashMap<>();
         for (FolderInfo folder : structureFolders) {
-            structures.put(folder.name, listJpgImages(drive, folder.id));
+            List<ImageDoc> images = listJpgImages(drive, folder.id);
+            if (!cols.isEmpty()) {
+                images = images.stream()
+                        .filter(img -> {
+                            ParsedFileName p = parseFileName(img.filename());
+                            return p != null && cols.contains(p.color());
+                        })
+                        .collect(Collectors.toList());
+            }
+            structures.put(folder.name, images);
         }
         return structures;
     }
 
-    private Map<String, Map<String, Map<String, List<ImageDoc>>>> buildEditions(Drive drive, String rootFolderId)
+    private Map<String, Map<String, Map<String, List<ImageDoc>>>> buildEditions(Drive drive, String rootFolderId,
+                                                                                List<String> editionFilter,
+                                                                                List<String> subEditionFilter,
+                                                                                List<String> colorFilter)
             throws IOException {
+        Set<String> eFilter = editionFilter.stream()
+                .filter(e -> e.startsWith(EDITION_PREFIX))
+                .collect(Collectors.toSet());
+
+        if (!editionFilter.isEmpty() && eFilter.isEmpty()) {
+            return Map.of();
+        }
+
         List<FolderInfo> rootFolders = listChildFolders(drive, rootFolderId);
         rootFolders.removeIf(folder -> !folder.name.startsWith(EDITION_PREFIX));
+        if (!eFilter.isEmpty()) {
+            rootFolders.removeIf(folder -> !eFilter.contains(folder.name));
+        }
         rootFolders.sort(Comparator.comparing(folder -> folder.name));
+
+        String[] sections = subEditionFilter.isEmpty()
+                ? EDITION_SECTIONS
+                : subEditionFilter.toArray(new String[0]);
+        String[] colors = colorFilter.isEmpty()
+                ? EDITION_COLORS
+                : colorFilter.toArray(new String[0]);
 
         Map<String, Map<String, Map<String, List<ImageDoc>>>> editions = new LinkedHashMap<>();
         for (FolderInfo edition : rootFolders) {
             Map<String, FolderInfo> editionFolders = listChildFoldersByName(drive, edition.id);
-            Map<String, Map<String, List<ImageDoc>>> sections = new LinkedHashMap<>();
+            Map<String, Map<String, List<ImageDoc>>> sectionsMap = new LinkedHashMap<>();
 
-            for (String section : EDITION_SECTIONS) {
+            for (String section : sections) {
                 FolderInfo sectionFolder = editionFolders.get(section);
                 Map<String, List<ImageDoc>> colorMap = new LinkedHashMap<>();
 
                 if (sectionFolder != null) {
                     Map<String, FolderInfo> colorFolders = listChildFoldersByName(drive, sectionFolder.id);
-                    for (String color : EDITION_COLORS) {
+                    for (String color : colors) {
                         FolderInfo colorFolder = colorFolders.get(color);
                         colorMap.put(color, colorFolder != null ? listJpgImages(drive, colorFolder.id) : List.of());
                     }
                 } else {
-                    for (String color : EDITION_COLORS) {
+                    for (String color : colors) {
                         colorMap.put(color, List.of());
                     }
                 }
-                sections.put(section, colorMap);
+                sectionsMap.put(section, colorMap);
             }
-            editions.put(edition.name, sections);
+            editions.put(edition.name, sectionsMap);
         }
         return editions;
     }

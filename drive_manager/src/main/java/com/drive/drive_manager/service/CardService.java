@@ -85,6 +85,15 @@ public class CardService {
             if (cardDetails.getInheritEffects() != null) {
                 card.setInheritEffects(cardDetails.getInheritEffects());
             }
+            if (cardDetails.getSpecialCost() != null) {
+                card.setSpecialCost(cardDetails.getSpecialCost());
+            }
+            if (cardDetails.getSpecialSummonKind() != null) {
+                card.setSpecialSummonKind(cardDetails.getSpecialSummonKind());
+            }
+            if (cardDetails.getRequirement() != null) {
+                card.setRequirement(cardDetails.getRequirement());
+            }
 
             return Optional.of(cardRepository.save(card));
         }

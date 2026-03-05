@@ -82,6 +82,10 @@ public class DriveController {
     /**
      * Full drive listing without persistence.
      * GET /api/drive/cards?folderUrl=...
+     *
+     * POST /api/drive/cards
+     * Body (optional): { "editions": ["ST1", "ST2", "E1"] }
+     * Empty or omitted editions = return everything.
      */
     @GetMapping("/cards")
     public ResponseEntity<CardsResponse> readCards(
@@ -95,6 +99,24 @@ public class DriveController {
             return ResponseEntity.internalServerError().build();
         }
     }
+
+    @PostMapping("/cards")
+    public ResponseEntity<CardsResponse> readCardsFiltered(
+            @RequestBody(required = false) CardsFilterRequest body) {
+        List<String> editions    = body != null && body.editions()    != null ? body.editions()    : List.of();
+        List<String> subEditions = body != null && body.subEditions() != null ? body.subEditions() : List.of();
+        List<String> colors      = body != null && body.colors()      != null ? body.colors()      : List.of();
+        try {
+            CardsResponse response = driveParser.listCards(null, editions, subEditions, colors);
+            return ResponseEntity.ok(response);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().build();
+        } catch (IOException e) {
+            return ResponseEntity.internalServerError().build();
+        }
+    }
+
+    public record CardsFilterRequest(List<String> editions, List<String> subEditions, List<String> colors) {}
 
     /**
      * Filtered drive fetch with MongoDB persistence.
