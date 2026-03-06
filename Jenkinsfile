@@ -29,7 +29,7 @@ pipeline {
                     docker run -d \\
                         --name ${IMAGE_NAME}-staging \\
                         --restart unless-stopped \\
-                        --env-file /etc/drive-manager/.env \\
+                        --env-file /etc/drive-manager-staging/.env \\
                         -p 8091:8081 \\
                         ${IMAGE_NAME}:${GIT_COMMIT}
                 """
