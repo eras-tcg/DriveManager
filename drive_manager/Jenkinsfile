@@ -1,0 +1,77 @@
+pipeline {
+    agent any
+
+    environment {
+        IMAGE_NAME = 'drive-manager'
+    }
+
+    stages {
+        stage('Checkout') {
+            steps {
+                checkout scm
+            }
+        }
+
+        stage('Build Image') {
+            steps {
+                sh "docker build -t ${IMAGE_NAME}:${GIT_COMMIT} ."
+            }
+        }
+
+        stage('Deploy to Staging') {
+            when {
+                branch 'develop'
+            }
+            steps {
+                sh """
+                    docker stop ${IMAGE_NAME}-staging || true
+                    docker rm ${IMAGE_NAME}-staging || true
+                    docker run -d \
+                        --name ${IMAGE_NAME}-staging \
+                        --restart unless-stopped \
+                        -p 9081:8081 \
+                        --env-file /var/jenkins_home/envs/drive-manager-staging.env \
+                        ${IMAGE_NAME}:${GIT_COMMIT}
+                """
+            }
+        }
+
+        stage('Approve Production Deploy') {
+            when {
+                branch 'main'
+            }
+            steps {
+                timeout(time: 30, unit: 'MINUTES') {
+                    input message: 'Deploy to production?', ok: 'Deploy'
+                }
+            }
+        }
+
+        stage('Deploy to Production') {
+            when {
+                branch 'main'
+            }
+            steps {
+                sh """
+                    docker stop ${IMAGE_NAME}-prod || true
+                    docker rm ${IMAGE_NAME}-prod || true
+                    docker run -d \
+                        --name ${IMAGE_NAME}-prod \
+                        --restart unless-stopped \
+                        -p 8081:8081 \
+                        --env-file /var/jenkins_home/envs/drive-manager-prod.env \
+                        ${IMAGE_NAME}:${GIT_COMMIT}
+                """
+            }
+        }
+    }
+
+    post {
+        failure {
+            echo 'Pipeline failed.'
+        }
+        success {
+            echo 'Pipeline completed successfully.'
+        }
+    }
+}
