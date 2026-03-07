@@ -97,6 +97,7 @@ public class DriveController {
             CardsResponse response = driveParser.listCards(folderUrl);
             return ResponseEntity.ok(response);
         } catch (IllegalArgumentException e) {
+            log.error("GET /api/drive/cards bad request", e);
             return ResponseEntity.badRequest().build();
         } catch (IOException e) {
             log.error("GET /api/drive/cards failed", e);
@@ -114,6 +115,7 @@ public class DriveController {
             CardsResponse response = driveParser.listCards(null, editions, subEditions, colors);
             return ResponseEntity.ok(response);
         } catch (IllegalArgumentException e) {
+            log.error("POST /api/drive/cards bad request", e);
             return ResponseEntity.badRequest().build();
         } catch (IOException e) {
             log.error("POST /api/drive/cards failed", e);
