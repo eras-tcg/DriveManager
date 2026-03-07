@@ -30,6 +30,7 @@ pipeline {
                         --name ${IMAGE_NAME}-staging \\
                         --restart unless-stopped \\
                         --env-file /etc/drive-manager-staging/.env \\
+                        -v /etc/drive-manager-staging/drive-service-account.json:/etc/drive-manager-staging/drive-service-account.json:ro \\
                         -p 8091:8081 \\
                         ${IMAGE_NAME}:${GIT_COMMIT}
                 """
@@ -59,6 +60,7 @@ pipeline {
                         --name ${IMAGE_NAME}-prod \\
                         --restart unless-stopped \\
                         --env-file /etc/drive-manager/.env \\
+                        -v /etc/drive-manager/drive-service-account.json:/etc/drive-manager/drive-service-account.json:ro \\
                         -p 8081:8081 \\
                         ${IMAGE_NAME}:${GIT_COMMIT}
                 """
