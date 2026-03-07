@@ -16,6 +16,8 @@ import org.springframework.web.bind.annotation.RestController;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
@@ -123,7 +125,10 @@ public class DriveController {
         }
     }
 
-    public record CardsFilterRequest(List<String> editions, List<String> subEditions, List<String> colors) {}
+    public record CardsFilterRequest(
+            @JsonProperty("editions")    List<String> editions,
+            @JsonProperty("subEditions") List<String> subEditions,
+            @JsonProperty("colors")      List<String> colors) {}
 
     /**
      * Filtered drive fetch with MongoDB persistence.
@@ -161,8 +166,8 @@ public class DriveController {
     }
 
     public record SyncRequest(
-            List<String> editions,
-            List<String> subEditions,
-            List<String> colors
+            @JsonProperty("editions")    List<String> editions,
+            @JsonProperty("subEditions") List<String> subEditions,
+            @JsonProperty("colors")      List<String> colors
     ) {}
 }
