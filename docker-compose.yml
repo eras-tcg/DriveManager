@@ -1,9 +1,9 @@
 services:
   drive-manager:
     image: capitanpio/drive-manager:latest
-    container_name: drive_manager
+    container_name: drive-manager-${ENVIRONMENT:-prod}
     ports:
-      - "8081:8081"
+      - "${DRIVE_MANAGER_PORT:-8081}:8081"
     env_file:
       - .env          # create this file on the VPS with all required secrets
     restart: unless-stopped
