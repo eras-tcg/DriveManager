@@ -51,6 +51,26 @@ public class R2Service {
     }
 
     /**
+     * Uploads to R2 using the full key as-is (no prefix added).
+     *
+     * @return the public URL of the uploaded object
+     */
+    public String uploadRaw(String key, InputStream content, long size) {
+        r2Client.putObject(
+                PutObjectRequest.builder()
+                        .bucket(bucketName)
+                        .key(key)
+                        .contentType("image/jpeg")
+                        .contentLength(size)
+                        .build(),
+                RequestBody.fromInputStream(content, size));
+
+        String url = publicBaseUrl.stripTrailing() + "/" + key;
+        logger.info("Uploaded to R2: {}", url);
+        return url;
+    }
+
+    /**
      * Deletes the image from R2. Silently ignores if the object does not exist.
      */
     public void delete(String fileId) {

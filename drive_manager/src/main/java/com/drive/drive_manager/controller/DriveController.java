@@ -1,6 +1,5 @@
 package com.drive.drive_manager.controller;
 
-import com.drive.drive_manager.dto.DriveCard;
 import com.drive.drive_manager.repository.DriveCardRepository;
 import com.drive.drive_manager.service.DriveParser;
 import com.drive.drive_manager.service.DriveParser.CardsResponse;
@@ -14,6 +13,10 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 import java.io.IOException;
 import java.util.List;
@@ -25,6 +28,8 @@ import java.util.Map;
 @RestController
 @RequestMapping("/api/drive")
 public class DriveController {
+
+    private static final Logger log = LoggerFactory.getLogger(DriveController.class);
 
     @Autowired
     private DriveParser driveParser;
@@ -55,7 +60,8 @@ public class DriveController {
     public ResponseEntity<List<Map<String, Object>>> getDbCards(
             @RequestParam(required = false) String edition,
             @RequestParam(required = false) String color,
-            @RequestParam(required = false) String subEdition) {
+            @RequestParam(required = false) String subEdition,
+            @RequestParam(required = false) String name) {
 
         String baseUrl = r2PublicUrl.stripTrailing();
 
@@ -63,6 +69,7 @@ public class DriveController {
                 .filter(c -> edition == null || edition.equalsIgnoreCase(c.getEdition()))
                 .filter(c -> color == null || color.equalsIgnoreCase(c.getColorIdentity()))
                 .filter(c -> subEdition == null || subEdition.equalsIgnoreCase(c.getSubEdition()))
+                .filter(c -> name == null || (c.getName() != null && c.getName().equalsIgnoreCase(name)))
                 .map(c -> Map.<String, Object>of(
                         "id",             c.getId(),
                         "image_url",      baseUrl + "/cards/" + c.getId() + ".jpg",
@@ -94,8 +101,10 @@ public class DriveController {
             CardsResponse response = driveParser.listCards(folderUrl);
             return ResponseEntity.ok(response);
         } catch (IllegalArgumentException e) {
+            log.error("GET /api/drive/cards bad request", e);
             return ResponseEntity.badRequest().build();
         } catch (IOException e) {
+            log.error("GET /api/drive/cards failed", e);
             return ResponseEntity.internalServerError().build();
         }
     }
@@ -110,13 +119,18 @@ public class DriveController {
             CardsResponse response = driveParser.listCards(null, editions, subEditions, colors);
             return ResponseEntity.ok(response);
         } catch (IllegalArgumentException e) {
+            log.error("POST /api/drive/cards bad request", e);
             return ResponseEntity.badRequest().build();
         } catch (IOException e) {
+            log.error("POST /api/drive/cards failed", e);
             return ResponseEntity.internalServerError().build();
         }
     }
 
-    public record CardsFilterRequest(List<String> editions, List<String> subEditions, List<String> colors) {}
+    public record CardsFilterRequest(
+            @JsonProperty("editions")    List<String> editions,
+            @JsonProperty("subEditions") List<String> subEditions,
+            @JsonProperty("colors")      List<String> colors) {}
 
     /**
      * Filtered drive fetch with MongoDB persistence.
@@ -148,13 +162,14 @@ public class DriveController {
             );
             return ResponseEntity.ok(result);
         } catch (IOException e) {
+            log.error("POST /api/drive/cards/map_to_db failed", e);
             return ResponseEntity.internalServerError().build();
         }
     }
 
     public record SyncRequest(
-            List<String> editions,
-            List<String> subEditions,
-            List<String> colors
+            @JsonProperty("editions")    List<String> editions,
+            @JsonProperty("subEditions") List<String> subEditions,
+            @JsonProperty("colors")      List<String> colors
     ) {}
 }
