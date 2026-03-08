@@ -41,11 +41,26 @@ public class Effect {
         private String cost;
         private String resolution;
 
+        private static String resolveTokens(String text) {
+            if (text == null) return null;
+            return java.util.regex.Pattern.compile("\\[\\[([^\\]:]+)(?::([^\\]]*))?\\]\\]")
+                .matcher(text)
+                .replaceAll(mr -> {
+                    String kw  = mr.group(1);
+                    String val = mr.group(2);
+                    return java.util.regex.Matcher.quoteReplacement(
+                        (val != null && !val.isEmpty())
+                            ? kw.replaceFirst("\\{[^}]+\\}", val)
+                            : kw
+                    );
+                });
+        }
+
         public String getPlainEffect(){
             StringBuilder plainEffect = new StringBuilder();
-            if (activationCondition != null) plainEffect.append(activationCondition).append(": ");
-            if (cost != null) plainEffect.append(cost).append("; ");
-            if (resolution != null) plainEffect.append(resolution).append(" ");
+            if (activationCondition != null) plainEffect.append(resolveTokens(activationCondition)).append(": ");
+            if (cost != null)               plainEffect.append(resolveTokens(cost)).append("; ");
+            if (resolution != null)         plainEffect.append(resolveTokens(resolution)).append(" ");
             return plainEffect.toString().trim();
         }
     }

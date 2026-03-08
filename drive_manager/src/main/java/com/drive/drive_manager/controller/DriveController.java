@@ -60,7 +60,8 @@ public class DriveController {
     public ResponseEntity<List<Map<String, Object>>> getDbCards(
             @RequestParam(required = false) String edition,
             @RequestParam(required = false) String color,
-            @RequestParam(required = false) String subEdition) {
+            @RequestParam(required = false) String subEdition,
+            @RequestParam(required = false) String name) {
 
         String baseUrl = r2PublicUrl.stripTrailing();
 
@@ -68,6 +69,7 @@ public class DriveController {
                 .filter(c -> edition == null || edition.equalsIgnoreCase(c.getEdition()))
                 .filter(c -> color == null || color.equalsIgnoreCase(c.getColorIdentity()))
                 .filter(c -> subEdition == null || subEdition.equalsIgnoreCase(c.getSubEdition()))
+                .filter(c -> name == null || (c.getName() != null && c.getName().equalsIgnoreCase(name)))
                 .map(c -> Map.<String, Object>of(
                         "id",             c.getId(),
                         "image_url",      baseUrl + "/cards/" + c.getId() + ".jpg",
