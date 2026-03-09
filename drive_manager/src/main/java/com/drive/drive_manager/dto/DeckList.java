@@ -29,4 +29,9 @@ public class DeckList {
 
     @Field("created_at")
     private Instant createdAt;
+
+    @Field("user_id")
+    private String userId;
+
+    private String username;
 }

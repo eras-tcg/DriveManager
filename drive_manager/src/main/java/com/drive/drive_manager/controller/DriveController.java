@@ -8,6 +8,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -84,6 +86,23 @@ public class DriveController {
                 .toList();
 
         return ResponseEntity.ok(result);
+    }
+
+    /**
+     * Rename a drive card stored in MongoDB.
+     * PATCH /api/drive/cards/db/{id}/name
+     * Body: { "name": "New Name" }
+     */
+    @PatchMapping("/cards/db/{id}/name")
+    public ResponseEntity<?> renameCard(@PathVariable String id, @RequestBody Map<String, String> body) {
+        String name = body.get("name");
+        if (name == null || name.isBlank())
+            return ResponseEntity.badRequest().body(Map.of("error", "name is required"));
+        return driveCardRepository.findById(id).map(card -> {
+            card.setName(name.trim());
+            driveCardRepository.save(card);
+            return ResponseEntity.ok(Map.<String, Object>of("id", id, "name", card.getName()));
+        }).orElse(ResponseEntity.notFound().build());
     }
 
     /**

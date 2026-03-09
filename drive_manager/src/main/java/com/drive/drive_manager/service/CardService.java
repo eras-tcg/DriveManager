@@ -103,6 +103,12 @@ public class CardService {
             if (cardDetails.getRequirement() != null) {
                 card.setRequirement(cardDetails.getRequirement());
             }
+            if (cardDetails.getRarity() != null) {
+                card.setRarity(cardDetails.getRarity());
+            }
+            if (cardDetails.getColors() != null) {
+                card.setColors(cardDetails.getColors());
+            }
 
             return Optional.of(cardRepository.save(card));
         }

@@ -27,7 +27,11 @@ public class DeckListController {
     }
 
     @GetMapping
-    public ResponseEntity<List<DeckList>> listAll() {
+    public ResponseEntity<List<DeckList>> listAll(
+            @RequestParam(required = false) String userId) {
+        if (userId != null && !userId.isBlank()) {
+            return ResponseEntity.ok(repo.findByUserId(userId));
+        }
         return ResponseEntity.ok(repo.findAll());
     }
 
