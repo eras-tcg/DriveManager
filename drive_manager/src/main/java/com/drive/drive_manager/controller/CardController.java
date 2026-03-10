@@ -182,15 +182,6 @@ public class CardController {
             CardRefData data = refRepo.findById(REF_ID).orElseGet(() ->
                     new CardRefData(REF_ID, new ArrayList<>(), new ArrayList<>(), new ArrayList<>(), new ArrayList<>(), new HashMap<>()));
             
-            // Fix malformed keywordEffects (if it has "keyword", "param", "description" as keys)
-            if (data.getKeywordEffects() != null && 
-                data.getKeywordEffects().size() > 0 &&
-                data.getKeywordEffects().containsKey("keyword")) {
-                // Old malformed format detected - reset to empty
-                data.setKeywordEffects(new HashMap<>());
-                refRepo.save(data);
-            }
-            
             return ResponseEntity.ok(data);
         } catch (Exception e) {
             // If conversion fails, delete and recreate
@@ -223,7 +214,7 @@ public class CardController {
 
     /**
      * POST /api/cards/ref/{field} — add an item to classes / instances / kinds / tags / keywordsEffects.
-     * For keywordsEffects: Body: { "keyword": "...", "parameter": "...", "description": "..." }
+     * For keywordsEffects: Body: { "keyword": "...", "effect": { ... } }
      * For others: Body: { "value": "..." }
      */
     @PostMapping("/ref/{field}")
@@ -235,21 +226,13 @@ public class CardController {
             if (keyword == null || keyword.isBlank())
                 return ResponseEntity.badRequest().body(Map.of("error", "keyword is required"));
 
-            KeywordEffect effect;
-            if (body.containsKey("effect")) {
-                // New format with full Effect
-                @SuppressWarnings("unchecked")
-                Map<String, Object> effectData = (Map<String, Object>) body.get("effect");
-                Effect fullEffect = convertMapToEffect(effectData);
-                effect = new KeywordEffect(keyword.trim(), fullEffect);
-            } else {
-                // Legacy format
-                String parameter = (String) body.get("parameter");
-                String description = (String) body.get("description");
-                if (description == null || description.isBlank())
-                    return ResponseEntity.badRequest().body(Map.of("error", "description is required"));
-                effect = new KeywordEffect(keyword.trim(), parameter != null ? parameter.trim() : null, description.trim());
-            }
+            if (!body.containsKey("effect"))
+                return ResponseEntity.badRequest().body(Map.of("error", "effect is required"));
+
+            @SuppressWarnings("unchecked")
+            Map<String, Object> effectData = (Map<String, Object>) body.get("effect");
+            Effect fullEffect = convertMapToEffect(effectData);
+            KeywordEffect effect = new KeywordEffect(keyword.trim(), fullEffect);
             
             ref.getKeywordEffects().put(keyword.trim(), effect);
             refRepo.save(ref);

@@ -35,10 +35,11 @@ public class DriveParser {
     private static final String[] EDITION_SECTIONS = {"MAIN", "SUB1", "SUB2", "SUB3"};
     private static final String[] EDITION_COLORS = {"B", "G", "P", "R", "W"};
 
-    // Pattern: {edition}-{color}{number} {name}.jpg
+    // Pattern: {edition}-{color}{number}-{name}.jpg  (dash separator = sRGB web image)
+    // Files using a space separator are CMYK print files and are intentionally ignored.
     // edition = ST\d+ | E\d+ | E\d+\.\d+
     private static final Pattern FILE_NAME_PATTERN = Pattern.compile(
-            "^((?:ST|E)\\d+(?:\\.\\d+)?)-([BGPRW])(\\d+)\\s+(.+)\\.jpe?g$",
+            "^((?:ST|E)\\d+(?:\\.\\d+)?)-([BGPRW])(\\d+)-(.+)\\.jpe?g$",
             Pattern.CASE_INSENSITIVE
     );
 
@@ -245,7 +246,7 @@ public class DriveParser {
         String fullEdition = m.group(1).toUpperCase(Locale.ROOT);
         String color = m.group(2).toUpperCase(Locale.ROOT);
         int number = Integer.parseInt(m.group(3));
-        String name = m.group(4);
+        String name = m.group(4).replace('-', ' ');
 
         int dotIndex = fullEdition.indexOf('.');
         String edition = dotIndex >= 0 ? fullEdition.substring(0, dotIndex) : fullEdition;

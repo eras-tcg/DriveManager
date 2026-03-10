@@ -39,4 +39,6 @@ public class Card {
     private Integer specialCost;
     private String specialSummonKind;
     private String requirement;
+    private String rarity;
+    private List<String> colors;
 }

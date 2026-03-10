@@ -58,9 +58,12 @@ public class Effect {
 
         public String getPlainEffect(){
             StringBuilder plainEffect = new StringBuilder();
-            if (activationCondition != null) plainEffect.append(resolveTokens(activationCondition)).append(": ");
-            if (cost != null)               plainEffect.append(resolveTokens(cost)).append("; ");
-            if (resolution != null)         plainEffect.append(resolveTokens(resolution)).append(" ");
+            if (activationCondition != null && !activationCondition.isBlank())
+                plainEffect.append(resolveTokens(activationCondition)).append(": ");
+            if (cost != null && !cost.isBlank())
+                plainEffect.append(resolveTokens(cost)).append("; ");
+            if (resolution != null && !resolution.isBlank())
+                plainEffect.append(resolveTokens(resolution)).append(" ");
             return plainEffect.toString().trim();
         }
     }

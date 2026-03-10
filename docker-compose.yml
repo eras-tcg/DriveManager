@@ -1,15 +1,16 @@
 services:
   drive-manager:
-    image: capitanpio/drive-manager:latest
+    build:
+      context: ./drive_manager
     container_name: drive-manager-${ENVIRONMENT:-prod}
     ports:
       - "${DRIVE_MANAGER_PORT:-8081}:8081"
     env_file:
-      - /etc/drive-manager-${ENVIRONMENT:-prod}/.env
+      - ./drive_manager/.env
     restart: unless-stopped
     networks:
       - eras-network
 
 networks:
   eras-network:
-    external: true
+    external: false
