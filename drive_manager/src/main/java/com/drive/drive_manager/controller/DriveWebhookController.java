@@ -1,6 +1,8 @@
 package com.drive.drive_manager.controller;
 
 import com.drive.drive_manager.service.DriveWatchService;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestHeader;
@@ -20,6 +22,9 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/api/drive")
 public class DriveWebhookController {
 
+    @Value("${drive.webhook-token}")
+    private String webhookToken;
+
     private final DriveWatchService driveWatchService;
 
     public DriveWebhookController(DriveWatchService driveWatchService) {
@@ -29,10 +34,14 @@ public class DriveWebhookController {
     @PostMapping("/webhook")
     public ResponseEntity<Void> onDriveChange(
             @RequestHeader("X-Goog-Channel-ID") String channelId,
-            @RequestHeader("X-Goog-Resource-State") String resourceState) {
+            @RequestHeader("X-Goog-Resource-State") String resourceState,
+            @RequestHeader(value = "X-Goog-Channel-Token", required = false) String token) {
+
+        if (!webhookToken.equals(token)) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
 
         // Google sends a one-time "sync" message right after channel registration.
-        // It carries no change data — just acknowledge it.
         if ("sync".equals(resourceState)) {
             return ResponseEntity.ok().build();
         }

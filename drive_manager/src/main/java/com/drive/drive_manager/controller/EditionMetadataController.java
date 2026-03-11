@@ -8,6 +8,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.io.ByteArrayInputStream;
@@ -56,6 +57,7 @@ public class EditionMetadataController {
                 .orElse(ResponseEntity.notFound().build());
     }
 
+    @PreAuthorize("hasAuthority('manage_editions')")
     @PostMapping
     public ResponseEntity<Object> upsert(@RequestBody EditionMetadata body) {
         // If editionImage is set and looks like a Drive file ID (not a URL), pull it to R2
@@ -88,6 +90,7 @@ public class EditionMetadataController {
         return ResponseEntity.ok(repo.save(body));
     }
 
+    @PreAuthorize("hasAuthority('manage_editions')")
     @DeleteMapping("/{editionId}")
     public ResponseEntity<Void> delete(@PathVariable String editionId) {
         repo.deleteById(editionId);
@@ -101,6 +104,7 @@ public class EditionMetadataController {
      * POST /api/drive/editions/{editionId}/pull-image
      * Body: { "driveFileId": "1abc...xyz" }
      */
+    @PreAuthorize("hasAuthority('manage_editions')")
     @PostMapping("/{editionId}/pull-image")
     public ResponseEntity<Object> pullImage(@PathVariable String editionId,
                                             @RequestBody PullImageRequest body) {

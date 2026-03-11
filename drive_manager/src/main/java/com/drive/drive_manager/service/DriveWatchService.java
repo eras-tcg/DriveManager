@@ -52,6 +52,9 @@ public class DriveWatchService implements ApplicationRunner, DisposableBean {
     @Value("${ngrok.auth-token:}")
     private String ngrokAuthToken;
 
+    @Value("${drive.webhook-token}")
+    private String webhookToken;
+
     // Resolved once on first channel registration — reused for renewals
     private volatile String resolvedWebhookUrl;
     private NgrokClient ngrokClient;
@@ -224,6 +227,7 @@ public class DriveWatchService implements ApplicationRunner, DisposableBean {
                         .setId(channelId)
                         .setType("web_hook")
                         .setAddress(url)
+                        .setToken(webhookToken)
                         .setExpiration(sevenDaysMs))
                 .execute();
 
