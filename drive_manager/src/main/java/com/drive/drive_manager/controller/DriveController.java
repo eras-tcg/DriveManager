@@ -173,6 +173,7 @@ public class DriveController {
      *  - E entries in editions: traverses section → color subfolders normally
      */
 
+    @PreAuthorize("hasAuthority('manage_cards')")
     @PostMapping("/cards/map_to_db")
     public ResponseEntity<SyncResult> syncCards(
             @RequestBody(required = false) SyncRequest body) {
