@@ -27,4 +27,7 @@ public class EditionMetadata {
 
     @Field("edition_image")
     private String editionImage;       // R2 URL once pulled, or Drive file ID before
+
+    @Field("release_date")
+    private String releaseDate;        // yyyy-mm-dd-hh (hour used only for same-day ordering)
 }

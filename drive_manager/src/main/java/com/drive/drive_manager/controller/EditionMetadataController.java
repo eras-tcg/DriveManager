@@ -120,7 +120,7 @@ public class EditionMetadataController {
             String url = r2Service.uploadRaw(r2Key, new ByteArrayInputStream(bytes), bytes.length);
 
             EditionMetadata edition = repo.findById(editionId)
-                    .orElse(new EditionMetadata(editionId, null, 0, null, null));
+                    .orElse(new EditionMetadata(editionId, null, 0, null, null, null));
             edition.setEditionImage(url);
             repo.save(edition);
 
