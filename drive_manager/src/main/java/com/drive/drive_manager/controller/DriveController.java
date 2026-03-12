@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -93,6 +94,7 @@ public class DriveController {
      * PATCH /api/drive/cards/db/{id}/name
      * Body: { "name": "New Name" }
      */
+    @PreAuthorize("hasAuthority('manage_cards')")
     @PatchMapping("/cards/db/{id}/name")
     public ResponseEntity<?> renameCard(@PathVariable String id, @RequestBody Map<String, String> body) {
         String name = body.get("name");
@@ -128,6 +130,7 @@ public class DriveController {
         }
     }
 
+    @PreAuthorize("hasAuthority('manage_cards')")
     @PostMapping("/cards")
     public ResponseEntity<CardsResponse> readCardsFiltered(
             @RequestBody(required = false) CardsFilterRequest body) {
@@ -169,6 +172,7 @@ public class DriveController {
      *  - ST entries in editions: no color subfolders; color is matched from filename
      *  - E entries in editions: traverses section → color subfolders normally
      */
+    @PreAuthorize("hasAuthority('manage_cards')")
     @PostMapping("/cards/map_to_db")
     public ResponseEntity<SyncResult> syncCards(
             @RequestBody(required = false) SyncRequest body) {

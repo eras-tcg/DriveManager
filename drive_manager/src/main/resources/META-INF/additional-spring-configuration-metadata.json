@@ -16,6 +16,11 @@
       "description": "Public HTTPS URL Google will POST change notifications to (POST /api/drive/webhook)."
     },
     {
+      "name": "drive.webhook-token",
+      "type": "java.lang.String",
+      "description": "Secret token sent by Google in X-Goog-Channel-Token to authenticate webhook calls."
+    },
+    {
       "name": "ngrok.auth-token",
       "type": "java.lang.String",
       "description": "ngrok auth token for local dev tunneling. Leave blank in production."

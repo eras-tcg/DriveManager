@@ -7,4 +7,10 @@ import java.util.List;
 
 public interface DeckListRepository extends MongoRepository<DeckList, String> {
     List<DeckList> findByUserId(String userId);
+
+    default List<DeckList> findPublicDecks() {
+        return findAll().stream()
+                .filter(deck -> !deck.isPrivateDeck())
+                .toList();
+    }
 }

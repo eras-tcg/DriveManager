@@ -34,4 +34,6 @@ public class DeckList {
     private String userId;
 
     private String username;
+
+    private boolean privateDeck;
 }

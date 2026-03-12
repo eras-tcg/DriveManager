@@ -3,6 +3,7 @@ package com.drive.drive_manager.controller;
 import com.drive.drive_manager.dto.StagedChange;
 import com.drive.drive_manager.service.StagedChangeService;
 import org.slf4j.Logger;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -35,11 +36,13 @@ public class StagedChangeController {
         this.stagedChangeService = stagedChangeService;
     }
 
+    @PreAuthorize("hasAuthority('manage_cards')")
     @GetMapping
     public ResponseEntity<List<StagedChange>> list() {
         return ResponseEntity.ok(stagedChangeService.listAll());
     }
 
+    @PreAuthorize("hasAuthority('manage_cards')")
     @PostMapping("/apply")
     public ResponseEntity<Map<String, Object>> applyAll() {
         try {
@@ -52,6 +55,7 @@ public class StagedChangeController {
         }
     }
 
+    @PreAuthorize("hasAuthority('manage_cards')")
     @PostMapping("/apply/{fileId}")
     public ResponseEntity<Map<String, Object>> applyOne(@PathVariable String fileId) {
         try {
@@ -66,6 +70,7 @@ public class StagedChangeController {
         }
     }
 
+    @PreAuthorize("hasAuthority('manage_cards')")
     @DeleteMapping("/{fileId}")
     public ResponseEntity<Void> discard(@PathVariable String fileId) {
         stagedChangeService.discard(fileId);

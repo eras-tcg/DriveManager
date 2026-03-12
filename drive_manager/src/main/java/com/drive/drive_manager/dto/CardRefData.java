@@ -20,7 +20,6 @@ import java.util.Map;
  * instanceKinds — optional instance → kind mapping for auto-fill in the card editor
  */
 @Data
-@NoArgsConstructor
 @Document(collection = "card_ref_data")
 public class CardRefData {
     @Id

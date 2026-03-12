@@ -8,6 +8,7 @@ import com.drive.drive_manager.service.CardService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.ArrayList;
@@ -37,6 +38,7 @@ public class CardController {
      * Create a new card.
      * POST /api/cards
      */
+    @PreAuthorize("hasAuthority('manage_cards')")
     @PostMapping
     public ResponseEntity<Card> createCard(@RequestBody Card card) {
         Card createdCard = cardService.createCard(card);
@@ -68,6 +70,7 @@ public class CardController {
      * Update a card by ID.
      * PUT /api/cards/{id}
      */
+    @PreAuthorize("hasAuthority('manage_cards')")
     @PutMapping("/{id}")
     public ResponseEntity<Card> updateCard(@PathVariable String id, @RequestBody Card cardDetails) {
         Optional<Card> updatedCard = cardService.updateCard(id, cardDetails);
@@ -79,6 +82,7 @@ public class CardController {
      * Delete a card by ID.
      * DELETE /api/cards/{id}
      */
+    @PreAuthorize("hasAuthority('manage_cards')")
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteCard(@PathVariable String id) {
         boolean deleted = cardService.deleteCard(id);
@@ -197,6 +201,7 @@ public class CardController {
     /**
      * PUT /api/cards/ref — replace the full vocabulary document.
      */
+    @PreAuthorize("hasAuthority('manage_cards')")
     @PutMapping("/ref")
     public ResponseEntity<CardRefData> updateRef(@RequestBody CardRefData body) {
         body.setId(REF_ID);
@@ -207,6 +212,7 @@ public class CardController {
      * POST /api/cards/ref/tags — kept for backwards compat with Cards.vue effect editor.
      * Body: { "value": "new tag" }
      */
+    @PreAuthorize("hasAuthority('manage_cards')")
     @PostMapping("/ref/tags")
     public ResponseEntity<Object> addTag(@RequestBody Map<String, Object> body) {
         return addRefItem("tags", body);
@@ -217,6 +223,7 @@ public class CardController {
      * For keywordsEffects: Body: { "keyword": "...", "effect": { ... } }
      * For others: Body: { "value": "..." }
      */
+    @PreAuthorize("hasAuthority('manage_cards')")
     @PostMapping("/ref/{field}")
     public ResponseEntity<Object> addRefItem(@PathVariable String field,
                                              @RequestBody Map<String, Object> body) {
@@ -255,6 +262,7 @@ public class CardController {
      * For keywordsEffects: Body: { "keyword": "..." }
      * For others: Body: { "value": "..." }
      */
+    @PreAuthorize("hasAuthority('manage_cards')")
     @DeleteMapping("/ref/{field}")
     public ResponseEntity<Object> deleteRefItem(@PathVariable String field,
                                                 @RequestBody Map<String, Object> body) {
@@ -294,6 +302,7 @@ public class CardController {
      * POST /api/cards/ref/{field}/replace — replaces oldValue with replacement in all cards, then removes old from ref.
      * Body: { "value": "...", "replacement": "..." }  (omit replacement or send blank/null to remove)
      */
+    @PreAuthorize("hasAuthority('manage_cards')")
     @PostMapping("/ref/{field}/replace")
     public ResponseEntity<Object> replaceRefItem(@PathVariable String field,
                                                  @RequestBody Map<String, String> body) {
@@ -313,6 +322,7 @@ public class CardController {
      * POST /api/cards/ref/{field}/purge — removes the value from all cards, then from ref data.
      * Body: { "value": "..." }
      */
+    @PreAuthorize("hasAuthority('manage_cards')")
     @PostMapping("/ref/{field}/purge")
     public ResponseEntity<Object> purgeRefItem(@PathVariable String field,
                                                @RequestBody Map<String, Object> body) {
@@ -330,6 +340,7 @@ public class CardController {
      * PATCH /api/cards/ref/instance-kind — set or clear the default kind for an instance.
      * Body: { "instance": "Quick", "kind": "attack" }  (omit kind or send blank to remove)
      */
+    @PreAuthorize("hasAuthority('manage_cards')")
     @PatchMapping("/ref/instance-kind")
     public ResponseEntity<Object> setInstanceKind(@RequestBody Map<String, String> body) {
         String instance = body.get("instance");
