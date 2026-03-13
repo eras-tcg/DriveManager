@@ -25,7 +25,7 @@ public class DeckList {
     private List<String> cards;        // list of card codes
 
     @Field("deck_image")
-    private String deckImage;          // card code of the most relevant card (must be in cards)
+    private String deckImage;          // image URL of the deck cover card
 
     @Field("created_at")
     private Instant createdAt;

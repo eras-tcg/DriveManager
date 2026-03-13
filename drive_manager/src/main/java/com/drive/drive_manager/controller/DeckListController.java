@@ -110,9 +110,7 @@ public class DeckListController {
         if (body.getCards() == null || body.getCards().isEmpty()) {
             return "cards list must not be empty";
         }
-        if (body.getDeckImage() != null && !body.getCards().contains(body.getDeckImage())) {
-            return "deckImage must be a card code present in the cards list";
-        }
+        // deckImage is now a URL — no card-code membership check needed
         return null;
     }
 }
