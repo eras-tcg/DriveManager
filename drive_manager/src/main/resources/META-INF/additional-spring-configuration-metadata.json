@@ -21,6 +21,11 @@
       "description": "Secret token sent by Google in X-Goog-Channel-Token to authenticate webhook calls."
     },
     {
+      "name": "drive.instance-id",
+      "type": "java.lang.String",
+      "description": "Unique identifier for this environment (e.g. 'prod', 'staging'). Used as the sync_state document ID so each environment manages its own independent Drive channel."
+    },
+    {
       "name": "ngrok.auth-token",
       "type": "java.lang.String",
       "description": "ngrok auth token for local dev tunneling. Leave blank in production."
