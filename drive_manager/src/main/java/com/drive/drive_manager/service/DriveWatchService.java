@@ -33,7 +33,6 @@ import java.util.UUID;
 public class DriveWatchService implements ApplicationRunner, DisposableBean {
 
     private static final Logger logger = LoggerFactory.getLogger(DriveWatchService.class);
-    private static final String STATE_ID = "drive";
     private static final String CHANGES_FIELDS =
             "newStartPageToken, nextPageToken, " +
             "changes(fileId, removed, file(id, name, mimeType, webContentLink, parents))";
@@ -42,6 +41,9 @@ public class DriveWatchService implements ApplicationRunner, DisposableBean {
     private final DriveParser driveParser;
     private final SyncStateRepository syncStateRepository;
     private final StagedChangeRepository stagedChangeRepository;
+
+    @Value("${drive.instance-id:drive}")
+    private String stateId;
 
     @Value("${drive.webhook-url:}")
     private String webhookUrl;
@@ -102,7 +104,7 @@ public class DriveWatchService implements ApplicationRunner, DisposableBean {
             return;
         }
 
-        SyncState state = syncStateRepository.findById(STATE_ID).orElse(null);
+        SyncState state = syncStateRepository.findById(stateId).orElse(null);
 
         // In ngrok mode the public URL changes on every restart, so we must
         // always re-register the channel — otherwise Google keeps posting to
@@ -232,7 +234,7 @@ public class DriveWatchService implements ApplicationRunner, DisposableBean {
                 .execute();
 
         SyncState newState = new SyncState(
-                STATE_ID,
+                stateId,
                 pageToken,
                 registered.getId(),
                 registered.getResourceId(),
@@ -249,7 +251,7 @@ public class DriveWatchService implements ApplicationRunner, DisposableBean {
      * Fetches only the delta since the last stored page token.
      */
     public void processChanges(String incomingChannelId) throws Exception {
-        SyncState state = syncStateRepository.findById(STATE_ID).orElse(null);
+        SyncState state = syncStateRepository.findById(stateId).orElse(null);
         if (state == null) {
             logger.warn("Received webhook notification but no sync state found. Ignoring.");
             return;
