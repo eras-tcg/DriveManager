@@ -46,7 +46,11 @@ public class DriveWebhookController {
             return ResponseEntity.ok().build();
         }
 
-        driveWatchService.processChanges(channelId);
+        try {
+            driveWatchService.processChanges(channelId);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
         return ResponseEntity.ok().build();
     }
 }

@@ -248,7 +248,7 @@ public class DriveWatchService implements ApplicationRunner, DisposableBean {
      * Called by the webhook endpoint when Google notifies us of changes.
      * Fetches only the delta since the last stored page token.
      */
-    public void processChanges(String incomingChannelId) {
+    public void processChanges(String incomingChannelId) throws Exception {
         SyncState state = syncStateRepository.findById(STATE_ID).orElse(null);
         if (state == null) {
             logger.warn("Received webhook notification but no sync state found. Ignoring.");
@@ -261,38 +261,33 @@ public class DriveWatchService implements ApplicationRunner, DisposableBean {
         }
 
         logger.info("Processing Drive changes for channel: {}", incomingChannelId);
-        try {
-            Drive drive = driveClientFactory.create();
-            String token = state.getPageToken();
-            ChangeList result;
-            int totalChanges = 0;
+        Drive drive = driveClientFactory.create();
+        String token = state.getPageToken();
+        ChangeList result;
+        int totalChanges = 0;
 
-            do {
-                result = drive.changes().list(token)
-                        .setFields(CHANGES_FIELDS)
-                        .execute();
+        do {
+            result = drive.changes().list(token)
+                    .setFields(CHANGES_FIELDS)
+                    .execute();
 
-                int pageSize = result.getChanges() != null ? result.getChanges().size() : 0;
-                totalChanges += pageSize;
-                logger.info("Fetched {} change(s) from Drive (page token: {})", pageSize, token);
+            int pageSize = result.getChanges() != null ? result.getChanges().size() : 0;
+            totalChanges += pageSize;
+            logger.info("Fetched {} change(s) from Drive (page token: {})", pageSize, token);
 
-                for (Change change : result.getChanges()) {
-                    handleChange(drive, change);
-                }
+            for (Change change : result.getChanges()) {
+                handleChange(drive, change);
+            }
 
-                token = result.getNextPageToken() != null
-                        ? result.getNextPageToken()
-                        : result.getNewStartPageToken();
+            token = result.getNextPageToken() != null
+                    ? result.getNextPageToken()
+                    : result.getNewStartPageToken();
 
-            } while (result.getNextPageToken() != null);
+        } while (result.getNextPageToken() != null);
 
-            state.setPageToken(token);
-            syncStateRepository.save(state);
-            logger.info("Drive changes processed. Total: {}. Page token advanced.", totalChanges);
-
-        } catch (Exception e) {
-            logger.error("Error processing Drive changes", e);
-        }
+        state.setPageToken(token);
+        syncStateRepository.save(state);
+        logger.info("Drive changes processed. Total: {}. Page token advanced.", totalChanges);
     }
 
     private void handleChange(Drive drive, Change change) throws IOException {
