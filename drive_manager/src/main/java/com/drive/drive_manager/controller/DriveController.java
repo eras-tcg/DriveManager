@@ -4,9 +4,11 @@ import com.drive.drive_manager.repository.DriveCardRepository;
 import com.drive.drive_manager.service.DriveParser;
 import com.drive.drive_manager.service.DriveParser.CardsResponse;
 import com.drive.drive_manager.service.DriveParser.SyncResult;
+import com.drive.drive_manager.service.R2Service;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -39,6 +41,9 @@ public class DriveController {
 
     @Autowired
     private DriveCardRepository driveCardRepository;
+
+    @Autowired
+    private R2Service r2Service;
 
     @Value("${r2.public-url}")
     private String r2PublicUrl;
@@ -105,6 +110,21 @@ public class DriveController {
             driveCardRepository.save(card);
             return ResponseEntity.ok(Map.<String, Object>of("id", id, "name", card.getName()));
         }).orElse(ResponseEntity.notFound().build());
+    }
+
+    /**
+     * Delete a drive card's image from R2 and its DB record.
+     * DELETE /api/drive/cards/db/{id}
+     */
+    @PreAuthorize("hasAuthority('manage_cards')")
+    @DeleteMapping("/cards/db/{id}")
+    public ResponseEntity<?> deleteCard(@PathVariable String id) {
+        if (!driveCardRepository.existsById(id))
+            return ResponseEntity.notFound().build();
+        r2Service.delete(id);
+        driveCardRepository.deleteById(id);
+        log.info("Deleted drive card and R2 image: {}", id);
+        return ResponseEntity.noContent().build();
     }
 
     /**
