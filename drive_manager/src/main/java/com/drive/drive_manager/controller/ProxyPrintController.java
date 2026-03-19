@@ -24,7 +24,7 @@ public class ProxyPrintController {
     private static final float PTS    = 72f;
     private static final float CARD_W = 2.5f * PTS;   // 180 pts
     private static final float CARD_H = 3.5f * PTS;   // 252 pts
-    private static final float MARGIN = 0.1f * PTS;   //   7.2 pts
+    private static final float MARGIN = 0.5f * PTS;   //  36 pts
 
     @Autowired
     private R2Service r2Service;
