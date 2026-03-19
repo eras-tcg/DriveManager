@@ -7,6 +7,7 @@ import com.drive.drive_manager.service.DriveParser.SyncResult;
 import com.drive.drive_manager.service.R2Service;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -125,6 +126,26 @@ public class DriveController {
         driveCardRepository.deleteById(id);
         log.info("Deleted drive card and R2 image: {}", id);
         return ResponseEntity.noContent().build();
+    }
+
+    /**
+     * Proxies a card image from R2 through the API so the browser can load it
+     * without CORS restrictions (e.g. for canvas/PDF generation).
+     * GET /api/drive/cards/db/{id}/image
+     */
+    @GetMapping("/cards/db/{id}/image")
+    public ResponseEntity<byte[]> proxyImage(@PathVariable String id) {
+        if (!driveCardRepository.existsById(id))
+            return ResponseEntity.notFound().build();
+        try {
+            byte[] data = r2Service.getImage(id);
+            return ResponseEntity.ok()
+                    .contentType(MediaType.IMAGE_JPEG)
+                    .body(data);
+        } catch (Exception e) {
+            log.error("Failed to proxy image for card {}", id, e);
+            return ResponseEntity.notFound().build();
+        }
     }
 
     /**

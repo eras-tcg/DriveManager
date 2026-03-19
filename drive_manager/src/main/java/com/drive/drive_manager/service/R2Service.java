@@ -7,6 +7,7 @@ import org.springframework.stereotype.Service;
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.DeleteObjectRequest;
+import software.amazon.awssdk.services.s3.model.GetObjectRequest;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 
 import java.io.InputStream;
@@ -68,6 +69,16 @@ public class R2Service {
         String url = publicBaseUrl.stripTrailing() + "/" + key;
         logger.info("Uploaded to R2: {}", url);
         return url;
+    }
+
+    /**
+     * Fetches image bytes from R2. Key: cards/{fileId}.jpg
+     */
+    public byte[] getImage(String fileId) {
+        String key = KEY_PREFIX + fileId + ".jpg";
+        return r2Client.getObjectAsBytes(
+                GetObjectRequest.builder().bucket(bucketName).key(key).build()
+        ).asByteArray();
     }
 
     /**
