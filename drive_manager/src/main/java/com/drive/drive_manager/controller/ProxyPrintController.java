@@ -13,8 +13,13 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import javax.imageio.ImageIO;
 import java.awt.Color;
+import java.awt.image.BufferedImage;
+import java.awt.image.RescaleOp;
+import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.util.Arrays;
 import java.util.List;
 
 @RestController
@@ -22,9 +27,9 @@ import java.util.List;
 public class ProxyPrintController {
 
     private static final float PTS    = 72f;
-    private static final float CARD_W = 2.5f * PTS;   // 180 pts
-    private static final float CARD_H = 3.5f * PTS;   // 252 pts
-    private static final float MARGIN = 0.5f * PTS;   //  36 pts
+    private static final float CARD_W = 2.5f * PTS;
+    private static final float CARD_H = 3.5f * PTS;
+    private static final float MARGIN = 0.5f * PTS;
 
     @Autowired
     private R2Service r2Service;
@@ -35,6 +40,10 @@ public class ProxyPrintController {
         int cols    = (int) ((pageSize.getWidth()  - MARGIN * 2) / CARD_W);
         int rows    = (int) ((pageSize.getHeight() - MARGIN * 2) / CARD_H);
         int perPage = Math.max(1, cols * rows);
+
+        float brightness = request.brightness() != null ? request.brightness() : 0f;
+        float contrast   = request.contrast()   != null ? request.contrast()   : 0f;
+        boolean adjust   = brightness != 0f || contrast != 0f;
 
         List<String> cardIds = request.cardIds();
 
@@ -57,10 +66,10 @@ public class ProxyPrintController {
 
                 try {
                     byte[] imgBytes = r2Service.getImage(cardIds.get(i));
+                    if (adjust) imgBytes = adjustImage(imgBytes, brightness, contrast);
                     PDImageXObject img = PDImageXObject.createFromByteArray(doc, imgBytes, cardIds.get(i));
                     cs.drawImage(img, x, y, CARD_W, CARD_H);
                 } catch (Exception e) {
-                    // No image — draw a placeholder border
                     cs.setStrokingColor(Color.LIGHT_GRAY);
                     cs.addRect(x, y, CARD_W, CARD_H);
                     cs.stroke();
@@ -79,6 +88,32 @@ public class ProxyPrintController {
         }
     }
 
+    /**
+     * Adjusts brightness and contrast using RescaleOp.
+     * brightness: -100 to +100 (maps to -255..+255 pixel offset)
+     * contrast:   -100 to +100 (maps to scale factor 0..2, midpoint-preserving)
+     */
+    private byte[] adjustImage(byte[] imageBytes, float brightness, float contrast) throws Exception {
+        BufferedImage img = ImageIO.read(new ByteArrayInputStream(imageBytes));
+        if (img == null) return imageBytes;
+
+        float scale  = Math.max(0f, 1f + contrast / 100f);
+        float offset = (brightness / 100f) * 255f + 128f * (1f - scale);
+
+        int numBands = img.getRaster().getNumBands();
+        float[] scales  = new float[numBands];
+        float[] offsets = new float[numBands];
+        Arrays.fill(scales,  scale);
+        Arrays.fill(offsets, offset);
+        if (numBands == 4) { scales[3] = 1f; offsets[3] = 0f; } // preserve alpha
+
+        BufferedImage adjusted = new RescaleOp(scales, offsets, null).filter(img, null);
+
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        ImageIO.write(adjusted, "jpg", baos);
+        return baos.toByteArray();
+    }
+
     private PDRectangle resolvePageSize(String paperSize, String orientation) {
         PDRectangle base = switch (paperSize == null ? "" : paperSize.toLowerCase()) {
             case "a4"    -> PDRectangle.A4;
@@ -94,6 +129,8 @@ public class ProxyPrintController {
     public record ProxyPrintRequest(
             @JsonProperty("cardIds")     List<String> cardIds,
             @JsonProperty("paperSize")   String paperSize,
-            @JsonProperty("orientation") String orientation
+            @JsonProperty("orientation") String orientation,
+            @JsonProperty("brightness")  Float brightness,
+            @JsonProperty("contrast")    Float contrast
     ) {}
 }
