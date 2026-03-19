@@ -26,10 +26,10 @@ import java.util.List;
 @RequestMapping("/api/drive")
 public class ProxyPrintController {
 
-    private static final float PTS    = 72f;
-    private static final float CARD_W = 2.5f * PTS;
-    private static final float CARD_H = 3.5f * PTS;
-    private static final float MARGIN = 0.5f * PTS;
+    private static final float PTS           = 72f;
+    private static final float CARD_W        = 2.5f * PTS;
+    private static final float CARD_H        = 3.5f * PTS;
+    private static final float DEFAULT_MARGIN = 0.5f;   // inches
 
     @Autowired
     private R2Service r2Service;
@@ -37,8 +37,9 @@ public class ProxyPrintController {
     @PostMapping(value = "/proxy-print", produces = "application/pdf")
     public ResponseEntity<byte[]> generateProxyPdf(@RequestBody ProxyPrintRequest request) throws Exception {
         PDRectangle pageSize = resolvePageSize(request.paperSize(), request.orientation());
-        int cols    = (int) ((pageSize.getWidth()  - MARGIN * 2) / CARD_W);
-        int rows    = (int) ((pageSize.getHeight() - MARGIN * 2) / CARD_H);
+        float margin = (request.margin() != null ? request.margin() : DEFAULT_MARGIN) * PTS;
+        int cols    = (int) ((pageSize.getWidth()  - margin * 2) / CARD_W);
+        int rows    = (int) ((pageSize.getHeight() - margin * 2) / CARD_H);
         int perPage = Math.max(1, cols * rows);
 
         float brightness = request.brightness() != null ? request.brightness() : 0f;
@@ -61,8 +62,8 @@ public class ProxyPrintController {
                 }
 
                 int pos = i % perPage;
-                float x = MARGIN + (pos % cols) * CARD_W;
-                float y = pageSize.getHeight() - MARGIN - (pos / cols + 1) * CARD_H;
+                float x = margin + (pos % cols) * CARD_W;
+                float y = pageSize.getHeight() - margin - (pos / cols + 1) * CARD_H;
 
                 try {
                     byte[] imgBytes = r2Service.getImage(cardIds.get(i));
@@ -130,6 +131,7 @@ public class ProxyPrintController {
             @JsonProperty("cardIds")     List<String> cardIds,
             @JsonProperty("paperSize")   String paperSize,
             @JsonProperty("orientation") String orientation,
+            @JsonProperty("margin")      Float margin,
             @JsonProperty("brightness")  Float brightness,
             @JsonProperty("contrast")    Float contrast
     ) {}
