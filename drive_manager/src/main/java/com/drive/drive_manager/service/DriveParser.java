@@ -37,9 +37,9 @@ public class DriveParser {
 
     // Pattern: {edition}-{color}{number}-{name}.jpg  (dash separator = sRGB web image)
     // Files using a space separator are CMYK print files and are intentionally ignored.
-    // edition = ST\d+ | E\d+ | E\d+\.\d+
+    // edition = ST\d+ | E\d+ | E\d+_\d+  (underscore used instead of dot to avoid filesystem ambiguity)
     private static final Pattern FILE_NAME_PATTERN = Pattern.compile(
-            "^((?:ST|E)\\d+(?:\\.\\d+)?)-([BGPRW])(\\d+)-(.+)\\.jpe?g$",
+            "^((?:ST|E)\\d+(?:_\\d+)?)-([BGPRW])(\\d+)-(.+)\\.jpe?g$",
             Pattern.CASE_INSENSITIVE
     );
 
@@ -248,7 +248,7 @@ public class DriveParser {
         int number = Integer.parseInt(m.group(3));
         String name = m.group(4).replace('-', ' ');
 
-        int dotIndex = fullEdition.indexOf('.');
+        int dotIndex = fullEdition.indexOf('_');
         String edition = dotIndex >= 0 ? fullEdition.substring(0, dotIndex) : fullEdition;
         String subEdition = dotIndex >= 0 ? fullEdition.substring(dotIndex + 1) : null;
 
