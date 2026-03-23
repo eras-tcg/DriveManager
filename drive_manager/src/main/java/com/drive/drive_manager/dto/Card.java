@@ -29,6 +29,7 @@ public class Card {
     private Boolean starter;
     private List<String> cardClasses;
     private String edition;
+    private String subEdition;
     private String colorIdentity;
     private Integer cardNumber;
     private String regulation;
