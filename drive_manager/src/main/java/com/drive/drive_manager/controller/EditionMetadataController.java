@@ -119,8 +119,11 @@ public class EditionMetadataController {
             String r2Key = "editions/" + editionId + ".jpg";
             String url = r2Service.uploadRaw(r2Key, new ByteArrayInputStream(bytes), bytes.length);
 
-            EditionMetadata edition = repo.findById(editionId)
-                    .orElse(new EditionMetadata(editionId, null, 0, null, null, null));
+            EditionMetadata edition = repo.findById(editionId).orElseGet(() -> {
+                EditionMetadata e = new EditionMetadata();
+                e.setEditionId(editionId);
+                return e;
+            });
             edition.setEditionImage(url);
             repo.save(edition);
 
