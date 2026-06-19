@@ -24,6 +24,11 @@ public interface CardRepository extends MongoRepository<Card, String> {
     List<Card> findByCardType(String cardType);
 
     /**
+     * Find card by name and edition (for simulator card metadata lookup).
+     */
+    List<Card> findByCardNameIgnoreCaseAndEdition(String cardName, String edition);
+
+    /**
      * Find all cards by edition.
      */
     List<Card> findByEdition(String edition);
