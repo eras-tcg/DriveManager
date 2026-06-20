@@ -20,6 +20,8 @@ public class GameStateUpdate {
     private Map<String, String> postGameChoices;
     private String targetedInstanceId;
     private String targetingSourceInstanceId;
+    private String revealedCardImageUrl;
+    private String revealedCardName;
 
     public static GameStateUpdate from(GameRoom room, String event, String actorId) {
         GameStateUpdate u = new GameStateUpdate();

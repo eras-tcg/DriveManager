@@ -85,6 +85,7 @@ public class RoomService {
             case "TARGET_CARD"              -> handleTargetCard(room, userId, action);
             case "REORDER_ATTACHMENT"           -> handleReorderAttachment(room, userId, action);
             case "RECLASSIFY_ATTACHMENT"        -> handleReclassifyAttachment(room, userId, action);
+            case "REVEAL_TO_HAND"               -> handleRevealToHand(room, userId, action);
             default                             -> GameStateUpdate.error(roomId, "Unknown action: " + action.getType());
         };
     }
@@ -188,6 +189,13 @@ public class RoomService {
             card.setFaceDown(false);
         }
         if ("deck".equals(toZone)) {
+            card.setFaceDown(true);
+        }
+        if ("hand".equals(fromZone) && "lifeStack".equals(toZone)) {
+            card.setFaceDown(true);
+        }
+        Object forceFaceDown = action.getPayload().get("faceDown");
+        if (Boolean.TRUE.equals(forceFaceDown)) {
             card.setFaceDown(true);
         }
         if (!"field".equals(toZone)) {
@@ -791,6 +799,8 @@ public class RoomService {
                 summoned.getResources().add(0, summoner);
             }
             case "ritual" -> {
+                summoned.setTapped(summoner.isTapped());
+                summoned.setStrengthModifier(summoner.getStrengthModifier());
                 summoner.getMaterials().forEach(m -> { m.setFaceDown(false); player.getDiscardPile().add(m); });
                 summoner.getResources().forEach(r -> { r.setFaceDown(false); player.getDiscardPile().add(r); });
                 summoner.setMaterials(new ArrayList<>());
@@ -938,6 +948,23 @@ public class RoomService {
         toList.add(card);
 
         return GameStateUpdate.from(room, "RECLASSIFY_ATTACHMENT", userId);
+    }
+
+    private GameStateUpdate handleRevealToHand(GameRoom room, String userId, GameAction action) {
+        PlayerState player = room.getPlayer(userId);
+        if (player == null) return GameStateUpdate.error(room.getRoomId(), "Player not in room");
+        String instanceId = action.getString("instanceId");
+        CardSlot card = player.getDeck().stream()
+                .filter(c -> instanceId.equals(c.getInstanceId()))
+                .findFirst().orElse(null);
+        if (card == null) return GameStateUpdate.error(room.getRoomId(), "Card not found in deck");
+        player.getDeck().remove(card);
+        card.setFaceDown(false);
+        player.getHand().add(card);
+        GameStateUpdate update = GameStateUpdate.from(room, "REVEAL_TO_HAND", userId);
+        update.setRevealedCardImageUrl(card.getImageUrl());
+        update.setRevealedCardName(card.getCardName());
+        return update;
     }
 
     private List<CardSlot> getZone(PlayerState player, String zoneName) {
