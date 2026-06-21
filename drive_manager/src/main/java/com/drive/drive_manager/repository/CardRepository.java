@@ -48,4 +48,6 @@ public interface CardRepository extends MongoRepository<Card, String> {
      */
     List<Card> findByStarterTrue();
 
+    List<Card> findByEditionIn(List<String> editions);
+
 }

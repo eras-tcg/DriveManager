@@ -86,6 +86,7 @@ public class RoomService {
             case "REORDER_ATTACHMENT"           -> handleReorderAttachment(room, userId, action);
             case "RECLASSIFY_ATTACHMENT"        -> handleReclassifyAttachment(room, userId, action);
             case "REVEAL_TO_HAND"               -> handleRevealToHand(room, userId, action);
+            case "REFRESH_CARD_METADATA"        -> handleRefreshCardMetadata(room, userId, action);
             default                             -> GameStateUpdate.error(roomId, "Unknown action: " + action.getType());
         };
     }
@@ -103,7 +104,8 @@ public class RoomService {
             if (room.getStatus() == GameRoom.RoomStatus.WAITING && deckId != null) {
                 existing.setDeckId(deckId);
                 List<CardSlot> slots = resolveDeck(deckId);
-                existing.setDeck(slots);
+                existing.setDeck(new ArrayList<>(slots));
+                existing.setOriginalDeck(deepCopySlots(slots));
             }
             return GameStateUpdate.from(room, "RECONNECT", userId);
         }
@@ -115,7 +117,8 @@ public class RoomService {
         if (deckId != null) {
             player.setDeckId(deckId);
             List<CardSlot> slots = resolveDeck(deckId);
-            player.setDeck(slots);
+            player.setDeck(new ArrayList<>(slots));
+            player.setOriginalDeck(deepCopySlots(slots));
         }
 
         room.getPlayers().put(userId, player);
@@ -551,6 +554,7 @@ public class RoomService {
             room.setSharedCounter(Math.max(-10, Math.min(10, next)));
             opponent.getField().forEach(c -> c.setTapped(false));
             room.setCurrentTurnUserId(opponentId);
+            autoDraw(opponent);
         }
         room.setCurrentPhase("MAIN");
         return GameStateUpdate.from(room, "END_TURN", userId);
@@ -822,6 +826,7 @@ public class RoomService {
 
         summoned.setFaceDown(false);
         player.getField().add(summoned);
+        autoDraw(player);
         return GameStateUpdate.from(room, "SPECIAL_SUMMON", userId);
     }
 
@@ -967,6 +972,69 @@ public class RoomService {
         return update;
     }
 
+    private GameStateUpdate handleRefreshCardMetadata(GameRoom room, String userId, GameAction action) {
+        String cardId = action.getString("cardId");
+        if (cardId == null) return GameStateUpdate.error(room.getRoomId(), "No cardId");
+
+        DriveCard dc = driveCardRepo.findById(cardId).orElse(null);
+        if (dc == null || dc.getName() == null)
+            return GameStateUpdate.error(room.getRoomId(), "Card not found in drive_cards");
+
+        List<Card> matches = cardRepo.findByCardNameIgnoreCaseAndEdition(dc.getName(), dc.getEdition());
+        if (matches.isEmpty())
+            return GameStateUpdate.error(room.getRoomId(), "Card metadata not found");
+        Card meta = matches.get(0);
+
+        for (PlayerState player : room.getPlayers().values()) {
+            refreshSlotsInList(player.getHand(),         cardId, meta);
+            refreshSlotsInList(player.getDeck(),         cardId, meta);
+            refreshSlotsInList(player.getOriginalDeck(), cardId, meta);
+            refreshSlotsInList(player.getLifeStack(),    cardId, meta);
+            refreshSlotsInList(player.getTributeZone(),  cardId, meta);
+            refreshSlotsInList(player.getDiscardPile(),  cardId, meta);
+            for (CardSlot fs : player.getField()) {
+                applyMeta(fs, cardId, meta);
+                refreshSlotsInList(fs.getMaterials(), cardId, meta);
+                refreshSlotsInList(fs.getResources(), cardId, meta);
+            }
+        }
+        return GameStateUpdate.from(room, "REFRESH_CARD_METADATA", userId);
+    }
+
+    private void autoDraw(PlayerState player) {
+        if (player.getDeck().isEmpty()) return;
+        CardSlot drawn = player.getDeck().remove(0);
+        drawn.setFaceDown(false);
+        player.getHand().add(drawn);
+    }
+
+    private List<CardSlot> deepCopySlots(List<CardSlot> slots) {
+        return slots.stream().map(s -> {
+            CardSlot c = new CardSlot();
+            c.setInstanceId(s.getInstanceId());
+            c.setCardId(s.getCardId());
+            c.setImageUrl(s.getImageUrl());
+            c.setCardName(s.getCardName());
+            c.setCardType(s.getCardType());
+            c.setStrength(s.getStrength());
+            c.setSpecialSummonKind(s.getSpecialSummonKind());
+            c.setFaceDown(true);
+            return c;
+        }).collect(Collectors.toList());
+    }
+
+    private void refreshSlotsInList(List<CardSlot> slots, String cardId, Card meta) {
+        slots.stream().filter(s -> cardId.equals(s.getCardId())).forEach(s -> applyMeta(s, cardId, meta));
+    }
+
+    private void applyMeta(CardSlot slot, String cardId, Card meta) {
+        if (!cardId.equals(slot.getCardId())) return;
+        slot.setCardName(meta.getCardName());
+        slot.setCardType(meta.getCardType());
+        slot.setStrength(meta.getStrength());
+        slot.setSpecialSummonKind(meta.getSpecialSummonKind());
+    }
+
     private List<CardSlot> getZone(PlayerState player, String zoneName) {
         if (zoneName == null) return null;
         return switch (zoneName) {
@@ -984,26 +1052,47 @@ public class RoomService {
         Optional<DeckList> deckOpt = deckListRepo.findById(deckId);
         if (deckOpt.isEmpty()) return new ArrayList<>();
 
+        List<String> fileIds = deckOpt.get().getCards();
         String baseUrl = r2PublicUrl.stripTrailing();
-        return new ArrayList<>(deckOpt.get().getCards().stream()
-                .map(driveFileId -> {
-                    CardSlot slot = new CardSlot();
-                    slot.setInstanceId(UUID.randomUUID().toString());
-                    slot.setCardId(driveFileId);
-                    slot.setImageUrl(baseUrl + "/cards/" + driveFileId + ".jpg");
-                    slot.setFaceDown(true);
-                    driveCardRepo.findById(driveFileId).ifPresent(dc -> {
-                        List<Card> matches = cardRepo.findByCardNameIgnoreCaseAndEdition(dc.getName(), dc.getEdition());
-                        if (!matches.isEmpty()) {
-                            Card card = matches.get(0);
+
+        // Batch 1: all DriveCards at once
+        Map<String, DriveCard> driveCardMap = driveCardRepo.findAllById(fileIds)
+                .stream().collect(Collectors.toMap(DriveCard::getId, dc -> dc));
+
+        // Batch 2: all Card metadata by editions present in deck
+        Set<String> editions = driveCardMap.values().stream()
+                .map(DriveCard::getEdition)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toSet());
+        Map<String, Card> cardMeta = cardRepo.findByEditionIn(new ArrayList<>(editions))
+                .stream().collect(Collectors.toMap(
+                        c -> c.getCardName().toLowerCase() + ":" + c.getEdition(),
+                        c -> c,
+                        (a, b) -> a
+                ));
+
+        return new ArrayList<>(fileIds.stream().map(driveFileId -> {
+            CardSlot slot = new CardSlot();
+            slot.setInstanceId(UUID.randomUUID().toString());
+            slot.setCardId(driveFileId);
+            slot.setFaceDown(true);
+            DriveCard dc = driveCardMap.get(driveFileId);
+            if (dc != null) {
+                slot.setImageUrl(baseUrl + "/cards/" + driveFileId + ".jpg");
+                if (dc.getName() != null) {
+                    slot.setCardName(dc.getName());
+                    if (dc.getEdition() != null) {
+                        Card card = cardMeta.get(dc.getName().toLowerCase() + ":" + dc.getEdition());
+                        if (card != null) {
                             slot.setCardName(card.getCardName());
                             slot.setCardType(card.getCardType());
                             slot.setStrength(card.getStrength());
                             slot.setSpecialSummonKind(card.getSpecialSummonKind());
                         }
-                    });
-                    return slot;
-                })
-                .toList());
+                    }
+                }
+            }
+            return slot;
+        }).toList());
     }
 }

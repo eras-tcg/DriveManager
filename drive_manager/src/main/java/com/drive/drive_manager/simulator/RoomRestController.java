@@ -27,10 +27,11 @@ public class RoomRestController {
     public ResponseEntity<Map<String, Object>> getRoom(@PathVariable String id) {
         GameRoom room = roomService.getRoom(id);
         if (room == null) return ResponseEntity.notFound().build();
-        return ResponseEntity.ok(Map.of(
-                "roomId",      room.getRoomId(),
-                "status",      room.getStatus().name(),
-                "playerCount", room.getPlayers().size()
-        ));
+        Map<String, Object> body = new java.util.LinkedHashMap<>();
+        body.put("roomId",      room.getRoomId());
+        body.put("status",      room.getStatus().name());
+        body.put("playerCount", room.getPlayers().size());
+        body.put("playerIds",   new java.util.ArrayList<>(room.getPlayers().keySet()));
+        return ResponseEntity.ok(body);
     }
 }
