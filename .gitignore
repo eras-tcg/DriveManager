@@ -1,1 +1,10 @@
 docker-compose.override.yml
+
+# Secrets / local config (never commit)
+.env
+.env.*
+!.env.example
+*service-account*.json
+
+# Build output
+target/
