@@ -38,7 +38,17 @@ public class SecurityConfig {
                 .cors(Customizer.withDefaults())
                 .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers(HttpMethod.GET, "/api/**").permitAll()
+                        // Public read-only data used by pages that work without login
+                        // (home, editions, cards, deck builder, public decks, booster result)
+                        .requestMatchers(HttpMethod.GET, "/api/cards/ref/*/check").authenticated()
+                        .requestMatchers(HttpMethod.GET,
+                                "/api/cards", "/api/cards/**",
+                                "/api/drive/health",
+                                "/api/drive/cards/db", "/api/drive/cards/db/*/image",
+                                "/api/drive/editions", "/api/drive/editions/**",
+                                "/api/drive/front-content/**",
+                                "/api/drive/decklists", "/api/drive/decklists/*",
+                                "/api/drive/newsletter", "/api/drive/newsletter/*").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/drive/webhook").permitAll()
                         .requestMatchers("/ws/**").permitAll()
                         .anyRequest().authenticated()
