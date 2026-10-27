@@ -4,6 +4,7 @@ import com.drive.drive_manager.dto.DeckList;
 import com.drive.drive_manager.repository.DeckListRepository;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.authentication.AnonymousAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
@@ -13,8 +14,8 @@ import java.util.Map;
 import java.util.Optional;
 
 /**
- * GET    /api/drive/decklists          — list all (public)
- * GET    /api/drive/decklists/{id}     — get one (public)
+ * GET    /api/drive/decklists          — public decks; with ?userId=, that user's decks (private ones only for the owner)
+ * GET    /api/drive/decklists/{id}     — get one (private decks only for the owner)
  * POST   /api/drive/decklists          — create (requires manage_decks)
  * PUT    /api/drive/decklists/{id}     — update (requires manage_decks + ownership)
  * DELETE /api/drive/decklists/{id}     — delete (requires manage_decks + ownership)
@@ -32,22 +33,24 @@ public class DeckListController {
     @GetMapping
     public ResponseEntity<List<DeckList>> listAll(
             @RequestParam(required = false) String userId,
-            @RequestParam(required = false) boolean publicDecks) {
+            @RequestParam(required = false) boolean publicDecks,
+            Authentication auth) {
 
-        if (publicDecks) {
-            return ResponseEntity.ok(repo.findPublicDecks());
+        if (!publicDecks && userId != null && !userId.isBlank()) {
+            List<DeckList> decks = repo.findByUserId(userId);
+            if (userId.equals(callerId(auth))) {
+                return ResponseEntity.ok(decks);
+            }
+            return ResponseEntity.ok(decks.stream().filter(deck -> !deck.isPrivateDeck()).toList());
         }
-        if (userId != null && !userId.isBlank()) {
-            return ResponseEntity.ok(repo.findByUserId(userId));
-        }
-        return ResponseEntity.ok(repo.findAll());
+        return ResponseEntity.ok(repo.findPublicDecks());
     }
 
-
-
     @GetMapping("/{id}")
-    public ResponseEntity<DeckList> getOne(@PathVariable String id) {
+    public ResponseEntity<DeckList> getOne(@PathVariable String id, Authentication auth) {
+        // A private deck is invisible (404) to anyone but its owner
         return repo.findById(id)
+                .filter(deck -> !deck.isPrivateDeck() || deck.getUserId() != null && deck.getUserId().equals(callerId(auth)))
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }
@@ -104,6 +107,12 @@ public class DeckListController {
 
         repo.deleteById(id);
         return ResponseEntity.noContent().build();
+    }
+
+    /** User id from the JWT, or null for anonymous requests. */
+    private static String callerId(Authentication auth) {
+        if (auth == null || !auth.isAuthenticated() || auth instanceof AnonymousAuthenticationToken) return null;
+        return auth.getName();
     }
 
     private String validate(DeckList body) {
