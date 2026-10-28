@@ -34,6 +34,8 @@ public class PendingEffect {
     private String subjectId;
     /** Ritual by effect: the creature chosen to be summoned, before choosing who meets its Requerimiento. */
     private String ritualTargetId;
+    /** Ritual by effect with a level sum: the summoner, chosen before the other creatures used. */
+    private String ritualSummonerId;
     /** Cards taken out of the deck by "mira las primeras N", waiting for the next step. Owner-only info. */
     @JsonIgnore
     private List<CardSlot> looked = new ArrayList<>();

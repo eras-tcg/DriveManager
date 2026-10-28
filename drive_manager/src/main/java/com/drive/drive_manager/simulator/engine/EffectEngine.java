@@ -219,13 +219,13 @@ public final class EffectEngine {
             return null;
         }
 
-        List<CardSlot> valid = req.sum() ? materials : materials.stream().filter(c -> c.getLevel() == req.level()).toList();
-        boolean feasible = req.sum() ? sumsExactly(valid, req.level()) : !valid.isEmpty();
-        if (!feasible) return missing;
-        ritualPrompt(room, player, card, null, valid, req.sum()
-                ? "Elige las criaturas que se sacrifican: sus niveles deben sumar exactamente " + req.level() + ". La primera que elijas es el invocador."
-                : "Elige el invocador: 1 criatura nivel " + req.level() + ". Se sacrifica y " + name(card) + " ocupa su lugar.",
-                req.sum() ? valid.size() : 1);
+        // Rule 9.2.0.13: first the summoner (it must meet part of the Requerimiento), then the rest
+        List<CardSlot> valid = req.sum() ? summonerCandidates(materials, req.level())
+                : materials.stream().filter(c -> c.getLevel() == req.level()).toList();
+        if (valid.isEmpty()) return missing;
+        ritualPrompt(room, player, card, null, valid, "Elige el invocador" + (req.sum() ? "" : ": 1 criatura nivel " + req.level())
+                + ". Se sacrifica y " + name(card) + " ocupa su lugar y hereda su estado.", 1);
+        room.getPrompt().setChosenLabel("Invocador");
         return null;
     }
 
@@ -834,12 +834,12 @@ public final class EffectEngine {
             // Several mandatory effects: their controller orders them (all of them are chained)
             List<CardSlot> sources = sources(room, group);
             if (sources.size() > 1) {
-                rulesPrompt(room, effect.getControllerId(), PURPOSE_ORDER, "Orden en la cadena",
-                        "Estos efectos obligatorios se encadenan todos. Haz clic en el orden en que entran: el primero será "
-                                + "Cadena " + (room.getChain().size() + 1) + ". La cadena se resuelve al revés: el último eslabón "
-                                + "se resuelve primero.", "En cadena", sources, sources);
-                room.getPrompt().setMin(sources.size());
-                room.getPrompt().setMax(sources.size());
+                rulesPrompt(room, effect.getControllerId(), PURPOSE_ORDER, "Encadenar efectos obligatorios",
+                        "Estos efectos son obligatorios: se encadenan todos. Elige cuál entra ahora como Cadena "
+                                + (room.getChain().size() + 1) + "; después eliges el siguiente. La cadena se resuelve al revés: "
+                                + "el último eslabón se resuelve primero.", "Encadenar", sources, sources);
+                room.getPrompt().setMin(1);
+                room.getPrompt().setMax(1);
                 room.getPrompt().setCardLabels(labels(group));
                 return;
             }
@@ -1490,6 +1490,13 @@ public final class EffectEngine {
         return new Requirement(text.contains("sum"), level);
     }
 
+    /** Creatures that can be the summoner of a level-sum Ritual: the rest of the field can complete the sum exactly. */
+    private static List<CardSlot> summonerCandidates(List<CardSlot> materials, int level) {
+        return materials.stream()
+                .filter(s -> s.getLevel() <= level && sumsExactly(materials.stream().filter(c -> c != s).toList(), level - s.getLevel()))
+                .toList();
+    }
+
     /** Whether some of the creatures' levels add up exactly to {@code target} ("criaturas que en nivel sumen N"). */
     static boolean sumsExactly(List<CardSlot> cards, int target) {
         if (target < 0) return false;
@@ -1559,18 +1566,66 @@ public final class EffectEngine {
             performRitual(room, effect, player, target, ritual, find(player.getField(), effect.getSourceInstanceId()), List.of());
             return false;
         }
-        List<CardSlot> valid = req.sum() ? materials : materials.stream().filter(c -> c.getLevel() == req.level()).toList();
-        Prompt prompt = prompt(room, effect, Prompt.Kind.PICK, req.sum()
-                ? "Elige las criaturas que se sacrifican (sus niveles deben sumar exactamente " + req.level() + ")"
-                        + (ritual.selfSummoner() ? ", incluida " + effect.getSourceName() + ", que es el invocador." : "; la primera que elijas es el invocador.")
-                : "Elige el invocador: 1 criatura nivel " + req.level() + ". Se sacrifica y " + name(target) + " ocupa su lugar.");
+        // Rule 9.2.0.13: the summoner is declared first; it must meet part of the Requerimiento
+        CardSlot summoner = ritual.selfSummoner() ? find(player.getField(), effect.getSourceInstanceId())
+                : find(player.getField(), effect.getRitualSummonerId());
+        if (summoner == null) {
+            effect.setRitualSummonerId(null);
+            List<CardSlot> valid = req.sum() ? summonerCandidates(materials, req.level())
+                    : materials.stream().filter(c -> c.getLevel() == req.level()).toList();
+            Prompt prompt = prompt(room, effect, Prompt.Kind.PICK, "Elige el invocador" + (req.sum() ? "" : ": 1 criatura nivel " + req.level())
+                    + ". Se sacrifica y " + name(target) + " ocupa su lugar y hereda su estado.");
+            prompt.setCards(new ArrayList<>(player.getField()));
+            prompt.setValidIds(new ArrayList<>(ids(valid)));
+            prompt.setMin(1);
+            prompt.setMax(1);
+            prompt.setChosenLabel("Invocador");
+            room.setPrompt(prompt);
+            return true;
+        }
+        if (!req.sum() || summoner.getLevel() == req.level()) {
+            performRitual(room, effect, player, target, ritual, summoner, List.of());
+            effect.setRitualSummonerId(null);
+            return false;
+        }
+        CardSlot chosenSummoner = summoner;
+        List<CardSlot> valid = materials.stream().filter(c -> c != chosenSummoner).toList();
+        Prompt prompt = prompt(room, effect, Prompt.Kind.PICK, "Elige las demás criaturas que se sacrifican junto a " + name(summoner)
+                + " (el invocador): sus niveles deben sumar exactamente " + (req.level() - summoner.getLevel()) + ".");
         prompt.setCards(new ArrayList<>(player.getField()));
         prompt.setValidIds(new ArrayList<>(ids(valid)));
         prompt.setMin(1);
-        prompt.setMax(req.sum() ? valid.size() : 1);
-        prompt.setChosenLabel(req.sum() ? "Sacrificar" : "Invocador");
+        prompt.setMax(valid.size());
+        prompt.setChosenLabel("Sacrificar");
         room.setPrompt(prompt);
         return true;
+    }
+
+    /**
+     * Rules 9.2.0.2–9.2.0.7: the summoned creature takes the summoner's zone and its whole game state (active or
+     * exhausted, attacker or blocker, strength changes, effects until the end of the turn) but keeps its own printed
+     * properties; the summoner's Recursos and Materiales pass to it. Continuous effects are checked again afterwards.
+     */
+    public static void inheritFromSummoner(GameRoom room, CardSlot target, CardSlot summoner) {
+        target.setFaceDown(false);
+        target.setX(summoner.getX());
+        target.setY(summoner.getY());
+        target.setTapped(summoner.isTapped());
+        target.setStrengthModifier(summoner.getStrengthModifier());
+        target.getTurnKeywords().clear();
+        target.getTurnKeywords().addAll(summoner.getTurnKeywords());
+        target.getMaterials().addAll(0, summoner.getMaterials());
+        target.getResources().addAll(0, summoner.getResources());
+        summoner.setMaterials(new ArrayList<>());
+        summoner.setResources(new ArrayList<>());
+        Combat c = room.getCombat();
+        if (c != null) {
+            String from = summoner.getInstanceId();
+            String to = target.getInstanceId();
+            if (from.equals(c.getAttackerId())) c.setAttackerId(to);
+            if (from.equals(c.getBlockerId())) c.setBlockerId(to);
+            if (from.equals(c.getTargetId())) c.setTargetId(to);
+        }
     }
 
     /** Ritual by effect (rule 9.3): pays the special cost minus the reduction and summons it. */
@@ -1591,15 +1646,7 @@ public final class EffectEngine {
      */
     private static void ritualSummon(GameRoom room, PlayerState player, CardSlot target, String fromZone, int cost,
                                      CardSlot summoner, List<CardSlot> others, PendingEffect effect, String logText) {
-        target.setFaceDown(false);
-        target.setX(summoner.getX());
-        target.setY(summoner.getY());
-        target.setTapped(summoner.isTapped());
-        target.setStrengthModifier(summoner.getStrengthModifier());
-        target.getMaterials().addAll(0, summoner.getMaterials());
-        target.getResources().addAll(0, summoner.getResources());
-        summoner.setMaterials(new ArrayList<>());
-        summoner.setResources(new ArrayList<>());
+        inheritFromSummoner(room, target, summoner);
         destroy(room, summoner, player, true, CAUSE_RITUAL, player.getUserId(), null, effect);
         for (CardSlot other : others) destroy(room, other, player, true, CAUSE_RITUAL, player.getUserId(), null, effect);
         player.getField().add(target);
@@ -1725,6 +1772,16 @@ public final class EffectEngine {
                 room.setPrompt(null);
                 return "Esa carta ya no está en tu mano";
             }
+            if (prompt.getSummonerId() == null) {
+                // This answer is the summoner: the Ritual goes on as if the card had been dropped onto it
+                room.setPrompt(null);
+                String error = ritualByPlayer(room, userId, card.getInstanceId(), picks.get(0));
+                if (error != null) {
+                    room.setPrompt(prompt);
+                    return error;
+                }
+                return "";
+            }
             List<CardSlot> used = new ArrayList<>();
             for (String id : picks) used.add(find(player.getField(), id));
             CardSlot summoner = prompt.getSummonerId() != null ? find(player.getField(), prompt.getSummonerId()) : used.get(0);
@@ -1777,11 +1834,12 @@ public final class EffectEngine {
             int head = rank(queue.get(0), room.getCurrentTurnUserId());
             List<PendingEffect> group = new ArrayList<>();
             while (!queue.isEmpty() && rank(queue.get(0), room.getCurrentTurnUserId()) == head) group.add(queue.remove(0));
+            // The chosen one is chained now; the rest are asked for again
             group.sort(Comparator.comparingInt(e -> {
                 int at = picks.indexOf(e.getSourceInstanceId());
                 return at < 0 ? picks.size() : at;
             }));
-            group.forEach(e -> e.setOrdered(true));
+            group.get(0).setOrdered(true);
             queue.addAll(0, group);
             advance(room);
             return "";
@@ -1899,24 +1957,25 @@ public final class EffectEngine {
                 CardSlot target = find(zone(player, ritual.zone()), effect.getRitualTargetId());
                 if (target == null) return "Esa criatura ya no está en tus " + zoneName(ritual.zone());
                 Requirement req = requirement(target);
-                List<CardSlot> used = new ArrayList<>();
+                CardSlot summoner = ritual.selfSummoner() ? find(player.getField(), effect.getSourceInstanceId())
+                        : find(player.getField(), effect.getRitualSummonerId());
+                if (summoner == null) {
+                    // This answer is the summoner
+                    if (find(player.getField(), picks.get(0)) == null) return "Esa criatura ya no está en el campo";
+                    effect.setRitualSummonerId(picks.get(0));
+                    repeat[0] = true;
+                    return null;
+                }
+                List<CardSlot> others = new ArrayList<>();
                 for (String id : picks) {
                     CardSlot c = find(player.getField(), id);
                     if (c == null) return "Esa criatura ya no está en el campo";
-                    used.add(c);
+                    if (c != summoner) others.add(c);
                 }
-                CardSlot summoner;
-                List<CardSlot> others = new ArrayList<>(used);
-                if (ritual.selfSummoner()) {
-                    summoner = find(player.getField(), effect.getSourceInstanceId());
-                    if (summoner == null) return "El invocador ya no está en el campo";
-                    if (!others.remove(summoner)) return "Debes incluir a " + effect.getSourceName() + ", que es el invocador";
-                } else {
-                    summoner = others.remove(0);
-                }
-                int total = used.stream().mapToInt(CardSlot::getLevel).sum();
+                int total = summoner.getLevel() + others.stream().mapToInt(CardSlot::getLevel).sum();
                 if (req.sum() && total != req.level()) return "Los niveles suman " + total + ": deben sumar exactamente " + req.level();
                 performRitual(room, effect, player, target, ritual, summoner, others);
+                effect.setRitualSummonerId(null);
             }
             case SendFromZoneToDeckBottom send -> {
                 List<CardSlot> from = zone(player, send.zone());

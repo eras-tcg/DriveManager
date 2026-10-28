@@ -292,8 +292,9 @@ class DestructionTest {
         Prompt order = room.getPrompt();
         assertThat(order.getPurpose()).isEqualTo("ORDER");
         assertThat(order.getValidIds()).containsExactlyInAnyOrder("carn", "caz");
-        assertThat(order.getMin()).isEqualTo(2);
-        EffectEngine.answer(room, "host", order.getId(), List.of("carn", "caz"), List.of());
+        // One at a time: Carnhaus now; Cazador, the only one left, follows on its own
+        assertThat(order.getMax()).isEqualTo(1);
+        EffectEngine.answer(room, "host", order.getId(), List.of("carn"), List.of());
         // Both are chained (Cadena 1 Carnhaus, Cadena 2 Cazador): the chain resolves the last link first
         assertThat(room.getChain()).extracting(PendingEffect::getSourceName).containsExactly("Carnhaus", "Cazador De Bestias");
         assertThat(room.getChain()).extracting(PendingEffect::getLink).containsExactly(1, 2);

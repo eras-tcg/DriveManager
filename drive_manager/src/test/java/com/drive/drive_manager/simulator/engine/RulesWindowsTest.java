@@ -88,22 +88,43 @@ class RulesWindowsTest {
         field(host, creature("c", "C", 1, 3), BACK);
         assertThat(EffectEngine.canRitual(room, "host", mawser)).isTrue();
 
+        // First the summoner: each of them can be completed exactly by the others
         assertThat(EffectEngine.ritualByPlayer(room, "host", "maw", null)).isNull();
-        Prompt pick = room.getPrompt();
-        assertThat(pick.getPurpose()).isEqualTo("RITUAL");
-        assertThat(pick.getValidIds()).containsExactly("a", "b", "c");
-        // Not exactly 6: 2 + 1
-        assertThat(EffectEngine.answer(room, "host", pick.getId(), List.of("a", "c"), List.of())).contains("suman 3");
+        Prompt summoner = room.getPrompt();
+        assertThat(summoner.getPurpose()).isEqualTo("RITUAL");
+        assertThat(summoner.getChosenLabel()).isEqualTo("Invocador");
+        assertThat(summoner.getMax()).isEqualTo(1);
+        assertThat(summoner.getValidIds()).containsExactly("a", "b", "c");
         // Cancelled: nothing happened
-        assertThat(EffectEngine.answer(room, "host", pick.getId(), List.of(), List.of())).isNull();
+        assertThat(EffectEngine.answer(room, "host", summoner.getId(), List.of(), List.of())).isNull();
         assertThat(host.getHand()).contains(mawser);
         assertThat(EffectEngine.gemsOf(room, "host")).isEqualTo(5);
 
         EffectEngine.ritualByPlayer(room, "host", "maw", null);
-        // The first chosen is the summoner: Mawser takes the place of "b" (Retaguardia)
-        assertThat(EffectEngine.answer(room, "host", room.getPrompt().getId(), List.of("b", "a", "c"), List.of())).isNull();
+        EffectEngine.answer(room, "host", room.getPrompt().getId(), List.of("b"), List.of());
+        Prompt rest = room.getPrompt();
+        assertThat(rest.getSummonerId()).isEqualTo("b");
+        // Not exactly 6: 3 + 2
+        assertThat(EffectEngine.answer(room, "host", rest.getId(), List.of("a"), List.of())).contains("suman 5");
+        assertThat(EffectEngine.answer(room, "host", rest.getId(), List.of("a", "c"), List.of())).isNull();
+        // Mawser takes the place of the summoner "b" (Retaguardia)
         assertThat(mawser.getY()).isEqualTo(BACK);
         assertThat(host.getTributeZone()).extracting(CardSlot::getInstanceId).containsExactlyInAnyOrder("a", "b", "c");
+    }
+
+    @Test
+    void theSummonedCreatureInheritsTheSummonersState() {
+        CardSlot zhaglizer = ritual("zha", "Zhaglizer", 2, 3, "criatura nivel 2.");
+        host.getHand().add(zhaglizer);
+        CardSlot summoner = field(host, creature("s", "Invocador", 2, 3), FRONT);
+        summoner.setTapped(true);
+        summoner.setStrengthModifier(2);
+        summoner.getTurnKeywords().add("Furia 1");
+        EffectEngine.ritualByPlayer(room, "host", "zha", "s");
+        assertThat(zhaglizer.getY()).isEqualTo(FRONT);
+        assertThat(zhaglizer.isTapped()).isTrue();
+        assertThat(zhaglizer.getStrengthModifier()).isEqualTo(2);
+        assertThat(zhaglizer.getTurnKeywords()).containsExactly("Furia 1");
     }
 
     @Test

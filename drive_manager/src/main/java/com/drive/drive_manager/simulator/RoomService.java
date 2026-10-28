@@ -1206,6 +1206,8 @@ public class RoomService {
         summoned.setFaceDown(false);
         summoned.setX(summoner.getX());
         summoned.setY(summoner.getY());
+        // Rule 9.2.0.3: its whole state, also its effects until the end of the turn and its role in a combat
+        EffectEngine.inheritFromSummoner(room, summoned, summoner);
 
         switch (summonType) {
             case "materialization" -> {
