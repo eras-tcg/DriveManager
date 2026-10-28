@@ -187,7 +187,7 @@ public class RoomService {
     }
 
     private GameStateUpdate handleRitualSummon(GameRoom room, String userId, GameAction action) {
-        String error = EffectEngine.ritualByPlayer(room, userId, action.getString("instanceId"), action.getString("summonerId"));
+        String error = EffectEngine.specialByPlayer(room, userId, action.getString("instanceId"), action.getString("summonerId"));
         if (error != null) return GameStateUpdate.error(room.getRoomId(), error);
         return GameStateUpdate.from(room, "RITUAL_SUMMON", userId);
     }

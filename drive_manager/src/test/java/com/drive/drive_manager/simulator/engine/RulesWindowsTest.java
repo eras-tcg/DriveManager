@@ -303,6 +303,64 @@ class RulesWindowsTest {
         assertThat(host.getDiscardPile()).extracting(CardSlot::getInstanceId).containsExactly("caza");
     }
 
+    // ------------------------------------------------------------------ Evolución, Ascenso, Materialización
+
+    private static CardSlot special(String id, String name, String kind, int cost, int level, String requirement) {
+        CardSlot c = creature(id, name, level, 8);
+        c.setSpecialSummonKind(kind);
+        c.setSpecialCost(cost);
+        c.setRequirement(requirement);
+        return c;
+    }
+
+    @Test
+    void evolutionTurnsTheSummonerIntoAResource() {
+        CardSlot galveta = special("gal", "Galveta", "evolution", 1, 2, "criatura nivel 1.");
+        host.getHand().add(galveta);
+        CardSlot summoner = field(host, creature("s", "Dírumy", 1, 2), FRONT);
+        summoner.setTapped(true);
+        assertThat(EffectEngine.canSpecial(room, "host", galveta)).isTrue();
+        assertThat(EffectEngine.specialByPlayer(room, "host", "gal", "s")).isNull();
+        assertThat(host.getField()).containsExactly(galveta);
+        assertThat(galveta.getResources()).containsExactly(summoner);
+        assertThat(galveta.isTapped()).isTrue();
+        assertThat(galveta.getY()).isEqualTo(FRONT);
+        assertThat(EffectEngine.gemsOf(room, "host")).isEqualTo(4);
+    }
+
+    @Test
+    void promotionNeedsTheAlliesLevelsAndTributesTheSummoner() {
+        CardSlot ferreo = special("fer", "Caballero Férreo", "promotion", 1, 2, "criatura nivel 1, mientras tus aliados suman 2 o más en nivel.");
+        host.getHand().add(ferreo);
+        CardSlot summoner = field(host, creature("s", "Peón", 1, 4), FRONT);
+        assertThat(EffectEngine.canSpecial(room, "host", ferreo)).isFalse();
+        assertThat(EffectEngine.specialByPlayer(room, "host", "fer", "s")).contains("sumar 2");
+        field(host, creature("o", "Otro", 1, 3), BACK);
+        assertThat(EffectEngine.specialByPlayer(room, "host", "fer", "s")).isNull();
+        assertThat(host.getTributeZone()).containsExactly(summoner);
+        assertThat(room.getTimeline()).extracting(GameEvent::getType).contains(GameEvent.TRIBUTE).doesNotContain(GameEvent.SACRIFICE);
+    }
+
+    @Test
+    void materializationUsesTheSummonerAndAMaterialFromTheTributos() {
+        CardSlot flarix = special("fla", "Flarix", "materialization", 1, 2, "criatura nivel 1 + material nivel 1 en tributos o campo.");
+        host.getHand().add(flarix);
+        CardSlot summoner = field(host, creature("s", "Eisten", 1, 3), FRONT);
+        CardSlot material = creature("m", "Jhav", 1, 2);
+        host.getTributeZone().add(material);
+        // Without a summoner: first the summoner, then the material
+        assertThat(EffectEngine.specialByPlayer(room, "host", "fla", null)).isNull();
+        Prompt who = room.getPrompt();
+        assertThat(who.getPurpose()).isEqualTo("SPECIAL");
+        EffectEngine.answer(room, "host", who.getId(), List.of("s"), List.of());
+        Prompt which = room.getPrompt();
+        assertThat(which.getValidIds()).containsExactly("m");
+        EffectEngine.answer(room, "host", which.getId(), List.of("m"), List.of());
+        assertThat(flarix.getMaterials()).containsExactly(summoner, material);
+        assertThat(host.getTributeZone()).isEmpty();
+        assertThat(host.getField()).containsExactly(flarix);
+    }
+
     // ------------------------------------------------------------------ Furia
 
     @Test

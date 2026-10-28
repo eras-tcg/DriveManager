@@ -36,6 +36,8 @@ public final class EffectEngine {
     private static final String PURPOSE_PROVOKE = "PROVOKE";
     private static final String PURPOSE_ADVANCE = "ADVANCE";
     private static final String PURPOSE_RITUAL = "RITUAL";
+    /** Evolución, Ascenso and Materialización from the hand: the summoner, then (Materialización) the material. */
+    private static final String PURPOSE_SPECIAL = "SPECIAL";
     /** Key in the room's per-turn usage: the player already played a structure normally this turn. */
     private static final String STRUCTURE_PLAYED = "structure-played|";
     private static final String PURPOSE_SPECIAL_FRONT = "SPECIAL_FRONT";
@@ -229,6 +231,165 @@ public final class EffectEngine {
         return null;
     }
 
+    // ------------------------------------------------------------------ Evolución, Ascenso, Materialización (rule 9)
+
+    /**
+     * What a non-Ritual special summon needs: the summoner's level, for Ascenso the level the allies must add up
+     * to, for Materialización the level of the other material (from the Tributos or the field).
+     */
+    private record SpecialRequirement(String kind, int level, int alliesSum, int materialLevel) {}
+
+    private static SpecialRequirement specialRequirement(CardSlot card) {
+        String kind = card.getSpecialSummonKind() == null ? "" : card.getSpecialSummonKind().toLowerCase(Locale.ROOT);
+        if (!List.of("evolution", "promotion", "materialization").contains(kind) || card.getRequirement() == null) return null;
+        String text = card.getRequirement().toLowerCase(Locale.ROOT);
+        Matcher level = Pattern.compile("ni[ev]*l\\s*(\\d+)").matcher(text);
+        if (!level.find()) return null;
+        int summonerLevel = Integer.parseInt(level.group(1));
+        Matcher sum = Pattern.compile("suman\\s*(\\d+)").matcher(text);
+        int alliesSum = "promotion".equals(kind) && sum.find() ? Integer.parseInt(sum.group(1)) : 0;
+        int materialLevel = summonerLevel;
+        if ("materialization".equals(kind)) {
+            Matcher material = Pattern.compile("material\\s*ni[ev]*l\\s*(\\d+)").matcher(text);
+            if (material.find()) materialLevel = Integer.parseInt(material.group(1));
+        }
+        return new SpecialRequirement(kind, summonerLevel, alliesSum, materialLevel);
+    }
+
+    private static String kindName(String kind) {
+        return switch (kind) {
+            case "evolution" -> "Evolución";
+            case "promotion" -> "Ascenso";
+            case "materialization" -> "Materialización";
+            default -> "Ritual";
+        };
+    }
+
+    /** Creatures of the field that can be the summoner: the level asked for, sharing a type or color. */
+    private static List<CardSlot> specialSummoners(PlayerState player, CardSlot card, SpecialRequirement req) {
+        return player.getField().stream()
+                .filter(c -> "creature".equals(c.getCardType()) && c.getLevel() != null && c.getLevel() == req.level() && shares(c, card))
+                .toList();
+    }
+
+    /** Materialización: the other material, a creature of that level in the Tributos or on the field (not the summoner). */
+    private static List<CardSlot> specialMaterials(PlayerState player, CardSlot card, SpecialRequirement req, CardSlot summoner) {
+        List<CardSlot> all = new ArrayList<>(player.getTributeZone());
+        all.addAll(player.getField());
+        return all.stream()
+                .filter(c -> c != summoner && "creature".equals(c.getCardType()) && c.getLevel() != null
+                        && c.getLevel() == req.materialLevel() && shares(c, card))
+                .toList();
+    }
+
+    /** Ascenso: "mientras tus aliados suman N o más en nivel". */
+    private static boolean alliesAddUp(PlayerState player, SpecialRequirement req) {
+        return allies(player).stream().mapToInt(c -> c.getLevel() == null ? 0 : c.getLevel()).sum() >= req.alliesSum();
+    }
+
+    /** Whether the card can be summoned now by its special summon (any kind), for the board's legal actions. */
+    public static boolean canSpecial(GameRoom room, String userId, CardSlot card) {
+        if ("ritual".equalsIgnoreCase(card.getSpecialSummonKind())) return canRitual(room, userId, card);
+        PlayerState player = room.getPlayer(userId);
+        SpecialRequirement req = specialRequirement(card);
+        if (player == null || req == null || card.getSpecialCost() == null) return false;
+        if (!canPay(room, userId, card.getSpecialCost())) return false;
+        if ("promotion".equals(req.kind()) && !alliesAddUp(player, req)) return false;
+        return specialSummoners(player, card, req).stream()
+                .anyMatch(s -> !"materialization".equals(req.kind()) || !specialMaterials(player, card, req, s).isEmpty());
+    }
+
+    /**
+     * Special summon from the hand by the rules (rule 9): Ritual, Evolución, Ascenso or Materialización, as the
+     * card says. {@code summonerId} is the creature it was dropped onto; whatever is missing is asked for.
+     */
+    public static String specialByPlayer(GameRoom room, String userId, String instanceId, String summonerId) {
+        PlayerState player = room.getPlayer(userId);
+        CardSlot card = player == null ? null : find(player.getHand(), instanceId);
+        if (card != null && "ritual".equalsIgnoreCase(card.getSpecialSummonKind())) return ritualByPlayer(room, userId, instanceId, summonerId);
+        String error = checkMainPhase(room, userId, "invocar");
+        if (error != null) return error;
+        if (card == null) return "La carta no está en tu mano";
+        SpecialRequirement req = specialRequirement(card);
+        if (req == null || card.getSpecialCost() == null) return name(card) + " no tiene una invocación especial que el motor conozca";
+        String kind = kindName(req.kind());
+        if (!canPay(room, userId, card.getSpecialCost())) return "No tienes gemas suficientes: tienes " + gemsOf(room, userId) + " y el coste especial es " + card.getSpecialCost();
+        if ("promotion".equals(req.kind()) && !alliesAddUp(player, req)) return "Para el Ascenso tus aliados deben sumar " + req.alliesSum() + " o más en nivel";
+        String missing = "Tus criaturas no cumplen el Requerimiento de " + name(card) + ": " + card.getRequirement().trim();
+        List<CardSlot> summoners = specialSummoners(player, card, req).stream()
+                .filter(s -> !"materialization".equals(req.kind()) || !specialMaterials(player, card, req, s).isEmpty()).toList();
+        if (summonerId == null) {
+            if (summoners.isEmpty()) return missing;
+            rulesPrompt(room, userId, PURPOSE_SPECIAL, name(card) + " · " + kind,
+                    "Elige el invocador: 1 criatura nivel " + req.level() + ". " + name(card) + " ocupa su lugar y hereda su estado. Si no eliges ninguna, no se invoca.",
+                    "Invocador", summoners, player.getField());
+            room.getPrompt().setSubjectId(card.getInstanceId());
+            return null;
+        }
+        CardSlot summoner = find(player.getField(), summonerId);
+        if (summoner == null) return "El invocador debe ser una criatura de tu campo";
+        if (!summoners.contains(summoner)) return shares(summoner, card) ? missing : name(summoner) + " no comparte tipo ni color con " + name(card);
+        if ("materialization".equals(req.kind())) {
+            List<CardSlot> materials = specialMaterials(player, card, req, summoner);
+            List<CardSlot> shown = new ArrayList<>(player.getTributeZone());
+            shown.addAll(player.getField());
+            rulesPrompt(room, userId, PURPOSE_SPECIAL, name(card) + " · " + kind,
+                    "Elige el material: 1 criatura nivel " + req.materialLevel() + " de tus tributos o de tu campo. Se convierte en material de "
+                            + name(card) + " junto a " + name(summoner) + ".", "Material", materials, shown);
+            room.getPrompt().setMin(1);
+            room.getPrompt().setSubjectId(card.getInstanceId());
+            room.getPrompt().setSummonerId(summoner.getInstanceId());
+            return null;
+        }
+        handSpecial(room, player, card, req, summoner, null);
+        return null;
+    }
+
+    /**
+     * Carries out the special summon (rules 9.4–9.6): pays the special cost, the creature takes the summoner's
+     * place and state; the summoner is tributed (Ascenso), becomes a Recurso (Evolución) or, with the other
+     * material, Materiales (Materialización). Then the move up and the regulatory draw.
+     */
+    private static void handSpecial(GameRoom room, PlayerState player, CardSlot card, SpecialRequirement req, CardSlot summoner, CardSlot material) {
+        String userId = player.getUserId();
+        int cost = card.getSpecialCost();
+        pay(room, userId, cost);
+        player.getHand().remove(card);
+        inheritFromSummoner(room, card, summoner);
+        player.getField().remove(summoner);
+        leaveField(summoner);
+        String used = name(summoner);
+        switch (req.kind()) {
+            case "promotion" -> {
+                player.getTributeZone().add(summoner);
+                record(room, GameEvent.TRIBUTE, userId, summoner, "field", "tributeZone", null, Map.of("cause", "promotion"), null);
+            }
+            case "evolution" -> card.getResources().add(0, summoner);
+            default -> {
+                card.getMaterials().add(0, summoner);
+                if (material != null) {
+                    String from = player.getTributeZone().remove(material) ? "tributeZone" : "field";
+                    if ("field".equals(from)) {
+                        // A creature of the field used as a material loses its state; its attachments go to the Descarte
+                        player.getField().remove(material);
+                        for (CardSlot a : concat(material.getMaterials(), material.getResources())) player.getDiscardPile().add(a);
+                        material.setMaterials(new ArrayList<>());
+                        material.setResources(new ArrayList<>());
+                        leaveField(material);
+                    }
+                    material.setFaceDown(false);
+                    card.getMaterials().add(material);
+                    used += " y " + name(material);
+                }
+            }
+        }
+        player.getField().add(card);
+        record(room, GameEvent.SPECIAL_SUMMON, userId, card, "hand", "field", null, Map.of("summonType", req.kind(), "cost", cost),
+                player.getUsername() + " invoca por " + kindName(req.kind()) + " a " + name(card) + " usando " + used + " y pagando " + gemsText(cost));
+        afterSpecialSummon(room, player, card, null);
+        advance(room);
+    }
+
     /** Whether the card can be summoned by Ritual from the hand now, for the board's legal actions. */
     public static boolean canRitual(GameRoom room, String userId, CardSlot card) {
         PlayerState player = room.getPlayer(userId);
@@ -412,6 +573,16 @@ public final class EffectEngine {
         PlayerState player = room.getPlayer(playerId);
         if (player == null) return;
         record(room, GameEvent.TURN_START, playerId, null, null, null, null, null, "Inicio del turno de " + player.getUsername());
+        // Reactivar: "al inicio del turno: reactiva esta carta" (any turn)
+        for (PlayerState p : room.getPlayers().values()) {
+            for (CardSlot c : p.getField()) {
+                if (c.isTapped() && keywordLevel(c, "Reactivar") != null) {
+                    c.setTapped(false);
+                    record(room, GameEvent.UNTAP, p.getUserId(), c, null, null, null, Map.of("keyword", "Reactivar"),
+                            name(c) + " se reactiva (Reactivar)");
+                }
+            }
+        }
         offerAdvance(room, playerId, true);
         advance(room);
     }
@@ -1824,6 +1995,31 @@ public final class EffectEngine {
             if (!canPay(room, userId, ritualCost(room, userId, card))) return "Ya no tienes gemas suficientes";
             room.setPrompt(null);
             handRitual(room, player, card, summoner, others);
+            return "";
+        }
+        if (PURPOSE_SPECIAL.equals(purpose)) {
+            CardSlot card = find(player.getHand(), prompt.getSubjectId());
+            if (picks.isEmpty() || card == null) {
+                room.setPrompt(null);
+                advance(room);
+                return card == null ? "Esa carta ya no está en tu mano" : "";
+            }
+            if (prompt.getSummonerId() == null) {
+                room.setPrompt(null);
+                String error = specialByPlayer(room, userId, card.getInstanceId(), picks.get(0));
+                if (error != null) {
+                    room.setPrompt(prompt);
+                    return error;
+                }
+                return "";
+            }
+            CardSlot summoner = find(player.getField(), prompt.getSummonerId());
+            CardSlot material = find(player.getTributeZone(), picks.get(0));
+            if (material == null) material = find(player.getField(), picks.get(0));
+            if (summoner == null || material == null) return "Esa criatura ya no está disponible";
+            if (!canPay(room, userId, card.getSpecialCost())) return "Ya no tienes gemas suficientes";
+            room.setPrompt(null);
+            handSpecial(room, player, card, specialRequirement(card), summoner, material);
             return "";
         }
         if (PURPOSE_SPECIAL_FRONT.equals(purpose)) {
