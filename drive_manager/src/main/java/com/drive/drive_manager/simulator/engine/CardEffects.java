@@ -8,12 +8,19 @@ import com.drive.drive_manager.simulator.engine.EffectScript.Limit;
 import com.drive.drive_manager.simulator.engine.EffectScript.Moment;
 import com.drive.drive_manager.simulator.engine.EffectStep.ChooseEnemy;
 import com.drive.drive_manager.simulator.engine.EffectStep.DeclareAttack;
+import com.drive.drive_manager.simulator.engine.EffectStep.DestroyFaceUpLife;
+import com.drive.drive_manager.simulator.engine.EffectStep.GainUntilEndOfAttack;
+import com.drive.drive_manager.simulator.engine.EffectStep.PlaySelfFromZone;
+import com.drive.drive_manager.simulator.engine.EffectStep.ToDeckTop;
+import com.drive.drive_manager.simulator.engine.EffectStep.TributeResource;
+import com.drive.drive_manager.simulator.engine.EffectStep.TributeTop;
 import com.drive.drive_manager.simulator.engine.EffectStep.GainStrength;
 import com.drive.drive_manager.simulator.engine.EffectStep.IfDone;
 import com.drive.drive_manager.simulator.engine.EffectStep.SpecialFromZone;
 import com.drive.drive_manager.simulator.engine.EffectStep.SummonSelfFree;
 import com.drive.drive_manager.simulator.engine.EffectStep.TakeFromZone;
 import com.drive.drive_manager.simulator.engine.EffectStep.DestroyChosen;
+import com.drive.drive_manager.simulator.engine.EffectStep.DestroyEnemy;
 import com.drive.drive_manager.simulator.engine.EffectStep.Draw;
 import com.drive.drive_manager.simulator.engine.EffectStep.GainGems;
 import com.drive.drive_manager.simulator.engine.EffectStep.GainUntilEndOfTurn;
@@ -50,6 +57,8 @@ public final class CardEffects {
     private static final String TODOS = "Todos Los Turnos";
 
     private static final Map<String, List<EffectScript>> BY_NAME = new HashMap<>();
+    /** Inherited effects ("heredables"): what a card gives the creature it is a Recurso of (rule 11.4.0.3). */
+    private static final Map<String, List<EffectScript>> INHERITED = new HashMap<>();
 
     /** Keyword abilities with an effect the engine runs ("Celeridad"). Others (Provocar, Letalidad…) are combat rules. */
     private static final Map<String, EffectScript> KEYWORDS = Map.of(
@@ -295,6 +304,160 @@ public final class CardEffects {
                         .fromZone("hand"));
     }
 
+    // ------------------------------------------------------------------ ST2 Dragones
+    static {
+        CardFilter dragon = CardFilter.creatures().withClasses("dragón");
+        CardFilter fiveDragons = CardFilter.any().withClasses("dragón");
+        // ST2-1 Dírumy (Iniciador)
+        add("dírumy",
+                new EffectScript("dirumy:tributada", Moment.ON_EVENT, true, "En Tributos",
+                        "Si esta carta es tributada desde tu mazo por efecto de 1 carta Verde: roba 1 carta. Luego: tributa 1 carta de tu mano.",
+                        List.of(new Draw(1), new TributeFromHand(1)))
+                        .when(tributedFromDeckBy(CardFilter.colors("G")))
+                        .fromZone("tributeZone"),
+                new EffectScript("dirumy:en-invocacion", Moment.ON_SUMMON, true, EN_INVOCACION,
+                        "Mira las primeras 4 cartas de tu mazo: de ellas toma hasta 1 carta Verde o Blanca. Envía el resto al fondo de tu mazo.",
+                        List.of(new LookTop(4), new TakeFromLookedRestToBottom(1, CardFilter.colors("G", "W")))));
+        inherit("dírumy", new EffectScript("dirumy:hereda-al-atacar", Moment.ON_ATTACK, false, AL_ATACAR,
+                "Heredado de Dírumy: puedes tributar \"Dírumy\" de los recursos de esta carta para robar 1 carta.",
+                List.of(new TributeResource("Dírumy")), List.of(new Draw(1))));
+        // ST2-2 Wyphound
+        add("wyphound", new EffectScript("wyphound:en-invocacion", Moment.ON_SUMMON, true, EN_INVOCACION,
+                "Coloca hasta 1 carta de tu mano al tope de tu mazo. Luego: tributa 2 cartas del tope de tu mazo.",
+                List.of(new ToDeckTop("hand", 1, true), new TributeTop(2))));
+        inherit("wyphound", new EffectScript("wyphound:hereda-al-atacar", Moment.ON_ATTACK, false, AL_ATACAR,
+                "Heredado de Wyphound: puedes colocar 1 carta de tus tributos al tope de tu mazo.",
+                List.of(new ToDeckTop("tributeZone", 1, false))));
+        // ST2-3 Flamagón
+        add("flamagón", new EffectScript("flamagon:al-atacar", Moment.ON_ATTACK, false, AL_ATACAR,
+                "Esta carta puede invocar por Evolución 1 [dragón] de tu mano reduciendo el coste especial en 1.",
+                List.of(new SpecialFromZone("evolution", "hand", 1, "self", dragon))));
+        inherit("flamagón", new EffectScript("flamagon:hereda-todos-los-turnos", Moment.ON_EVENT, false, TODOS,
+                "Heredado de Flamagón: si algún enemigo es destruido por tus efectos, puedes tomar 1 carta Verde de tus tributos.",
+                List.of(new TakeFromZone("tributeZone", CardFilter.colors("G"), 1, false)))
+                .when(CardEffects::enemyDestroyedByYourEffect));
+        // ST2-4 Duregón (Iniciador; its Evolución cost reduction is in summonerReduction)
+        add("duregón", new EffectScript("duregon:en-invocacion", Moment.ON_SUMMON, true, EN_INVOCACION,
+                "Tributa 2 cartas del tope de tu mazo. Luego: toma 1 carta Verde o [dragón] de tus tributos.",
+                List.of(new TributeTop(2), new TakeFromZone("tributeZone", CardFilter.colors("G").withClasses("dragón"), 1, false))));
+        inherit("duregón", new EffectScript("duregon:hereda-al-atacar", Moment.ON_ATTACK, true, AL_ATACAR,
+                "Heredado de Duregón: roba 1 carta. Luego: tributa 1 carta de tu mano.",
+                List.of(new Draw(1), new TributeFromHand(1))));
+        // ST2-5 Galveta
+        add("galveta", new EffectScript("galveta:en-invocacion", Moment.ON_SUMMON, true, EN_INVOCACION,
+                "Coloca hasta 1 carta de tu mano al tope de tu mazo. Luego: tributa 2 cartas del tope de tu mazo.",
+                List.of(new ToDeckTop("hand", 1, true), new TributeTop(2))));
+        inherit("galveta", new EffectScript("galveta:hereda-al-atacar", Moment.ON_ATTACK, true, AL_ATACAR,
+                "Heredado de Galveta: coloca hasta 1 carta de tu mano al tope de tu mazo. Luego: tributa 2 cartas del tope de tu mazo.",
+                List.of(new ToDeckTop("hand", 1, true), new TributeTop(2))));
+        // ST2-6 Wyfreik
+        add("wyfreik", new EffectScript("wyfreik:al-atacar", Moment.ON_ATTACK, true, AL_ATACAR,
+                "Tributa 3 cartas del tope de tu mazo.",
+                List.of(new TributeTop(3))));
+        inherit("wyfreik", new EffectScript("wyfreik:hereda-al-atacar", Moment.ON_ATTACK, true, AL_ATACAR,
+                "Heredado de Wyfreik: coloca hasta 1 carta de tu mano al tope de tu mazo. Luego: tributa 2 cartas del tope de tu mazo.",
+                List.of(new ToDeckTop("hand", 1, true), new TributeTop(2))));
+        // ST2-7 Dragón Delta
+        inherit("dragón delta", new EffectScript("dragon-delta:hereda-al-atacar", Moment.ON_ATTACK, true, AL_ATACAR,
+                "Heredado de Dragón Delta: elige 1 enemigo de fuerza 5 o menos; destrúyelo.",
+                List.of(new ChooseEnemy(1, CardFilter.creatures().withMaxStrength(5))), List.of(new DestroyChosen())));
+        // ST2-8 Flambreik (its optional Evolución cost reduction is not applied yet)
+        inherit("flambreik", new EffectScript("flambreik:hereda-al-atacar", Moment.ON_ATTACK, true, AL_ATACAR,
+                "Heredado de Flambreik: coloca hasta 1 carta de tu mano al tope de tu mazo. Luego: tributa 2 cartas del tope de tu mazo.",
+                List.of(new ToDeckTop("hand", 1, true), new TributeTop(2))));
+        // ST2-9 Fadrake
+        add("fadrake", new EffectScript("fadrake:al-atacar", Moment.ON_ATTACK, true, AL_ATACAR,
+                "Una vez por turno: elige 1 enemigo de fuerza 5 o menos; destrúyelo.",
+                List.of(new ChooseEnemy(1, CardFilter.creatures().withMaxStrength(5))), List.of(new DestroyChosen()))
+                .limited(Limit.ONCE_PER_TURN));
+        inherit("fadrake", new EffectScript("fadrake:hereda-al-atacar", Moment.ON_ATTACK, true, AL_ATACAR,
+                "Heredado de Fadrake: elige 1 enemigo de fuerza 5 o menos; destrúyelo.",
+                List.of(new ChooseEnemy(1, CardFilter.creatures().withMaxStrength(5))), List.of(new DestroyChosen())));
+        // ST2-10 Ddraig
+        add("ddraig", new EffectScript("ddraig:en-invocacion", Moment.ON_SUMMON, true, EN_INVOCACION,
+                "Tributa 3 cartas del tope de tu mazo. Luego: elige 1 enemigo de fuerza 5 o menos; destrúyelo.",
+                List.of(new TributeTop(3), new DestroyEnemy(1, CardFilter.creatures().withMaxStrength(5)))));
+        inherit("ddraig", new EffectScript("ddraig:hereda-al-atacar", Moment.ON_ATTACK, true, AL_ATACAR,
+                "Heredado de Ddraig: elige 1 enemigo de fuerza 5 o menos; destrúyelo.",
+                List.of(new ChooseEnemy(1, CardFilter.creatures().withMaxStrength(5))), List.of(new DestroyChosen())));
+        // ST2-11 Wyverno De Pantano
+        add("wyverno de pantano", new EffectScript("wyverno-pantano:tributada", Moment.ON_EVENT, false, "En Tributos",
+                "(1) Si esta carta es tributada desde tu mazo: puedes tributar 1 carta de tu mano para tomar 1 carta Verde de tus tributos.",
+                List.of(new TributeFromHand(1)), List.of(new TakeFromZone("tributeZone", CardFilter.colors("G"), 1, false)))
+                .when(tributedFromDeckBy(null))
+                .fromZone("tributeZone")
+                .limited(Limit.ONCE_PER_TURN_BETWEEN_COPIES));
+        inherit("wyverno de pantano", new EffectScript("wyverno-pantano:hereda-al-atacar", Moment.ON_ATTACK, true, AL_ATACAR,
+                "Heredado de Wyverno De Pantano: elige hasta 2 enemigos de fuerza 3 o menos; destrúyelos.",
+                List.of(new ChooseEnemy(2, CardFilter.creatures().withMaxStrength(3), true)), List.of(new DestroyChosen())));
+        // ST2-12 Dracoventus
+        add("dracoventus", new EffectScript("dracoventus:al-atacar", Moment.ON_ATTACK, false, AL_ATACAR,
+                "Puedes enviar 5 de tus tributos [dragón] al fondo de tu mazo para elegir 1 enemigo de fuerza 9 o menos; destrúyelo.",
+                List.of(new SendFromZoneToDeckBottom("tributeZone", 5, fiveDragons), new ChooseEnemy(1, CardFilter.creatures().withMaxStrength(9))),
+                List.of(new DestroyChosen())));
+        // ST2-13 Saildreik
+        add("saildreik", new EffectScript("saildreik:al-atacar", Moment.ON_ATTACK, false, AL_ATACAR,
+                "Esta carta puede invocar por Evolución 1 [dragón] de tus tributos reduciendo su coste especial en 1.",
+                List.of(new SpecialFromZone("evolution", "tributeZone", 1, "self", dragon))));
+        inherit("saildreik", new EffectScript("saildreik:hereda-al-final-del-ataque", Moment.ON_ATTACK_END, true, AL_FINAL,
+                "Heredado de Saildreik: elige 1 enemigo de fuerza 8 o menos; destrúyelo.",
+                List.of(new ChooseEnemy(1, CardFilter.creatures().withMaxStrength(8))), List.of(new DestroyChosen())));
+        // ST2-14 Dragón Carmesí
+        EffectScript carmesiAttack = new EffectScript("dragon-carmesi:al-atacar", Moment.ON_ATTACK, false, AL_ATACAR,
+                "Una vez por turno: puedes enviar 5 de tus tributos [dragón] al fondo de tu mazo; esta carta gana Letalidad 1 hasta el final del ataque.",
+                List.of(new SendFromZoneToDeckBottom("tributeZone", 5, fiveDragons)), List.of(new GainUntilEndOfAttack("Letalidad 1")))
+                .limited(Limit.ONCE_PER_TURN);
+        add("dragón carmesí", carmesiAttack,
+                new EffectScript("dragon-carmesi:todos-los-turnos", Moment.ON_EVENT, false, TODOS,
+                        "Una vez por turno: si destruyes algún enemigo, puedes reactivar esta carta.",
+                        List.of(new UntapSelf()))
+                        .when(CardEffects::youDestroyedAnEnemy)
+                        .limited(Limit.ONCE_PER_TURN));
+        inherit("dragón carmesí", new EffectScript("dragon-carmesi:hereda-al-atacar", Moment.ON_ATTACK, false, AL_ATACAR,
+                "Heredado de Dragón Carmesí: puedes enviar 5 de tus tributos [dragón] al fondo de tu mazo; esta carta gana Letalidad 1 hasta el final del ataque.",
+                List.of(new SendFromZoneToDeckBottom("tributeZone", 5, fiveDragons)), List.of(new GainUntilEndOfAttack("Letalidad 1"))));
+        // ST2-15 Dragón Volcánico
+        add("dragón volcánico",
+                new EffectScript("dragon-volcanico:al-atacar", Moment.ON_ATTACK, false, AL_ATACAR,
+                        "Una vez por turno: puedes destruir 1 carta bocarriba en las vidas oponentes.",
+                        List.of(new DestroyFaceUpLife()))
+                        .limited(Limit.ONCE_PER_TURN),
+                new EffectScript("dragon-volcanico:al-final-del-ataque", Moment.ON_ATTACK_END, false, AL_FINAL,
+                        "Una vez por turno: si algún enemigo fue destruido durante el ataque, puedes enviar 5 de tus tributos [dragón] al fondo de tu mazo "
+                                + "para reactivar esta carta.",
+                        List.of(new SendFromZoneToDeckBottom("tributeZone", 5, fiveDragons)), List.of(new UntapSelf()))
+                        .when((room, event, source, controller) -> event.getData() != null && Boolean.TRUE.equals(event.getData().get("enemyDestroyed")))
+                        .limited(Limit.ONCE_PER_TURN));
+        // ST2-16 Volcán De Dragones (structure)
+        add("volcán de dragones", new EffectScript("volcan-de-dragones:turno-aliado", Moment.ON_EVENT, false, "Turno Aliado",
+                "Si invocas especialmente 1 [dragón]: puedes agotar esta carta para ganar 1 gema y robar 1 carta. Si lo haces: tributa 1 carta de tu mano.",
+                List.of(new TapSelf()),
+                List.of(new GainGems(1), new Draw(1), new TributeFromHand(1)))
+                .when(youSpecialSummoned(dragon))
+                .onlyAllyTurn());
+        // ST2-17 Huevo De Dragón (utility; its slow effect from the field is not applied yet)
+        add("huevo de dragón", new EffectScript("huevo-de-dragon:en-juego", Moment.ON_PLAY, true, EN_JUEGO,
+                "Tributa 4 cartas del tope de tu mazo. Luego: toma 1 carta Verde o [dragón] nivel 1 de tus tributos.",
+                List.of(new TributeTop(4), new TakeFromZone("tributeZone", CardFilter.colors("G").withClasses("dragón").withLevel(1), 1, false))));
+        // ST2-18 Llamarada (utility)
+        add("llamarada",
+                new EffectScript("llamarada:tributada", Moment.ON_EVENT, false, "En Tributos",
+                        "(1) Si esta carta es tributada desde tu mazo por un aliado [dragón]: puedes jugar esta carta reduciendo su coste en el nivel de dicho aliado.",
+                        List.of(new PlaySelfFromZone("tributeZone", true)))
+                        .when(tributedFromDeckBy(CardFilter.creatures().withClasses("dragón")))
+                        .fromZone("tributeZone")
+                        .limited(Limit.ONCE_PER_TURN_BETWEEN_COPIES),
+                new EffectScript("llamarada:en-juego", Moment.ON_PLAY, true, EN_JUEGO,
+                        "Elige 1 enemigo de fuerza 11 o menos; destrúyelo.",
+                        List.of(new ChooseEnemy(1, CardFilter.creatures().withMaxStrength(11))), List.of(new DestroyChosen())));
+    }
+
+    /** Evolución by Duregón: "si tienes 5 o más tributos [dragón]: reduce en 1 el coste especial". */
+    static int summonerReduction(GameRoom room, PlayerState player, String kind, CardSlot summoner) {
+        if (!"evolution".equals(kind) || summoner == null || !"duregón".equalsIgnoreCase(summoner.getCardName())) return 0;
+        return countInZone(room, player.getUserId(), "tributeZone", CardFilter.any().withClasses("dragón")) >= 5 ? 1 : 0;
+    }
+
     private CardEffects() {}
 
     /** Adds effects for a card name (tests use it for mechanics no printed card has yet). */
@@ -311,9 +474,16 @@ public final class CardEffects {
         return BY_NAME.getOrDefault(cardName.trim().toLowerCase(Locale.ROOT), List.of());
     }
 
-    /** The card's own effects plus those of the keywords the engine runs. */
+    private static void inherit(String name, EffectScript... scripts) {
+        INHERITED.put(name, List.of(scripts));
+    }
+
+    /** The card's own effects, those its Recursos give it and those of the keywords the engine runs. */
     public static List<EffectScript> of(CardSlot card) {
         List<EffectScript> all = new ArrayList<>(of(card.getCardName()));
+        for (CardSlot resource : card.getResources()) {
+            if (resource.getCardName() != null) all.addAll(INHERITED.getOrDefault(resource.getCardName().trim().toLowerCase(Locale.ROOT), List.of()));
+        }
         for (String keyword : card.getKeywords()) {
             EffectScript script = KEYWORDS.get(keyword.toLowerCase(Locale.ROOT));
             if (script != null) all.add(script);
@@ -324,6 +494,7 @@ public final class CardEffects {
     /** Looks an effect up by its id (card effects and keywords). */
     public static Optional<EffectScript> byId(String id) {
         return BY_NAME.values().stream().flatMap(List::stream).filter(s -> s.id().equals(id)).findFirst()
+                .or(() -> INHERITED.values().stream().flatMap(List::stream).filter(s -> s.id().equals(id)).findFirst())
                 .or(() -> KEYWORDS.values().stream().filter(s -> s.id().equals(id)).findFirst());
     }
 
@@ -371,6 +542,36 @@ public final class CardEffects {
                 && source.getInstanceId().equals(event.getData().get("byCard")) && !controller.equals(ownerOf(event));
     }
 
+    /** "si esta carta es tributada desde tu mazo [por efecto de una carta filtro]". */
+    private static Condition tributedFromDeckBy(CardFilter by) {
+        return (room, event, source, controller) -> {
+            if (!GameEvent.TRIBUTE.equals(event.getType()) || !"deck".equals(event.getFromZone())) return false;
+            if (!source.getInstanceId().equals(event.getCardInstanceId())) return false;
+            if (by == null) return true;
+            Object byCard = event.getData() == null ? null : event.getData().get("byCard");
+            for (PlayerState p : room.getPlayers().values()) {
+                for (List<CardSlot> zone : List.of(p.getField(), p.getHand(), p.getTributeZone(), p.getDiscardPile())) {
+                    for (CardSlot c : zone) if (c.getInstanceId().equals(byCard)) return by.matches(c);
+                }
+            }
+            return false;
+        };
+    }
+
+    /** "si algún enemigo es destruido por tus efectos". */
+    private static boolean enemyDestroyedByYourEffect(GameRoom room, GameEvent event, CardSlot source, String controller) {
+        return youDestroyedAnEnemy(room, event, source, controller) && event.getEffectId() != null;
+    }
+
+    /** "si invocas especialmente 1 [filtro]". */
+    private static Condition youSpecialSummoned(CardFilter filter) {
+        return (room, event, source, controller) -> {
+            if (!GameEvent.SPECIAL_SUMMON.equals(event.getType()) || !controller.equals(event.getPlayerId())) return false;
+            CardSlot summoned = EffectEngine.eventCard(room, event);
+            return summoned != null && filter.matches(summoned);
+        };
+    }
+
     /** "si algún aliado [filtro] es invocado por efecto". */
     private static Condition allySummonedByEffect(CardFilter filter) {
         return (room, event, source, controller) -> {
@@ -404,7 +605,7 @@ public final class CardEffects {
     private static long countInZone(GameRoom room, String playerId, String zone, CardFilter filter) {
         PlayerState player = room.getPlayer(playerId);
         if (player == null) return 0;
-        List<CardSlot> cards = "tributeZone".equals(zone) ? player.getTributeZone() : List.of();
+        List<CardSlot> cards = "tributeZone".equals(zone) ? player.getTributeZone() : "hand".equals(zone) ? player.getHand() : List.of();
         return cards.stream().filter(filter::matches).count();
     }
 }

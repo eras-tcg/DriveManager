@@ -25,4 +25,8 @@ public class Combat {
     private boolean blockAsked;
     /** Direct damage still to deal (1 + Letalidad), counted down hit by hit; null until the damage step. */
     private Integer hitsLeft;
+    /** Abilities gained "hasta el final del ataque" ("instanceId|keyword"), removed when the combat ends. */
+    private java.util.List<String> untilEndOfAttack = new java.util.ArrayList<>();
+    /** An enemy of the attacker was destroyed during this attack. */
+    private boolean enemyDestroyed;
 }

@@ -9,7 +9,11 @@ import java.util.List;
  * Which cards an effect may choose ("1 carta Violeta o Blanca", "1 criatura [bestia] nivel 1").
  * Colors and classes are alternatives (any of them); card type and level limits must hold too. Empty = any card.
  */
-public record CardFilter(List<String> colors, List<String> classes, String cardType, Integer level, Integer maxLevel) {
+public record CardFilter(List<String> colors, List<String> classes, String cardType, Integer level, Integer maxLevel, Integer maxStrength) {
+
+    public CardFilter(List<String> colors, List<String> classes, String cardType, Integer level, Integer maxLevel) {
+        this(colors, classes, cardType, level, maxLevel, null);
+    }
 
     public static CardFilter any() {
         return new CardFilter(List.of(), List.of(), null, null, null);
@@ -24,19 +28,24 @@ public record CardFilter(List<String> colors, List<String> classes, String cardT
     }
 
     public CardFilter withColors(String... colors) {
-        return new CardFilter(List.of(colors), classes, cardType, level, maxLevel);
+        return new CardFilter(List.of(colors), classes, cardType, level, maxLevel, maxStrength);
     }
 
     public CardFilter withClasses(String... classes) {
-        return new CardFilter(colors, List.of(classes), cardType, level, maxLevel);
+        return new CardFilter(colors, List.of(classes), cardType, level, maxLevel, maxStrength);
     }
 
     public CardFilter withLevel(int level) {
-        return new CardFilter(colors, classes, cardType, level, maxLevel);
+        return new CardFilter(colors, classes, cardType, level, maxLevel, maxStrength);
     }
 
     public CardFilter withMaxLevel(int maxLevel) {
-        return new CardFilter(colors, classes, cardType, level, maxLevel);
+        return new CardFilter(colors, classes, cardType, level, maxLevel, maxStrength);
+    }
+
+    /** "de fuerza N o menos" (its current strength). */
+    public CardFilter withMaxStrength(int maxStrength) {
+        return new CardFilter(colors, classes, cardType, level, maxLevel, maxStrength);
     }
 
     public boolean matches(CardSlot card) {
@@ -50,6 +59,7 @@ public record CardFilter(List<String> colors, List<String> classes, String cardT
         }
         if (!anyOf) return false;
         if (level != null && !level.equals(card.getLevel())) return false;
+        if (maxStrength != null && EffectEngine.strength(card) > maxStrength) return false;
         return maxLevel == null || (card.getLevel() != null && card.getLevel() <= maxLevel);
     }
 
@@ -61,6 +71,7 @@ public record CardFilter(List<String> colors, List<String> classes, String cardT
         String text = String.join(" o ", parts);
         if (level != null) text += " nivel " + level;
         if (maxLevel != null) text += " nivel " + maxLevel + " o menor";
+        if (maxStrength != null) text += " de fuerza " + maxStrength + " o menos";
         return text.trim();
     }
 

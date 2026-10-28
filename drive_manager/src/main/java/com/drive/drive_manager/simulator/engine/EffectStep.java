@@ -33,7 +33,9 @@ public sealed interface EffectStep {
      * "elige N enemigo [filtro];" as a cost: the targets are chosen when the effect is activated (rule 11.10.1);
      * the effect can only be activated if there are enough of them. Only the opponent's Línea frontal.
      */
-    record ChooseEnemy(int count, CardFilter filter) implements EffectStep {}
+    record ChooseEnemy(int count, CardFilter filter, boolean upTo) implements EffectStep {
+        public ChooseEnemy(int count, CardFilter filter) { this(count, filter, false); }
+    }
 
     /** "destrúyelo": destroys the targets chosen on activation that are still valid (rule 11.10.2). */
     record DestroyChosen() implements EffectStep {}
@@ -53,7 +55,30 @@ public sealed interface EffectStep {
      * "[otro aliado / 1 aliado] puede invocar por [Ascenso / Evolución] 1 criatura de tu [zona] reduciendo el coste
      * especial en N": the controller may pick the creature (or none), then the summoner.
      */
-    record SpecialFromZone(String kind, String zone, int reduce, boolean otherAlly) implements EffectStep {}
+    record SpecialFromZone(String kind, String zone, int reduce, String summoner, CardFilter filter) implements EffectStep {
+        /** "otro aliado" (not this card) or "1 aliado" (any). */
+        public SpecialFromZone(String kind, String zone, int reduce, boolean otherAlly) {
+            this(kind, zone, reduce, otherAlly ? "other" : "any", CardFilter.any());
+        }
+    }
+
+    /** "tributa N cartas del tope de tu mazo". */
+    record TributeTop(int count) implements EffectStep {}
+
+    /** "coloca [hasta] N cartas de tu [zona] al tope de tu mazo". */
+    record ToDeckTop(String zone, int count, boolean upTo) implements EffectStep {}
+
+    /** "puedes tributar "X" de los recursos de esta carta" (a cost). */
+    record TributeResource(String name) implements EffectStep {}
+
+    /** "destruye 1 carta bocarriba en las vidas oponentes". */
+    record DestroyFaceUpLife() implements EffectStep {}
+
+    /** "gana [habilidad] hasta el final del ataque". */
+    record GainUntilEndOfAttack(String keyword) implements EffectStep {}
+
+    /** "puedes jugar esta carta [desde zona] reduciendo su coste en el nivel de dicho aliado". */
+    record PlaySelfFromZone(String zone, boolean reduceBySourceLevel) implements EffectStep {}
 
     /** "toma N carta [filtro] de tus [zona]": to the hand (up to N when {@code upTo}). */
     record TakeFromZone(String zone, CardFilter filter, int count, boolean upTo) implements EffectStep {}
