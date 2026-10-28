@@ -35,7 +35,18 @@ public class GameEvent {
     public static final String SEND             = "SEND";
     public static final String UNTAP            = "UNTAP";
     public static final String GAIN             = "GAIN";
-    public static final String DECLARE_ATTACK   = "DECLARE_ATTACK";
+    public static final String PLAY             = "PLAY";
+    /** An attack was declared (rule 10.1.1). data: targetId (null = the opponent), byEffect. */
+    public static final String ATTACK_DECLARED  = "ATTACK_DECLARED";
+    public static final String BLOCK            = "BLOCK";
+    public static final String CLASH            = "CLASH";
+    /** Direct damage to the top life card (rule 10.1.4). data: damage. */
+    public static final String LIFE_DAMAGE      = "LIFE_DAMAGE";
+    public static final String ATTACK_ENDED     = "ATTACK_ENDED";
+    public static final String GAME_LOST        = "GAME_LOST";
+    public static final String TAP              = "TAP";
+    public static final String MOVE             = "MOVE";
+    public static final String GAIN_GEMS        = "GAIN_GEMS";
 
     /** Order in the room's timeline (1, 2, 3…). */
     private long seq;

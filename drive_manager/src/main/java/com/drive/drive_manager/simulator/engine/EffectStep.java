@@ -44,11 +44,42 @@ public sealed interface EffectStep {
     /** "reactiva esta carta". */
     record UntapSelf() implements EffectStep {}
 
-    /** "esta carta gana [habilidad] hasta el final del turno". */
+    /** "gana [habilidad] hasta el final del turno": this card, or the ally chosen by {@link PickAlly}. */
     record GainUntilEndOfTurn(String keyword) implements EffectStep {}
 
-    /** "esta carta declara ataque". Combat is still played on the board: the engine records the declaration. */
+    /**
+     * "declara ataque": this card, or the ally chosen by {@link PickAlly}, attacks without being exhausted
+     * (rule 11.9.3.1). Its controller picks an exhausted enemy creature, or none to attack the opponent.
+     */
     record DeclareAttack() implements EffectStep {}
+
+    /** "elige 1 aliado": the ally the next steps act on. */
+    record PickAlly() implements EffectStep {}
+
+    /** "gana N gemas": moves the Contador towards the controller. */
+    record GainGems(int count) implements EffectStep {}
+
+    /** "agota esta carta" (a cost: it must be active on the field). */
+    record TapSelf() implements EffectStep {}
+
+    /** "sacrifica esta carta" (a cost: it must be on the field). */
+    record SacrificeSelf() implements EffectStep {}
+
+    /** "sacrifica 1 aliado": the controller picks one of their creatures on the field. */
+    record SacrificeAlly() implements EffectStep {}
+
+    /** Celeridad: "puede subir a tu línea frontal". */
+    record MoveSelfToFront() implements EffectStep {}
+
+    /** "puedes jugar esta carta sin pagar su coste" (from the hand). */
+    record PlaySelfFree() implements EffectStep {}
+
+    /**
+     * "[esta carta / un aliado] invoca por Ritual 1 criatura de tus [zona] reduciendo su coste especial en N"
+     * (rule 9.3): the controller picks the creature, then the summoner and the other creatures that meet its
+     * Requerimiento; they are sacrificed and it is summoned in the summoner's place.
+     */
+    record RitualFromZone(String zone, boolean selfSummoner, int reduce) implements EffectStep {}
 
     /**
      * "puedes A; B": asks the controller. If they decline, or A cannot be done, the next {@code covers}

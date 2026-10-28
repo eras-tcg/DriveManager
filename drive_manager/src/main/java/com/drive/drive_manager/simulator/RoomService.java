@@ -70,6 +70,8 @@ public class RoomService {
             case "RESOLVE_PROMPT"       -> handleResolvePrompt(room, userId, action);
             case "DESTROY_CARD"         -> handleDestroyCard(room, userId, action);
             case "SACRIFICE_CARD"       -> handleSacrificeCard(room, userId, action);
+            case "ATTACK"               -> handleAttack(room, userId, action);
+            case "PLAY_CARD"            -> handlePlayCard(room, userId, action);
             case "JOIN_ROOM"            -> handleJoin(room, userId, action);
             case "DRAW_CARD"            -> handleDraw(room, userId);
             case "MOVE_CARD"            -> handleMove(room, userId, action);
@@ -156,6 +158,20 @@ public class RoomService {
         String error = EffectEngine.sacrificeByPlayer(room, userId, action.getString("instanceId"));
         if (error != null) return GameStateUpdate.error(room.getRoomId(), error);
         return GameStateUpdate.from(room, "SACRIFICE_CARD", userId);
+    }
+
+    /** Declares an attack (rule 10): the engine runs the combat. targetInstanceId null = the opponent. */
+    private GameStateUpdate handleAttack(GameRoom room, String userId, GameAction action) {
+        String error = EffectEngine.attackByPlayer(room, userId, action.getString("instanceId"), action.getString("targetInstanceId"));
+        if (error != null) return GameStateUpdate.error(room.getRoomId(), error);
+        return GameStateUpdate.from(room, "ATTACK", userId);
+    }
+
+    /** Plays a utility or structure from the hand: pays its cost and fires its "En Juego" effects. */
+    private GameStateUpdate handlePlayCard(GameRoom room, String userId, GameAction action) {
+        String error = EffectEngine.playByPlayer(room, userId, action.getString("instanceId"), action.getDouble("x"), action.getDouble("y"));
+        if (error != null) return GameStateUpdate.error(room.getRoomId(), error);
+        return GameStateUpdate.from(room, "PLAY_CARD", userId);
     }
 
     private void recordLog(GameRoom room, GameStateUpdate update) {
@@ -741,6 +757,8 @@ public class RoomService {
         room.setPrompt(null);
         room.getTriggerQueue().clear();
         room.getPendingEvents().clear();
+        room.setCombat(null);
+        room.getUsedThisTurn().clear();
         room.getTimeline().clear();
     }
 
@@ -891,9 +909,10 @@ public class RoomService {
         return GameStateUpdate.from(room, "END_TURN", userId);
     }
 
-    /** "Hasta el final del turno" ends when the turn changes. */
+    /** "Hasta el final del turno" ends and the per-turn limits reset when the turn changes (rule 11.8.0.7). */
     private void clearTurnKeywords(GameRoom room) {
         room.getPlayers().values().forEach(p -> p.getField().forEach(c -> c.getTurnKeywords().clear()));
+        room.getUsedThisTurn().clear();
     }
 
     private int getPlayerDirection(GameRoom room, String userId) {
@@ -1458,6 +1477,9 @@ public class RoomService {
             c.setLevel(s.getLevel());
             c.setColors(new ArrayList<>(s.getColors()));
             c.setClasses(new ArrayList<>(s.getClasses()));
+            c.setSpecialCost(s.getSpecialCost());
+            c.setRequirement(s.getRequirement());
+            c.setKeywords(new ArrayList<>(s.getKeywords()));
             c.setFaceDown(true);
             return c;
         }).collect(Collectors.toList());
@@ -1478,6 +1500,18 @@ public class RoomService {
         slot.setCost(meta.getCost());
         slot.setLevel(meta.getLevel());
         slot.setClasses(meta.getCardClasses() != null ? new ArrayList<>(meta.getCardClasses()) : new ArrayList<>());
+        slot.setSpecialCost(meta.getSpecialCost());
+        slot.setRequirement(meta.getRequirement());
+        // "Letalidad {cantidad}" + 1 → "Letalidad 1"
+        List<String> keywords = new ArrayList<>();
+        if (meta.getKeywordEffects() != null) {
+            meta.getKeywordEffects().forEach(k -> {
+                if (k.getKeyword() == null) return;
+                String name = k.getKeyword().replaceAll("\\{[^}]*}", k.getNumber() != null ? k.getNumber() : "").trim();
+                keywords.add(name.replaceAll("\\s+", " "));
+            });
+        }
+        slot.setKeywords(keywords);
         List<String> colors = new ArrayList<>();
         if (meta.getColorIdentity() != null) colors.add(meta.getColorIdentity());
         if (meta.getColors() != null) meta.getColors().stream().filter(c -> !colors.contains(c)).forEach(colors::add);

@@ -201,7 +201,9 @@ class DestructionTest {
         assertThat(host.getDeck().subList(host.getDeck().size() - 10, host.getDeck().size()))
                 .extracting(CardSlot::getInstanceId).containsExactlyElementsOf(ten);
         assertThat(berkelus.getTurnKeywords()).containsExactly("Furia 1");
-        assertThat(room.getTimeline()).extracting(GameEvent::getType).contains(GameEvent.DECLARE_ATTACK);
+        // Summoned normally it is in the Retaguardia: it cannot attack (rule 10.1.1.1)
+        assertThat(room.getCombat()).isNull();
+        assertThat(room.getEventLog()).anyMatch(l -> l.getText().contains("no está en la línea frontal"));
         assertThat(room.isEngineBusy()).isFalse();
     }
 

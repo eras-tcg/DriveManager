@@ -43,10 +43,14 @@ public class GameRoom {
     /** Events since the last chain window: they trigger effects once the current resolution ends (rule 11.6.0.4). */
     private List<GameEvent> pendingEvents = new ArrayList<>();
     private long idSeq = 0;
+    /** The combat in progress (rule 10), if any. */
+    private com.drive.drive_manager.simulator.engine.Combat combat;
+    /** Effects already used this turn (rule 11.8), keyed by the engine. Cleared when the turn changes. */
+    private Set<String> usedThisTurn = new HashSet<>();
 
     /** Closed game state (rule 7.2): a chain or a choice is pending, so no new actions can start. */
     public boolean isEngineBusy() {
-        return prompt != null || !chain.isEmpty() || !triggerQueue.isEmpty();
+        return prompt != null || !chain.isEmpty() || !triggerQueue.isEmpty() || combat != null;
     }
 
     public String nextId(String prefix) {

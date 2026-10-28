@@ -36,6 +36,8 @@ public class GameStateUpdate {
     private List<PendingEffect> chain;
     /** Choice being waited for; only prompt.playerId may answer. */
     private Prompt prompt;
+    /** Combat in progress, if any. */
+    private com.drive.drive_manager.simulator.engine.Combat combat;
 
     public static GameStateUpdate from(GameRoom room, String event, String actorId) {
         GameStateUpdate u = new GameStateUpdate();
@@ -50,6 +52,7 @@ public class GameStateUpdate {
         u.actorId           = actorId;
         u.chain             = room.getChain().isEmpty() ? null : new ArrayList<>(room.getChain());
         u.prompt            = room.getPrompt();
+        u.combat            = room.getCombat();
         List<GameEvent> tl  = room.getTimeline();
         u.timeline          = tl.isEmpty() ? null : new ArrayList<>(tl.subList(Math.max(0, tl.size() - 100), tl.size()));
         u.postGameChoices   = room.getPostGameChoices().isEmpty()

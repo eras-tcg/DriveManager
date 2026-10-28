@@ -23,6 +23,10 @@ public class PendingEffect {
     // --- Resolution progress (set while it resolves) ---
     private String resolutionId;
     private int stepIndex;
+    /** The ally chosen by "elige 1 aliado", which the next steps act on. */
+    private String subjectId;
+    /** Ritual by effect: the creature chosen to be summoned, before choosing who meets its Requerimiento. */
+    private String ritualTargetId;
     /** Cards taken out of the deck by "mira las primeras N", waiting for the next step. Owner-only info. */
     @JsonIgnore
     private List<CardSlot> looked = new ArrayList<>();

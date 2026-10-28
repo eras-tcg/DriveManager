@@ -30,6 +30,11 @@ public class CardSlot {
     /** Color identity plus extra colors (B, G, P, R, W). */
     private List<String> colors = new ArrayList<>();
     private List<String> classes = new ArrayList<>();
+    /** Special summon cost and Requerimiento as printed ("criatura nivel 2", "criaturas que en nivel sumen 6"). */
+    private Integer specialCost;
+    private String requirement;
+    /** Printed keyword abilities ("Provocar", "Letalidad 1", "Imbloqueable"). */
+    private List<String> keywords = new ArrayList<>();
     /** Abilities gained until the end of the turn ("gana Furia 1 hasta el final del turno"). */
     private List<String> turnKeywords = new ArrayList<>();
     private List<CardSlot> materials = new ArrayList<>();

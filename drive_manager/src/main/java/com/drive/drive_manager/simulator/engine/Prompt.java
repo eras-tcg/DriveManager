@@ -26,6 +26,8 @@ public class Prompt {
     private Kind kind;
     private String playerId;
     private String effectId;
+    /** Combat choices that are not part of an effect: BLOCK (defender) or PROVOKE (attacker's Provocar). */
+    private String purpose;
     private String sourceName;
     private String title;
     /** What the player is asked to do, in Spanish. */
