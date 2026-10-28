@@ -570,10 +570,12 @@ public final class CardEffects {
                         List.of(new TributeFromHandUpTo(3), new DrawLastCount(), new KeepOnField())),
                 // A slow effect from the field: the ally chosen gets this card as a material and is the summoner
                 new EffectScript("composicion-adimensional:turno-aliado", Moment.ACTIVATED, false, "Turno Aliado",
-                        "Puedes añadir esta carta como material a un aliado para que invoque por Materialización 1 criatura en tu mano o tributos "
-                                + "reduciendo el coste especial en 1.",
+                        "Puedes añadir esta carta activa como material a un aliado para que invoque por Materialización 1 criatura en tu mano o "
+                                + "tributos reduciendo el coste especial en 1.",
                         List.of(new PickAlly(), new AttachSelfToSubject(),
                                 new SpecialFromZone("materialization", "hand,tributeZone", 1, "subject", CardFilter.any())))
+                        // "esta carta activa": not while it is exhausted (it stays exhausted after being played)
+                        .when((room, event, source, controller) -> !source.isTapped())
                         .onlyAllyTurn());
         // ST1-18 Paso Interdimensional: not applied yet
     }

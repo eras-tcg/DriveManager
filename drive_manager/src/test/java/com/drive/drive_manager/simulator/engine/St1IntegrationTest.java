@@ -146,8 +146,11 @@ class St1IntegrationTest {
     @Test
     void composicionFromTheFieldBecomesAMaterialSoAnAllyMaterializes() {
         CardSlot composicion = onField(host, slot("Composición Adimensional"), 80.0);
-        composicion.setTapped(true);
         CardSlot eisten = onField(host, slot("Eisten"), FRONT);
+        // Exhausted (as it stays after being played) it cannot be used
+        composicion.setTapped(true);
+        assertThat(EffectEngine.activatable(room, "host")).isEmpty();
+        composicion.setTapped(false);
         CardSlot flarix = slot("Flarix");
         host.getHand().add(flarix);
         CardSlot jhav = slot("Jhav");
