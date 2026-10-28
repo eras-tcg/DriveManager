@@ -30,6 +30,15 @@ public sealed interface EffectStep {
     record DestroyEnemy(int count, CardFilter filter) implements EffectStep {}
 
     /**
+     * "elige N enemigo [filtro];" as a cost: the targets are chosen when the effect is activated (rule 11.10.1);
+     * the effect can only be activated if there are enough of them. Only the opponent's Línea frontal.
+     */
+    record ChooseEnemy(int count, CardFilter filter) implements EffectStep {}
+
+    /** "destrúyelo": destroys the targets chosen on activation that are still valid (rule 11.10.2). */
+    record DestroyChosen() implements EffectStep {}
+
+    /**
      * "invoca 1 criatura [filtro] de tus [zona] reduciendo su coste en N": summon by effect (rule 9.1.0.2),
      * paying the normal cost minus {@code reduce}; it enters the Retaguardia with the regulatory draw.
      */

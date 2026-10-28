@@ -6,8 +6,9 @@ import com.drive.drive_manager.simulator.PlayerState;
 import com.drive.drive_manager.simulator.engine.EffectScript.Condition;
 import com.drive.drive_manager.simulator.engine.EffectScript.Limit;
 import com.drive.drive_manager.simulator.engine.EffectScript.Moment;
+import com.drive.drive_manager.simulator.engine.EffectStep.ChooseEnemy;
 import com.drive.drive_manager.simulator.engine.EffectStep.DeclareAttack;
-import com.drive.drive_manager.simulator.engine.EffectStep.DestroyEnemy;
+import com.drive.drive_manager.simulator.engine.EffectStep.DestroyChosen;
 import com.drive.drive_manager.simulator.engine.EffectStep.Draw;
 import com.drive.drive_manager.simulator.engine.EffectStep.GainGems;
 import com.drive.drive_manager.simulator.engine.EffectStep.GainUntilEndOfTurn;
@@ -82,7 +83,8 @@ public final class CardEffects {
         // ST3-7 Krokler
         add("krokler", new EffectScript("krokler:en-invocacion", Moment.ON_SUMMON, false, EN_INVOCACION,
                 "Puedes elegir 1 enemigo nivel 1; destrúyelo.",
-                List.of(new DestroyEnemy(1, CardFilter.any().withLevel(1)))));
+                List.of(new ChooseEnemy(1, CardFilter.any().withLevel(1))),
+                List.of(new DestroyChosen())));
         // ST3-8 Zohx
         add("zohx", new EffectScript("zohx:al-final-del-ataque", Moment.ON_ATTACK_END, false, AL_FINAL,
                 "(1) Si tienes 10 o más tributos [bestia]: esta carta puede invocar por Ritual 1 criatura de tus tributos reduciendo el coste especial en 1.",
@@ -92,11 +94,13 @@ public final class CardEffects {
         // ST3-9 Zhaglizer
         add("zhaglizer", new EffectScript("zhaglizer:al-atacar", Moment.ON_ATTACK, true, AL_ATACAR,
                 "Elige 1 enemigo nivel 2 o menor; destrúyelo.",
-                List.of(new DestroyEnemy(1, CardFilter.any().withMaxLevel(2)))));
+                List.of(new ChooseEnemy(1, CardFilter.any().withMaxLevel(2))),
+                List.of(new DestroyChosen())));
         // ST3-10 Hong (Letalidad 1: combat rule)
         add("hong", new EffectScript("hong:todos-los-turnos", Moment.ON_EVENT, false, TODOS,
                 "Una vez por turno: si destruyes algún enemigo, puedes elegir 1 enemigo nivel 1; destrúyelo.",
-                List.of(new DestroyEnemy(1, CardFilter.any().withLevel(1))))
+                List.of(new ChooseEnemy(1, CardFilter.any().withLevel(1))),
+                List.of(new DestroyChosen()))
                 .when(CardEffects::youDestroyedAnEnemy)
                 .limited(Limit.ONCE_PER_TURN));
         // ST3-11 Cazador De Bestias (Celeridad: keyword)
@@ -113,7 +117,8 @@ public final class CardEffects {
         add("zhauz",
                 new EffectScript("zhauz:al-atacar", Moment.ON_ATTACK, false, AL_ATACAR,
                         "Una vez por turno: puedes sacrificar 1 aliado para elegir 1 enemigo nivel 3 o menor; destrúyelo.",
-                        List.of(new SacrificeAlly(), new DestroyEnemy(1, CardFilter.any().withMaxLevel(3))))
+                        List.of(new SacrificeAlly(), new ChooseEnemy(1, CardFilter.any().withMaxLevel(3))),
+                        List.of(new DestroyChosen()))
                         .limited(Limit.ONCE_PER_TURN),
                 new EffectScript("zhauz:turno-aliado", Moment.ON_EVENT, true, "Turno Aliado",
                         "Una vez por turno: si algún aliado es destruido, reactiva esta carta.",
@@ -124,7 +129,8 @@ public final class CardEffects {
         // ST3-14 Mawser (Provocar: combat rule)
         add("mawser", new EffectScript("mawser:todos-los-turnos", Moment.ON_EVENT, true, TODOS,
                 "Una vez por turno: si esta carta destruye algún enemigo, elige 1 enemigo nivel 3 o menor; destrúyelo.",
-                List.of(new DestroyEnemy(1, CardFilter.any().withMaxLevel(3))))
+                List.of(new ChooseEnemy(1, CardFilter.any().withMaxLevel(3))),
+                List.of(new DestroyChosen()))
                 .when(CardEffects::thisDestroyedAnEnemy)
                 .limited(Limit.ONCE_PER_TURN));
         // ST3-15 Berkelus El Cazarrecompensas Del Bajomundo

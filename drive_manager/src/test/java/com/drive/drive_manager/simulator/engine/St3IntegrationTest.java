@@ -86,7 +86,7 @@ class St3IntegrationTest {
         assertThat(destroy.getValidIds()).containsExactly(damon.getInstanceId());
         // Clients receive it as JSON
         String sent = json.writeValueAsString(attack);
-        assertThat(sent).contains("\"combat\"").contains("\"chosenLabel\":\"Destruir\"");
+        assertThat(sent).contains("\"combat\"").contains("\"chosenLabel\":\"Objetivo\"");
 
         GameStateUpdate destroyed = act("host", "RESOLVE_PROMPT", Map.of("promptId", destroy.getId(), "chosen", List.of(damon.getInstanceId())));
         assertThat(destroyed.getError()).isNull();

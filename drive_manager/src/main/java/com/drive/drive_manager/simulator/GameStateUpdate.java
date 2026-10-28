@@ -45,6 +45,8 @@ public class GameStateUpdate {
     private String starterAdvantageUserId;
     /** Slow effects each player can activate right now (rule 11.4.1.1), by player id. */
     private Map<String, List<EffectEngine.Activatable>> activatable;
+    /** Players who already played a structure normally this turn (one per turn). */
+    private List<String> structurePlayed;
 
     public static GameStateUpdate from(GameRoom room, String event, String actorId) {
         GameStateUpdate u = new GameStateUpdate();
@@ -68,6 +70,8 @@ public class GameStateUpdate {
             if (!list.isEmpty()) activatable.put(id, list);
         }
         u.activatable       = activatable.isEmpty() ? null : activatable;
+        List<String> structures = room.getPlayers().keySet().stream().filter(id -> EffectEngine.structurePlayed(room, id)).toList();
+        u.structurePlayed   = structures.isEmpty() ? null : structures;
         List<GameEvent> tl  = room.getTimeline();
         u.timeline          = tl.isEmpty() ? null : new ArrayList<>(tl.subList(Math.max(0, tl.size() - 100), tl.size()));
         u.postGameChoices   = room.getPostGameChoices().isEmpty()

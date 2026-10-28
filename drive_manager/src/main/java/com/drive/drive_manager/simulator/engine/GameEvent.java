@@ -47,6 +47,8 @@ public class GameEvent {
     public static final String COMBAT_STEP      = "COMBAT_STEP";
     public static final String GAME_LOST        = "GAME_LOST";
     public static final String TAP              = "TAP";
+    /** Targets chosen when an effect is activated. data: targetIds. */
+    public static final String TARGET = "TARGET";
     public static final String MOVE             = "MOVE";
     public static final String GAIN_GEMS        = "GAIN_GEMS";
 

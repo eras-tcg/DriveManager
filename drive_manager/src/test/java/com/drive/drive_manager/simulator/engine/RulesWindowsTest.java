@@ -85,15 +85,15 @@ class RulesWindowsTest {
         host.getHand().add(mawser);
         field(host, creature("a", "A", 2, 3), FRONT);
         field(host, creature("b", "B", 3, 3), BACK);
-        field(host, creature("c", "C", 2, 3), BACK);
+        field(host, creature("c", "C", 1, 3), BACK);
         assertThat(EffectEngine.canRitual(room, "host", mawser)).isTrue();
 
         assertThat(EffectEngine.ritualByPlayer(room, "host", "maw", null)).isNull();
         Prompt pick = room.getPrompt();
         assertThat(pick.getPurpose()).isEqualTo("RITUAL");
         assertThat(pick.getValidIds()).containsExactly("a", "b", "c");
-        // Not enough: 2 + 2 < 6
-        assertThat(EffectEngine.answer(room, "host", pick.getId(), List.of("a", "c"), List.of())).contains("suman 4");
+        // Not exactly 6: 2 + 1
+        assertThat(EffectEngine.answer(room, "host", pick.getId(), List.of("a", "c"), List.of())).contains("suman 3");
         // Cancelled: nothing happened
         assertThat(EffectEngine.answer(room, "host", pick.getId(), List.of(), List.of())).isNull();
         assertThat(host.getHand()).contains(mawser);
@@ -171,6 +171,70 @@ class RulesWindowsTest {
         room.setCurrentTurnUserId("guest");
         assertThat(EffectEngine.canPay(room, "guest", 1)).isFalse();
         assertThat(EffectEngine.canPay(room, "guest", 0)).isTrue();
+    }
+
+    @Test
+    void sumRequerimientoMustBeExact() {
+        CardSlot mawser = ritual("maw", "Mawser", 3, 3, "criaturas que en nivel sumen 6.");
+        host.getHand().add(mawser);
+        field(host, creature("a", "A", 4, 3), FRONT);
+        field(host, creature("b", "B", 3, 3), BACK);
+        // 4 + 3 = 7: more than 6 is not allowed, and no other combination adds up to 6
+        assertThat(EffectEngine.canRitual(room, "host", mawser)).isFalse();
+        assertThat(EffectEngine.ritualByPlayer(room, "host", "maw", null)).contains("Requerimiento");
+        assertThat(EffectEngine.ritualByPlayer(room, "host", "maw", "a")).contains("Requerimiento");
+        field(host, creature("c", "C", 2, 3), BACK);
+        assertThat(EffectEngine.ritualByPlayer(room, "host", "maw", "a")).isNull();
+        // Dropped onto A (4): only C (2) completes it exactly
+        assertThat(room.getPrompt().getValidIds()).containsExactly("b", "c");
+        assertThat(EffectEngine.answer(room, "host", room.getPrompt().getId(), List.of("b"), List.of())).contains("exactamente 6");
+        assertThat(EffectEngine.answer(room, "host", room.getPrompt().getId(), List.of("c"), List.of())).isNull();
+        assertThat(host.getField()).extracting(CardSlot::getInstanceId).containsExactlyInAnyOrder("maw", "b");
+    }
+
+    @Test
+    void onlyOneStructureIsPlayedNormallyPerTurn() {
+        CardSlot cueva1 = creature("cu1", "Cueva De Bestias", 1, 0);
+        cueva1.setCardType("structure");
+        cueva1.setCost(1);
+        CardSlot cueva2 = creature("cu2", "Cueva De Bestias", 1, 0);
+        cueva2.setCardType("structure");
+        cueva2.setCost(1);
+        host.getHand().addAll(List.of(cueva1, cueva2));
+        assertThat(EffectEngine.playByPlayer(room, "host", "cu1", 50.0, 75.0)).isNull();
+        assertThat(EffectEngine.structurePlayed(room, "host")).isTrue();
+        assertThat(EffectEngine.playByPlayer(room, "host", "cu2", 50.0, 75.0)).contains("una estructura por turno");
+    }
+
+    @Test
+    void theTargetIsChosenWhenTheEffectIsActivated() {
+        // Hong: "si destruyes algún enemigo: puedes elegir 1 enemigo nivel 1; destrúyelo" — the choice is its cost
+        field(host, creature("hong", "Hong", 2, 5), FRONT);
+        field(guest, creature("v", "Víctima", 3, 3), FRONT);
+        field(guest, creature("l1", "Nivel 1", 1, 3), FRONT);
+        EffectEngine.destroyByPlayer(room, "host", "guest", "v");
+        Prompt confirm = room.getPrompt();
+        assertThat(confirm.getKind()).isEqualTo(Prompt.Kind.CONFIRM);
+        EffectEngine.answer(room, "host", confirm.getId(), List.of("hong"), List.of());
+        // Right after activating it: the target, before anything resolves
+        Prompt target = room.getPrompt();
+        assertThat(target.getChosenLabel()).isEqualTo("Objetivo");
+        assertThat(room.getChain().get(0).getResolutionId()).isNull();
+        EffectEngine.answer(room, "host", target.getId(), List.of("l1"), List.of());
+        assertThat(room.getTimeline()).extracting(GameEvent::getType)
+                .containsSubsequence(GameEvent.EFFECT_ACTIVATED, GameEvent.TARGET, GameEvent.DESTROY, GameEvent.EFFECT_RESOLVED);
+        assertThat(guest.getDiscardPile()).extracting(CardSlot::getInstanceId).containsExactly("v", "l1");
+    }
+
+    @Test
+    void anEffectWithoutValidTargetsIsNotOffered() {
+        // Hong with no level 1 enemy in the Línea frontal: its cost cannot be paid
+        field(host, creature("hong", "Hong", 2, 5), FRONT);
+        field(guest, creature("v", "Víctima", 3, 3), FRONT);
+        field(guest, creature("back", "Atrás", 1, 3), BACK);
+        EffectEngine.destroyByPlayer(room, "host", "guest", "v");
+        assertThat(room.getPrompt()).isNull();
+        assertThat(room.isEngineBusy()).isFalse();
     }
 
     // ------------------------------------------------------------------ Furia

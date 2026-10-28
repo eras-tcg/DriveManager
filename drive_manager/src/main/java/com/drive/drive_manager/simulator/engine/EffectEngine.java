@@ -36,6 +36,8 @@ public final class EffectEngine {
     private static final String PURPOSE_PROVOKE = "PROVOKE";
     private static final String PURPOSE_ADVANCE = "ADVANCE";
     private static final String PURPOSE_RITUAL = "RITUAL";
+    /** Key in the room's per-turn usage: the player already played a structure normally this turn. */
+    private static final String STRUCTURE_PLAYED = "structure-played|";
     private static final String PURPOSE_SPECIAL_FRONT = "SPECIAL_FRONT";
     private static final String PURPOSE_REINFORCE = "REINFORCE";
     private static final String PURPOSE_LIFE_PLAY = "LIFE_PLAY";
@@ -90,12 +92,21 @@ public final class EffectEngine {
         CardSlot card = player == null ? null : find(player.getHand(), instanceId);
         if (card == null) return "La carta no está en tu mano";
         if (!"utility".equals(card.getCardType()) && !"structure".equals(card.getCardType())) return "Solo las utilidades y estructuras se juegan";
+        // Only one structure can be played normally per turn (by effect or from a life it does not count)
+        boolean structure = "structure".equals(card.getCardType());
+        if (structure && structurePlayed(room, userId)) return "Solo puedes jugar una estructura por turno";
         int cost = CardEffects.playCost(room, userId, card);
         if (!canPay(room, userId, cost)) return "No tienes gemas suficientes: tienes " + gemsOf(room, userId) + " y cuesta " + cost;
         pay(room, userId, cost);
+        if (structure) room.getUsedThisTurn().add(STRUCTURE_PLAYED + userId);
         play(room, player, card, cost, x, y, null);
         advance(room);
         return null;
+    }
+
+    /** The player already played a structure normally this turn. */
+    public static boolean structurePlayed(GameRoom room, String userId) {
+        return room.getUsedThisTurn().contains(STRUCTURE_PLAYED + userId);
     }
 
     private static void play(GameRoom room, PlayerState player, CardSlot card, int cost, Double x, Double y, PendingEffect effect) {
@@ -196,22 +207,22 @@ public final class EffectEngine {
                 handRitual(room, player, card, summoner, List.of());
                 return null;
             }
-            if (summoner.getLevel() >= req.level()) {
+            if (summoner.getLevel() == req.level()) {
                 handRitual(room, player, card, summoner, List.of());
                 return null;
             }
-            if (materials.stream().mapToInt(CardSlot::getLevel).sum() < req.level()) return missing;
             List<CardSlot> others = materials.stream().filter(c -> c != summoner).toList();
+            if (summoner.getLevel() > req.level() || !sumsExactly(others, req.level() - summoner.getLevel())) return missing;
             ritualPrompt(room, player, card, summoner, others, "Elige las demás criaturas que se sacrifican junto a " + name(summoner)
-                    + ": sus niveles deben sumar " + req.level() + " o más.", others.size());
+                    + ": sus niveles deben sumar exactamente " + req.level() + ".", others.size());
             return null;
         }
 
         List<CardSlot> valid = req.sum() ? materials : materials.stream().filter(c -> c.getLevel() == req.level()).toList();
-        boolean feasible = req.sum() ? valid.stream().mapToInt(CardSlot::getLevel).sum() >= req.level() : !valid.isEmpty();
+        boolean feasible = req.sum() ? sumsExactly(valid, req.level()) : !valid.isEmpty();
         if (!feasible) return missing;
         ritualPrompt(room, player, card, null, valid, req.sum()
-                ? "Elige las criaturas que se sacrifican: sus niveles deben sumar " + req.level() + " o más. La primera que elijas es el invocador."
+                ? "Elige las criaturas que se sacrifican: sus niveles deben sumar exactamente " + req.level() + ". La primera que elijas es el invocador."
                 : "Elige el invocador: 1 criatura nivel " + req.level() + ". Se sacrifica y " + name(card) + " ocupa su lugar.",
                 req.sum() ? valid.size() : 1);
         return null;
@@ -224,8 +235,7 @@ public final class EffectEngine {
         if (player == null || req == null || card.getSpecialCost() == null || !"ritual".equalsIgnoreCase(card.getSpecialSummonKind())) return false;
         if (!canPay(room, userId, ritualCost(room, userId, card))) return false;
         List<CardSlot> materials = ritualMaterials(player, card);
-        return req.sum() ? materials.stream().mapToInt(CardSlot::getLevel).sum() >= req.level()
-                : materials.stream().anyMatch(c -> c.getLevel() == req.level());
+        return req.sum() ? sumsExactly(materials, req.level()) : materials.stream().anyMatch(c -> c.getLevel() == req.level());
     }
 
     private static int ritualCost(GameRoom room, String userId, CardSlot card) {
@@ -707,7 +717,11 @@ public final class EffectEngine {
             // Rules 7.2.0.4 and 11.6.0.4: once a chain is closed and resolving nothing can be added to it; what
             // triggers meanwhile waits until the whole chain has resolved and then forms a new chain
             boolean resolving = chain.stream().anyMatch(e -> e.isPriorityDone() || e.getResolutionId() != null);
-            if (!resolving && !room.getPendingEvents().isEmpty()) {
+            PendingEffect top = chain.isEmpty() ? null : chain.get(chain.size() - 1);
+            if (top != null && paying(top)) {
+                // The effect just activated pays its cost before anything else, choices included
+                if (!run(room, top, script(top).cost().get(top.getCostIndex()))) top.setCostIndex(top.getCostIndex() + 1);
+            } else if (!resolving && !room.getPendingEvents().isEmpty()) {
                 queueTriggers(room);
             } else if (!resolving && !room.getTriggerQueue().isEmpty()) {
                 activateNext(room);
@@ -859,6 +873,13 @@ public final class EffectEngine {
         }
         if (script.mandatory() || effect.isConfirmed()) {
             room.getTriggerQueue().remove(0);
+            for (EffectStep step : script.cost()) {
+                if (!possible(room, effect, step)) {
+                    // A cost that cannot be paid (no valid target): it cannot be activated (rule 11.2.0.2)
+                    log(room, effect.getSourceName() + ": " + effect.getLabel() + " no puede activarse (no hay objetivos válidos)", null);
+                    return;
+                }
+            }
             activate(room, effect);
             return;
         }
@@ -890,15 +911,20 @@ public final class EffectEngine {
         record(room, GameEvent.EFFECT_ACTIVATED, effect.getControllerId(), null, null, null, effect,
                 Map.of("label", effect.getLabel(), "link", effect.getLink()),
                 "Cadena " + effect.getLink() + ": se activa el efecto " + effect.getLabel() + " de " + effect.getSourceName());
-        for (EffectStep step : script.cost()) run(room, effect, step);
+        // Its cost is paid next (advance), before anything else happens
         room.getChain().add(effect);
+    }
+
+    /** The effect is still paying its cost. */
+    private static boolean paying(PendingEffect effect) {
+        return effect.getCostIndex() < script(effect).cost().size();
     }
 
     /** An optional effect is offered only when its cost can be paid and its choices have something to choose. */
     private static boolean canActivate(GameRoom room, PendingEffect effect, EffectScript script) {
         for (EffectStep step : script.cost()) if (!possible(room, effect, step)) return false;
         for (EffectStep step : script.steps()) {
-            boolean needsTarget = step instanceof DestroyEnemy || step instanceof SummonFromZone || step instanceof RitualFromZone
+            boolean needsTarget = step instanceof DestroyEnemy || step instanceof ChooseEnemy || step instanceof SummonFromZone || step instanceof RitualFromZone
                     || step instanceof SacrificeAlly || step instanceof UntapAlly || step instanceof PickAlly || step instanceof PlaySelfFree
                     || step instanceof MoveSelfToFront;
             if (needsTarget && !possible(room, effect, step)) return false;
@@ -1064,6 +1090,7 @@ public final class EffectEngine {
         CardSlot onField = find(player.getField(), effect.getSourceInstanceId());
         return switch (step) {
             case DestroyEnemy destroy -> !enemyTargets(room, effect, destroy.filter()).isEmpty();
+            case ChooseEnemy choose -> enemyTargets(room, effect, choose.filter()).size() >= choose.count();
             case SummonFromZone summon -> !summonable(room, effect, summon).isEmpty();
             case RitualFromZone ritual -> !ritualTargets(room, effect, ritual).isEmpty();
             case SendSelfTo send -> {
@@ -1139,6 +1166,27 @@ public final class EffectEngine {
                         + plural(n, "será destruido", "serán destruidos") + ".", "Destruir",
                         frontLine(opponent.getField()), ids(valid), n);
                 return true;
+            }
+            case ChooseEnemy choose -> {
+                List<CardSlot> valid = enemyTargets(room, effect, choose.filter());
+                if (valid.isEmpty()) return false;
+                int n = Math.min(choose.count(), valid.size());
+                PlayerState opponent = room.getPlayer(room.getOpponentId(userId));
+                pick(room, effect, "Elige " + n + " " + plural(n, "enemigo", "enemigos") + " " + choose.filter().describe()
+                        + " de la línea frontal: es el objetivo del efecto.", "Objetivo", frontLine(opponent.getField()), ids(valid), n);
+                return true;
+            }
+            case DestroyChosen ignored -> {
+                PlayerState opponent = room.getPlayer(room.getOpponentId(userId));
+                for (String id : effect.getTargetIds()) {
+                    CardSlot target = opponent == null ? null : find(frontLine(opponent.getField()), id);
+                    if (target == null) {
+                        log(room, "El objetivo de " + effect.getSourceName() + " ya no es válido", null);
+                        continue;
+                    }
+                    destroy(room, target, opponent, false, CAUSE_EFFECT, userId, null, effect);
+                }
+                return false;
             }
             case SummonFromZone summon -> {
                 List<CardSlot> valid = summonable(room, effect, summon);
@@ -1428,6 +1476,19 @@ public final class EffectEngine {
         return new Requirement(text.contains("sum"), level);
     }
 
+    /** Whether some of the creatures' levels add up exactly to {@code target} ("criaturas que en nivel sumen N"). */
+    static boolean sumsExactly(List<CardSlot> cards, int target) {
+        if (target < 0) return false;
+        boolean[] reachable = new boolean[target + 1];
+        reachable[0] = true;
+        for (CardSlot c : cards) {
+            int level = c.getLevel() == null ? 0 : c.getLevel();
+            if (level <= 0) continue;
+            for (int t = target; t >= level; t--) if (reachable[t - level]) reachable[t] = true;
+        }
+        return reachable[target];
+    }
+
     /** Rule 9.2.0.10: the cards used must share a type or a color with the summoned creature. */
     private static boolean shares(CardSlot used, CardSlot summoned) {
         boolean color = used.getColors().stream().anyMatch(summoned.getColors()::contains);
@@ -1449,9 +1510,11 @@ public final class EffectEngine {
             CardSlot self = find(materials, effect.getSourceInstanceId());
             if (self == null) return false;
             if (!req.sum()) return self.getLevel() == req.level();
+            // The summoner is one of them: the others make up the rest
+            return self.getLevel() <= req.level() && sumsExactly(materials.stream().filter(c -> c != self).toList(), req.level() - self.getLevel());
         }
         if (!req.sum()) return materials.stream().anyMatch(c -> c.getLevel() == req.level());
-        return materials.stream().mapToInt(CardSlot::getLevel).sum() >= req.level();
+        return sumsExactly(materials, req.level());
     }
 
     private static List<CardSlot> ritualTargets(GameRoom room, PendingEffect effect, RitualFromZone ritual) {
@@ -1484,7 +1547,7 @@ public final class EffectEngine {
         }
         List<CardSlot> valid = req.sum() ? materials : materials.stream().filter(c -> c.getLevel() == req.level()).toList();
         Prompt prompt = prompt(room, effect, Prompt.Kind.PICK, req.sum()
-                ? "Elige las criaturas que se sacrifican (sus niveles deben sumar " + req.level() + " o más)"
+                ? "Elige las criaturas que se sacrifican (sus niveles deben sumar exactamente " + req.level() + ")"
                         + (ritual.selfSummoner() ? ", incluida " + effect.getSourceName() + ", que es el invocador." : "; la primera que elijas es el invocador.")
                 : "Elige el invocador: 1 criatura nivel " + req.level() + ". Se sacrifica y " + name(target) + " ocupa su lugar.");
         prompt.setCards(new ArrayList<>(player.getField()));
@@ -1610,7 +1673,8 @@ public final class EffectEngine {
 
         PendingEffect effect = room.getChain().stream().filter(e -> e.getId().equals(prompt.getEffectId())).findFirst().orElse(null);
         if (effect == null) return "El efecto ya no está pendiente";
-        EffectStep step = script(effect).steps().get(effect.getStepIndex());
+        boolean paying = paying(effect);
+        EffectStep step = paying ? script(effect).cost().get(effect.getCostIndex()) : script(effect).steps().get(effect.getStepIndex());
         boolean[] repeat = {false};
         // Cleared first: the step may ask something else right away (a special summon's move up)
         room.setPrompt(null);
@@ -1619,7 +1683,10 @@ public final class EffectEngine {
             room.setPrompt(prompt);
             return error;
         }
-        if (!repeat[0]) effect.setStepIndex(effect.getStepIndex() + 1);
+        if (!repeat[0]) {
+            if (paying) effect.setCostIndex(effect.getCostIndex() + 1);
+            else effect.setStepIndex(effect.getStepIndex() + 1);
+        }
         advance(room);
         return null;
     }
@@ -1652,7 +1719,7 @@ public final class EffectEngine {
             others.remove(summoner);
             Requirement req = requirement(card);
             int total = summoner.getLevel() + others.stream().mapToInt(CardSlot::getLevel).sum();
-            if (req.sum() && total < req.level()) return "Los niveles suman " + total + ": se necesitan " + req.level();
+            if (req.sum() && total != req.level()) return "Los niveles suman " + total + ": deben sumar exactamente " + req.level();
             if (!canPay(room, userId, ritualCost(room, userId, card))) return "Ya no tienes gemas suficientes";
             room.setPrompt(null);
             handRitual(room, player, card, summoner, others);
@@ -1781,6 +1848,14 @@ public final class EffectEngine {
                 if (opponent == null || !allIn(frontLine(opponent.getField()), picks)) return "Ese enemigo ya no está en la línea frontal";
                 for (String id : picks) destroy(room, find(opponent.getField(), id), opponent, false, CAUSE_EFFECT, userId, null, effect);
             }
+            case ChooseEnemy ignored -> {
+                PlayerState opponent = room.getPlayer(room.getOpponentId(userId));
+                if (opponent == null || !allIn(frontLine(opponent.getField()), picks)) return "Ese enemigo ya no está en la línea frontal";
+                effect.setTargetIds(new ArrayList<>(picks));
+                List<String> names = picks.stream().map(id -> name(find(opponent.getField(), id))).toList();
+                record(room, GameEvent.TARGET, userId, find(opponent.getField(), picks.get(0)), null, null, effect, Map.of("targetIds", picks),
+                        player.getUsername() + " elige como objetivo a " + String.join(", ", names) + " (" + effect.getSourceName() + ")");
+            }
             case SummonFromZone summon -> {
                 CardSlot card = find(summonable(room, effect, summon), picks.get(0));
                 if (card == null) return "Ya no puedes invocar esa criatura";
@@ -1811,7 +1886,7 @@ public final class EffectEngine {
                     summoner = others.remove(0);
                 }
                 int total = used.stream().mapToInt(CardSlot::getLevel).sum();
-                if (req.sum() && total < req.level()) return "Los niveles suman " + total + ": se necesitan " + req.level();
+                if (req.sum() && total != req.level()) return "Los niveles suman " + total + ": deben sumar exactamente " + req.level();
                 performRitual(room, effect, player, target, ritual, summoner, others);
             }
             case SendFromZoneToDeckBottom send -> {

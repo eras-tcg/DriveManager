@@ -22,6 +22,11 @@ public class PendingEffect {
     /** Its link in the chain: 1 for the first one activated (resolves last). */
     private int link;
 
+    /** Cost steps already paid: the cost is paid right after it is activated, choices included (rule 11.2.0.2). */
+    private int costIndex;
+    /** Targets chosen when it was activated ("elige 1 enemigo …;"), acted on when it resolves (rule 11.10.1). */
+    private List<String> targetIds = new ArrayList<>();
+
     // --- Resolution progress (set while it resolves) ---
     private String resolutionId;
     private int stepIndex;
