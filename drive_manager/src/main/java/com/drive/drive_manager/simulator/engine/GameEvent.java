@@ -24,6 +24,18 @@ public class GameEvent {
     public static final String LOOK_TOP         = "LOOK_TOP";
     public static final String ADD_TO_HAND      = "ADD_TO_HAND";
     public static final String TRIBUTE          = "TRIBUTE";
+    public static final String EFFECT_DECLINED  = "EFFECT_DECLINED";
+    public static final String DRAW             = "DRAW";
+    /** Destroyed: to the Descarte. data: cause (EFFECT, BATTLE, RULES, MANUAL), ownerId. */
+    public static final String DESTROY          = "DESTROY";
+    /** Sacrificed: destroyed, but to the Tributos (rule 4.0.4.2). Same data as DESTROY. */
+    public static final String SACRIFICE        = "SACRIFICE";
+    public static final String EFFECT_SUMMON    = "EFFECT_SUMMON";
+    public static final String SPECIAL_SUMMON   = "SPECIAL_SUMMON";
+    public static final String SEND             = "SEND";
+    public static final String UNTAP            = "UNTAP";
+    public static final String GAIN             = "GAIN";
+    public static final String DECLARE_ATTACK   = "DECLARE_ATTACK";
 
     /** Order in the room's timeline (1, 2, 3…). */
     private long seq;

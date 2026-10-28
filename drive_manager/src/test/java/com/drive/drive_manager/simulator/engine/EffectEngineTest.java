@@ -86,7 +86,7 @@ class EffectEngineTest {
 
         // "Luego: tributa 1 carta de tu mano"
         Prompt tribute = room.getPrompt();
-        assertThat(tribute.getKind()).isEqualTo(Prompt.Kind.PICK_FROM_HAND);
+        assertThat(tribute.getKind()).isEqualTo(Prompt.Kind.PICK);
         assertThat(tribute.getMin()).isEqualTo(1);
         assertThat(tribute.getMax()).isEqualTo(1);
         assertThat(EffectEngine.answer(room, "host", tribute.getId(), List.of(), List.of())).contains("Debes elegir 1");
@@ -123,7 +123,7 @@ class EffectEngineTest {
         assertThat(prompt.getMax()).isZero();
         assertThat(EffectEngine.answer(room, "host", prompt.getId(), List.of(), List.of("x2", "x1"))).isNull();
         assertThat(host.getDeck()).extracting(CardSlot::getInstanceId).containsExactly("x2", "x1");
-        assertThat(room.getPrompt().getKind()).isEqualTo(Prompt.Kind.PICK_FROM_HAND);
+        assertThat(room.getPrompt().getKind()).isEqualTo(Prompt.Kind.PICK);
     }
 
     @Test

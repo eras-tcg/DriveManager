@@ -38,11 +38,15 @@ public class GameRoom {
     private List<PendingEffect> chain = new ArrayList<>();
     /** Choice the engine is waiting for, if any. */
     private Prompt prompt;
+    /** Triggered effects waiting to be activated into the chain, in rules order (rule 11.7.0.5). */
+    private List<PendingEffect> triggerQueue = new ArrayList<>();
+    /** Events since the last chain window: they trigger effects once the current resolution ends (rule 11.6.0.4). */
+    private List<GameEvent> pendingEvents = new ArrayList<>();
     private long idSeq = 0;
 
     /** Closed game state (rule 7.2): a chain or a choice is pending, so no new actions can start. */
     public boolean isEngineBusy() {
-        return prompt != null || !chain.isEmpty();
+        return prompt != null || !chain.isEmpty() || !triggerQueue.isEmpty();
     }
 
     public String nextId(String prefix) {

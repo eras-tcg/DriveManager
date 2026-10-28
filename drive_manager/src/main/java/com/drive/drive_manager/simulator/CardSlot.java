@@ -30,6 +30,8 @@ public class CardSlot {
     /** Color identity plus extra colors (B, G, P, R, W). */
     private List<String> colors = new ArrayList<>();
     private List<String> classes = new ArrayList<>();
+    /** Abilities gained until the end of the turn ("gana Furia 1 hasta el final del turno"). */
+    private List<String> turnKeywords = new ArrayList<>();
     private List<CardSlot> materials = new ArrayList<>();
     private List<CardSlot> resources = new ArrayList<>();
 }
