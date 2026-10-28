@@ -47,6 +47,8 @@ public class GameStateUpdate {
     private Map<String, List<EffectEngine.Activatable>> activatable;
     /** Players who already played a structure normally this turn (one per turn). */
     private List<String> structurePlayed;
+    /** Cards each player can special summon now, from the hand or the Tributos, by player id. */
+    private Map<String, List<String>> specialSummonable;
     /** Who won the game that just ended, and why ("lives", "surrender"). */
     private String winnerId;
     private String endReason;
@@ -75,6 +77,13 @@ public class GameStateUpdate {
             if (!list.isEmpty()) activatable.put(id, list);
         }
         u.activatable       = activatable.isEmpty() ? null : activatable;
+        Map<String, List<String>> specials = new LinkedHashMap<>();
+        for (String id : room.getPlayers().keySet()) {
+            List<String> list = EffectEngine.specialSummonable(room, id);
+            if (!list.isEmpty()) specials.put(id, list);
+        }
+        // Always sent (empty when nobody can): the board relies on it instead of its own checks
+        u.specialSummonable = specials;
         List<String> structures = room.getPlayers().keySet().stream().filter(id -> EffectEngine.structurePlayed(room, id)).toList();
         u.structurePlayed   = structures.isEmpty() ? null : structures;
         u.winnerId          = room.getWinnerId();

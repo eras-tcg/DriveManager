@@ -9,10 +9,20 @@ import java.util.List;
  * Which cards an effect may choose ("1 carta Violeta o Blanca", "1 criatura [bestia] nivel 1").
  * Colors and classes are alternatives (any of them); card type and level limits must hold too. Empty = any card.
  */
-public record CardFilter(List<String> colors, List<String> classes, String cardType, Integer level, Integer maxLevel, Integer maxStrength) {
+public record CardFilter(List<String> colors, List<String> classes, String cardType, Integer level, Integer maxLevel, Integer maxStrength,
+                         boolean activeOnly) {
 
     public CardFilter(List<String> colors, List<String> classes, String cardType, Integer level, Integer maxLevel) {
-        this(colors, classes, cardType, level, maxLevel, null);
+        this(colors, classes, cardType, level, maxLevel, null, false);
+    }
+
+    public CardFilter(List<String> colors, List<String> classes, String cardType, Integer level, Integer maxLevel, Integer maxStrength) {
+        this(colors, classes, cardType, level, maxLevel, maxStrength, false);
+    }
+
+    /** "activo": not exhausted. */
+    public CardFilter active() {
+        return new CardFilter(colors, classes, cardType, level, maxLevel, maxStrength, true);
     }
 
     public static CardFilter any() {
@@ -60,6 +70,7 @@ public record CardFilter(List<String> colors, List<String> classes, String cardT
         if (!anyOf) return false;
         if (level != null && !level.equals(card.getLevel())) return false;
         if (maxStrength != null && EffectEngine.strength(card) > maxStrength) return false;
+        if (activeOnly && card.isTapped()) return false;
         return maxLevel == null || (card.getLevel() != null && card.getLevel() <= maxLevel);
     }
 
@@ -72,6 +83,7 @@ public record CardFilter(List<String> colors, List<String> classes, String cardT
         if (level != null) text += " nivel " + level;
         if (maxLevel != null) text += " nivel " + maxLevel + " o menor";
         if (maxStrength != null) text += " de fuerza " + maxStrength + " o menos";
+        if (activeOnly) text += " activo";
         return text.trim();
     }
 

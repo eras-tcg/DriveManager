@@ -212,6 +212,66 @@ class St1IntegrationTest {
         assertThat(damon.getLaterStrength()).isEqualTo(-3);
     }
 
+    @Test
+    void falanxIsMaterializedFromTheTributosWithAlliesAddingUpTo6() {
+        CardSlot falis = onField(host, slot("Falis"), FRONT);
+        CardSlot fhalid = onField(host, slot("Fhalid"), FRONT);
+        CardSlot jhav = onField(host, slot("Jhav"), FRONT);
+        CardSlot mihel = onField(host, slot("Mihel"), FRONT);
+        CardSlot falanx = slot("Falanx");
+        host.getTributeZone().add(falanx);
+        room.setSharedCounter(-10);
+
+        // "En Tributos": as if it were in the hand for special summons
+        assertThat(EffectEngine.specialSummonable(room, "host")).contains(falanx.getInstanceId());
+        assertThat(EffectEngine.specialByPlayer(room, "host", falanx.getInstanceId(), falis.getInstanceId())).isNull();
+        Prompt materials = room.getPrompt();
+        assertThat(materials.getValidIds()).containsExactlyInAnyOrder(fhalid.getInstanceId(), jhav.getInstanceId(), mihel.getInstanceId());
+        // 3 + 2 + 1 + 1 = 7: not exactly 6
+        assertThat(EffectEngine.answer(room, "host", materials.getId(),
+                List.of(fhalid.getInstanceId(), jhav.getInstanceId(), mihel.getInstanceId()), List.of())).contains("exactamente 6");
+        assertThat(EffectEngine.answer(room, "host", materials.getId(), List.of(fhalid.getInstanceId(), jhav.getInstanceId()), List.of())).isNull();
+        assertThat(host.getField()).contains(falanx, mihel).doesNotContain(falis, fhalid, jhav);
+        assertThat(host.getTributeZone()).doesNotContain(falanx);
+        assertThat(falanx.getMaterials()).containsExactly(falis, fhalid, jhav);
+    }
+
+    @Test
+    void falanxTriggersWhenItIsExhaustedToAttack() {
+        CardSlot falanx = onField(host, slot("Falanx"), FRONT);
+        falanx.getMaterials().add(slot("Jhav"));
+        falanx.getMaterials().add(slot("Mihel"));
+        CardSlot damon = onField(guest, slot("Damon"), FRONT);
+        damon.setStrength(7);
+        EffectEngine.attackByPlayer(room, "host", falanx.getInstanceId(), null);
+        Prompt offer = room.getPrompt();
+        assertThat(offer.getPurpose()).isEqualTo("OPTIONAL");
+        assertThat(offer.getEffects()).extracting(Prompt.OfferedEffect::label).contains("Todos Los Turnos");
+        EffectEngine.answer(room, "host", offer.getId(), List.of(falanx.getInstanceId()), List.of());
+        while (room.getPrompt() != null && room.getPrompt().getEffectId() != null) {
+            Prompt p = room.getPrompt();
+            List<String> picks = p.getValidIds().contains(damon.getInstanceId()) ? List.of(damon.getInstanceId())
+                    : p.getValidIds().subList(0, Math.max(p.getMin(), Math.min(p.getMax(), p.getValidIds().size())));
+            assertThat(EffectEngine.answer(room, "host", p.getId(), picks, List.of())).isNull();
+        }
+        assertThat(EffectEngine.strength(damon)).isEqualTo(3);
+    }
+
+    @Test
+    void composicionAdimensionalOnlyLetsAnAllyThatMeetsTheRequerimientoSummon() {
+        CardSlot composicion = onField(host, slot("Composición Adimensional"), 75.0);
+        CardSlot falis = onField(host, slot("Falis"), FRONT);
+        CardSlot sahiel = slot("Sahiel");
+        host.getHand().add(sahiel);
+        host.getTributeZone().add(slot("Zula"));
+        // Sahiel asks for a level 2 summoner: Falis (level 3) cannot, so nothing can be summoned
+        assertThat(EffectEngine.activatable(room, "host")).extracting(EffectEngine.Activatable::scriptId)
+                .doesNotContain("composicion-adimensional:turno-aliado");
+        CardSlot fhalid = onField(host, slot("Fhalid"), FRONT);
+        assertThat(EffectEngine.activateByPlayer(room, "host", composicion.getInstanceId(), null)).isNull();
+        assertThat(room.getPrompt().getValidIds()).containsExactly(fhalid.getInstanceId());
+    }
+
     // ------------------------------------------------------------------ Helpers
 
     private CardSlot slot(String name) {

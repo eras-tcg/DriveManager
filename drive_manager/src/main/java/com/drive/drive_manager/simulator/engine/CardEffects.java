@@ -562,7 +562,16 @@ public final class CardEffects {
                 List.of(new TributeMaterials(2, false), new ChooseEnemy(1, enemy)), List.of(new ReduceChosen(3, true)))
                 .onlyAllyTurn()
                 .limited(Limit.ONCE_PER_TURN));
-        // ST1-13 Falanx: its Requerimiento and "En Tributos" special summon are not applied yet
+        // ST1-13 Falanx: "En Tributos" (continuous) is SPECIAL_FROM_TRIBUTES. "si esta carta es agotada": exhausted to
+        // declare an attack or by an effect; it triggers with the declaration (both happen at once)
+        add("falanx", new EffectScript("falanx:agotada", Moment.ON_EVENT, false, TODOS,
+                "Si esta carta es agotada: puedes tributar 2 materiales de esta carta y elegir 1 enemigo activo; reduce en 4 su fuerza "
+                        + "hasta el final del próximo turno.",
+                List.of(new TributeMaterials(2, false), new ChooseEnemy(1, CardFilter.creatures().active())),
+                List.of(new ReduceChosen(4, true)))
+                .when((room, event, source, controller) -> source.getInstanceId().equals(event.getCardInstanceId())
+                        && (GameEvent.TAP.equals(event.getType()) || (GameEvent.ATTACK_DECLARED.equals(event.getType())
+                        && event.getData() != null && Boolean.TRUE.equals(event.getData().get("exhausted"))))));
         // ST1-14 Galafendrax El Transmutador
         add("galafendrax el transmutador",
                 new EffectScript("galafendrax:en-invocacion", Moment.ON_SUMMON, true, EN_INVOCACION,
@@ -632,6 +641,13 @@ public final class CardEffects {
 
     private static void continuous(String name, Continuous... effects) {
         CONTINUOUS.put(name, List.of(effects));
+    }
+
+    /** "En Tributos: esta carta puede considerarse como si estuviera en tu mano para invocaciones especiales." */
+    private static final Set<String> SPECIAL_FROM_TRIBUTES = Set.of("falanx");
+
+    public static boolean specialFromTributes(CardSlot card) {
+        return card.getCardName() != null && SPECIAL_FROM_TRIBUTES.contains(card.getCardName().trim().toLowerCase(Locale.ROOT));
     }
 
     /** The card's own continuous effects. */

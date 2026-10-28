@@ -211,6 +211,18 @@ class St4IntegrationTest {
         assertThat(EffectEngine.gemsOf(room, "host")).isEqualTo(gems);
     }
 
+    @Test
+    void franchuteAscendsFromALevel3CreatureWhileTheAlliesAddUpTo5() {
+        CardSlot luke = onField(host, slot("Luke El Filo Rojo"), FRONT);
+        onField(host, slot("Armadura De Plata"), FRONT);
+        CardSlot franchute = slot("Franchute");
+        host.getHand().add(franchute);
+        room.setSharedCounter(-10);
+        assertThat(EffectEngine.specialSummonable(room, "host")).contains(franchute.getInstanceId());
+        assertThat(EffectEngine.specialByPlayer(room, "host", franchute.getInstanceId(), luke.getInstanceId())).isNull();
+        assertThat(host.getField()).contains(franchute).doesNotContain(luke);
+    }
+
     // ------------------------------------------------------------------ Helpers
 
     private GameStateUpdate act(String userId, String type, Map<String, Object> payload) {

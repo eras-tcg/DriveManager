@@ -778,7 +778,7 @@
   "inheritKeywordEffects": [],
   "specialCost": 3,
   "specialSummonKind": "promotion",
-  "requirement": "criatura nivel 4, mientras tus aliados suman 5 o más en nivel.",
+  "requirement": "criatura nivel 3, mientras tus aliados suman 5 o más en nivel.",
   "rarity": "C",
   "colors": [
    "R"
