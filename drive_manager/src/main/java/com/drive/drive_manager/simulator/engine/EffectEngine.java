@@ -856,10 +856,10 @@ public final class EffectEngine {
                 }
             }
             if (dropped) return;
-            // Several: offered one at a time. The chosen one is chained and pays its cost, then the rest are
-            // offered again until the player passes; then it is the opponent's turn to chain theirs
+            // Offered one at a time, with the same choice even when only one is left: the chosen one is chained
+            // and pays its cost, then the rest are offered again until the player passes; then the opponent
             List<CardSlot> sources = sources(room, group);
-            if (group.size() > 1 && sources.size() > 1) {
+            if (!sources.isEmpty()) {
                 rulesPrompt(room, effect.getControllerId(), PURPOSE_OPTIONAL, "Encadenar efectos",
                         "Elige 1 efecto para encadenarlo como Cadena " + (room.getChain().size() + 1) + " (después podrás elegir otro), "
                                 + "o no encadenes más. La cadena se resuelve al revés: el último eslabón se resuelve primero.",

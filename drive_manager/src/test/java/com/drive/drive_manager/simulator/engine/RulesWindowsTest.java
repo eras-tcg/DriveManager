@@ -235,7 +235,7 @@ class RulesWindowsTest {
         field(guest, creature("l1", "Nivel 1", 1, 3), FRONT);
         EffectEngine.destroyByPlayer(room, "host", "guest", "v");
         Prompt confirm = room.getPrompt();
-        assertThat(confirm.getKind()).isEqualTo(Prompt.Kind.CONFIRM);
+        assertThat(confirm.getPurpose()).isEqualTo("OPTIONAL");
         EffectEngine.answer(room, "host", confirm.getId(), List.of("hong"), List.of());
         // Right after activating it: the target, before anything resolves
         Prompt target = room.getPrompt();
@@ -341,8 +341,8 @@ class RulesWindowsTest {
 
         EffectEngine.ritualByPlayer(room, "host", "ara", "s");
         Prompt confirm = room.getPrompt();
-        assertThat(confirm.getKind()).isEqualTo(Prompt.Kind.CONFIRM);
-        assertThat(confirm.getSourceName()).isEqualTo("Arañador");
+        assertThat(confirm.getPurpose()).isEqualTo("OPTIONAL");
+        assertThat(confirm.getValidIds()).containsExactly("ara");
         EffectEngine.answer(room, "host", confirm.getId(), List.of("ara"), List.of());
         Prompt summon = room.getPrompt();
         assertThat(summon.getValidIds()).containsExactly("v1");
@@ -438,8 +438,8 @@ class RulesWindowsTest {
 
         // Celeridad chained as Cadena 2; Slicker is offered on its own now
         Prompt second = room.getPrompt();
-        assertThat(second.getKind()).isEqualTo(Prompt.Kind.CONFIRM);
-        assertThat(second.getSourceName()).isEqualTo("Slicker");
+        assertThat(second.getPurpose()).isEqualTo("OPTIONAL");
+        assertThat(second.getValidIds()).containsExactly("sli");
         assertThat(second.getInstruction()).contains("Cadena 3");
         EffectEngine.answer(room, "host", second.getId(), List.of(), List.of());
         assertThat(room.getTimeline()).filteredOn(e -> GameEvent.EFFECT_ACTIVATED.equals(e.getType()))
@@ -466,7 +466,7 @@ class RulesWindowsTest {
         // Damon is mandatory: Cadena 1 with no question. Then the active player's optional: Hong
         Prompt hong = room.getPrompt();
         assertThat(hong.getPlayerId()).isEqualTo("host");
-        assertThat(hong.getSourceName()).isEqualTo("Hong");
+        assertThat(hong.getValidIds()).containsExactly("hong");
         EffectEngine.answer(room, "host", hong.getId(), List.of("hong"), List.of());
         EffectEngine.answer(room, "host", room.getPrompt().getId(), List.of("l1"), List.of()); // its cost: the target
 
@@ -476,7 +476,7 @@ class RulesWindowsTest {
         assertThat(guestChoice.getPurpose()).isEqualTo("OPTIONAL");
         EffectEngine.answer(room, "guest", guestChoice.getId(), List.of("cueva"), List.of());
         Prompt alimentoChoice = room.getPrompt();
-        assertThat(alimentoChoice.getSourceName()).isEqualTo("Alimento De Las Sombras");
+        assertThat(alimentoChoice.getValidIds()).containsExactly("ali");
         EffectEngine.answer(room, "guest", alimentoChoice.getId(), List.of("ali"), List.of());
 
         // All in one chain, in that order

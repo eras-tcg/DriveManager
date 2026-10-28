@@ -132,8 +132,8 @@ class St3IntegrationTest {
         GameStateUpdate sacrificed = act("host", "SACRIFICE_CARD", Map.of("instanceId", carnhaus.getInstanceId()));
         // Carnhaus' own "En Destrucción" (mandatory) goes first; Cueva (optional) asks
         Prompt confirm = sacrificed.getPrompt();
-        assertThat(confirm.getKind()).isEqualTo(Prompt.Kind.CONFIRM);
-        assertThat(confirm.getSourceName()).isEqualTo("Cueva De Bestias");
+        assertThat(confirm.getPurpose()).isEqualTo("OPTIONAL");
+        assertThat(confirm.getValidIds()).containsExactly(cueva.getInstanceId());
         act("host", "RESOLVE_PROMPT", Map.of("promptId", confirm.getId(), "chosen", List.of(cueva.getInstanceId())));
         assertThat(cueva.isTapped()).isTrue();
         assertThat(EffectEngine.gemsOf(room, "host")).isEqualTo(gems);

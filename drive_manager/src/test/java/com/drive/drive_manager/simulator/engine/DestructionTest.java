@@ -127,7 +127,7 @@ class DestructionTest {
 
         // Optional: asks first
         Prompt confirm = room.getPrompt();
-        assertThat(confirm.getKind()).isEqualTo(Prompt.Kind.CONFIRM);
+        assertThat(confirm.getPurpose()).isEqualTo("OPTIONAL");
         assertThat(EffectEngine.answer(room, "host", confirm.getId(), List.of("kro"), List.of())).isNull();
 
         // Only the level 1 enemy of the Línea frontal
@@ -241,7 +241,7 @@ class DestructionTest {
 
         EffectEngine.sacrificeByPlayer(room, "host", "sli");
         Prompt confirm = room.getPrompt();
-        assertThat(confirm.getKind()).isEqualTo(Prompt.Kind.CONFIRM);
+        assertThat(confirm.getPurpose()).isEqualTo("OPTIONAL");
         EffectEngine.answer(room, "host", confirm.getId(), List.of("sli"), List.of());
 
         // Cost paid on activation: Slicker goes from the Tributos to the Descarte

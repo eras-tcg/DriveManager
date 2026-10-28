@@ -256,7 +256,7 @@ class CombatTest {
 
         EffectEngine.attackByPlayer(room, "host", "rho", null);
         Prompt confirm = room.getPrompt();
-        assertThat(confirm.getKind()).isEqualTo(Prompt.Kind.CONFIRM);
+        assertThat(confirm.getPurpose()).isEqualTo("OPTIONAL");
         assertThat(room.getCombat()).isNull();
         EffectEngine.answer(room, "host", confirm.getId(), List.of("rho"), List.of());
         int gems = EffectEngine.gemsOf(room, "host");
@@ -330,7 +330,7 @@ class CombatTest {
         EffectEngine.attackByPlayer(room, "host", "hong", null);
         EffectEngine.answer(room, "guest", room.getPrompt().getId(), List.of("b"), List.of());
         Prompt confirm = room.getPrompt();
-        assertThat(confirm.getKind()).isEqualTo(Prompt.Kind.CONFIRM);
+        assertThat(confirm.getPurpose()).isEqualTo("OPTIONAL");
         EffectEngine.answer(room, "host", confirm.getId(), List.of("hong"), List.of());
         EffectEngine.answer(room, "host", room.getPrompt().getId(), List.of("l1"), List.of());
         assertThat(guest.getDiscardPile()).extracting(CardSlot::getInstanceId).containsExactly("b", "l1");
@@ -413,8 +413,8 @@ class CombatTest {
         EffectEngine.normalSummon(room, "host", "caz", 50.0, 70.0);
         // Both trigger: its own effect (mandatory) is activated first, then Celeridad (optional) asks
         Prompt confirm = room.getPrompt();
-        assertThat(confirm.getKind()).isEqualTo(Prompt.Kind.CONFIRM);
-        assertThat(confirm.getTitle()).contains("Celeridad");
+        assertThat(confirm.getPurpose()).isEqualTo("OPTIONAL");
+        assertThat(confirm.getCardLabels()).containsValue("Celeridad");
         EffectEngine.answer(room, "host", confirm.getId(), List.of("caz"), List.of());
         // Celeridad resolves first (last in the chain)
         assertThat(EffectEngine.inFrontLine(cazador)).isTrue();
