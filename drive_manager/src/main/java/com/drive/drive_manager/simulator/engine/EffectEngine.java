@@ -802,24 +802,52 @@ public final class EffectEngine {
         }
         // Rule 11.7.0.5: within a group, the controller chooses the order in which they are chained
         if (!effect.isOrdered()) {
-            int head = rank(effect, room.getCurrentTurnUserId());
-            List<CardSlot> sources = new ArrayList<>();
+            String active = room.getCurrentTurnUserId();
+            int head = rank(effect, active);
+            List<PendingEffect> group = new ArrayList<>();
             for (PendingEffect e : room.getTriggerQueue()) {
-                if (rank(e, room.getCurrentTurnUserId()) != head) break;
+                if (rank(e, active) != head) break;
+                group.add(e);
+            }
+            if (!script.mandatory()) {
+                // Optional effects that cannot be activated (cost, nothing to do, limit) lose their moment first
+                boolean dropped = false;
+                for (PendingEffect e : group) {
+                    EffectScript s = script(e);
+                    boolean used = s.limit() != Limit.NONE && room.getUsedThisTurn().contains(usageKey(e, s));
+                    if (used || !canActivate(room, e, s)) {
+                        room.getTriggerQueue().remove(e);
+                        dropped = true;
+                    }
+                }
+                if (dropped) return;
+            }
+            List<CardSlot> sources = new ArrayList<>();
+            for (PendingEffect e : group) {
                 CardSlot source = findAnywhere(room, e.getControllerId(), e.getSourceInstanceId());
                 if (source != null && !sources.contains(source)) sources.add(source);
             }
             if (sources.size() > 1) {
-                rulesPrompt(room, effect.getControllerId(), PURPOSE_ORDER, "Orden en la cadena",
-                        "Varios efectos tuyos se disparan a la vez y se encadenan todos. Elígelos en orden: el primero ocupa el "
-                                + "siguiente eslabón de la cadena y el último, el más alto. La cadena se resuelve al revés: "
-                                + "el último eslabón se resuelve primero.", "En cadena", sources, sources);
-                room.getPrompt().setMin(sources.size());
+                int next = room.getChain().size() + 1;
+                if (script.mandatory()) {
+                    rulesPrompt(room, effect.getControllerId(), PURPOSE_ORDER, "Orden en la cadena",
+                            "Estos efectos obligatorios se encadenan todos. Haz clic en el orden en que entran: el primero será "
+                                    + "Cadena " + next + ". La cadena se resuelve al revés: el último eslabón se resuelve primero.",
+                            "En cadena", sources, sources);
+                    room.getPrompt().setMin(sources.size());
+                } else {
+                    // One choice for the whole group: which ones are activated and in what order
+                    rulesPrompt(room, effect.getControllerId(), PURPOSE_ORDER, "Efectos que puedes activar",
+                            "Haz clic en los efectos que activas, en el orden en que entran a la cadena: el primero será Cadena "
+                                    + next + ". Los que no elijas no se activan. La cadena se resuelve al revés: el último eslabón "
+                                    + "se resuelve primero.", "En cadena", sources, sources);
+                    room.getPrompt().setMin(0);
+                }
                 room.getPrompt().setMax(sources.size());
                 return;
             }
         }
-        if (script.mandatory()) {
+        if (script.mandatory() || effect.isConfirmed()) {
             room.getTriggerQueue().remove(0);
             activate(room, effect);
             return;
@@ -1658,11 +1686,24 @@ public final class EffectEngine {
             int head = rank(queue.get(0), room.getCurrentTurnUserId());
             List<PendingEffect> group = new ArrayList<>();
             while (!queue.isEmpty() && rank(queue.get(0), room.getCurrentTurnUserId()) == head) group.add(queue.remove(0));
+            boolean optional = !script(group.get(0)).mandatory();
+            if (optional) {
+                // Not chosen: not activated
+                for (PendingEffect e : new ArrayList<>(group)) {
+                    if (picks.contains(e.getSourceInstanceId())) continue;
+                    group.remove(e);
+                    record(room, GameEvent.EFFECT_DECLINED, userId, null, null, null, e, null,
+                            player.getUsername() + " no activa el efecto " + e.getLabel() + " de " + e.getSourceName());
+                }
+            }
             group.sort(Comparator.comparingInt(e -> {
                 int at = picks.indexOf(e.getSourceInstanceId());
                 return at < 0 ? picks.size() : at;
             }));
-            group.forEach(e -> e.setOrdered(true));
+            group.forEach(e -> {
+                e.setOrdered(true);
+                e.setConfirmed(optional);
+            });
             queue.addAll(0, group);
             advance(room);
             return "";

@@ -310,6 +310,35 @@ class RulesWindowsTest {
         assertThat(room.getPrompt().getPlayerId()).isEqualTo("guest");
     }
 
+    @Test
+    void optionalTriggersAreChosenAndOrderedInOneChoice() {
+        // Cazador by Ritual onto Slicker in the Retaguardia: Cazador (mandatory) + Celeridad and Slicker (optional)
+        CardSlot cazador = ritual("caz", "Cazador De Bestias", 2, 2, "criatura nivel 2.");
+        cazador.getKeywords().add("Celeridad");
+        host.getHand().add(cazador);
+        field(host, creature("sli", "Slicker", 2, 3), BACK);
+        host.getTributeZone().add(creature("v1", "Violeta", 1, 2));
+        EffectEngine.ritualByPlayer(room, "host", "caz", "sli");
+        EffectEngine.answer(room, "host", room.getPrompt().getId(), List.of(), List.of()); // stays in the Retaguardia
+
+        Prompt choice = room.getPrompt();
+        assertThat(choice.getPurpose()).isEqualTo("ORDER");
+        assertThat(choice.getMin()).isZero();
+        assertThat(choice.getValidIds()).containsExactlyInAnyOrder("sli", "caz");
+        assertThat(room.getChain()).extracting(PendingEffect::getSourceName).containsExactly("Cazador De Bestias");
+
+        // Only Celeridad: Slicker is not activated, and no further yes/no question
+        EffectEngine.answer(room, "host", choice.getId(), List.of("caz"), List.of());
+        // Celeridad was Cadena 2 and resolved first (Cazador moved up); Cadena 1 is resolving now
+        assertThat(room.getTimeline()).filteredOn(e -> GameEvent.EFFECT_ACTIVATED.equals(e.getType()))
+                .extracting(e -> e.getData().get("label") + ":" + e.getData().get("link"))
+                .containsExactly("En Invocación:1", "Celeridad:2");
+        assertThat(EffectEngine.inFrontLine(cazador)).isTrue();
+        assertThat(room.getChain()).extracting(PendingEffect::getLabel).containsExactly("En Invocación");
+        assertThat(room.getTimeline()).extracting(GameEvent::getType).contains(GameEvent.EFFECT_DECLINED);
+        assertThat(room.getPrompt().getPurpose()).isNotEqualTo("ORDER");
+    }
+
     // ------------------------------------------------------------------ Responding to a chain
 
     @Test

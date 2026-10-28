@@ -35,6 +35,9 @@ public class PendingEffect {
     /** Its controller already chose it to activate next among simultaneous triggers (rule 11.7.0.5). */
     @JsonIgnore
     private boolean ordered;
+    /** An optional effect its controller already chose to activate (in the combined order choice). */
+    @JsonIgnore
+    private boolean confirmed;
     /** Players who passed priority while it was the last effect in the chain (rule 11.3.0.3). */
     @JsonIgnore
     private java.util.Set<String> passed = new java.util.HashSet<>();
