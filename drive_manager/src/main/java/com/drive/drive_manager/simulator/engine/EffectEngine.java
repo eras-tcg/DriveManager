@@ -786,6 +786,8 @@ public final class EffectEngine {
                     for (EffectScript script : CardEffects.of(card)) {
                         if (script.moment() != EffectScript.Moment.ON_EVENT || !script.sourceZone().equals(zone)) continue;
                         if (script.allyTurn() && !p.getUserId().equals(room.getCurrentTurnUserId())) continue;
+                        // A card on the field cannot react to an event that happened before it got there
+                        if ("field".equals(zone) && event.getSeq() < card.getFieldSeq()) continue;
                         addIfTriggers(room, result, script, event, card, p.getUserId());
                     }
                 }
@@ -2060,6 +2062,8 @@ public final class EffectEngine {
         if (card != null) {
             e.setCardInstanceId(card.getInstanceId());
             e.setCardName(card.getCardName());
+            // Entering the field (summoned, played…): it reacts to events from this one on
+            if ("field".equals(to)) card.setFieldSeq(e.getSeq());
         }
         e.setFromZone(from);
         e.setToZone(to);

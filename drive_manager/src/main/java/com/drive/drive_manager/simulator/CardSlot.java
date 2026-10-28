@@ -37,6 +37,11 @@ public class CardSlot {
     private List<String> keywords = new ArrayList<>();
     /** Abilities gained until the end of the turn ("gana Furia 1 hasta el final del turno"). */
     private List<String> turnKeywords = new ArrayList<>();
+    /**
+     * Timeline seq when it entered the field: a card on the field only reacts to events from then on (an event
+     * that happened before it was there, like the sacrifice of its own Ritual summoner, cannot trigger it).
+     */
+    private long fieldSeq;
     private List<CardSlot> materials = new ArrayList<>();
     private List<CardSlot> resources = new ArrayList<>();
 }

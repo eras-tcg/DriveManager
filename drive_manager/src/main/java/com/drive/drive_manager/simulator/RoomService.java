@@ -288,6 +288,8 @@ public class RoomService {
         if ("field".equals(toZone)) {
             card.setX(x);
             card.setY(y);
+            // Placed by hand: it reacts to events from now on
+            if (!"field".equals(fromZone)) card.setFieldSeq(room.getEventSeq() + 1);
         } else {
             card.setX(null);
             card.setY(null);

@@ -113,6 +113,23 @@ class RulesWindowsTest {
     }
 
     @Test
+    void zhauzSummonedByRitualDoesNotReactToItsOwnSummonersSacrifice() {
+        // Zhauz: "Turno Aliado: si algún aliado es destruido, reactiva esta carta". Its summoner is sacrificed
+        // before Zhauz is on the field, so that destruction cannot trigger it
+        CardSlot zhauz = ritual("zha", "Zhauz", 3, 4, "criatura nivel 3.");
+        host.getHand().add(zhauz);
+        CardSlot summoner = field(host, creature("s", "Invocador", 3, 3), FRONT);
+        summoner.setTapped(true);
+        EffectEngine.ritualByPlayer(room, "host", "zha", "s");
+        assertThat(zhauz.isTapped()).isTrue();
+        assertThat(room.getTimeline()).extracting(GameEvent::getType).doesNotContain(GameEvent.EFFECT_ACTIVATED);
+        // An ally destroyed afterwards does trigger it
+        field(host, creature("ally", "Aliado", 1, 1), BACK);
+        EffectEngine.sacrificeByPlayer(room, "host", "ally");
+        assertThat(zhauz.isTapped()).isFalse();
+    }
+
+    @Test
     void theSummonedCreatureInheritsTheSummonersState() {
         CardSlot zhaglizer = ritual("zha", "Zhaglizer", 2, 3, "criatura nivel 2.");
         host.getHand().add(zhaglizer);
