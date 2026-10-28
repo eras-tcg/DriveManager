@@ -45,6 +45,9 @@ public class PendingEffect {
     /** An optional effect its controller already chose to activate (in the combined order choice). */
     @JsonIgnore
     private boolean confirmed;
+    /** The last "puedes …" step was done, for "Si lo haces:" (IfDone). */
+    @JsonIgnore
+    private boolean lastDone;
     /** Players who passed priority while it was the last effect in the chain (rule 11.3.0.3). */
     @JsonIgnore
     private java.util.Set<String> passed = new java.util.HashSet<>();

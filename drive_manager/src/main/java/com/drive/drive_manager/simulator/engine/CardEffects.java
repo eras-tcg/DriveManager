@@ -8,6 +8,11 @@ import com.drive.drive_manager.simulator.engine.EffectScript.Limit;
 import com.drive.drive_manager.simulator.engine.EffectScript.Moment;
 import com.drive.drive_manager.simulator.engine.EffectStep.ChooseEnemy;
 import com.drive.drive_manager.simulator.engine.EffectStep.DeclareAttack;
+import com.drive.drive_manager.simulator.engine.EffectStep.GainStrength;
+import com.drive.drive_manager.simulator.engine.EffectStep.IfDone;
+import com.drive.drive_manager.simulator.engine.EffectStep.SpecialFromZone;
+import com.drive.drive_manager.simulator.engine.EffectStep.SummonSelfFree;
+import com.drive.drive_manager.simulator.engine.EffectStep.TakeFromZone;
 import com.drive.drive_manager.simulator.engine.EffectStep.DestroyChosen;
 import com.drive.drive_manager.simulator.engine.EffectStep.Draw;
 import com.drive.drive_manager.simulator.engine.EffectStep.GainGems;
@@ -179,6 +184,117 @@ public final class CardEffects {
                         .limited(Limit.ONCE_PER_TURN));
     }
 
+    // ------------------------------------------------------------------ ST4 Caballeros
+    static {
+        // ST4-1 Caballero Umbrío (Iniciador)
+        add("caballero umbrío",
+                new EffectScript("caballero-umbrio:en-invocacion", Moment.ON_SUMMON, true, EN_INVOCACION,
+                        "Mira las primeras 4 cartas de tu mazo: de ellas toma hasta 2 cartas Rojas o Blancas. Envía el resto al fondo de tu mazo. "
+                                + "Luego: tributa 1 carta de tu mano.",
+                        List.of(new LookTop(4), new TakeFromLookedRestToBottom(2, CardFilter.colors("R", "W")), new TributeFromHand(1))),
+                new EffectScript("caballero-umbrio:al-atacar", Moment.ON_ATTACK, false, AL_ATACAR,
+                        "Puedes invocar 1 criatura Roja, [caballero] o [mercenario] de tu mano en tu línea frontal pagando su coste.",
+                        List.of(new SummonFromZone("hand", CardFilter.creatures().withColors("R").withClasses("caballero", "mercenario"), 0, true))));
+        // ST4-2 Peón De Línea Frontal: Enfrentar (combat rule)
+        // ST4-3 Espada De Los Leones De Fuego
+        add("espada de los leones de fuego", new EffectScript("espada-leones:en-mano", Moment.ON_EVENT, false, "En Mano",
+                "(1) Si algún aliado es invocado por efecto y controlas algún [caballero] nivel 4 o mayor: puedes invocar esta carta sin pagar su coste.",
+                List.of(new SummonSelfFree()))
+                .when((room, event, source, controller) -> allySummonedByEffect(CardFilter.any()).test(room, event, source, controller)
+                        && controls(room, controller, CardFilter.creatures().withClasses("caballero"), 4))
+                .fromZone("hand")
+                .limited(Limit.ONCE_PER_TURN_BETWEEN_COPIES));
+        // ST4-4 Espada De Primera Línea (its continuous "+2 fuerza y Celeridad con 3 aliados Rojos" is not applied yet)
+        add("espada de primera línea", new EffectScript("espada-primera-linea:en-invocacion", Moment.ON_SUMMON, true, EN_INVOCACION,
+                "Roba 2 cartas. Luego: tributa 1 carta de tu mano.",
+                List.of(new Draw(2), new TributeFromHand(1))));
+        // ST4-5 Caballero Férreo (the moment is missing in its metadata: taken as En Invocación)
+        add("caballero férreo", new EffectScript("caballero-ferreo:en-invocacion", Moment.ON_SUMMON, true, EN_INVOCACION,
+                "Reactiva 1 aliado nivel 2 o menor.",
+                List.of(new UntapAlly(CardFilter.any().withMaxLevel(2)))));
+        // ST4-6 Espada De Plata: its "En Destrucción" has no text in the metadata
+        // ST4-7 Filo Vengativo: Celeridad (keyword)
+        // ST4-8 Armadura De Plata
+        add("armadura de plata", new EffectScript("armadura-de-plata:en-invocacion", Moment.ON_SUMMON, false, EN_INVOCACION,
+                "(1) Otro aliado puede invocar por Ascenso 1 criatura de tu mano reduciendo el coste especial en 1.",
+                List.of(new SpecialFromZone("promotion", "hand", 1, true)))
+                .limited(Limit.ONCE_PER_TURN_BETWEEN_COPIES));
+        // ST4-9 Caballería Cruzada
+        add("caballería cruzada", new EffectScript("caballeria-cruzada:en-invocacion", Moment.ON_SUMMON, true, EN_INVOCACION,
+                "Reactiva 1 aliado.",
+                List.of(new UntapAlly())));
+        // ST4-10 Luke El Filo Rojo (Celeridad: keyword)
+        add("luke el filo rojo", new EffectScript("luke:en-invocacion", Moment.ON_SUMMON, true, EN_INVOCACION + " por efecto",
+                "Esta carta gana Enfrentar 3 hasta el final del turno.",
+                List.of(new GainUntilEndOfTurn("Enfrentar 3")))
+                .when((room, event, source, controller) -> GameEvent.EFFECT_SUMMON.equals(event.getType())));
+        // ST4-11 Ballesta Montada
+        add("ballesta montada", new EffectScript("ballesta-montada:final-del-turno", Moment.ON_EVENT, false, "Turno Aliado",
+                "Al final del turno: esta carta activa puede atacar al oponente sin agotarse.",
+                List.of(new DeclareAttack(true)))
+                .when((room, event, source, controller) -> turnEnds(event, controller) && !source.isTapped()
+                        && EffectEngine.inFrontLine(source) && room.getCombat() == null)
+                .onlyAllyTurn());
+        // ST4-12 Franchute: Perforante (combat rule); its inherited effect waits for the inherited effects
+        // ST4-13 Comandante De Las Espadas Dragón (Enfrentar 3: combat rule)
+        add("comandante de las espadas dragón", new EffectScript("comandante-espadas-dragon:al-atacar", Moment.ON_ATTACK, false, AL_ATACAR,
+                "Una vez por turno: puedes invocar 1 criatura Roja nivel 2 o menor de tu mano reduciendo su coste en 1.",
+                List.of(new SummonFromZone("hand", CardFilter.creatures().withColors("R").withMaxLevel(2), 1)))
+                .limited(Limit.ONCE_PER_TURN));
+        // ST4-14 Caballero Real
+        add("caballero real", new EffectScript("caballero-real:al-atacar", Moment.ON_ATTACK, false, AL_ATACAR,
+                "Una vez por turno: puedes invocar 1 criatura Roja nivel 3 de tu mano reduciendo su coste en 2. "
+                        + "Si lo haces: esta carta gana fuerza 3 y Perforante hasta el final del turno.",
+                List.of(new SummonFromZone("hand", CardFilter.creatures().withColors("R").withLevel(3), 2),
+                        new IfDone(2), new GainStrength(3), new GainUntilEndOfTurn("Perforante")))
+                .limited(Limit.ONCE_PER_TURN));
+        // ST4-15 Rey Franco
+        add("rey franco",
+                new EffectScript("rey-franco:todos-los-turnos", Moment.ON_EVENT, false, TODOS,
+                        "Una vez por turno: si esta carta entra en combate, puedes reactivar esta carta.",
+                        List.of(new UntapSelf()))
+                        .when(CardEffects::entersCombat)
+                        .limited(Limit.ONCE_PER_TURN),
+                new EffectScript("rey-franco:final-del-turno", Moment.ON_EVENT, false, "Turno Aliado",
+                        "Al final del turno: 1 aliado puede invocar por Ascenso una criatura de tu mano reduciendo el coste especial en 2.",
+                        List.of(new SpecialFromZone("promotion", "hand", 2, false)))
+                        .when((room, event, source, controller) -> turnEnds(event, controller))
+                        .onlyAllyTurn());
+        // ST4-16 Reino Medieval (structure)
+        add("reino medieval", new EffectScript("reino-medieval:todos-los-turnos", Moment.ON_EVENT, false, TODOS,
+                "Si algún aliado Rojo es invocado por efecto: puedes agotar esta carta para ganar 1 gema y tomar 1 carta Roja de tus tributos. "
+                        + "Si lo haces: tributa 1 carta de tu mano.",
+                List.of(new TapSelf()),
+                List.of(new GainGems(1), new TakeFromZone("tributeZone", CardFilter.colors("R"), 1, false), new TributeFromHand(1)))
+                .when(allySummonedByEffect(CardFilter.colors("R"))));
+        // ST4-17 Caballeros De La Primera Línea (utility)
+        add("caballeros de la primera línea",
+                new EffectScript("caballeros-primera-linea:en-juego", Moment.ON_PLAY, true, EN_JUEGO,
+                        "Puedes invocar 1 criatura Roja de tu mano reduciendo su coste en 1.",
+                        List.of(new MayDo("¿Invocas 1 criatura Roja de tu mano reduciendo su coste en 1?", 1),
+                                new SummonFromZone("hand", CardFilter.creatures().withColors("R"), 1))),
+                new EffectScript("caballeros-primera-linea:en-mano", Moment.ON_EVENT, false, "En Mano",
+                        "(1) Si algún aliado es destruido: puedes jugar esta carta sin pagar su coste.",
+                        List.of(new PlaySelfFree()))
+                        .when(allyDestroyed(CardFilter.any()))
+                        .fromZone("hand")
+                        .limited(Limit.ONCE_PER_TURN_BETWEEN_COPIES));
+        // ST4-18 Investidura (utility)
+        add("investidura",
+                new EffectScript("investidura:en-juego", Moment.ON_PLAY, true, EN_JUEGO,
+                        "(1) Puedes tributar 1 carta de tu mano para tomar 1 carta de tus tributos. Luego: 1 aliado puede invocar por Ascenso "
+                                + "1 criatura en tu mano reduciendo su coste especial en 1.",
+                        List.of(new MayDo("¿Tributas 1 carta de tu mano para tomar 1 carta de tus tributos?", 2),
+                                new TributeFromHand(1), new TakeFromZone("tributeZone", CardFilter.any(), 1, false),
+                                new SpecialFromZone("promotion", "hand", 1, false)))
+                        .limited(Limit.ONCE_PER_TURN_BETWEEN_COPIES),
+                new EffectScript("investidura:en-mano", Moment.ON_EVENT, false, "En Mano",
+                        "Si algún aliado es invocado por efecto: puedes jugar esta carta sin pagar su coste.",
+                        List.of(new PlaySelfFree()))
+                        .when(allySummonedByEffect(CardFilter.any()))
+                        .fromZone("hand"));
+    }
+
     private CardEffects() {}
 
     /** Adds effects for a card name (tests use it for mechanics no printed card has yet). */
@@ -253,6 +369,36 @@ public final class CardEffects {
     private static boolean thisDestroyedAnEnemy(GameRoom room, GameEvent event, CardSlot source, String controller) {
         return isDestruction(event) && event.getData() != null
                 && source.getInstanceId().equals(event.getData().get("byCard")) && !controller.equals(ownerOf(event));
+    }
+
+    /** "si algún aliado [filtro] es invocado por efecto". */
+    private static Condition allySummonedByEffect(CardFilter filter) {
+        return (room, event, source, controller) -> {
+            if (!GameEvent.EFFECT_SUMMON.equals(event.getType()) || !controller.equals(event.getPlayerId())) return false;
+            CardSlot summoned = EffectEngine.eventCard(room, event);
+            return summoned != null && filter.matches(summoned);
+        };
+    }
+
+    /** "controlas algún [filtro] nivel N o mayor". */
+    private static boolean controls(GameRoom room, String controller, CardFilter filter, int minLevel) {
+        PlayerState player = room.getPlayer(controller);
+        return player != null && player.getField().stream()
+                .anyMatch(c -> filter.matches(c) && c.getLevel() != null && c.getLevel() >= minLevel);
+    }
+
+    /** "al final del turno" (of its controller). */
+    private static boolean turnEnds(GameEvent event, String controller) {
+        return GameEvent.TURN_END.equals(event.getType()) && controller.equals(event.getPlayerId());
+    }
+
+    /** "si esta carta entra en combate": it attacks, blocks or is attacked. */
+    private static boolean entersCombat(GameRoom room, GameEvent event, CardSlot source, String controller) {
+        String id = source.getInstanceId();
+        if (GameEvent.ATTACK_DECLARED.equals(event.getType())) {
+            return id.equals(event.getCardInstanceId()) || (event.getData() != null && id.equals(event.getData().get("targetId")));
+        }
+        return GameEvent.BLOCK.equals(event.getType()) && id.equals(event.getCardInstanceId());
     }
 
     private static long countInZone(GameRoom room, String playerId, String zone, CardFilter filter) {

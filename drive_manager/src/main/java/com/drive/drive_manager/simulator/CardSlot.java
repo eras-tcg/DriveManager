@@ -42,6 +42,8 @@ public class CardSlot {
      * that happened before it was there, like the sacrifice of its own Ritual summoner, cannot trigger it).
      */
     private long fieldSeq;
+    /** Strength gained or lost until the end of the turn ("gana fuerza 3 hasta el final del turno"). */
+    private int turnStrength;
     private List<CardSlot> materials = new ArrayList<>();
     private List<CardSlot> resources = new ArrayList<>();
 }

@@ -940,7 +940,7 @@ public class RoomService {
             room.setSharedCounter(0);
         }
         room.setCurrentPhase("END_PHASE");
-        EffectEngine.offerAdvance(room, userId, false);
+        EffectEngine.turnEnding(room, userId);
         return GameStateUpdate.from(room, "ENTER_END_PHASE", userId);
     }
 
@@ -950,7 +950,7 @@ public class RoomService {
         // Ending from the main phase goes through the end phase first (rule 8.3): its move up to the Línea frontal
         if ("MAIN".equals(room.getCurrentPhase())) {
             handleEnterEndPhase(room, userId);
-            if (room.getPrompt() != null) {
+            if (room.isEngineBusy()) {
                 room.setEndTurnPending(true);
                 return GameStateUpdate.from(room, "ENTER_END_PHASE", userId);
             }
@@ -987,7 +987,10 @@ public class RoomService {
 
     /** "Hasta el final del turno" ends and the per-turn limits reset when the turn changes (rule 11.8.0.7). */
     private void clearTurnKeywords(GameRoom room) {
-        room.getPlayers().values().forEach(p -> p.getField().forEach(c -> c.getTurnKeywords().clear()));
+        room.getPlayers().values().forEach(p -> p.getField().forEach(c -> {
+            c.getTurnKeywords().clear();
+            c.setTurnStrength(0);
+        }));
         room.getUsedThisTurn().clear();
     }
 

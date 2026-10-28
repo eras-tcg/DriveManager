@@ -1,0 +1,1074 @@
+[
+ {
+  "cardName": "Wyphound",
+  "cardType": "creature",
+  "strength": 3,
+  "cost": 1,
+  "level": 1,
+  "starter": false,
+  "cardClasses": [
+   "dragón",
+   "wyverno"
+  ],
+  "edition": "ST2",
+  "colorIdentity": "G",
+  "cardNumber": 2,
+  "regulation": "A",
+  "effects": [
+   {
+    "instance": "En Invocación",
+    "effectBlocks": [
+     {
+      "activationCondition": "",
+      "cost": "",
+      "resolution": "coloca hasta 1 carta de tu mano al tope de tu mazo."
+     },
+     {
+      "activationCondition": "Luego:",
+      "cost": "",
+      "resolution": "tributa 2 cartas del tope de tu mazo."
+     }
+    ],
+    "kind": "disparado",
+    "tags": [
+     "tributo"
+    ]
+   }
+  ],
+  "inheritEffects": [
+   {
+    "instance": "Al Atacar",
+    "effectBlocks": [
+     {
+      "activationCondition": "",
+      "cost": "",
+      "resolution": "puedes colocar 1 carta de tus tributos al tope de tu mazo."
+     }
+    ],
+    "kind": "disparado",
+    "tags": [
+     "tributo"
+    ]
+   }
+  ],
+  "keywordEffects": [],
+  "inheritKeywordEffects": [],
+  "rarity": "C",
+  "colors": [
+   "G"
+  ],
+  "id": "69af4555d60f9452c3dc20f0"
+ },
+ {
+  "cardName": "Dragón Volcánico",
+  "cardType": "creature",
+  "strength": 14,
+  "cost": 8,
+  "level": 5,
+  "starter": false,
+  "cardClasses": [
+   "dragón"
+  ],
+  "edition": "ST2",
+  "colorIdentity": "G",
+  "cardNumber": 15,
+  "regulation": "A",
+  "effects": [
+   {
+    "instance": "Al Atacar",
+    "ussageLimit": "once per turn",
+    "effectBlocks": [
+     {
+      "activationCondition": "",
+      "cost": "",
+      "resolution": "puedes destruir 1 carta bocarriba en las vidas oponentes."
+     }
+    ],
+    "kind": "disparado",
+    "tags": [
+     "ofensivo"
+    ]
+   },
+   {
+    "instance": "Al Final Del Ataque",
+    "ussageLimit": "once per turn",
+    "effectBlocks": [
+     {
+      "activationCondition": "si algún enemigo fue destruido durante el ataque",
+      "cost": "",
+      "resolution": "puedes enviar 5 de tus tributos [dragón] al fondo de tu mazo para reactivar esta carta."
+     }
+    ],
+    "kind": "disparado",
+    "tags": [
+     "reactivo"
+    ]
+   }
+  ],
+  "inheritEffects": [],
+  "keywordEffects": [],
+  "inheritKeywordEffects": [],
+  "specialCost": 4,
+  "specialSummonKind": "evolution",
+  "requirement": "criatura nivel 4.",
+  "rarity": "R",
+  "colors": [
+   "G"
+  ],
+  "id": "69b398f9b1f266700290ecd6"
+ },
+ {
+  "cardName": "Dragón Delta",
+  "cardType": "creature",
+  "strength": 6,
+  "cost": 2,
+  "level": 2,
+  "starter": false,
+  "cardClasses": [
+   "dragón"
+  ],
+  "edition": "ST2",
+  "colorIdentity": "G",
+  "cardNumber": 7,
+  "regulation": "A",
+  "effects": [],
+  "inheritEffects": [
+   {
+    "instance": "Al Atacar",
+    "ussageLimit": "once per turn",
+    "effectBlocks": [
+     {
+      "activationCondition": "",
+      "cost": "elige 1 enemigo de fuerza 5 o menos",
+      "resolution": "destrúyelo."
+     }
+    ],
+    "kind": "disparado",
+    "tags": [
+     "remoción"
+    ]
+   }
+  ],
+  "keywordEffects": [],
+  "inheritKeywordEffects": [],
+  "specialCost": 1,
+  "specialSummonKind": "evolution",
+  "requirement": "criatura nivel 1.",
+  "rarity": "C",
+  "colors": [
+   "G"
+  ],
+  "id": "69bb23fa6cdb8c5e49c20972"
+ },
+ {
+  "cardName": "Flambreik",
+  "cardType": "creature",
+  "strength": 4,
+  "cost": 2,
+  "level": 2,
+  "starter": false,
+  "cardClasses": [
+   "dragón",
+   "wyverno"
+  ],
+  "edition": "ST2",
+  "colorIdentity": "G",
+  "cardNumber": 8,
+  "regulation": "A",
+  "effects": [
+   {
+    "instance": "Turno Aliado",
+    "effectBlocks": [
+     {
+      "activationCondition": "cuando esta carta fuera a invocar por Evolución",
+      "cost": "",
+      "resolution": "puedes enviar 5 de tus tributos [dragón] al fondo de tu mazo para reducir el coste especial en 1."
+     }
+    ],
+    "kind": "reactivo-modificador",
+    "tags": [
+     "invocar especial"
+    ]
+   }
+  ],
+  "inheritEffects": [
+   {
+    "instance": "Al Atacar",
+    "effectBlocks": [
+     {
+      "activationCondition": "",
+      "cost": "",
+      "resolution": "coloca hasta 1 carta de tu mano al tope de tu mazo."
+     },
+     {
+      "activationCondition": "luego",
+      "cost": "",
+      "resolution": "tributa 2 cartas del tope de tu mazo."
+     }
+    ],
+    "kind": "disparado",
+    "tags": [
+     "tributo"
+    ]
+   }
+  ],
+  "keywordEffects": [],
+  "inheritKeywordEffects": [],
+  "specialCost": 1,
+  "specialSummonKind": "evolution",
+  "requirement": "criatura nivel 1.",
+  "rarity": "R",
+  "colors": [
+   "G"
+  ],
+  "id": "69b38369b1f266700290ecd0"
+ },
+ {
+  "cardName": "Volcán De Dragones",
+  "cardType": "structure",
+  "cost": 1,
+  "level": 2,
+  "starter": false,
+  "cardClasses": [],
+  "edition": "ST2",
+  "colorIdentity": "G",
+  "cardNumber": 16,
+  "regulation": "A",
+  "effects": [
+   {
+    "instance": "Turno Aliado",
+    "effectBlocks": [
+     {
+      "activationCondition": "si invocas especialmente 1 [dragón]",
+      "cost": "",
+      "resolution": "puedes agotar esta carta para ganar 1 gema y robar 1 carta."
+     },
+     {
+      "activationCondition": "Si lo haces",
+      "cost": "",
+      "resolution": "tributa 1 carta de tu mano."
+     }
+    ],
+    "kind": "disparado",
+    "tags": [
+     "gana gemas",
+     "robo",
+     "tributo"
+    ]
+   }
+  ],
+  "inheritEffects": [],
+  "keywordEffects": [],
+  "inheritKeywordEffects": [],
+  "rarity": "UC",
+  "colors": [
+   "G"
+  ],
+  "id": "69af124f790530010e53c403"
+ },
+ {
+  "cardName": "Dragón Carmesí",
+  "cardType": "creature",
+  "strength": 14,
+  "cost": 8,
+  "level": 5,
+  "starter": false,
+  "cardClasses": [
+   "dragón"
+  ],
+  "edition": "ST2",
+  "colorIdentity": "G",
+  "cardNumber": 14,
+  "regulation": "A",
+  "effects": [
+   {
+    "instance": "Al Atacar",
+    "ussageLimit": "once per turn",
+    "effectBlocks": [
+     {
+      "activationCondition": "",
+      "cost": "puedes enviar 5 de tus tributos [dragón] al fondo de tu mazo",
+      "resolution": "esta carta gana [[Letalidad {cantidad}:1]] hasta el final del ataque."
+     }
+    ],
+    "kind": "disparado",
+    "tags": [
+     "ofensivo"
+    ]
+   },
+   {
+    "instance": "Todos Los Turnos",
+    "ussageLimit": "once per turn",
+    "effectBlocks": [
+     {
+      "activationCondition": "si destruyes algún enemigo",
+      "cost": "",
+      "resolution": "puedes reactivar esta carta."
+     }
+    ],
+    "kind": "disparado",
+    "tags": [
+     "reactivo"
+    ]
+   }
+  ],
+  "inheritEffects": [
+   {
+    "instance": "Al Atacar",
+    "ussageLimit": "once per turn",
+    "effectBlocks": [
+     {
+      "activationCondition": "",
+      "cost": "puedes enviar 5 de tus tributos [dragón] al fondo de tu mazo",
+      "resolution": "esta carta gana [[Letalidad {cantidad}:1]] hasta el final del ataque."
+     }
+    ],
+    "kind": "disparado",
+    "tags": [
+     "ofensivo"
+    ]
+   }
+  ],
+  "keywordEffects": [],
+  "inheritKeywordEffects": [],
+  "specialCost": 4,
+  "specialSummonKind": "evolution",
+  "requirement": "criatura nivel 4.",
+  "rarity": "SR",
+  "colors": [
+   "G"
+  ],
+  "id": "69bb4b5e68d1c61cf0e3dbd9"
+ },
+ {
+  "cardName": "Huevo De Dragón",
+  "cardType": "utility",
+  "cost": 1,
+  "level": 1,
+  "starter": false,
+  "cardClasses": [
+   "dragón"
+  ],
+  "edition": "ST2",
+  "colorIdentity": "G",
+  "cardNumber": 17,
+  "regulation": "A",
+  "effects": [
+   {
+    "instance": "En Juego",
+    "effectBlocks": [
+     {
+      "activationCondition": "",
+      "cost": "",
+      "resolution": "tributa 4 cartas del tope de tu mazo."
+     },
+     {
+      "activationCondition": "Luego",
+      "cost": "",
+      "resolution": "toma 1 carta Verde o [dragón] nivel 1 de tus tributos reduciendo su coste en 1."
+     }
+    ],
+    "kind": "disparado",
+    "tags": [
+     "tributo",
+     "busqueda tributos"
+    ]
+   },
+   {
+    "instance": "Turno Aliado",
+    "effectBlocks": [
+     {
+      "activationCondition": "",
+      "cost": "",
+      "resolution": "puedes enviar esta carta activa a tu descarte para invocar 1 [dragón] nivel 1 de tus tributos reduciendo su coste en 1."
+     }
+    ],
+    "kind": "activado",
+    "tags": [
+     "invocar efecto"
+    ]
+   }
+  ],
+  "inheritEffects": [],
+  "keywordEffects": [],
+  "inheritKeywordEffects": [],
+  "rarity": "C",
+  "colors": [
+   "G"
+  ],
+  "id": "69bb4bef68d1c61cf0e3dbda"
+ },
+ {
+  "cardName": "Galveta",
+  "cardType": "creature",
+  "strength": 5,
+  "cost": 2,
+  "level": 2,
+  "starter": false,
+  "cardClasses": [
+   "dragón",
+   "wyverno"
+  ],
+  "edition": "ST2",
+  "colorIdentity": "G",
+  "cardNumber": 5,
+  "regulation": "A",
+  "effects": [
+   {
+    "instance": "En Invocación",
+    "effectBlocks": [
+     {
+      "activationCondition": "",
+      "cost": "",
+      "resolution": "coloca hasta 1 carta de tu mano al tope de tu mazo."
+     },
+     {
+      "activationCondition": "Luego",
+      "cost": "",
+      "resolution": "tributa 2 cartas del tope de tu mazo."
+     }
+    ],
+    "kind": "disparado",
+    "tags": [
+     "tributo"
+    ]
+   }
+  ],
+  "inheritEffects": [
+   {
+    "instance": "Al Atacar",
+    "effectBlocks": [
+     {
+      "activationCondition": "",
+      "cost": "",
+      "resolution": "coloca hasta 1 carta de tu mano al tope de tu mazo."
+     },
+     {
+      "activationCondition": "Luego",
+      "cost": "",
+      "resolution": "tributa 2 cartas de del tope de tu mazo."
+     }
+    ],
+    "kind": "disparado",
+    "tags": [
+     "tributo"
+    ]
+   }
+  ],
+  "keywordEffects": [],
+  "inheritKeywordEffects": [],
+  "specialCost": 1,
+  "specialSummonKind": "evolution",
+  "requirement": "criatura nivel 1.",
+  "rarity": "UC",
+  "colors": [
+   "G"
+  ],
+  "id": "69b38279b1f266700290eccd"
+ },
+ {
+  "cardName": "Wyfreik",
+  "cardType": "creature",
+  "strength": 5,
+  "cost": 2,
+  "level": 2,
+  "starter": false,
+  "cardClasses": [
+   "dragón",
+   "wyverno"
+  ],
+  "edition": "ST2",
+  "colorIdentity": "G",
+  "cardNumber": 6,
+  "regulation": "A",
+  "effects": [
+   {
+    "instance": "Al Atacar",
+    "effectBlocks": [
+     {
+      "activationCondition": "",
+      "cost": "",
+      "resolution": "tributa 3 cartas del tope de tu mazo."
+     }
+    ],
+    "kind": "disparado",
+    "tags": [
+     "tributo"
+    ]
+   }
+  ],
+  "inheritEffects": [
+   {
+    "instance": "Al Atacar",
+    "effectBlocks": [
+     {
+      "activationCondition": "",
+      "cost": "",
+      "resolution": "coloca hasta 1 carta de tu mano al tope de tu mazo."
+     },
+     {
+      "activationCondition": "Luego",
+      "cost": "",
+      "resolution": "tributa 2 cartas del tope de tu mazo."
+     }
+    ],
+    "kind": "disparado",
+    "tags": [
+     "tributo"
+    ]
+   }
+  ],
+  "keywordEffects": [],
+  "inheritKeywordEffects": [],
+  "specialCost": 1,
+  "specialSummonKind": "evolution",
+  "requirement": "criatura nivel 1.",
+  "rarity": "C",
+  "colors": [
+   "G"
+  ],
+  "id": "69b382b2b1f266700290ecce"
+ },
+ {
+  "cardName": "Ddraig",
+  "cardType": "creature",
+  "strength": 8,
+  "cost": 3,
+  "level": 3,
+  "starter": false,
+  "cardClasses": [
+   "dragón",
+   "wyverno"
+  ],
+  "edition": "ST2",
+  "colorIdentity": "G",
+  "cardNumber": 10,
+  "regulation": "A",
+  "effects": [
+   {
+    "instance": "En Invocación",
+    "effectBlocks": [
+     {
+      "activationCondition": "",
+      "cost": "",
+      "resolution": "tributa 3 cartas del tope de tu mazo."
+     },
+     {
+      "activationCondition": "Luego",
+      "cost": "elige 1 enemigo de fuerza 5 o menos",
+      "resolution": "destrúyelo."
+     }
+    ],
+    "kind": "disparado",
+    "tags": [
+     "tributo",
+     "remoción"
+    ]
+   }
+  ],
+  "inheritEffects": [
+   {
+    "instance": "Al Atacar",
+    "ussageLimit": "once per turn",
+    "effectBlocks": [
+     {
+      "activationCondition": "",
+      "cost": "elige 1 enemigo de fuerza 5 o menos",
+      "resolution": "destrúyelo."
+     }
+    ],
+    "kind": "disparado",
+    "tags": [
+     "remoción"
+    ]
+   }
+  ],
+  "keywordEffects": [],
+  "inheritKeywordEffects": [],
+  "specialCost": 2,
+  "specialSummonKind": "evolution",
+  "requirement": "criatura nivel 2.",
+  "rarity": "R",
+  "colors": [
+   "G"
+  ],
+  "id": "69b38407b1f266700290ecd2"
+ },
+ {
+  "cardName": "Fadrake",
+  "cardType": "creature",
+  "strength": 8,
+  "cost": 3,
+  "level": 3,
+  "starter": false,
+  "cardClasses": [
+   "dragón"
+  ],
+  "edition": "ST2",
+  "colorIdentity": "G",
+  "cardNumber": 9,
+  "regulation": "A",
+  "effects": [
+   {
+    "instance": "Al Atacar",
+    "ussageLimit": "once per turn",
+    "effectBlocks": [
+     {
+      "activationCondition": "elige 1 enemigo de fuerza 5 o menos",
+      "cost": "",
+      "resolution": "destrúyelo."
+     }
+    ],
+    "kind": "disparado",
+    "tags": [
+     "remoción"
+    ]
+   }
+  ],
+  "inheritEffects": [
+   {
+    "instance": "Al Atacar",
+    "ussageLimit": "once per turn",
+    "effectBlocks": [
+     {
+      "activationCondition": "elige 1 enemigo de fuerza 5 o menos",
+      "cost": "",
+      "resolution": "destrúyelo."
+     }
+    ],
+    "kind": "disparado",
+    "tags": [
+     "remoción"
+    ]
+   }
+  ],
+  "keywordEffects": [],
+  "inheritKeywordEffects": [],
+  "specialCost": 2,
+  "specialSummonKind": "evolution",
+  "requirement": "criatura nivel 2.",
+  "rarity": "UC",
+  "colors": [
+   "G"
+  ],
+  "id": "69b383cbb1f266700290ecd1"
+ },
+ {
+  "cardName": "Saildreik",
+  "cardType": "creature",
+  "strength": 11,
+  "cost": 5,
+  "level": 4,
+  "starter": false,
+  "cardClasses": [
+   "dragón"
+  ],
+  "edition": "ST2",
+  "colorIdentity": "G",
+  "cardNumber": 13,
+  "regulation": "A",
+  "effects": [
+   {
+    "instance": "Al Atacar",
+    "effectBlocks": [
+     {
+      "activationCondition": "",
+      "cost": "",
+      "resolution": "esta carta puede invocar por Evolución 1 [dragón] de tus tributos reduciendo su coste especial en 1."
+     }
+    ],
+    "kind": "disparado",
+    "tags": [
+     "invocar especial"
+    ]
+   }
+  ],
+  "inheritEffects": [
+   {
+    "instance": "Al Final Del Ataque",
+    "ussageLimit": "once per turn",
+    "effectBlocks": [
+     {
+      "activationCondition": "",
+      "cost": "elige 1 enemigo de fuerza 8 o menos",
+      "resolution": "destrúyelo."
+     }
+    ],
+    "kind": "disparado",
+    "tags": [
+     "remoción"
+    ]
+   }
+  ],
+  "keywordEffects": [],
+  "inheritKeywordEffects": [],
+  "specialCost": 3,
+  "specialSummonKind": "evolution",
+  "requirement": "criatura nivel 3.",
+  "rarity": "UC",
+  "colors": [
+   "G"
+  ],
+  "id": "69b3988eb1f266700290ecd5"
+ },
+ {
+  "cardName": "Duregón",
+  "cardType": "creature",
+  "strength": 2,
+  "cost": 1,
+  "level": 1,
+  "starter": true,
+  "cardClasses": [
+   "dragón"
+  ],
+  "edition": "ST2",
+  "colorIdentity": "G",
+  "cardNumber": 4,
+  "regulation": "A",
+  "effects": [
+   {
+    "instance": "En Invocación",
+    "effectBlocks": [
+     {
+      "activationCondition": "",
+      "cost": "",
+      "resolution": "tributa 2 catas del tope de tu mazo."
+     },
+     {
+      "activationCondition": "Luego",
+      "cost": "",
+      "resolution": "toma 1 carta Verde o [dragón] de tus tributos."
+     }
+    ],
+    "kind": "disparado",
+    "tags": [
+     "tributo",
+     "busqueda tributos"
+    ]
+   },
+   {
+    "instance": "Turno Aliado",
+    "effectBlocks": [
+     {
+      "activationCondition": "cuando esta carta fuera a invocar por Evolución, si tienes 5 o más tributos [dragón]",
+      "cost": "",
+      "resolution": "reduce en 1 el coste especial."
+     }
+    ],
+    "kind": "reactivo-modificador",
+    "tags": []
+   }
+  ],
+  "inheritEffects": [
+   {
+    "instance": "Al Atacar",
+    "effectBlocks": [
+     {
+      "activationCondition": "",
+      "cost": "",
+      "resolution": "roba 1 carta."
+     },
+     {
+      "activationCondition": "Luego",
+      "cost": "",
+      "resolution": "tributa 1 carta de tu mano."
+     }
+    ],
+    "kind": "disparado",
+    "tags": [
+     "robo",
+     "tributo"
+    ]
+   }
+  ],
+  "keywordEffects": [],
+  "inheritKeywordEffects": [],
+  "rarity": "SR",
+  "colors": [
+   "G"
+  ],
+  "id": "69bb22b96cdb8c5e49c20970"
+ },
+ {
+  "cardName": "Dírumy",
+  "cardType": "creature",
+  "strength": 2,
+  "cost": 1,
+  "level": 1,
+  "starter": true,
+  "cardClasses": [
+   "dragón",
+   "hada"
+  ],
+  "edition": "ST2",
+  "colorIdentity": "G",
+  "cardNumber": 1,
+  "regulation": "A",
+  "effects": [
+   {
+    "effectBlocks": [
+     {
+      "activationCondition": "Si esta carta es tributada desde tu mazo por efecto de 1 carta Verde",
+      "cost": "",
+      "resolution": "roba 1 carta."
+     },
+     {
+      "activationCondition": "Luego:",
+      "cost": "",
+      "resolution": "tributa 1 carta de tu mano."
+     }
+    ],
+    "kind": "disparado",
+    "tags": [
+     "robo",
+     "tributo"
+    ]
+   },
+   {
+    "instance": "En Invocación",
+    "effectBlocks": [
+     {
+      "activationCondition": "",
+      "cost": "",
+      "resolution": "mira las primeras 4 cartas de tu mazo: de ellas toma hasta 1 carta Verde o Blanca. Envía el resto al fondo de tu mazo."
+     }
+    ],
+    "kind": "disparado",
+    "tags": [
+     "busqueda"
+    ]
+   }
+  ],
+  "inheritEffects": [
+   {
+    "instance": "Al Atacar",
+    "effectBlocks": [
+     {
+      "activationCondition": "",
+      "cost": "",
+      "resolution": "puedes tributar \"Dírumy\" de los recursos de esta carta para robar 1 carta."
+     }
+    ],
+    "kind": "disparado",
+    "tags": [
+     "busqueda"
+    ]
+   }
+  ],
+  "keywordEffects": [],
+  "inheritKeywordEffects": [],
+  "rarity": "UC",
+  "colors": [
+   "G"
+  ],
+  "id": "69bb21216cdb8c5e49c2096f"
+ },
+ {
+  "cardName": "Wyverno De Pantano",
+  "cardType": "creature",
+  "strength": 7,
+  "cost": 3,
+  "level": 3,
+  "starter": false,
+  "cardClasses": [
+   "dragón",
+   "wyverno"
+  ],
+  "edition": "ST2",
+  "colorIdentity": "G",
+  "cardNumber": 11,
+  "regulation": "A",
+  "effects": [
+   {
+    "ussageLimit": "once per turn between copies",
+    "effectBlocks": [
+     {
+      "activationCondition": "si esta carta es tributada desde tu mazo",
+      "cost": "",
+      "resolution": "puedes tributar 1 carta de tu mano para tomar 1 carta Verde de tus tributos."
+     }
+    ],
+    "kind": "disparado",
+    "tags": [
+     "tributo"
+    ]
+   }
+  ],
+  "inheritEffects": [
+   {
+    "instance": "Al Atacar",
+    "ussageLimit": "once per turn",
+    "effectBlocks": [
+     {
+      "activationCondition": "elige hasta 2 enemigos de fuerza 3 o menos",
+      "cost": "",
+      "resolution": "destrúyelos."
+     }
+    ],
+    "kind": "disparado",
+    "tags": [
+     "remoción"
+    ]
+   }
+  ],
+  "keywordEffects": [],
+  "inheritKeywordEffects": [],
+  "specialCost": 1,
+  "specialSummonKind": "evolution",
+  "requirement": "criatura nivel 2.",
+  "rarity": "C",
+  "colors": [
+   "G"
+  ],
+  "id": "69b384fdb1f266700290ecd3"
+ },
+ {
+  "cardName": "Dracoventus",
+  "cardType": "creature",
+  "strength": 11,
+  "cost": 5,
+  "level": 4,
+  "starter": false,
+  "cardClasses": [
+   "dragón"
+  ],
+  "edition": "ST2",
+  "colorIdentity": "G",
+  "cardNumber": 12,
+  "regulation": "A",
+  "effects": [
+   {
+    "instance": "Al Atacar",
+    "effectBlocks": [
+     {
+      "activationCondition": "",
+      "cost": "puedes enviar 5 de tus tributos [dragón] al fondo de tu mazo para elegir 1 enemigo de fuerza 9 o menos",
+      "resolution": "destrúyelo."
+     }
+    ],
+    "kind": "disparado",
+    "tags": [
+     "remoción"
+    ]
+   }
+  ],
+  "inheritEffects": [],
+  "keywordEffects": [],
+  "inheritKeywordEffects": [
+   {
+    "keyword": "Reactivar"
+   }
+  ],
+  "specialCost": 2,
+  "specialSummonKind": "evolution",
+  "requirement": "criatura nivel 3.",
+  "rarity": "C",
+  "colors": [
+   "G"
+  ],
+  "id": "69b38550b1f266700290ecd4"
+ },
+ {
+  "cardName": "Llamarada",
+  "cardType": "utility",
+  "cost": 6,
+  "level": 4,
+  "starter": false,
+  "cardClasses": [],
+  "edition": "ST2",
+  "colorIdentity": "G",
+  "cardNumber": 18,
+  "regulation": "A",
+  "effects": [
+   {
+    "ussageLimit": "once per turn between copies",
+    "effectBlocks": [
+     {
+      "activationCondition": "si esta carta es tributada desde tu mazo por un aliado [dragón]",
+      "cost": "",
+      "resolution": "puedes jugar esta carta reduciendo su coste en el nivel del dicho aliado."
+     }
+    ],
+    "kind": "disparado",
+    "tags": []
+   },
+   {
+    "instance": "En Juego",
+    "effectBlocks": [
+     {
+      "activationCondition": "",
+      "cost": "elige 1 enemigo de fuerza 11 o menos",
+      "resolution": "destrúyelo."
+     }
+    ],
+    "kind": "disparado",
+    "tags": [
+     "remoción"
+    ]
+   }
+  ],
+  "inheritEffects": [],
+  "keywordEffects": [],
+  "inheritKeywordEffects": [],
+  "rarity": "SR",
+  "colors": [
+   "G"
+  ],
+  "id": "69b399cdb1f266700290ecd8"
+ },
+ {
+  "cardName": "Flamagón",
+  "cardType": "creature",
+  "strength": 2,
+  "cost": 1,
+  "level": 1,
+  "starter": false,
+  "cardClasses": [
+   "dragón"
+  ],
+  "edition": "ST2",
+  "colorIdentity": "G",
+  "cardNumber": 3,
+  "regulation": "A",
+  "effects": [
+   {
+    "instance": "Al Atacar",
+    "effectBlocks": [
+     {
+      "activationCondition": "",
+      "cost": "",
+      "resolution": "esta carta puede invocar por Evolución 1 [dragón] de tu mano reduciendo el coste especial en 1."
+     }
+    ],
+    "kind": "disparado",
+    "tags": [
+     "invocar especial"
+    ]
+   }
+  ],
+  "inheritEffects": [
+   {
+    "instance": "Todos Los Turnos",
+    "ussageLimit": "once per turn",
+    "effectBlocks": [
+     {
+      "activationCondition": "si algún enemigo es destruido por tus efectos",
+      "cost": "",
+      "resolution": "puedes tomar 1 carta Verde de tus tributos."
+     }
+    ],
+    "kind": "disparado",
+    "tags": [
+     "busqueda tributos"
+    ]
+   }
+  ],
+  "keywordEffects": [],
+  "inheritKeywordEffects": [],
+  "rarity": "R",
+  "colors": [
+   "G"
+  ],
+  "id": "69bb232a6cdb8c5e49c20971"
+ }
+]

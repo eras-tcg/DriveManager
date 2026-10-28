@@ -42,7 +42,27 @@ public sealed interface EffectStep {
      * "invoca 1 criatura [filtro] de tus [zona] reduciendo su coste en N": summon by effect (rule 9.1.0.2),
      * paying the normal cost minus {@code reduce}; it enters the Retaguardia with the regulatory draw.
      */
-    record SummonFromZone(String zone, CardFilter filter, int reduce) implements EffectStep {}
+    record SummonFromZone(String zone, CardFilter filter, int reduce, boolean toFront) implements EffectStep {
+        public SummonFromZone(String zone, CardFilter filter, int reduce) { this(zone, filter, reduce, false); }
+    }
+
+    /** "invoca esta carta sin pagar su coste" from the hand: a summon by effect. */
+    record SummonSelfFree() implements EffectStep {}
+
+    /**
+     * "[otro aliado / 1 aliado] puede invocar por [Ascenso / Evolución] 1 criatura de tu [zona] reduciendo el coste
+     * especial en N": the controller may pick the creature (or none), then the summoner.
+     */
+    record SpecialFromZone(String kind, String zone, int reduce, boolean otherAlly) implements EffectStep {}
+
+    /** "toma N carta [filtro] de tus [zona]": to the hand (up to N when {@code upTo}). */
+    record TakeFromZone(String zone, CardFilter filter, int count, boolean upTo) implements EffectStep {}
+
+    /** "Si lo haces:": the next {@code covers} steps only if the last optional step was done. */
+    record IfDone(int covers) implements EffectStep {}
+
+    /** "gana fuerza N hasta el final del turno": this card or the chosen ally. */
+    record GainStrength(int amount) implements EffectStep {}
 
     /** "envía esta carta a tu [zona]" (Slicker pays its effect this way). Only from another zone. */
     record SendSelfTo(String zone) implements EffectStep {}
@@ -60,7 +80,9 @@ public sealed interface EffectStep {
      * "declara ataque": this card, or the ally chosen by {@link PickAlly}, attacks without being exhausted
      * (rule 11.9.3.1). Its controller picks an exhausted enemy creature, or none to attack the opponent.
      */
-    record DeclareAttack() implements EffectStep {}
+    record DeclareAttack(boolean opponentOnly) implements EffectStep {
+        public DeclareAttack() { this(false); }
+    }
 
     /**
      * "elige 1 aliado": the ally the next steps act on. With {@code attacker} it is going to declare an attack, so
@@ -89,7 +111,9 @@ public sealed interface EffectStep {
     }
 
     /** "reactiva 1 aliado" / "reactivar otro": the controller picks an exhausted ally that can be reactivated. */
-    record UntapAlly() implements EffectStep {}
+    record UntapAlly(CardFilter filter) implements EffectStep {
+        public UntapAlly() { this(CardFilter.any()); }
+    }
 
     /** Celeridad: "puede subir a tu línea frontal". */
     record MoveSelfToFront() implements EffectStep {}
