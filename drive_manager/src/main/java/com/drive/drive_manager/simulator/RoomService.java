@@ -68,6 +68,10 @@ public class RoomService {
         GameStateUpdate update = switch (action.getType()) {
             case "NORMAL_SUMMON"        -> handleNormalSummon(room, userId, action);
             case "RESOLVE_PROMPT"       -> handleResolvePrompt(room, userId, action);
+            case "DESTROY_CARD"         -> handleDestroyCard(room, userId, action);
+            case "SACRIFICE_CARD"       -> handleSacrificeCard(room, userId, action);
+            case "ATTACK"               -> handleAttack(room, userId, action);
+            case "PLAY_CARD"            -> handlePlayCard(room, userId, action);
             case "JOIN_ROOM"            -> handleJoin(room, userId, action);
             case "DRAW_CARD"            -> handleDraw(room, userId);
             case "MOVE_CARD"            -> handleMove(room, userId, action);
@@ -140,6 +144,34 @@ public class RoomService {
         String error = EffectEngine.answer(room, userId, action.getString("promptId"), action.getStringList("chosen"), action.getStringList("order"));
         if (error != null) return GameStateUpdate.error(room.getRoomId(), error);
         return GameStateUpdate.from(room, "RESOLVE_PROMPT", userId);
+    }
+
+    /** Destroys a card on the field (to its owner's Descarte); its "En Destrucción" effects trigger. */
+    private GameStateUpdate handleDestroyCard(GameRoom room, String userId, GameAction action) {
+        String error = EffectEngine.destroyByPlayer(room, userId, action.getString("targetPlayerId"), action.getString("instanceId"));
+        if (error != null) return GameStateUpdate.error(room.getRoomId(), error);
+        return GameStateUpdate.from(room, "DESTROY_CARD", userId);
+    }
+
+    /** Sacrifices one of your cards on the field (destroyed, to your Tributos). */
+    private GameStateUpdate handleSacrificeCard(GameRoom room, String userId, GameAction action) {
+        String error = EffectEngine.sacrificeByPlayer(room, userId, action.getString("instanceId"));
+        if (error != null) return GameStateUpdate.error(room.getRoomId(), error);
+        return GameStateUpdate.from(room, "SACRIFICE_CARD", userId);
+    }
+
+    /** Declares an attack (rule 10): the engine runs the combat. targetInstanceId null = the opponent. */
+    private GameStateUpdate handleAttack(GameRoom room, String userId, GameAction action) {
+        String error = EffectEngine.attackByPlayer(room, userId, action.getString("instanceId"), action.getString("targetInstanceId"));
+        if (error != null) return GameStateUpdate.error(room.getRoomId(), error);
+        return GameStateUpdate.from(room, "ATTACK", userId);
+    }
+
+    /** Plays a utility or structure from the hand: pays its cost and fires its "En Juego" effects. */
+    private GameStateUpdate handlePlayCard(GameRoom room, String userId, GameAction action) {
+        String error = EffectEngine.playByPlayer(room, userId, action.getString("instanceId"), action.getDouble("x"), action.getDouble("y"));
+        if (error != null) return GameStateUpdate.error(room.getRoomId(), error);
+        return GameStateUpdate.from(room, "PLAY_CARD", userId);
     }
 
     private void recordLog(GameRoom room, GameStateUpdate update) {
@@ -404,6 +436,8 @@ public class RoomService {
             room.setSharedCounter(Math.max(-10, Math.min(10, next)));
 
             room.setCurrentTurnUserId(opponentId);
+            clearTurnKeywords(room);
+            EffectEngine.offerAdvance(room, opponentId, true);
         }
         return GameStateUpdate.from(room, "PASS_TURN", userId);
     }
@@ -592,9 +626,10 @@ public class RoomService {
         CardSlot starter = cardOpt.get();
         if (!starter.isStarter()) return GameStateUpdate.error(room.getRoomId(), "Esa carta no es un starter válido");
         player.getDeck().remove(starter);
+        // Rule 3.0.2: set aside and public until the mulligan is done (kept on the field meanwhile)
         starter.setFaceDown(false);
         starter.setX(50.0);
-        starter.setY(50.0);
+        starter.setY(75.0);
         player.getField().add(starter);
         room.getStarterSelections().put(userId, instanceId);
         if (room.getStarterSelections().size() >= room.getPlayers().size()) {
@@ -632,6 +667,14 @@ public class RoomService {
             player.getHand().add(drawn);
         }
         Collections.shuffle(player.getDeck());
+        // Rule 3.0.6: after the mulligan the starter joins the hand (6 cards)
+        String starterId = room.getStarterSelections().get(userId);
+        player.getField().stream().filter(c -> c.getInstanceId().equals(starterId)).findFirst().ifPresent(starter -> {
+            player.getField().remove(starter);
+            starter.setX(null);
+            starter.setY(null);
+            player.getHand().add(starter);
+        });
         int lifeCount = Math.min(6, player.getDeck().size());
         for (int i = 0; i < lifeCount; i++) {
             CardSlot c = player.getDeck().remove(0);
@@ -722,6 +765,10 @@ public class RoomService {
         // A new game starts with an empty chain, no pending choice and a fresh timeline
         room.getChain().clear();
         room.setPrompt(null);
+        room.getTriggerQueue().clear();
+        room.getPendingEvents().clear();
+        room.setCombat(null);
+        room.getUsedThisTurn().clear();
         room.getTimeline().clear();
     }
 
@@ -849,6 +896,7 @@ public class RoomService {
             room.setSharedCounter(0);
         }
         room.setCurrentPhase("END_PHASE");
+        EffectEngine.offerAdvance(room, userId, false);
         return GameStateUpdate.from(room, "ENTER_END_PHASE", userId);
     }
 
@@ -865,10 +913,18 @@ public class RoomService {
             room.setSharedCounter(Math.max(-10, Math.min(10, next)));
             opponent.getField().forEach(c -> c.setTapped(false));
             room.setCurrentTurnUserId(opponentId);
+            clearTurnKeywords(room);
             autoDraw(opponent);
         }
         room.setCurrentPhase("MAIN");
+        if (opponentId != null) EffectEngine.offerAdvance(room, opponentId, true);
         return GameStateUpdate.from(room, "END_TURN", userId);
+    }
+
+    /** "Hasta el final del turno" ends and the per-turn limits reset when the turn changes (rule 11.8.0.7). */
+    private void clearTurnKeywords(GameRoom room) {
+        room.getPlayers().values().forEach(p -> p.getField().forEach(c -> c.getTurnKeywords().clear()));
+        room.getUsedThisTurn().clear();
     }
 
     private int getPlayerDirection(GameRoom room, String userId) {
@@ -973,6 +1029,8 @@ public class RoomService {
         CardSlot card = player.getField().stream().filter(c -> instanceId.equals(c.getInstanceId())).findFirst().orElse(null);
         if (card == null) return GameStateUpdate.error(room.getRoomId(), "Card not found");
         card.setStrengthModifier(card.getStrengthModifier() + delta);
+        // Strength 0: destroyed right away (rule 12.0.0.2)
+        EffectEngine.destroyIfNoStrength(room, userId, player, card);
         return GameStateUpdate.from(room, "MODIFY_STRENGTH", userId);
     }
 
@@ -1131,10 +1189,11 @@ public class RoomService {
                 summoned.getResources().add(0, summoner);
             }
             case "ritual" -> {
+                // The summoner is sacrificed; its Recursos and Materiales pass to the summoned creature (rule 9.3.0.5)
                 summoned.setTapped(summoner.isTapped());
                 summoned.setStrengthModifier(summoner.getStrengthModifier());
-                summoner.getMaterials().forEach(m -> { m.setFaceDown(false); player.getDiscardPile().add(m); });
-                summoner.getResources().forEach(r -> { r.setFaceDown(false); player.getDiscardPile().add(r); });
+                summoned.getMaterials().addAll(0, summoner.getMaterials());
+                summoned.getResources().addAll(0, summoner.getResources());
                 summoner.setMaterials(new ArrayList<>());
                 summoner.setResources(new ArrayList<>());
                 summoner.setFaceDown(false); summoner.setTapped(false); summoner.setX(null); summoner.setY(null);
@@ -1155,10 +1214,11 @@ public class RoomService {
         summoned.setFaceDown(false);
         player.getField().add(summoned);
         autoDraw(player);
-        GameStateUpdate update = GameStateUpdate.from(room, "SPECIAL_SUMMON", userId);
-        update.setLogEntry(player.getUsername() + " invocó especialmente a " + cardLabel(summoned)
-                + " (" + summonTypeLabel(summonType) + ") usando " + cardLabel(summoner));
-        return update;
+        // Recorded by the engine, which fires the summon and sacrifice triggers ("En Invocación", "En Destrucción")
+        EffectEngine.specialSummoned(room, userId, summoned, summoner, summonType,
+                player.getUsername() + " invocó especialmente a " + cardLabel(summoned)
+                        + " (" + summonTypeLabel(summonType) + ") usando " + cardLabel(summoner));
+        return GameStateUpdate.from(room, "SPECIAL_SUMMON", userId);
     }
 
     private String summonTypeLabel(String summonType) {
@@ -1429,6 +1489,9 @@ public class RoomService {
             c.setLevel(s.getLevel());
             c.setColors(new ArrayList<>(s.getColors()));
             c.setClasses(new ArrayList<>(s.getClasses()));
+            c.setSpecialCost(s.getSpecialCost());
+            c.setRequirement(s.getRequirement());
+            c.setKeywords(new ArrayList<>(s.getKeywords()));
             c.setFaceDown(true);
             return c;
         }).collect(Collectors.toList());
@@ -1449,6 +1512,18 @@ public class RoomService {
         slot.setCost(meta.getCost());
         slot.setLevel(meta.getLevel());
         slot.setClasses(meta.getCardClasses() != null ? new ArrayList<>(meta.getCardClasses()) : new ArrayList<>());
+        slot.setSpecialCost(meta.getSpecialCost());
+        slot.setRequirement(meta.getRequirement());
+        // "Letalidad {cantidad}" + 1 → "Letalidad 1"
+        List<String> keywords = new ArrayList<>();
+        if (meta.getKeywordEffects() != null) {
+            meta.getKeywordEffects().forEach(k -> {
+                if (k.getKeyword() == null) return;
+                String name = k.getKeyword().replaceAll("\\{[^}]*}", k.getNumber() != null ? k.getNumber() : "").trim();
+                keywords.add(name.replaceAll("\\s+", " "));
+            });
+        }
+        slot.setKeywords(keywords);
         List<String> colors = new ArrayList<>();
         if (meta.getColorIdentity() != null) colors.add(meta.getColorIdentity());
         if (meta.getColors() != null) meta.getColors().stream().filter(c -> !colors.contains(c)).forEach(colors::add);
