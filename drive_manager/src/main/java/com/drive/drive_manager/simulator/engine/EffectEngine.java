@@ -34,6 +34,7 @@ public final class EffectEngine {
 
     private static final String PURPOSE_BLOCK = "BLOCK";
     private static final String PURPOSE_PROVOKE = "PROVOKE";
+    private static final String PURPOSE_ADVANCE = "ADVANCE";
 
     private EffectEngine() {}
 
@@ -242,11 +243,30 @@ public final class EffectEngine {
         card.setY(null);
     }
 
+    // ------------------------------------------------------------------ Línea frontal
+
+    /**
+     * Rules 8.1.0.4 and 8.3.0.3: at the start of the turn and in the end phase the active player may move any of
+     * their creatures from the Retaguardia to the Línea frontal, all in one action. Asks only if there are some.
+     */
+    public static void offerAdvance(GameRoom room, String userId, boolean startOfTurn) {
+        PlayerState player = room.getPlayer(userId);
+        if (player == null || room.getStatus() != GameRoom.RoomStatus.IN_PROGRESS || room.getPrompt() != null) return;
+        List<CardSlot> back = player.getField().stream().filter(c -> "creature".equals(c.getCardType()) && !inFrontLine(c)).toList();
+        if (back.isEmpty()) return;
+        String title = startOfTurn ? "Inicio de turno" : "Final de turno";
+        combatPrompt(room, userId, PURPOSE_ADVANCE, title + " · Línea frontal",
+                "Elige las criaturas de tu retaguardia que suben a la línea frontal (todas a la vez), o ninguna.",
+                "A la línea frontal", back, back);
+        room.getPrompt().setMax(back.size());
+    }
+
     // ------------------------------------------------------------------ Combat (rule 10)
 
     /**
-     * Declares an attack from the board: an active creature of your Línea frontal is exhausted and attacks
-     * an exhausted enemy creature ({@code targetId}) or the opponent (null).
+     * Declares an attack from the board (rule 10.1.1): an active creature of your Línea frontal attacks an
+     * exhausted enemy creature ({@code targetId}) or the opponent (null). Exhausting it and declaring the attack
+     * are one action; it is only possible with 0 or more gems.
      */
     public static String attackByPlayer(GameRoom room, String userId, String attackerId, String targetId) {
         String error = checkMainPhase(room, userId, "atacar");
@@ -256,6 +276,7 @@ public final class EffectEngine {
         if (attacker == null || !"creature".equals(attacker.getCardType())) return "Solo tus criaturas del campo pueden atacar";
         if (!inFrontLine(attacker)) return "Solo las criaturas de la línea frontal pueden atacar";
         if (attacker.isTapped()) return "Esa criatura está agotada";
+        if (gemsOf(room, userId) < 0) return "Para declarar un ataque necesitas 0 o más gemas";
         if (targetId != null) {
             PlayerState opponent = room.getPlayer(room.getOpponentId(userId));
             CardSlot target = opponent == null ? null : find(opponent.getField(), targetId);
@@ -268,6 +289,7 @@ public final class EffectEngine {
         return null;
     }
 
+    /** The declaration is the attack step itself: its "Al Atacar" triggers resolve before the block (rule 10.1.1.3). */
     private static void startCombat(GameRoom room, String userId, CardSlot attacker, String targetId, boolean byEffect, PendingEffect effect) {
         PlayerState player = room.getPlayer(userId);
         PlayerState opponent = room.getPlayer(room.getOpponentId(userId));
@@ -277,35 +299,82 @@ public final class EffectEngine {
         combat.setDefenderId(opponent == null ? null : opponent.getUserId());
         combat.setTargetId(targetId);
         combat.setByEffect(byEffect);
+        combat.setStep(Combat.Step.ATTACK);
+        combat.setPhase(Combat.Phase.EXIT);
         room.setCombat(combat);
         CardSlot target = targetId == null || opponent == null ? null : find(opponent.getField(), targetId);
         Map<String, Object> data = new HashMap<>();
         data.put("byEffect", byEffect);
+        data.put("exhausted", !byEffect);
         if (targetId != null) data.put("targetId", targetId);
-        record(room, GameEvent.ATTACK_DECLARED, userId, attacker, null, null, effect, data,
-                player.getUsername() + ": " + name(attacker) + " ataca a "
-                        + (target != null ? name(target) : opponent != null ? opponent.getUsername() : "el rival"));
+        String targetName = target != null ? name(target) : opponent != null ? opponent.getUsername() : "el rival";
+        record(room, GameEvent.ATTACK_DECLARED, userId, attacker, null, null, effect, data, byEffect
+                ? player.getUsername() + ": " + name(attacker) + " ataca a " + targetName
+                : player.getUsername() + " agota a " + name(attacker) + " y ataca a " + targetName);
     }
 
-    /** Moves the combat to its next step; may stop at a choice. */
+    /**
+     * Moves the combat on (rule 10.1). Each step is entered, carried out and left; entering and leaving record
+     * an event, so the triggers of that moment resolve before the combat goes on.
+     */
     private static void combatStep(GameRoom room) {
         Combat c = room.getCombat();
         PlayerState owner = room.getPlayer(c.getAttackerOwnerId());
         PlayerState defender = room.getPlayer(c.getDefenderId());
         CardSlot attacker = owner == null ? null : find(owner.getField(), c.getAttackerId());
-        // Rule 10.0.0.2: if the attacker leaves the field the combat ends at once (after a clash it still reaches its end)
+        // Rule 10.0.0.2: if the attacker leaves the field the combat ends at once; there is no end of combat
         if (attacker == null || defender == null) {
-            if (c.getStep() == Combat.Step.END) {
-                endCombat(room, true);
-            } else {
-                room.setCombat(null);
-                log(room, "El combate termina: el atacante dejó el campo", null);
-            }
+            room.setCombat(null);
+            log(room, "El combate termina: el atacante dejó el campo", null);
             return;
         }
+        switch (c.getPhase()) {
+            case ENTER -> {
+                if (c.getStep() == Combat.Step.END) {
+                    endCombat(room);
+                    return;
+                }
+                record(room, GameEvent.COMBAT_STEP, owner.getUserId(), attacker, null, null, null,
+                        Map.of("step", c.getStep().name(), "moment", "ENTER"), "Paso de " + stepName(c.getStep()));
+                c.setPhase(Combat.Phase.ACT);
+            }
+            case ACT -> {
+                if (actStep(room, c, owner, defender, attacker)) c.setPhase(Combat.Phase.EXIT);
+            }
+            case EXIT -> {
+                record(room, GameEvent.COMBAT_STEP, owner.getUserId(), attacker, null, null, null,
+                        Map.of("step", c.getStep().name(), "moment", "EXIT"), null);
+                c.setStep(nextStep(c, defender));
+                c.setPhase(Combat.Phase.ENTER);
+            }
+        }
+    }
+
+    private static Combat.Step nextStep(Combat c, PlayerState defender) {
+        return switch (c.getStep()) {
+            case ATTACK -> Combat.Step.BLOCK;
+            // Rule 10.1.3.1: the clash only happens if there is a blocker when the step starts
+            case BLOCK -> c.getBlockerId() != null && find(defender.getField(), c.getBlockerId()) != null
+                    ? Combat.Step.CLASH : Combat.Step.DAMAGE;
+            case CLASH, DAMAGE, END -> Combat.Step.END;
+        };
+    }
+
+    private static String stepName(Combat.Step step) {
+        return switch (step) {
+            case ATTACK -> "ataque";
+            case BLOCK -> "bloqueo";
+            case CLASH -> "enfrentamiento";
+            case DAMAGE -> "daño directo";
+            case END -> "final del combate";
+        };
+    }
+
+    /** Carries out the step. Returns false while it waits for a choice. */
+    private static boolean actStep(GameRoom room, Combat c, PlayerState owner, PlayerState defender, CardSlot attacker) {
         switch (c.getStep()) {
-            case ATTACK -> c.setStep(Combat.Step.BLOCK);
             case BLOCK -> {
+                // Provocar: "al entrar al paso de bloqueo puedes elegir 1 enemigo; deberá bloquear"
                 if (!c.isProvokeAsked()) {
                     c.setProvokeAsked(true);
                     Integer provoke = keywordLevel(attacker, "Provocar");
@@ -316,10 +385,11 @@ public final class EffectEngine {
                             combatPrompt(room, owner.getUserId(), PURPOSE_PROVOKE, name(attacker) + " · Provocar",
                                     "Puedes elegir 1 enemigo" + (provoke > 0 ? " nivel " + provoke + " o menor" : "") + ": deberá bloquear este ataque.",
                                     "Provocar", options, defender.getField());
-                            return;
+                            return false;
                         }
                     }
                 }
+                // Rule 10.1.2.3: the defender may declare a blocker, unless one was already declared
                 if (c.getBlockerId() == null && !c.isBlockAsked()) {
                     c.setBlockAsked(true);
                     List<CardSlot> options = keywordLevel(attacker, "Imbloqueable") != null ? List.of() : blockers(defender);
@@ -327,21 +397,19 @@ public final class EffectEngine {
                         combatPrompt(room, defender.getUserId(), PURPOSE_BLOCK, name(attacker) + " ataca",
                                 "Puedes elegir 1 criatura activa de tu línea frontal para bloquear (se agota), o ninguna.",
                                 "Bloquear", options, defender.getField());
-                        return;
+                        return false;
                     }
                 }
                 // Rule 10.1.2.7: attacking a creature that is not blocked makes it the blocker
                 if (c.getBlockerId() == null && c.getTargetId() != null && find(defender.getField(), c.getTargetId()) != null) {
                     c.setBlockerId(c.getTargetId());
                 }
-                c.setStep(Combat.Step.CLASH);
+                return true;
             }
             case CLASH -> {
                 CardSlot blocker = c.getBlockerId() == null ? null : find(defender.getField(), c.getBlockerId());
-                if (blocker == null) {
-                    c.setStep(Combat.Step.DAMAGE);
-                    return;
-                }
+                // Rule 10.1.3.5: a blocker removed during the clash leaves the attacker as the winner
+                if (blocker == null) return true;
                 int a = strength(attacker);
                 int b = strength(blocker);
                 record(room, GameEvent.CLASH, owner.getUserId(), attacker, null, null, null,
@@ -350,13 +418,15 @@ public final class EffectEngine {
                 // Rule 10.1.3.2: the weaker one is destroyed; both when equal. Attributed to the opponent and the other creature.
                 if (b <= a) destroy(room, blocker, defender, false, CAUSE_BATTLE, owner.getUserId(), attacker.getInstanceId(), null);
                 if (a <= b) destroy(room, attacker, owner, false, CAUSE_BATTLE, defender.getUserId(), blocker.getInstanceId(), null);
-                c.setStep(Combat.Step.END);
+                return true;
             }
             case DAMAGE -> {
                 directDamage(room, owner, defender, attacker);
-                if (room.getCombat() != null) c.setStep(Combat.Step.END);
+                return true;
             }
-            case END -> endCombat(room, true);
+            default -> {
+                return true;
+            }
         }
     }
 
@@ -416,14 +486,12 @@ public final class EffectEngine {
     }
 
     /** Rule 10.1.5: the end of the combat fires "Al Final Del Ataque", resolved outside the combat. */
-    private static void endCombat(GameRoom room, boolean reachedEnd) {
+    private static void endCombat(GameRoom room) {
         Combat c = room.getCombat();
         room.setCombat(null);
         PlayerState owner = room.getPlayer(c.getAttackerOwnerId());
         CardSlot attacker = owner == null ? null : findAnywhere(room, owner.getUserId(), c.getAttackerId());
-        if (reachedEnd && owner != null) {
-            record(room, GameEvent.ATTACK_ENDED, owner.getUserId(), attacker, null, null, null, null, "Termina el combate");
-        }
+        if (owner != null) record(room, GameEvent.ATTACK_ENDED, owner.getUserId(), attacker, null, null, null, null, "Termina el combate");
     }
 
     /**
@@ -1090,6 +1158,22 @@ public final class EffectEngine {
         if (!prompt.getValidIds().containsAll(picks)) return "Esa carta no cumple lo que pide el efecto";
         PlayerState player = room.getPlayer(userId);
         if (player == null) return "No estás en la partida";
+
+        // Creatures that move up to the Línea frontal, all at once
+        if (PURPOSE_ADVANCE.equals(prompt.getPurpose())) {
+            room.setPrompt(null);
+            List<String> moved = new ArrayList<>();
+            for (String id : picks) {
+                CardSlot card = find(player.getField(), id);
+                if (card == null || inFrontLine(card)) continue;
+                card.setY(25.0);
+                moved.add(name(card));
+                record(room, GameEvent.MOVE, userId, card, null, "frontLine", null, Map.of("reason", "advance"), null);
+            }
+            if (!moved.isEmpty()) log(room, player.getUsername() + " sube a la línea frontal: " + String.join(", ", moved), room.getEventSeq());
+            advance(room);
+            return null;
+        }
 
         // Combat choices: the blocker, or the enemy forced to block by Provocar
         if (prompt.getPurpose() != null) {

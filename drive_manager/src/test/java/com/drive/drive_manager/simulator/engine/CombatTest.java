@@ -72,6 +72,57 @@ class CombatTest {
     }
 
     @Test
+    void declaringAnAttackNeedsZeroOrMoreGems() {
+        field(host, creature("a", "Atacante", 1, 5), FRONT);
+        room.setSharedCounter(1); // host: -1 gems
+        assertThat(EffectEngine.attackByPlayer(room, "host", "a", null)).contains("0 o más gemas");
+        room.setSharedCounter(0);
+        assertThat(EffectEngine.attackByPlayer(room, "host", "a", null)).isNull();
+    }
+
+    @Test
+    void everyCombatStepOpensAWindowWhenEnteredAndLeft() {
+        field(host, creature("a", "Atacante", 1, 5), FRONT);
+        EffectEngine.attackByPlayer(room, "host", "a", null);
+        List<String> steps = room.getTimeline().stream()
+                .filter(e -> GameEvent.COMBAT_STEP.equals(e.getType()))
+                .map(e -> e.getData().get("step") + ":" + e.getData().get("moment")).toList();
+        assertThat(steps).containsExactly("ATTACK:EXIT", "BLOCK:ENTER", "BLOCK:EXIT", "DAMAGE:ENTER", "DAMAGE:EXIT");
+        assertThat(room.getTimeline().get(room.getTimeline().size() - 1).getType()).isEqualTo(GameEvent.ATTACK_ENDED);
+    }
+
+    @Test
+    void anAttackerDestroyedInTheClashHasNoEndOfCombat() {
+        field(host, creature("rho", "Rhogler", 4, 3), FRONT);
+        CardSlot beast = creature("b3", "Bestia 3", 3, 8);
+        beast.getClasses().add("bestia");
+        host.getTributeZone().add(beast);
+        field(guest, creature("big", "Grande", 1, 9), FRONT);
+        EffectEngine.attackByPlayer(room, "host", "rho", null);
+        EffectEngine.answer(room, "guest", room.getPrompt().getId(), List.of("big"), List.of());
+        // Rhogler lost the clash: the combat ends there and "Al Final Del Ataque" does not trigger
+        assertThat(host.getDiscardPile()).extracting(CardSlot::getInstanceId).containsExactly("rho");
+        assertThat(room.getTimeline()).extracting(GameEvent::getType).doesNotContain(GameEvent.ATTACK_ENDED);
+        assertThat(room.isEngineBusy()).isFalse();
+    }
+
+    @Test
+    void theRetaguardiaMovesUpAllAtOnce() {
+        CardSlot a = field(host, creature("a", "A", 1, 3), BACK);
+        CardSlot b = field(host, creature("b", "B", 1, 3), BACK);
+        EffectEngine.offerAdvance(room, "host", true);
+        Prompt advance = room.getPrompt();
+        assertThat(advance.getPurpose()).isEqualTo("ADVANCE");
+        assertThat(advance.getMax()).isEqualTo(2);
+        EffectEngine.answer(room, "host", advance.getId(), List.of("a", "b"), List.of());
+        assertThat(EffectEngine.inFrontLine(a)).isTrue();
+        assertThat(EffectEngine.inFrontLine(b)).isTrue();
+        // Nothing left behind: no question
+        EffectEngine.offerAdvance(room, "host", false);
+        assertThat(room.getPrompt()).isNull();
+    }
+
+    @Test
     void theDefenderBlocksAndTheWeakerCreatureIsDestroyed() {
         field(host, creature("a", "Atacante", 1, 5), FRONT);
         CardSlot damon = field(guest, creature("damon", "Damon", 1, 3), FRONT);

@@ -437,6 +437,7 @@ public class RoomService {
 
             room.setCurrentTurnUserId(opponentId);
             clearTurnKeywords(room);
+            EffectEngine.offerAdvance(room, opponentId, true);
         }
         return GameStateUpdate.from(room, "PASS_TURN", userId);
     }
@@ -625,9 +626,10 @@ public class RoomService {
         CardSlot starter = cardOpt.get();
         if (!starter.isStarter()) return GameStateUpdate.error(room.getRoomId(), "Esa carta no es un starter válido");
         player.getDeck().remove(starter);
+        // Rule 3.0.2: set aside and public until the mulligan is done (kept on the field meanwhile)
         starter.setFaceDown(false);
         starter.setX(50.0);
-        starter.setY(50.0);
+        starter.setY(75.0);
         player.getField().add(starter);
         room.getStarterSelections().put(userId, instanceId);
         if (room.getStarterSelections().size() >= room.getPlayers().size()) {
@@ -665,6 +667,14 @@ public class RoomService {
             player.getHand().add(drawn);
         }
         Collections.shuffle(player.getDeck());
+        // Rule 3.0.6: after the mulligan the starter joins the hand (6 cards)
+        String starterId = room.getStarterSelections().get(userId);
+        player.getField().stream().filter(c -> c.getInstanceId().equals(starterId)).findFirst().ifPresent(starter -> {
+            player.getField().remove(starter);
+            starter.setX(null);
+            starter.setY(null);
+            player.getHand().add(starter);
+        });
         int lifeCount = Math.min(6, player.getDeck().size());
         for (int i = 0; i < lifeCount; i++) {
             CardSlot c = player.getDeck().remove(0);
@@ -886,6 +896,7 @@ public class RoomService {
             room.setSharedCounter(0);
         }
         room.setCurrentPhase("END_PHASE");
+        EffectEngine.offerAdvance(room, userId, false);
         return GameStateUpdate.from(room, "ENTER_END_PHASE", userId);
     }
 
@@ -906,6 +917,7 @@ public class RoomService {
             autoDraw(opponent);
         }
         room.setCurrentPhase("MAIN");
+        if (opponentId != null) EffectEngine.offerAdvance(room, opponentId, true);
         return GameStateUpdate.from(room, "END_TURN", userId);
     }
 

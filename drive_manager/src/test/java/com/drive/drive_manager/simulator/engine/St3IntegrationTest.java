@@ -139,6 +139,42 @@ class St3IntegrationTest {
         assertThat(EffectEngine.gemsOf(room, "host")).isEqualTo(gems);
     }
 
+    @Test
+    void endingTheTurnOffersTheNextPlayerToMoveUp() {
+        onField(guest, slot("Damon"), 75.0);
+        GameStateUpdate ended = act("host", "END_TURN", Map.of());
+        assertThat(ended.getPrompt()).isNotNull();
+        assertThat(ended.getPrompt().getPlayerId()).isEqualTo("guest");
+        assertThat(ended.getPrompt().getPurpose()).isEqualTo("ADVANCE");
+        // Until it is answered the game waits
+        assertThat(act("guest", "DRAW_CARD", Map.of()).getError()).isNotNull();
+        assertThat(act("guest", "RESOLVE_PROMPT", Map.of("promptId", ended.getPrompt().getId(), "chosen", List.of())).getError()).isNull();
+        assertThat(room.isEngineBusy()).isFalse();
+    }
+
+    @Test
+    void theStarterJoinsTheHandAfterTheMulligan() {
+        room.setStatus(GameRoom.RoomStatus.SELECTING_STARTER);
+        for (PlayerState p : List.of(host, guest)) {
+            p.getDeck().clear();
+            p.getLifeStack().clear();
+            for (int i = 0; i < 20; i++) p.getDeck().add(slot("Damon"));
+            p.getDeck().add(slot("Carnhaus"));
+        }
+        for (PlayerState p : List.of(host, guest)) {
+            String starter = p.getDeck().stream().filter(CardSlot::isStarter).findFirst().orElseThrow().getInstanceId();
+            assertThat(act(p.getUserId(), "SELECT_STARTER", Map.of("instanceId", starter)).getError()).isNull();
+        }
+        for (PlayerState p : List.of(host, guest)) {
+            assertThat(act(p.getUserId(), "CONFIRM_MULLIGAN", Map.of()).getError()).isNull();
+        }
+        for (PlayerState p : List.of(host, guest)) {
+            assertThat(p.getHand()).hasSize(6).anyMatch(c -> "Carnhaus".equals(c.getCardName()));
+            assertThat(p.getField()).isEmpty();
+            assertThat(p.getLifeStack()).hasSize(6);
+        }
+    }
+
     // ------------------------------------------------------------------ Helpers
 
     private GameStateUpdate act(String userId, String type, Map<String, Object> payload) {

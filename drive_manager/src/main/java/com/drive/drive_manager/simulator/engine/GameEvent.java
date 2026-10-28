@@ -43,6 +43,8 @@ public class GameEvent {
     /** Direct damage to the top life card (rule 10.1.4). data: damage. */
     public static final String LIFE_DAMAGE      = "LIFE_DAMAGE";
     public static final String ATTACK_ENDED     = "ATTACK_ENDED";
+    /** Entering or leaving a combat step. data: step (BLOCK, CLASH…), moment (ENTER, EXIT). */
+    public static final String COMBAT_STEP      = "COMBAT_STEP";
     public static final String GAME_LOST        = "GAME_LOST";
     public static final String TAP              = "TAP";
     public static final String MOVE             = "MOVE";
