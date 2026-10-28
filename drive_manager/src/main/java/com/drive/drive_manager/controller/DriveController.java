@@ -7,6 +7,7 @@ import com.drive.drive_manager.service.DriveParser.SyncResult;
 import com.drive.drive_manager.service.R2Service;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -49,13 +50,22 @@ public class DriveController {
     @Value("${r2.public-url}")
     private String r2PublicUrl;
 
+    @Autowired
+    private MongoTemplate mongoTemplate;
+
     /**
-     * Health check endpoint.
+     * Health check endpoint (public; used by the deploy). Pings MongoDB, so 200 means the data layer answers.
      * GET /api/drive/health
      */
     @GetMapping("/health")
     public ResponseEntity<String> healthCheck() {
-        return ResponseEntity.ok("DriveController is healthy");
+        try {
+            mongoTemplate.executeCommand("{ ping: 1 }");
+            return ResponseEntity.ok("DriveController is healthy");
+        } catch (RuntimeException e) {
+            log.warn("Health check: MongoDB did not answer: {}", e.getMessage());
+            return ResponseEntity.status(503).body("MongoDB unavailable");
+        }
     }
 
     /**
