@@ -398,7 +398,7 @@ class RulesWindowsTest {
     }
 
     @Test
-    void optionalTriggersAreChosenAndOrderedInOneChoice() {
+    void optionalTriggersAreChainedOneAtATime() {
         // Cazador by Ritual onto Slicker in the Retaguardia: Cazador (mandatory) + Celeridad and Slicker (optional)
         CardSlot cazador = ritual("caz", "Cazador De Bestias", 2, 2, "criatura nivel 2.");
         cazador.getKeywords().add("Celeridad");
@@ -408,22 +408,60 @@ class RulesWindowsTest {
         EffectEngine.ritualByPlayer(room, "host", "caz", "sli");
         EffectEngine.answer(room, "host", room.getPrompt().getId(), List.of(), List.of()); // stays in the Retaguardia
 
-        Prompt choice = room.getPrompt();
-        assertThat(choice.getPurpose()).isEqualTo("ORDER");
-        assertThat(choice.getMin()).isZero();
-        assertThat(choice.getValidIds()).containsExactlyInAnyOrder("sli", "caz");
-        assertThat(room.getChain()).extracting(PendingEffect::getSourceName).containsExactly("Cazador De Bestias");
+        Prompt first = room.getPrompt();
+        assertThat(first.getPurpose()).isEqualTo("OPTIONAL");
+        assertThat(first.getMax()).isEqualTo(1);
+        assertThat(first.getValidIds()).containsExactlyInAnyOrder("sli", "caz");
+        assertThat(first.getCardLabels()).containsEntry("caz", "Celeridad");
+        EffectEngine.answer(room, "host", first.getId(), List.of("caz"), List.of());
 
-        // Only Celeridad: Slicker is not activated, and no further yes/no question
-        EffectEngine.answer(room, "host", choice.getId(), List.of("caz"), List.of());
-        // Celeridad was Cadena 2 and resolved first (Cazador moved up); Cadena 1 is resolving now
+        // Celeridad chained as Cadena 2; Slicker is offered on its own now
+        Prompt second = room.getPrompt();
+        assertThat(second.getKind()).isEqualTo(Prompt.Kind.CONFIRM);
+        assertThat(second.getSourceName()).isEqualTo("Slicker");
+        assertThat(second.getInstruction()).contains("Cadena 3");
+        EffectEngine.answer(room, "host", second.getId(), List.of(), List.of());
         assertThat(room.getTimeline()).filteredOn(e -> GameEvent.EFFECT_ACTIVATED.equals(e.getType()))
                 .extracting(e -> e.getData().get("label") + ":" + e.getData().get("link"))
                 .containsExactly("En Invocación:1", "Celeridad:2");
-        assertThat(EffectEngine.inFrontLine(cazador)).isTrue();
-        assertThat(room.getChain()).extracting(PendingEffect::getLabel).containsExactly("En Invocación");
         assertThat(room.getTimeline()).extracting(GameEvent::getType).contains(GameEvent.EFFECT_DECLINED);
-        assertThat(room.getPrompt().getPurpose()).isNotEqualTo("ORDER");
+    }
+
+    @Test
+    void bothPlayersTriggersGoIntoOneChain() {
+        // The host destroys the guest's Damon: Damon (guest, mandatory), Hong (host, optional),
+        // Cueva De Bestias and Alimento De Las Sombras (guest, optional)
+        field(host, creature("hong", "Hong", 2, 5), FRONT);
+        field(guest, creature("damon", "Damon", 1, 3), FRONT);
+        field(guest, creature("l1", "Nivel 1", 1, 3), FRONT);
+        CardSlot cueva = field(guest, creature("cueva", "Cueva De Bestias", 1, 0), BACK);
+        cueva.setCardType("structure");
+        CardSlot alimento = creature("ali", "Alimento De Las Sombras", 1, 0);
+        alimento.setCardType("utility");
+        guest.getHand().add(alimento);
+        guest.getHand().add(creature("gh", "Para tributar", 1, 1));
+
+        EffectEngine.destroyByPlayer(room, "host", "guest", "damon");
+        // Damon is mandatory: Cadena 1 with no question. Then the active player's optional: Hong
+        Prompt hong = room.getPrompt();
+        assertThat(hong.getPlayerId()).isEqualTo("host");
+        assertThat(hong.getSourceName()).isEqualTo("Hong");
+        EffectEngine.answer(room, "host", hong.getId(), List.of("hong"), List.of());
+        EffectEngine.answer(room, "host", room.getPrompt().getId(), List.of("l1"), List.of()); // its cost: the target
+
+        // Then the opponent's optional ones, one at a time
+        Prompt guestChoice = room.getPrompt();
+        assertThat(guestChoice.getPlayerId()).isEqualTo("guest");
+        assertThat(guestChoice.getPurpose()).isEqualTo("OPTIONAL");
+        EffectEngine.answer(room, "guest", guestChoice.getId(), List.of("cueva"), List.of());
+        Prompt alimentoChoice = room.getPrompt();
+        assertThat(alimentoChoice.getSourceName()).isEqualTo("Alimento De Las Sombras");
+        EffectEngine.answer(room, "guest", alimentoChoice.getId(), List.of("ali"), List.of());
+
+        // All in one chain, in that order
+        assertThat(room.getTimeline()).filteredOn(e -> GameEvent.EFFECT_ACTIVATED.equals(e.getType()))
+                .extracting(e -> e.getData().get("link") + ":" + e.getPlayerId())
+                .startsWith("1:guest", "2:host", "3:guest", "4:guest");
     }
 
     // ------------------------------------------------------------------ Responding to a chain

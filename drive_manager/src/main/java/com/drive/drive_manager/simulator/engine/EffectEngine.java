@@ -42,6 +42,7 @@ public final class EffectEngine {
     private static final String PURPOSE_REINFORCE = "REINFORCE";
     private static final String PURPOSE_LIFE_PLAY = "LIFE_PLAY";
     private static final String PURPOSE_ORDER = "ORDER";
+    private static final String PURPOSE_OPTIONAL = "OPTIONAL";
     private static final String PURPOSE_PRIORITY = "PRIORITY";
 
     private EffectEngine() {}
@@ -820,54 +821,50 @@ public final class EffectEngine {
             room.getTriggerQueue().remove(0);
             return;
         }
-        // Rule 11.7.0.5: within a group, the controller chooses the order in which they are chained
-        if (!effect.isOrdered()) {
-            String active = room.getCurrentTurnUserId();
-            int head = rank(effect, active);
-            List<PendingEffect> group = new ArrayList<>();
-            for (PendingEffect e : room.getTriggerQueue()) {
-                if (rank(e, active) != head) break;
-                group.add(e);
-            }
-            if (!script.mandatory()) {
-                // Optional effects that cannot be activated (cost, nothing to do, limit) lose their moment first
-                boolean dropped = false;
-                for (PendingEffect e : group) {
-                    EffectScript s = script(e);
-                    boolean used = s.limit() != Limit.NONE && room.getUsedThisTurn().contains(usageKey(e, s));
-                    if (used || !canActivate(room, e, s)) {
-                        room.getTriggerQueue().remove(e);
-                        dropped = true;
-                    }
-                }
-                if (dropped) return;
-            }
-            List<CardSlot> sources = new ArrayList<>();
-            for (PendingEffect e : group) {
-                CardSlot source = findAnywhere(room, e.getControllerId(), e.getSourceInstanceId());
-                if (source != null && !sources.contains(source)) sources.add(source);
-            }
+        // Rule 11.7.0.5: the active player's mandatory effects, the opponent's mandatory effects, then the
+        // active player's optional ones and the opponent's, all into the same chain
+        String active = room.getCurrentTurnUserId();
+        int head = rank(effect, active);
+        List<PendingEffect> group = new ArrayList<>();
+        for (PendingEffect e : room.getTriggerQueue()) {
+            if (rank(e, active) != head) break;
+            group.add(e);
+        }
+        if (script.mandatory() && !effect.isOrdered()) {
+            // Several mandatory effects: their controller orders them (all of them are chained)
+            List<CardSlot> sources = sources(room, group);
             if (sources.size() > 1) {
-                int next = room.getChain().size() + 1;
-                if (script.mandatory()) {
-                    rulesPrompt(room, effect.getControllerId(), PURPOSE_ORDER, "Orden en la cadena",
-                            "Estos efectos obligatorios se encadenan todos. Haz clic en el orden en que entran: el primero será "
-                                    + "Cadena " + next + ". La cadena se resuelve al revés: el último eslabón se resuelve primero.",
-                            "En cadena", sources, sources);
-                    room.getPrompt().setMin(sources.size());
-                } else {
-                    // One choice for the whole group: which ones are activated and in what order
-                    rulesPrompt(room, effect.getControllerId(), PURPOSE_ORDER, "Efectos que puedes activar",
-                            "Haz clic en los efectos que activas, en el orden en que entran a la cadena: el primero será Cadena "
-                                    + next + ". Los que no elijas no se activan. La cadena se resuelve al revés: el último eslabón "
-                                    + "se resuelve primero.", "En cadena", sources, sources);
-                    room.getPrompt().setMin(0);
-                }
+                rulesPrompt(room, effect.getControllerId(), PURPOSE_ORDER, "Orden en la cadena",
+                        "Estos efectos obligatorios se encadenan todos. Haz clic en el orden en que entran: el primero será "
+                                + "Cadena " + (room.getChain().size() + 1) + ". La cadena se resuelve al revés: el último eslabón "
+                                + "se resuelve primero.", "En cadena", sources, sources);
+                room.getPrompt().setMin(sources.size());
                 room.getPrompt().setMax(sources.size());
-                // Each card shows the effect it triggered ("Celeridad", "En Destrucción")
-                Map<String, String> labels = new LinkedHashMap<>();
-                for (PendingEffect e : group) labels.merge(e.getSourceInstanceId(), e.getLabel(), (a, b) -> a + " + " + b);
-                room.getPrompt().setCardLabels(labels);
+                room.getPrompt().setCardLabels(labels(group));
+                return;
+            }
+        }
+        if (!script.mandatory() && !effect.isConfirmed()) {
+            // Optional effects that cannot be activated now (cost, nothing to do, limit) lose their moment
+            boolean dropped = false;
+            for (PendingEffect e : group) {
+                EffectScript s = script(e);
+                boolean used = s.limit() != Limit.NONE && room.getUsedThisTurn().contains(usageKey(e, s));
+                if (used || !canActivate(room, e, s)) {
+                    room.getTriggerQueue().remove(e);
+                    dropped = true;
+                }
+            }
+            if (dropped) return;
+            // Several: offered one at a time. The chosen one is chained and pays its cost, then the rest are
+            // offered again until the player passes; then it is the opponent's turn to chain theirs
+            List<CardSlot> sources = sources(room, group);
+            if (group.size() > 1 && sources.size() > 1) {
+                rulesPrompt(room, effect.getControllerId(), PURPOSE_OPTIONAL, "Encadenar efectos",
+                        "Elige 1 efecto para encadenarlo como Cadena " + (room.getChain().size() + 1) + " (después podrás elegir otro), "
+                                + "o no encadenes más. La cadena se resuelve al revés: el último eslabón se resuelve primero.",
+                        "Encadenar", sources, sources);
+                room.getPrompt().setCardLabels(labels(group));
                 return;
             }
         }
@@ -901,6 +898,23 @@ public final class EffectEngine {
         prompt.setMax(1);
         prompt.setChosenLabel("Activar");
         room.setPrompt(prompt);
+    }
+
+    /** The cards of a group of triggered effects, once each. */
+    private static List<CardSlot> sources(GameRoom room, List<PendingEffect> group) {
+        List<CardSlot> sources = new ArrayList<>();
+        for (PendingEffect e : group) {
+            CardSlot source = findAnywhere(room, e.getControllerId(), e.getSourceInstanceId());
+            if (source != null && !sources.contains(source)) sources.add(source);
+        }
+        return sources;
+    }
+
+    /** What each card of a group triggered ("Celeridad", "En Destrucción"), for the choice. */
+    private static Map<String, String> labels(List<PendingEffect> group) {
+        Map<String, String> labels = new LinkedHashMap<>();
+        for (PendingEffect e : group) labels.merge(e.getSourceInstanceId(), e.getLabel(), (a, b) -> a + " + " + b);
+        return labels;
     }
 
     /** Puts the effect in the chain; its cost, if any, is paid now (rule 11.2.0.2). */
@@ -1763,25 +1777,40 @@ public final class EffectEngine {
             int head = rank(queue.get(0), room.getCurrentTurnUserId());
             List<PendingEffect> group = new ArrayList<>();
             while (!queue.isEmpty() && rank(queue.get(0), room.getCurrentTurnUserId()) == head) group.add(queue.remove(0));
-            boolean optional = !script(group.get(0)).mandatory();
-            if (optional) {
-                // Not chosen: not activated
-                for (PendingEffect e : new ArrayList<>(group)) {
-                    if (picks.contains(e.getSourceInstanceId())) continue;
-                    group.remove(e);
-                    record(room, GameEvent.EFFECT_DECLINED, userId, null, null, null, e, null,
-                            player.getUsername() + " no activa el efecto " + e.getLabel() + " de " + e.getSourceName());
-                }
-            }
             group.sort(Comparator.comparingInt(e -> {
                 int at = picks.indexOf(e.getSourceInstanceId());
                 return at < 0 ? picks.size() : at;
             }));
-            group.forEach(e -> {
-                e.setOrdered(true);
-                e.setConfirmed(optional);
-            });
+            group.forEach(e -> e.setOrdered(true));
             queue.addAll(0, group);
+            advance(room);
+            return "";
+        }
+        if (PURPOSE_OPTIONAL.equals(purpose)) {
+            room.setPrompt(null);
+            List<PendingEffect> queue = room.getTriggerQueue();
+            int head = rank(queue.get(0), room.getCurrentTurnUserId());
+            List<PendingEffect> group = new ArrayList<>();
+            for (PendingEffect e : queue) {
+                if (rank(e, room.getCurrentTurnUserId()) != head) break;
+                group.add(e);
+            }
+            if (picks.isEmpty()) {
+                // No more: the rest of this player's optional effects are not activated
+                for (PendingEffect e : group) {
+                    queue.remove(e);
+                    record(room, GameEvent.EFFECT_DECLINED, userId, null, null, null, e, null,
+                            player.getUsername() + " no activa el efecto " + e.getLabel() + " de " + e.getSourceName());
+                }
+            } else {
+                // The chosen one goes first and is chained now (activateNext pays its cost next)
+                PendingEffect chosen = group.stream().filter(e -> e.getSourceInstanceId().equals(picks.get(0))).findFirst().orElse(null);
+                if (chosen != null) {
+                    queue.remove(chosen);
+                    chosen.setConfirmed(true);
+                    queue.add(0, chosen);
+                }
+            }
             advance(room);
             return "";
         }
