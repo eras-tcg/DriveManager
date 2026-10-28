@@ -7,7 +7,21 @@ import com.drive.drive_manager.simulator.engine.EffectScript.Condition;
 import com.drive.drive_manager.simulator.engine.EffectScript.Limit;
 import com.drive.drive_manager.simulator.engine.EffectScript.Moment;
 import com.drive.drive_manager.simulator.engine.EffectStep.ChooseEnemy;
+import com.drive.drive_manager.simulator.engine.EffectStep.AttachLowerFromTributes;
+import com.drive.drive_manager.simulator.engine.EffectStep.DamageByEffect;
+import com.drive.drive_manager.simulator.engine.EffectStep.DeckTopToLife;
 import com.drive.drive_manager.simulator.engine.EffectStep.DeclareAttack;
+import com.drive.drive_manager.simulator.engine.EffectStep.DrawLastCount;
+import com.drive.drive_manager.simulator.engine.EffectStep.IfTributed;
+import com.drive.drive_manager.simulator.engine.EffectStep.KeepOnField;
+import com.drive.drive_manager.simulator.engine.EffectStep.MaterialToLife;
+import com.drive.drive_manager.simulator.engine.EffectStep.ReduceChosen;
+import com.drive.drive_manager.simulator.engine.EffectStep.ReduceTriggerToZero;
+import com.drive.drive_manager.simulator.engine.EffectStep.SummonSelfFromZone;
+import com.drive.drive_manager.simulator.engine.EffectStep.TakePerCount;
+import com.drive.drive_manager.simulator.engine.EffectStep.TargetAllEnemies;
+import com.drive.drive_manager.simulator.engine.EffectStep.TributeFromHandUpTo;
+import com.drive.drive_manager.simulator.engine.EffectStep.TributeMaterials;
 import com.drive.drive_manager.simulator.engine.EffectStep.DestroyFaceUpLife;
 import com.drive.drive_manager.simulator.engine.EffectStep.GainUntilEndOfAttack;
 import com.drive.drive_manager.simulator.engine.EffectStep.PlaySelfFromZone;
@@ -458,6 +472,103 @@ public final class CardEffects {
         return countInZone(room, player.getUserId(), "tributeZone", CardFilter.any().withClasses("dragón")) >= 5 ? 1 : 0;
     }
 
+    // ------------------------------------------------------------------ ST1 Entes
+    static {
+        CardFilter enemy = CardFilter.creatures();
+        // ST1-1 Eisten
+        add("eisten", new EffectScript("eisten:en-invocacion", Moment.ON_SUMMON, true, EN_INVOCACION,
+                "Tributa 4 cartas del tope de tu mazo. Luego: toma hasta 1 carta Azul de tus tributos.",
+                List.of(new TributeTop(4), new TakeFromZone("tributeZone", CardFilter.colors("B"), 1, true))));
+        // ST1-2 Jhav
+        add("jhav", new EffectScript("jhav:en-invocacion", Moment.ON_SUMMON, true, EN_INVOCACION,
+                "Toma hasta 1 carta Azul de tus tributos. Luego: tributa 1 carta de tu mano. Si tributaste 1 carta [ente]: roba 1 carta.",
+                List.of(new TakeFromZone("tributeZone", CardFilter.colors("B"), 1, true), new TributeFromHand(1),
+                        new IfTributed(CardFilter.any().withClasses("ente"), 1), new Draw(1))));
+        // ST1-3 Mihel (its "Todos Los Turnos" effect, as a material that reduces 2 more, is not applied yet)
+        add("mihel", new EffectScript("mihel:en-invocacion", Moment.ON_SUMMON, true, EN_INVOCACION,
+                "Roba 2 cartas. Luego: tributa 2 cartas de tu mano.",
+                List.of(new Draw(2), new TributeFromHand(2))));
+        // ST1-4 Flureteus (Iniciador; its "Turno Aliado" summon from the Tributos is not applied yet)
+        add("flureteus", new EffectScript("flureteus:en-invocacion", Moment.ON_SUMMON, true, EN_INVOCACION,
+                "Mira las primeras 5 cartas de tu mazo: de ellas toma hasta 2 cartas Azules o Blancas. Envía el resto al fondo de tu mazo. "
+                        + "Luego: tributa 2 cartas de tu mano.",
+                List.of(new LookTop(5), new TakeFromLookedRestToBottom(2, CardFilter.colors("B", "W")), new TributeFromHand(2))));
+        // ST1-5 Flarix
+        add("flarix",
+                new EffectScript("flarix:en-invocacion", Moment.ON_SUMMON, false, EN_INVOCACION,
+                        "Puedes tributar hasta 2 materiales de esta carta; toma 1 carta Azul de tus tributos por cada material tributado.",
+                        List.of(new TributeMaterials(2, true)), List.of(new TakePerCount("tributeZone", CardFilter.colors("B")))),
+                new EffectScript("flarix:en-tributos", Moment.ON_EVENT, false, "En Tributos",
+                        "(1) Si reduces a 0 la fuerza de algún enemigo: puedes enviar esta carta al fondo de tu mazo para infringir 9 de daño directo.",
+                        List.of(new SendSelfTo("deck")), List.of(new DamageByEffect(9)))
+                        .when(youReducedStrengthTo(0))
+                        .fromZone("tributeZone")
+                        .limited(Limit.ONCE_PER_TURN_BETWEEN_COPIES));
+        // ST1-6 Zula
+        add("zula", new EffectScript("zula:en-invocacion", Moment.ON_SUMMON, false, EN_INVOCACION,
+                "Si tienes 4 o menos vidas: puedes tributar 1 material de esta carta; coloca hasta 1 material de esta carta al tope de tus vidas bocarriba.",
+                List.of(new TributeMaterials(1, false)), List.of(new MaterialToLife()))
+                .when(livesAtMost(4)));
+        // ST1-7 Fhalid: no effect
+        // ST1-8 Arc xioma
+        add("arc xioma",
+                new EffectScript("arc-xioma:en-invocacion", Moment.ON_SUMMON, false, EN_INVOCACION,
+                        "Puedes tributar 1 material de esta carta y elegir 1 enemigo; reduce su fuerza en 3 hasta el final del turno.",
+                        List.of(new TributeMaterials(1, false), new ChooseEnemy(1, enemy)), List.of(new ReduceChosen(3, false))),
+                new EffectScript("arc-xioma:en-tributos", Moment.ON_EVENT, false, "En Tributos",
+                        "Si reduces a 2 o menos la fuerza de algún enemigo: puedes enviar esta carta al fondo de tu mazo para reducirla a 0.",
+                        List.of(new SendSelfTo("deck")), List.of(new ReduceTriggerToZero()))
+                        .when(youReducedStrengthTo(2))
+                        .fromZone("tributeZone"));
+        // ST1-9 Bertalum
+        add("bertalum", new EffectScript("bertalum:en-invocacion", Moment.ON_SUMMON, false, EN_INVOCACION,
+                "Puedes tributar 2 materiales de esta carta para elegir 1 enemigo; reduce en 4 su fuerza hasta el final del turno.",
+                List.of(new TributeMaterials(2, false), new ChooseEnemy(1, enemy)), List.of(new ReduceChosen(4, false))));
+        // ST1-10 Sahiel (Reactivar: keyword)
+        add("sahiel", new EffectScript("sahiel:en-invocacion", Moment.ON_SUMMON, false, EN_INVOCACION,
+                "Si tienes 5 o menos vidas: puedes tributar 2 materiales de esta carta; coloca la carta del tope de tu mazo al tope de tus vidas bocabajo.",
+                List.of(new TributeMaterials(2, false)), List.of(new DeckTopToLife()))
+                .when(livesAtMost(5)));
+        // ST1-11 Falis
+        add("falis", new EffectScript("falis:en-tributos", Moment.ON_EVENT, false, "En Tributos",
+                "(1) Si reduces a 0 la fuerza de algún enemigo: puedes invocar esta carta reduciendo su coste en 2.",
+                List.of(new SummonSelfFromZone("tributeZone", 2)))
+                .when(youReducedStrengthTo(0))
+                .fromZone("tributeZone")
+                .limited(Limit.ONCE_PER_TURN_BETWEEN_COPIES));
+        // ST1-12 Mathaus (Letalidad 1: combat rule)
+        add("mathaus", new EffectScript("mathaus:turno-aliado", Moment.ACTIVATED, false, "Turno Aliado",
+                "Una vez por turno: puedes tributar 2 materiales de esta carta; elige 1 enemigo para reducir su fuerza en 3 hasta el final del turno oponente.",
+                List.of(new TributeMaterials(2, false), new ChooseEnemy(1, enemy)), List.of(new ReduceChosen(3, true)))
+                .onlyAllyTurn()
+                .limited(Limit.ONCE_PER_TURN));
+        // ST1-13 Falanx: its Requerimiento and "En Tributos" special summon are not applied yet
+        // ST1-14 Galafendrax El Transmutador (its "En Invocación" is not applied yet)
+        add("galafendrax el transmutador", new EffectScript("galafendrax:todos-los-turnos", Moment.ON_EVENT, false, TODOS,
+                "Una vez por turno: si reduces a 0 la fuerza de algún enemigo, puedes reactivar esta carta.",
+                List.of(new UntapSelf()))
+                .when(youReducedStrengthTo(0))
+                .limited(Limit.ONCE_PER_TURN));
+        // ST1-15 Hez (Reactivar: keyword)
+        add("hez", new EffectScript("hez:inicio-del-turno", Moment.ON_EVENT, false, TODOS,
+                "Al inicio del turno: puedes tributar 2 materiales de esta carta para elegir todos los enemigos en la línea frontal; "
+                        + "reduce en 4 su fuerza hasta el final del turno.",
+                List.of(new TributeMaterials(2, false)), List.of(new TargetAllEnemies(), new ReduceChosen(4, false)))
+                .when((room, event, source, controller) -> GameEvent.TURN_START.equals(event.getType())));
+        // ST1-16 Portal Al Mundo Espiritual (structure)
+        add("portal al mundo espiritual", new EffectScript("portal-mundo-espiritual:todos-los-turnos", Moment.ON_EVENT, false, TODOS,
+                "Si algún aliado [ente] es invocado por efecto: puedes agotar esta carta; añádele 1 criatura [ente] de menor nivel de tus tributos "
+                        + "como material para ganar 1 gema.",
+                List.of(new TapSelf()),
+                List.of(new AttachLowerFromTributes(CardFilter.creatures().withClasses("ente")), new GainGems(1)))
+                .when(allySummonedByEffect(CardFilter.any().withClasses("ente"))));
+        // ST1-17 Composición Adimensional (utility; its "Turno Aliado" Materialización is not applied yet)
+        add("composición adimensional", new EffectScript("composicion-adimensional:en-juego", Moment.ON_PLAY, true, EN_JUEGO,
+                "Tributa hasta 3 cartas de tu mano. Luego: roba la misma cantidad y coloca esta carta agotada en tu retaguardia.",
+                List.of(new TributeFromHandUpTo(3), new DrawLastCount(), new KeepOnField())));
+        // ST1-18 Paso Interdimensional: not applied yet
+    }
+
     private CardEffects() {}
 
     /** Adds effects for a card name (tests use it for mechanics no printed card has yet). */
@@ -569,6 +680,23 @@ public final class CardEffects {
             if (!GameEvent.SPECIAL_SUMMON.equals(event.getType()) || !controller.equals(event.getPlayerId())) return false;
             CardSlot summoned = EffectEngine.eventCard(room, event);
             return summoned != null && filter.matches(summoned);
+        };
+    }
+
+    /** "si reduces [a N o menos] la fuerza de algún enemigo". */
+    private static Condition youReducedStrengthTo(Integer atMost) {
+        return (room, event, source, controller) -> {
+            if (!GameEvent.STRENGTH_REDUCED.equals(event.getType()) || !controller.equals(event.getPlayerId())) return false;
+            Object to = event.getData() == null ? null : event.getData().get("to");
+            return atMost == null || (to instanceof Number n && n.intValue() <= atMost);
+        };
+    }
+
+    /** "si tienes N o menos vidas". */
+    private static Condition livesAtMost(int lives) {
+        return (room, event, source, controller) -> {
+            PlayerState player = room.getPlayer(controller);
+            return player != null && player.getLifeStack().size() <= lives;
         };
     }
 

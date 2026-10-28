@@ -989,7 +989,9 @@ public class RoomService {
     private void clearTurnKeywords(GameRoom room) {
         room.getPlayers().values().forEach(p -> p.getField().forEach(c -> {
             c.getTurnKeywords().clear();
-            c.setTurnStrength(0);
+            // What lasts until the end of the next turn now lasts until the end of this one
+            c.setTurnStrength(c.getLaterStrength());
+            c.setLaterStrength(0);
         }));
         room.getUsedThisTurn().clear();
     }

@@ -44,6 +44,8 @@ public class CardSlot {
     private long fieldSeq;
     /** Strength gained or lost until the end of the turn ("gana fuerza 3 hasta el final del turno"). */
     private int turnStrength;
+    /** Strength lost until the end of the next turn ("hasta el final del turno oponente / del próximo turno"). */
+    private int laterStrength;
     private List<CardSlot> materials = new ArrayList<>();
     private List<CardSlot> resources = new ArrayList<>();
 }

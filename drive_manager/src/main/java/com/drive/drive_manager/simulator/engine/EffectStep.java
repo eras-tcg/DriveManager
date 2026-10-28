@@ -62,6 +62,48 @@ public sealed interface EffectStep {
         }
     }
 
+    /** "tributa [hasta] N materiales de esta carta" (a cost); lastCount is how many. */
+    record TributeMaterials(int count, boolean upTo) implements EffectStep {}
+
+    /** "toma 1 carta [filtro] de tus [zona] por cada material tributado" (lastCount). */
+    record TakePerCount(String zone, CardFilter filter) implements EffectStep {}
+
+    /** "tributa hasta N cartas de tu mano"; lastCount is how many. */
+    record TributeFromHandUpTo(int count) implements EffectStep {}
+
+    /** "roba la misma cantidad" (lastCount). */
+    record DrawLastCount() implements EffectStep {}
+
+    /** "Si tributaste 1 carta [filtro]:": the next {@code covers} steps only then. */
+    record IfTributed(CardFilter filter, int covers) implements EffectStep {}
+
+    /** "reduce su fuerza en N" on the chosen targets; {@code untilNextTurn}: until the end of the next turn. */
+    record ReduceChosen(int amount, boolean untilNextTurn) implements EffectStep {}
+
+    /** "elige todos los enemigos en la línea frontal" (no choice: they are the targets). */
+    record TargetAllEnemies() implements EffectStep {}
+
+    /** "reducirla a 0": the enemy whose strength was reduced in the triggering event. */
+    record ReduceTriggerToZero() implements EffectStep {}
+
+    /** "coloca hasta 1 material de esta carta al tope de tus vidas bocarriba". */
+    record MaterialToLife() implements EffectStep {}
+
+    /** "coloca la carta del tope de tu mazo al tope de tus vidas bocabajo". */
+    record DeckTopToLife() implements EffectStep {}
+
+    /** "infringe N de daño directo" by effect (to the top life). */
+    record DamageByEffect(int amount) implements EffectStep {}
+
+    /** "puedes invocar esta carta [desde zona] reduciendo su coste en N". */
+    record SummonSelfFromZone(String zone, int reduce) implements EffectStep {}
+
+    /** "añadele 1 criatura [filtro] de menor nivel de tus tributos como material" (to the ally of the triggering event). */
+    record AttachLowerFromTributes(CardFilter filter) implements EffectStep {}
+
+    /** "coloca esta carta agotada en tu retaguardia": the utility stays on the field. */
+    record KeepOnField() implements EffectStep {}
+
     /** "tributa N cartas del tope de tu mazo". */
     record TributeTop(int count) implements EffectStep {}
 

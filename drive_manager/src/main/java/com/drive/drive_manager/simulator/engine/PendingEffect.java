@@ -48,6 +48,15 @@ public class PendingEffect {
     /** The last "puedes …" step was done, for "Si lo haces:" (IfDone). */
     @JsonIgnore
     private boolean lastDone;
+    /** How many cards the last step moved ("toma 1 carta por cada material tributado", "roba la misma cantidad"). */
+    @JsonIgnore
+    private int lastCount;
+    /** The cards the last tribute step tributed ("si tributaste 1 carta [ente]"). */
+    @JsonIgnore
+    private List<String> lastTributed = new ArrayList<>();
+    /** A utility that stays on the field after resolving ("coloca esta carta agotada en tu retaguardia"). */
+    @JsonIgnore
+    private boolean keepOnField;
     /** Players who passed priority while it was the last effect in the chain (rule 11.3.0.3). */
     @JsonIgnore
     private java.util.Set<String> passed = new java.util.HashSet<>();
