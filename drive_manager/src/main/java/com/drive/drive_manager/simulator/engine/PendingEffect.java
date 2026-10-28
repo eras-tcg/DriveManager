@@ -19,6 +19,8 @@ public class PendingEffect {
     private String text;
     /** Timeline seq of the event that triggered it. */
     private long triggerSeq;
+    /** Its link in the chain: 1 for the first one activated (resolves last). */
+    private int link;
 
     // --- Resolution progress (set while it resolves) ---
     private String resolutionId;

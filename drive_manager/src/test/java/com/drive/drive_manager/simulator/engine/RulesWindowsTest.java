@@ -280,6 +280,36 @@ class RulesWindowsTest {
         assertThat(EffectEngine.activatable(room, "host")).isEmpty();
     }
 
+    // ------------------------------------------------------------------ Chains
+
+    @Test
+    void whatTriggersWhileAChainResolvesWaitsForTheWholeChain() {
+        // Krokler by Ritual onto Carnhaus: Cadena 1 Carnhaus (En Destrucción), Cadena 2 Krokler (En Invocación)
+        CardSlot krokler = ritual("kro", "Krokler", 1, 2, "criatura nivel 1.");
+        host.getHand().add(krokler);
+        field(host, creature("carn", "Carnhaus", 1, 3), FRONT);
+        field(guest, creature("gcarn", "Carnhaus", 1, 3), FRONT);
+        EffectEngine.ritualByPlayer(room, "host", "kro", "carn");
+        EffectEngine.answer(room, "host", room.getPrompt().getId(), List.of("kro"), List.of());
+        assertThat(room.getChain()).extracting(PendingEffect::getSourceName).containsExactly("Carnhaus", "Krokler");
+
+        // Cadena 2 resolves first: Krokler destroys the guest's Carnhaus
+        Prompt destroy = room.getPrompt();
+        assertThat(destroy.getValidIds()).containsExactly("gcarn");
+        EffectEngine.answer(room, "host", destroy.getId(), List.of("gcarn"), List.of());
+
+        // Its "En Destrucción" waits: Cadena 1 (the host's Carnhaus) resolves before it
+        Prompt tribute = room.getPrompt();
+        assertThat(tribute.getPlayerId()).isEqualTo("host");
+        assertThat(room.getChain()).extracting(PendingEffect::getSourceInstanceId).containsExactly("carn");
+        EffectEngine.answer(room, "host", tribute.getId(), List.of(host.getHand().get(0).getInstanceId()), List.of());
+
+        // Then a new chain: Cadena 1, the guest's Carnhaus
+        assertThat(room.getChain()).extracting(PendingEffect::getSourceInstanceId).containsExactly("gcarn");
+        assertThat(room.getChain().get(0).getLink()).isEqualTo(1);
+        assertThat(room.getPrompt().getPlayerId()).isEqualTo("guest");
+    }
+
     // ------------------------------------------------------------------ Responding to a chain
 
     @Test

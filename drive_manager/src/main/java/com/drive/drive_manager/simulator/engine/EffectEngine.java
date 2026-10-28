@@ -698,11 +698,12 @@ public final class EffectEngine {
     static void advance(GameRoom room) {
         while (room.getPrompt() == null && room.getStatus() == GameRoom.RoomStatus.IN_PROGRESS) {
             List<PendingEffect> chain = room.getChain();
-            // Rule 11.6.0.4: triggers do not interrupt the effect that caused them
-            boolean midResolution = !chain.isEmpty() && chain.get(chain.size() - 1).getResolutionId() != null;
-            if (!midResolution && !room.getPendingEvents().isEmpty()) {
+            // Rules 7.2.0.4 and 11.6.0.4: once a chain is closed and resolving nothing can be added to it; what
+            // triggers meanwhile waits until the whole chain has resolved and then forms a new chain
+            boolean resolving = chain.stream().anyMatch(e -> e.isPriorityDone() || e.getResolutionId() != null);
+            if (!resolving && !room.getPendingEvents().isEmpty()) {
                 queueTriggers(room);
-            } else if (!midResolution && !room.getTriggerQueue().isEmpty()) {
+            } else if (!resolving && !room.getTriggerQueue().isEmpty()) {
                 activateNext(room);
             } else if (!chain.isEmpty()) {
                 if (offerPriority(room)) return;
@@ -799,7 +800,7 @@ public final class EffectEngine {
             room.getTriggerQueue().remove(0);
             return;
         }
-        // Rule 11.7.0.5: within a group, the controller chooses the order of activation
+        // Rule 11.7.0.5: within a group, the controller chooses the order in which they are chained
         if (!effect.isOrdered()) {
             int head = rank(effect, room.getCurrentTurnUserId());
             List<CardSlot> sources = new ArrayList<>();
@@ -809,10 +810,12 @@ public final class EffectEngine {
                 if (source != null && !sources.contains(source)) sources.add(source);
             }
             if (sources.size() > 1) {
-                rulesPrompt(room, effect.getControllerId(), PURPOSE_ORDER, "Orden de activación",
-                        "Varios efectos tuyos se disparan a la vez: elige cuál se activa ahora. La cadena se resuelve al revés: "
-                                + "el último en activarse se resuelve primero.", "Activar ahora", sources, sources);
-                room.getPrompt().setMin(1);
+                rulesPrompt(room, effect.getControllerId(), PURPOSE_ORDER, "Orden en la cadena",
+                        "Varios efectos tuyos se disparan a la vez y se encadenan todos. Elígelos en orden: el primero ocupa el "
+                                + "siguiente eslabón de la cadena y el último, el más alto. La cadena se resuelve al revés: "
+                                + "el último eslabón se resuelve primero.", "En cadena", sources, sources);
+                room.getPrompt().setMin(sources.size());
+                room.getPrompt().setMax(sources.size());
                 return;
             }
         }
@@ -842,8 +845,10 @@ public final class EffectEngine {
     private static void activate(GameRoom room, PendingEffect effect) {
         EffectScript script = script(effect);
         if (script.limit() != Limit.NONE) room.getUsedThisTurn().add(usageKey(effect, script));
-        record(room, GameEvent.EFFECT_ACTIVATED, effect.getControllerId(), null, null, null, effect, Map.of("label", effect.getLabel()),
-                "Se activa el efecto " + effect.getLabel() + " de " + effect.getSourceName());
+        effect.setLink(room.getChain().size() + 1);
+        record(room, GameEvent.EFFECT_ACTIVATED, effect.getControllerId(), null, null, null, effect,
+                Map.of("label", effect.getLabel(), "link", effect.getLink()),
+                "Cadena " + effect.getLink() + ": se activa el efecto " + effect.getLabel() + " de " + effect.getSourceName());
         for (EffectStep step : script.cost()) run(room, effect, step);
         room.getChain().add(effect);
     }
@@ -1645,15 +1650,17 @@ public final class EffectEngine {
         }
         if (PURPOSE_ORDER.equals(purpose)) {
             room.setPrompt(null);
+            // The group at the head of the queue, chained in the order the sources were picked
             List<PendingEffect> queue = room.getTriggerQueue();
-            for (int i = 0; i < queue.size(); i++) {
-                if (queue.get(i).getSourceInstanceId().equals(picks.get(0))) {
-                    PendingEffect chosen = queue.remove(i);
-                    chosen.setOrdered(true);
-                    queue.add(0, chosen);
-                    break;
-                }
-            }
+            int head = rank(queue.get(0), room.getCurrentTurnUserId());
+            List<PendingEffect> group = new ArrayList<>();
+            while (!queue.isEmpty() && rank(queue.get(0), room.getCurrentTurnUserId()) == head) group.add(queue.remove(0));
+            group.sort(Comparator.comparingInt(e -> {
+                int at = picks.indexOf(e.getSourceInstanceId());
+                return at < 0 ? picks.size() : at;
+            }));
+            group.forEach(e -> e.setOrdered(true));
+            queue.addAll(0, group);
             advance(room);
             return "";
         }
