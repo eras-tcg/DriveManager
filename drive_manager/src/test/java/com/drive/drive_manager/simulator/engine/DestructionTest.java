@@ -112,12 +112,18 @@ class DestructionTest {
 
     @Test
     void kroklerMayDestroyAFrontLineLevel1EnemyAndItsEffectThenResolves() {
-        host.getHand().add(card("kro", "Krokler", 2, 2, "P"));
+        // By Ritual onto a creature of the Línea frontal: Krokler takes its place there
+        CardSlot krokler = card("kro", "Krokler", 2, 2, "P");
+        krokler.setSpecialSummonKind("ritual");
+        krokler.setSpecialCost(1);
+        krokler.setRequirement("Criatura nivel 1.");
+        host.getHand().add(krokler);
+        onField(host, card("sum", "Invocador", 1, 1, "P"), 20.0);
         CardSlot enemy = onField(guest, card("ec", "Carnhaus", 1, 1, "P"), 20.0);
         onField(guest, card("lvl2", "Grande", 2, 2, "R"), 20.0);
         onField(guest, card("back", "Atrás", 1, 1, "R"), 80.0);
 
-        EffectEngine.normalSummon(room, "host", "kro", 50.0, 70.0);
+        assertThat(EffectEngine.ritualByPlayer(room, "host", "kro", "sum")).isNull();
 
         // Optional: asks first
         Prompt confirm = room.getPrompt();
@@ -152,10 +158,20 @@ class DestructionTest {
     }
 
     @Test
-    void kroklerCanBeDeclined() {
+    void kroklerInTheRetaguardiaCannotAffectEnemies() {
         host.getHand().add(card("kro", "Krokler", 2, 2, "P"));
         onField(guest, card("ec", "Carnhaus", 1, 1, "P"), 20.0);
+        // A normal summon enters the Retaguardia: its effect is not even offered
         EffectEngine.normalSummon(room, "host", "kro", 50.0, 70.0);
+        assertThat(room.getPrompt()).isNull();
+        assertThat(guest.getField()).hasSize(1);
+    }
+
+    @Test
+    void kroklerCanBeDeclined() {
+        onField(host, card("kro", "Krokler", 2, 2, "P"), 20.0);
+        onField(guest, card("ec", "Carnhaus", 1, 1, "P"), 20.0);
+        EffectEngine.specialSummoned(room, "host", host.getField().get(0), card("x", "Nadie", 1, 1, "P"), "special", null);
         assertThat(EffectEngine.answer(room, "host", room.getPrompt().getId(), List.of(), List.of())).isNull();
         assertThat(guest.getField()).hasSize(1);
         assertThat(room.isEngineBusy()).isFalse();
@@ -266,6 +282,17 @@ class DestructionTest {
         EffectEngine.specialSummoned(room, "host", summoned, summoner, "ritual", "Ana invocó a Cazador");
 
         assertThat(room.getTimeline()).extracting(GameEvent::getType).startsWith(GameEvent.SACRIFICE, GameEvent.SPECIAL_SUMMON);
+        // First the move up (declined) and the regulatory draw; only then do the effects trigger
+        Prompt front = room.getPrompt();
+        assertThat(front.getPurpose()).isEqualTo("SPECIAL_FRONT");
+        assertThat(room.getChain()).isEmpty();
+        EffectEngine.answer(room, "host", front.getId(), List.of(), List.of());
+        assertThat(room.getTimeline()).extracting(GameEvent::getType).containsSubsequence(GameEvent.SPECIAL_SUMMON, GameEvent.DRAW);
+        // Two mandatory effects of the same player: the player orders them
+        Prompt order = room.getPrompt();
+        assertThat(order.getPurpose()).isEqualTo("ORDER");
+        assertThat(order.getValidIds()).containsExactlyInAnyOrder("carn", "caz");
+        EffectEngine.answer(room, "host", order.getId(), List.of("carn"), List.of());
         // Both triggered together: the chain resolves the last activated first
         assertThat(room.getChain()).extracting(PendingEffect::getSourceName).containsExactly("Carnhaus", "Cazador De Bestias");
     }

@@ -47,6 +47,10 @@ public class GameRoom {
     private com.drive.drive_manager.simulator.engine.Combat combat;
     /** Effects already used this turn (rule 11.8), keyed by the engine. Cleared when the turn changes. */
     private Set<String> usedThisTurn = new HashSet<>();
+    /** Who took the first turn of the game (rule 3.0.1). */
+    private String firstPlayerId;
+    /** The second player while they still have the "ventaja del iniciador" (rule 6.2.1.4); null once used. */
+    private String starterAdvantageUserId;
 
     /** Closed game state (rule 7.2): a chain or a choice is pending, so no new actions can start. */
     public boolean isEngineBusy() {

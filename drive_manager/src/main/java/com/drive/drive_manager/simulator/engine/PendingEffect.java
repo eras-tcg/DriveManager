@@ -30,4 +30,13 @@ public class PendingEffect {
     /** Cards taken out of the deck by "mira las primeras N", waiting for the next step. Owner-only info. */
     @JsonIgnore
     private List<CardSlot> looked = new ArrayList<>();
+    /** Its controller already chose it to activate next among simultaneous triggers (rule 11.7.0.5). */
+    @JsonIgnore
+    private boolean ordered;
+    /** Players who passed priority while it was the last effect in the chain (rule 11.3.0.3). */
+    @JsonIgnore
+    private java.util.Set<String> passed = new java.util.HashSet<>();
+    /** The chain it belongs to was closed: both players passed (rule 11.3.0.5). */
+    @JsonIgnore
+    private boolean priorityDone;
 }
