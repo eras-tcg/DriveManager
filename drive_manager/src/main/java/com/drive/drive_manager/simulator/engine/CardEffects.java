@@ -15,6 +15,7 @@ import com.drive.drive_manager.simulator.engine.EffectStep.DeclareAttack;
 import com.drive.drive_manager.simulator.engine.EffectStep.DrawLastCount;
 import com.drive.drive_manager.simulator.engine.EffectStep.IfTributed;
 import com.drive.drive_manager.simulator.engine.EffectStep.KeepOnField;
+import com.drive.drive_manager.simulator.engine.EffectStep.MaterialToFront;
 import com.drive.drive_manager.simulator.engine.EffectStep.MaterialToLife;
 import com.drive.drive_manager.simulator.engine.EffectStep.ReduceChosen;
 import com.drive.drive_manager.simulator.engine.EffectStep.ReduceTriggerToZero;
@@ -544,12 +545,17 @@ public final class CardEffects {
                 .onlyAllyTurn()
                 .limited(Limit.ONCE_PER_TURN));
         // ST1-13 Falanx: its Requerimiento and "En Tributos" special summon are not applied yet
-        // ST1-14 Galafendrax El Transmutador (its "En Invocación" is not applied yet)
-        add("galafendrax el transmutador", new EffectScript("galafendrax:todos-los-turnos", Moment.ON_EVENT, false, TODOS,
-                "Una vez por turno: si reduces a 0 la fuerza de algún enemigo, puedes reactivar esta carta.",
-                List.of(new UntapSelf()))
-                .when(youReducedStrengthTo(0))
-                .limited(Limit.ONCE_PER_TURN));
+        // ST1-14 Galafendrax El Transmutador
+        add("galafendrax el transmutador",
+                new EffectScript("galafendrax:en-invocacion", Moment.ON_SUMMON, true, EN_INVOCACION,
+                        "Coloca hasta 1 [ente] nivel 4 de los materiales de esta carta en tu línea frontal. Luego: añádele todos los materiales "
+                                + "de esta carta como materiales.",
+                        List.of(new MaterialToFront(CardFilter.creatures().withClasses("ente"), 4))),
+                new EffectScript("galafendrax:todos-los-turnos", Moment.ON_EVENT, false, TODOS,
+                        "Una vez por turno: si reduces a 0 la fuerza de algún enemigo, puedes reactivar esta carta.",
+                        List.of(new UntapSelf()))
+                        .when(youReducedStrengthTo(0))
+                        .limited(Limit.ONCE_PER_TURN));
         // ST1-15 Hez (Reactivar: keyword)
         add("hez", new EffectScript("hez:inicio-del-turno", Moment.ON_EVENT, false, TODOS,
                 "Al inicio del turno: puedes tributar 2 materiales de esta carta para elegir todos los enemigos en la línea frontal; "

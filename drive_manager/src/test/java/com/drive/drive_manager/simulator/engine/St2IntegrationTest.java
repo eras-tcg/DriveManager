@@ -130,6 +130,26 @@ class St2IntegrationTest {
         assertThat(room.getTimeline()).extracting(GameEvent::getType).contains(GameEvent.PLAY);
     }
 
+    @Test
+    void inheritedEffectsOfOneCardWithTheSameTriggerAreChainedOneAtATime() {
+        CardSlot duregon = onField(host, slot("Duregón"), FRONT);
+        duregon.getResources().add(slot("Galveta"));
+        duregon.getResources().add(slot("Wyfreik"));
+        onField(guest, slot("Damon"), FRONT);
+        EffectEngine.attackByPlayer(room, "host", duregon.getInstanceId(), null);
+
+        // Both inherited "Al Atacar" are mandatory and come from the same card: each one is picked by its own id
+        Prompt order = room.getPrompt();
+        assertThat(order.getPurpose()).isEqualTo("ORDER");
+        assertThat(order.getEffects()).extracting(Prompt.OfferedEffect::label).hasSize(2);
+        Prompt.OfferedEffect wyfreik = order.getEffects().stream()
+                .filter(e -> e.text().contains("Wyfreik")).findFirst().orElseThrow();
+        assertThat(EffectEngine.answer(room, "host", order.getId(), List.of(wyfreik.effectId()), List.of())).isNull();
+        // Wyfreik's is Cadena 1, Galveta's Cadena 2
+        assertThat(room.getTimeline()).filteredOn(e -> GameEvent.EFFECT_ACTIVATED.equals(e.getType()))
+                .extracting(GameEvent::getEffectId).hasSize(2).first().isEqualTo(wyfreik.effectId());
+    }
+
     // ------------------------------------------------------------------ Helpers
 
     private CardSlot slot(String name) {

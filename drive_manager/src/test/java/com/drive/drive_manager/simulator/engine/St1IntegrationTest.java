@@ -170,6 +170,48 @@ class St1IntegrationTest {
         assertThat(EffectEngine.gemsOf(room, "host")).isEqualTo(gems);
     }
 
+    @Test
+    void galafendraxMaterializedPlacesALevel4EnteOfItsMaterialsInTheFrontLine() {
+        CardSlot mathaus = onField(host, slot("Mathaus"), FRONT);
+        CardSlot falanx = slot("Falanx");
+        host.getTributeZone().add(falanx);
+        CardSlot galafendrax = slot("Galafendrax El Transmutador");
+        host.getHand().add(galafendrax);
+
+        assertThat(EffectEngine.specialByPlayer(room, "host", galafendrax.getInstanceId(), mathaus.getInstanceId())).isNull();
+        EffectEngine.answer(room, "host", room.getPrompt().getId(), List.of(falanx.getInstanceId()), List.of());
+        assertThat(galafendrax.getMaterials()).containsExactly(mathaus, falanx);
+
+        // Its "En Invocación" (mandatory): up to 1 level 4 ente of its materials to the Línea frontal, with the rest
+        Prompt pick = room.getPrompt();
+        assertThat(pick).isNotNull();
+        assertThat(pick.getValidIds()).containsExactlyInAnyOrder(mathaus.getInstanceId(), falanx.getInstanceId());
+        EffectEngine.answer(room, "host", pick.getId(), List.of(mathaus.getInstanceId()), List.of());
+        assertThat(host.getField()).contains(mathaus);
+        assertThat(EffectEngine.inFrontLine(mathaus)).isTrue();
+        assertThat(mathaus.getMaterials()).containsExactly(falanx);
+        assertThat(galafendrax.getMaterials()).isEmpty();
+    }
+
+    @Test
+    void mathausReducesAnEnemyBy3UntilTheEndOfTheOpponentsTurn() {
+        CardSlot mathaus = onField(host, slot("Mathaus"), FRONT);
+        mathaus.getMaterials().add(slot("Jhav"));
+        mathaus.getMaterials().add(slot("Mihel"));
+        CardSlot damon = onField(guest, slot("Damon"), FRONT);
+        damon.setStrength(7);
+        assertThat(EffectEngine.activateByPlayer(room, "host", mathaus.getInstanceId(), null)).isNull();
+        // Its cost: 2 materials, then the enemy
+        while (room.getPrompt() != null) {
+            Prompt p = room.getPrompt();
+            List<String> picks = p.getValidIds().contains(damon.getInstanceId()) ? List.of(damon.getInstanceId())
+                    : p.getValidIds().subList(0, Math.max(p.getMin(), Math.min(p.getMax(), p.getValidIds().size())));
+            assertThat(EffectEngine.answer(room, "host", p.getId(), picks, List.of())).isNull();
+        }
+        assertThat(EffectEngine.strength(damon)).isEqualTo(4);
+        assertThat(damon.getLaterStrength()).isEqualTo(-3);
+    }
+
     // ------------------------------------------------------------------ Helpers
 
     private CardSlot slot(String name) {

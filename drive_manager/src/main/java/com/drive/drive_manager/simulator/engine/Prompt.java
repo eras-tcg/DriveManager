@@ -57,6 +57,6 @@ public class Prompt {
     /** The whole text of the effect this choice belongs to (an effect resolving or paying its cost). */
     private String effectText;
 
-    /** An effect offered to be chained. */
-    public record OfferedEffect(String sourceId, String sourceName, String label, String text) {}
+    /** An effect offered to be chained; {@code effectId} is what the player picks to chain it. */
+    public record OfferedEffect(String effectId, String sourceId, String sourceName, String label, String text) {}
 }

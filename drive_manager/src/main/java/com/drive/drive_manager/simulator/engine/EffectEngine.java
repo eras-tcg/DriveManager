@@ -1141,17 +1141,17 @@ public final class EffectEngine {
             group.add(e);
         }
         if (script.mandatory() && !effect.isOrdered()) {
-            // Several mandatory effects: their controller orders them (all of them are chained)
-            List<CardSlot> sources = sources(room, group);
-            if (sources.size() > 1) {
+            // Several mandatory effects (also several of one card, like its inherited ones): their controller
+            // chains them one at a time (all of them are chained)
+            if (group.size() > 1) {
+                List<CardSlot> sources = sources(room, group);
                 rulesPrompt(room, effect.getControllerId(), PURPOSE_ORDER, "Encadenar efectos obligatorios",
                         "Estos efectos son obligatorios: se encadenan todos. Elige cuál entra ahora como Cadena "
                                 + (room.getChain().size() + 1) + "; después eliges el siguiente. La cadena se resuelve al revés: "
                                 + "el último eslabón se resuelve primero.", "Encadenar", sources, sources);
+                offerEffects(room.getPrompt(), group);
                 room.getPrompt().setMin(1);
                 room.getPrompt().setMax(1);
-                room.getPrompt().setCardLabels(labels(group));
-                room.getPrompt().setEffects(offered(group));
                 return;
             }
         }
@@ -1173,11 +1173,10 @@ public final class EffectEngine {
             if (!sources.isEmpty()) {
                 rulesPrompt(room, effect.getControllerId(), PURPOSE_OPTIONAL, "Encadenar efectos",
                         "Elige 1 efecto para encadenarlo como Cadena " + (room.getChain().size() + 1)
-                                + (sources.size() > 1 ? " (después podrás elegir otro)" : "") + ", o no encadenes más. "
+                                + (group.size() > 1 ? " (después podrás elegir otro)" : "") + ", o no encadenes más. "
                                 + "La cadena se resuelve al revés: el último eslabón se resuelve primero.",
                         "Encadenar", sources, sources);
-                room.getPrompt().setCardLabels(labels(group));
-                room.getPrompt().setEffects(offered(group));
+                offerEffects(room.getPrompt(), group);
                 return;
             }
         }
@@ -1224,9 +1223,19 @@ public final class EffectEngine {
         return sources;
     }
 
-    /** The effects of a group with their whole text, for the choice. */
-    private static List<Prompt.OfferedEffect> offered(List<PendingEffect> group) {
-        return group.stream().map(e -> new Prompt.OfferedEffect(e.getSourceInstanceId(), e.getSourceName(), e.getLabel(), e.getText())).toList();
+    /**
+     * The effects of a group with their whole text, for a chaining choice. Each one is chosen by its own id: a
+     * card can trigger several at once (its own and the inherited ones); its card's id picks its first one.
+     */
+    private static void offerEffects(Prompt prompt, List<PendingEffect> group) {
+        prompt.setCardLabels(labels(group));
+        prompt.setEffects(group.stream()
+                .map(e -> new Prompt.OfferedEffect(e.getId(), e.getSourceInstanceId(), e.getSourceName(), e.getLabel(), e.getText())).toList());
+    }
+
+    /** The effect a chaining choice picked: by its own id, or the first one of the card picked. */
+    private static boolean picked(PendingEffect e, String pick) {
+        return e.getId().equals(pick) || e.getSourceInstanceId().equals(pick);
     }
 
     /** What each card of a group triggered ("Celeridad", "En Destrucción"), for the choice. */
@@ -1435,6 +1444,10 @@ public final class EffectEngine {
             case MaterialToLife ignored -> {
                 CardSlot self = find(player.getField(), effect.getSourceInstanceId());
                 yield self != null && !self.getMaterials().isEmpty();
+            }
+            case MaterialToFront mf -> {
+                CardSlot self = find(player.getField(), effect.getSourceInstanceId());
+                yield self != null && self.getMaterials().stream().anyMatch(m -> materialToFront(mf, m));
             }
             case SummonSelfFromZone ss -> {
                 CardSlot self = find(zone(player, ss.zone()), effect.getSourceInstanceId());
@@ -1660,6 +1673,18 @@ public final class EffectEngine {
                 if (self == null || self.getMaterials().isEmpty()) return false;
                 pick(room, effect, "Coloca hasta 1 material de " + name(self) + " al tope de tus vidas, bocarriba.", "A tus vidas",
                         self.getMaterials(), ids(self.getMaterials()), 1);
+                room.getPrompt().setMin(0);
+                return true;
+            }
+            case MaterialToFront mf -> {
+                CardSlot self = find(player.getField(), effect.getSourceInstanceId());
+                List<String> valid = self == null ? List.of() : ids(self.getMaterials().stream().filter(m -> materialToFront(mf, m)).toList());
+                if (valid.isEmpty()) {
+                    log(room, "No hay materiales que colocar en la línea frontal (" + effect.getSourceName() + ")", null);
+                    return false;
+                }
+                pick(room, effect, "Coloca hasta 1 " + mf.filter().describe() + " nivel " + mf.level() + " de los materiales de " + name(self)
+                        + " en tu línea frontal; recibirá todos los demás materiales.", "A la línea frontal", self.getMaterials(), valid, 1);
                 room.getPrompt().setMin(0);
                 return true;
             }
@@ -2082,6 +2107,11 @@ public final class EffectEngine {
                 .toList();
     }
 
+    private static boolean materialToFront(MaterialToFront mf, CardSlot material) {
+        return "creature".equals(material.getCardType()) && mf.filter().matches(material)
+                && material.getLevel() != null && material.getLevel() == mf.level();
+    }
+
     public static boolean inFrontLine(CardSlot card) {
         return card.getY() != null && card.getY() < 50;
     }
@@ -2321,7 +2351,9 @@ public final class EffectEngine {
                     ? "Debes elegir " + prompt.getMin() + " " + plural(prompt.getMin(), "carta", "cartas")
                     : "Puedes elegir hasta " + prompt.getMax() + " " + plural(prompt.getMax(), "carta", "cartas");
         }
-        if (!prompt.getValidIds().containsAll(picks)) return "Esa carta no cumple lo que pide el efecto";
+        Set<String> allowed = new HashSet<>(prompt.getValidIds());
+        if (prompt.getEffects() != null) prompt.getEffects().forEach(e -> allowed.add(e.effectId()));
+        if (!allowed.containsAll(picks)) return "Esa carta no cumple lo que pide el efecto";
         PlayerState player = room.getPlayer(userId);
         if (player == null) return "No estás en la partida";
 
@@ -2507,8 +2539,8 @@ public final class EffectEngine {
             while (!queue.isEmpty() && rank(queue.get(0), room.getCurrentTurnUserId()) == head) group.add(queue.remove(0));
             // The chosen one is chained now; the rest are asked for again
             group.sort(Comparator.comparingInt(e -> {
-                int at = picks.indexOf(e.getSourceInstanceId());
-                return at < 0 ? picks.size() : at;
+                for (int at = 0; at < picks.size(); at++) if (picked(e, picks.get(at))) return at;
+                return picks.size();
             }));
             group.get(0).setOrdered(true);
             queue.addAll(0, group);
@@ -2533,7 +2565,8 @@ public final class EffectEngine {
                 }
             } else {
                 // The chosen one goes first and is chained now (activateNext pays its cost next)
-                PendingEffect chosen = group.stream().filter(e -> e.getSourceInstanceId().equals(picks.get(0))).findFirst().orElse(null);
+                PendingEffect chosen = group.stream().filter(e -> e.getId().equals(picks.get(0))).findFirst()
+                        .or(() -> group.stream().filter(e -> picked(e, picks.get(0))).findFirst()).orElse(null);
                 if (chosen != null) {
                     queue.remove(chosen);
                     chosen.setConfirmed(true);
@@ -2720,6 +2753,25 @@ public final class EffectEngine {
                     record(room, GameEvent.SEND, userId, material, "materials", "lifeStack", effect, null,
                             player.getUsername() + " coloca " + name(material) + " como vida bocarriba (" + effect.getSourceName() + ")");
                 }
+            }
+            case MaterialToFront ignored -> {
+                CardSlot self = find(player.getField(), effect.getSourceInstanceId());
+                if (picks.isEmpty() || self == null) return null;
+                CardSlot card = find(self.getMaterials(), picks.get(0));
+                if (card == null) return "Ese material ya no está";
+                self.getMaterials().remove(card);
+                card.setFaceDown(false);
+                card.setTapped(false);
+                card.setX(50.0);
+                card.setY(25.0);
+                player.getField().add(card);
+                record(room, GameEvent.SEND, userId, card, "materials", "field", effect, null,
+                        player.getUsername() + " coloca " + name(card) + " en su línea frontal (" + effect.getSourceName() + ")");
+                List<CardSlot> rest = new ArrayList<>(self.getMaterials());
+                self.getMaterials().clear();
+                card.getMaterials().addAll(rest);
+                if (!rest.isEmpty()) log(room, player.getUsername() + " añade " + rest.size() + " " + plural(rest.size(), "material", "materiales")
+                        + " de " + name(self) + " a " + name(card), room.getEventSeq());
             }
             case AttachLowerFromTributes ignored -> {
                 CardSlot ally = find(player.getField(), effect.getSubjectId());

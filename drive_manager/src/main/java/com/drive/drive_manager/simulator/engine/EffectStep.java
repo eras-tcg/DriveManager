@@ -89,6 +89,12 @@ public sealed interface EffectStep {
     /** "coloca hasta 1 material de esta carta al tope de tus vidas bocarriba". */
     record MaterialToLife() implements EffectStep {}
 
+    /**
+     * "coloca hasta 1 [ente] nivel 4 de los materiales de esta carta en tu línea frontal. Luego: añádele todos los
+     * materiales de esta carta como materiales." It is placed, not summoned.
+     */
+    record MaterialToFront(CardFilter filter, int level) implements EffectStep {}
+
     /** "coloca la carta del tope de tu mazo al tope de tus vidas bocabajo". */
     record DeckTopToLife() implements EffectStep {}
 

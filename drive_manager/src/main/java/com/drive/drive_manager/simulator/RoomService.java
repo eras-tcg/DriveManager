@@ -146,10 +146,7 @@ public class RoomService {
         String error = EffectEngine.answer(room, userId, action.getString("promptId"), action.getStringList("chosen"), action.getStringList("order"));
         if (error != null) return GameStateUpdate.error(room.getRoomId(), error);
         // The end phase's move up was answered: the turn that was being ended ends now
-        if (room.isEndTurnPending() && !room.isEngineBusy()) {
-            room.setEndTurnPending(false);
-            return handleEndTurn(room, room.getCurrentTurnUserId());
-        }
+        if (room.isEndTurnPending() && !room.isEngineBusy()) return passTurn(room, room.getCurrentTurnUserId());
         // The start of the turn is done (its move up answered, its effects resolved): the main phase begins
         if (room.isStartPhasePending() && !room.isEngineBusy()) {
             room.setStartPhasePending(false);
@@ -935,26 +932,33 @@ public class RoomService {
     private GameStateUpdate handleEnterEndPhase(GameRoom room, String userId) {
         if (!userId.equals(room.getCurrentTurnUserId()))
             return GameStateUpdate.error(room.getRoomId(), "Not your turn");
+        if (!"MAIN".equals(room.getCurrentPhase()) || room.isEngineBusy())
+            return GameStateUpdate.error(room.getRoomId(), "La fase final empieza al terminar la fase principal");
         int dir = getPlayerDirection(room, userId);
         if (dir * room.getSharedCounter() > 0) {
             room.setSharedCounter(0);
         }
         room.setCurrentPhase("END_PHASE");
         EffectEngine.turnEnding(room, userId);
-        return GameStateUpdate.from(room, "ENTER_END_PHASE", userId);
+        // Rule 8.3: the end phase is closed: once its move up and its triggers are done, the turn ends by itself
+        if (room.isEngineBusy()) {
+            room.setEndTurnPending(true);
+            return GameStateUpdate.from(room, "ENTER_END_PHASE", userId);
+        }
+        return passTurn(room, userId);
     }
 
     private GameStateUpdate handleEndTurn(GameRoom room, String userId) {
         if (!userId.equals(room.getCurrentTurnUserId()))
             return GameStateUpdate.error(room.getRoomId(), "Not your turn");
-        // Ending from the main phase goes through the end phase first (rule 8.3): its move up to the Línea frontal
-        if ("MAIN".equals(room.getCurrentPhase())) {
-            handleEnterEndPhase(room, userId);
-            if (room.isEngineBusy()) {
-                room.setEndTurnPending(true);
-                return GameStateUpdate.from(room, "ENTER_END_PHASE", userId);
-            }
-        }
+        // Ending from the main phase goes through the end phase first (rule 8.3)
+        if ("MAIN".equals(room.getCurrentPhase())) return handleEnterEndPhase(room, userId);
+        if (room.isEngineBusy()) return GameStateUpdate.error(room.getRoomId(), "Termina primero lo pendiente de la fase final");
+        return passTurn(room, userId);
+    }
+
+    private GameStateUpdate passTurn(GameRoom room, String userId) {
+        room.setEndTurnPending(false);
         String opponentId = room.getOpponentId(userId);
         if (opponentId != null) startTurn(room, opponentId);
         else room.setCurrentPhase("MAIN");
