@@ -101,6 +101,9 @@ public sealed interface EffectStep {
     /** "añadele 1 criatura [filtro] de menor nivel de tus tributos como material" (to the ally of the triggering event). */
     record AttachLowerFromTributes(CardFilter filter) implements EffectStep {}
 
+    /** "añade esta carta como material a un aliado" (the ally chosen with PickAlly). */
+    record AttachSelfToSubject() implements EffectStep {}
+
     /** "coloca esta carta agotada en tu retaguardia": the utility stays on the field. */
     record KeepOnField() implements EffectStep {}
 

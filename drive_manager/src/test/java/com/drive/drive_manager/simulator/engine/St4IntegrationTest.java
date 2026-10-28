@@ -111,6 +111,8 @@ class St4IntegrationTest {
         CardSlot level3 = onField(guest, slot("Zhaglizer"), FRONT);
         CardSlot level4 = onField(guest, slot("Berkelus El Cazarrecompensas Del Bajomundo"), FRONT);
         assertThat(EffectEngine.attackByPlayer(room, "host", comandante.getInstanceId(), level4.getInstanceId())).contains("agotadas");
+        CardSlot back = onField(guest, slot("Damon"), BACK);
+        assertThat(EffectEngine.attackByPlayer(room, "host", comandante.getInstanceId(), back.getInstanceId())).contains("retaguardia");
         assertThat(EffectEngine.attackByPlayer(room, "host", comandante.getInstanceId(), level3.getInstanceId())).isNull();
         assertThat(room.getTimeline()).extracting(GameEvent::getType).contains(GameEvent.ATTACK_DECLARED);
     }

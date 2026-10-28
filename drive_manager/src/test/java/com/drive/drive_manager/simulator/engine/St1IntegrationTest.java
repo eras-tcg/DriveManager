@@ -143,6 +143,30 @@ class St1IntegrationTest {
         assertThat(mathaus.getMaterials()).isEmpty();
     }
 
+    @Test
+    void composicionFromTheFieldBecomesAMaterialSoAnAllyMaterializes() {
+        CardSlot composicion = onField(host, slot("Composición Adimensional"), 80.0);
+        composicion.setTapped(true);
+        CardSlot eisten = onField(host, slot("Eisten"), FRONT);
+        CardSlot flarix = slot("Flarix");
+        host.getHand().add(flarix);
+        CardSlot jhav = slot("Jhav");
+        host.getTributeZone().add(jhav);
+        assertThat(EffectEngine.activatable(room, "host")).extracting(EffectEngine.Activatable::scriptId)
+                .contains("composicion-adimensional:turno-aliado");
+        int gems = EffectEngine.gemsOf(room, "host");
+        assertThat(EffectEngine.activateByPlayer(room, "host", composicion.getInstanceId(), null)).isNull();
+        EffectEngine.answer(room, "host", room.getPrompt().getId(), List.of(eisten.getInstanceId()), List.of());
+        EffectEngine.answer(room, "host", room.getPrompt().getId(), List.of(flarix.getInstanceId()), List.of());
+        Prompt material = room.getPrompt();
+        assertThat(material.getChosenLabel()).isEqualTo("Material");
+        EffectEngine.answer(room, "host", material.getId(), List.of(jhav.getInstanceId()), List.of());
+        assertThat(host.getField()).contains(flarix).doesNotContain(eisten, composicion);
+        assertThat(flarix.getMaterials()).contains(eisten, jhav, composicion);
+        // Special cost 1, minus 1
+        assertThat(EffectEngine.gemsOf(room, "host")).isEqualTo(gems);
+    }
+
     // ------------------------------------------------------------------ Helpers
 
     private CardSlot slot(String name) {

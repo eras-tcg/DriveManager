@@ -8,6 +8,7 @@ import com.drive.drive_manager.simulator.engine.EffectScript.Limit;
 import com.drive.drive_manager.simulator.engine.EffectScript.Moment;
 import com.drive.drive_manager.simulator.engine.EffectStep.ChooseEnemy;
 import com.drive.drive_manager.simulator.engine.EffectStep.AttachLowerFromTributes;
+import com.drive.drive_manager.simulator.engine.EffectStep.AttachSelfToSubject;
 import com.drive.drive_manager.simulator.engine.EffectStep.DamageByEffect;
 import com.drive.drive_manager.simulator.engine.EffectStep.DeckTopToLife;
 import com.drive.drive_manager.simulator.engine.EffectStep.DeclareAttack;
@@ -563,9 +564,17 @@ public final class CardEffects {
                 List.of(new AttachLowerFromTributes(CardFilter.creatures().withClasses("ente")), new GainGems(1)))
                 .when(allySummonedByEffect(CardFilter.any().withClasses("ente"))));
         // ST1-17 Composición Adimensional (utility; its "Turno Aliado" Materialización is not applied yet)
-        add("composición adimensional", new EffectScript("composicion-adimensional:en-juego", Moment.ON_PLAY, true, EN_JUEGO,
-                "Tributa hasta 3 cartas de tu mano. Luego: roba la misma cantidad y coloca esta carta agotada en tu retaguardia.",
-                List.of(new TributeFromHandUpTo(3), new DrawLastCount(), new KeepOnField())));
+        add("composición adimensional",
+                new EffectScript("composicion-adimensional:en-juego", Moment.ON_PLAY, true, EN_JUEGO,
+                        "Tributa hasta 3 cartas de tu mano. Luego: roba la misma cantidad y coloca esta carta agotada en tu retaguardia.",
+                        List.of(new TributeFromHandUpTo(3), new DrawLastCount(), new KeepOnField())),
+                // A slow effect from the field: the ally chosen gets this card as a material and is the summoner
+                new EffectScript("composicion-adimensional:turno-aliado", Moment.ACTIVATED, false, "Turno Aliado",
+                        "Puedes añadir esta carta como material a un aliado para que invoque por Materialización 1 criatura en tu mano o tributos "
+                                + "reduciendo el coste especial en 1.",
+                        List.of(new PickAlly(), new AttachSelfToSubject(),
+                                new SpecialFromZone("materialization", "hand,tributeZone", 1, "subject", CardFilter.any())))
+                        .onlyAllyTurn());
         // ST1-18 Paso Interdimensional: not applied yet
     }
 
