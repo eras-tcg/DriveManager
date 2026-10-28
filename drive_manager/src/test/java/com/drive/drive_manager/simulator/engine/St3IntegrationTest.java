@@ -143,6 +143,8 @@ class St3IntegrationTest {
     void endingTheTurnOffersTheNextPlayerToMoveUp() {
         onField(guest, slot("Damon"), 75.0);
         GameStateUpdate ended = act("host", "END_TURN", Map.of());
+        // The start of the guest's turn waits for the move up before the main phase
+        assertThat(room.getCurrentPhase()).isEqualTo("START");
         assertThat(ended.getPrompt()).isNotNull();
         assertThat(ended.getPrompt().getPlayerId()).isEqualTo("guest");
         assertThat(ended.getPrompt().getPurpose()).isEqualTo("ADVANCE");
@@ -150,6 +152,7 @@ class St3IntegrationTest {
         assertThat(act("guest", "DRAW_CARD", Map.of()).getError()).isNotNull();
         assertThat(act("guest", "RESOLVE_PROMPT", Map.of("promptId", ended.getPrompt().getId(), "chosen", List.of())).getError()).isNull();
         assertThat(room.isEngineBusy()).isFalse();
+        assertThat(room.getCurrentPhase()).isEqualTo("MAIN");
     }
 
     @Test

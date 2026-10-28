@@ -62,8 +62,13 @@ public sealed interface EffectStep {
      */
     record DeclareAttack() implements EffectStep {}
 
-    /** "elige 1 aliado": the ally the next steps act on. */
-    record PickAlly() implements EffectStep {}
+    /**
+     * "elige 1 aliado": the ally the next steps act on. With {@code attacker} it is going to declare an attack, so
+     * only allies of the Línea frontal can be chosen.
+     */
+    record PickAlly(boolean attacker) implements EffectStep {
+        public PickAlly() { this(false); }
+    }
 
     /** "gana N gemas": moves the Contador towards the controller. */
     record GainGems(int count) implements EffectStep {}

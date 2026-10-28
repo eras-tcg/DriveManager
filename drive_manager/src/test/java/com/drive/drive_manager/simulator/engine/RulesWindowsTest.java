@@ -275,6 +275,34 @@ class RulesWindowsTest {
         assertThat(room.isEngineBusy()).isFalse();
     }
 
+    @Test
+    void cazaNocturnaOnlyChoosesAlliesOfTheFrontLine() {
+        CardSlot caza = creature("caza", "Caza Nocturna", 1, 0);
+        caza.setCardType("utility");
+        caza.setCost(1);
+        host.getHand().add(caza);
+        field(host, creature("back", "Atrás", 1, 3), BACK);
+        CardSlot front = field(host, creature("front", "Delante", 1, 3), FRONT);
+        EffectEngine.playByPlayer(room, "host", "caza", 50.0, 75.0);
+        Prompt pick = room.getPrompt();
+        assertThat(pick.getValidIds()).containsExactly("front");
+        EffectEngine.answer(room, "host", pick.getId(), List.of("front"), List.of());
+        assertThat(front.getTurnKeywords()).contains("Provocar 3");
+    }
+
+    @Test
+    void cazaNocturnaWithoutAFrontLineAllyDoesNothing() {
+        CardSlot caza = creature("caza", "Caza Nocturna", 1, 0);
+        caza.setCardType("utility");
+        caza.setCost(1);
+        host.getHand().add(caza);
+        field(host, creature("back", "Atrás", 1, 3), BACK);
+        EffectEngine.playByPlayer(room, "host", "caza", 50.0, 75.0);
+        assertThat(room.getPrompt()).isNull();
+        assertThat(room.getCombat()).isNull();
+        assertThat(host.getDiscardPile()).extracting(CardSlot::getInstanceId).containsExactly("caza");
+    }
+
     // ------------------------------------------------------------------ Furia
 
     @Test

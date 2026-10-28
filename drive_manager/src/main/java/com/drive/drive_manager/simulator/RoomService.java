@@ -148,9 +148,12 @@ public class RoomService {
         // The end phase's move up was answered: the turn that was being ended ends now
         if (room.isEndTurnPending() && !room.isEngineBusy()) {
             room.setEndTurnPending(false);
-        room.setWinnerId(null);
-        room.setEndReason(null);
             return handleEndTurn(room, room.getCurrentTurnUserId());
+        }
+        // The start of the turn is done (its move up answered, its effects resolved): the main phase begins
+        if (room.isStartPhasePending() && !room.isEngineBusy()) {
+            room.setStartPhasePending(false);
+            room.setCurrentPhase("MAIN");
         }
         return GameStateUpdate.from(room, "RESOLVE_PROMPT", userId);
     }
@@ -795,6 +798,9 @@ public class RoomService {
         room.setCurrentTurnUserId(null);
         room.setFirstPlayerId(null);
         room.setStarterAdvantageUserId(null);
+        room.setWinnerId(null);
+        room.setEndReason(null);
+        room.setStartPhasePending(false);
         room.setEndTurnPending(false);
         room.setCurrentPhase("MAIN");
         room.getStarterSelections().clear();
@@ -950,21 +956,33 @@ public class RoomService {
             }
         }
         String opponentId = room.getOpponentId(userId);
-        if (opponentId != null) {
-            PlayerState opponent = room.getPlayer(opponentId);
-            int newCount = Math.min(5, opponent.getResourceCount() + 1);
-            opponent.setResourceCount(newCount);
-            int dir = getPlayerDirection(room, opponentId);
-            int next = room.getSharedCounter() + newCount * dir;
-            room.setSharedCounter(Math.max(-10, Math.min(10, next)));
-            opponent.getField().forEach(c -> c.setTapped(false));
-            room.setCurrentTurnUserId(opponentId);
-            clearTurnKeywords(room);
-            autoDraw(opponent);
-        }
-        room.setCurrentPhase("MAIN");
-        if (opponentId != null) EffectEngine.offerAdvance(room, opponentId, true);
+        if (opponentId != null) startTurn(room, opponentId);
+        else room.setCurrentPhase("MAIN");
         return GameStateUpdate.from(room, "END_TURN", userId);
+    }
+
+    /**
+     * Rule 8.1, start of the turn, in order: the Marcador goes up by 1 (up to 5), the player gains that many gems
+     * and draws 1 card, their cards are reactivated, they may move creatures up to the Línea frontal, and the
+     * start-of-turn effects trigger. The main phase begins once all of that is done.
+     */
+    private void startTurn(GameRoom room, String playerId) {
+        PlayerState player = room.getPlayer(playerId);
+        room.setCurrentTurnUserId(playerId);
+        room.setCurrentPhase("START");
+        clearTurnKeywords(room);
+        int newCount = Math.min(5, player.getResourceCount() + 1);
+        player.setResourceCount(newCount);
+        int dir = getPlayerDirection(room, playerId);
+        room.setSharedCounter(Math.max(-10, Math.min(10, room.getSharedCounter() + newCount * dir)));
+        autoDraw(player);
+        player.getField().forEach(c -> c.setTapped(false));
+        EffectEngine.turnStarted(room, playerId);
+        if (room.isEngineBusy()) {
+            room.setStartPhasePending(true);
+        } else {
+            room.setCurrentPhase("MAIN");
+        }
     }
 
     /** "Hasta el final del turno" ends and the per-turn limits reset when the turn changes (rule 11.8.0.7). */

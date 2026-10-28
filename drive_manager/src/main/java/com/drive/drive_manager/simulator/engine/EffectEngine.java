@@ -404,6 +404,18 @@ public final class EffectEngine {
         room.getPrompt().setMax(back.size());
     }
 
+    /**
+     * Rule 8.1: the start of the turn, after the gems, the draw and the reactivation: records it (start-of-turn
+     * triggers), offers the move up to the Línea frontal and lets pending effects resolve.
+     */
+    public static void turnStarted(GameRoom room, String playerId) {
+        PlayerState player = room.getPlayer(playerId);
+        if (player == null) return;
+        record(room, GameEvent.TURN_START, playerId, null, null, null, null, null, "Inicio del turno de " + player.getUsername());
+        offerAdvance(room, playerId, true);
+        advance(room);
+    }
+
     // ------------------------------------------------------------------ Combat (rule 10)
 
     /**
@@ -660,6 +672,8 @@ public final class EffectEngine {
                         "¿Juegas " + name(life) + " sin pagar su coste? Si no, queda en tu mano.", "Jugar");
                 return false;
             }
+            // The revealed life is fully resolved (its triggers too) before the next hit (Letalidad)
+            if (c.getHitsLeft() > 0 && !defender.getLifeStack().isEmpty()) return false;
         }
         // Rule 2.1.0.1: a player whose life stack reaches 0 loses
         if (defender.getLifeStack().isEmpty()) {
@@ -1121,7 +1135,7 @@ public final class EffectEngine {
             case SacrificeSelf ignored -> onField != null;
             case SacrificeAlly sacrifice -> !(sacrifice.toUntapAnother() ? sacrificeToUntap(player) : allies(player)).isEmpty();
             case UntapAlly ignored -> allies(player).stream().anyMatch(EffectEngine::reactivable);
-            case PickAlly ignored -> !allies(player).isEmpty();
+            case PickAlly pick -> !pickable(player, pick).isEmpty();
             case MoveSelfToFront ignored -> onField != null && !inFrontLine(onField);
             case PlaySelfFree ignored -> find(player.getHand(), effect.getSourceInstanceId()) != null;
             default -> true;
@@ -1296,10 +1310,16 @@ public final class EffectEngine {
                 room.setPrompt(prompt);
                 return true;
             }
-            case PickAlly ignored -> {
-                List<CardSlot> allies = allies(player);
-                if (allies.isEmpty()) return false;
-                pick(room, effect, "Elige 1 aliado.", "Elegido", player.getField(), ids(allies), 1);
+            case PickAlly pick -> {
+                List<CardSlot> valid = pickable(player, pick);
+                if (valid.isEmpty()) {
+                    // Nothing to act on: the rest of the effect does nothing
+                    log(room, "No hay aliados que puedan elegirse (" + effect.getSourceName() + ")", null);
+                    effect.setStepIndex(script(effect).steps().size() - 1);
+                    return false;
+                }
+                pick(room, effect, pick.attacker() ? "Elige 1 aliado de tu línea frontal: declarará ataque." : "Elige 1 aliado.",
+                        "Elegido", player.getField(), ids(valid), 1);
                 return true;
             }
             case SacrificeSelf ignored -> {
@@ -1402,6 +1422,11 @@ public final class EffectEngine {
 
     private static List<CardSlot> allies(PlayerState player) {
         return player.getField().stream().filter(c -> "creature".equals(c.getCardType())).toList();
+    }
+
+    /** Allies "elige 1 aliado" may choose; for an attack, only those in the Línea frontal (rule 10.1.1.1). */
+    private static List<CardSlot> pickable(PlayerState player, PickAlly pick) {
+        return allies(player).stream().filter(c -> !pick.attacker() || inFrontLine(c)).toList();
     }
 
     /** The effect's card is a creature in its owner's Retaguardia. */

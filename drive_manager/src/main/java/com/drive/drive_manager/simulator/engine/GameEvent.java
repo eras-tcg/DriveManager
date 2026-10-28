@@ -49,6 +49,8 @@ public class GameEvent {
     public static final String TAP              = "TAP";
     /** Targets chosen when an effect is activated. data: targetIds. */
     public static final String TARGET = "TARGET";
+    /** The start of a player's turn (rule 8.1): start-of-turn effects trigger from it. */
+    public static final String TURN_START = "TURN_START";
     public static final String MOVE             = "MOVE";
     public static final String GAIN_GEMS        = "GAIN_GEMS";
 

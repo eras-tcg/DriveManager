@@ -53,6 +53,8 @@ public class GameRoom {
     private String starterAdvantageUserId;
     /** "Terminar turno" from the main phase went through the end phase and waits for its move up to be answered. */
     private boolean endTurnPending;
+    /** The start of the turn waits for its move up to be answered before the main phase. */
+    private boolean startPhasePending;
     /** Who won the last game, and why: "lives" (the opponent ran out of lives) or "surrender". */
     private String winnerId;
     private String endReason;

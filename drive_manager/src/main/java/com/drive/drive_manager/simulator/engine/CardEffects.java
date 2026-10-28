@@ -163,7 +163,7 @@ public final class CardEffects {
         // ST3-18 Caza Nocturna (utility; its cost reduction is in playCost)
         add("caza nocturna", new EffectScript("caza-nocturna:en-juego", Moment.ON_PLAY, true, EN_JUEGO,
                 "(1) Elige 1 aliado para que gane Provocar 3 hasta el final del turno y declare ataque.",
-                List.of(new PickAlly(), new GainUntilEndOfTurn("Provocar 3"), new DeclareAttack()))
+                List.of(new PickAlly(true), new GainUntilEndOfTurn("Provocar 3"), new DeclareAttack()))
                 .limited(Limit.ONCE_PER_TURN_BETWEEN_COPIES));
 
         // E1-P17 Arañador
