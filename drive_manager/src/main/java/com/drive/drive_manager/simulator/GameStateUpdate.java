@@ -47,6 +47,9 @@ public class GameStateUpdate {
     private Map<String, List<EffectEngine.Activatable>> activatable;
     /** Players who already played a structure normally this turn (one per turn). */
     private List<String> structurePlayed;
+    /** Who won the game that just ended, and why ("lives", "surrender"). */
+    private String winnerId;
+    private String endReason;
 
     public static GameStateUpdate from(GameRoom room, String event, String actorId) {
         GameStateUpdate u = new GameStateUpdate();
@@ -72,6 +75,8 @@ public class GameStateUpdate {
         u.activatable       = activatable.isEmpty() ? null : activatable;
         List<String> structures = room.getPlayers().keySet().stream().filter(id -> EffectEngine.structurePlayed(room, id)).toList();
         u.structurePlayed   = structures.isEmpty() ? null : structures;
+        u.winnerId          = room.getWinnerId();
+        u.endReason         = room.getEndReason();
         List<GameEvent> tl  = room.getTimeline();
         u.timeline          = tl.isEmpty() ? null : new ArrayList<>(tl.subList(Math.max(0, tl.size() - 100), tl.size()));
         u.postGameChoices   = room.getPostGameChoices().isEmpty()

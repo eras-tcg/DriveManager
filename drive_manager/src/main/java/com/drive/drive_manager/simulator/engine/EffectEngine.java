@@ -665,6 +665,8 @@ public final class EffectEngine {
         if (defender.getLifeStack().isEmpty()) {
             record(room, GameEvent.GAME_LOST, defender.getUserId(), null, null, null, null, Map.of("reason", "lives"),
                     defender.getUsername() + " se quedó sin vidas: pierde la partida");
+            room.setWinnerId(owner.getUserId());
+            room.setEndReason("lives");
             room.setCombat(null);
             room.getChain().clear();
             room.getTriggerQueue().clear();

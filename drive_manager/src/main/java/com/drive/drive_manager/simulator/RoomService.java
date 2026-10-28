@@ -148,6 +148,8 @@ public class RoomService {
         // The end phase's move up was answered: the turn that was being ended ends now
         if (room.isEndTurnPending() && !room.isEngineBusy()) {
             room.setEndTurnPending(false);
+        room.setWinnerId(null);
+        room.setEndReason(null);
             return handleEndTurn(room, room.getCurrentTurnUserId());
         }
         return GameStateUpdate.from(room, "RESOLVE_PROMPT", userId);
@@ -722,6 +724,8 @@ public class RoomService {
     }
 
     private GameStateUpdate handleSurrender(GameRoom room, String userId) {
+        room.setWinnerId(room.getOpponentId(userId));
+        room.setEndReason("surrender");
         room.getPostGameChoices().clear();
         room.setStatus(GameRoom.RoomStatus.POST_GAME);
         return GameStateUpdate.from(room, "SURRENDER", userId);

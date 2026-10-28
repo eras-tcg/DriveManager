@@ -53,6 +53,9 @@ public class GameRoom {
     private String starterAdvantageUserId;
     /** "Terminar turno" from the main phase went through the end phase and waits for its move up to be answered. */
     private boolean endTurnPending;
+    /** Who won the last game, and why: "lives" (the opponent ran out of lives) or "surrender". */
+    private String winnerId;
+    private String endReason;
 
     /** Closed game state (rule 7.2): a chain or a choice is pending, so no new actions can start. */
     public boolean isEngineBusy() {

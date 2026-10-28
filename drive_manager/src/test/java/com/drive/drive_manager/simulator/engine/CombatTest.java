@@ -203,6 +203,8 @@ class CombatTest {
         EffectEngine.attackByPlayer(room, "host", "a", null);
         assertThat(room.getStatus()).isEqualTo(GameRoom.RoomStatus.POST_GAME);
         assertThat(room.getTimeline()).extracting(GameEvent::getType).contains(GameEvent.GAME_LOST);
+        assertThat(room.getWinnerId()).isEqualTo("host");
+        assertThat(room.getEndReason()).isEqualTo("lives");
     }
 
     // ------------------------------------------------------------------ "Al Atacar" and "Al Final Del Ataque"
