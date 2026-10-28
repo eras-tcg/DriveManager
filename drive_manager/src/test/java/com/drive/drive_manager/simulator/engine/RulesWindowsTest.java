@@ -161,6 +161,18 @@ class RulesWindowsTest {
         assertThat(host.getField()).extracting(CardSlot::getInstanceId).containsExactly("kro");
     }
 
+    @Test
+    void onTheOpponentsTurnOnlyTheEndOfTheContadorLimitsPaying() {
+        // The guest at -5 gems, the host's Marcador is 5... on the host's turn the guest pays up to -10
+        room.setSharedCounter(-5);
+        assertThat(EffectEngine.canPay(room, "guest", 5)).isTrue();
+        assertThat(EffectEngine.canPay(room, "guest", 6)).isFalse();
+        // On their own turn the opponent's Marcador limits it
+        room.setCurrentTurnUserId("guest");
+        assertThat(EffectEngine.canPay(room, "guest", 1)).isFalse();
+        assertThat(EffectEngine.canPay(room, "guest", 0)).isTrue();
+    }
+
     // ------------------------------------------------------------------ Furia
 
     @Test

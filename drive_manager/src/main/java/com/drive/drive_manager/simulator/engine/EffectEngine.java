@@ -268,11 +268,13 @@ public final class EffectEngine {
     }
 
     /**
-     * Rule 5.0.0.1: paying may not leave the opponent with more gems than their Marcador shows. Paying nothing
-     * does not move the Contador, so a cost of 0 can always be paid.
+     * Rule 5.0.0.1: on your turn, paying may not leave the opponent with more gems than their Marcador shows.
+     * On the opponent's turn that limit does not apply: only the Contador's end (10 gems for the opponent).
+     * Paying nothing does not move the Contador, so a cost of 0 can always be paid.
      */
     static boolean canPay(GameRoom room, String userId, int cost) {
         if (cost <= 0) return true;
+        if (!userId.equals(room.getCurrentTurnUserId())) return gemsOf(room, userId) - cost >= -10;
         PlayerState opponent = room.getPlayer(room.getOpponentId(userId));
         int opponentMarker = opponent == null ? 0 : opponent.getResourceCount();
         return gemsOf(room, userId) - cost >= -opponentMarker;
