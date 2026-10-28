@@ -145,6 +145,11 @@ public class RoomService {
     private GameStateUpdate handleResolvePrompt(GameRoom room, String userId, GameAction action) {
         String error = EffectEngine.answer(room, userId, action.getString("promptId"), action.getStringList("chosen"), action.getStringList("order"));
         if (error != null) return GameStateUpdate.error(room.getRoomId(), error);
+        // The end phase's move up was answered: the turn that was being ended ends now
+        if (room.isEndTurnPending() && !room.isEngineBusy()) {
+            room.setEndTurnPending(false);
+            return handleEndTurn(room, room.getCurrentTurnUserId());
+        }
         return GameStateUpdate.from(room, "RESOLVE_PROMPT", userId);
     }
 
@@ -784,6 +789,7 @@ public class RoomService {
         room.setCurrentTurnUserId(null);
         room.setFirstPlayerId(null);
         room.setStarterAdvantageUserId(null);
+        room.setEndTurnPending(false);
         room.setCurrentPhase("MAIN");
         room.getStarterSelections().clear();
         room.getMulliganReady().clear();
@@ -929,6 +935,14 @@ public class RoomService {
     private GameStateUpdate handleEndTurn(GameRoom room, String userId) {
         if (!userId.equals(room.getCurrentTurnUserId()))
             return GameStateUpdate.error(room.getRoomId(), "Not your turn");
+        // Ending from the main phase goes through the end phase first (rule 8.3): its move up to the Línea frontal
+        if ("MAIN".equals(room.getCurrentPhase())) {
+            handleEnterEndPhase(room, userId);
+            if (room.getPrompt() != null) {
+                room.setEndTurnPending(true);
+                return GameStateUpdate.from(room, "ENTER_END_PHASE", userId);
+            }
+        }
         String opponentId = room.getOpponentId(userId);
         if (opponentId != null) {
             PlayerState opponent = room.getPlayer(opponentId);

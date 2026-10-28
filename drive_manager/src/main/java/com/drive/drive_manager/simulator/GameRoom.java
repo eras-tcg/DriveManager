@@ -51,6 +51,8 @@ public class GameRoom {
     private String firstPlayerId;
     /** The second player while they still have the "ventaja del iniciador" (rule 6.2.1.4); null once used. */
     private String starterAdvantageUserId;
+    /** "Terminar turno" from the main phase went through the end phase and waits for its move up to be answered. */
+    private boolean endTurnPending;
 
     /** Closed game state (rule 7.2): a chain or a choice is pending, so no new actions can start. */
     public boolean isEngineBusy() {

@@ -176,6 +176,21 @@ class St3IntegrationTest {
     }
 
     @Test
+    void endingTheTurnFromTheMainPhaseOffersTheMoveUpFirst() {
+        CardSlot damon = onField(host, slot("Damon"), 75.0);
+        GameStateUpdate ending = act("host", "END_TURN", Map.of());
+        assertThat(room.getCurrentTurnUserId()).isEqualTo("host");
+        assertThat(room.getCurrentPhase()).isEqualTo("END_PHASE");
+        assertThat(ending.getPrompt().getPurpose()).isEqualTo("ADVANCE");
+        assertThat(ending.getPrompt().getPlayerId()).isEqualTo("host");
+        act("host", "RESOLVE_PROMPT", Map.of("promptId", ending.getPrompt().getId(), "chosen", List.of(damon.getInstanceId())));
+        assertThat(EffectEngine.inFrontLine(damon)).isTrue();
+        // Answered: the turn ends
+        assertThat(room.getCurrentTurnUserId()).isEqualTo("guest");
+        assertThat(room.isEndTurnPending()).isFalse();
+    }
+
+    @Test
     void aRematchDrawsWhoStartsAgain() {
         room.setStatus(GameRoom.RoomStatus.POST_GAME);
         for (PlayerState p : List.of(host, guest)) assertThat(act(p.getUserId(), "POST_GAME_CHOICE", Map.of("choice", "rematch")).getError()).isNull();
