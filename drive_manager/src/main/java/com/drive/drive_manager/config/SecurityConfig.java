@@ -38,17 +38,9 @@ public class SecurityConfig {
                 .cors(Customizer.withDefaults())
                 .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        // Public read-only data used by pages that work without login
-                        // (home, editions, cards, deck builder, public decks, booster result)
-                        .requestMatchers(HttpMethod.GET, "/api/cards/ref/*/check").authenticated()
-                        .requestMatchers(HttpMethod.GET,
-                                "/api/cards", "/api/cards/**",
-                                "/api/drive/health",
-                                "/api/drive/cards/db", "/api/drive/cards/db/*/image",
-                                "/api/drive/editions", "/api/drive/editions/**",
-                                "/api/drive/front-content/**",
-                                "/api/drive/decklists", "/api/drive/decklists/*",
-                                "/api/drive/newsletter", "/api/drive/newsletter/*").permitAll()
+                        // The whole site needs a session: only the deploy health check, the Drive webhook
+                        // (validated by its channel token) and the simulator socket are open.
+                        .requestMatchers(HttpMethod.GET, "/api/drive/health").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/drive/webhook").permitAll()
                         .requestMatchers("/ws/**").permitAll()
                         .anyRequest().authenticated()
