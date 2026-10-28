@@ -829,7 +829,10 @@ public final class EffectEngine {
             room.getTriggerQueue().remove(0);
             return;
         }
-        Prompt prompt = prompt(room, effect, Prompt.Kind.CONFIRM, "¿Activas este efecto? " + effect.getText());
+        int link = room.getChain().size() + 1;
+        Prompt prompt = prompt(room, effect, Prompt.Kind.CONFIRM, (link == 1 ? "¿Activas este efecto como Cadena 1? "
+                : "¿Lo encadenas como Cadena " + link + "? Se resolverá antes que los eslabones que ya están en la cadena. ")
+                + effect.getText());
         CardSlot source = findAnywhere(room, effect.getControllerId(), effect.getSourceInstanceId());
         if (source != null) {
             prompt.setCards(new ArrayList<>(List.of(source)));
@@ -1269,7 +1272,7 @@ public final class EffectEngine {
         p.setPlayerId(effect.getControllerId());
         p.setEffectId(effect.getId());
         p.setSourceName(effect.getSourceName());
-        p.setTitle(effect.getSourceName() + " · " + effect.getLabel());
+        p.setTitle((effect.getLink() > 0 ? "Cadena " + effect.getLink() + " · " : "") + effect.getSourceName() + " · " + effect.getLabel());
         p.setInstruction(instruction);
         return p;
     }
