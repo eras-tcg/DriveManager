@@ -451,8 +451,8 @@ public final class CardEffects {
                 .onlyAllyTurn());
         // ST2-17 Huevo De Dragón (utility; its slow effect from the field is not applied yet)
         add("huevo de dragón", new EffectScript("huevo-de-dragon:en-juego", Moment.ON_PLAY, true, EN_JUEGO,
-                "Tributa 4 cartas del tope de tu mazo. Luego: toma 1 carta Verde o [dragón] nivel 1 de tus tributos.",
-                List.of(new TributeTop(4), new TakeFromZone("tributeZone", CardFilter.colors("G").withClasses("dragón").withLevel(1), 1, false))));
+                "Tributa 4 cartas del tope de tu mazo. Luego: toma 1 carta Verde o [dragón] de tus tributos.",
+                List.of(new TributeTop(4), new TakeFromZone("tributeZone", CardFilter.colors("G").withClasses("dragón"), 1, false))));
         // ST2-18 Llamarada (utility)
         add("llamarada",
                 new EffectScript("llamarada:tributada", Moment.ON_EVENT, false, "En Tributos",

@@ -52,4 +52,11 @@ public class Prompt {
     private String summonerId;
     /** What each card stands for in this choice (the effects it triggered), by instance id. */
     private java.util.Map<String, String> cardLabels;
+    /** The effects offered in this choice, with their whole text (chaining choices). */
+    private List<OfferedEffect> effects;
+    /** The whole text of the effect this choice belongs to (an effect resolving or paying its cost). */
+    private String effectText;
+
+    /** An effect offered to be chained. */
+    public record OfferedEffect(String sourceId, String sourceName, String label, String text) {}
 }

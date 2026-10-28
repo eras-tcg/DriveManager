@@ -1127,6 +1127,7 @@ public final class EffectEngine {
                 room.getPrompt().setMin(1);
                 room.getPrompt().setMax(1);
                 room.getPrompt().setCardLabels(labels(group));
+                room.getPrompt().setEffects(offered(group));
                 return;
             }
         }
@@ -1152,6 +1153,7 @@ public final class EffectEngine {
                                 + "La cadena se resuelve al revés: el último eslabón se resuelve primero.",
                         "Encadenar", sources, sources);
                 room.getPrompt().setCardLabels(labels(group));
+                room.getPrompt().setEffects(offered(group));
                 return;
             }
         }
@@ -1196,6 +1198,11 @@ public final class EffectEngine {
             if (source != null && !sources.contains(source)) sources.add(source);
         }
         return sources;
+    }
+
+    /** The effects of a group with their whole text, for the choice. */
+    private static List<Prompt.OfferedEffect> offered(List<PendingEffect> group) {
+        return group.stream().map(e -> new Prompt.OfferedEffect(e.getSourceInstanceId(), e.getSourceName(), e.getLabel(), e.getText())).toList();
     }
 
     /** What each card of a group triggered ("Celeridad", "En Destrucción"), for the choice. */
@@ -1920,6 +1927,7 @@ public final class EffectEngine {
         p.setEffectId(effect.getId());
         p.setSourceName(effect.getSourceName());
         p.setTitle((effect.getLink() > 0 ? "Cadena " + effect.getLink() + " · " : "") + effect.getSourceName() + " · " + effect.getLabel());
+        p.setEffectText(effect.getText());
         p.setInstruction(instruction);
         return p;
     }
