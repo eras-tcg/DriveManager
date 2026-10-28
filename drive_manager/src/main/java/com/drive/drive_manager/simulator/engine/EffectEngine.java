@@ -861,8 +861,9 @@ public final class EffectEngine {
             List<CardSlot> sources = sources(room, group);
             if (!sources.isEmpty()) {
                 rulesPrompt(room, effect.getControllerId(), PURPOSE_OPTIONAL, "Encadenar efectos",
-                        "Elige 1 efecto para encadenarlo como Cadena " + (room.getChain().size() + 1) + " (después podrás elegir otro), "
-                                + "o no encadenes más. La cadena se resuelve al revés: el último eslabón se resuelve primero.",
+                        "Elige 1 efecto para encadenarlo como Cadena " + (room.getChain().size() + 1)
+                                + (sources.size() > 1 ? " (después podrás elegir otro)" : "") + ", o no encadenes más. "
+                                + "La cadena se resuelve al revés: el último eslabón se resuelve primero.",
                         "Encadenar", sources, sources);
                 room.getPrompt().setCardLabels(labels(group));
                 return;
