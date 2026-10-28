@@ -158,6 +158,59 @@ class St4IntegrationTest {
         assertThat(EffectEngine.gemsOf(room, "host")).isEqualTo(gems);
     }
 
+    @Test
+    void espadaDePrimeraLineaGains2AndCeleridadOnlyWhileYouControl3RedAllies() {
+        CardSlot espada = onField(host, slot("Espada De Primera Línea"), FRONT);
+        onField(host, slot("Peón De Línea Frontal"), FRONT);
+        EffectEngine.refreshContinuous(room);
+        assertThat(EffectEngine.strength(espada)).isEqualTo(3);
+
+        // A third Red ally: the condition holds after that event
+        CardSlot peon = slot("Peón De Línea Frontal");
+        host.getHand().add(peon);
+        assertThat(EffectEngine.normalSummon(room, "host", peon.getInstanceId(), 50.0, 75.0)).isNull();
+        while (room.getPrompt() != null) EffectEngine.answer(room, "host", room.getPrompt().getId(), List.of(), List.of());
+        assertThat(EffectEngine.strength(espada)).isEqualTo(5);
+        assertThat(EffectEngine.keywords(espada)).contains("Celeridad");
+
+        // One of them leaves: it stops applying right away
+        host.getField().remove(peon);
+        EffectEngine.refreshContinuous(room);
+        assertThat(EffectEngine.strength(espada)).isEqualTo(3);
+        assertThat(EffectEngine.keywords(espada)).doesNotContain("Celeridad");
+
+        // "Turno Aliado": not on the opponent's turn
+        host.getField().add(peon);
+        room.setCurrentTurnUserId("guest");
+        EffectEngine.refreshContinuous(room);
+        assertThat(EffectEngine.strength(espada)).isEqualTo(3);
+    }
+
+    @Test
+    void franchuteSummonsRedCreaturesOfLevelSum2FromTheHandForFree() {
+        CardSlot franchute = slot("Franchute");
+        host.getHand().add(franchute);
+        CardSlot peon = slot("Peón De Línea Frontal");
+        CardSlot umbrio = slot("Caballero Umbrío");
+        CardSlot plata = slot("Espada De Plata");
+        host.getHand().addAll(List.of(peon, umbrio, plata));
+        room.setSharedCounter(-10);
+        assertThat(EffectEngine.normalSummon(room, "host", franchute.getInstanceId(), 50.0, 75.0)).isNull();
+
+        Prompt offer = room.getPrompt();
+        assertThat(offer.getPurpose()).isEqualTo("OPTIONAL");
+        EffectEngine.answer(room, "host", offer.getId(), List.of(franchute.getInstanceId()), List.of());
+        Prompt pick = room.getPrompt();
+        assertThat(pick.getValidIds()).containsExactlyInAnyOrder(peon.getInstanceId(), umbrio.getInstanceId(), plata.getInstanceId());
+        // Levels 1 + 2 go over 2
+        assertThat(EffectEngine.answer(room, "host", pick.getId(), List.of(peon.getInstanceId(), plata.getInstanceId()), List.of()))
+                .contains("sumar 2");
+        int gems = EffectEngine.gemsOf(room, "host");
+        assertThat(EffectEngine.answer(room, "host", pick.getId(), List.of(peon.getInstanceId(), umbrio.getInstanceId()), List.of())).isNull();
+        assertThat(host.getField()).contains(peon, umbrio);
+        assertThat(EffectEngine.gemsOf(room, "host")).isEqualTo(gems);
+    }
+
     // ------------------------------------------------------------------ Helpers
 
     private GameStateUpdate act(String userId, String type, Map<String, Object> payload) {

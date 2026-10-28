@@ -111,10 +111,16 @@ public sealed interface EffectStep {
     record AttachSelfToSubject() implements EffectStep {}
 
     /** "coloca esta carta agotada en tu retaguardia": the utility stays on the field. */
-    record KeepOnField() implements EffectStep {}
+    record KeepOnField(boolean exhausted) implements EffectStep {}
 
     /** "tributa N cartas del tope de tu mazo". */
     record TributeTop(int count) implements EffectStep {}
+
+    /** "envía esta carta (del campo) a tu descarte": a permanent paying with itself. */
+    record SendSelfFromFieldTo(String zone) implements EffectStep {}
+
+    /** "invoca criaturas … que en nivel sumen hasta N de tu mano sin pagar sus costes" (up to that level sum, all at once). */
+    record SummonFreeLevelSum(String zone, CardFilter filter, int maxLevelSum) implements EffectStep {}
 
     /** "coloca [hasta] N cartas de tu [zona] al tope de tu mazo". */
     record ToDeckTop(String zone, int count, boolean upTo) implements EffectStep {}

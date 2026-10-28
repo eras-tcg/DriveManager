@@ -52,6 +52,8 @@ public class GameStateUpdate {
     private String endReason;
 
     public static GameStateUpdate from(GameRoom room, String event, String actorId) {
+        // Continuous effects as they are now (manual moves in editor mode record no event)
+        com.drive.drive_manager.simulator.engine.EffectEngine.refreshContinuous(room);
         GameStateUpdate u = new GameStateUpdate();
         u.roomId            = room.getRoomId();
         u.status            = room.getStatus().name();

@@ -150,6 +150,34 @@ class St2IntegrationTest {
                 .extracting(GameEvent::getEffectId).hasSize(2).first().isEqualTo(wyfreik.effectId());
     }
 
+    @Test
+    void huevoDeDragonStaysOnTheFieldAndLaterSummonsALevel1Dragon() {
+        CardSlot huevo = slot("Huevo De Dragón");
+        host.getHand().add(huevo);
+        assertThat(EffectEngine.playByPlayer(room, "host", huevo.getInstanceId(), 50.0, 75.0)).isNull();
+        while (room.getPrompt() != null) {
+            Prompt p = room.getPrompt();
+            EffectEngine.answer(room, "host", p.getId(), p.getValidIds().isEmpty() ? List.of() : List.of(p.getValidIds().get(0)), List.of());
+        }
+        // It stays on the field as a permanent
+        assertThat(host.getField()).contains(huevo);
+        assertThat(host.getDiscardPile()).doesNotContain(huevo);
+
+        // Its slow effect from the field: to the Descarte, summon a level 1 [dragón] of the Tributos
+        CardSlot flamagon = slot("Flamagón");
+        host.getTributeZone().add(flamagon);
+        assertThat(EffectEngine.activatable(room, "host")).extracting(EffectEngine.Activatable::scriptId)
+                .contains("huevo-de-dragon:turno-aliado");
+        assertThat(EffectEngine.activateByPlayer(room, "host", huevo.getInstanceId(), "huevo-de-dragon:turno-aliado")).isNull();
+        while (room.getPrompt() != null) {
+            Prompt p = room.getPrompt();
+            List<String> pick = p.getValidIds().contains(flamagon.getInstanceId()) ? List.of(flamagon.getInstanceId()) : List.of();
+            EffectEngine.answer(room, "host", p.getId(), pick, List.of());
+        }
+        assertThat(host.getDiscardPile()).contains(huevo);
+        assertThat(host.getField()).contains(flamagon).doesNotContain(huevo);
+    }
+
     // ------------------------------------------------------------------ Helpers
 
     private CardSlot slot(String name) {

@@ -633,6 +633,8 @@ public final class EffectEngine {
         card.setTurnStrength(0);
         card.setLaterStrength(0);
         card.getTurnKeywords().clear();
+        card.setContinuousStrength(0);
+        card.getContinuousKeywords().clear();
         card.setX(null);
         card.setY(null);
     }
@@ -737,7 +739,7 @@ public final class EffectEngine {
     /** Furia N → N; Furia without a number → −1 (no limit); null without Furia. */
     private static Integer furia(CardSlot card) {
         Integer best = null;
-        for (String k : concatStrings(card.getKeywords(), card.getTurnKeywords())) {
+        for (String k : keywords(card)) {
             if (!k.toLowerCase(Locale.ROOT).startsWith("furia")) continue;
             Matcher m = Pattern.compile("(\\d+)").matcher(k);
             if (!m.find()) return -1;
@@ -1005,7 +1007,7 @@ public final class EffectEngine {
      */
     static Integer keywordLevel(CardSlot card, String keyword) {
         Integer best = null;
-        for (String k : concatStrings(card.getKeywords(), card.getTurnKeywords())) {
+        for (String k : keywords(card)) {
             if (!k.toLowerCase(Locale.ROOT).startsWith(keyword.toLowerCase(Locale.ROOT))) continue;
             Matcher m = Pattern.compile("(\\d+)").matcher(k);
             int value = m.find() ? Integer.parseInt(m.group(1)) : 0;
@@ -1021,6 +1023,7 @@ public final class EffectEngine {
      * resolutions), activates them in rules order, resolves the chain and goes on with the combat.
      */
     static void advance(GameRoom room) {
+        refreshContinuous(room);
         while (room.getPrompt() == null && room.getStatus() == GameRoom.RoomStatus.IN_PROGRESS) {
             List<PendingEffect> chain = room.getChain();
             // Rules 7.2.0.4 and 11.6.0.4: once a chain is closed and resolving nothing can be added to it; what
@@ -1271,7 +1274,7 @@ public final class EffectEngine {
                     || step instanceof DestroyFaceUpLife || step instanceof TakeFromZone || step instanceof PlaySelfFromZone
                     || step instanceof SpecialFromZone || step instanceof SummonFromZone || step instanceof RitualFromZone
                     || step instanceof SacrificeAlly || step instanceof UntapAlly || step instanceof PickAlly || step instanceof PlaySelfFree
-                    || step instanceof MoveSelfToFront;
+                    || step instanceof MoveSelfToFront || step instanceof SummonFreeLevelSum;
             if (needsTarget && !possible(room, effect, step)) return false;
         }
         return true;
@@ -1476,6 +1479,8 @@ public final class EffectEngine {
                 Located at = locate(player, effect.getSourceInstanceId());
                 yield at != null && !at.zone().equals(send.zone()) && !"field".equals(at.zone());
             }
+            case SendSelfFromFieldTo ignored -> onField != null;
+            case SummonFreeLevelSum sum -> !freeLevelSum(room, effect, sum).isEmpty();
             case SendFromZoneToDeckBottom send -> zone(player, send.zone()).stream().filter(send.filter()::matches).count() >= send.count();
             case TapSelf ignored -> onField != null && !onField.isTapped();
             case SacrificeSelf ignored -> onField != null;
@@ -1731,14 +1736,34 @@ public final class EffectEngine {
                         player.getUsername() + " añade " + name(self) + " como material de " + name(ally));
                 return false;
             }
-            case KeepOnField ignored -> {
+            case KeepOnField keep -> {
                 CardSlot self = find(player.getField(), effect.getSourceInstanceId());
                 if (self != null) {
-                    self.setTapped(true);
+                    // It stays as a permanent: its effects on the field work like any other card's there
+                    if (keep.exhausted()) self.setTapped(true);
                     effect.setKeepOnField(true);
-                    log(room, name(self) + " queda agotada en la retaguardia", null);
+                    log(room, name(self) + (keep.exhausted() ? " queda agotada en la retaguardia" : " permanece en el campo"), null);
                 }
                 return false;
+            }
+            case SendSelfFromFieldTo send -> {
+                CardSlot self = find(player.getField(), effect.getSourceInstanceId());
+                if (self == null) return false;
+                player.getField().remove(self);
+                leaveField(self);
+                zone(player, send.zone()).add(self);
+                record(room, GameEvent.SEND, userId, self, "field", send.zone(), effect, null,
+                        player.getUsername() + " envía " + name(self) + " a su " + zoneName(send.zone()));
+                return false;
+            }
+            case SummonFreeLevelSum sum -> {
+                List<CardSlot> valid = freeLevelSum(room, effect, sum);
+                if (valid.isEmpty()) return false;
+                pick(room, effect, "Puedes invocar criaturas " + sum.filter().describe() + " de tu " + zoneName(sum.zone())
+                                + " que en nivel sumen hasta " + sum.maxLevelSum() + ", sin pagar sus costes. Entran en Retaguardia y robas 1 carta por cada una.",
+                        "Invocar", zone(player, sum.zone()), ids(valid), valid.size());
+                room.getPrompt().setMin(0);
+                return true;
             }
             case TributeTop top -> {
                 int n = Math.min(top.count(), player.getDeck().size());
@@ -2104,6 +2129,18 @@ public final class EffectEngine {
                 .filter(c -> "creature".equals(c.getCardType()) && c.getCost() != null)
                 .filter(summon.filter()::matches)
                 .filter(c -> canPay(room, player.getUserId(), Math.max(0, c.getCost() - summon.reduce())))
+                .toList();
+    }
+
+    /** Creatures that fit within the level sum on their own (summoned free). */
+    private static List<CardSlot> freeLevelSum(GameRoom room, PendingEffect effect, SummonFreeLevelSum sum) {
+        PlayerState player = room.getPlayer(effect.getControllerId());
+        if (player == null) return List.of();
+        return zone(player, sum.zone()).stream()
+                .filter(c -> !c.getInstanceId().equals(effect.getSourceInstanceId()))
+                .filter(c -> "creature".equals(c.getCardType()) && c.getCost() != null && c.getLevel() != null)
+                .filter(sum.filter()::matches)
+                .filter(c -> c.getLevel() <= sum.maxLevelSum())
                 .toList();
     }
 
@@ -2648,6 +2685,19 @@ public final class EffectEngine {
                 record(room, GameEvent.TARGET, userId, find(opponent.getField(), picks.get(0)), null, null, effect, Map.of("targetIds", picks),
                         player.getUsername() + " elige como objetivo a " + String.join(", ", names) + " (" + effect.getSourceName() + ")");
             }
+            case SummonFreeLevelSum sum -> {
+                List<CardSlot> valid = freeLevelSum(room, effect, sum);
+                List<CardSlot> chosen = new ArrayList<>();
+                for (String id : picks) {
+                    CardSlot card = find(valid, id);
+                    if (card == null) return "Ya no puedes invocar esa criatura";
+                    chosen.add(card);
+                }
+                if (chosen.stream().mapToInt(c -> c.getLevel()).sum() > sum.maxLevelSum())
+                    return "Sus niveles deben sumar " + sum.maxLevelSum() + " o menos";
+                for (CardSlot card : chosen) summonByEffect(room, effect, player, card, sum.zone(), card.getCost(), false);
+                effect.setLastDone(!chosen.isEmpty());
+            }
             case SummonFromZone summon -> {
                 CardSlot card = find(summonable(room, effect, summon), picks.get(0));
                 if (card == null) return "Ya no puedes invocar esa criatura";
@@ -2929,6 +2979,7 @@ public final class EffectEngine {
         room.getTimeline().add(e);
         if (room.getTimeline().size() > TIMELINE_LIMIT) room.getTimeline().remove(0);
         room.getPendingEvents().add(e);
+        refreshContinuous(room);
         if (logText != null) log(room, logText, e.getSeq());
         return e;
     }
@@ -2958,7 +3009,36 @@ public final class EffectEngine {
 
     public static int strength(CardSlot card) {
         return (card.getStrength() == null ? 0 : card.getStrength()) + card.getStrengthModifier() + card.getTurnStrength()
-                + card.getLaterStrength();
+                + card.getLaterStrength() + card.getContinuousStrength();
+    }
+
+    /** Its abilities: printed, gained this turn and given by its continuous effects now. */
+    public static List<String> keywords(CardSlot card) {
+        List<String> all = new ArrayList<>(card.getKeywords());
+        all.addAll(card.getTurnKeywords());
+        all.addAll(card.getContinuousKeywords());
+        return all;
+    }
+
+    /**
+     * Continuous effects with a condition ("mientras controles 3 o más aliados Rojos") are checked again after every
+     * event: each card on the field gets what those that hold give it, and loses what those that stopped gave it.
+     */
+    public static void refreshContinuous(GameRoom room) {
+        for (PlayerState p : room.getPlayers().values()) {
+            for (CardSlot card : p.getField()) {
+                int strength = 0;
+                List<String> keywords = new ArrayList<>();
+                for (CardEffects.Continuous c : CardEffects.continuousOf(card)) {
+                    if (c.allyTurn() && !p.getUserId().equals(room.getCurrentTurnUserId())) continue;
+                    if (card.isFaceDown() || !c.condition().test(room, null, card, p.getUserId())) continue;
+                    strength += c.strength();
+                    keywords.addAll(c.keywords());
+                }
+                card.setContinuousStrength(strength);
+                card.setContinuousKeywords(keywords);
+            }
+        }
     }
 
     private record Located(CardSlot card, String zone) {}

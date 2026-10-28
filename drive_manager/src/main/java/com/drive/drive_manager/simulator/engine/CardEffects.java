@@ -30,6 +30,8 @@ import com.drive.drive_manager.simulator.engine.EffectStep.PlaySelfFromZone;
 import com.drive.drive_manager.simulator.engine.EffectStep.ToDeckTop;
 import com.drive.drive_manager.simulator.engine.EffectStep.TributeResource;
 import com.drive.drive_manager.simulator.engine.EffectStep.TributeTop;
+import com.drive.drive_manager.simulator.engine.EffectStep.SendSelfFromFieldTo;
+import com.drive.drive_manager.simulator.engine.EffectStep.SummonFreeLevelSum;
 import com.drive.drive_manager.simulator.engine.EffectStep.GainStrength;
 import com.drive.drive_manager.simulator.engine.EffectStep.IfDone;
 import com.drive.drive_manager.simulator.engine.EffectStep.SpecialFromZone;
@@ -75,6 +77,7 @@ public final class CardEffects {
     private static final Map<String, List<EffectScript>> BY_NAME = new HashMap<>();
     /** Inherited effects ("heredables"): what a card gives the creature it is a Recurso of (rule 11.4.0.3). */
     private static final Map<String, List<EffectScript>> INHERITED = new HashMap<>();
+    private static final Map<String, List<Continuous>> CONTINUOUS = new HashMap<>();
 
     /** Keyword abilities with an effect the engine runs ("Celeridad"). Others (Provocar, Letalidad…) are combat rules. */
     private static final Map<String, EffectScript> KEYWORDS = Map.of(
@@ -229,7 +232,11 @@ public final class CardEffects {
                         && controls(room, controller, CardFilter.creatures().withClasses("caballero"), 4))
                 .fromZone("hand")
                 .limited(Limit.ONCE_PER_TURN_BETWEEN_COPIES));
-        // ST4-4 Espada De Primera Línea (its continuous "+2 fuerza y Celeridad con 3 aliados Rojos" is not applied yet)
+        // ST4-4 Espada De Primera Línea
+        continuous("espada de primera línea", new Continuous("Turno Aliado",
+                "Mientras controles 3 o más aliados Rojos: esta carta gana fuerza 2 y tiene Celeridad.", true,
+                (room, event, source, controller) -> countOnField(room, controller, CardFilter.creatures().withColors("R")) >= 3,
+                2, List.of("Celeridad")));
         add("espada de primera línea", new EffectScript("espada-primera-linea:en-invocacion", Moment.ON_SUMMON, true, EN_INVOCACION,
                 "Roba 2 cartas. Luego: tributa 1 carta de tu mano.",
                 List.of(new Draw(2), new TributeFromHand(1))));
@@ -260,7 +267,10 @@ public final class CardEffects {
                 .when((room, event, source, controller) -> turnEnds(event, controller) && !source.isTapped()
                         && EffectEngine.inFrontLine(source) && room.getCombat() == null)
                 .onlyAllyTurn());
-        // ST4-12 Franchute: Perforante (combat rule); its inherited effect waits for the inherited effects
+        // ST4-12 Franchute (Perforante: combat rule)
+        add("franchute", new EffectScript("franchute:en-invocacion", Moment.ON_SUMMON, false, EN_INVOCACION,
+                "Puedes invocar criaturas Rojas que en nivel sumen hasta 2 de tu mano sin pagar sus costes.",
+                List.of(new SummonFreeLevelSum("hand", CardFilter.creatures().withColors("R"), 2))));
         // ST4-13 Comandante De Las Espadas Dragón (Enfrentar 3: combat rule)
         add("comandante de las espadas dragón", new EffectScript("comandante-espadas-dragon:al-atacar", Moment.ON_ATTACK, false, AL_ATACAR,
                 "Una vez por turno: puedes invocar 1 criatura Roja nivel 2 o menor de tu mano reduciendo su coste en 1.",
@@ -451,10 +461,18 @@ public final class CardEffects {
                 List.of(new GainGems(1), new Draw(1), new TributeFromHand(1)))
                 .when(youSpecialSummoned(dragon))
                 .onlyAllyTurn());
-        // ST2-17 Huevo De Dragón (utility; its slow effect from the field is not applied yet)
-        add("huevo de dragón", new EffectScript("huevo-de-dragon:en-juego", Moment.ON_PLAY, true, EN_JUEGO,
-                "Tributa 4 cartas del tope de tu mazo. Luego: toma 1 carta Verde o [dragón] de tus tributos.",
-                List.of(new TributeTop(4), new TakeFromZone("tributeZone", CardFilter.colors("G").withClasses("dragón"), 1, false))));
+        // ST2-17 Huevo De Dragón (utility): it stays on the field as a permanent, with a slow effect from there
+        add("huevo de dragón",
+                new EffectScript("huevo-de-dragon:en-juego", Moment.ON_PLAY, true, EN_JUEGO,
+                        "Tributa 4 cartas del tope de tu mazo. Luego: toma 1 carta Verde o [dragón] de tus tributos. Esta carta permanece en el campo.",
+                        List.of(new TributeTop(4), new TakeFromZone("tributeZone", CardFilter.colors("G").withClasses("dragón"), 1, false),
+                                new KeepOnField(false))),
+                new EffectScript("huevo-de-dragon:turno-aliado", Moment.ACTIVATED, false, "Turno Aliado",
+                        "Puedes enviar esta carta activa a tu descarte para invocar 1 [dragón] nivel 1 de tus tributos reduciendo su coste en 1.",
+                        List.of(new SendSelfFromFieldTo("discardPile")),
+                        List.of(new SummonFromZone("tributeZone", CardFilter.creatures().withClasses("dragón").withMaxLevel(1), 1, false)))
+                        .when((room, event, source, controller) -> !source.isTapped())
+                        .onlyAllyTurn());
         // ST2-18 Llamarada (utility)
         add("llamarada",
                 new EffectScript("llamarada:tributada", Moment.ON_EVENT, false, "En Tributos",
@@ -573,7 +591,7 @@ public final class CardEffects {
         add("composición adimensional",
                 new EffectScript("composicion-adimensional:en-juego", Moment.ON_PLAY, true, EN_JUEGO,
                         "Tributa hasta 3 cartas de tu mano. Luego: roba la misma cantidad y coloca esta carta agotada en tu retaguardia.",
-                        List.of(new TributeFromHandUpTo(3), new DrawLastCount(), new KeepOnField())),
+                        List.of(new TributeFromHandUpTo(3), new DrawLastCount(), new KeepOnField(true))),
                 // A slow effect from the field: the ally chosen gets this card as a material and is the summoner
                 new EffectScript("composicion-adimensional:turno-aliado", Moment.ACTIVATED, false, "Turno Aliado",
                         "Puedes añadir esta carta activa como material a un aliado para que invoque por Materialización 1 criatura en tu mano o "
@@ -606,13 +624,29 @@ public final class CardEffects {
         INHERITED.put(name, List.of(scripts));
     }
 
+    /**
+     * A continuous effect: while its condition holds, the card has that strength and those abilities. It is
+     * checked again after every event, so it stops applying as soon as the condition does.
+     */
+    public record Continuous(String label, String text, boolean allyTurn, EffectScript.Condition condition, int strength, List<String> keywords) {}
+
+    private static void continuous(String name, Continuous... effects) {
+        CONTINUOUS.put(name, List.of(effects));
+    }
+
+    /** The card's own continuous effects. */
+    public static List<Continuous> continuousOf(CardSlot card) {
+        if (card.getCardName() == null) return List.of();
+        return CONTINUOUS.getOrDefault(card.getCardName().trim().toLowerCase(Locale.ROOT), List.of());
+    }
+
     /** The card's own effects, those its Recursos give it and those of the keywords the engine runs. */
     public static List<EffectScript> of(CardSlot card) {
         List<EffectScript> all = new ArrayList<>(of(card.getCardName()));
         for (CardSlot resource : card.getResources()) {
             if (resource.getCardName() != null) all.addAll(INHERITED.getOrDefault(resource.getCardName().trim().toLowerCase(Locale.ROOT), List.of()));
         }
-        for (String keyword : card.getKeywords()) {
+        for (String keyword : EffectEngine.keywords(card)) {
             EffectScript script = KEYWORDS.get(keyword.toLowerCase(Locale.ROOT));
             if (script != null) all.add(script);
         }
@@ -745,6 +779,11 @@ public final class CardEffects {
             return id.equals(event.getCardInstanceId()) || (event.getData() != null && id.equals(event.getData().get("targetId")));
         }
         return GameEvent.BLOCK.equals(event.getType()) && id.equals(event.getCardInstanceId());
+    }
+
+    private static long countOnField(GameRoom room, String playerId, CardFilter filter) {
+        PlayerState player = room.getPlayer(playerId);
+        return player == null ? 0 : player.getField().stream().filter(filter::matches).count();
     }
 
     private static long countInZone(GameRoom room, String playerId, String zone, CardFilter filter) {

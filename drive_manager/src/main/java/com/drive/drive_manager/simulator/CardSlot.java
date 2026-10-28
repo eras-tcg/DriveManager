@@ -46,6 +46,9 @@ public class CardSlot {
     private int turnStrength;
     /** Strength lost until the end of the next turn ("hasta el final del turno oponente / del próximo turno"). */
     private int laterStrength;
+    /** Strength and abilities its continuous effects give it while their condition holds (checked after every event). */
+    private int continuousStrength;
+    private List<String> continuousKeywords = new ArrayList<>();
     private List<CardSlot> materials = new ArrayList<>();
     private List<CardSlot> resources = new ArrayList<>();
 }

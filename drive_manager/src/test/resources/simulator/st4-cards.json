@@ -752,8 +752,7 @@
   "colorIdentity": "R",
   "cardNumber": 12,
   "regulation": "A",
-  "effects": [],
-  "inheritEffects": [
+  "effects": [
    {
     "instance": "En Invocación",
     "effectBlocks": [
@@ -770,6 +769,7 @@
     ]
    }
   ],
+  "inheritEffects": [],
   "keywordEffects": [
    {
     "keyword": "Perforante"
