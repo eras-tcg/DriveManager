@@ -50,4 +50,6 @@ public class Prompt {
     private String subjectId;
     /** Ritual from the hand: the summoner already chosen (dropped onto it). */
     private String summonerId;
+    /** What each card stands for in this choice (the effects it triggered), by instance id. */
+    private java.util.Map<String, String> cardLabels;
 }

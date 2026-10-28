@@ -844,6 +844,10 @@ public final class EffectEngine {
                     room.getPrompt().setMin(0);
                 }
                 room.getPrompt().setMax(sources.size());
+                // Each card shows the effect it triggered ("Celeridad", "En Destrucción")
+                Map<String, String> labels = new LinkedHashMap<>();
+                for (PendingEffect e : group) labels.merge(e.getSourceInstanceId(), e.getLabel(), (a, b) -> a + " + " + b);
+                room.getPrompt().setCardLabels(labels);
                 return;
             }
         }
