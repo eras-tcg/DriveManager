@@ -150,6 +150,17 @@ class RulesWindowsTest {
         assertThat(room.getStarterAdvantageUserId()).isNull();
     }
 
+    @Test
+    void aCostReducedToZeroCanBePaidBelowTheOpponentsMarcador() {
+        // Host at -8 gems, the opponent's Marcador is 2: nothing can be paid... except a cost of 0
+        room.setSharedCounter(8);
+        guest.setResourceCount(2);
+        host.getHand().add(ritual("kro", "Krokler", 0, 2, "criatura nivel 1."));
+        field(host, creature("s", "Invocador", 1, 3), FRONT);
+        assertThat(EffectEngine.ritualByPlayer(room, "host", "kro", "s")).isNull();
+        assertThat(host.getField()).extracting(CardSlot::getInstanceId).containsExactly("kro");
+    }
+
     // ------------------------------------------------------------------ Furia
 
     @Test
