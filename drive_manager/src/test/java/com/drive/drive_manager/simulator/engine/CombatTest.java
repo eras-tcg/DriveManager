@@ -38,6 +38,8 @@ class CombatTest {
         host.setDeck(cards("hd", 8));
         guest.setDeck(cards("gd", 8));
         guest.setLifeStack(cards("life", 3));
+        // Weak lives: tributed by any attack (Reforzar has its own tests)
+        guest.getLifeStack().forEach(l -> l.setStrength(1));
     }
 
     // ------------------------------------------------------------------ Combat rules
@@ -196,6 +198,7 @@ class CombatTest {
     @Test
     void lastLifeLosesTheGame() {
         guest.setLifeStack(cards("life", 1));
+        guest.getLifeStack().get(0).setStrength(1);
         field(host, creature("a", "Atacante", 1, 5), FRONT);
         EffectEngine.attackByPlayer(room, "host", "a", null);
         assertThat(room.getStatus()).isEqualTo(GameRoom.RoomStatus.POST_GAME);

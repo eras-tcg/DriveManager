@@ -175,6 +175,37 @@ class St3IntegrationTest {
         }
     }
 
+    @Test
+    void aRematchDrawsWhoStartsAgain() {
+        room.setStatus(GameRoom.RoomStatus.POST_GAME);
+        for (PlayerState p : List.of(host, guest)) assertThat(act(p.getUserId(), "POST_GAME_CHOICE", Map.of("choice", "rematch")).getError()).isNull();
+        assertThat(room.getStatus()).isEqualTo(GameRoom.RoomStatus.SELECTING_STARTER);
+        assertThat(room.getCurrentTurnUserId()).isIn("host", "guest");
+        assertThat(room.getFirstPlayerId()).isEqualTo(room.getCurrentTurnUserId());
+        assertThat(room.getStarterAdvantageUserId()).isEqualTo(room.getOpponentId(room.getCurrentTurnUserId()));
+    }
+
+    @Test
+    void ritualAndSlowEffectsThroughTheRoomActions() throws Exception {
+        CardSlot zhaglizer = slot("Zhaglizer");
+        host.getHand().add(zhaglizer);
+        CardSlot summoner = onField(host, slot("Hong"), 20.0);
+        summoner.setLevel(2);
+        GameStateUpdate ritual = act("host", "RITUAL_SUMMON", Map.of("instanceId", zhaglizer.getInstanceId(), "summonerId", summoner.getInstanceId()));
+        assertThat(ritual.getError()).isNull();
+        assertThat(host.getField()).contains(zhaglizer);
+
+        // The slow effects each player can activate travel with the state
+        CardSlot aranador = onField(host, slot("Zhaglizer"), 20.0);
+        aranador.setCardName("Arañador");
+        aranador.setTapped(true);
+        GameStateUpdate state = GameStateUpdate.from(room, "TEST", "host");
+        assertThat(state.getActivatable()).containsKey("host");
+        assertThat(json.writeValueAsString(state)).contains("\"scriptId\":\"aranador:turno-aliado\"");
+        assertThat(act("host", "ACTIVATE_EFFECT", Map.of("instanceId", aranador.getInstanceId())).getError()).isNull();
+        assertThat(room.getPrompt().getValidIds()).containsExactly(zhaglizer.getInstanceId());
+    }
+
     // ------------------------------------------------------------------ Helpers
 
     private GameStateUpdate act(String userId, String type, Map<String, Object> payload) {

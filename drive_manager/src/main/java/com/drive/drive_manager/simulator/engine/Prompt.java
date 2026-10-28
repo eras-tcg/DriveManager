@@ -26,7 +26,12 @@ public class Prompt {
     private Kind kind;
     private String playerId;
     private String effectId;
-    /** Choices that are not part of an effect: BLOCK (defender), PROVOKE (attacker's Provocar), ADVANCE (move up to the Línea frontal). */
+    /**
+     * Choices that are not part of an effect: BLOCK (defender), PROVOKE (attacker's Provocar), ADVANCE (move up to
+     * the Línea frontal), RITUAL (creatures for a Ritual from the hand), SPECIAL_FRONT (move up right after a
+     * special summon), REINFORCE (Reforzar with a life card), LIFE_PLAY (play a utility or structure lost as a
+     * life), ORDER (which of your simultaneous triggers activates next), PRIORITY (respond to the chain).
+     */
     private String purpose;
     private String sourceName;
     private String title;
@@ -41,4 +46,8 @@ public class Prompt {
     private int max;
     /** The cards that are not chosen can be reordered (they go to the deck bottom in that order). */
     private boolean reorderRest;
+    /** The card the choice is about (the creature being summoned by Ritual, the life card…). */
+    private String subjectId;
+    /** Ritual from the hand: the summoner already chosen (dropped onto it). */
+    private String summonerId;
 }

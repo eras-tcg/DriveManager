@@ -1,5 +1,6 @@
 package com.drive.drive_manager.simulator;
 
+import com.drive.drive_manager.simulator.engine.EffectEngine;
 import com.drive.drive_manager.simulator.engine.GameEvent;
 import com.drive.drive_manager.simulator.engine.PendingEffect;
 import com.drive.drive_manager.simulator.engine.Prompt;
@@ -38,6 +39,12 @@ public class GameStateUpdate {
     private Prompt prompt;
     /** Combat in progress, if any. */
     private com.drive.drive_manager.simulator.engine.Combat combat;
+    /** Who took the first turn. */
+    private String firstPlayerId;
+    /** The player who can still use the "ventaja del iniciador", if any. */
+    private String starterAdvantageUserId;
+    /** Slow effects each player can activate right now (rule 11.4.1.1), by player id. */
+    private Map<String, List<EffectEngine.Activatable>> activatable;
 
     public static GameStateUpdate from(GameRoom room, String event, String actorId) {
         GameStateUpdate u = new GameStateUpdate();
@@ -53,6 +60,14 @@ public class GameStateUpdate {
         u.chain             = room.getChain().isEmpty() ? null : new ArrayList<>(room.getChain());
         u.prompt            = room.getPrompt();
         u.combat            = room.getCombat();
+        u.firstPlayerId     = room.getFirstPlayerId();
+        u.starterAdvantageUserId = room.getStarterAdvantageUserId();
+        Map<String, List<EffectEngine.Activatable>> activatable = new LinkedHashMap<>();
+        for (String id : room.getPlayers().keySet()) {
+            List<EffectEngine.Activatable> list = EffectEngine.activatable(room, id);
+            if (!list.isEmpty()) activatable.put(id, list);
+        }
+        u.activatable       = activatable.isEmpty() ? null : activatable;
         List<GameEvent> tl  = room.getTimeline();
         u.timeline          = tl.isEmpty() ? null : new ArrayList<>(tl.subList(Math.max(0, tl.size() - 100), tl.size()));
         u.postGameChoices   = room.getPostGameChoices().isEmpty()

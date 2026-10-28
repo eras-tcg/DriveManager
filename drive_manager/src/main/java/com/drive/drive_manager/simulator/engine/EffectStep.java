@@ -65,8 +65,17 @@ public sealed interface EffectStep {
     /** "sacrifica esta carta" (a cost: it must be on the field). */
     record SacrificeSelf() implements EffectStep {}
 
-    /** "sacrifica 1 aliado": the controller picks one of their creatures on the field. */
-    record SacrificeAlly() implements EffectStep {}
+    /**
+     * "sacrifica 1 aliado": the controller picks one of their creatures on the field. With {@code toUntapAnother}
+     * ("sacrifica 1 aliado para reactivar otro") both must be possible: the one sacrificed cannot be the only
+     * ally left to reactivate.
+     */
+    record SacrificeAlly(boolean toUntapAnother) implements EffectStep {
+        public SacrificeAlly() { this(false); }
+    }
+
+    /** "reactiva 1 aliado" / "reactivar otro": the controller picks an exhausted ally that can be reactivated. */
+    record UntapAlly() implements EffectStep {}
 
     /** Celeridad: "puede subir a tu línea frontal". */
     record MoveSelfToFront() implements EffectStep {}

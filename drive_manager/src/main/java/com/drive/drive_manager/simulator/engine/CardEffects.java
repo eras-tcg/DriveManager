@@ -25,6 +25,7 @@ import com.drive.drive_manager.simulator.engine.EffectStep.SummonFromZone;
 import com.drive.drive_manager.simulator.engine.EffectStep.TakeFromLookedRestToBottom;
 import com.drive.drive_manager.simulator.engine.EffectStep.TapSelf;
 import com.drive.drive_manager.simulator.engine.EffectStep.TributeFromHand;
+import com.drive.drive_manager.simulator.engine.EffectStep.UntapAlly;
 import com.drive.drive_manager.simulator.engine.EffectStep.UntapSelf;
 
 import java.util.*;
@@ -158,9 +159,26 @@ public final class CardEffects {
                 "(1) Elige 1 aliado para que gane Provocar 3 hasta el final del turno y declare ataque.",
                 List.of(new PickAlly(), new GainUntilEndOfTurn("Provocar 3"), new DeclareAttack()))
                 .limited(Limit.ONCE_PER_TURN_BETWEEN_COPIES));
+
+        // E1-P17 Arañador
+        add("arañador",
+                new EffectScript("aranador:en-invocacion", Moment.ON_SUMMON, false, EN_INVOCACION,
+                        "Puedes invocar 1 criatura Violeta nivel 1 de tus tributos reduciendo su coste en 1.",
+                        List.of(new SummonFromZone("tributeZone", CardFilter.creatures().withColors("P").withLevel(1), 1))),
+                // A slow effect (no trigger condition): activated from the board in the open state
+                new EffectScript("aranador:turno-aliado", Moment.ACTIVATED, false, "Turno Aliado",
+                        "Una vez por turno: puede sacrificar 1 aliado para reactivar otro.",
+                        List.of(new SacrificeAlly(true), new UntapAlly()))
+                        .onlyAllyTurn()
+                        .limited(Limit.ONCE_PER_TURN));
     }
 
     private CardEffects() {}
+
+    /** Adds effects for a card name (tests use it for mechanics no printed card has yet). */
+    static void register(String name, EffectScript... scripts) {
+        add(name, scripts);
+    }
 
     private static void add(String name, EffectScript... scripts) {
         BY_NAME.put(name, List.of(scripts));

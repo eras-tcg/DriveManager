@@ -23,4 +23,6 @@ public class Combat {
     private boolean byEffect;
     private boolean provokeAsked;
     private boolean blockAsked;
+    /** Direct damage still to deal (1 + Letalidad), counted down hit by hit; null until the damage step. */
+    private Integer hitsLeft;
 }

@@ -72,6 +72,8 @@ public class RoomService {
             case "SACRIFICE_CARD"       -> handleSacrificeCard(room, userId, action);
             case "ATTACK"               -> handleAttack(room, userId, action);
             case "PLAY_CARD"            -> handlePlayCard(room, userId, action);
+            case "RITUAL_SUMMON"        -> handleRitualSummon(room, userId, action);
+            case "ACTIVATE_EFFECT"      -> handleActivateEffect(room, userId, action);
             case "JOIN_ROOM"            -> handleJoin(room, userId, action);
             case "DRAW_CARD"            -> handleDraw(room, userId);
             case "MOVE_CARD"            -> handleMove(room, userId, action);
@@ -172,6 +174,25 @@ public class RoomService {
         String error = EffectEngine.playByPlayer(room, userId, action.getString("instanceId"), action.getDouble("x"), action.getDouble("y"));
         if (error != null) return GameStateUpdate.error(room.getRoomId(), error);
         return GameStateUpdate.from(room, "PLAY_CARD", userId);
+    }
+
+    private GameStateUpdate handleRitualSummon(GameRoom room, String userId, GameAction action) {
+        String error = EffectEngine.ritualByPlayer(room, userId, action.getString("instanceId"), action.getString("summonerId"));
+        if (error != null) return GameStateUpdate.error(room.getRoomId(), error);
+        return GameStateUpdate.from(room, "RITUAL_SUMMON", userId);
+    }
+
+    private GameStateUpdate handleActivateEffect(GameRoom room, String userId, GameAction action) {
+        String error = EffectEngine.activateByPlayer(room, userId, action.getString("instanceId"), action.getString("scriptId"));
+        if (error != null) return GameStateUpdate.error(room.getRoomId(), error);
+        return GameStateUpdate.from(room, "ACTIVATE_EFFECT", userId);
+    }
+
+    /** Rule 3.0.1: who starts; the other player gets the "ventaja del iniciador" (rule 6.2.1.4). */
+    private void setFirstPlayer(GameRoom room, String firstPlayerId) {
+        room.setCurrentTurnUserId(firstPlayerId);
+        room.setFirstPlayerId(firstPlayerId);
+        room.setStarterAdvantageUserId(room.getOpponentId(firstPlayerId));
     }
 
     private void recordLog(GameRoom room, GameStateUpdate update) {
@@ -604,7 +625,7 @@ public class RoomService {
         }
         if (!room.getPlayers().containsKey(firstPlayerId))
             return GameStateUpdate.error(room.getRoomId(), "Jugador no encontrado");
-        room.setCurrentTurnUserId(firstPlayerId);
+        setFirstPlayer(room, firstPlayerId);
         room.setCurrentPhase("MAIN");
         room.getStarterSelections().clear();
         room.getMulliganReady().clear();
@@ -722,6 +743,9 @@ public class RoomService {
                 room.setStatus(GameRoom.RoomStatus.WAITING);
             } else {
                 resetGameState(room, true);
+                // A rematch starts right away: who goes first is drawn again (rule 3.0.1)
+                List<String> ids = new ArrayList<>(room.getPlayers().keySet());
+                setFirstPlayer(room, ids.get(new java.util.Random().nextInt(ids.size())));
                 room.setStatus(GameRoom.RoomStatus.SELECTING_STARTER);
             }
         }
@@ -758,6 +782,8 @@ public class RoomService {
         });
         room.setSharedCounter(0);
         room.setCurrentTurnUserId(null);
+        room.setFirstPlayerId(null);
+        room.setStarterAdvantageUserId(null);
         room.setCurrentPhase("MAIN");
         room.getStarterSelections().clear();
         room.getMulliganReady().clear();
@@ -1213,8 +1239,8 @@ public class RoomService {
 
         summoned.setFaceDown(false);
         player.getField().add(summoned);
-        autoDraw(player);
-        // Recorded by the engine, which fires the summon and sacrifice triggers ("En Invocación", "En Destrucción")
+        // Recorded by the engine: it offers the move up to the Línea frontal, does the regulatory draw and then
+        // fires the summon and sacrifice triggers ("En Invocación", "En Destrucción")
         EffectEngine.specialSummoned(room, userId, summoned, summoner, summonType,
                 player.getUsername() + " invocó especialmente a " + cardLabel(summoned)
                         + " (" + summonTypeLabel(summonType) + ") usando " + cardLabel(summoner));

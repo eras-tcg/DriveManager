@@ -63,7 +63,14 @@ public record EffectScript(String id, Moment moment, boolean mandatory, String l
         /** "En Juego": when this card is played. */
         ON_PLAY,
         /** Passive moments with a trigger condition ("Todos Los Turnos: si algún aliado es destruido"). */
-        ON_EVENT
+        ON_EVENT,
+        /**
+         * Passive moments without a trigger condition: slow effects, activated by the player in the open state
+         * (rule 11.4.1.1), from the field unless a zone is given.
+         */
+        ACTIVATED,
+        /** Effects that can be added to a chain being built, in response to its last effect (rule 11.3.0.3). */
+        RESPONSE
     }
 
     /** Rule 11.8: "una vez por turno" (that copy) and "una vez por turno entre copias" (same original name). */
