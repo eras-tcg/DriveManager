@@ -10,4 +10,11 @@ import lombok.NoArgsConstructor;
 public class GameLogEntry {
     private long   ts;
     private String text;
+    /** Timeline event this entry describes, when it comes from one. */
+    private Long eventSeq;
+
+    public GameLogEntry(long ts, String text) {
+        this.ts = ts;
+        this.text = text;
+    }
 }
