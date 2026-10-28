@@ -6,6 +6,7 @@ import com.drive.drive_manager.dto.DriveCard;
 import com.drive.drive_manager.repository.CardRepository;
 import com.drive.drive_manager.repository.DeckListRepository;
 import com.drive.drive_manager.repository.DriveCardRepository;
+import com.drive.drive_manager.simulator.engine.EffectEngine;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -48,10 +49,25 @@ public class RoomService {
     }
 
     public GameStateUpdate applyAction(String roomId, String userId, GameAction action) {
+        GameStateUpdate update = apply(roomId, userId, action);
+        // Errors go to the whole room topic: tag who caused them so only that player is shown the message
+        if (update != null && update.getError() != null && update.getActorId() == null) update.setActorId(userId);
+        return update;
+    }
+
+    private GameStateUpdate apply(String roomId, String userId, GameAction action) {
         GameRoom room = rooms.get(roomId);
         if (room == null) return GameStateUpdate.error(roomId, "Room not found");
 
+        // Closed game state (rule 7.2): while a chain or a choice is pending, only answering it (and leaving
+        // or conceding) is allowed. The board's manual actions wait until the effect is done.
+        if (room.isEngineBusy() && !ALLOWED_WHILE_RESOLVING.contains(action.getType())) {
+            return GameStateUpdate.error(roomId, "Hay un efecto resolviéndose: espera a que termine");
+        }
+
         GameStateUpdate update = switch (action.getType()) {
+            case "NORMAL_SUMMON"        -> handleNormalSummon(room, userId, action);
+            case "RESOLVE_PROMPT"       -> handleResolvePrompt(room, userId, action);
             case "JOIN_ROOM"            -> handleJoin(room, userId, action);
             case "DRAW_CARD"            -> handleDraw(room, userId);
             case "MOVE_CARD"            -> handleMove(room, userId, action);
@@ -107,6 +123,23 @@ public class RoomService {
             update.setEventLog(new ArrayList<>(room.getEventLog()));
         }
         return update;
+    }
+
+    private static final Set<String> ALLOWED_WHILE_RESOLVING = Set.of(
+            "RESOLVE_PROMPT", "JOIN_ROOM", "SURRENDER", "FORFEIT", "CLOSE_ROOM", "POST_GAME_CHOICE", "REFRESH_CARD_METADATA");
+
+    /** Taking a creature from the hand to the board without an effect is a normal summon (rules engine). */
+    private GameStateUpdate handleNormalSummon(GameRoom room, String userId, GameAction action) {
+        String error = EffectEngine.normalSummon(room, userId, action.getString("instanceId"), action.getDouble("x"), action.getDouble("y"));
+        if (error != null) return GameStateUpdate.error(room.getRoomId(), error);
+        return GameStateUpdate.from(room, "NORMAL_SUMMON", userId);
+    }
+
+    /** The player's choice for the effect step the engine is waiting on. */
+    private GameStateUpdate handleResolvePrompt(GameRoom room, String userId, GameAction action) {
+        String error = EffectEngine.answer(room, userId, action.getString("promptId"), action.getStringList("chosen"), action.getStringList("order"));
+        if (error != null) return GameStateUpdate.error(room.getRoomId(), error);
+        return GameStateUpdate.from(room, "RESOLVE_PROMPT", userId);
     }
 
     private void recordLog(GameRoom room, GameStateUpdate update) {
@@ -686,6 +719,10 @@ public class RoomService {
         room.getStarterSelections().clear();
         room.getMulliganReady().clear();
         room.getPostGameChoices().clear();
+        // A new game starts with an empty chain, no pending choice and a fresh timeline
+        room.getChain().clear();
+        room.setPrompt(null);
+        room.getTimeline().clear();
     }
 
     private GameStateUpdate handleLifeHeal(GameRoom room, String userId) {
@@ -1387,6 +1424,11 @@ public class RoomService {
             c.setCardType(s.getCardType());
             c.setStrength(s.getStrength());
             c.setSpecialSummonKind(s.getSpecialSummonKind());
+            c.setStarter(s.isStarter());
+            c.setCost(s.getCost());
+            c.setLevel(s.getLevel());
+            c.setColors(new ArrayList<>(s.getColors()));
+            c.setClasses(new ArrayList<>(s.getClasses()));
             c.setFaceDown(true);
             return c;
         }).collect(Collectors.toList());
@@ -1403,6 +1445,14 @@ public class RoomService {
         slot.setStrength(meta.getStrength());
         slot.setSpecialSummonKind(meta.getSpecialSummonKind());
         slot.setStarter(Boolean.TRUE.equals(meta.getStarter()));
+        // Printed properties the rules engine reads (cost to pay, filters by color/class/level)
+        slot.setCost(meta.getCost());
+        slot.setLevel(meta.getLevel());
+        slot.setClasses(meta.getCardClasses() != null ? new ArrayList<>(meta.getCardClasses()) : new ArrayList<>());
+        List<String> colors = new ArrayList<>();
+        if (meta.getColorIdentity() != null) colors.add(meta.getColorIdentity());
+        if (meta.getColors() != null) meta.getColors().stream().filter(c -> !colors.contains(c)).forEach(colors::add);
+        slot.setColors(colors);
     }
 
     private List<CardSlot> getZone(PlayerState player, String zoneName) {
@@ -1454,11 +1504,7 @@ public class RoomService {
                     if (dc.getEdition() != null) {
                         Card card = cardMeta.get(dc.getName().toLowerCase() + ":" + dc.getEdition());
                         if (card != null) {
-                            slot.setCardName(card.getCardName());
-                            slot.setCardType(card.getCardType());
-                            slot.setStrength(card.getStrength());
-                            slot.setSpecialSummonKind(card.getSpecialSummonKind());
-                            slot.setStarter(Boolean.TRUE.equals(card.getStarter()));
+                            applyMeta(slot, driveFileId, card);
                         }
                     }
                 }

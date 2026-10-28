@@ -1,7 +1,12 @@
 package com.drive.drive_manager.simulator;
 
+import com.drive.drive_manager.simulator.engine.GameEvent;
+import com.drive.drive_manager.simulator.engine.PendingEffect;
+import com.drive.drive_manager.simulator.engine.Prompt;
+
 import lombok.Data;
 
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -25,6 +30,12 @@ public class GameStateUpdate {
     private String revealedCardName;
     private String logEntry;
     private List<GameLogEntry> eventLog;
+    /** Latest timeline events (structured). */
+    private List<GameEvent> timeline;
+    /** Effects in the chain (the last one resolves first). */
+    private List<PendingEffect> chain;
+    /** Choice being waited for; only prompt.playerId may answer. */
+    private Prompt prompt;
 
     public static GameStateUpdate from(GameRoom room, String event, String actorId) {
         GameStateUpdate u = new GameStateUpdate();
@@ -37,6 +48,10 @@ public class GameStateUpdate {
         u.sharedCounter     = room.getSharedCounter();
         u.event             = event;
         u.actorId           = actorId;
+        u.chain             = room.getChain().isEmpty() ? null : new ArrayList<>(room.getChain());
+        u.prompt            = room.getPrompt();
+        List<GameEvent> tl  = room.getTimeline();
+        u.timeline          = tl.isEmpty() ? null : new ArrayList<>(tl.subList(Math.max(0, tl.size() - 100), tl.size()));
         u.postGameChoices   = room.getPostGameChoices().isEmpty()
                               ? null : new LinkedHashMap<>(room.getPostGameChoices());
         return u;
