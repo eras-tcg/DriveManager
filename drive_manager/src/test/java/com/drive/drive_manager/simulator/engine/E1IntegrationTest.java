@@ -360,7 +360,7 @@ class E1IntegrationTest {
     }
 
     @Test
-    void imperialDiscardsTenTributesForEachLetalidad() {
+    void imperialSendsTenTributesToTheDeckBottomForEachLetalidad() {
         CardSlot imperial = onField(host, card("imp", "Imperial De La Llama Eterna", 1, 5, "R"), FRONT);
         for (int i = 0; i < 20; i++) host.getTributeZone().add(card("t" + i, "Tributo", 1, 1, "R"));
         onField(guest, card("en", "Enemigo", 1, 1, "R"), FRONT);
@@ -373,7 +373,9 @@ class E1IntegrationTest {
         Answers.answer(room, "host", second.getId(), second.getValidIds().subList(0, 10), List.of());
         assertThat(EffectEngine.keywordLevel(imperial, "Letalidad")).isEqualTo(2);
         assertThat(host.getTributeZone()).isEmpty();
-        assertThat(host.getDiscardPile()).hasSize(20);
+        // "envía 10 tributos … al fondo de tu mazo"
+        assertThat(host.getDiscardPile()).isEmpty();
+        assertThat(host.getDeck().subList(host.getDeck().size() - 20, host.getDeck().size())).allMatch(c -> c.getInstanceId().startsWith("t"));
     }
 
     @Test

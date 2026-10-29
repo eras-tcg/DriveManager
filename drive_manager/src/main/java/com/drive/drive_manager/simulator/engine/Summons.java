@@ -53,12 +53,15 @@ public final class Summons {
         card.setFaceDown(false);
         card.setTapped(false);
         card.setX(x != null ? x : 50.0);
-        // Normal summons enter the Retaguardia: the lower half of the owner's field
-        card.setY(y != null && y >= 55 ? y : 75.0);
+        // Normal summons enter the Retaguardia (the lower half of the owner's field); Asalto lets it enter the Línea frontal, exhausted
+        boolean assault = y != null && y < 55 && keywordLevel(card, "Asalto") != null;
+        card.setY(assault ? y : y != null && y >= 55 ? y : 75.0);
+        if (assault) card.setTapped(true);
         player.getField().add(card);
 
         record(room, GameEvent.NORMAL_SUMMON, userId, card, "hand", "field", null, Map.of("cost", cost),
                 player.getUsername() + " invocó " + name(card) + " pagando " + gemsText(cost) + (advantage ? " (ventaja del iniciador)" : ""));
+        offerAssault(room, player, card);
         advance(room);
         return null;
     }
@@ -223,12 +226,15 @@ public final class Summons {
      * @param materialZones where they may come from ("en campo o mano"): "field", "hand", "tributeZone"
      * @param noSummoner    "K criaturas nivel N en tu mano o tributos": no summoner, all of them are materials; it enters the Retaguardia
      * @param alternative   "(A) o (B)": the other way, or null
+     * @param alone         "mientras no controles otras criaturas": the summoner is the only creature on the field
+     * @param strongest     "con fuerza igual o mayor que la de cualquier otro aliado"
      */
     record SpecialRequirement(String kind, int level, int alliesSum, int materialLevel, int levelSum, boolean atLeast, int maxLevel,
-                              int materialCount, List<String> materialZones, boolean noSummoner, SpecialRequirement alternative) {
+                              int materialCount, List<String> materialZones, boolean noSummoner, SpecialRequirement alternative,
+                              boolean alone, boolean strongest) {
         SpecialRequirement withAlternative(SpecialRequirement other) {
             return new SpecialRequirement(kind, level, alliesSum, materialLevel, levelSum, atLeast, maxLevel, materialCount, materialZones,
-                    noSummoner, other);
+                    noSummoner, other, alone, strongest);
         }
 
         /** A summoner of that level meets it. */
@@ -260,7 +266,8 @@ public final class Summons {
         // "2 criaturas nivel 1 en tu mano o tributos": no summoner
         Matcher many = Pattern.compile("(\\d+)\\s*criaturas\\s*ni\\w*\\s*(\\d+)").matcher(text);
         if (materialization && !text.contains("+") && many.find()) {
-            return new SpecialRequirement(kind, 0, 0, Integer.parseInt(many.group(2)), 0, false, 0, Integer.parseInt(many.group(1)), zones, true, null);
+            return new SpecialRequirement(kind, 0, 0, Integer.parseInt(many.group(2)), 0, false, 0, Integer.parseInt(many.group(1)), zones, true, null,
+                    false, false);
         }
         Matcher level = Pattern.compile("ni[ev]*l\\s*(\\d+)(?:\\s*o\\s*(\\d+))?").matcher(text);
         if (!level.find()) return null;
@@ -283,7 +290,10 @@ public final class Summons {
             if (allies.find()) levelSum = Integer.parseInt(allies.group(1));
         }
         boolean atLeast = Pattern.compile("ni[ev]*l\\s*\\d+\\s*o\\s*mayor").matcher(text).find();
-        return new SpecialRequirement(kind, summonerLevel, alliesSum, materialLevel, levelSum, atLeast, maxLevel, materialCount, zones, false, null);
+        boolean alone = Pattern.compile("no\\s+control\\w*\\s+otras\\s+criaturas").matcher(text).find();
+        boolean strongest = Pattern.compile("fuerza\\s+igual\\s+o\\s+mayor\\s+que\\s+la\\s+de\\s+cualquier\\s+otro\\s+aliado").matcher(text).find();
+        return new SpecialRequirement(kind, summonerLevel, alliesSum, materialLevel, levelSum, atLeast, maxLevel, materialCount, zones, false, null,
+                alone, strongest);
     }
 
     /** "en campo o mano", "en tu mano o tributos", "en el campo"; when it says none, the Tributos or the field. */
@@ -322,8 +332,13 @@ public final class Summons {
 
     /** Creatures of the field that can be the summoner: the level asked for, sharing a type or color. */
     static List<CardSlot> specialSummoners(PlayerState player, CardSlot card, SpecialRequirement req) {
+        List<CardSlot> creatures = allies(player);
         return player.getField().stream()
                 .filter(c -> "creature".equals(c.getCardType()) && c.getLevel() != null && shares(c, card) && optionFor(req, c) != null)
+                // "mientras no controles otras criaturas"
+                .filter(c -> !req.alone() || creatures.stream().allMatch(o -> o == c))
+                // "con fuerza igual o mayor que la de cualquier otro aliado"
+                .filter(c -> !req.strongest() || creatures.stream().allMatch(o -> o == c || strength(o) <= strength(c)))
                 .toList();
     }
 
@@ -872,6 +887,18 @@ public final class Summons {
         specialSummon(room, player, card, specialRequirement(card), summoner, List.of(), pending.fromZone(), 0, null);
     }
 
+    /**
+     * Asalto: "en lugar de quedar en tu retaguardia, puedes colocarla agotada en tu línea frontal". It modifies the summon, so it is
+     * asked as the creature enters the Retaguardia, before anything reacts to it (not a triggered effect).
+     */
+    static void offerAssault(GameRoom room, PlayerState player, CardSlot card) {
+        if (room.getPrompt() != null || keywordLevel(card, "Asalto") == null || inFrontLine(card)) return;
+        rulesPrompt(room, player.getUserId(), PURPOSE_ASSAULT, name(card) + " · Asalto",
+                "En lugar de quedar en tu retaguardia, puedes colocarla agotada en tu línea frontal.", "Línea frontal", List.of(card), List.of(card));
+        room.getPrompt().setKind(Prompt.Kind.CONFIRM);
+        room.getPrompt().setSubjectId(card.getInstanceId());
+    }
+
     /** Ritual by effect (rule 9.3): pays the special cost minus the reduction and summons it. */
     static void performRitual(GameRoom room, PendingEffect effect, PlayerState player, CardSlot target, RitualFromZone ritual,
                                       CardSlot summoner, List<CardSlot> others) {
@@ -917,6 +944,7 @@ public final class Summons {
                         + " pagando " + gemsText(cost)
                         + " (" + effect.getSourceName() + ")");
         regulatoryDraw(room, player, effect);
+        offerAssault(room, player, card);
     }
 
     static void regulatoryDraw(GameRoom room, PlayerState player, PendingEffect effect) {

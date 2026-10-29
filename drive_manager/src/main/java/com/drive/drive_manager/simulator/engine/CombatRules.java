@@ -182,6 +182,7 @@ public final class CombatRules {
                     Integer provoke = keywordLevel(attacker, "Provocar");
                     if (provoke != null && c.getBlockerId() == null) {
                         List<CardSlot> options = blockers(defender).stream()
+                                .filter(b -> !b.getInstanceId().equals(c.getTargetId()))
                                 .filter(b -> provoke == 0 || (b.getLevel() != null && b.getLevel() <= provoke)).toList();
                         if (!options.isEmpty()) {
                             rulesPrompt(room, owner.getUserId(), PURPOSE_PROVOKE, name(attacker) + " · Provocar",
@@ -194,7 +195,8 @@ public final class CombatRules {
                 // Rule 10.1.2.3: the defender may declare a blocker, unless one was already declared
                 if (c.getBlockerId() == null && !c.isBlockAsked()) {
                     c.setBlockAsked(true);
-                    List<CardSlot> options = keywordLevel(attacker, "Imbloqueable") != null ? List.of() : blockers(defender);
+                    List<CardSlot> options = keywordLevel(attacker, "Imbloqueable") != null ? List.of()
+                            : blockers(defender).stream().filter(b -> !b.getInstanceId().equals(c.getTargetId())).toList();
                     if (!options.isEmpty()) {
                         rulesPrompt(room, defender.getUserId(), PURPOSE_BLOCK, name(attacker) + " ataca",
                                 "Puedes elegir 1 criatura activa de tu línea frontal para bloquear (se agota), o ninguna.",
@@ -299,7 +301,9 @@ public final class CombatRules {
     static boolean offerBlockerSwap(GameRoom room, PlayerState defender, CardSlot blocker) {
         CardSlot holder = defender.getField().stream().filter(c -> !c.isFaceDown() && CardEffects.swapsBlocker(c)).findFirst().orElse(null);
         if (holder == null || room.getUsedThisTurn().contains(defender.getUserId() + "|blocker-swap")) return false;
-        List<CardSlot> others = blockers(defender).stream().filter(b -> b != blocker).toList();
+        Combat combat = room.getCombat();
+        List<CardSlot> others = blockers(defender).stream()
+                .filter(b -> b != blocker && (combat == null || !b.getInstanceId().equals(combat.getTargetId()))).toList();
         if (others.isEmpty()) return false;
         rulesPrompt(room, defender.getUserId(), PURPOSE_BLOCK_SWAP, name(holder) + " · Turno Oponente",
                 "En lugar de " + name(blocker) + ", puedes reactivarlo y elegir otro aliado para que bloquee. O ninguno.", "Bloquea", others,

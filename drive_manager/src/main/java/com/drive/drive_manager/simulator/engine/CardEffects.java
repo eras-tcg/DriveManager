@@ -80,7 +80,7 @@ import com.drive.drive_manager.simulator.engine.EffectStep.TributeHand;
 import com.drive.drive_manager.simulator.engine.EffectStep.TributeResources;
 import com.drive.drive_manager.simulator.engine.EffectStep.PlaceFromHandUntilTurnEnd;
 import com.drive.drive_manager.simulator.engine.EffectStep.TributeAlliesLevelSum;
-import com.drive.drive_manager.simulator.engine.EffectStep.DiscardTributesForKeyword;
+import com.drive.drive_manager.simulator.engine.EffectStep.TributesToDeckBottomForKeyword;
 import com.drive.drive_manager.simulator.engine.EffectStep.ReduceRepeatedly;
 import com.drive.drive_manager.simulator.engine.EffectStep.HandsToBottomDrawOpponentLives;
 import com.drive.drive_manager.simulator.engine.EffectStep.OpponentMovesOneToFront;
@@ -154,15 +154,13 @@ public final class CardEffects {
     private static final Map<String, List<Continuous>> CONTINUOUS = new HashMap<>();
     private static final Map<String, List<Aura>> AURAS = new HashMap<>();
 
-    /** Keyword abilities with an effect the engine runs ("Celeridad"). Others (Provocar, Letalidad…) are combat rules. */
+    /**
+     * Keyword abilities with an effect the engine runs ("Celeridad"). Others (Provocar, Letalidad…) are combat rules; Asalto modifies the
+     * summon itself (Summons.offerAssault).
+     */
     private static final Map<String, EffectScript> KEYWORDS = Map.of(
             "celeridad", new EffectScript("kw:celeridad", Moment.ON_SUMMON, false, "Celeridad",
                     "Puede subir a tu línea frontal.", List.of(new MoveSelfToFront()))
-                    .when(not(new InFrontLine())),
-            // Asalto replaces entering the Retaguardia; here it moves up right after, exhausted (the same position)
-            "asalto", new EffectScript("kw:asalto", Moment.ON_SUMMON, false, "Asalto",
-                    "En lugar de quedar en tu retaguardia, puedes colocarla agotada en tu línea frontal.",
-                    List.of(new MoveSelfToFront(), new TapSelf()))
                     .when(not(new InFrontLine())));
 
     static {
@@ -888,9 +886,9 @@ public final class CardEffects {
                 List.of(new SummonFromZone("tributeZone", CardFilter.creatures().withClasses("chamán", "ente", "ángel"), 3, true), new SummonedCannotAttack()))
                 .onlyAllyTurn());
         // E1-B22 Unidad De Emergencia L1
-        add("unidad de emergencia l1", new EffectScript("unidad-emergencia-l1:en-invocacion", Moment.ON_SUMMON, false, EN_INVOCACION,
-                "Puedes subir los materiales de esta carta a tu mano. Si subiste alguna carta nivel 2 o menor a tu mano por este efecto: reactiva esta carta.",
-                List.of(new MaterialsToHand(), new IfTributed(CardFilter.any().withMaxLevel(2), 1), new UntapSelf())));
+        add("unidad de emergencia l1", new EffectScript("unidad-emergencia-l1:en-invocacion", Moment.ON_SUMMON, true, EN_INVOCACION,
+                "Puedes subir hasta tantos materiales de esta carta a tu mano como tenga. Luego: reactiva esta carta.",
+                List.of(new MaterialsToHand(true), new UntapSelf())));
         // E1-G5 Salamandrake
         add("salamandrake", new EffectScript("salamandrake:tributada", Moment.ON_EVENT, false, "En Tributos",
                 "(1) Si esta carta es tributada desde el tope de tu mazo y no controlas copias de esta carta: puedes colocar esta carta en tu retaguardia.",
@@ -1100,12 +1098,11 @@ public final class CardEffects {
                         List.of(new TributeMaterials(2, false)), List.of(new GainUntilEndOfTurn("Letalidad 1")))
                         .limited(Limit.ONCE_PER_TURN));
         // E1-R8 Explorador Temerario
-        add("explorador temerario", new EffectScript("explorador-temerario:en-mano", Moment.ACTIVATED, false, "Turno Aliado / En Mano",
-                "Puedes tributar 1 aliado [caballero] nivel 1; invoca esta carta en tu línea frontal reduciendo su coste en 1.",
-                List.of(new TributeAlly(CardFilter.creatures().withClasses("caballero").withLevel(1))),
-                List.of(new SummonSelf("hand", Amount.fixed(1), true)))
-                .fromZone("hand")
-                .onlyAllyTurn());
+        // "Turno Aliado: una vez por turno entre copias, cuando esta carta fuera a invocar por Ascenso, si controlas 3 o más aliados:
+        // reduce el coste especial en 1" (a Reactivo–Modificador of the Ascenso it makes as the summoner)
+        costModifier("explorador temerario", new CostModifier("Turno Aliado", CostModifiers.Event.SPECIAL_SUMMON, Set.of("promotion"),
+                CostModifiers.Holder.SUMMONER, true, new CountOnField(CardFilter.creatures(), 3, null), Payment.none(), 1,
+                Limit.ONCE_PER_TURN_BETWEEN_COPIES));
         // E1-R16 Caballeria Frontal
         add("caballeria frontal", new EffectScript("caballeria-frontal:en-invocacion", Moment.ON_SUMMON, false, EN_INVOCACION,
                 "1 aliado nivel 1 puede invocar por Ascenso 1 criatura en tu mano reduciendo el coste especial en 1.",
@@ -1211,8 +1208,8 @@ public final class CardEffects {
                 .limited(Limit.ONCE_PER_TURN_BETWEEN_COPIES));
         // E1-R21 Imperial De La Llama Eterna (Perforante: combat rule)
         add("imperial de la llama eterna", new EffectScript("imperial-llama-eterna:al-atacar", Moment.ON_ATTACK, false, AL_ATACAR,
-                "Tantas veces como quieras: descarta 10 tributos Rojos o [retador]; esta carta gana Letalidad 1 hasta el final del ataque.",
-                List.of(new DiscardTributesForKeyword(10, CardFilter.colors("R").withClasses("retador"), "Letalidad"))));
+                "Tantas veces como quieras: envía 10 tributos Rojos o [retador] al fondo de tu mazo; esta carta gana Letalidad 1 hasta el final del ataque.",
+                List.of(new TributesToDeckBottomForKeyword(10, CardFilter.colors("R").withClasses("retador"), "Letalidad"))));
         // E1-W01…W05: White utilities with a Definitive effect (only 1 per turn, whichever card)
         add("nexo del inframundo material", new EffectScript("nexo-inframundo:en-juego", Moment.ON_PLAY, true, EN_JUEGO,
                 "Efecto Definitivo. Elige 1 aliado; mira las primeras 4 cartas de tu mazo: de ellas toma hasta 1 carta que comparta tipo con el "

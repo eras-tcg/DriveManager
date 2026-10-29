@@ -287,8 +287,8 @@ public sealed interface Condition {
     record ThisExhausted() implements Condition {
         public boolean test(GameRoom room, GameEvent event, CardSlot source, String controller) {
             if (!source.getInstanceId().equals(event.getCardInstanceId())) return false;
-            return GameEvent.TAP.equals(event.getType()) || (GameEvent.ATTACK_DECLARED.equals(event.getType())
-                    && event.getData() != null && Boolean.TRUE.equals(event.getData().get("exhausted")));
+            return GameEvent.TAP.equals(event.getType()) || GameEvent.BLOCK.equals(event.getType())
+                    || (GameEvent.ATTACK_DECLARED.equals(event.getType()) && event.getData() != null && Boolean.TRUE.equals(event.getData().get("exhausted")));
         }
     }
 

@@ -64,7 +64,22 @@ public final class CostModifiers {
      * @param reduce    how much it lowers the cost
      */
     public record CostModifier(String label, Event event, Set<String> kinds, Holder holder, boolean allyTurn,
-                               Condition condition, Payment payment, int reduce) {}
+                               Condition condition, Payment payment, int reduce, EffectScript.Limit limit) {
+        public CostModifier(String label, Event event, Set<String> kinds, Holder holder, boolean allyTurn, Condition condition, Payment payment,
+                            int reduce) {
+            this(label, event, kinds, holder, allyTurn, condition, payment, reduce, EffectScript.Limit.NONE);
+        }
+    }
+
+    /** The mark of a limited modifier used this turn (between copies: by the card's name). */
+    static String usageKey(PlayerState player, Use use) {
+        return player.getUserId() + "|cost-modifier|" + use.holder().getCardName().trim().toLowerCase(Locale.ROOT);
+    }
+
+    /** A limited modifier was used: it is not offered again this turn. */
+    static void markUsed(GameRoom room, PlayerState player, Use use) {
+        if (use.modifier().limit() != EffectScript.Limit.NONE) room.getUsedThisTurn().add(usageKey(player, use));
+    }
 
     /** A modifier that applies now, with the card that has it. */
     public record Use(CostModifier modifier, CardSlot holder) {}
@@ -122,7 +137,9 @@ public final class CostModifiers {
                 if (m.allyTurn() && !player.getUserId().equals(room.getCurrentTurnUserId())) continue;
                 if (m.condition() != null && !m.condition().test(room, null, holder, player.getUserId())) continue;
                 if (!payable(player, m.payment(), holder)) continue;
-                uses.add(new Use(m, holder));
+                Use use = new Use(m, holder);
+                if (m.limit() != EffectScript.Limit.NONE && room.getUsedThisTurn().contains(usageKey(player, use))) continue;
+                uses.add(use);
             }
         }
         return uses;
@@ -156,6 +173,7 @@ public final class CostModifiers {
                         player.getUsername() + " agota " + use.holder().getCardName() + " para reducir en " + use.modifier().reduce() + " el coste");
             }
             reduced += use.modifier().reduce();
+            markUsed(room, player, use);
         }
         return reduced;
     }

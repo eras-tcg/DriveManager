@@ -160,7 +160,7 @@ public final class Steps {
                 yield at != null && !at.zone().equals(send.zone()) && !"field".equals(at.zone());
             }
             case SendSelfFromFieldTo ignored -> onField != null;
-            case DiscardTributesForKeyword d -> player.getTributeZone().stream().filter(d.filter()::matches).count() >= d.count();
+            case TributesToDeckBottomForKeyword d -> player.getTributeZone().stream().filter(d.filter()::matches).count() >= d.count();
             case TributeAlliesLevelSum t -> {
                 List<CardSlot> valid = allies(player).stream().filter(t.filter()::matches).toList();
                 yield valid.size() >= t.minCount() && valid.stream().mapToInt(c -> c.getLevel() == null ? 0 : c.getLevel()).sum() >= t.minSum();
@@ -498,7 +498,7 @@ public final class Steps {
                 room.getPrompt().setMin(0);
                 return true;
             }
-            case DiscardTributesForKeyword d -> {
+            case TributesToDeckBottomForKeyword d -> {
                 List<CardSlot> valid = player.getTributeZone().stream().filter(d.filter()::matches).toList();
                 if (valid.size() < d.count()) return false;
                 pick(room, effect, "Puedes descartar " + d.count() + " tributos " + d.filter().describe() + " para que " + effect.getSourceName() + " gane "
@@ -1244,9 +1244,16 @@ public final class Steps {
                 floating(summoned, effect, "No puede declarar ataque este turno", "turn", 0, NO_ATTACK);
                 return false;
             }
-            case MaterialsToHand ignored -> {
+            case MaterialsToHand toHand -> {
                 CardSlot self = find(player.getField(), effect.getSourceInstanceId());
                 if (self == null || self.getMaterials().isEmpty()) return false;
+                if (toHand.upTo()) {
+                    // "hasta tantos … como tenga": the controller picks which (none is fine)
+                    pick(room, effect, "Sube a tu mano los materiales de " + name(self) + " que quieras (o ninguno).", "A tu mano",
+                            self.getMaterials(), ids(self.getMaterials()), self.getMaterials().size());
+                    room.getPrompt().setMin(0);
+                    return true;
+                }
                 List<CardSlot> materials = new ArrayList<>(self.getMaterials());
                 self.getMaterials().clear();
                 for (CardSlot m : materials) {
@@ -1751,6 +1758,20 @@ public final class Steps {
                 effect.setLastTributed(new ArrayList<>(picks));
                 effect.setLastDone(true);
             }
+            case MaterialsToHand ignored -> {
+                CardSlot self = find(player.getField(), effect.getSourceInstanceId());
+                if (self == null || !allIn(self.getMaterials(), picks)) return "Ese material ya no está";
+                for (String id : picks) {
+                    CardSlot m = find(self.getMaterials(), id);
+                    self.getMaterials().remove(m);
+                    m.setFaceDown(false);
+                    player.getHand().add(m);
+                    record(room, GameEvent.ADD_TO_HAND, userId, m, "materials", "hand", effect, null,
+                            player.getUsername() + " sube " + name(m) + " (material de " + name(self) + ") a su mano");
+                }
+                effect.setLastTributed(new ArrayList<>(picks));
+                effect.setLastDone(!picks.isEmpty());
+            }
             case TributeFromHandAsSubjectLevel ignored -> {
                 if (!allIn(player.getHand(), picks)) return "Esa carta ya no está en tu mano";
                 tributeFromHand(room, effect, player, picks);
@@ -1818,7 +1839,7 @@ public final class Steps {
                 effect.setRepeatsDone(effect.getRepeatsDone() + 1);
                 repeat[0] = true;
             }
-            case DiscardTributesForKeyword d -> {
+            case TributesToDeckBottomForKeyword d -> {
                 if (picks.isEmpty()) return null;
                 if (picks.size() != d.count()) return "Elige exactamente " + d.count() + " tributos, o ninguno";
                 if (!allIn(player.getTributeZone(), picks)) return "Esas cartas ya no están en tus tributos";
@@ -1826,7 +1847,8 @@ public final class Steps {
                 for (String id : picks) {
                     CardSlot card = find(player.getTributeZone(), id);
                     player.getTributeZone().remove(card);
-                    player.getDiscardPile().add(card);
+                    card.setFaceDown(true);
+                    player.getDeck().add(card);
                     discarded.add(card);
                 }
                 CardSlot self = find(player.getField(), effect.getSourceInstanceId());

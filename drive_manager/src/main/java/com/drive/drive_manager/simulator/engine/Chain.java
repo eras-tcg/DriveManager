@@ -47,7 +47,7 @@ public final class Chain {
             if (top != null && paying(top)) {
                 // The effect just activated pays its cost before anything else, choices included
                 if (!run(room, top, script(top).cost().get(top.getCostIndex()))) top.setCostIndex(top.getCostIndex() + 1);
-            } else if (!resolving && !room.getPendingEvents().isEmpty()) {
+            } else if (chain.isEmpty() && !room.getPendingEvents().isEmpty()) {
                 queueTriggers(room);
             } else if (!resolving && !room.getTriggerQueue().isEmpty()) {
                 activateNext(room);

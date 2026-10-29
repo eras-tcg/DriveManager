@@ -223,6 +223,18 @@ public final class Answers {
             handSpecial(room, player, card, req, summoner, materials, find(player.getHand(), card.getInstanceId()) != null ? "hand" : "tributeZone");
             return "";
         }
+        if (PURPOSE_ASSAULT.equals(purpose)) {
+            room.setPrompt(null);
+            CardSlot card = find(player.getField(), prompt.getSubjectId());
+            if (card != null && !picks.isEmpty() && !inFrontLine(card)) {
+                card.setY(25.0);
+                card.setTapped(true);
+                record(room, GameEvent.MOVE, userId, card, null, "frontLine", null, Map.of("reason", "Asalto"),
+                        name(card) + " entra agotada en la línea frontal (Asalto)");
+            }
+            advance(room);
+            return "";
+        }
         if (PURPOSE_ASCEND_ATTACK.equals(purpose)) {
             room.setPrompt(null);
             CardSlot card = specialSource(player, prompt.getSubjectId());
@@ -258,6 +270,7 @@ public final class Answers {
             int count = use == null ? 0 : use.modifier().payment().count();
             if (!picks.isEmpty() && picks.size() != count) return "Elige " + count + " cartas, o ninguna";
             int reduce = picks.isEmpty() || use == null ? 0 : use.modifier().reduce();
+            if (!picks.isEmpty() && use != null) CostModifiers.markUsed(room, player, use);
             // Without it, the others still apply on their own
             if (!canPay(room, userId, card.getSpecialCost() - reduce - CostModifiers.available(room, player, CostModifiers.Event.SPECIAL_SUMMON, req.kind(), card, summoner)
                     + (use == null ? 0 : use.modifier().reduce())))

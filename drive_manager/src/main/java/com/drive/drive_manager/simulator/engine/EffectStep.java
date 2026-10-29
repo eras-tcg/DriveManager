@@ -214,7 +214,7 @@ public sealed interface EffectStep {
     record ReduceRepeatedly(int times, int amount, String until) implements EffectStep {}
 
     /** "tantas veces como quieras: descarta N tributos [filtro]; esta carta gana [habilidad] 1 hasta el final del ataque" (it adds up). */
-    record DiscardTributesForKeyword(int count, CardFilter filter, String keyword) implements EffectStep {}
+    record TributesToDeckBottomForKeyword(int count, CardFilter filter, String keyword) implements EffectStep {}
 
     /** "tributa N o más aliados [filtro] que sumen M o más en nivel" (a cost). */
     record TributeAlliesLevelSum(int minCount, int minSum, CardFilter filter) implements EffectStep {}
@@ -346,7 +346,11 @@ public sealed interface EffectStep {
     record SummonedCannotAttack() implements EffectStep {}
 
     /** "puedes subir los materiales de esta carta a tu mano": all of them; they are the last "tributed" for {@link IfTributed}. */
-    record MaterialsToHand() implements EffectStep {}
+    record MaterialsToHand(boolean upTo) implements EffectStep {
+        public MaterialsToHand() {
+            this(false);
+        }
+    }
 
     /** "coloca esta carta al tope de tus vidas bocabajo". */
     record SelfToLife() implements EffectStep {}
