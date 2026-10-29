@@ -48,7 +48,16 @@ public class CardSlot {
     private int laterStrength;
     /** Strength and abilities its continuous effects give it while their condition holds (checked after every event). */
     private int continuousStrength;
+    /** Placed "hasta el final del turno" (Janne): it goes back to its owner's hand when the turn ends. */
+    private boolean returnAtTurnEnd;
     private List<String> continuousKeywords = new ArrayList<>();
+    /** What effects gave or took from it for a while, with their source (shown in its details). */
+    private List<FloatingEffect> floating = new ArrayList<>();
+    /**
+     * "no se reactiva al inicio del turno oponente": 2 while the effect's turn lasts, 1 during its owner's next turn
+     * (it is not reactivated then), 0 otherwise. Counted down when the turn changes.
+     */
+    private int noUntap;
     private List<CardSlot> materials = new ArrayList<>();
     private List<CardSlot> resources = new ArrayList<>();
 }

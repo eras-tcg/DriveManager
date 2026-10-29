@@ -26,6 +26,9 @@ public class PendingEffect {
     private int costIndex;
     /** Targets chosen when it was activated ("elige 1 enemigo …;"), acted on when it resolves (rule 11.10.1). */
     private List<String> targetIds = new ArrayList<>();
+    /** How many times a repeated choice was already made ("hasta 2 veces", "tantas veces como quieras"). */
+    @JsonIgnore
+    private int repeatsDone;
 
     // --- Resolution progress (set while it resolves) ---
     private String resolutionId;
@@ -36,6 +39,8 @@ public class PendingEffect {
     private String ritualTargetId;
     /** Ritual by effect with a level sum: the summoner, chosen before the other creatures used. */
     private String ritualSummonerId;
+    /** The creature the effect just summoned ("añádele … como materiales del aliado invocado"). */
+    private String summonedId;
     /** Cards taken out of the deck by "mira las primeras N", waiting for the next step. Owner-only info. */
     @JsonIgnore
     private List<CardSlot> looked = new ArrayList<>();

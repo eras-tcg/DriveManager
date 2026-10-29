@@ -46,6 +46,8 @@ public class Prompt {
     private int max;
     /** The cards that are not chosen can be reordered (they go to the deck bottom in that order). */
     private boolean reorderRest;
+    /** The cards not chosen go back to the deck top instead of its bottom (in the order given, the first one on top). */
+    private boolean restToTop;
     /** The card the choice is about (the creature being summoned by Ritual, the life card…). */
     private String subjectId;
     /** Ritual from the hand: the summoner already chosen (dropped onto it). */

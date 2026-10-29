@@ -194,10 +194,10 @@ class St3IntegrationTest {
     }
 
     @Test
-    void aRematchDrawsWhoStartsAgain() {
+    void aRematchDrawsWhoStartsAgainAndGoesStraightToTheMulligan() {
         room.setStatus(GameRoom.RoomStatus.POST_GAME);
         for (PlayerState p : List.of(host, guest)) assertThat(act(p.getUserId(), "POST_GAME_CHOICE", Map.of("choice", "rematch")).getError()).isNull();
-        assertThat(room.getStatus()).isEqualTo(GameRoom.RoomStatus.SELECTING_STARTER);
+        assertThat(room.getStatus()).isEqualTo(GameRoom.RoomStatus.MULLIGAN);
         assertThat(room.getCurrentTurnUserId()).isIn("host", "guest");
         assertThat(room.getFirstPlayerId()).isEqualTo(room.getCurrentTurnUserId());
         assertThat(room.getStarterAdvantageUserId()).isEqualTo(room.getOpponentId(room.getCurrentTurnUserId()));

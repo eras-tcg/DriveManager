@@ -18,6 +18,12 @@ public class GameStateUpdate {
     private String status;
     private Map<String, PlayerState> players;
     private String hostId;
+    /** A test room: its owner controls both sides (see GameRoom.editor). */
+    private boolean editor;
+    /** Mulligan: who already confirmed their hand. */
+    private List<String> mulliganReady;
+    /** Pre-room: who takes the first turn ("random" or a player id). */
+    private String firstChoice;
     private String currentTurnUserId;
     private String currentPhase;
     private String event;
@@ -25,6 +31,8 @@ public class GameStateUpdate {
     private String error;
     private int    sharedCounter;
     private Map<String, String> postGameChoices;
+    /** The player an event is about (the one taken out of the room by PLAYER_KICKED). */
+    private String subjectUserId;
     private String targetedInstanceId;
     private String targetingSourceInstanceId;
     private String revealedCardImageUrl;
@@ -61,6 +69,9 @@ public class GameStateUpdate {
         u.status            = room.getStatus().name();
         u.players           = room.getPlayers();
         u.hostId            = room.getHostId();
+        u.editor            = room.isEditor();
+        u.mulliganReady     = room.getStatus() == GameRoom.RoomStatus.MULLIGAN ? new ArrayList<>(room.getMulliganReady()) : null;
+        u.firstChoice       = room.getFirstChoice();
         u.currentTurnUserId = room.getCurrentTurnUserId();
         u.currentPhase      = room.getCurrentPhase();
         u.sharedCounter     = room.getSharedCounter();

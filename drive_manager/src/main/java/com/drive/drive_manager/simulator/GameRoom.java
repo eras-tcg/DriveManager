@@ -14,6 +14,11 @@ public class GameRoom {
     public enum RoomStatus { WAITING, SELECTING_STARTER, MULLIGAN, IN_PROGRESS, POST_GAME, FINISHED }
 
     private String     roomId;
+    /**
+     * A test room (editor mode): its owner plays alone, controlling both sides (the rival is not a real player),
+     * with the manual actions and test cards. Not listed and nobody else can enter.
+     */
+    private boolean    editor;
     private RoomStatus status           = RoomStatus.WAITING;
     private Map<String, PlayerState> players = new LinkedHashMap<>();
     private String     hostId;
@@ -21,6 +26,10 @@ public class GameRoom {
     private String     currentPhase     = "MAIN";
     private int        sharedCounter    = 0;
     private Instant    createdAt        = Instant.now();
+    /** Pre-room: who takes the first turn, chosen by the host ("random" or a player id). */
+    private String     firstChoice      = "random";
+    /** Since when nobody is connected (null while someone is): the room is kept a while so reloading does not lose it. */
+    private Instant    emptySince;
 
     private Map<String, String> starterSelections = new LinkedHashMap<>();
     private Set<String>         mulliganReady     = new HashSet<>();
@@ -43,6 +52,10 @@ public class GameRoom {
     /** Events since the last chain window: they trigger effects once the current resolution ends (rule 11.6.0.4). */
     private List<GameEvent> pendingEvents = new ArrayList<>();
     private long idSeq = 0;
+    /** Removals waiting for their owner to choose a replacement, in order. */
+    private List<com.drive.drive_manager.simulator.engine.PendingRemoval> pendingRemovals = new ArrayList<>();
+    /** Cards whose owner already chose not to replace their removal: it happens now. */
+    private Set<String> removalDecided = new HashSet<>();
     /** The combat in progress (rule 10), if any. */
     private com.drive.drive_manager.simulator.engine.Combat combat;
     /** Effects already used this turn (rule 11.8), keyed by the engine. Cleared when the turn changes. */
@@ -61,7 +74,7 @@ public class GameRoom {
 
     /** Closed game state (rule 7.2): a chain or a choice is pending, so no new actions can start. */
     public boolean isEngineBusy() {
-        return prompt != null || !chain.isEmpty() || !triggerQueue.isEmpty() || combat != null;
+        return prompt != null || !chain.isEmpty() || !triggerQueue.isEmpty() || combat != null || !pendingRemovals.isEmpty();
     }
 
     public String nextId(String prefix) {

@@ -159,9 +159,13 @@ class St2IntegrationTest {
             Prompt p = room.getPrompt();
             EffectEngine.answer(room, "host", p.getId(), p.getValidIds().isEmpty() ? List.of() : List.of(p.getValidIds().get(0)), List.of());
         }
-        // It stays on the field as a permanent
+        // It stays on the field as a permanent, exhausted
         assertThat(host.getField()).contains(huevo);
+        assertThat(huevo.isTapped()).isTrue();
         assertThat(host.getDiscardPile()).doesNotContain(huevo);
+        // "esta carta activa": not while it is exhausted
+        assertThat(EffectEngine.activatable(room, "host")).isEmpty();
+        huevo.setTapped(false);
 
         // Its slow effect from the field: to the Descarte, summon a level 1 [dragón] of the Tributos
         CardSlot flamagon = slot("Flamagón");
@@ -176,6 +180,53 @@ class St2IntegrationTest {
         }
         assertThat(host.getDiscardPile()).contains(huevo);
         assertThat(host.getField()).contains(flamagon).doesNotContain(huevo);
+    }
+
+    @Test
+    void ddraigAlwaysTributesItsThreeCardsEvenWithNoEnemyToChoose() {
+        // "Tributa 3. Luego: elige 1 enemigo de fuerza 5 o menos; destrúyelo": the choice is the cost of the "Luego"
+        // part, paid when it is reached on resolution; without an enemy only that part is lost
+        room.setSharedCounter(-10);
+        CardSlot ddraig = slot("Ddraig");
+        host.getHand().add(ddraig);
+        int deck = host.getDeck().size();
+        int tributes = host.getTributeZone().size();
+        assertThat(EffectEngine.normalSummon(room, "host", ddraig.getInstanceId(), 50.0, 75.0)).isNull();
+        for (int i = 0; i < 10 && room.getPrompt() != null; i++) {
+            Prompt p = room.getPrompt();
+            List<String> pick = p.getValidIds().subList(0, Math.max(p.getMin(), Math.min(p.getMax(), p.getValidIds().size())));
+            assertThat(EffectEngine.answer(room, p.getPlayerId(), p.getId(), pick, List.of())).isNull();
+        }
+        assertThat(host.getField()).contains(ddraig);
+        // The 3 cards are tributed; there was no enemy to destroy
+        assertThat(host.getTributeZone()).hasSize(tributes + 3);
+        assertThat(host.getDeck()).hasSize(deck - 3);
+    }
+
+    @Test
+    void ddraigChoosesItsEnemyOnActivationThenTributesAndDestroysIt() {
+        room.setSharedCounter(-10);
+        // Evolución from a level 2 creature in the Línea frontal: Ddraig takes its place there
+        CardSlot summoner = onField(host, slot("Wyfreik"), FRONT);
+        CardSlot ddraig = slot("Ddraig");
+        host.getHand().add(ddraig);
+        CardSlot damon = onField(guest, slot("Damon"), FRONT);
+        damon.setStrength(3);
+        int tributes = host.getTributeZone().size();
+        assertThat(EffectEngine.specialByPlayer(room, "host", ddraig.getInstanceId(), summoner.getInstanceId())).isNull();
+        for (int i = 0; i < 10 && room.getPrompt() != null; i++) {
+            Prompt p = room.getPrompt();
+            List<String> pick = p.getValidIds().contains(damon.getInstanceId()) ? List.of(damon.getInstanceId())
+                    : p.getValidIds().subList(0, Math.max(p.getMin(), Math.min(p.getMax(), p.getValidIds().size())));
+            assertThat(EffectEngine.answer(room, p.getPlayerId(), p.getId(), pick, List.of())).isNull();
+        }
+        assertThat(guest.getDiscardPile()).contains(damon);
+        assertThat(host.getTributeZone().size()).isGreaterThanOrEqualTo(tributes + 3);
+        // The target was chosen (activation) before the 3 cards were tributed (resolution)
+        long targeted = room.getTimeline().stream().filter(e -> GameEvent.TARGET.equals(e.getType())).mapToLong(GameEvent::getSeq).min().orElseThrow();
+        long tributed = room.getTimeline().stream().filter(e -> GameEvent.TRIBUTE.equals(e.getType()) && "deck".equals(e.getFromZone()))
+                .mapToLong(GameEvent::getSeq).min().orElseThrow();
+        assertThat(targeted).isLessThan(tributed);
     }
 
     // ------------------------------------------------------------------ Helpers

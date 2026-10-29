@@ -1,6 +1,7 @@
 package com.drive.drive_manager.simulator.engine;
 
 import com.drive.drive_manager.simulator.CardSlot;
+import com.drive.drive_manager.simulator.FloatingEffect;
 import com.drive.drive_manager.simulator.GameLogEntry;
 import com.drive.drive_manager.simulator.GameRoom;
 import com.drive.drive_manager.simulator.PlayerState;
@@ -43,9 +44,20 @@ public final class EffectEngine {
     private static final String PURPOSE_SPECIAL_FRONT = "SPECIAL_FRONT";
     private static final String PURPOSE_REINFORCE = "REINFORCE";
     private static final String PURPOSE_LIFE_PLAY = "LIFE_PLAY";
+    /** Turn-scoped marks in usedThisTurn: a Definitive effect used, Última Línea's extra hit, the turn to end. */
+    private static final String DEFINITIVE_USED = "definitive";
+    static final String EXTRA_HIT = "extra-hit|";
+    public static final String END_TURN_REQUESTED = "end-turn|";
     private static final String PURPOSE_ORDER = "ORDER";
+    /** A card about to leave the field: its owner may replace it ("en su lugar"), or a card that pays it (Caballero Leal's hand card). */
+    private static final String PURPOSE_REPLACE = "REPLACE";
+    private static final String PURPOSE_REPLACE_HAND = "REPLACE_HAND";
     private static final String PURPOSE_OPTIONAL = "OPTIONAL";
     private static final String PURPOSE_PRIORITY = "PRIORITY";
+    /** Gained by a creature that cannot declare an attack this turn. */
+    static final String NO_ATTACK = "No puede atacar";
+    /** An "until the end of the attack" entry that is strength, not an ability ("id|fuerza:3"). */
+    private static final String STRENGTH_ENTRY = "fuerza:";
 
     private EffectEngine() {}
 
@@ -352,7 +364,7 @@ public final class EffectEngine {
         PlayerState player = room.getPlayer(userId);
         SpecialRequirement req = specialRequirement(card);
         if (player == null || req == null || card.getSpecialCost() == null) return false;
-        if (!canPay(room, userId, card.getSpecialCost())) return false;
+        if (!canPay(room, userId, card.getSpecialCost() - CardEffects.structureDiscount(room, player, req.kind()))) return false;
         if ("promotion".equals(req.kind()) && !alliesAddUp(player, req)) return false;
         return specialSummoners(player, card, req).stream().anyMatch(s -> materialsPossible(player, card, req, s));
     }
@@ -372,7 +384,7 @@ public final class EffectEngine {
         SpecialRequirement req = specialRequirement(card);
         if (req == null || card.getSpecialCost() == null) return name(card) + " no tiene una invocación especial que el motor conozca";
         String kind = kindName(req.kind());
-        if (!canPay(room, userId, card.getSpecialCost())) return "No tienes gemas suficientes: tienes " + gemsOf(room, userId) + " y el coste especial es " + card.getSpecialCost();
+        if (!canPay(room, userId, card.getSpecialCost() - CardEffects.structureDiscount(room, player, req.kind()))) return "No tienes gemas suficientes: tienes " + gemsOf(room, userId) + " y el coste especial es " + card.getSpecialCost();
         if ("promotion".equals(req.kind()) && !alliesAddUp(player, req)) return "Para el Ascenso tus aliados deben sumar " + req.alliesSum() + " o más en nivel";
         String missing = "Tus criaturas no cumplen el Requerimiento de " + name(card) + ": " + card.getRequirement().trim();
         List<CardSlot> summoners = specialSummoners(player, card, req).stream().filter(s -> materialsPossible(player, card, req, s)).toList();
@@ -418,6 +430,8 @@ public final class EffectEngine {
                                       List<CardSlot> materials, String fromZone, int reduce, PendingEffect effect) {
         String userId = player.getUserId();
         int cost = Math.max(0, card.getSpecialCost() - reduce - CardEffects.summonerReduction(room, player, req.kind(), summoner));
+        // "cuando fueras a invocar especialmente por …: puedes agotar esta carta para reducir el coste especial en 1"
+        if (cost > 0) cost -= CardEffects.useStructureDiscount(room, player, req.kind());
         pay(room, userId, cost);
         zone(player, fromZone).remove(card);
         inheritFromSummoner(room, card, summoner);
@@ -465,7 +479,8 @@ public final class EffectEngine {
                 .filter(special.filter()::matches)
                 .filter(c -> {
                     SpecialRequirement req = specialRequirement(c);
-                    if (req == null || !canPay(room, player.getUserId(), Math.max(0, c.getSpecialCost() - special.reduce()))) return false;
+                    if (req == null || !canPay(room, player.getUserId(), Math.max(0, c.getSpecialCost() - special.reduce()
+                            - CardEffects.structureDiscount(room, player, req.kind())))) return false;
                     if ("promotion".equals(req.kind()) && !alliesAddUp(player, req)) return false;
                     return specialSummoners(player, c, req).stream().anyMatch(s -> summonerAllowed(special, s, effect)
                             && materialsPossible(player, c, req, s));
@@ -481,7 +496,9 @@ public final class EffectEngine {
             case "other" -> !self;
             // "a un aliado para que invoque": the ally chosen before (any, while it is not chosen yet)
             case "subject" -> effect.getSubjectId() == null || summoner.getInstanceId().equals(effect.getSubjectId());
-            default -> true;
+            // "1 aliado nivel N puede invocar…"
+            default -> !special.summoner().startsWith("level:")
+                    || Integer.valueOf(special.summoner().substring(6)).equals(summoner.getLevel());
         };
     }
 
@@ -549,7 +566,9 @@ public final class EffectEngine {
     }
 
     private static int ritualCost(GameRoom room, String userId, CardSlot card) {
-        return card.getSpecialCost() - (starterAdvantage(room, userId, card, card.getSpecialCost()) ? 1 : 0);
+        int cost = card.getSpecialCost() - (starterAdvantage(room, userId, card, card.getSpecialCost()) ? 1 : 0);
+        PlayerState player = room.getPlayer(userId);
+        return player == null ? cost : Math.max(0, cost - (cost > 0 ? CardEffects.structureDiscount(room, player, "ritual") : 0));
     }
 
     private static void ritualPrompt(GameRoom room, PlayerState player, CardSlot card, CardSlot summoner, List<CardSlot> valid,
@@ -565,6 +584,7 @@ public final class EffectEngine {
         String userId = player.getUserId();
         boolean advantage = starterAdvantage(room, userId, card, card.getSpecialCost());
         int cost = ritualCost(room, userId, card);
+        if (cost < card.getSpecialCost() - (advantage ? 1 : 0)) CardEffects.useStructureDiscount(room, player, "ritual");
         pay(room, userId, cost);
         if (advantage) room.setStarterAdvantageUserId(null);
         player.getHand().remove(card);
@@ -659,9 +679,13 @@ public final class EffectEngine {
      */
     static GameEvent destroy(GameRoom room, CardSlot card, PlayerState owner, boolean sacrifice, String cause, String byId,
                              String byCard, PendingEffect effect) {
+        // A replacement ("en su lugar", Protección): its owner chooses first; the destruction waits
+        if (!sacrifice && deferRemoval(room, card, owner, true, cause, byId, byCard, effect)) return null;
         owner.getField().remove(card);
         Combat combat = room.getCombat();
         if (combat != null && owner.getUserId().equals(combat.getDefenderId())) combat.setEnemyDestroyed(true);
+        // Its Recursos leave with it, but what they gave it "En Destrucción" still triggers (rule 11.4.0.3)
+        List<String> inherited = card.getResources().stream().map(CardSlot::getCardName).filter(Objects::nonNull).toList();
         for (CardSlot attached : concat(card.getMaterials(), card.getResources())) {
             attached.setFaceDown(false);
             owner.getDiscardPile().add(attached);
@@ -685,6 +709,8 @@ public final class EffectEngine {
         data.put("ownerId", owner.getUserId());
         if (byCard == null && effect != null) byCard = effect.getSourceInstanceId();
         if (byCard != null) data.put("byCard", byCard);
+        if (!inherited.isEmpty()) data.put("inherited", inherited);
+        if (combat != null && card.getInstanceId().equals(combat.getAttackerId())) data.put("asAttacker", true);
         return record(room, sacrifice ? GameEvent.SACRIFICE : GameEvent.DESTROY, byId, card, "field", toZone, effect, data, text);
     }
 
@@ -697,6 +723,8 @@ public final class EffectEngine {
         card.getTurnKeywords().clear();
         card.setContinuousStrength(0);
         card.getContinuousKeywords().clear();
+        card.getFloating().clear();
+        card.setReturnAtTurnEnd(false);
         card.setX(null);
         card.setY(null);
     }
@@ -768,6 +796,7 @@ public final class EffectEngine {
         if (attacker == null || !"creature".equals(attacker.getCardType())) return "Solo tus criaturas del campo pueden atacar";
         if (!inFrontLine(attacker)) return "Solo las criaturas de la línea frontal pueden atacar";
         if (attacker.isTapped()) return "Esa criatura está agotada";
+        if (attacker.getTurnKeywords().contains(NO_ATTACK)) return name(attacker) + " no puede declarar ataque este turno";
         if (!attackGemsOk(room, userId, attacker)) {
             Integer furia = furia(attacker);
             return furia == null ? "Para declarar un ataque necesitas 0 o más gemas"
@@ -942,7 +971,10 @@ public final class EffectEngine {
                         "Enfrentamiento: " + name(attacker) + " (" + a + ") contra " + name(blocker) + " (" + b + ")");
                 // Rule 10.1.3.2: the weaker one is destroyed; both when equal. Attributed to the opponent and the other creature.
                 if (b <= a) destroy(room, blocker, defender, false, CAUSE_BATTLE, owner.getUserId(), attacker.getInstanceId(), null);
-                if (a <= b) destroy(room, attacker, owner, false, CAUSE_BATTLE, defender.getUserId(), blocker.getInstanceId(), null);
+                // Alcance: "esta carta no puede ser destruida por enfrentamiento como atacante"
+                if (a <= b && keywordLevel(attacker, "Alcance") == null) {
+                    destroy(room, attacker, owner, false, CAUSE_BATTLE, defender.getUserId(), blocker.getInstanceId(), null);
+                }
                 return true;
             }
             case DAMAGE -> {
@@ -990,6 +1022,12 @@ public final class EffectEngine {
         if (c.getHitsLeft() == null) {
             Integer lethality = keywordLevel(attacker, "Letalidad");
             c.setHitsLeft(1 + (lethality == null ? 0 : lethality));
+            // "la próxima vez que un aliado inflinja daño directo por combate este turno, inflinge daño 1 vez más"
+            if (room.getUsedThisTurn().remove(EXTRA_HIT + owner.getUserId())) {
+                c.setHitsLeft(c.getHitsLeft() + 1);
+                room.getUsedThisTurn().add(END_TURN_REQUESTED + owner.getUserId());
+                log(room, name(attacker) + " inflige daño 1 vez más: después termina el turno de " + owner.getUsername(), null);
+            }
         }
         int damage = strength(attacker);
         while (c.getHitsLeft() > 0 && !defender.getLifeStack().isEmpty()) {
@@ -998,7 +1036,7 @@ public final class EffectEngine {
             boolean revealedNow = life.isFaceDown();
             life.setFaceDown(false);
             boolean creature = "creature".equals(life.getCardType());
-            boolean tribute = creature && (life.getStrength() == null || life.getStrength() <= damage);
+            boolean tribute = creature && (life.getStrength() == null || CardEffects.lifeStrength(life) <= damage);
             (tribute ? defender.getTributeZone() : defender.getHand()).add(life);
             record(room, GameEvent.LIFE_DAMAGE, owner.getUserId(), life, "lifeStack", tribute ? "tributeZone" : "hand", null,
                     Map.of("damage", damage, "attackerId", attacker.getInstanceId(), "defenderId", defender.getUserId()),
@@ -1057,7 +1095,15 @@ public final class EffectEngine {
             String[] parts = entry.split("\\|", 2);
             for (PlayerState p : room.getPlayers().values()) {
                 CardSlot card = find(p.getField(), parts[0]);
-                if (card != null) card.getTurnKeywords().remove(parts[1]);
+                if (card == null) continue;
+                if (parts[1].startsWith(STRENGTH_ENTRY)) {
+                    int amount = Integer.parseInt(parts[1].substring(STRENGTH_ENTRY.length()));
+                    card.setTurnStrength(card.getTurnStrength() - amount);
+                    card.getFloating().removeIf(f -> "attack".equals(f.until()) && f.keyword() == null && f.strength() == amount);
+                    continue;
+                }
+                card.getTurnKeywords().remove(parts[1]);
+                card.getFloating().removeIf(f -> "attack".equals(f.until()) && parts[1].equals(f.keyword()));
             }
         }
         c.getUntilEndOfAttack().clear();
@@ -1087,6 +1133,11 @@ public final class EffectEngine {
     static void advance(GameRoom room) {
         refreshContinuous(room);
         while (room.getPrompt() == null && room.getStatus() == GameRoom.RoomStatus.IN_PROGRESS) {
+            // A card about to leave the field with a replacement: its owner chooses before anything else
+            if (!room.getPendingRemovals().isEmpty()) {
+                promptRemoval(room);
+                continue;
+            }
             List<PendingEffect> chain = room.getChain();
             // Rules 7.2.0.4 and 11.6.0.4: once a chain is closed and resolving nothing can be added to it; what
             // triggers meanwhile waits until the whole chain has resolved and then forms a new chain
@@ -1126,6 +1177,23 @@ public final class EffectEngine {
         String active = room.getCurrentTurnUserId();
         triggered.sort(Comparator.comparingInt(e -> rank(e, active)));
         room.getTriggerQueue().addAll(triggered);
+        // A utility played whose "En Juego" does not activate (its condition, a Definitive one already used) has
+        // nothing to resolve: it goes to the Descarte (rule 6.2.3.1)
+        for (GameEvent event : events) {
+            if (!GameEvent.PLAY.equals(event.getType())) continue;
+            boolean resolves = triggered.stream().anyMatch(e -> e.getSourceInstanceId().equals(event.getCardInstanceId())
+                    && script(e).moment() == EffectScript.Moment.ON_PLAY);
+            PlayerState owner = room.getPlayer(event.getPlayerId());
+            CardSlot card = owner == null ? null : find(owner.getField(), event.getCardInstanceId());
+            if (!resolves && card != null && "utility".equals(card.getCardType())
+                    && CardEffects.of(card).stream().anyMatch(sc -> sc.moment() == EffectScript.Moment.ON_PLAY)) {
+                owner.getField().remove(card);
+                leaveField(card);
+                owner.getDiscardPile().add(card);
+                record(room, GameEvent.SEND, owner.getUserId(), card, "field", "discardPile", null, null,
+                        name(card) + " va al descarte: su efecto no se activa");
+            }
+        }
     }
 
     private static List<PendingEffect> triggersOf(GameRoom room, GameEvent event) {
@@ -1145,7 +1213,11 @@ public final class EffectEngine {
             String zone = moment == EffectScript.Moment.ON_DESTROY ? event.getToZone() : "field";
             CardSlot source = findIn(room, controllerId, zone, event.getCardInstanceId());
             if (source != null) {
-                for (EffectScript script : CardEffects.of(source)) {
+                List<EffectScript> scripts = new ArrayList<>(CardEffects.of(source));
+                if (moment == EffectScript.Moment.ON_DESTROY && event.getData() != null && event.getData().get("inherited") instanceof List<?> names) {
+                    for (Object n : names) scripts.addAll(CardEffects.inheritedOf((String) n));
+                }
+                for (EffectScript script : scripts) {
                     if (script.moment() == moment) addIfTriggers(room, result, script, event, source, controllerId);
                 }
             }
@@ -1171,11 +1243,16 @@ public final class EffectEngine {
                                       CardSlot source, String controllerId) {
         if (script.condition() != null && !script.condition().test(room, event, source, controllerId)) return;
         PendingEffect e = pending(room, script, controllerId, source, event.getSeq());
-        if (script.limit() != Limit.NONE && room.getUsedThisTurn().contains(usageKey(e, script))) return;
+        if (script.limit() != Limit.NONE && room.getUsedThisTurn().contains(usageKey(e, script))) {
+            if (script.limit() == Limit.DEFINITIVE)
+                log(room, name(source) + ": ya activaste un Efecto Definitivo este turno (solo 1 por turno)", null);
+            return;
+        }
         result.add(e);
     }
 
     private static String usageKey(PendingEffect e, EffectScript script) {
+        if (script.limit() == Limit.DEFINITIVE) return e.getControllerId() + "|" + DEFINITIVE_USED;
         return script.limit() == Limit.ONCE_PER_TURN_BETWEEN_COPIES
                 ? e.getControllerId() + "|" + script.id()
                 : e.getControllerId() + "|" + e.getSourceInstanceId() + "|" + script.id();
@@ -1330,13 +1407,20 @@ public final class EffectEngine {
     /** An optional effect is offered only when its cost can be paid and its choices have something to choose. */
     private static boolean canActivate(GameRoom room, PendingEffect effect, EffectScript script) {
         for (EffectStep step : script.cost()) if (!possible(room, effect, step)) return false;
+        if (!allPossibleAfterIfPossible(room, effect, script.steps(), 0)) return false;
+        // "Si ningún enemigo fue …: …" (IfNotDone): the effect does something even when there is nothing to choose
+        if (script.steps().stream().anyMatch(s -> s instanceof IfNotDone)) return true;
         for (EffectStep step : script.steps()) {
             boolean needsTarget = step instanceof DestroyEnemy || step instanceof ChooseEnemy || step instanceof SummonSelfFree
                     || step instanceof SummonSelfFromZone || step instanceof MaterialToLife
                     || step instanceof DestroyFaceUpLife || step instanceof TakeFromZone || step instanceof PlaySelfFromZone
                     || step instanceof SpecialFromZone || step instanceof SummonFromZone || step instanceof RitualFromZone
                     || step instanceof SacrificeAlly || step instanceof UntapAlly || step instanceof PickAlly || step instanceof PlaySelfFree
-                    || step instanceof MoveSelfToFront || step instanceof SummonFreeLevelSum;
+                    || step instanceof MoveSelfToFront || step instanceof SummonFreeLevelSum || step instanceof ChooseEnemyBy
+                    || step instanceof SummonSelf || step instanceof PickAllyWhere || step instanceof SacrificeAllyWhere
+                    || step instanceof TributeAlly || step instanceof TributeAllyMaterial || step instanceof ChooseWeakestEnemy
+                    || step instanceof PlayFromZone || step instanceof UntapStructure || step instanceof PlaceSelfOnField
+                    || step instanceof MaterialToBack || step instanceof TributeAllyMaterialWhere || step instanceof PlaceFromHandUntilTurnEnd;
             if (needsTarget && !possible(room, effect, step)) return false;
         }
         return true;
@@ -1493,14 +1577,41 @@ public final class EffectEngine {
                 name(card) + " va al descarte tras resolverse");
     }
 
+    /** "puedes hacer A para hacer B": every step after IfPossible (from {@code from}) can be done now. */
+    private static boolean allPossibleAfterIfPossible(GameRoom room, PendingEffect effect, List<EffectStep> steps, int from) {
+        for (int i = from; i < steps.size(); i++) {
+            if (!(steps.get(i) instanceof IfPossible)) continue;
+            for (EffectStep after : steps.subList(i + 1, steps.size())) if (!possible(room, effect, after)) return false;
+            return true;
+        }
+        return true;
+    }
+
+    /** The enemy of the strength reduction that triggered the effect, still on the field with some strength. */
+    private static CardSlot triggerEnemy(GameRoom room, PendingEffect effect) {
+        GameEvent trigger = room.getTimeline().stream().filter(e -> e.getSeq() == effect.getTriggerSeq()).findFirst().orElse(null);
+        PlayerState opponent = room.getPlayer(room.getOpponentId(effect.getControllerId()));
+        CardSlot target = trigger == null || opponent == null ? null : find(opponent.getField(), trigger.getCardInstanceId());
+        return target != null && strength(target) > 0 ? target : null;
+    }
+
+    /** A step whose details depend on the game, as it is now ({@link ChooseEnemyBy} → {@link ChooseEnemy}). */
+    private static EffectStep resolved(GameRoom room, PendingEffect effect, EffectStep step) {
+        if (step instanceof ChooseEnemyBy by) return new ChooseEnemy(by.count(), by.filter().of(room, effect.getControllerId()), by.upTo());
+        if (step instanceof SummonFromZoneBy by) return new SummonFromZone(by.zone(), by.filter().of(room, effect.getControllerId()), by.reduce());
+        return step;
+    }
+
     /** Whether a step can do anything now (used to offer optional effects and "puedes" choices). */
     private static boolean possible(GameRoom room, PendingEffect effect, EffectStep step) {
         PlayerState player = room.getPlayer(effect.getControllerId());
         if (player == null) return false;
+        step = resolved(room, effect, step);
         CardSlot onField = find(player.getField(), effect.getSourceInstanceId());
         return switch (step) {
             case DestroyEnemy destroy -> !enemyTargets(room, effect, destroy.filter()).isEmpty();
-            case ChooseEnemy choose -> enemyTargets(room, effect, choose.filter()).size() >= (choose.upTo() ? 1 : choose.count());
+            // "elige hasta N": choosing none is allowed, so it never stops the effect
+            case ChooseEnemy choose -> choose.upTo() || enemyTargets(room, effect, choose.filter()).size() >= choose.count();
             case TributeTop ignored -> !player.getDeck().isEmpty();
             case TributeMaterials tm -> {
                 CardSlot self = find(player.getField(), effect.getSourceInstanceId());
@@ -1518,7 +1629,24 @@ public final class EffectEngine {
                 CardSlot self = find(zone(player, ss.zone()), effect.getSourceInstanceId());
                 yield self != null && self.getCost() != null && canPay(room, player.getUserId(), Math.max(0, self.getCost() - ss.reduce()));
             }
-            case TributeFromHand ignored -> !player.getHand().isEmpty();
+            case TributeFromHand tribute -> player.getHand().stream()
+                    .filter(c -> !c.getInstanceId().equals(effect.getSourceInstanceId())).count() >= tribute.count();
+            case TargetAllEnemies ignored -> {
+                PlayerState opponent = room.getPlayer(room.getOpponentId(player.getUserId()));
+                yield opponent != null && frontLine(opponent.getField()).stream().anyMatch(c -> "creature".equals(c.getCardType()));
+            }
+            case AttachSelfToSubject ignored -> {
+                Located at = locate(player, effect.getSourceInstanceId());
+                yield at != null && ("field".equals(at.zone()) || "tributeZone".equals(at.zone()));
+            }
+            case AttachLowerFromTributes attach -> {
+                GameEvent trigger = room.getTimeline().stream().filter(e -> e.getSeq() == effect.getTriggerSeq()).findFirst().orElse(null);
+                CardSlot ally = trigger == null ? null : find(player.getField(), trigger.getCardInstanceId());
+                yield ally != null && ally.getLevel() != null && player.getTributeZone().stream()
+                        .anyMatch(c -> attach.filter().matches(c) && c.getLevel() != null && c.getLevel() < ally.getLevel());
+            }
+            case ReduceTriggerFurther ignored -> triggerEnemy(room, effect) != null;
+            case ReduceTriggerToZero ignored -> triggerEnemy(room, effect) != null;
             case ToDeckTop top -> !zone(player, top.zone()).isEmpty();
             case TributeResource tr -> {
                 CardSlot self = find(player.getField(), effect.getSourceInstanceId());
@@ -1542,6 +1670,13 @@ public final class EffectEngine {
                 yield at != null && !at.zone().equals(send.zone()) && !"field".equals(at.zone());
             }
             case SendSelfFromFieldTo ignored -> onField != null;
+            case DiscardTributesForKeyword d -> player.getTributeZone().stream().filter(d.filter()::matches).count() >= d.count();
+            case TributeAlliesLevelSum t -> {
+                List<CardSlot> valid = allies(player).stream().filter(t.filter()::matches).toList();
+                yield valid.size() >= t.minCount() && valid.stream().mapToInt(c -> c.getLevel() == null ? 0 : c.getLevel()).sum() >= t.minSum();
+            }
+            case PlaceFromHandUntilTurnEnd p -> player.getHand().stream().anyMatch(p.filter()::matches);
+            case TributeAllyMaterialWhere t -> !allyMaterialsWhere(player, t).isEmpty();
             case SummonFreeLevelSum sum -> !freeLevelSum(room, effect, sum).isEmpty();
             case SendFromZoneToDeckBottom send -> zone(player, send.zone()).stream().filter(send.filter()::matches).count() >= send.count();
             case TapSelf ignored -> onField != null && !onField.isTapped();
@@ -1551,6 +1686,26 @@ public final class EffectEngine {
             case PickAlly pick -> !pickable(room, effect, player, pick).isEmpty();
             case MoveSelfToFront ignored -> onField != null && !inFrontLine(onField);
             case PlaySelfFree ignored -> find(player.getHand(), effect.getSourceInstanceId()) != null;
+            case ChooseWeakestEnemy weakest -> !enemyTargets(room, effect, weakest.filter()).isEmpty();
+            case SummonSelf ss -> {
+                CardSlot self = find(zone(player, ss.zone()), effect.getSourceInstanceId());
+                yield self != null && "creature".equals(self.getCardType()) && self.getCost() != null
+                        && canPay(room, player.getUserId(), Math.max(0, self.getCost() - ss.reduce().of(room, player.getUserId())));
+            }
+            case SacrificeAllyWhere sacrifice -> allies(player).stream().anyMatch(sacrifice.filter()::matches);
+            case TributeAlly tribute -> allies(player).stream().anyMatch(tribute.filter()::matches);
+            case TributeAllyMaterial ignored -> !allyMaterials(player).isEmpty();
+            case PickAllyWhere pick -> !pickableWhere(room, effect, player, pick).isEmpty();
+            case MaterialsToHand ignored -> onField != null && !onField.getMaterials().isEmpty();
+            case SelfToLife ignored -> onField != null;
+            case MaterialToBack back -> onField != null && onField.getMaterials().stream()
+                    .anyMatch(m -> "creature".equals(m.getCardType()) && back.filter().matches(m));
+            case PlaceSelfOnField place -> find(zone(player, place.zone()), effect.getSourceInstanceId()) != null;
+            case PlayFromZone play -> !playable(room, effect, play).isEmpty();
+            case AddResourceFrom add -> !resourceCandidates(room, effect, add).isEmpty();
+            case ReturnSelfToHand ignored -> onField != null;
+            case UntapStructure untap -> player.getField().stream().anyMatch(c -> "structure".equals(c.getCardType()) && c.isTapped()
+                    && untap.filter().matches(c));
             default -> true;
         };
     }
@@ -1560,6 +1715,7 @@ public final class EffectEngine {
         PlayerState player = room.getPlayer(effect.getControllerId());
         if (player == null) return false;
         String userId = player.getUserId();
+        step = resolved(room, effect, step);
 
         switch (step) {
             case LookTop look -> {
@@ -1567,6 +1723,134 @@ public final class EffectEngine {
                 for (int i = 0; i < n; i++) effect.getLooked().add(player.getDeck().remove(0));
                 record(room, GameEvent.LOOK_TOP, userId, null, "deck", null, effect, Map.of("count", n),
                         player.getUsername() + " mira las primeras " + n + " cartas de su mazo (" + effect.getSourceName() + ")");
+                return false;
+            }
+            case TakeFromLookedLikeSubject take -> {
+                if (effect.getLooked().isEmpty()) return false;
+                CardSlot subject = subject(room, effect);
+                List<String> classes = subject == null || subject.getClasses() == null ? List.of() : subject.getClasses();
+                List<String> valid = effect.getLooked().stream()
+                        .filter(c -> c.getClasses() != null && c.getClasses().stream().anyMatch(t -> classes.stream().anyMatch(t::equalsIgnoreCase)))
+                        .map(CardSlot::getInstanceId).toList();
+                Prompt prompt = prompt(room, effect, Prompt.Kind.TAKE_REVEALED_REST_BOTTOM,
+                        "Toma hasta " + take.max() + " " + plural(take.max(), "carta", "cartas") + " que comparta tipo con " + name(subject)
+                                + " para tu mano. El resto va al fondo de tu mazo en orden aleatorio.");
+                prompt.setCards(new ArrayList<>(effect.getLooked()));
+                prompt.setValidIds(new ArrayList<>(valid));
+                prompt.setMin(0);
+                prompt.setMax(Math.min(take.max(), valid.size()));
+                prompt.setChosenLabel("A tu mano");
+                room.setPrompt(prompt);
+                return true;
+            }
+            case DiscardLookedRestTop discard -> {
+                if (effect.getLooked().isEmpty()) return false;
+                int n = effect.getLooked().size();
+                int min = Math.min(discard.atLeast(), n);
+                pick(room, effect, "Descarta al menos " + min + " " + plural(min, "carta", "cartas") + " bocabajo. Ordena el resto: vuelve al tope "
+                        + "de tu mazo en ese orden (la de la izquierda queda arriba).", "Descartar", effect.getLooked(), ids(effect.getLooked()), n);
+                room.getPrompt().setMin(min);
+                room.getPrompt().setReorderRest(true);
+                room.getPrompt().setRestToTop(true);
+                return true;
+            }
+            case ReduceRepeatedly r -> {
+                int total = r.times() < 0 ? effect.getLastCount() : r.times();
+                List<CardSlot> valid = enemyTargets(room, effect, CardFilter.creatures());
+                if (effect.getRepeatsDone() >= total || valid.isEmpty()) {
+                    effect.setRepeatsDone(0);
+                    return false;
+                }
+                PlayerState opponent = room.getPlayer(room.getOpponentId(userId));
+                pick(room, effect, "Elige 1 enemigo: reduce en " + r.amount() + " su fuerza" + ("attack".equals(r.until()) ? " hasta el final del ataque" : "")
+                                + " (" + (effect.getRepeatsDone() + 1) + " de " + total + "). Puedes no elegir más.", "Reducir",
+                        frontLine(opponent.getField()), ids(valid), 1);
+                room.getPrompt().setMin(0);
+                return true;
+            }
+            case DiscardTributesForKeyword d -> {
+                List<CardSlot> valid = player.getTributeZone().stream().filter(d.filter()::matches).toList();
+                if (valid.size() < d.count()) return false;
+                pick(room, effect, "Puedes descartar " + d.count() + " tributos " + d.filter().describe() + " para que " + effect.getSourceName() + " gane "
+                        + d.keyword() + " 1 hasta el final del ataque (tantas veces como quieras). Elige ninguno para terminar.", "Descartar",
+                        player.getTributeZone(), ids(valid), d.count());
+                room.getPrompt().setMin(0);
+                return true;
+            }
+            case TributeAlliesLevelSum t -> {
+                List<CardSlot> valid = allies(player).stream().filter(t.filter()::matches).toList();
+                pick(room, effect, "Tributa " + t.minCount() + " o más aliados " + t.filter().describe() + " que sumen " + t.minSum() + " o más en nivel.",
+                        "Tributar", player.getField(), ids(valid), valid.size());
+                room.getPrompt().setMin(t.minCount());
+                return true;
+            }
+            case PlaceFromHandUntilTurnEnd p -> {
+                List<CardSlot> valid = player.getHand().stream().filter(p.filter()::matches).toList();
+                if (valid.isEmpty()) return false;
+                pick(room, effect, "Puedes colocar 1 criatura " + p.filter().describe() + " de tu mano en tu retaguardia; al final del turno vuelve a tu mano.",
+                        "A la retaguardia", player.getHand(), ids(valid), 1);
+                room.getPrompt().setMin(0);
+                return true;
+            }
+            case TributeAllyMaterialWhere t -> {
+                List<CardSlot> valid = allyMaterialsWhere(player, t);
+                if (valid.isEmpty()) return false;
+                pick(room, effect, "Tributa 1 material " + t.material().describe() + " de un aliado " + t.ally().describe() + ".", "Tributar", valid, ids(valid), 1);
+                return true;
+            }
+            case ActivateTributedSummonEffect ignored -> {
+                CardSlot ally = subject(room, effect);
+                String materialId = effect.getLastTributed().isEmpty() ? null : effect.getLastTributed().get(0);
+                CardSlot material = materialId == null ? null : find(player.getTributeZone(), materialId);
+                EffectScript summon = material == null ? null : CardEffects.of(material.getCardName()).stream()
+                        .filter(sc -> sc.moment() == EffectScript.Moment.ON_SUMMON).findFirst().orElse(null);
+                if (ally == null || summon == null) {
+                    log(room, "No hay un efecto En Invocación que activar (" + effect.getSourceName() + ")", null);
+                    return false;
+                }
+                // The ally activates it as its own: a new link of the chain, after this one resolves
+                PendingEffect link = pending(room, summon, userId, ally, room.getEventSeq());
+                link.setConfirmed(true);
+                link.setOrdered(true);
+                room.getTriggerQueue().add(0, link);
+                log(room, name(ally) + " activa el efecto En Invocación de " + name(material) + " (" + effect.getSourceName() + ")", null);
+                return false;
+            }
+            case ExtraCombatHitThenEndTurn ignored -> {
+                room.getUsedThisTurn().add(EXTRA_HIT + userId);
+                log(room, "La próxima vez que un aliado de " + player.getUsername() + " inflija daño directo por combate este turno, inflige daño 1 vez más",
+                        null);
+                return false;
+            }
+            case OpponentMovesOneToFront ignored -> {
+                PlayerState opponent = room.getPlayer(room.getOpponentId(userId));
+                List<CardSlot> back = opponent == null ? List.of() : opponent.getField().stream()
+                        .filter(c -> "creature".equals(c.getCardType()) && !inFrontLine(c)).toList();
+                if (back.isEmpty()) {
+                    log(room, "El oponente no tiene criaturas en su retaguardia (" + effect.getSourceName() + ")", null);
+                    return false;
+                }
+                pick(room, effect, "Elige 1 criatura de tu retaguardia: se mueve a tu línea frontal (" + effect.getSourceName() + ").", "A la línea frontal",
+                        opponent.getField(), ids(back), 1);
+                room.getPrompt().setPlayerId(opponent.getUserId());
+                return true;
+            }
+            case HandsToBottomDrawOpponentLives ignored -> {
+                List<PlayerState> both = new ArrayList<>(room.getPlayers().values());
+                for (PlayerState p : both) {
+                    List<CardSlot> hand = new ArrayList<>(p.getHand());
+                    Collections.shuffle(hand);
+                    p.getHand().clear();
+                    hand.forEach(c -> c.setFaceDown(true));
+                    p.getDeck().addAll(hand);
+                    log(room, p.getUsername() + " envía las " + hand.size() + " cartas de su mano al fondo de su mazo", null);
+                }
+                for (PlayerState p : both) {
+                    PlayerState other = room.getPlayer(room.getOpponentId(p.getUserId()));
+                    int n = Math.min(other == null ? 0 : other.getLifeStack().size(), p.getDeck().size());
+                    for (int i = 0; i < n; i++) drawOne(room, p, effect, false);
+                    log(room, p.getUsername() + " roba " + n + " " + plural(n, "carta", "cartas") + " (" + effect.getSourceName() + ")", null);
+                }
                 return false;
             }
             case TakeFromLookedRestToBottom take -> {
@@ -1585,10 +1869,12 @@ public final class EffectEngine {
                 return true;
             }
             case TributeFromHand tribute -> {
-                if (player.getHand().isEmpty()) return false;
-                int n = Math.min(tribute.count(), player.getHand().size());
+                // Not the effect's own card when it is in the hand ("tributa 2 cartas de tu mano para invocar esta carta")
+                List<CardSlot> valid = player.getHand().stream().filter(c -> !c.getInstanceId().equals(effect.getSourceInstanceId())).toList();
+                if (valid.isEmpty()) return false;
+                int n = Math.min(tribute.count(), valid.size());
                 pick(room, effect, "Tributa " + n + " " + plural(n, "carta", "cartas") + " de tu mano.", "Tributar",
-                        player.getHand(), ids(player.getHand()), n);
+                        player.getHand(), ids(valid), n);
                 return true;
             }
             case Draw draw -> {
@@ -1621,7 +1907,7 @@ public final class EffectEngine {
                 pick(room, effect, "Elige " + (choose.upTo() ? "hasta " : "") + n + " " + plural(n, "enemigo", "enemigos") + " "
                         + choose.filter().describe() + " de la línea frontal: " + (n == 1 ? "es el objetivo" : "son los objetivos") + " del efecto.",
                         "Objetivo", frontLine(opponent.getField()), ids(valid), n);
-                if (choose.upTo()) room.getPrompt().setMin(1);
+                if (choose.upTo()) room.getPrompt().setMin(0);
                 return true;
             }
             case DestroyChosen ignored -> {
@@ -1643,7 +1929,8 @@ public final class EffectEngine {
                     return false;
                 }
                 pick(room, effect, "Invoca 1 criatura " + summon.filter().describe() + " de tu " + zoneName(summon.zone())
-                                + (summon.reduce() > 0 ? " pagando su coste reducido en " + summon.reduce() : " pagando su coste")
+                                + (summon.reduce() >= SummonFromZone.FREE ? " sin pagar su coste"
+                                        : summon.reduce() > 0 ? " pagando su coste reducido en " + summon.reduce() : " pagando su coste")
                                 + ". Entra en " + (summon.toFront() ? "tu línea frontal" : "Retaguardia") + " y robas 1 carta.", "Invocar",
                         zone(player, summon.zone()), ids(valid), 1);
                 return true;
@@ -1735,6 +2022,49 @@ public final class EffectEngine {
                 if (target != null && strength(target) > 0) reduceStrength(room, effect, opponent, target, strength(target), false);
                 return false;
             }
+            case IfPossible ignored -> {
+                if (!allPossibleAfterIfPossible(room, effect, script(effect).steps(), effect.getStepIndex())) {
+                    log(room, effect.getSourceName() + ": " + effect.getLabel() + " no se resuelve (ya no puede hacerse todo lo que pide)", null);
+                    effect.setStepIndex(script(effect).steps().size() - 1);
+                }
+                return false;
+            }
+            case ReduceTriggerFurther further -> {
+                GameEvent trigger = room.getTimeline().stream().filter(e -> e.getSeq() == effect.getTriggerSeq()).findFirst().orElse(null);
+                PlayerState opponent = room.getPlayer(room.getOpponentId(userId));
+                CardSlot target = trigger == null || opponent == null ? null : find(opponent.getField(), trigger.getCardInstanceId());
+                if (target == null || strength(target) <= 0) return false;
+                boolean later = trigger.getData() != null && Boolean.TRUE.equals(trigger.getData().get("untilNextTurn"));
+                reduceStrength(room, effect, opponent, target, further.amount(), later);
+                return false;
+            }
+            case SummonLikeSubject like -> {
+                CardSlot ally = subject(room, effect);
+                List<CardSlot> valid = ally == null ? List.of() : likeSubject(player, like, ally);
+                if (valid.isEmpty()) {
+                    log(room, "No hay criaturas que " + effect.getSourceName() + " pueda invocar", null);
+                    return false;
+                }
+                pick(room, effect, "Invoca 1 criatura " + like.filter().describe() + " nivel " + ally.getLevel() + " distinta de " + name(ally)
+                                + " de tus " + zoneName(like.zone()) + " sin pagar su coste. Entra en tu línea frontal y robas 1 carta.", "Invocar",
+                        zone(player, like.zone()), ids(valid), 1);
+                return true;
+            }
+            case AttachSubjectToSummoned ignored -> {
+                CardSlot ally = find(player.getField(), effect.getSubjectId());
+                CardSlot summoned = find(player.getField(), effect.getSummonedId());
+                if (ally == null || summoned == null || ally == summoned) return false;
+                player.getField().remove(ally);
+                leaveField(ally);
+                List<CardSlot> materials = new ArrayList<>(ally.getMaterials());
+                ally.getMaterials().clear();
+                summoned.getMaterials().add(ally);
+                summoned.getMaterials().addAll(materials);
+                record(room, GameEvent.SEND, userId, ally, "field", "materials", effect, Map.of("to", summoned.getInstanceId()),
+                        player.getUsername() + " añade " + name(ally) + (materials.isEmpty() ? "" : " y sus " + materials.size() + " "
+                                + plural(materials.size(), "material", "materiales")) + " como materiales de " + name(summoned));
+                return false;
+            }
             case MaterialToLife ignored -> {
                 CardSlot self = find(player.getField(), effect.getSourceInstanceId());
                 if (self == null || self.getMaterials().isEmpty()) return false;
@@ -1788,13 +2118,19 @@ public final class EffectEngine {
                 return true;
             }
             case AttachSelfToSubject ignored -> {
-                CardSlot self = find(player.getField(), effect.getSourceInstanceId());
+                Located at = locate(player, effect.getSourceInstanceId());
+                CardSlot self = at == null ? null : at.card();
                 CardSlot ally = subject(room, effect);
                 if (self == null || ally == null || self == ally) return false;
-                player.getField().remove(self);
-                leaveField(self);
+                if ("field".equals(at.zone())) {
+                    player.getField().remove(self);
+                    leaveField(self);
+                } else {
+                    zone(player, at.zone()).remove(self);
+                    self.setFaceDown(false);
+                }
                 ally.getMaterials().add(self);
-                record(room, GameEvent.SEND, userId, self, "field", "materials", effect, Map.of("to", ally.getInstanceId()),
+                record(room, GameEvent.SEND, userId, self, at.zone(), "materials", effect, Map.of("to", ally.getInstanceId()),
                         player.getUsername() + " añade " + name(self) + " como material de " + name(ally));
                 return false;
             }
@@ -1875,6 +2211,7 @@ public final class EffectEngine {
                 if (subject == null) return false;
                 subject.getTurnKeywords().add(gain.keyword());
                 if (room.getCombat() != null) room.getCombat().getUntilEndOfAttack().add(subject.getInstanceId() + "|" + gain.keyword());
+                floating(subject, effect, "Gana " + gain.keyword() + " hasta el final del ataque", "attack", 0, gain.keyword());
                 record(room, GameEvent.GAIN, userId, subject, null, null, effect, Map.of("keyword", gain.keyword()),
                         name(subject) + " gana " + gain.keyword() + " hasta el final del ataque");
                 return false;
@@ -1899,10 +2236,16 @@ public final class EffectEngine {
                 effect.setLastDone(false);
                 return false;
             }
+            case IfNotDone ifNot -> {
+                if (effect.isLastDone()) effect.setStepIndex(effect.getStepIndex() + ifNot.covers());
+                effect.setLastDone(false);
+                return false;
+            }
             case GainStrength gain -> {
                 CardSlot subject = subject(room, effect);
                 if (subject == null) return false;
                 subject.setTurnStrength(subject.getTurnStrength() + gain.amount());
+                floating(subject, effect, "Gana fuerza " + gain.amount() + " hasta el final del turno", "turn", gain.amount(), null);
                 record(room, GameEvent.GAIN, userId, subject, null, null, effect, Map.of("strength", gain.amount()),
                         name(subject) + " gana fuerza " + gain.amount() + " hasta el final del turno");
                 return false;
@@ -1916,7 +2259,7 @@ public final class EffectEngine {
                 zone(player, at.zone()).remove(at.card());
                 at.card().setFaceDown(false);
                 zone(player, send.zone()).add(at.card());
-                record(room, GameEvent.SEND, userId, at.card(), at.zone(), send.zone(), effect, null,
+                record(room, "tributeZone".equals(send.zone()) ? GameEvent.TRIBUTE : GameEvent.SEND, userId, at.card(), at.zone(), send.zone(), effect, null,
                         player.getUsername() + " envía " + name(at.card()) + " a su " + zoneName(send.zone()));
                 return false;
             }
@@ -1948,6 +2291,7 @@ public final class EffectEngine {
                 CardSlot subject = subject(room, effect);
                 if (subject == null) return false;
                 subject.getTurnKeywords().add(gain.keyword());
+                floating(subject, effect, "Gana " + gain.keyword() + " hasta el final del turno", "turn", 0, gain.keyword());
                 record(room, GameEvent.GAIN, userId, subject, null, null, effect, Map.of("keyword", gain.keyword()),
                         name(subject) + " gana " + gain.keyword() + " hasta el final del turno");
                 return false;
@@ -1963,6 +2307,10 @@ public final class EffectEngine {
                 if (subject == null) return false;
                 if (room.getCombat() != null) {
                     log(room, name(subject) + " no puede atacar: ya hay un combate en curso", null);
+                    return false;
+                }
+                if (subject.getTurnKeywords().contains(NO_ATTACK)) {
+                    log(room, name(subject) + " no puede declarar ataque este turno", null);
                     return false;
                 }
                 if (!inFrontLine(subject)) {
@@ -2033,10 +2381,271 @@ public final class EffectEngine {
                 if (self != null) play(room, player, self, 0, null, null, effect);
                 return false;
             }
+            case ChooseEnemyBy ignored -> {
+                return false;
+            }
+            case SummonFromZoneBy ignored -> {
+                return false;
+            }
+            case ReduceChosenToZero ignored -> {
+                PlayerState opponent = room.getPlayer(room.getOpponentId(userId));
+                for (String id : effect.getTargetIds()) {
+                    CardSlot target = opponent == null ? null : find(frontLine(opponent.getField()), id);
+                    if (target != null && strength(target) > 0) reduceStrength(room, effect, opponent, target, strength(target), false);
+                }
+                return false;
+            }
+            case TapChosen ignored -> {
+                PlayerState opponent = room.getPlayer(room.getOpponentId(userId));
+                for (String id : effect.getTargetIds()) {
+                    CardSlot target = opponent == null ? null : find(frontLine(opponent.getField()), id);
+                    if (target == null) {
+                        log(room, "El objetivo de " + effect.getSourceName() + " ya no es válido", null);
+                        continue;
+                    }
+                    if (target.isTapped()) continue;
+                    target.setTapped(true);
+                    effect.setLastDone(true);
+                    record(room, GameEvent.TAP, userId, target, null, null, effect, Map.of("ownerId", opponent.getUserId()),
+                            player.getUsername() + " agota a " + name(target) + " (" + effect.getSourceName() + ")");
+                }
+                return false;
+            }
+            case BounceChosen ignored -> {
+                PlayerState opponent = room.getPlayer(room.getOpponentId(userId));
+                boolean any = false;
+                for (String id : effect.getTargetIds()) {
+                    CardSlot target = opponent == null ? null : find(frontLine(opponent.getField()), id);
+                    if (target == null) {
+                        log(room, "El objetivo de " + effect.getSourceName() + " ya no es válido", null);
+                        continue;
+                    }
+                    any = true;
+                    if (deferRemoval(room, target, opponent, false, CAUSE_EFFECT, userId, effect.getSourceInstanceId(), effect)) continue;
+                    removeFromField(opponent, target);
+                    opponent.getHand().add(target);
+                    record(room, GameEvent.SEND, userId, target, "field", "hand", effect, Map.of("ownerId", opponent.getUserId()),
+                            player.getUsername() + " sube a " + name(target) + " a la mano de " + opponent.getUsername() + " (" + effect.getSourceName() + ")");
+                }
+                effect.setLastDone(any);
+                return false;
+            }
+            case NoUntapChosen ignored -> {
+                PlayerState opponent = room.getPlayer(room.getOpponentId(userId));
+                for (String id : effect.getTargetIds()) {
+                    CardSlot target = opponent == null ? null : find(opponent.getField(), id);
+                    if (target == null) continue;
+                    // Counted down at each change of turn: it is 1 during its owner's next turn
+                    target.setNoUntap(opponent.getUserId().equals(room.getCurrentTurnUserId()) ? 3 : 2);
+                    floating(target, effect, "No se reactiva durante el próximo turno de " + opponent.getUsername(), "nextTurn", 0, null);
+                    log(room, name(target) + " no se reactivará en el próximo turno de " + opponent.getUsername() + " (" + effect.getSourceName() + ")", null);
+                }
+                return false;
+            }
+            case ChooseWeakestEnemy weakest -> {
+                List<CardSlot> valid = enemyTargets(room, effect, weakest.filter());
+                if (valid.isEmpty()) return false;
+                int min = valid.stream().mapToInt(EffectEngine::strength).min().orElse(0);
+                List<CardSlot> ties = valid.stream().filter(c -> strength(c) == min).toList();
+                if (ties.size() == 1) {
+                    effect.getTargetIds().add(ties.get(0).getInstanceId());
+                    record(room, GameEvent.TARGET, userId, ties.get(0), null, null, effect, Map.of("targetIds", List.of(ties.get(0).getInstanceId())),
+                            player.getUsername() + " elige como objetivo a " + name(ties.get(0)) + " (" + effect.getSourceName() + ")");
+                    return false;
+                }
+                PlayerState opponent = room.getPlayer(room.getOpponentId(userId));
+                pick(room, effect, "Varios enemigos " + weakest.filter().describe() + " tienen la menor fuerza (" + min + "): elige 1.",
+                        "Objetivo", frontLine(opponent.getField()), ids(ties), 1);
+                return true;
+            }
+            case SummonSelf ss -> {
+                CardSlot self = find(zone(player, ss.zone()), effect.getSourceInstanceId());
+                if (self == null || self.getCost() == null) return false;
+                int reduce = ss.reduce().of(room, userId);
+                if (!canPay(room, userId, Math.max(0, self.getCost() - reduce))) {
+                    log(room, "No tienes gemas para invocar " + name(self), null);
+                    return false;
+                }
+                summonByEffect(room, effect, player, self, ss.zone(), reduce, ss.toFront());
+                effect.setLastDone(true);
+                return false;
+            }
+            case SacrificeAllyWhere sacrifice -> {
+                List<CardSlot> valid = allies(player).stream().filter(sacrifice.filter()::matches).toList();
+                if (valid.isEmpty()) return false;
+                pick(room, effect, "Sacrifica 1 aliado " + sacrifice.filter().describe() + ".", "Sacrificar", player.getField(), ids(valid), 1);
+                return true;
+            }
+            case TributeAlly tribute -> {
+                List<CardSlot> valid = allies(player).stream().filter(tribute.filter()::matches).toList();
+                if (valid.isEmpty()) return false;
+                pick(room, effect, "Tributa 1 aliado " + tribute.filter().describe() + ": va a tus tributos.", "Tributar", player.getField(), ids(valid), 1);
+                return true;
+            }
+            case TributeAllyMaterial ignored -> {
+                List<CardSlot> valid = allyMaterials(player);
+                if (valid.isEmpty()) return false;
+                pick(room, effect, "Tributa 1 material de 1 de tus aliados.", "Tributar", valid, ids(valid), 1);
+                return true;
+            }
+            case PickAllyWhere pick -> {
+                List<CardSlot> valid = pickableWhere(room, effect, player, pick);
+                if (valid.isEmpty()) {
+                    log(room, "No hay aliados que puedan elegirse (" + effect.getSourceName() + ")", null);
+                    effect.setStepIndex(script(effect).steps().size() - 1);
+                    return false;
+                }
+                pick(room, effect, "Elige 1 aliado " + pick.filter().describe() + ".", "Elegido", player.getField(), ids(valid), 1);
+                return true;
+            }
+            case SubjectFromTrigger ignored -> {
+                GameEvent trigger = room.getTimeline().stream().filter(e -> e.getSeq() == effect.getTriggerSeq()).findFirst().orElse(null);
+                CardSlot card = trigger == null ? null : find(player.getField(), trigger.getCardInstanceId());
+                if (card != null) effect.setSubjectId(card.getInstanceId());
+                return false;
+            }
+            case UntapSubject ignored -> {
+                CardSlot ally = subject(room, effect);
+                if (ally == null || !reactivable(ally)) return false;
+                ally.setTapped(false);
+                record(room, GameEvent.UNTAP, userId, ally, null, null, effect, null,
+                        player.getUsername() + " reactiva " + name(ally) + " (" + effect.getSourceName() + ")");
+                return false;
+            }
+            case GainStrengthUntil gain -> {
+                CardSlot subject = subject(room, effect);
+                if (subject == null) return false;
+                if ("nextTurn".equals(gain.until())) {
+                    subject.setLaterStrength(subject.getLaterStrength() + gain.amount());
+                } else {
+                    subject.setTurnStrength(subject.getTurnStrength() + gain.amount());
+                    if (room.getCombat() != null) room.getCombat().getUntilEndOfAttack().add(subject.getInstanceId() + "|" + STRENGTH_ENTRY + gain.amount());
+                }
+                String until = "nextTurn".equals(gain.until()) ? "el final del turno oponente" : "el final del ataque";
+                floating(subject, effect, "Gana fuerza " + gain.amount() + " hasta " + until, gain.until(), gain.amount(), null);
+                record(room, GameEvent.GAIN, userId, subject, null, null, effect, Map.of("strength", gain.amount()),
+                        name(subject) + " gana fuerza " + gain.amount() + " hasta " + until);
+                return false;
+            }
+            case DamageBySelfStrength ignored -> {
+                CardSlot self = subject(room, effect);
+                if (self != null) damageByEffect(room, effect, player, strength(self));
+                return false;
+            }
+            case SummonedCannotAttack ignored -> {
+                CardSlot summoned = find(player.getField(), effect.getSummonedId());
+                if (summoned == null) return false;
+                summoned.getTurnKeywords().add(NO_ATTACK);
+                floating(summoned, effect, "No puede declarar ataque este turno", "turn", 0, NO_ATTACK);
+                return false;
+            }
+            case MaterialsToHand ignored -> {
+                CardSlot self = find(player.getField(), effect.getSourceInstanceId());
+                if (self == null || self.getMaterials().isEmpty()) return false;
+                List<CardSlot> materials = new ArrayList<>(self.getMaterials());
+                self.getMaterials().clear();
+                for (CardSlot m : materials) {
+                    m.setFaceDown(false);
+                    player.getHand().add(m);
+                    record(room, GameEvent.ADD_TO_HAND, userId, m, "materials", "hand", effect, null, null);
+                }
+                effect.setLastTributed(new ArrayList<>(ids(materials)));
+                effect.setLastDone(true);
+                log(room, player.getUsername() + " sube a su mano los materiales de " + name(self) + ": "
+                        + String.join(", ", materials.stream().map(EffectEngine::name).toList()), room.getEventSeq());
+                return false;
+            }
+            case SelfToLife ignored -> {
+                CardSlot self = find(player.getField(), effect.getSourceInstanceId());
+                if (self == null) return false;
+                removeFromField(player, self);
+                self.setFaceDown(true);
+                player.getLifeStack().add(0, self);
+                record(room, GameEvent.SEND, userId, self, "field", "lifeStack", effect, null,
+                        player.getUsername() + " coloca " + name(self) + " al tope de sus vidas, bocabajo");
+                return false;
+            }
+            case MaterialToBack back -> {
+                CardSlot self = find(player.getField(), effect.getSourceInstanceId());
+                List<String> valid = self == null ? List.of() : ids(self.getMaterials().stream()
+                        .filter(m -> "creature".equals(m.getCardType()) && back.filter().matches(m)).toList());
+                if (valid.isEmpty()) return false;
+                pick(room, effect, "Coloca 1 criatura " + back.filter().describe() + " de los materiales de " + name(self) + " en tu retaguardia.",
+                        "A la retaguardia", self.getMaterials(), valid, 1);
+                return true;
+            }
+            case PlaceSelfOnField place -> {
+                CardSlot self = find(zone(player, place.zone()), effect.getSourceInstanceId());
+                if (self == null) return false;
+                zone(player, place.zone()).remove(self);
+                self.setFaceDown(false);
+                self.setTapped(false);
+                self.setX(50.0);
+                self.setY(75.0);
+                player.getField().add(self);
+                record(room, GameEvent.SEND, userId, self, place.zone(), "field", effect, null,
+                        player.getUsername() + " coloca " + name(self) + " en su retaguardia (" + effect.getSourceName() + ")");
+                return false;
+            }
+            case PlayFromZone play -> {
+                List<CardSlot> valid = playable(room, effect, play);
+                if (valid.isEmpty()) {
+                    log(room, "No hay cartas " + play.filter().describe() + " que jugar de tus " + zoneName(play.zone()), null);
+                    return false;
+                }
+                pick(room, effect, "Juega 1 carta " + play.filter().describe() + " de tus " + zoneName(play.zone())
+                        + (play.reduce() > 0 ? " reduciendo su coste en " + play.reduce() : "") + ".", "Jugar", zone(player, play.zone()), ids(valid), 1);
+                return true;
+            }
+            case TributeFromLookedRestToBottom tribute -> {
+                if (effect.getLooked().isEmpty()) return false;
+                int n = Math.min(tribute.count(), effect.getLooked().size());
+                Prompt prompt = prompt(room, effect, Prompt.Kind.TAKE_REVEALED_REST_BOTTOM,
+                        "Tributa " + n + " " + plural(n, "carta", "cartas") + ". Ordena el resto: irá al fondo de tu mazo en ese orden.");
+                prompt.setCards(new ArrayList<>(effect.getLooked()));
+                prompt.setValidIds(new ArrayList<>(ids(effect.getLooked())));
+                prompt.setMin(n);
+                prompt.setMax(n);
+                prompt.setReorderRest(true);
+                prompt.setChosenLabel("Tributar");
+                room.setPrompt(prompt);
+                return true;
+            }
+            case AddResourceFrom add -> {
+                List<CardSlot> valid = resourceCandidates(room, effect, add);
+                if (valid.isEmpty()) return false;
+                List<CardSlot> shown = new ArrayList<>();
+                for (String z : add.zones().split(",")) shown.addAll(zone(player, z.trim()));
+                pick(room, effect, "Añade 1 carta " + add.filter().describe() + " como recurso de " + effect.getSourceName() + ".",
+                        "Recurso", shown, ids(valid), 1);
+                return true;
+            }
+            case ReturnSelfToHand ignored -> {
+                CardSlot self = find(player.getField(), effect.getSourceInstanceId());
+                if (self == null) return false;
+                removeFromField(player, self);
+                player.getHand().add(self);
+                effect.setLastDone(true);
+                record(room, GameEvent.SEND, userId, self, "field", "hand", effect, null,
+                        player.getUsername() + " sube " + name(self) + " a su mano");
+                return false;
+            }
+            case UntapStructure untap -> {
+                List<CardSlot> valid = player.getField().stream()
+                        .filter(c -> "structure".equals(c.getCardType()) && c.isTapped() && untap.filter().matches(c)).toList();
+                if (valid.isEmpty()) return false;
+                pick(room, effect, "Reactiva 1 de tus estructuras " + untap.filter().describe() + ".", "Reactivar", player.getField(), ids(valid), 1);
+                return true;
+            }
             case MayDo may -> {
                 List<EffectStep> steps = script(effect).steps();
                 int next = effect.getStepIndex() + 1;
-                if (next >= steps.size() || !possible(room, effect, steps.get(next))) {
+                // "puedes A para B": offered only when everything it covers can be done
+                boolean can = next < steps.size();
+                for (int i = next; can && i < Math.min(steps.size(), next + may.covers()); i++) {
+                    if (!(steps.get(i) instanceof IfDone) && !possible(room, effect, steps.get(i))) can = false;
+                }
+                if (!can) {
                     effect.setStepIndex(effect.getStepIndex() + may.covers());
                     return false;
                 }
@@ -2106,11 +2715,18 @@ public final class EffectEngine {
     private static void reduceStrength(GameRoom room, PendingEffect effect, PlayerState owner, CardSlot target, int amount, boolean untilNextTurn) {
         if (untilNextTurn) target.setLaterStrength(target.getLaterStrength() - amount);
         else target.setTurnStrength(target.getTurnStrength() - amount);
+        floating(target, effect, "Pierde " + amount + " de fuerza hasta el final del " + (untilNextTurn ? "próximo turno" : "turno"),
+                untilNextTurn ? "nextTurn" : "turn", -amount, null);
         int now = Math.max(0, strength(target));
         record(room, GameEvent.STRENGTH_REDUCED, effect.getControllerId(), target, null, null, effect,
-                Map.of("amount", amount, "to", now, "ownerId", owner.getUserId()),
+                Map.of("amount", amount, "to", now, "ownerId", owner.getUserId(), "untilNextTurn", untilNextTurn),
                 name(target) + " pierde " + amount + " de fuerza (" + effect.getSourceName() + "): queda en " + now);
         if (now <= 0) destroy(room, target, owner, false, CAUSE_EFFECT, effect.getControllerId(), null, effect);
+    }
+
+    /** Notes what an effect gave or took from a card for a while, for its details. */
+    private static void floating(CardSlot card, PendingEffect effect, String text, String until, int strength, String keyword) {
+        card.getFloating().add(new FloatingEffect(text, effect == null ? null : effect.getSourceName(), until, strength, keyword));
     }
 
     /** Direct damage by an effect to the opponent's top life: a creature with that strength or less is tributed, the rest go to the hand. */
@@ -2119,7 +2735,7 @@ public final class EffectEngine {
         if (defender == null || defender.getLifeStack().isEmpty()) return;
         CardSlot life = defender.getLifeStack().remove(0);
         life.setFaceDown(false);
-        boolean tribute = "creature".equals(life.getCardType()) && (life.getStrength() == null || life.getStrength() <= damage);
+        boolean tribute = "creature".equals(life.getCardType()) && (life.getStrength() == null || CardEffects.lifeStrength(life) <= damage);
         (tribute ? defender.getTributeZone() : defender.getHand()).add(life);
         record(room, GameEvent.LIFE_DAMAGE, player.getUserId(), life, "lifeStack", tribute ? "tributeZone" : "hand", effect,
                 Map.of("damage", damage, "attackerId", effect.getSourceInstanceId(), "defenderId", defender.getUserId()),
@@ -2151,7 +2767,14 @@ public final class EffectEngine {
 
     /** Allies "elige 1 aliado" may choose; for an attack, only those in the Línea frontal (rule 10.1.1.1). */
     private static List<CardSlot> pickable(GameRoom room, PendingEffect effect, PlayerState player, PickAlly pick) {
-        List<CardSlot> valid = allies(player).stream().filter(c -> !pick.attacker() || inFrontLine(c)).toList();
+        List<EffectStep> steps = new ArrayList<>(script(effect).cost());
+        steps.addAll(script(effect).steps());
+        List<CardSlot> valid = allies(player).stream().filter(c -> !pick.attacker() || inFrontLine(c))
+                // "añade esta carta como material a un aliado": another one
+                .filter(c -> steps.stream().noneMatch(s -> s instanceof AttachSelfToSubject) || !c.getInstanceId().equals(effect.getSourceInstanceId()))
+                // "elige 1 aliado: invoca 1 criatura del mismo nivel": one with something to summon
+                .filter(c -> steps.stream().noneMatch(s -> s instanceof SummonLikeSubject like && likeSubject(player, like, c).isEmpty()))
+                .toList();
         // "a un aliado para que invoque por …": only an ally that meets the Requerimiento of something it could summon
         SpecialFromZone special = script(effect).steps().stream().filter(s -> s instanceof SpecialFromZone sp && "subject".equals(sp.summoner()))
                 .map(s -> (SpecialFromZone) s).findFirst().orElse(null);
@@ -2177,7 +2800,220 @@ public final class EffectEngine {
      * will be checked here once a card has one.
      */
     static boolean reactivable(CardSlot card) {
-        return "creature".equals(card.getCardType()) && card.isTapped();
+        return "creature".equals(card.getCardType()) && card.isTapped() && card.getNoUntap() != 1;
+    }
+
+    /** A creature on the field leaves it (not destroyed): its Recursos and Materiales go to the Descarte and it loses its state. */
+    // ------------------------------------------------------------------ Replacements ("en su lugar", Protección)
+
+    /** A way to replace a removal: the card's own or inherited replacement, or a protector destroyed instead. */
+    private record ReplacementOption(String key, CardSlot source, CardEffects.Replacement replacement, String label, String text) {}
+
+    /**
+     * Rule of replacements: "cuando X fuera a ser destruida / removida: en su lugar …". When the card has one its owner
+     * can use, the removal waits for their choice. Manual removals (editor mode) are never replaced.
+     *
+     * @return true when the removal waits (it is done or replaced once the owner answers)
+     */
+    private static boolean deferRemoval(GameRoom room, CardSlot card, PlayerState owner, boolean destroy, String cause, String byId,
+                                        String byCard, PendingEffect effect) {
+        if (CAUSE_MANUAL.equals(cause) || card == null) return false;
+        if (room.getRemovalDecided().remove(card.getInstanceId())) return false;
+        if (replacementOptions(room, card, owner, destroy, byId).isEmpty()) return false;
+        if (room.getPendingRemovals().stream().anyMatch(r -> r.cardId().equals(card.getInstanceId()))) return true;
+        room.getPendingRemovals().add(new PendingRemoval(card.getInstanceId(), owner.getUserId(), destroy, cause, byId, byCard,
+                effect == null ? null : effect.getId()));
+        return true;
+    }
+
+    private static List<ReplacementOption> replacementOptions(GameRoom room, CardSlot card, PlayerState owner, boolean destroy, String byId) {
+        List<ReplacementOption> options = new ArrayList<>();
+        boolean byOpponent = byId != null && !byId.equals(owner.getUserId());
+        for (CardEffects.Replacement r : CardEffects.replacementsOf(card)) {
+            if (r.destroyOnly() && !destroy) continue;
+            if (r.byOpponentOnly() && !byOpponent) continue;
+            if (r.limit() != Limit.NONE && room.getUsedThisTurn().contains(replacementKey(owner, card, r))) continue;
+            boolean payable = switch (r.cost()) {
+                case TRIBUTE_TWO_MATERIALS -> card.getMaterials().size() >= 2;
+                case TRIBUTE_ONE_FROM_HAND -> !owner.getHand().isEmpty();
+                case TRIBUTE_HYDRA_RESOURCES -> card.getResources().stream().anyMatch(c -> c.getClasses() != null
+                        && c.getClasses().stream().anyMatch("hydra"::equalsIgnoreCase));
+                case TRIBUTE_ALL_RESOURCES -> !card.getResources().isEmpty();
+            };
+            if (payable) options.add(new ReplacementOption(r.id() + "@" + card.getInstanceId(), card, r, r.label(), r.text()));
+        }
+        // Protección [tipo]: "cuando algún aliado [tipo] fuera a ser removido: en su lugar, puedes destruir esta carta"
+        for (CardSlot protector : owner.getField()) {
+            if (protector == card) continue;
+            for (String k : keywords(protector)) {
+                if (!k.toLowerCase(Locale.ROOT).startsWith("protección")) continue;
+                String kind = k.replaceAll("(?i)protección", "").replaceAll("[\\[\\]]", "").trim();
+                boolean matches = kind.isEmpty() || (card.getClasses() != null && card.getClasses().stream().anyMatch(kind::equalsIgnoreCase));
+                if (matches) options.add(new ReplacementOption("proteccion@" + protector.getInstanceId(), protector, null, k,
+                        k + ": en su lugar, puedes destruir " + name(protector) + "."));
+            }
+        }
+        return options;
+    }
+
+    private static String replacementKey(PlayerState owner, CardSlot card, CardEffects.Replacement r) {
+        return r.limit() == Limit.ONCE_PER_TURN_BETWEEN_COPIES ? owner.getUserId() + "|" + r.id() : owner.getUserId() + "|" + card.getInstanceId() + "|" + r.id();
+    }
+
+    /** Asks the owner of the first pending removal whether to replace it; a removal with nothing left to replace it happens now. */
+    private static void promptRemoval(GameRoom room) {
+        PendingRemoval pending = room.getPendingRemovals().get(0);
+        PlayerState owner = room.getPlayer(pending.ownerId());
+        CardSlot card = owner == null ? null : find(owner.getField(), pending.cardId());
+        List<ReplacementOption> options = card == null ? List.of() : replacementOptions(room, card, owner, pending.destroy(), pending.byId());
+        if (options.isEmpty()) {
+            room.getPendingRemovals().remove(0);
+            if (card != null) executeRemoval(room, pending, owner, card);
+            return;
+        }
+        List<CardSlot> sources = options.stream().map(ReplacementOption::source).distinct().toList();
+        rulesPrompt(room, owner.getUserId(), PURPOSE_REPLACE, name(card) + (pending.destroy() ? " va a ser destruida" : " va a ser removida"),
+                "Puedes evitarlo con 1 de estos efectos (en su lugar), o dejar que " + (pending.destroy() ? "sea destruida." : "sea removida."),
+                "En su lugar", sources, sources);
+        room.getPrompt().setSubjectId(card.getInstanceId());
+        room.getPrompt().setEffects(options.stream()
+                .map(o -> new Prompt.OfferedEffect(o.key(), o.source().getInstanceId(), name(o.source()), o.label(), o.text())).toList());
+    }
+
+    private static String answerRemoval(GameRoom room, Prompt prompt, PlayerState player, List<String> picks) {
+        if (room.getPendingRemovals().isEmpty()) {
+            room.setPrompt(null);
+            return null;
+        }
+        PendingRemoval pending = room.getPendingRemovals().get(0);
+        CardSlot card = find(player.getField(), pending.cardId());
+        if (PURPOSE_REPLACE_HAND.equals(prompt.getPurpose())) {
+            // Caballero Leal: the hand card tributed instead
+            CardSlot paid = picks.isEmpty() ? null : find(player.getHand(), picks.get(0));
+            if (paid == null) return "Elige 1 carta de tu mano";
+            room.setPrompt(null);
+            room.getPendingRemovals().remove(0);
+            player.getHand().remove(paid);
+            player.getTributeZone().add(paid);
+            record(room, GameEvent.TRIBUTE, player.getUserId(), paid, "hand", "tributeZone", null, null,
+                    player.getUsername() + " tributa " + name(paid) + " de su mano: " + (card == null ? "la carta" : name(card)) + " no es destruida");
+            return null;
+        }
+        room.setPrompt(null);
+        if (card == null) {
+            room.getPendingRemovals().remove(0);
+            return null;
+        }
+        List<ReplacementOption> options = replacementOptions(room, card, player, pending.destroy(), pending.byId());
+        ReplacementOption chosen = picks.isEmpty() ? null : options.stream()
+                .filter(o -> o.key().equals(picks.get(0)) || o.source().getInstanceId().equals(picks.get(0))).findFirst().orElse(null);
+        if (chosen == null) {
+            // Not replaced: the removal happens now
+            room.getPendingRemovals().remove(0);
+            executeRemoval(room, pending, player, card);
+            return null;
+        }
+        if (chosen.replacement() == null) {
+            // Protección: the protector is destroyed instead (it may have a replacement of its own)
+            room.getPendingRemovals().remove(0);
+            log(room, name(chosen.source()) + " protege a " + name(card) + ": es destruida en su lugar", null);
+            destroy(room, chosen.source(), player, false, CAUSE_EFFECT, player.getUserId(), card.getInstanceId(), null);
+            return null;
+        }
+        CardEffects.Replacement r = chosen.replacement();
+        if (r.limit() != Limit.NONE) room.getUsedThisTurn().add(replacementKey(player, card, r));
+        switch (r.cost()) {
+            case TRIBUTE_TWO_MATERIALS -> {
+                for (int i = 0; i < 2 && !card.getMaterials().isEmpty(); i++) {
+                    CardSlot m = card.getMaterials().remove(0);
+                    m.setFaceDown(false);
+                    player.getTributeZone().add(m);
+                    record(room, GameEvent.TRIBUTE, player.getUserId(), m, "materials", "tributeZone", null, Map.of("byCard", card.getInstanceId()), null);
+                }
+                log(room, player.getUsername() + " tributa 2 materiales de " + name(card) + ": no es removida", null);
+            }
+            case TRIBUTE_HYDRA_RESOURCES, TRIBUTE_ALL_RESOURCES -> {
+                List<CardSlot> paid = card.getResources().stream().filter(c -> r.cost() == CardEffects.ReplacementCost.TRIBUTE_ALL_RESOURCES
+                        || (c.getClasses() != null && c.getClasses().stream().anyMatch("hydra"::equalsIgnoreCase))).toList();
+                card.getResources().removeAll(paid);
+                for (CardSlot c : paid) {
+                    c.setFaceDown(false);
+                    player.getTributeZone().add(c);
+                }
+                log(room, player.getUsername() + " tributa " + paid.size() + " " + plural(paid.size(), "recurso", "recursos") + " de " + name(card)
+                        + ": no es " + (pending.destroy() ? "destruida" : "removida"), null);
+            }
+            case TRIBUTE_ONE_FROM_HAND -> {
+                // The hand card is chosen next; the removal stays pending until then
+                rulesPrompt(room, player.getUserId(), PURPOSE_REPLACE_HAND, name(card) + " · " + r.label(),
+                        "Tributa 1 carta de tu mano: " + name(card) + " no es destruida.", "Tributar", player.getHand(), player.getHand());
+                room.getPrompt().setMin(1);
+                return null;
+            }
+        }
+        room.getPendingRemovals().remove(0);
+        return null;
+    }
+
+    /** The removal that was waiting, as it was going to happen. */
+    private static void executeRemoval(GameRoom room, PendingRemoval pending, PlayerState owner, CardSlot card) {
+        PendingEffect effect = pending.effectId() == null ? null
+                : room.getChain().stream().filter(e -> pending.effectId().equals(e.getId())).findFirst().orElse(null);
+        room.getRemovalDecided().add(card.getInstanceId());
+        if (pending.destroy()) {
+            destroy(room, card, owner, false, pending.cause(), pending.byId(), pending.byCard(), effect);
+            return;
+        }
+        room.getRemovalDecided().remove(card.getInstanceId());
+        removeFromField(owner, card);
+        owner.getHand().add(card);
+        PlayerState by = room.getPlayer(pending.byId());
+        record(room, GameEvent.SEND, pending.byId(), card, "field", "hand", effect, Map.of("ownerId", owner.getUserId()),
+                (by == null ? "" : by.getUsername() + " ") + "sube a " + name(card) + " a la mano de " + owner.getUsername());
+    }
+
+    private static void removeFromField(PlayerState owner, CardSlot card) {
+        owner.getField().remove(card);
+        for (CardSlot attached : concat(card.getMaterials(), card.getResources())) {
+            attached.setFaceDown(false);
+            owner.getDiscardPile().add(attached);
+        }
+        card.setMaterials(new ArrayList<>());
+        card.setResources(new ArrayList<>());
+        leaveField(card);
+    }
+
+    /** The materials of your creatures on the field. */
+    private static List<CardSlot> allyMaterialsWhere(PlayerState player, TributeAllyMaterialWhere t) {
+        return allies(player).stream().filter(t.ally()::matches).flatMap(a -> a.getMaterials().stream()).filter(t.material()::matches).toList();
+    }
+
+    private static List<CardSlot> allyMaterials(PlayerState player) {
+        return allies(player).stream().flatMap(a -> a.getMaterials().stream()).toList();
+    }
+
+    /** Allies "elige 1 aliado [filtro]" may choose. */
+    private static List<CardSlot> pickableWhere(GameRoom room, PendingEffect effect, PlayerState player, PickAllyWhere pick) {
+        return pickable(room, effect, player, new PickAlly()).stream().filter(pick.filter()::matches).toList();
+    }
+
+    /** Cards an effect can play from a zone: utilities and structures whose reduced cost the controller can pay. */
+    private static List<CardSlot> playable(GameRoom room, PendingEffect effect, PlayFromZone play) {
+        PlayerState player = room.getPlayer(effect.getControllerId());
+        if (player == null) return List.of();
+        return zone(player, play.zone()).stream()
+                .filter(c -> ("utility".equals(c.getCardType()) || "structure".equals(c.getCardType())) && play.filter().matches(c))
+                .filter(c -> canPay(room, player.getUserId(), Math.max(0, (c.getCost() == null ? 0 : c.getCost()) - play.reduce())))
+                .toList();
+    }
+
+    /** Cards "añade 1 … como recurso de esta carta" may take: from those zones, matching, not this card. */
+    private static List<CardSlot> resourceCandidates(GameRoom room, PendingEffect effect, AddResourceFrom add) {
+        PlayerState player = room.getPlayer(effect.getControllerId());
+        if (player == null || find(player.getField(), effect.getSourceInstanceId()) == null) return List.of();
+        List<CardSlot> all = new ArrayList<>();
+        for (String z : add.zones().split(",")) all.addAll(zone(player, z.trim()));
+        return all.stream().filter(c -> !c.getInstanceId().equals(effect.getSourceInstanceId())).filter(add.filter()::matches).toList();
     }
 
     /** Allies that may be sacrificed "para reactivar otro": another ally that can be reactivated must remain. */
@@ -2202,6 +3038,15 @@ public final class EffectEngine {
                 .filter(c -> "creature".equals(c.getCardType()) && c.getCost() != null)
                 .filter(summon.filter()::matches)
                 .filter(c -> canPay(room, player.getUserId(), Math.max(0, c.getCost() - summon.reduce())))
+                .toList();
+    }
+
+    /** Creatures of the zone of the ally's level and another name (summoned free). */
+    private static List<CardSlot> likeSubject(PlayerState player, SummonLikeSubject like, CardSlot ally) {
+        if (ally.getLevel() == null) return List.of();
+        return zone(player, like.zone()).stream()
+                .filter(c -> "creature".equals(c.getCardType()) && c.getCost() != null && like.filter().matches(c))
+                .filter(c -> ally.getLevel().equals(c.getLevel()) && !name(c).equalsIgnoreCase(name(ally)))
                 .toList();
     }
 
@@ -2311,7 +3156,7 @@ public final class EffectEngine {
     private static boolean ritualFeasible(GameRoom room, PendingEffect effect, RitualFromZone ritual, PlayerState player, CardSlot target) {
         Requirement req = requirement(target);
         if (req == null || target.getSpecialCost() == null) return false;
-        if (!canPay(room, player.getUserId(), Math.max(0, target.getSpecialCost() - ritual.reduce()))) return false;
+        if (!canPay(room, player.getUserId(), Math.max(0, target.getSpecialCost() - ritual.reduce() - CardEffects.structureDiscount(room, player, "ritual")))) return false;
         List<CardSlot> materials = ritualMaterials(player, target);
         if (ritual.selfSummoner()) {
             CardSlot self = find(materials, effect.getSourceInstanceId());
@@ -2400,6 +3245,9 @@ public final class EffectEngine {
         target.setStrengthModifier(summoner.getStrengthModifier());
         target.getTurnKeywords().clear();
         target.getTurnKeywords().addAll(summoner.getTurnKeywords());
+        // Its strength is its own: only the abilities gained pass on
+        target.getFloating().clear();
+        summoner.getFloating().stream().filter(f -> f.keyword() != null).forEach(target.getFloating()::add);
         target.getMaterials().addAll(0, summoner.getMaterials());
         target.getResources().addAll(0, summoner.getResources());
         summoner.setMaterials(new ArrayList<>());
@@ -2418,6 +3266,7 @@ public final class EffectEngine {
     private static void performRitual(GameRoom room, PendingEffect effect, PlayerState player, CardSlot target, RitualFromZone ritual,
                                       CardSlot summoner, List<CardSlot> others) {
         int cost = Math.max(0, target.getSpecialCost() - ritual.reduce());
+        if (cost > 0) cost -= CardEffects.useStructureDiscount(room, player, "ritual");
         pay(room, player.getUserId(), cost);
         zone(player, ritual.zone()).remove(target);
         effect.setRitualTargetId(null);
@@ -2549,6 +3398,12 @@ public final class EffectEngine {
     private static String answerRules(GameRoom room, Prompt prompt, PlayerState player, List<String> picks) {
         String userId = player.getUserId();
         String purpose = prompt.getPurpose();
+        if (PURPOSE_REPLACE.equals(purpose) || PURPOSE_REPLACE_HAND.equals(purpose)) {
+            String error = answerRemoval(room, prompt, player, picks);
+            if (error != null) return error;
+            advance(room);
+            return "";
+        }
         if (PURPOSE_RITUAL.equals(purpose)) {
             if (picks.isEmpty()) {
                 room.setPrompt(null);
@@ -2612,7 +3467,7 @@ public final class EffectEngine {
             if (summoner == null) return "Esa criatura ya no está disponible";
             String wrong = checkMaterials(req, summoner, materials);
             if (wrong != null) return wrong;
-            if (!canPay(room, userId, card.getSpecialCost())) return "Ya no tienes gemas suficientes";
+            if (!canPay(room, userId, card.getSpecialCost() - CardEffects.structureDiscount(room, player, "materialization"))) return "Ya no tienes gemas suficientes";
             room.setPrompt(null);
             handSpecial(room, player, card, req, summoner, materials, find(player.getHand(), card.getInstanceId()) != null ? "hand" : "tributeZone");
             return "";
@@ -2720,7 +3575,132 @@ public final class EffectEngine {
     private static String apply(GameRoom room, PendingEffect effect, EffectStep step, PlayerState player, List<String> picks,
                                 List<String> order, boolean[] repeat) {
         String userId = player.getUserId();
+        step = resolved(room, effect, step);
         switch (step) {
+            case TakeFromLookedLikeSubject ignored -> {
+                for (String id : picks) {
+                    CardSlot card = find(effect.getLooked(), id);
+                    if (card == null) return "Esa carta ya no está";
+                    effect.getLooked().remove(card);
+                    card.setFaceDown(false);
+                    player.getHand().add(card);
+                    record(room, GameEvent.ADD_TO_HAND, userId, card, "deck", "hand", effect, null,
+                            player.getUsername() + " añade " + name(card) + " a su mano (" + effect.getSourceName() + ")");
+                }
+                List<CardSlot> rest = new ArrayList<>(effect.getLooked());
+                Collections.shuffle(rest);
+                rest.forEach(c -> c.setFaceDown(true));
+                player.getDeck().addAll(rest);
+                if (!rest.isEmpty()) log(room, player.getUsername() + " envía " + rest.size() + " " + plural(rest.size(), "carta", "cartas")
+                        + " al fondo de su mazo en orden aleatorio", null);
+                effect.getLooked().clear();
+            }
+            case DiscardLookedRestTop ignored -> {
+                for (String id : picks) {
+                    CardSlot card = find(effect.getLooked(), id);
+                    if (card == null) return "Esa carta ya no está";
+                    effect.getLooked().remove(card);
+                    card.setFaceDown(true);
+                    player.getDiscardPile().add(card);
+                }
+                log(room, player.getUsername() + " descarta " + picks.size() + " " + plural(picks.size(), "carta", "cartas") + " bocabajo ("
+                        + effect.getSourceName() + ")", null);
+                List<CardSlot> rest = inOrder(effect.getLooked(), order);
+                rest.forEach(c -> c.setFaceDown(true));
+                player.getDeck().addAll(0, rest);
+                if (!rest.isEmpty()) log(room, player.getUsername() + " coloca " + rest.size() + " " + plural(rest.size(), "carta", "cartas")
+                        + " al tope de su mazo", null);
+                effect.getLooked().clear();
+            }
+            case ReduceRepeatedly r -> {
+                if (picks.isEmpty()) {
+                    effect.setRepeatsDone(0);
+                    return null;
+                }
+                PlayerState opponent = room.getPlayer(room.getOpponentId(userId));
+                CardSlot target = opponent == null ? null : find(frontLine(opponent.getField()), picks.get(0));
+                if (target == null) return "Ese enemigo ya no está en la línea frontal";
+                reduceStrength(room, effect, opponent, target, r.amount(), false);
+                if ("attack".equals(r.until()) && room.getCombat() != null && find(opponent.getField(), target.getInstanceId()) != null)
+                    room.getCombat().getUntilEndOfAttack().add(target.getInstanceId() + "|" + STRENGTH_ENTRY + (-r.amount()));
+                effect.setRepeatsDone(effect.getRepeatsDone() + 1);
+                repeat[0] = true;
+            }
+            case DiscardTributesForKeyword d -> {
+                if (picks.isEmpty()) return null;
+                if (picks.size() != d.count()) return "Elige exactamente " + d.count() + " tributos, o ninguno";
+                if (!allIn(player.getTributeZone(), picks)) return "Esas cartas ya no están en tus tributos";
+                for (String id : picks) {
+                    CardSlot card = find(player.getTributeZone(), id);
+                    player.getTributeZone().remove(card);
+                    player.getDiscardPile().add(card);
+                }
+                CardSlot self = find(player.getField(), effect.getSourceInstanceId());
+                if (self != null) {
+                    Integer had = keywordLevel(self, d.keyword());
+                    String gained = d.keyword() + " " + ((had == null ? 0 : had) + 1);
+                    self.getTurnKeywords().add(gained);
+                    if (room.getCombat() != null) room.getCombat().getUntilEndOfAttack().add(self.getInstanceId() + "|" + gained);
+                    log(room, player.getUsername() + " descarta " + d.count() + " tributos: " + name(self) + " tiene " + gained + " hasta el final del ataque",
+                            room.getEventSeq());
+                }
+                repeat[0] = true;
+            }
+            case TributeAlliesLevelSum t -> {
+                List<CardSlot> chosen = new ArrayList<>();
+                for (String id : picks) {
+                    CardSlot c = find(player.getField(), id);
+                    if (c == null || !t.filter().matches(c)) return "Ese aliado ya no está en el campo";
+                    chosen.add(c);
+                }
+                int sum = chosen.stream().mapToInt(c -> c.getLevel() == null ? 0 : c.getLevel()).sum();
+                if (chosen.size() < t.minCount() || sum < t.minSum())
+                    return "Elige " + t.minCount() + " o más aliados que sumen " + t.minSum() + " o más en nivel (suman " + sum + ")";
+                for (CardSlot c : chosen) {
+                    player.getField().remove(c);
+                    for (CardSlot a : concat(c.getMaterials(), c.getResources())) player.getDiscardPile().add(a);
+                    c.setMaterials(new ArrayList<>());
+                    c.setResources(new ArrayList<>());
+                    leaveField(c);
+                    player.getTributeZone().add(c);
+                    record(room, GameEvent.TRIBUTE, userId, c, "field", "tributeZone", effect, Map.of("byCard", effect.getSourceInstanceId()),
+                            player.getUsername() + " tributa a " + name(c) + " (" + effect.getSourceName() + ")");
+                }
+            }
+            case PlaceFromHandUntilTurnEnd ignored -> {
+                if (picks.isEmpty()) return null;
+                CardSlot card = find(player.getHand(), picks.get(0));
+                if (card == null) return "Esa carta ya no está en tu mano";
+                player.getHand().remove(card);
+                card.setFaceDown(false);
+                card.setTapped(false);
+                card.setX(50.0);
+                card.setY(75.0);
+                card.setReturnAtTurnEnd(true);
+                player.getField().add(card);
+                record(room, GameEvent.SEND, userId, card, "hand", "field", effect, Map.of("placed", true),
+                        player.getUsername() + " coloca " + name(card) + " en su retaguardia hasta el final del turno (" + effect.getSourceName() + ")");
+            }
+            case TributeAllyMaterialWhere t -> {
+                CardSlot holder = allies(player).stream().filter(a -> t.ally().matches(a) && find(a.getMaterials(), picks.get(0)) != null)
+                        .findFirst().orElse(null);
+                if (holder == null) return "Ese material ya no está";
+                CardSlot material = find(holder.getMaterials(), picks.get(0));
+                holder.getMaterials().remove(material);
+                material.setFaceDown(false);
+                player.getTributeZone().add(material);
+                effect.setSubjectId(holder.getInstanceId());
+                effect.setLastTributed(new ArrayList<>(List.of(material.getInstanceId())));
+                record(room, GameEvent.TRIBUTE, userId, material, "materials", "tributeZone", effect, Map.of("byCard", effect.getSourceInstanceId()),
+                        player.getUsername() + " tributa " + name(material) + " de los materiales de " + name(holder) + " (" + effect.getSourceName() + ")");
+            }
+            case OpponentMovesOneToFront ignored -> {
+                CardSlot card = find(player.getField(), picks.get(0));
+                if (card == null || inFrontLine(card)) return "Esa criatura ya no está en tu retaguardia";
+                card.setY(25.0);
+                record(room, GameEvent.MOVE, userId, card, null, "frontLine", effect, Map.of("reason", "effect"),
+                        player.getUsername() + " mueve " + name(card) + " a su línea frontal (" + effect.getSourceName() + ")");
+            }
             case TakeFromLookedRestToBottom ignored -> {
                 for (String id : picks) {
                     CardSlot card = find(effect.getLooked(), id);
@@ -2761,7 +3741,10 @@ public final class EffectEngine {
             case ChooseEnemy ignored -> {
                 PlayerState opponent = room.getPlayer(room.getOpponentId(userId));
                 if (opponent == null || !allIn(frontLine(opponent.getField()), picks)) return "Ese enemigo ya no está en la línea frontal";
-                effect.setTargetIds(new ArrayList<>(picks));
+                // Several choices of one effect add up ("elige hasta 1 enemigo nivel 2 y 1 enemigo nivel 1")
+                effect.getTargetIds().addAll(picks);
+                // "elige hasta N": none chosen
+                if (picks.isEmpty()) break;
                 List<String> names = picks.stream().map(id -> name(find(opponent.getField(), id))).toList();
                 record(room, GameEvent.TARGET, userId, find(opponent.getField(), picks.get(0)), null, null, effect, Map.of("targetIds", picks),
                         player.getUsername() + " elige como objetivo a " + String.join(", ", names) + " (" + effect.getSourceName() + ")");
@@ -2783,6 +3766,15 @@ public final class EffectEngine {
                 CardSlot card = find(summonable(room, effect, summon), picks.get(0));
                 if (card == null) return "Ya no puedes invocar esa criatura";
                 summonByEffect(room, effect, player, card, summon.zone(), summon.reduce(), summon.toFront());
+                effect.setSummonedId(card.getInstanceId());
+                effect.setLastDone(true);
+            }
+            case SummonLikeSubject like -> {
+                CardSlot ally = subject(room, effect);
+                CardSlot card = ally == null ? null : find(likeSubject(player, like, ally), picks.get(0));
+                if (card == null) return "Ya no puedes invocar esa criatura";
+                summonByEffect(room, effect, player, card, like.zone(), card.getCost(), true);
+                effect.setSummonedId(card.getInstanceId());
                 effect.setLastDone(true);
             }
             case RitualFromZone ritual -> {
@@ -2844,7 +3836,7 @@ public final class EffectEngine {
                     self.getMaterials().remove(material);
                     material.setFaceDown(false);
                     player.getTributeZone().add(material);
-                    record(room, GameEvent.TRIBUTE, userId, material, "materials", "tributeZone", effect, null,
+                    record(room, GameEvent.TRIBUTE, userId, material, "materials", "tributeZone", effect, Map.of("byCard", self.getInstanceId()),
                             player.getUsername() + " tributa " + name(material) + " de los materiales de " + name(self));
                 }
                 effect.setLastCount(picks.size());
@@ -3007,6 +3999,101 @@ public final class EffectEngine {
                     startCombat(room, userId, subject, picks.isEmpty() ? null : picks.get(0), true, effect);
                 }
             }
+            case ChooseWeakestEnemy ignored -> {
+                PlayerState opponent = room.getPlayer(room.getOpponentId(userId));
+                CardSlot target = opponent == null ? null : find(frontLine(opponent.getField()), picks.get(0));
+                if (target == null) return "Ese enemigo ya no está en la línea frontal";
+                effect.getTargetIds().add(target.getInstanceId());
+                record(room, GameEvent.TARGET, userId, target, null, null, effect, Map.of("targetIds", picks),
+                        player.getUsername() + " elige como objetivo a " + name(target) + " (" + effect.getSourceName() + ")");
+            }
+            case SacrificeAllyWhere ignored -> {
+                CardSlot ally = find(player.getField(), picks.get(0));
+                if (ally == null) return "Ese aliado ya no está en el campo";
+                destroy(room, ally, player, true, CAUSE_EFFECT, userId, null, effect);
+            }
+            case TributeAlly ignored -> {
+                CardSlot ally = find(player.getField(), picks.get(0));
+                if (ally == null) return "Ese aliado ya no está en el campo";
+                removeFromField(player, ally);
+                player.getTributeZone().add(ally);
+                record(room, GameEvent.TRIBUTE, userId, ally, "field", "tributeZone", effect, Map.of("byCard", effect.getSourceInstanceId()),
+                        player.getUsername() + " tributa a " + name(ally) + " (" + effect.getSourceName() + ")");
+            }
+            case TributeAllyMaterial ignored -> {
+                CardSlot holder = allies(player).stream().filter(a -> find(a.getMaterials(), picks.get(0)) != null).findFirst().orElse(null);
+                if (holder == null) return "Ese material ya no está";
+                CardSlot material = find(holder.getMaterials(), picks.get(0));
+                holder.getMaterials().remove(material);
+                material.setFaceDown(false);
+                player.getTributeZone().add(material);
+                record(room, GameEvent.TRIBUTE, userId, material, "materials", "tributeZone", effect, Map.of("byCard", effect.getSourceInstanceId()),
+                        player.getUsername() + " tributa " + name(material) + " de los materiales de " + name(holder) + " (" + effect.getSourceName() + ")");
+            }
+            case PickAllyWhere ignored -> {
+                if (find(player.getField(), picks.get(0)) == null) return "Ese aliado ya no está en el campo";
+                effect.setSubjectId(picks.get(0));
+            }
+            case MaterialToBack ignored -> {
+                CardSlot self = find(player.getField(), effect.getSourceInstanceId());
+                CardSlot card = self == null ? null : find(self.getMaterials(), picks.get(0));
+                if (card == null) return "Ese material ya no está";
+                self.getMaterials().remove(card);
+                card.setFaceDown(false);
+                card.setTapped(false);
+                card.setX(50.0);
+                card.setY(75.0);
+                player.getField().add(card);
+                record(room, GameEvent.SEND, userId, card, "materials", "field", effect, null,
+                        player.getUsername() + " coloca " + name(card) + " en su retaguardia (" + effect.getSourceName() + ")");
+            }
+            case PlayFromZone play -> {
+                CardSlot card = find(playable(room, effect, play), picks.get(0));
+                if (card == null) return "Ya no puedes jugar esa carta";
+                int cost = Math.max(0, (card.getCost() == null ? 0 : card.getCost()) - play.reduce());
+                pay(room, userId, cost);
+                zone(player, play.zone()).remove(card);
+                player.getHand().add(card);
+                play(room, player, card, cost, null, null, effect);
+                effect.setLastDone(true);
+            }
+            case TributeFromLookedRestToBottom ignored -> {
+                for (String id : picks) {
+                    CardSlot card = find(effect.getLooked(), id);
+                    effect.getLooked().remove(card);
+                    card.setFaceDown(false);
+                    player.getTributeZone().add(card);
+                    record(room, GameEvent.TRIBUTE, userId, card, "deck", "tributeZone", effect, Map.of("byCard", effect.getSourceInstanceId()),
+                            player.getUsername() + " tributa " + name(card) + " (" + effect.getSourceName() + ")");
+                }
+                List<CardSlot> rest = inOrder(effect.getLooked(), order);
+                for (CardSlot card : rest) {
+                    card.setFaceDown(true);
+                    player.getDeck().add(card);
+                }
+                if (!rest.isEmpty()) log(room, player.getUsername() + " envía " + rest.size() + " " + plural(rest.size(), "carta", "cartas") + " al fondo de su mazo", null);
+                effect.getLooked().clear();
+            }
+            case AddResourceFrom add -> {
+                CardSlot self = find(player.getField(), effect.getSourceInstanceId());
+                CardSlot card = find(resourceCandidates(room, effect, add), picks.get(0));
+                if (self == null || card == null) return "Esa carta ya no está disponible";
+                Located at = locate(player, card.getInstanceId());
+                if ("field".equals(at.zone())) removeFromField(player, card);
+                else zone(player, at.zone()).remove(card);
+                card.setFaceDown(false);
+                self.getResources().add(card);
+                effect.setLastDone(true);
+                record(room, GameEvent.SEND, userId, card, at.zone(), "resources", effect, Map.of("to", self.getInstanceId()),
+                        player.getUsername() + " añade " + name(card) + " como recurso de " + name(self));
+            }
+            case UntapStructure ignored -> {
+                CardSlot card = find(player.getField(), picks.get(0));
+                if (card == null) return "Esa estructura ya no está";
+                card.setTapped(false);
+                record(room, GameEvent.UNTAP, userId, card, null, null, effect, null,
+                        player.getUsername() + " reactiva " + name(card) + " (" + effect.getSourceName() + ")");
+            }
             case MayDo may -> {
                 // Declined: skip what it covers
                 if (picks.isEmpty()) effect.setStepIndex(effect.getStepIndex() + may.covers());
@@ -3112,13 +4199,23 @@ public final class EffectEngine {
      */
     public static void refreshContinuous(GameRoom room) {
         for (PlayerState p : room.getPlayers().values()) {
+            // What the cards' auras give their allies ("todos los aliados [armada] ganan fuerza 1")
+            Map<String, Integer> aura = new HashMap<>();
+            for (CardSlot source : p.getField()) {
+                if (source.isFaceDown()) continue;
+                for (CardEffects.Aura a : CardEffects.aurasOf(source)) {
+                    if (a.allyTurn() && !p.getUserId().equals(room.getCurrentTurnUserId())) continue;
+                    if (a.condition() != null && !a.condition().test(room, null, source, p.getUserId())) continue;
+                    for (CardSlot ally : p.getField()) if (a.targets().matches(ally)) aura.merge(ally.getInstanceId(), a.strength(), Integer::sum);
+                }
+            }
             for (CardSlot card : p.getField()) {
-                int strength = 0;
+                int strength = aura.getOrDefault(card.getInstanceId(), 0);
                 List<String> keywords = new ArrayList<>();
                 for (CardEffects.Continuous c : CardEffects.continuousOf(card)) {
                     if (c.allyTurn() && !p.getUserId().equals(room.getCurrentTurnUserId())) continue;
                     if (card.isFaceDown() || !c.condition().test(room, null, card, p.getUserId())) continue;
-                    strength += c.strength();
+                    strength += c.strength() + (c.bonus() == null ? 0 : c.bonus().of(room, p.getUserId()));
                     keywords.addAll(c.keywords());
                 }
                 card.setContinuousStrength(strength);
@@ -3177,7 +4274,7 @@ public final class EffectEngine {
         return cards.stream().filter(c -> instanceId.equals(c.getInstanceId())).findFirst().orElse(null);
     }
 
-    private static CardSlot findIn(GameRoom room, String playerId, String zone, String instanceId) {
+    static CardSlot findIn(GameRoom room, String playerId, String zone, String instanceId) {
         PlayerState p = playerId == null ? null : room.getPlayer(playerId);
         return p == null || zone == null ? null : find(zone(p, zone), instanceId);
     }

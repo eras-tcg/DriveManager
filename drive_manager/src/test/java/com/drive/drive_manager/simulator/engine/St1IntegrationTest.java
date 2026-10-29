@@ -272,6 +272,183 @@ class St1IntegrationTest {
         assertThat(room.getPrompt().getValidIds()).containsExactly(fhalid.getInstanceId());
     }
 
+    @Test
+    void mihelOnTheFieldJoinsAnAllyAsAMaterialToReduceTheEnemy2More() {
+        CardSlot mathaus = onField(host, slot("Mathaus"), FRONT);
+        mathaus.getMaterials().add(slot("Jhav"));
+        mathaus.getMaterials().add(slot("Eisten"));
+        // In the Retaguardia it works too
+        CardSlot mihel = onField(host, slot("Mihel"), 75.0);
+        CardSlot damon = onField(guest, slot("Damon"), FRONT);
+        damon.setStrength(7);
+        assertThat(EffectEngine.activateByPlayer(room, "host", mathaus.getInstanceId(), null)).isNull();
+        boolean offered = false;
+        while (room.getPrompt() != null) {
+            Prompt p = room.getPrompt();
+            if ("OPTIONAL".equals(p.getPurpose()) && p.getValidIds().contains(mihel.getInstanceId())) {
+                offered = true;
+                EffectEngine.answer(room, "host", p.getId(), List.of(mihel.getInstanceId()), List.of());
+                // "a un aliado": another one
+                assertThat(room.getPrompt().getValidIds()).containsExactly(mathaus.getInstanceId());
+                continue;
+            }
+            List<String> picks = p.getValidIds().contains(damon.getInstanceId()) ? List.of(damon.getInstanceId())
+                    : p.getValidIds().subList(0, Math.max(p.getMin(), Math.min(p.getMax(), p.getValidIds().size())));
+            assertThat(EffectEngine.answer(room, p.getPlayerId(), p.getId(), picks, List.of())).isNull();
+        }
+        assertThat(offered).isTrue();
+        assertThat(host.getField()).doesNotContain(mihel);
+        assertThat(mathaus.getMaterials()).contains(mihel);
+        // 7 - 3 - 2, for as long as Mathaus's reduction lasts
+        assertThat(EffectEngine.strength(damon)).isEqualTo(2);
+        assertThat(damon.getLaterStrength()).isEqualTo(-5);
+        // Its details show each reduction with its source
+        assertThat(damon.getFloating()).extracting(FloatingEffect::source, FloatingEffect::strength)
+                .containsExactly(org.assertj.core.groups.Tuple.tuple("Mathaus", -3), org.assertj.core.groups.Tuple.tuple("Mihel", -2));
+    }
+
+    @Test
+    void pasoInterdimensionalSummonsAnEnteOfTheSameLevelAndTheAllyBecomesItsMaterial() {
+        CardSlot fhalid = onField(host, slot("Fhalid"), FRONT);
+        CardSlot eisten = slot("Eisten");
+        fhalid.getMaterials().add(eisten);
+        CardSlot zula = slot("Zula");
+        host.getTributeZone().add(zula);
+        // Same name: not valid
+        host.getTributeZone().add(slot("Fhalid"));
+        CardSlot paso = slot("Paso Interdimensional");
+        host.getHand().add(paso);
+
+        assertThat(EffectEngine.playByPlayer(room, "host", paso.getInstanceId(), 50.0, 75.0)).isNull();
+        Prompt ally = room.getPrompt();
+        assertThat(ally.getValidIds()).containsExactly(fhalid.getInstanceId());
+        EffectEngine.answer(room, "host", ally.getId(), List.of(fhalid.getInstanceId()), List.of());
+        Prompt summon = room.getPrompt();
+        assertThat(summon.getValidIds()).containsExactly(zula.getInstanceId());
+        EffectEngine.answer(room, "host", summon.getId(), List.of(zula.getInstanceId()), List.of());
+
+        assertThat(host.getField()).contains(zula).doesNotContain(fhalid, paso);
+        assertThat(EffectEngine.inFrontLine(zula)).isTrue();
+        assertThat(zula.getMaterials()).containsExactly(fhalid, eisten);
+        assertThat(host.getDiscardPile()).contains(paso);
+    }
+
+    @Test
+    void flureteusReactsToAnEffectSummonWithALevel2EnteFromTheTributosAndJoinsAnAlly() {
+        CardSlot flureteus = onField(host, slot("Flureteus"), 75.0);
+        CardSlot fhalid = onField(host, slot("Fhalid"), FRONT);
+        CardSlot zula = slot("Zula");
+        host.getTributeZone().add(zula);
+        CardSlot otherFhalid = slot("Fhalid");
+        host.getTributeZone().add(otherFhalid);
+        CardSlot paso = slot("Paso Interdimensional");
+        host.getHand().add(paso);
+
+        assertThat(EffectEngine.playByPlayer(room, "host", paso.getInstanceId(), 50.0, 75.0)).isNull();
+        boolean offered = false;
+        for (int i = 0; i < 12 && room.getPrompt() != null; i++) {
+            Prompt p = room.getPrompt();
+            List<String> pick;
+            if ("OPTIONAL".equals(p.getPurpose()) && p.getValidIds().contains(flureteus.getInstanceId())) {
+                offered = true;
+                pick = List.of(flureteus.getInstanceId());
+            } else if ("OPTIONAL".equals(p.getPurpose())) {
+                // Zula's own "En Invocación": not used
+                pick = List.of();
+            } else if (p.getValidIds().contains(fhalid.getInstanceId())) {
+                pick = List.of(fhalid.getInstanceId());
+            } else if (p.getValidIds().contains(zula.getInstanceId())) {
+                pick = List.of(zula.getInstanceId());
+            } else {
+                pick = p.getValidIds().subList(0, Math.max(1, p.getMin()));
+            }
+            assertThat(EffectEngine.answer(room, "host", p.getId(), pick, List.of())).isNull();
+        }
+        assertThat(offered).isTrue();
+        // Paso summoned Zula (Fhalid as its material); Flureteus summoned the other Fhalid free and joined an ally
+        assertThat(host.getField()).contains(zula, otherFhalid).doesNotContain(flureteus);
+        assertThat(EffectEngine.inFrontLine(otherFhalid)).isTrue();
+        assertThat(host.getField().stream().flatMap(c -> c.getMaterials().stream())).contains(flureteus);
+    }
+
+    @Test
+    void hezPaysAndChoosesTheEnemiesOnActivationThenReducesThem() {
+        CardSlot hez = onField(host, slot("Hez"), FRONT);
+        hez.getMaterials().add(slot("Jhav"));
+        hez.getMaterials().add(slot("Eisten"));
+        CardSlot damon = onField(guest, slot("Damon"), FRONT);
+        damon.setStrength(7);
+        // Before ";" (materials and "elegir todos los enemigos") is its cost; after it, the reduction
+        EffectScript script = CardEffects.byId("hez:inicio-del-turno").orElseThrow();
+        assertThat(script.cost()).hasAtLeastOneElementOfType(EffectStep.TargetAllEnemies.class);
+        assertThat(script.steps()).noneMatch(EffectStep.TargetAllEnemies.class::isInstance);
+
+        EffectEngine.turnStarted(room, "host");
+        for (int i = 0; i < 10 && room.getPrompt() != null; i++) {
+            Prompt p = room.getPrompt();
+            List<String> pick = "OPTIONAL".equals(p.getPurpose()) ? List.of(hez.getInstanceId())
+                    : p.getValidIds().subList(0, Math.max(p.getMin(), Math.min(p.getMax(), p.getValidIds().size())));
+            assertThat(EffectEngine.answer(room, p.getPlayerId(), p.getId(), pick, List.of())).isNull();
+        }
+        assertThat(hez.getMaterials()).isEmpty();
+        assertThat(EffectEngine.strength(damon)).isEqualTo(3);
+    }
+
+    /** Mathaus reduces Damon (strength {@code strength}) by 3; every optional effect offered is used. */
+    private CardSlot reduceWithMathausAcceptingAll(int strength) {
+        CardSlot mathaus = onField(host, slot("Mathaus"), FRONT);
+        mathaus.getMaterials().add(slot("Jhav"));
+        mathaus.getMaterials().add(slot("Eisten"));
+        CardSlot damon = onField(guest, slot("Damon"), FRONT);
+        damon.setStrength(strength);
+        assertThat(EffectEngine.activateByPlayer(room, "host", mathaus.getInstanceId(), null)).isNull();
+        for (int i = 0; i < 30 && room.getPrompt() != null; i++) {
+            Prompt p = room.getPrompt();
+            List<String> pick;
+            if ("OPTIONAL".equals(p.getPurpose())) pick = p.getValidIds().subList(0, 1);
+            else if (p.getValidIds().contains(damon.getInstanceId())) pick = List.of(damon.getInstanceId());
+            else if (p.getValidIds().contains(mathaus.getInstanceId())) pick = List.of(mathaus.getInstanceId());
+            else pick = p.getValidIds().subList(0, Math.max(p.getMin(), Math.min(p.getMax(), p.getValidIds().size())));
+            assertThat(EffectEngine.answer(room, p.getPlayerId(), p.getId(), pick, List.of())).isNull();
+        }
+        return damon;
+    }
+
+    @Test
+    void twoMihelsChainAndTheSecondDoesNothingOnceTheEnemyIsGone() {
+        CardSlot first = onField(host, slot("Mihel"), 75.0);
+        CardSlot second = onField(host, slot("Mihel"), 75.0);
+        CardSlot damon = reduceWithMathausAcceptingAll(5);
+        // 5 - 3 = 2: both Mihels trigger; the first to resolve takes it to 0, the other can no longer reduce it
+        assertThat(guest.getDiscardPile()).contains(damon);
+        long left = host.getField().stream().filter(c -> c == first || c == second).count();
+        assertThat(left).isEqualTo(1);
+    }
+
+    @Test
+    void twoMihelsBothReduceWhileTheEnemyHasStrengthLeft() {
+        onField(host, slot("Mihel"), 75.0);
+        onField(host, slot("Mihel"), 75.0);
+        CardSlot damon = reduceWithMathausAcceptingAll(9);
+        // 9 - 3 - 2 - 2
+        assertThat(EffectEngine.strength(damon)).isEqualTo(2);
+        assertThat(host.getField()).extracting(CardSlot::getCardName).doesNotContain("Mihel");
+    }
+
+    @Test
+    void arcXiomaGoesToTheDeckOnlyWhenItResolves() {
+        CardSlot mihel = onField(host, slot("Mihel"), 75.0);
+        CardSlot arc = slot("Arc xioma");
+        host.getTributeZone().add(arc);
+        CardSlot damon = reduceWithMathausAcceptingAll(5);
+        // Both trigger at 2; whichever resolves first destroys Damon and the other one does nothing (it is not paid)
+        assertThat(guest.getDiscardPile()).contains(damon);
+        boolean arcResolved = host.getDeck().contains(arc);
+        boolean mihelResolved = !host.getField().contains(mihel);
+        assertThat(arcResolved ^ mihelResolved).isTrue();
+        if (!arcResolved) assertThat(host.getTributeZone()).contains(arc);
+    }
+
     // ------------------------------------------------------------------ Helpers
 
     private CardSlot slot(String name) {
