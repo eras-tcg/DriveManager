@@ -162,6 +162,33 @@ class E11FinalBatchTest {
         assertThat(evolved.getResources()).contains(tribute, wyverno);
     }
 
+    @Test
+    void principeCharlesAttacksFirstThenTheAscendedCreatureTakesItsPlaceWithoutItsAlAtacar() {
+        // The ascended creature has an "Al Atacar" that must not trigger: the declaration already happened
+        CardEffects.register("ascendido de prueba", new EffectScript("ascendido-prueba:al-atacar", EffectScript.Moment.ON_ATTACK, true,
+                "Al Atacar", "Gana 3 gemas.", List.of(new EffectStep.GainGems(3))));
+        CardSlot principe = onField(host, withClasses(card("pc", "Principe Charles Di Castirion", 4, 4, "R"), "armada", "caballero"));
+        CardSlot ascended = card("as", "Ascendido De Prueba", 5, 5, "R");
+        ascended.setStrength(10);
+        ascended.setSpecialSummonKind("promotion");
+        ascended.setSpecialCost(1);
+        ascended.setRequirement("criatura nivel 4.");
+        host.getHand().add(ascended);
+        int gems = EffectEngine.gemsOf(room, "host");
+        assertThat(Summons.specialByPlayer(room, "host", "as", "pc")).isNull();
+        Prompt attack = room.getPrompt();
+        assertThat(attack.getPurpose()).isEqualTo(EffectEngine.PURPOSE_ASCEND_ATTACK);
+        answer(attack, "pc");
+        assertThat(room.getTimeline()).anyMatch(e -> GameEvent.ATTACK_DECLARED.equals(e.getType()) && "pc".equals(e.getCardInstanceId()));
+        assertThat(host.getField()).contains(ascended).doesNotContain(principe);
+        // The ascended creature dealt the direct damage (it took Príncipe Charles' place in the combat)
+        assertThat(room.getTimeline()).anyMatch(e -> GameEvent.LIFE_DAMAGE.equals(e.getType()) && "as".equals(e.getData().get("attackerId")));
+        finishCombat();
+        assertThat(guest.getLifeStack()).hasSize(2);
+        // Only the Ascenso's cost: its "Al Atacar" did not trigger
+        assertThat(EffectEngine.gemsOf(room, "host")).isEqualTo(gems - 1);
+    }
+
     // ------------------------------------------------------------------ Helpers
 
     /** Answers "none" to everything else until a prompt of that purpose comes. */

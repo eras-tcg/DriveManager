@@ -1586,7 +1586,7 @@ public final class CardEffects {
         continuous("escudo jurado", new Continuous(TODOS,
                 "Mientras controles algún aliado nivel 4 o mayor: esta carta no puede ser objetivo de efectos oponentes.", false,
                 new CountOnField(CardFilter.creatures().withMinLevel(4), 1, null), 0, List.of(EffectEngine.IMMUNE)));
-        // E1.1-R9 Principe Charles Di Castirion (its reaction when it would be ascended is not applied yet)
+        // E1.1-R9 Principe Charles Di Castirion (its attack before being ascended: ATTACK_BEFORE_ASCENDED)
         add("principe charles di castirion", new EffectScript("principe-charles:en-invocacion", Moment.ON_SUMMON, true, EN_INVOCACION,
                 "Todos tus aliados [caballero] o [armada] ganan Reactivar hasta el final del turno oponente.",
                 List.of(new AlliesGain(CardFilter.creatures().withClasses("caballero", "armada"), "Reactivar", "nextTurn"))));
@@ -1709,6 +1709,7 @@ public final class CardEffects {
         SPECIAL_FROM_TRIBUTES.forEach(n -> all.computeIfAbsent(n, k -> new ArrayList<>()).add("En Tributos: cuenta como en la mano para invocaciones especiales"));
         ALIASES.forEach((n, alias) -> all.computeIfAbsent(n, k -> new ArrayList<>()).add("puede ser tratada como \"" + alias + "\""));
         BLOCKER_SWAP.forEach(n -> all.computeIfAbsent(n, k -> new ArrayList<>()).add("cambia al bloqueador declarado por otro aliado"));
+        ATTACK_BEFORE_ASCENDED.forEach(n -> all.computeIfAbsent(n, k -> new ArrayList<>()).add("declara ataque antes de ser ascendida"));
         DAMAGE_REPLACEMENTS.forEach((n, r) -> all.computeIfAbsent(n, k -> new ArrayList<>()).add("se invoca en lugar de recibir " + r.maxDamage() + " o menos de daño"));
         // The usage limit printed as its own line ("Solo puedes activar 1 efecto de «X» por turno"): Limit.ONE_EFFECT_OF_NAME_PER_TURN
         all.computeIfAbsent("fuego perforante", k -> new ArrayList<>()).add("solo 1 de sus efectos por turno");
@@ -1846,6 +1847,13 @@ public final class CardEffects {
                 List.of(new PlaySelfFromZone("hand", false)))
                 .when(new CombatStep(Combat.Step.BLOCK, Combat.Phase.ENTER))
                 .fromZone("hand");
+    }
+
+    /** "cuando esta carta fuera a ser ascendida: puede declarar ataque" (Summons.handSpecial, then completeAscension). */
+    private static final Set<String> ATTACK_BEFORE_ASCENDED = Set.of("principe charles di castirion");
+
+    static boolean attacksBeforeAscended(CardSlot card) {
+        return card.getCardName() != null && ATTACK_BEFORE_ASCENDED.contains(card.getCardName().trim().toLowerCase(Locale.ROOT));
     }
 
     /** "cuando un aliado sea declarado bloqueador: en su lugar, puedes reactivarlo y elegir otro aliado …" (CombatRules.offerBlockerSwap). */

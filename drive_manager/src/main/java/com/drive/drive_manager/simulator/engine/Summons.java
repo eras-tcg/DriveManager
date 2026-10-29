@@ -390,6 +390,22 @@ public final class Summons {
      */
     static void handSpecial(GameRoom room, PlayerState player, CardSlot card, SpecialRequirement req, CardSlot summoner,
                                     List<CardSlot> materials, String fromZone) {
+        // "cuando esta carta fuera a ser ascendida: puede declarar ataque" (Príncipe Charles): asked before the Ascenso
+        if ("promotion".equals(req.kind()) && CardEffects.attacksBeforeAscended(summoner) && room.getCombat() == null
+                && room.getPendingAscension() == null && inFrontLine(summoner)) {
+            List<CardSlot> options = new ArrayList<>(List.of(summoner));
+            options.addAll(CombatRules.attackTargets(room, player.getUserId(), summoner));
+            PlayerState opponent = room.getPlayer(room.getOpponentId(player.getUserId()));
+            List<CardSlot> shown = new ArrayList<>(List.of(summoner));
+            if (opponent != null) shown.addAll(opponent.getField());
+            rulesPrompt(room, player.getUserId(), PURPOSE_ASCEND_ATTACK, name(summoner) + " va a ser ascendida",
+                    "Puede declarar ataque antes: elige " + name(summoner) + " para atacar al oponente, o una criatura enemiga agotada. "
+                            + "O ninguna para ascenderla ya.", "Atacar", options, shown);
+            room.getPrompt().setMin(0);
+            room.getPrompt().setSubjectId(card.getInstanceId());
+            room.getPrompt().setSummonerId(summoner.getInstanceId());
+            return;
+        }
         // A cost modifier that asks for its payment (Flambreik's tributes) is asked before the summon (a Reacción applies
         // before its event); only when no materials are being chosen
         CostModifiers.Use use = materials.isEmpty() ? CostModifiers.choice(room, player, CostModifiers.Event.SPECIAL_SUMMON, req.kind(), card, summoner) : null;
@@ -723,6 +739,21 @@ public final class Summons {
             if (from.equals(c.getBlockerId())) c.setBlockerId(to);
             if (from.equals(c.getTargetId())) c.setTargetId(to);
         }
+    }
+
+    /** The Ascenso that waited for its summoner's attack: the creature arrives now and takes its place in the combat. */
+    static void completeAscension(GameRoom room) {
+        PendingAscension pending = room.getPendingAscension();
+        room.setPendingAscension(null);
+        PlayerState player = room.getPlayer(pending.playerId());
+        if (player == null) return;
+        CardSlot card = find(zone(player, pending.fromZone()), pending.cardId());
+        CardSlot summoner = find(player.getField(), pending.summonerId());
+        if (card == null || summoner == null) {
+            log(room, "El Ascenso no se completa: " + (summoner == null ? "el invocador dejó el campo" : "la carta ya no está"), null);
+            return;
+        }
+        specialSummon(room, player, card, specialRequirement(card), summoner, List.of(), pending.fromZone(), 0, null);
     }
 
     /** Ritual by effect (rule 9.3): pays the special cost minus the reduction and summons it. */

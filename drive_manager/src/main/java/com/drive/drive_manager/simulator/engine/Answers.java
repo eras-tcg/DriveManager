@@ -220,6 +220,28 @@ public final class Answers {
             handSpecial(room, player, card, req, summoner, materials, find(player.getHand(), card.getInstanceId()) != null ? "hand" : "tributeZone");
             return "";
         }
+        if (PURPOSE_ASCEND_ATTACK.equals(purpose)) {
+            room.setPrompt(null);
+            CardSlot card = specialSource(player, prompt.getSubjectId());
+            CardSlot summoner = find(player.getField(), prompt.getSummonerId());
+            if (card == null || summoner == null) {
+                advance(room);
+                return "";
+            }
+            String fromZone = find(player.getHand(), card.getInstanceId()) != null ? "hand" : "tributeZone";
+            if (picks.isEmpty()) {
+                // No attack: the Ascenso goes on as asked (its cost modifiers are asked there)
+                room.setPendingAscension(new PendingAscension(userId, card.getInstanceId(), summoner.getInstanceId(), fromZone));
+                completeAscension(room);
+                advance(room);
+                return "";
+            }
+            String target = picks.get(0).equals(summoner.getInstanceId()) ? null : picks.get(0);
+            room.setPendingAscension(new PendingAscension(userId, card.getInstanceId(), summoner.getInstanceId(), fromZone));
+            startCombat(room, userId, summoner, target, true, null);
+            advance(room);
+            return "";
+        }
         if (PURPOSE_SUMMONER_DISCOUNT.equals(purpose)) {
             CardSlot card = specialSource(player, prompt.getSubjectId());
             CardSlot summoner = find(player.getField(), prompt.getSummonerId());

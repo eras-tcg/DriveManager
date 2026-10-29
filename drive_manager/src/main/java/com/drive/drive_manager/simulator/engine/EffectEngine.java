@@ -81,6 +81,7 @@ public final class EffectEngine {
     /** Marks in usedThisTurn: a Definitive effect used the turn before ("definitive-last|player"). */
     public static final String DEFINITIVE_LAST_TURN = "definitive-last|";
     static final String PURPOSE_BLOCK_SWAP = "BLOCK_SWAP";
+    static final String PURPOSE_ASCEND_ATTACK = "ASCEND_ATTACK";
     static final String PURPOSE_DAMAGE_REPLACE = "DAMAGE_REPLACE";
     /** An "until the end of the attack" entry that is strength, not an ability ("id|fuerza:3"). */
     static final String STRENGTH_ENTRY = "fuerza:";

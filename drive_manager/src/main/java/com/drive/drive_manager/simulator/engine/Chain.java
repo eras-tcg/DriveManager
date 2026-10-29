@@ -54,6 +54,8 @@ public final class Chain {
             } else if (!chain.isEmpty()) {
                 if (offerPriority(room)) return;
                 stepTop(room);
+            } else if (room.getPendingAscension() != null) {
+                completeAscension(room);
             } else if (room.getCombat() != null) {
                 combatStep(room);
             } else {
