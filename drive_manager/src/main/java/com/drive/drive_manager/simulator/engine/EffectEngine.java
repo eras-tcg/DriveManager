@@ -101,6 +101,11 @@ public final class EffectEngine {
         if (effect != null) {
             e.setEffectId(effect.getId());
             e.setResolutionId(effect.getResolutionId());
+            // A tribute by an effect always says by which card ("si esta carta es tributada por efecto de 1 [bestia]")
+            if (GameEvent.TRIBUTE.equals(type) && (data == null || !data.containsKey("byCard")) && effect.getSourceInstanceId() != null) {
+                data = data == null ? new HashMap<>() : new HashMap<>(data);
+                data.put("byCard", effect.getSourceInstanceId());
+            }
         }
         e.setData(data);
         room.getTimeline().add(e);

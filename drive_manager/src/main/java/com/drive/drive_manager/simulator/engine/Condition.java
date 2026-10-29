@@ -45,6 +45,17 @@ public sealed interface Condition {
         }
     }
 
+    /** Any one of them. */
+    record Any(List<Condition> any) implements Condition {
+        public boolean test(GameRoom room, GameEvent event, CardSlot source, String controller) {
+            return any.stream().anyMatch(c -> c.test(room, event, source, controller));
+        }
+    }
+
+    static Condition any(Condition... conditions) {
+        return new Any(List.of(conditions));
+    }
+
     static Condition all(Condition... conditions) {
         return new All(List.of(conditions));
     }
@@ -114,6 +125,52 @@ public sealed interface Condition {
                 }
             }
             return false;
+        }
+    }
+
+    /**
+     * "si esta carta es tributada [desde zona] [, excepto desde zona] [por efecto de 1 carta filtro]": {@code fromZone} and
+     * {@code exceptZone} may be null ("tributada" from anywhere); {@code by} null: by anything, otherwise only by an effect of
+     * a card that matches.
+     */
+    record ThisTributed(String fromZone, String exceptZone, CardFilter by) implements Condition {
+        public boolean test(GameRoom room, GameEvent event, CardSlot source, String controller) {
+            if (!GameEvent.TRIBUTE.equals(event.getType()) || !source.getInstanceId().equals(event.getCardInstanceId())) return false;
+            if (fromZone != null && !fromZone.equals(event.getFromZone())) return false;
+            if (exceptZone != null && exceptZone.equals(event.getFromZone())) return false;
+            if (by == null) return true;
+            Object byId = event.getData() == null ? null : event.getData().get("byCard");
+            if (event.getEffectId() == null || byId == null) return false;
+            CardSlot byCard = EffectEngine.findInRoom(room, (String) byId);
+            return byCard != null && by.matches(byCard);
+        }
+    }
+
+    /** "si algún aliado [filtro] es invocado" (by any method: normal, special or by effect), other than this card. */
+    record AllySummoned(CardFilter filter) implements Condition {
+        public boolean test(GameRoom room, GameEvent event, CardSlot source, String controller) {
+            String type = event.getType();
+            boolean summon = GameEvent.NORMAL_SUMMON.equals(type) || GameEvent.SPECIAL_SUMMON.equals(type) || GameEvent.EFFECT_SUMMON.equals(type);
+            if (!summon || !controller.equals(event.getPlayerId()) || source.getInstanceId().equals(event.getCardInstanceId())) return false;
+            CardSlot summoned = EffectEngine.eventCard(room, event);
+            return summoned != null && filter.matches(summoned);
+        }
+    }
+
+    /** "si algún aliado [filtro] es invocado por [Ascenso / Evolución / Materialización / Ritual]" ({@code kind}: "promotion"…). */
+    record YouSpecialSummonedAs(String kind, CardFilter filter) implements Condition {
+        public boolean test(GameRoom room, GameEvent event, CardSlot source, String controller) {
+            if (!GameEvent.SPECIAL_SUMMON.equals(event.getType()) || !controller.equals(event.getPlayerId())) return false;
+            if (event.getData() == null || !kind.equals(event.getData().get("summonType"))) return false;
+            CardSlot summoned = EffectEngine.eventCard(room, event);
+            return summoned != null && filter.matches(summoned);
+        }
+    }
+
+    /** "si esta carta tiene algún recurso". */
+    record HasResources() implements Condition {
+        public boolean test(GameRoom room, GameEvent event, CardSlot source, String controller) {
+            return source != null && !source.getResources().isEmpty();
         }
     }
 

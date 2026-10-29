@@ -38,6 +38,20 @@ import com.drive.drive_manager.simulator.engine.EffectStep.ActivateTributedSummo
 import com.drive.drive_manager.simulator.engine.EffectStep.TributeAllyMaterialWhere;
 import com.drive.drive_manager.simulator.engine.EffectStep.SummonFromZoneBy;
 import com.drive.drive_manager.simulator.engine.EffectStep.FilterBy;
+import com.drive.drive_manager.simulator.engine.EffectStep.ActivateSubjectSummonEffect;
+import com.drive.drive_manager.simulator.engine.EffectStep.AlliesGainUntilEndOfTurn;
+import com.drive.drive_manager.simulator.engine.EffectStep.AttachSelfAsResourceToSubject;
+import com.drive.drive_manager.simulator.engine.EffectStep.ChooseEnemiesPerCount;
+import com.drive.drive_manager.simulator.engine.EffectStep.EndYourTurn;
+import com.drive.drive_manager.simulator.engine.EffectStep.IfCondition;
+import com.drive.drive_manager.simulator.engine.EffectStep.LookTopBy;
+import com.drive.drive_manager.simulator.engine.EffectStep.LookedToTopOrBottom;
+import com.drive.drive_manager.simulator.engine.EffectStep.PlaceSelfInFrontLine;
+import com.drive.drive_manager.simulator.engine.EffectStep.ReduceChosenPerCount;
+import com.drive.drive_manager.simulator.engine.EffectStep.SubjectIsThisCard;
+import com.drive.drive_manager.simulator.engine.EffectStep.TakeFromLookedRestToTributes;
+import com.drive.drive_manager.simulator.engine.EffectStep.TributeHand;
+import com.drive.drive_manager.simulator.engine.EffectStep.TributeResources;
 import com.drive.drive_manager.simulator.engine.EffectStep.PlaceFromHandUntilTurnEnd;
 import com.drive.drive_manager.simulator.engine.EffectStep.TributeAlliesLevelSum;
 import com.drive.drive_manager.simulator.engine.EffectStep.DiscardTributesForKeyword;
@@ -1353,14 +1367,138 @@ public final class CardEffects {
                 .when(all(new NoCopies(), new CountOnField(CardFilter.creatures().withClasses("caballero", "armada").withMinLevel(4), 1, null)))
                 .fromZone("hand")
                 .onlyAllyTurn());
-        // E1.1-R11 Establo (its "Turno Aliado" is not applied yet)
-        add("establo", new EffectScript("establo:en-juego", Moment.ON_PLAY, true, EN_JUEGO,
-                "Toma 1 carta Roja de tus tributos.",
-                List.of(new TakeFromZone("tributeZone", CardFilter.colors("R"), 1, false))));
+        // E1.1-R11 Establo (structure)
+        CardFilter caballero = CardFilter.creatures().withClasses("caballero");
+        add("establo",
+                new EffectScript("establo:en-juego", Moment.ON_PLAY, true, EN_JUEGO,
+                        "Toma 1 carta Roja de tus tributos.",
+                        List.of(new TakeFromZone("tributeZone", CardFilter.colors("R"), 1, false))),
+                new EffectScript("establo:turno-aliado", Moment.ON_EVENT, false, "Turno Aliado",
+                        "Si algún aliado [caballero] es invocado por efecto o por Ascenso: puedes agotar esta carta para ganar 1 gema.",
+                        List.of(new IfPossible(), new TapSelf(), new GainGems(1)))
+                        .when(any(new AllySummonedByEffect(caballero), new YouSpecialSummonedAs("promotion", caballero)))
+                        .onlyAllyTurn());
         // E1.1-W5 Escudos Leales (its "En Mano" is not applied yet)
         add("escudos leales", new EffectScript("escudos-leales:en-juego", Moment.ON_PLAY, true, EN_JUEGO,
                 "Efecto Definitivo. Reactiva hasta 2 aliados.",
                 List.of(new UntapAlly(), new UntapAlly()))
+                .limited(Limit.DEFINITIVE));
+
+        // ---- E1.1, second batch: new steps and conditions
+        // E1.1-B1 Zamaranzas (its "Turno Aliado / En Mano" is not applied yet)
+        add("zamaranzas", new EffectScript("zamaranzas:en-invocacion", Moment.ON_SUMMON, false, EN_INVOCACION,
+                "Puedes añadir esta carta como material a 1 aliado [ente] nivel 3 o menor; activa 1 de sus efectos En Invocación.",
+                List.of(new PickAllyWhere(CardFilter.creatures().withClasses("ente").withMaxLevel(3)), new AttachSelfToSubject()),
+                List.of(new ActivateSubjectSummonEffect())));
+        // E1.1-B5 Soléo
+        add("soléo", new EffectScript("soleo:al-atacar", Moment.ON_ATTACK, false, AL_ATACAR,
+                "Puedes tributar hasta 2 materiales de esta carta: por cada material tributado elige 1 enemigo distinto; reduce en 2 su fuerza.",
+                List.of(new TributeMaterials(2, true), new ChooseEnemiesPerCount(enemy)), List.of(new ReduceChosen(2, false))));
+        // E1.1-B9 Cragzum
+        add("cragzum", new EffectScript("cragzum:en-invocacion", Moment.ON_SUMMON, false, EN_INVOCACION,
+                "Puedes tributar hasta tantos materiales de esta carta como tenga y elegir 1 enemigo; reduce en 1 su fuerza por cada material removido.",
+                List.of(new TributeMaterials(99, true), new ChooseEnemy(1, enemy)), List.of(new ReduceChosenPerCount(1))));
+        // E1.1-B11 HE 110 (its "no puede ser objetivo" is not applied yet)
+        add("he 110", new EffectScript("he-110:todos-los-turnos", Moment.ON_EVENT, false, TODOS,
+                "Una vez por turno: si alguna de tus vidas es removida: puedes tributar 2 materiales de esta carta; coloca la carta del tope de tu mazo al tope de tus vidas.",
+                List.of(new TributeMaterials(2, false)), List.of(new DeckTopToLife()))
+                .when(new LifeRemoved())
+                .limited(Limit.ONCE_PER_TURN));
+        // E1.1-G1 Hatchkin
+        add("hatchkin",
+                new EffectScript("hatchkin:tributada", Moment.ON_EVENT, false, "En Tributos",
+                        "(1) Si esta carta es tributada, excepto desde tu mano: puedes enviar 5 de tus tributos [dragón] al fondo de tu mazo para "
+                                + "colocar esta carta en tu línea frontal agotada.",
+                        List.of(new IfPossible(), new SendFromZoneToDeckBottom("tributeZone", 5, dragons), new PlaceSelfInFrontLine("tributeZone", true)))
+                        .when(new ThisTributed(null, "hand", null))
+                        .fromZone("tributeZone")
+                        .limited(Limit.ONCE_PER_TURN_BETWEEN_COPIES),
+                new EffectScript("hatchkin:todos-los-turnos", Moment.ON_EVENT, false, TODOS,
+                        "(1) Si algún aliado es invocado: puedes añadirle esta carta como recurso para ganar 1 gema.",
+                        List.of(new IfPossible(), new SubjectFromTrigger(), new AttachSelfAsResourceToSubject(), new GainGems(1)))
+                        .when(new AllySummoned(CardFilter.creatures()))
+                        .limited(Limit.ONCE_PER_TURN_BETWEEN_COPIES));
+        // E1.1-G3 Cría De Dragón Rúnico: "Si esta carta tiene algún recurso: en su lugar, envía el resto al fondo"
+        add("cría de dragón rúnico", new EffectScript("cria-dragon-runico:en-invocacion", Moment.ON_SUMMON, true, EN_INVOCACION,
+                "Mira las primeras 3 cartas de tu mazo: de ellas toma hasta 1 [dragón]. Tributa el resto. Si esta carta tiene algún recurso: "
+                        + "en su lugar, envía el resto al fondo de tu mazo.",
+                List.of(new LookTop(3), new IfCondition(not(new HasResources()), 1), new TakeFromLookedRestToTributes(1, dragons),
+                        new IfCondition(new HasResources(), 1), new TakeFromLookedRestToBottom(1, dragons))));
+        // E1.1-G4 Rosedrake
+        add("rosedrake", new EffectScript("rosedrake:tributada", Moment.ON_EVENT, false, "En Tributos",
+                "(1) Si esta carta es tributada, excepto desde tu mano: puedes tributar 1 carta de tu mano para tomar 1 carta Verde de tus tributos.",
+                List.of(new IfPossible(), new TributeFromHand(1), new TakeFromZone("tributeZone", CardFilter.colors("G"), 1, false)))
+                .when(new ThisTributed(null, "hand", null))
+                .fromZone("tributeZone")
+                .limited(Limit.ONCE_PER_TURN_BETWEEN_COPIES));
+        // E1.1-G6 Grod
+        continuous("grod", new Continuous(TODOS, "Esta carta no puede declarar ataque.", false, new Always(), 0, List.of(EffectEngine.NO_ATTACK)));
+        // E1.1-G7 Wyverno Rapaz (its reaction when it would evolve is not applied yet)
+        add("wyverno rapaz", new EffectScript("wyverno-rapaz:tributada", Moment.ON_EVENT, true, "En Tributos",
+                "(1) Si esta carta es tributada por efecto de 1 carta Verde, excepto desde tu mano: tributa 2 cartas del tope de tu mazo.",
+                List.of(new TributeTop(2)))
+                .when(new ThisTributed(null, "hand", CardFilter.colors("G")))
+                .fromZone("tributeZone")
+                .limited(Limit.ONCE_PER_TURN_BETWEEN_COPIES));
+        // E1.1-G9 Wyverno De Las Nubes
+        add("wyverno de las nubes", new EffectScript("wyverno-de-las-nubes:en-invocacion", Moment.ON_SUMMON, true, EN_INVOCACION,
+                "Mira las primeras 3 cartas de tu mazo: envíalas al tope o al fondo de tu mazo. Luego: tributa 3 cartas del tope de tu mazo.",
+                List.of(new LookTop(3), new LookedToTopOrBottom(), new TributeTop(3))));
+        // E1.1-G12 Hebi
+        add("hebi",
+                new EffectScript("hebi:en-invocacion", Moment.ON_SUMMON, false, EN_INVOCACION,
+                        "Puedes añadir hasta 2 criaturas [hydra] de tus tributos como recurso de esta carta.",
+                        List.of(new AddResourceFrom("tributeZone", CardFilter.creatures().withClasses("hydra")),
+                                new MayDo("¿Añades otra criatura [hydra] de tus tributos como recurso?", 1),
+                                new AddResourceFrom("tributeZone", CardFilter.creatures().withClasses("hydra")))),
+                new EffectScript("hebi:al-atacar", Moment.ON_ATTACK, false, AL_ATACAR,
+                        "Puedes tributar 2 recursos [dragón] o [hydra] de esta carta para reactivar esta carta.",
+                        List.of(new IfPossible(), new TributeResources(2, CardFilter.any().withClasses("dragón", "hydra")), new UntapSelf())));
+        // E1.1-P1 Niobats
+        add("niobats", new EffectScript("niobats:tributada", Moment.ON_EVENT, false, "En Tributos",
+                "(1) Si esta carta es tributada por efecto de 1 [bestia]: puedes tributar 1 carta de tu mano para tomar 1 carta Violeta de tus tributos.",
+                List.of(new IfPossible(), new TributeFromHand(1), new TakeFromZone("tributeZone", CardFilter.colors("P"), 1, false)))
+                .when(new ThisTributed(null, null, CardFilter.any().withClasses("bestia")))
+                .fromZone("tributeZone")
+                .limited(Limit.ONCE_PER_TURN_BETWEEN_COPIES));
+        // E1.1-P2 Jabalix (Iniciador; printed "Jábalix" in the vault)
+        add("jabalix", new EffectScript("jabalix:en-invocacion", Moment.ON_SUMMON, true, EN_INVOCACION,
+                "Mira las primeras 3 cartas de tu mazo: de ellas toma hasta 1 carta Violeta, Blanca o [mutante]. Envía el resto al fondo de tu mazo. "
+                        + "Luego: tributa 1 carta de tu mano. Por cada copia de esta carta en tus tributos: mira 1 carta más con este efecto.",
+                List.of(new LookTopBy(new Amount.Scaled(new Amount.InZone("tributeZone", CardFilter.any().named("Jabalix")), 1, 3)),
+                        new TakeFromLookedRestToBottom(1, CardFilter.colors("P", "W").withClasses("mutante")), new TributeFromHand(1))));
+        // E1.1-P4 Cofre Mímico
+        add("cofre mímico", new EffectScript("cofre-mimico:tributada", Moment.ON_EVENT, false, "En Tributos",
+                "Si esta carta es tributada desde tus vidas: puedes invocarla. Si lo haces: puedes elegir 1 enemigo nivel 1; destrúyelo.",
+                List.of(new SummonSelf("tributeZone", Amount.fixed(0), false), new IfDone(2), new ChooseEnemy(1, enemy.withLevel(1), true),
+                        new DestroyChosen()))
+                .when(new ThisTributed("lifeStack", null, null))
+                .fromZone("tributeZone"));
+        // E1.1-P5 Lomo Plateado
+        add("lomo plateado", new EffectScript("lomo-plateado:turno-aliado", Moment.ACTIVATED, false, "Turno Aliado",
+                "Una vez por turno: puedes sacrificar 1 aliado para que esta carta gane fuerza 3 hasta el final del turno. Si lo haces: puedes mover "
+                        + "esta carta a tu línea frontal.",
+                List.of(new IfPossible(), new SacrificeAlly(false), new SubjectIsThisCard(), new GainStrength(3),
+                        new MayDo("¿Mueves esta carta a tu línea frontal?", 1), new MoveSelfToFront()))
+                .onlyAllyTurn()
+                .limited(Limit.ONCE_PER_TURN));
+        // E1.1-P6 Xiromorfo (Celeridad: keyword; its "gana 1 nivel por copia" is not applied yet)
+        continuous("xiromorfo", new Continuous(TODOS, "Esta carta gana 1 nivel y fuerza 3 por cada copia de esta carta en tus tributos.", false,
+                new Always(), 0, List.of(), new Amount.Times(new Amount.InZone("tributeZone", CardFilter.any().named("Xiromorfo")), 3)));
+        // E1.1-R15 A La Carga!
+        add("a la carga!", new EffectScript("a-la-carga:en-juego", Moment.ON_PLAY, true, EN_JUEGO,
+                "Si tienes al menos 7 aliados Rojos: todos los aliados ganan Furia y Perforante hasta el final del turno.",
+                List.of(new AlliesGainUntilEndOfTurn(CardFilter.creatures(), "Furia"), new AlliesGainUntilEndOfTurn(CardFilter.creatures(), "Perforante")))
+                .when(new CountOnField(CardFilter.creatures().withColors("R"), 7, null)));
+        // E1.1-W1 Hechizo Premonitorio
+        add("hechizo premonitorio", new EffectScript("hechizo-premonitorio:en-juego", Moment.ON_PLAY, true, EN_JUEGO,
+                "Efecto Definitivo. Mira las primeras 2 cartas de tu mazo: devuélvelas al tope o envíalas al fondo de tu mazo. Luego: roba 1 carta.",
+                List.of(new LookTop(2), new LookedToTopOrBottom(), new Draw(1)))
+                .limited(Limit.DEFINITIVE));
+        // E1.1-W3 Ascenso Espectral
+        add("ascenso espectral", new EffectScript("ascenso-espectral:en-juego", Moment.ON_PLAY, true, EN_JUEGO,
+                "Efecto Definitivo. Tributa tu mano. Luego: roba 5 cartas y termina tu turno.",
+                List.of(new TributeHand(), new Draw(5), new EndYourTurn()))
                 .limited(Limit.DEFINITIVE));
     }
 

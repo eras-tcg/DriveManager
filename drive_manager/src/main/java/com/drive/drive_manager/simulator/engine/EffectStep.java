@@ -386,4 +386,46 @@ public sealed interface EffectStep {
      * steps (A and B) are skipped.
      */
     record MayDo(String question, int covers) implements EffectStep {}
+
+    /** {@link LookTop} whose count depends on the game ("mira 1 carta más por cada copia de esta carta en tus tributos"). */
+    record LookTopBy(Amount count) implements EffectStep {}
+
+    /** "envíalas al tope o al fondo de tu mazo" / "devuélvelas al tope o envíalas al fondo": the looked cards, all together. */
+    record LookedToTopOrBottom() implements EffectStep {}
+
+    /** "de ellas toma hasta N [filtro]. Tributa el resto." (after {@link LookTop}). */
+    record TakeFromLookedRestToTributes(int max, CardFilter filter) implements EffectStep {}
+
+    /** "Si [condición sobre la mesa]:": the next {@code covers} steps only if it holds now. */
+    record IfCondition(Condition condition, int covers) implements EffectStep {}
+
+    /** "por cada material tributado elige 1 enemigo distinto": as many enemies as the last count (lastCount). */
+    record ChooseEnemiesPerCount(CardFilter filter) implements NeedsTarget {}
+
+    /** "reduce en N su fuerza por cada material removido": N times the last count, on the chosen targets. */
+    record ReduceChosenPerCount(int each) implements EffectStep {}
+
+    /** "todos los aliados [filtro] ganan [habilidad] hasta el final del turno". */
+    record AlliesGainUntilEndOfTurn(CardFilter filter, String keyword) implements EffectStep {}
+
+    /** "tributa tu mano": all of it. */
+    record TributeHand() implements EffectStep {}
+
+    /** "termina tu turno": once nothing is pending, the turn goes on to its end phase. */
+    record EndYourTurn() implements EffectStep {}
+
+    /** "coloca esta carta en tu línea frontal [agotada]" from a zone (placed, not summoned). */
+    record PlaceSelfInFrontLine(String zone, boolean exhausted) implements EffectStep {}
+
+    /** "añádele esta carta como recurso": this card becomes a Recurso of the subject (the ally of the trigger, or the chosen one). */
+    record AttachSelfAsResourceToSubject() implements EffectStep {}
+
+    /** "tributa N recursos [filtro] de esta carta". */
+    record TributeResources(int count, CardFilter filter) implements EffectStep {}
+
+    /** "activa 1 de sus efectos En Invocación": the subject activates its own "En Invocación" as a new link. */
+    record ActivateSubjectSummonEffect() implements EffectStep {}
+
+    /** "esta carta …" again after a step that chose another card (a sacrifice, an ally): the next steps act on this card. */
+    record SubjectIsThisCard() implements EffectStep {}
 }

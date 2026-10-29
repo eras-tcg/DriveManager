@@ -40,7 +40,7 @@ public final class CombatRules {
         if (attacker == null || !"creature".equals(attacker.getCardType())) return "Solo tus criaturas del campo pueden atacar";
         if (!inFrontLine(attacker)) return "Solo las criaturas de la línea frontal pueden atacar";
         if (attacker.isTapped()) return "Esa criatura está agotada";
-        if (attacker.getTurnKeywords().contains(NO_ATTACK)) return name(attacker) + " no puede declarar ataque este turno";
+        if (keywords(attacker).contains(NO_ATTACK)) return name(attacker) + " no puede declarar ataque este turno";
         if (!attackGemsOk(room, userId, attacker)) {
             Integer furia = furia(attacker);
             return furia == null ? "Para declarar un ataque necesitas 0 o más gemas"
