@@ -12,6 +12,7 @@ import org.springframework.test.util.ReflectionTestUtils;
 import java.io.InputStream;
 import java.util.*;
 
+import static com.drive.drive_manager.simulator.engine.TestTable.*;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
@@ -36,6 +37,8 @@ class St3IntegrationTest {
             list.forEach(c -> cards.put(c.getCardName(), c));
         }
         room = service.createRoom();
+        // These tests chain a lone mandatory effect straight away (its confirmation is tested on its own)
+        room.setConfirmMandatory(false);
         host = new PlayerState("host", "Ana");
         guest = new PlayerState("guest", "Beto");
         room.getPlayers().put("host", host);
@@ -243,11 +246,4 @@ class St3IntegrationTest {
         return s;
     }
 
-    private static CardSlot onField(PlayerState p, CardSlot c, double y) {
-        c.setX(50.0);
-        c.setY(y);
-        c.setFaceDown(false);
-        p.getField().add(c);
-        return c;
-    }
 }

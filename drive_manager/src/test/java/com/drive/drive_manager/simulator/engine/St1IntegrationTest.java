@@ -12,6 +12,7 @@ import org.springframework.test.util.ReflectionTestUtils;
 import java.io.InputStream;
 import java.util.*;
 
+import static com.drive.drive_manager.simulator.engine.TestTable.*;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /** ST1 (Entes) with its real metadata: Materialización, materials as costs, strength reduction and its triggers. */
@@ -37,6 +38,8 @@ class St1IntegrationTest {
             }
         }
         room = service.createRoom();
+        // These tests chain a lone mandatory effect straight away (its confirmation is tested on its own)
+        room.setConfirmMandatory(false);
         host = new PlayerState("host", "Ana");
         guest = new PlayerState("guest", "Beto");
         room.getPlayers().put("host", host);
@@ -70,16 +73,16 @@ class St1IntegrationTest {
         host.getHand().add(bertalum);
         CardSlot damon = onField(guest, slot("Damon"), FRONT);
 
-        assertThat(EffectEngine.specialByPlayer(room, "host", bertalum.getInstanceId(), summoner.getInstanceId())).isNull();
-        EffectEngine.answer(room, "host", room.getPrompt().getId(), List.of(material.getInstanceId()), List.of());
+        assertThat(Summons.specialByPlayer(room, "host", bertalum.getInstanceId(), summoner.getInstanceId())).isNull();
+        Answers.answer(room, "host", room.getPrompt().getId(), List.of(material.getInstanceId()), List.of());
         assertThat(bertalum.getMaterials()).containsExactly(summoner, material);
 
         // Its "En Invocación": tribute both materials and reduce Damon (3) by 4: destroyed
         Prompt offer = room.getPrompt();
         assertThat(offer.getPurpose()).isEqualTo("OPTIONAL");
-        EffectEngine.answer(room, "host", offer.getId(), List.of(bertalum.getInstanceId()), List.of());
-        EffectEngine.answer(room, "host", room.getPrompt().getId(), room.getPrompt().getValidIds(), List.of());
-        EffectEngine.answer(room, "host", room.getPrompt().getId(), List.of(damon.getInstanceId()), List.of());
+        Answers.answer(room, "host", offer.getId(), List.of(bertalum.getInstanceId()), List.of());
+        Answers.answer(room, "host", room.getPrompt().getId(), room.getPrompt().getValidIds(), List.of());
+        Answers.answer(room, "host", room.getPrompt().getId(), List.of(damon.getInstanceId()), List.of());
         assertThat(guest.getDiscardPile()).contains(damon);
         assertThat(room.getTimeline()).extracting(GameEvent::getType).contains(GameEvent.STRENGTH_REDUCED);
 
@@ -89,11 +92,11 @@ class St1IntegrationTest {
             Prompt p = room.getPrompt();
             if ("host".equals(p.getPlayerId()) && "OPTIONAL".equals(p.getPurpose()) && p.getValidIds().contains(falis.getInstanceId())) {
                 offered = true;
-                EffectEngine.answer(room, "host", p.getId(), List.of(falis.getInstanceId()), List.of());
+                Answers.answer(room, "host", p.getId(), List.of(falis.getInstanceId()), List.of());
                 break;
             }
             List<String> pick = p.getMin() > 0 ? p.getValidIds().subList(0, p.getMin()) : List.of();
-            EffectEngine.answer(room, p.getPlayerId(), p.getId(), pick, List.of());
+            Answers.answer(room, p.getPlayerId(), p.getId(), pick, List.of());
         }
         assertThat(offered).isTrue();
         assertThat(host.getField()).contains(falis);
@@ -105,12 +108,12 @@ class St1IntegrationTest {
         host.getHand().add(jhav);
         host.getHand().add(slot("Eisten"));
         host.getTributeZone().add(slot("Flarix"));
-        assertThat(EffectEngine.normalSummon(room, "host", jhav.getInstanceId(), 50.0, 75.0)).isNull();
+        assertThat(Summons.normalSummon(room, "host", jhav.getInstanceId(), 50.0, 75.0)).isNull();
         // Take up to 1 Azul (Flarix), tribute 1 (an Ente) and draw 1
-        EffectEngine.answer(room, "host", room.getPrompt().getId(), room.getPrompt().getValidIds(), List.of());
+        Answers.answer(room, "host", room.getPrompt().getId(), room.getPrompt().getValidIds(), List.of());
         int hand = host.getHand().size();
         Prompt tribute = room.getPrompt();
-        EffectEngine.answer(room, "host", tribute.getId(), List.of(tribute.getValidIds().get(0)), List.of());
+        Answers.answer(room, "host", tribute.getId(), List.of(tribute.getValidIds().get(0)), List.of());
         assertThat(host.getHand()).hasSize(hand);
     }
 
@@ -120,9 +123,9 @@ class St1IntegrationTest {
         host.getHand().add(composicion);
         host.getHand().add(slot("Eisten"));
         host.getHand().add(slot("Jhav"));
-        assertThat(EffectEngine.playByPlayer(room, "host", composicion.getInstanceId(), 50.0, 75.0)).isNull();
+        assertThat(Summons.playByPlayer(room, "host", composicion.getInstanceId(), 50.0, 75.0)).isNull();
         Prompt tribute = room.getPrompt();
-        EffectEngine.answer(room, "host", tribute.getId(), tribute.getValidIds(), List.of());
+        Answers.answer(room, "host", tribute.getId(), tribute.getValidIds(), List.of());
         assertThat(host.getHand()).hasSize(2);
         assertThat(host.getField()).contains(composicion);
         assertThat(composicion.isTapped()).isTrue();
@@ -134,10 +137,10 @@ class St1IntegrationTest {
         mathaus.getMaterials().add(slot("Eisten"));
         mathaus.getMaterials().add(slot("Jhav"));
         CardSlot enemy = onField(guest, slot("Zhaglizer"), FRONT);
-        assertThat(EffectEngine.activatable(room, "host")).extracting(EffectEngine.Activatable::scriptId).contains("mathaus:turno-aliado");
-        assertThat(EffectEngine.activateByPlayer(room, "host", mathaus.getInstanceId(), null)).isNull();
-        EffectEngine.answer(room, "host", room.getPrompt().getId(), room.getPrompt().getValidIds(), List.of());
-        EffectEngine.answer(room, "host", room.getPrompt().getId(), List.of(enemy.getInstanceId()), List.of());
+        assertThat(Chain.activatable(room, "host")).extracting(Chain.Activatable::scriptId).contains("mathaus:turno-aliado");
+        assertThat(Chain.activateByPlayer(room, "host", mathaus.getInstanceId(), null)).isNull();
+        Answers.answer(room, "host", room.getPrompt().getId(), room.getPrompt().getValidIds(), List.of());
+        Answers.answer(room, "host", room.getPrompt().getId(), List.of(enemy.getInstanceId()), List.of());
         // Until the end of the opponent's turn
         assertThat(enemy.getLaterStrength()).isEqualTo(-3);
         assertThat(mathaus.getMaterials()).isEmpty();
@@ -149,21 +152,21 @@ class St1IntegrationTest {
         CardSlot eisten = onField(host, slot("Eisten"), FRONT);
         // Exhausted (as it stays after being played) it cannot be used
         composicion.setTapped(true);
-        assertThat(EffectEngine.activatable(room, "host")).isEmpty();
+        assertThat(Chain.activatable(room, "host")).isEmpty();
         composicion.setTapped(false);
         CardSlot flarix = slot("Flarix");
         host.getHand().add(flarix);
         CardSlot jhav = slot("Jhav");
         host.getTributeZone().add(jhav);
-        assertThat(EffectEngine.activatable(room, "host")).extracting(EffectEngine.Activatable::scriptId)
+        assertThat(Chain.activatable(room, "host")).extracting(Chain.Activatable::scriptId)
                 .contains("composicion-adimensional:turno-aliado");
         int gems = EffectEngine.gemsOf(room, "host");
-        assertThat(EffectEngine.activateByPlayer(room, "host", composicion.getInstanceId(), null)).isNull();
-        EffectEngine.answer(room, "host", room.getPrompt().getId(), List.of(eisten.getInstanceId()), List.of());
-        EffectEngine.answer(room, "host", room.getPrompt().getId(), List.of(flarix.getInstanceId()), List.of());
+        assertThat(Chain.activateByPlayer(room, "host", composicion.getInstanceId(), null)).isNull();
+        Answers.answer(room, "host", room.getPrompt().getId(), List.of(eisten.getInstanceId()), List.of());
+        Answers.answer(room, "host", room.getPrompt().getId(), List.of(flarix.getInstanceId()), List.of());
         Prompt material = room.getPrompt();
         assertThat(material.getChosenLabel()).isEqualTo("Material");
-        EffectEngine.answer(room, "host", material.getId(), List.of(jhav.getInstanceId()), List.of());
+        Answers.answer(room, "host", material.getId(), List.of(jhav.getInstanceId()), List.of());
         assertThat(host.getField()).contains(flarix).doesNotContain(eisten, composicion);
         assertThat(flarix.getMaterials()).contains(eisten, jhav, composicion);
         // Special cost 1, minus 1
@@ -178,15 +181,15 @@ class St1IntegrationTest {
         CardSlot galafendrax = slot("Galafendrax El Transmutador");
         host.getHand().add(galafendrax);
 
-        assertThat(EffectEngine.specialByPlayer(room, "host", galafendrax.getInstanceId(), mathaus.getInstanceId())).isNull();
-        EffectEngine.answer(room, "host", room.getPrompt().getId(), List.of(falanx.getInstanceId()), List.of());
+        assertThat(Summons.specialByPlayer(room, "host", galafendrax.getInstanceId(), mathaus.getInstanceId())).isNull();
+        Answers.answer(room, "host", room.getPrompt().getId(), List.of(falanx.getInstanceId()), List.of());
         assertThat(galafendrax.getMaterials()).containsExactly(mathaus, falanx);
 
         // Its "En Invocación" (mandatory): up to 1 level 4 ente of its materials to the Línea frontal, with the rest
         Prompt pick = room.getPrompt();
         assertThat(pick).isNotNull();
         assertThat(pick.getValidIds()).containsExactlyInAnyOrder(mathaus.getInstanceId(), falanx.getInstanceId());
-        EffectEngine.answer(room, "host", pick.getId(), List.of(mathaus.getInstanceId()), List.of());
+        Answers.answer(room, "host", pick.getId(), List.of(mathaus.getInstanceId()), List.of());
         assertThat(host.getField()).contains(mathaus);
         assertThat(EffectEngine.inFrontLine(mathaus)).isTrue();
         assertThat(mathaus.getMaterials()).containsExactly(falanx);
@@ -200,13 +203,13 @@ class St1IntegrationTest {
         mathaus.getMaterials().add(slot("Mihel"));
         CardSlot damon = onField(guest, slot("Damon"), FRONT);
         damon.setStrength(7);
-        assertThat(EffectEngine.activateByPlayer(room, "host", mathaus.getInstanceId(), null)).isNull();
+        assertThat(Chain.activateByPlayer(room, "host", mathaus.getInstanceId(), null)).isNull();
         // Its cost: 2 materials, then the enemy
         while (room.getPrompt() != null) {
             Prompt p = room.getPrompt();
             List<String> picks = p.getValidIds().contains(damon.getInstanceId()) ? List.of(damon.getInstanceId())
                     : p.getValidIds().subList(0, Math.max(p.getMin(), Math.min(p.getMax(), p.getValidIds().size())));
-            assertThat(EffectEngine.answer(room, "host", p.getId(), picks, List.of())).isNull();
+            assertThat(Answers.answer(room, "host", p.getId(), picks, List.of())).isNull();
         }
         assertThat(EffectEngine.strength(damon)).isEqualTo(4);
         assertThat(damon.getLaterStrength()).isEqualTo(-3);
@@ -223,14 +226,14 @@ class St1IntegrationTest {
         room.setSharedCounter(-10);
 
         // "En Tributos": as if it were in the hand for special summons
-        assertThat(EffectEngine.specialSummonable(room, "host")).contains(falanx.getInstanceId());
-        assertThat(EffectEngine.specialByPlayer(room, "host", falanx.getInstanceId(), falis.getInstanceId())).isNull();
+        assertThat(Summons.specialSummonable(room, "host")).contains(falanx.getInstanceId());
+        assertThat(Summons.specialByPlayer(room, "host", falanx.getInstanceId(), falis.getInstanceId())).isNull();
         Prompt materials = room.getPrompt();
         assertThat(materials.getValidIds()).containsExactlyInAnyOrder(fhalid.getInstanceId(), jhav.getInstanceId(), mihel.getInstanceId());
         // 3 + 2 + 1 + 1 = 7: not exactly 6
-        assertThat(EffectEngine.answer(room, "host", materials.getId(),
+        assertThat(Answers.answer(room, "host", materials.getId(),
                 List.of(fhalid.getInstanceId(), jhav.getInstanceId(), mihel.getInstanceId()), List.of())).contains("exactamente 6");
-        assertThat(EffectEngine.answer(room, "host", materials.getId(), List.of(fhalid.getInstanceId(), jhav.getInstanceId()), List.of())).isNull();
+        assertThat(Answers.answer(room, "host", materials.getId(), List.of(fhalid.getInstanceId(), jhav.getInstanceId()), List.of())).isNull();
         assertThat(host.getField()).contains(falanx, mihel).doesNotContain(falis, fhalid, jhav);
         assertThat(host.getTributeZone()).doesNotContain(falanx);
         assertThat(falanx.getMaterials()).containsExactly(falis, fhalid, jhav);
@@ -243,16 +246,16 @@ class St1IntegrationTest {
         falanx.getMaterials().add(slot("Mihel"));
         CardSlot damon = onField(guest, slot("Damon"), FRONT);
         damon.setStrength(7);
-        EffectEngine.attackByPlayer(room, "host", falanx.getInstanceId(), null);
+        CombatRules.attackByPlayer(room, "host", falanx.getInstanceId(), null);
         Prompt offer = room.getPrompt();
         assertThat(offer.getPurpose()).isEqualTo("OPTIONAL");
         assertThat(offer.getEffects()).extracting(Prompt.OfferedEffect::label).contains("Todos Los Turnos");
-        EffectEngine.answer(room, "host", offer.getId(), List.of(falanx.getInstanceId()), List.of());
+        Answers.answer(room, "host", offer.getId(), List.of(falanx.getInstanceId()), List.of());
         while (room.getPrompt() != null && room.getPrompt().getEffectId() != null) {
             Prompt p = room.getPrompt();
             List<String> picks = p.getValidIds().contains(damon.getInstanceId()) ? List.of(damon.getInstanceId())
                     : p.getValidIds().subList(0, Math.max(p.getMin(), Math.min(p.getMax(), p.getValidIds().size())));
-            assertThat(EffectEngine.answer(room, "host", p.getId(), picks, List.of())).isNull();
+            assertThat(Answers.answer(room, "host", p.getId(), picks, List.of())).isNull();
         }
         assertThat(EffectEngine.strength(damon)).isEqualTo(3);
     }
@@ -265,10 +268,10 @@ class St1IntegrationTest {
         host.getHand().add(sahiel);
         host.getTributeZone().add(slot("Zula"));
         // Sahiel asks for a level 2 summoner: Falis (level 3) cannot, so nothing can be summoned
-        assertThat(EffectEngine.activatable(room, "host")).extracting(EffectEngine.Activatable::scriptId)
+        assertThat(Chain.activatable(room, "host")).extracting(Chain.Activatable::scriptId)
                 .doesNotContain("composicion-adimensional:turno-aliado");
         CardSlot fhalid = onField(host, slot("Fhalid"), FRONT);
-        assertThat(EffectEngine.activateByPlayer(room, "host", composicion.getInstanceId(), null)).isNull();
+        assertThat(Chain.activateByPlayer(room, "host", composicion.getInstanceId(), null)).isNull();
         assertThat(room.getPrompt().getValidIds()).containsExactly(fhalid.getInstanceId());
     }
 
@@ -281,20 +284,20 @@ class St1IntegrationTest {
         CardSlot mihel = onField(host, slot("Mihel"), 75.0);
         CardSlot damon = onField(guest, slot("Damon"), FRONT);
         damon.setStrength(7);
-        assertThat(EffectEngine.activateByPlayer(room, "host", mathaus.getInstanceId(), null)).isNull();
+        assertThat(Chain.activateByPlayer(room, "host", mathaus.getInstanceId(), null)).isNull();
         boolean offered = false;
         while (room.getPrompt() != null) {
             Prompt p = room.getPrompt();
             if ("OPTIONAL".equals(p.getPurpose()) && p.getValidIds().contains(mihel.getInstanceId())) {
                 offered = true;
-                EffectEngine.answer(room, "host", p.getId(), List.of(mihel.getInstanceId()), List.of());
+                Answers.answer(room, "host", p.getId(), List.of(mihel.getInstanceId()), List.of());
                 // "a un aliado": another one
                 assertThat(room.getPrompt().getValidIds()).containsExactly(mathaus.getInstanceId());
                 continue;
             }
             List<String> picks = p.getValidIds().contains(damon.getInstanceId()) ? List.of(damon.getInstanceId())
                     : p.getValidIds().subList(0, Math.max(p.getMin(), Math.min(p.getMax(), p.getValidIds().size())));
-            assertThat(EffectEngine.answer(room, p.getPlayerId(), p.getId(), picks, List.of())).isNull();
+            assertThat(Answers.answer(room, p.getPlayerId(), p.getId(), picks, List.of())).isNull();
         }
         assertThat(offered).isTrue();
         assertThat(host.getField()).doesNotContain(mihel);
@@ -319,13 +322,13 @@ class St1IntegrationTest {
         CardSlot paso = slot("Paso Interdimensional");
         host.getHand().add(paso);
 
-        assertThat(EffectEngine.playByPlayer(room, "host", paso.getInstanceId(), 50.0, 75.0)).isNull();
+        assertThat(Summons.playByPlayer(room, "host", paso.getInstanceId(), 50.0, 75.0)).isNull();
         Prompt ally = room.getPrompt();
         assertThat(ally.getValidIds()).containsExactly(fhalid.getInstanceId());
-        EffectEngine.answer(room, "host", ally.getId(), List.of(fhalid.getInstanceId()), List.of());
+        Answers.answer(room, "host", ally.getId(), List.of(fhalid.getInstanceId()), List.of());
         Prompt summon = room.getPrompt();
         assertThat(summon.getValidIds()).containsExactly(zula.getInstanceId());
-        EffectEngine.answer(room, "host", summon.getId(), List.of(zula.getInstanceId()), List.of());
+        Answers.answer(room, "host", summon.getId(), List.of(zula.getInstanceId()), List.of());
 
         assertThat(host.getField()).contains(zula).doesNotContain(fhalid, paso);
         assertThat(EffectEngine.inFrontLine(zula)).isTrue();
@@ -344,7 +347,7 @@ class St1IntegrationTest {
         CardSlot paso = slot("Paso Interdimensional");
         host.getHand().add(paso);
 
-        assertThat(EffectEngine.playByPlayer(room, "host", paso.getInstanceId(), 50.0, 75.0)).isNull();
+        assertThat(Summons.playByPlayer(room, "host", paso.getInstanceId(), 50.0, 75.0)).isNull();
         boolean offered = false;
         for (int i = 0; i < 12 && room.getPrompt() != null; i++) {
             Prompt p = room.getPrompt();
@@ -362,7 +365,7 @@ class St1IntegrationTest {
             } else {
                 pick = p.getValidIds().subList(0, Math.max(1, p.getMin()));
             }
-            assertThat(EffectEngine.answer(room, "host", p.getId(), pick, List.of())).isNull();
+            assertThat(Answers.answer(room, "host", p.getId(), pick, List.of())).isNull();
         }
         assertThat(offered).isTrue();
         // Paso summoned Zula (Fhalid as its material); Flureteus summoned the other Fhalid free and joined an ally
@@ -383,12 +386,12 @@ class St1IntegrationTest {
         assertThat(script.cost()).hasAtLeastOneElementOfType(EffectStep.TargetAllEnemies.class);
         assertThat(script.steps()).noneMatch(EffectStep.TargetAllEnemies.class::isInstance);
 
-        EffectEngine.turnStarted(room, "host");
+        TurnRules.turnStarted(room, "host");
         for (int i = 0; i < 10 && room.getPrompt() != null; i++) {
             Prompt p = room.getPrompt();
             List<String> pick = "OPTIONAL".equals(p.getPurpose()) ? List.of(hez.getInstanceId())
                     : p.getValidIds().subList(0, Math.max(p.getMin(), Math.min(p.getMax(), p.getValidIds().size())));
-            assertThat(EffectEngine.answer(room, p.getPlayerId(), p.getId(), pick, List.of())).isNull();
+            assertThat(Answers.answer(room, p.getPlayerId(), p.getId(), pick, List.of())).isNull();
         }
         assertThat(hez.getMaterials()).isEmpty();
         assertThat(EffectEngine.strength(damon)).isEqualTo(3);
@@ -401,7 +404,7 @@ class St1IntegrationTest {
         mathaus.getMaterials().add(slot("Eisten"));
         CardSlot damon = onField(guest, slot("Damon"), FRONT);
         damon.setStrength(strength);
-        assertThat(EffectEngine.activateByPlayer(room, "host", mathaus.getInstanceId(), null)).isNull();
+        assertThat(Chain.activateByPlayer(room, "host", mathaus.getInstanceId(), null)).isNull();
         for (int i = 0; i < 30 && room.getPrompt() != null; i++) {
             Prompt p = room.getPrompt();
             List<String> pick;
@@ -409,7 +412,7 @@ class St1IntegrationTest {
             else if (p.getValidIds().contains(damon.getInstanceId())) pick = List.of(damon.getInstanceId());
             else if (p.getValidIds().contains(mathaus.getInstanceId())) pick = List.of(mathaus.getInstanceId());
             else pick = p.getValidIds().subList(0, Math.max(p.getMin(), Math.min(p.getMax(), p.getValidIds().size())));
-            assertThat(EffectEngine.answer(room, p.getPlayerId(), p.getId(), pick, List.of())).isNull();
+            assertThat(Answers.answer(room, p.getPlayerId(), p.getId(), pick, List.of())).isNull();
         }
         return damon;
     }
@@ -462,11 +465,4 @@ class St1IntegrationTest {
         return s;
     }
 
-    private static CardSlot onField(PlayerState p, CardSlot c, double y) {
-        c.setX(50.0);
-        c.setY(y);
-        c.setFaceDown(false);
-        p.getField().add(c);
-        return c;
-    }
 }

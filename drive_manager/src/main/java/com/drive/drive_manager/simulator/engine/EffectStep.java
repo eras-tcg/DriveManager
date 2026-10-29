@@ -7,16 +7,24 @@ package com.drive.drive_manager.simulator.engine;
  */
 public sealed interface EffectStep {
 
-    /** A filter that depends on the game ("de nivel igual o menor a la cantidad de copias de esta carta en tus tributos"). */
-    @FunctionalInterface
-    interface FilterFn {
-        CardFilter of(com.drive.drive_manager.simulator.GameRoom room, String controller);
-    }
+    /**
+     * A step that acts on something that must be there: a target, a card to summon, play or take, an ally to choose.
+     * An optional effect is only offered when such a step has something to act on (rule 11.2.0.2: an effect with nothing
+     * to choose cannot be activated); the others (draw, gain gems…) never stop it.
+     */
+    sealed interface NeedsTarget extends EffectStep {}
 
-    /** An amount that depends on the game ("reduciendo su coste en X, donde X es …"). */
-    @FunctionalInterface
-    interface AmountFn {
-        int of(com.drive.drive_manager.simulator.GameRoom room, String controller);
+    /**
+     * A filter whose level depends on the game ("de nivel igual o menor a la cantidad de copias de esta carta en tus
+     * tributos"): {@code base} with its level, its maximum level, or both, read when it is used.
+     */
+    record FilterBy(CardFilter base, Amount level, Amount maxLevel) {
+        CardFilter of(com.drive.drive_manager.simulator.GameRoom room, String controller) {
+            CardFilter filter = base;
+            if (level != null) filter = filter.withLevel(level.of(room, controller));
+            if (maxLevel != null) filter = filter.withMaxLevel(maxLevel.of(room, controller));
+            return filter;
+        }
     }
 
     /** "mira las primeras N cartas de tu mazo" (fewer if the deck is shorter). */
@@ -39,18 +47,18 @@ public sealed interface EffectStep {
      * "elige N enemigo [filtro]; destrúyelo": the controller picks exactly N enemies of the Línea frontal
      * (rule 4.0.6.2: the Retaguardia cannot be chosen by the opponent's effects). Destruction by effect.
      */
-    record DestroyEnemy(int count, CardFilter filter) implements EffectStep {}
+    record DestroyEnemy(int count, CardFilter filter) implements NeedsTarget {}
 
     /**
      * "elige N enemigo [filtro];" as a cost: the targets are chosen when the effect is activated (rule 11.10.1);
      * the effect can only be activated if there are enough of them. Only the opponent's Línea frontal.
      */
-    record ChooseEnemy(int count, CardFilter filter, boolean upTo) implements EffectStep {
+    record ChooseEnemy(int count, CardFilter filter, boolean upTo) implements NeedsTarget {
         public ChooseEnemy(int count, CardFilter filter) { this(count, filter, false); }
     }
 
     /** {@link ChooseEnemy} whose filter is worked out when it is used. */
-    record ChooseEnemyBy(int count, FilterFn filter, boolean upTo) implements EffectStep {}
+    record ChooseEnemyBy(int count, FilterBy filter, boolean upTo) implements NeedsTarget {}
 
     /** "reduce a 0 su fuerza": the targets chosen on activation that are still valid. */
     record ReduceChosenToZero() implements EffectStep {}
@@ -65,7 +73,7 @@ public sealed interface EffectStep {
     record NoUntapChosen() implements EffectStep {}
 
     /** "elige el enemigo [activo / agotado] de menor fuerza" (a tie: the controller picks among them). */
-    record ChooseWeakestEnemy(CardFilter filter) implements EffectStep {}
+    record ChooseWeakestEnemy(CardFilter filter) implements NeedsTarget {}
 
     /** "destrúyelo": destroys the targets chosen on activation that are still valid (rule 11.10.2). */
     record DestroyChosen() implements EffectStep {}
@@ -74,7 +82,7 @@ public sealed interface EffectStep {
      * "invoca 1 criatura [filtro] de tus [zona] reduciendo su coste en N": summon by effect (rule 9.1.0.2),
      * paying the normal cost minus {@code reduce}; it enters the Retaguardia with the regulatory draw.
      */
-    record SummonFromZone(String zone, CardFilter filter, int reduce, boolean toFront) implements EffectStep {
+    record SummonFromZone(String zone, CardFilter filter, int reduce, boolean toFront) implements NeedsTarget {
         /** "sin pagar su coste". */
         public static final int FREE = 1000;
         public SummonFromZone(String zone, CardFilter filter, int reduce) { this(zone, filter, reduce, false); }
@@ -84,16 +92,16 @@ public sealed interface EffectStep {
      * "invoca esta carta [en tu línea frontal] reduciendo su coste en N" from a zone: a summon by effect, with the
      * reduction worked out when it happens ({@link SummonFromZone#FREE}: without paying its cost).
      */
-    record SummonSelf(String zone, AmountFn reduce, boolean toFront) implements EffectStep {}
+    record SummonSelf(String zone, Amount reduce, boolean toFront) implements NeedsTarget {}
 
     /** "invoca esta carta sin pagar su coste" from the hand: a summon by effect. */
-    record SummonSelfFree() implements EffectStep {}
+    record SummonSelfFree() implements NeedsTarget {}
 
     /**
      * "[otro aliado / 1 aliado] puede invocar por [Ascenso / Evolución] 1 criatura de tu [zona] reduciendo el coste
      * especial en N": the controller may pick the creature (or none), then the summoner.
      */
-    record SpecialFromZone(String kind, String zone, int reduce, String summoner, CardFilter filter) implements EffectStep {
+    record SpecialFromZone(String kind, String zone, int reduce, String summoner, CardFilter filter) implements NeedsTarget {
         /** "otro aliado" (not this card) or "1 aliado" (any). */
         public SpecialFromZone(String kind, String zone, int reduce, boolean otherAlly) {
             this(kind, zone, reduce, otherAlly ? "other" : "any", CardFilter.any());
@@ -144,7 +152,7 @@ public sealed interface EffectStep {
     record AttachSubjectToSummoned() implements EffectStep {}
 
     /** "coloca hasta 1 material de esta carta al tope de tus vidas bocarriba". */
-    record MaterialToLife() implements EffectStep {}
+    record MaterialToLife() implements NeedsTarget {}
 
     /**
      * "coloca hasta 1 [ente] nivel 4 de los materiales de esta carta en tu línea frontal. Luego: añádele todos los
@@ -159,7 +167,7 @@ public sealed interface EffectStep {
     record DamageByEffect(int amount) implements EffectStep {}
 
     /** "puedes invocar esta carta [desde zona] reduciendo su coste en N". */
-    record SummonSelfFromZone(String zone, int reduce) implements EffectStep {}
+    record SummonSelfFromZone(String zone, int reduce) implements NeedsTarget {}
 
     /** "añadele 1 criatura [filtro] de menor nivel de tus tributos como material" (to the ally of the triggering event). */
     record AttachLowerFromTributes(CardFilter filter) implements EffectStep {}
@@ -208,13 +216,13 @@ public sealed interface EffectStep {
     record TributeAlliesLevelSum(int minCount, int minSum, CardFilter filter) implements EffectStep {}
 
     /** "coloca 1 criatura [filtro] de tu mano en tu retaguardia. Al final del turno súbelo a tu mano" (placed, not summoned). */
-    record PlaceFromHandUntilTurnEnd(CardFilter filter) implements EffectStep {}
+    record PlaceFromHandUntilTurnEnd(CardFilter filter) implements NeedsTarget {}
 
     /** {@link SummonFromZone} whose filter is worked out when it is used. */
-    record SummonFromZoneBy(String zone, FilterFn filter, int reduce) implements EffectStep {}
+    record SummonFromZoneBy(String zone, FilterBy filter, int reduce) implements EffectStep {}
 
     /** "tributa 1 material [filtro] de un aliado [filtro]": that ally is the subject, the material the last tributed. */
-    record TributeAllyMaterialWhere(CardFilter ally, CardFilter material) implements EffectStep {}
+    record TributeAllyMaterialWhere(CardFilter ally, CardFilter material) implements NeedsTarget {}
 
     /** "para que [dicho aliado] active 1 efecto En Invocación del material tributado": a new link with that effect, for the ally. */
     record ActivateTributedSummonEffect() implements EffectStep {}
@@ -226,7 +234,7 @@ public sealed interface EffectStep {
     record SendSelfFromFieldTo(String zone) implements EffectStep {}
 
     /** "invoca criaturas … que en nivel sumen hasta N de tu mano sin pagar sus costes" (up to that level sum, all at once). */
-    record SummonFreeLevelSum(String zone, CardFilter filter, int maxLevelSum) implements EffectStep {}
+    record SummonFreeLevelSum(String zone, CardFilter filter, int maxLevelSum) implements NeedsTarget {}
 
     /** "coloca [hasta] N cartas de tu [zona] al tope de tu mazo". */
     record ToDeckTop(String zone, int count, boolean upTo) implements EffectStep {}
@@ -235,16 +243,16 @@ public sealed interface EffectStep {
     record TributeResource(String name) implements EffectStep {}
 
     /** "destruye 1 carta bocarriba en las vidas oponentes". */
-    record DestroyFaceUpLife() implements EffectStep {}
+    record DestroyFaceUpLife() implements NeedsTarget {}
 
     /** "gana [habilidad] hasta el final del ataque". */
     record GainUntilEndOfAttack(String keyword) implements EffectStep {}
 
     /** "puedes jugar esta carta [desde zona] reduciendo su coste en el nivel de dicho aliado". */
-    record PlaySelfFromZone(String zone, boolean reduceBySourceLevel) implements EffectStep {}
+    record PlaySelfFromZone(String zone, boolean reduceBySourceLevel) implements NeedsTarget {}
 
     /** "toma N carta [filtro] de tus [zona]": to the hand (up to N when {@code upTo}). */
-    record TakeFromZone(String zone, CardFilter filter, int count, boolean upTo) implements EffectStep {}
+    record TakeFromZone(String zone, CardFilter filter, int count, boolean upTo) implements NeedsTarget {}
 
     /** "Si lo haces:": the next {@code covers} steps only if the last optional step was done. */
     record IfDone(int covers) implements EffectStep {}
@@ -279,7 +287,7 @@ public sealed interface EffectStep {
      * "elige 1 aliado": the ally the next steps act on. With {@code attacker} it is going to declare an attack, so
      * only allies of the Línea frontal can be chosen.
      */
-    record PickAlly(boolean attacker) implements EffectStep {
+    record PickAlly(boolean attacker) implements NeedsTarget {
         public PickAlly() { this(false); }
     }
 
@@ -293,30 +301,30 @@ public sealed interface EffectStep {
     record SacrificeSelf() implements EffectStep {}
 
     /** "sacrifica 1 aliado [filtro]". */
-    record SacrificeAllyWhere(CardFilter filter) implements EffectStep {}
+    record SacrificeAllyWhere(CardFilter filter) implements NeedsTarget {}
 
     /** "tributa 1 aliado [filtro]": one of your creatures on the field goes to your Tributos (not destroyed). */
-    record TributeAlly(CardFilter filter) implements EffectStep {}
+    record TributeAlly(CardFilter filter) implements NeedsTarget {}
 
     /** "tributa 1 material de 1 aliado". */
-    record TributeAllyMaterial() implements EffectStep {}
+    record TributeAllyMaterial() implements NeedsTarget {}
 
     /**
      * "sacrifica 1 aliado": the controller picks one of their creatures on the field. With {@code toUntapAnother}
      * ("sacrifica 1 aliado para reactivar otro") both must be possible: the one sacrificed cannot be the only
      * ally left to reactivate.
      */
-    record SacrificeAlly(boolean toUntapAnother) implements EffectStep {
+    record SacrificeAlly(boolean toUntapAnother) implements NeedsTarget {
         public SacrificeAlly() { this(false); }
     }
 
     /** "reactiva 1 aliado" / "reactivar otro": the controller picks an exhausted ally that can be reactivated. */
-    record UntapAlly(CardFilter filter) implements EffectStep {
+    record UntapAlly(CardFilter filter) implements NeedsTarget {
         public UntapAlly() { this(CardFilter.any()); }
     }
 
     /** "elige 1 aliado [filtro]": like {@link PickAlly}, among those that match. */
-    record PickAllyWhere(CardFilter filter) implements EffectStep {}
+    record PickAllyWhere(CardFilter filter) implements NeedsTarget {}
 
     /** "dicho aliado": the card of the event that triggered the effect is the one the next steps act on. */
     record SubjectFromTrigger() implements EffectStep {}
@@ -340,13 +348,13 @@ public sealed interface EffectStep {
     record SelfToLife() implements EffectStep {}
 
     /** "coloca 1 criatura [filtro] de los materiales de esta carta en tu retaguardia" (placed, not summoned). */
-    record MaterialToBack(CardFilter filter) implements EffectStep {}
+    record MaterialToBack(CardFilter filter) implements NeedsTarget {}
 
     /** "coloca esta carta en tu retaguardia" from a zone (placed, not summoned). */
-    record PlaceSelfOnField(String zone) implements EffectStep {}
+    record PlaceSelfOnField(String zone) implements NeedsTarget {}
 
     /** "juega 1 [estructura / utilidad] [filtro] de tus [zona] reduciendo su coste en N". */
-    record PlayFromZone(String zone, CardFilter filter, int reduce) implements EffectStep {}
+    record PlayFromZone(String zone, CardFilter filter, int reduce) implements NeedsTarget {}
 
     /** "mira las primeras N cartas: de ellas tributa M y envía el resto al fondo de tu mazo en cualquier orden". */
     record TributeFromLookedRestToBottom(int count) implements EffectStep {}
@@ -358,20 +366,20 @@ public sealed interface EffectStep {
     record ReturnSelfToHand() implements EffectStep {}
 
     /** "reactiva 1 de tus estructuras [filtro]". */
-    record UntapStructure(CardFilter filter) implements EffectStep {}
+    record UntapStructure(CardFilter filter) implements NeedsTarget {}
 
     /** Celeridad: "puede subir a tu línea frontal". */
-    record MoveSelfToFront() implements EffectStep {}
+    record MoveSelfToFront() implements NeedsTarget {}
 
     /** "puedes jugar esta carta sin pagar su coste" (from the hand). */
-    record PlaySelfFree() implements EffectStep {}
+    record PlaySelfFree() implements NeedsTarget {}
 
     /**
      * "[esta carta / un aliado] invoca por Ritual 1 criatura de tus [zona] reduciendo su coste especial en N"
      * (rule 9.3): the controller picks the creature, then the summoner and the other creatures that meet its
      * Requerimiento; they are sacrificed and it is summoned in the summoner's place.
      */
-    record RitualFromZone(String zone, boolean selfSummoner, int reduce) implements EffectStep {}
+    record RitualFromZone(String zone, boolean selfSummoner, int reduce) implements NeedsTarget {}
 
     /**
      * "puedes A; B": asks the controller. If they decline, or A cannot be done, the next {@code covers}

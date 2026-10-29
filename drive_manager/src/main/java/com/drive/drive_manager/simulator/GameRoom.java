@@ -19,6 +19,11 @@ public class GameRoom {
      * with the manual actions and test cards. Not listed and nobody else can enter.
      */
     private boolean    editor;
+    /**
+     * A lone mandatory effect is also shown to its controller to chain it (they see what triggered): rooms created by
+     * the service; the engine's tests leave it off and chain it straight away.
+     */
+    private boolean    confirmMandatory;
     private RoomStatus status           = RoomStatus.WAITING;
     private Map<String, PlayerState> players = new LinkedHashMap<>();
     private String     hostId;

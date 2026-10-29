@@ -60,5 +60,7 @@ public class Prompt {
     private String effectText;
 
     /** An effect offered to be chained; {@code effectId} is what the player picks to chain it. */
-    public record OfferedEffect(String effectId, String sourceId, String sourceName, String label, String text) {}
+    /** {@code inheritedFrom*}: the Recurso that gives it, for an inherited effect. */
+    public record OfferedEffect(String effectId, String sourceId, String sourceName, String label, String text,
+                                String inheritedFromName, String inheritedFromImage) {}
 }

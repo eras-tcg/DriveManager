@@ -49,7 +49,7 @@ class CombatTest {
         CardSlot attacker = field(host, creature("a", "Atacante", 1, 5), FRONT);
         guest.getLifeStack().get(0).setStrength(4);
 
-        assertThat(EffectEngine.attackByPlayer(room, "host", "a", null)).isNull();
+        assertThat(CombatRules.attackByPlayer(room, "host", "a", null)).isNull();
 
         assertThat(attacker.isTapped()).isTrue();
         assertThat(room.getCombat()).isNull();
@@ -66,26 +66,26 @@ class CombatTest {
         CardSlot tapped = field(host, creature("t", "Agotada", 1, 5), FRONT);
         tapped.setTapped(true);
         field(guest, creature("active", "Activa", 1, 3), FRONT);
-        assertThat(EffectEngine.attackByPlayer(room, "host", "back", null)).contains("línea frontal");
-        assertThat(EffectEngine.attackByPlayer(room, "host", "t", null)).contains("agotada");
+        assertThat(CombatRules.attackByPlayer(room, "host", "back", null)).contains("línea frontal");
+        assertThat(CombatRules.attackByPlayer(room, "host", "t", null)).contains("agotada");
         field(host, creature("a", "Atacante", 1, 5), FRONT);
-        assertThat(EffectEngine.attackByPlayer(room, "host", "a", "active")).contains("agotadas");
-        assertThat(EffectEngine.attackByPlayer(room, "guest", "active", null)).contains("tu turno");
+        assertThat(CombatRules.attackByPlayer(room, "host", "a", "active")).contains("agotadas");
+        assertThat(CombatRules.attackByPlayer(room, "guest", "active", null)).contains("tu turno");
     }
 
     @Test
     void declaringAnAttackNeedsZeroOrMoreGems() {
         field(host, creature("a", "Atacante", 1, 5), FRONT);
         room.setSharedCounter(1); // host: -1 gems
-        assertThat(EffectEngine.attackByPlayer(room, "host", "a", null)).contains("0 o más gemas");
+        assertThat(CombatRules.attackByPlayer(room, "host", "a", null)).contains("0 o más gemas");
         room.setSharedCounter(0);
-        assertThat(EffectEngine.attackByPlayer(room, "host", "a", null)).isNull();
+        assertThat(CombatRules.attackByPlayer(room, "host", "a", null)).isNull();
     }
 
     @Test
     void everyCombatStepOpensAWindowWhenEnteredAndLeft() {
         field(host, creature("a", "Atacante", 1, 5), FRONT);
-        EffectEngine.attackByPlayer(room, "host", "a", null);
+        CombatRules.attackByPlayer(room, "host", "a", null);
         List<String> steps = room.getTimeline().stream()
                 .filter(e -> GameEvent.COMBAT_STEP.equals(e.getType()))
                 .map(e -> e.getData().get("step") + ":" + e.getData().get("moment")).toList();
@@ -100,8 +100,8 @@ class CombatTest {
         beast.getClasses().add("bestia");
         host.getTributeZone().add(beast);
         field(guest, creature("big", "Grande", 1, 9), FRONT);
-        EffectEngine.attackByPlayer(room, "host", "rho", null);
-        EffectEngine.answer(room, "guest", room.getPrompt().getId(), List.of("big"), List.of());
+        CombatRules.attackByPlayer(room, "host", "rho", null);
+        Answers.answer(room, "guest", room.getPrompt().getId(), List.of("big"), List.of());
         // Rhogler lost the clash: the combat ends there and "Al Final Del Ataque" does not trigger
         assertThat(host.getDiscardPile()).extracting(CardSlot::getInstanceId).containsExactly("rho");
         assertThat(room.getTimeline()).extracting(GameEvent::getType).doesNotContain(GameEvent.ATTACK_ENDED);
@@ -112,15 +112,15 @@ class CombatTest {
     void theRetaguardiaMovesUpAllAtOnce() {
         CardSlot a = field(host, creature("a", "A", 1, 3), BACK);
         CardSlot b = field(host, creature("b", "B", 1, 3), BACK);
-        EffectEngine.offerAdvance(room, "host", true);
+        TurnRules.offerAdvance(room, "host", true);
         Prompt advance = room.getPrompt();
         assertThat(advance.getPurpose()).isEqualTo("ADVANCE");
         assertThat(advance.getMax()).isEqualTo(2);
-        EffectEngine.answer(room, "host", advance.getId(), List.of("a", "b"), List.of());
+        Answers.answer(room, "host", advance.getId(), List.of("a", "b"), List.of());
         assertThat(EffectEngine.inFrontLine(a)).isTrue();
         assertThat(EffectEngine.inFrontLine(b)).isTrue();
         // Nothing left behind: no question
-        EffectEngine.offerAdvance(room, "host", false);
+        TurnRules.offerAdvance(room, "host", false);
         assertThat(room.getPrompt()).isNull();
     }
 
@@ -129,11 +129,11 @@ class CombatTest {
         field(host, creature("a", "Atacante", 1, 5), FRONT);
         CardSlot damon = field(guest, creature("damon", "Damon", 1, 3), FRONT);
 
-        EffectEngine.attackByPlayer(room, "host", "a", null);
+        CombatRules.attackByPlayer(room, "host", "a", null);
         Prompt block = room.getPrompt();
         assertThat(block.getPlayerId()).isEqualTo("guest");
         assertThat(block.getPurpose()).isEqualTo("BLOCK");
-        EffectEngine.answer(room, "guest", block.getId(), List.of("damon"), List.of());
+        Answers.answer(room, "guest", block.getId(), List.of("damon"), List.of());
 
         assertThat(guest.getDiscardPile()).containsExactly(damon);
         GameEvent destroyed = room.getTimeline().stream().filter(e -> GameEvent.DESTROY.equals(e.getType())).findFirst().orElseThrow();
@@ -148,8 +148,8 @@ class CombatTest {
     void equalStrengthDestroysBoth() {
         field(host, creature("a", "Atacante", 1, 4), FRONT);
         field(guest, creature("b", "Bloqueador", 1, 4), FRONT);
-        EffectEngine.attackByPlayer(room, "host", "a", null);
-        EffectEngine.answer(room, "guest", room.getPrompt().getId(), List.of("b"), List.of());
+        CombatRules.attackByPlayer(room, "host", "a", null);
+        Answers.answer(room, "guest", room.getPrompt().getId(), List.of("b"), List.of());
         assertThat(host.getDiscardPile()).extracting(CardSlot::getInstanceId).containsExactly("a");
         assertThat(guest.getDiscardPile()).extracting(CardSlot::getInstanceId).containsExactly("b");
         assertThat(room.isEngineBusy()).isFalse();
@@ -160,7 +160,7 @@ class CombatTest {
         field(host, creature("a", "Atacante", 1, 6), FRONT);
         CardSlot target = field(guest, creature("t", "Objetivo", 1, 3), FRONT);
         target.setTapped(true);
-        EffectEngine.attackByPlayer(room, "host", "a", "t");
+        CombatRules.attackByPlayer(room, "host", "a", "t");
         assertThat(room.getPrompt()).isNull();
         assertThat(guest.getDiscardPile()).containsExactly(target);
         assertThat(guest.getLifeStack()).hasSize(3);
@@ -172,7 +172,7 @@ class CombatTest {
         bajmut.getKeywords().add("Imbloqueable");
         bajmut.getKeywords().add("Letalidad 1");
         field(guest, creature("b", "Bloqueador", 1, 9), FRONT);
-        EffectEngine.attackByPlayer(room, "host", "baj", null);
+        CombatRules.attackByPlayer(room, "host", "baj", null);
         assertThat(room.getPrompt()).isNull();
         assertThat(guest.getLifeStack()).hasSize(1);
     }
@@ -184,11 +184,11 @@ class CombatTest {
         field(guest, creature("small", "Pequeña", 1, 2), FRONT);
         field(guest, creature("big", "Grande", 1, 9), FRONT);
 
-        EffectEngine.attackByPlayer(room, "host", "bur", null);
+        CombatRules.attackByPlayer(room, "host", "bur", null);
         Prompt provoke = room.getPrompt();
         assertThat(provoke.getPlayerId()).isEqualTo("host");
         assertThat(provoke.getPurpose()).isEqualTo("PROVOKE");
-        EffectEngine.answer(room, "host", provoke.getId(), List.of("small"), List.of());
+        Answers.answer(room, "host", provoke.getId(), List.of("small"), List.of());
 
         // No block choice for the defender: the provoked creature blocks and loses
         assertThat(guest.getDiscardPile()).extracting(CardSlot::getInstanceId).containsExactly("small");
@@ -200,7 +200,7 @@ class CombatTest {
         guest.setLifeStack(cards("life", 1));
         guest.getLifeStack().get(0).setStrength(1);
         field(host, creature("a", "Atacante", 1, 5), FRONT);
-        EffectEngine.attackByPlayer(room, "host", "a", null);
+        CombatRules.attackByPlayer(room, "host", "a", null);
         assertThat(room.getStatus()).isEqualTo(GameRoom.RoomStatus.POST_GAME);
         assertThat(room.getTimeline()).extracting(GameEvent::getType).contains(GameEvent.GAME_LOST);
         assertThat(room.getWinnerId()).isEqualTo("host");
@@ -215,10 +215,10 @@ class CombatTest {
         field(guest, creature("l2", "Nivel 2", 2, 5), FRONT);
         field(guest, creature("l3", "Nivel 3", 3, 5), FRONT);
 
-        EffectEngine.attackByPlayer(room, "host", "zha", null);
+        CombatRules.attackByPlayer(room, "host", "zha", null);
         Prompt destroy = room.getPrompt();
         assertThat(destroy.getValidIds()).containsExactly("l2");
-        EffectEngine.answer(room, "host", destroy.getId(), List.of("l2"), List.of());
+        Answers.answer(room, "host", destroy.getId(), List.of("l2"), List.of());
 
         // Then the block step: only the level 3 is left
         Prompt block = room.getPrompt();
@@ -232,13 +232,13 @@ class CombatTest {
         field(host, creature("ally", "Aliado", 1, 2), BACK);
         field(guest, creature("l3", "Nivel 3", 3, 5), FRONT);
 
-        EffectEngine.attackByPlayer(room, "host", "zhz", null);
+        CombatRules.attackByPlayer(room, "host", "zhz", null);
         assertThat(zhauz.isTapped()).isTrue();
-        EffectEngine.answer(room, "host", room.getPrompt().getId(), List.of("zhz"), List.of());
+        Answers.answer(room, "host", room.getPrompt().getId(), List.of("zhz"), List.of());
         Prompt sacrifice = room.getPrompt();
         assertThat(sacrifice.getChosenLabel()).isEqualTo("Sacrificar");
-        EffectEngine.answer(room, "host", sacrifice.getId(), List.of("ally"), List.of());
-        EffectEngine.answer(room, "host", room.getPrompt().getId(), List.of("l3"), List.of());
+        Answers.answer(room, "host", sacrifice.getId(), List.of("ally"), List.of());
+        Answers.answer(room, "host", room.getPrompt().getId(), List.of("l3"), List.of());
 
         assertThat(host.getTributeZone()).extracting(CardSlot::getInstanceId).containsExactly("ally");
         assertThat(guest.getDiscardPile()).extracting(CardSlot::getInstanceId).containsExactly("l3");
@@ -256,13 +256,13 @@ class CombatTest {
         beast.getClasses().add("bestia");
         host.getTributeZone().add(beast);
 
-        EffectEngine.attackByPlayer(room, "host", "rho", null);
+        CombatRules.attackByPlayer(room, "host", "rho", null);
         Prompt confirm = room.getPrompt();
         assertThat(confirm.getPurpose()).isEqualTo("OPTIONAL");
         assertThat(room.getCombat()).isNull();
-        EffectEngine.answer(room, "host", confirm.getId(), List.of("rho"), List.of());
+        Answers.answer(room, "host", confirm.getId(), List.of("rho"), List.of());
         int gems = EffectEngine.gemsOf(room, "host");
-        EffectEngine.answer(room, "host", room.getPrompt().getId(), List.of("b3"), List.of());
+        Answers.answer(room, "host", room.getPrompt().getId(), List.of("b3"), List.of());
 
         assertThat(host.getTributeZone()).extracting(CardSlot::getInstanceId).containsExactly("rho");
         assertThat(host.getField()).extracting(CardSlot::getInstanceId).containsExactly("b3");
@@ -285,12 +285,12 @@ class CombatTest {
         hong.setRequirement("criatura nivel 2.");
         host.getTributeZone().add(hong);
 
-        EffectEngine.attackByPlayer(room, "host", "zox", null);
-        EffectEngine.answer(room, "host", room.getPrompt().getId(), List.of("zox"), List.of());
+        CombatRules.attackByPlayer(room, "host", "zox", null);
+        Answers.answer(room, "host", room.getPrompt().getId(), List.of("zox"), List.of());
         Prompt target = room.getPrompt();
         assertThat(target.getValidIds()).containsExactly("hong");
         int gems = EffectEngine.gemsOf(room, "host");
-        EffectEngine.answer(room, "host", target.getId(), List.of("hong"), List.of());
+        Answers.answer(room, "host", target.getId(), List.of("hong"), List.of());
 
         // Zohx is the summoner: sacrificed, Hong takes its place (Línea frontal, exhausted), special cost 2 - 1
         assertThat(host.getField()).extracting(CardSlot::getInstanceId).containsExactly("hong");
@@ -310,14 +310,14 @@ class CombatTest {
         field(guest, creature("l3", "Nivel 3", 3, 5), BACK);
         field(guest, creature("l3f", "Nivel 3 frontal", 3, 5), FRONT);
 
-        EffectEngine.attackByPlayer(room, "host", "maw", null);
-        EffectEngine.answer(room, "guest", room.getPrompt().getId(), List.of("b"), List.of());
+        CombatRules.attackByPlayer(room, "host", "maw", null);
+        Answers.answer(room, "guest", room.getPrompt().getId(), List.of("b"), List.of());
 
         // Mawser destroyed the blocker: mandatory, only the Línea frontal
         Prompt again = room.getPrompt();
         assertThat(again.getPlayerId()).isEqualTo("host");
         assertThat(again.getValidIds()).containsExactly("l3f");
-        EffectEngine.answer(room, "host", again.getId(), List.of("l3f"), List.of());
+        Answers.answer(room, "host", again.getId(), List.of("l3f"), List.of());
         assertThat(guest.getDiscardPile()).extracting(CardSlot::getInstanceId).containsExactly("b", "l3f");
         // Its own effect destroyed an enemy too, but it is once per turn
         assertThat(room.isEngineBusy()).isFalse();
@@ -329,12 +329,12 @@ class CombatTest {
         field(guest, creature("b", "Bloqueador", 2, 5), FRONT);
         field(guest, creature("l1", "Nivel 1", 1, 2), FRONT);
 
-        EffectEngine.attackByPlayer(room, "host", "hong", null);
-        EffectEngine.answer(room, "guest", room.getPrompt().getId(), List.of("b"), List.of());
+        CombatRules.attackByPlayer(room, "host", "hong", null);
+        Answers.answer(room, "guest", room.getPrompt().getId(), List.of("b"), List.of());
         Prompt confirm = room.getPrompt();
         assertThat(confirm.getPurpose()).isEqualTo("OPTIONAL");
-        EffectEngine.answer(room, "host", confirm.getId(), List.of("hong"), List.of());
-        EffectEngine.answer(room, "host", room.getPrompt().getId(), List.of("l1"), List.of());
+        Answers.answer(room, "host", confirm.getId(), List.of("hong"), List.of());
+        Answers.answer(room, "host", room.getPrompt().getId(), List.of("l1"), List.of());
         assertThat(guest.getDiscardPile()).extracting(CardSlot::getInstanceId).containsExactly("b", "l1");
         // Its own destruction does not trigger it again this turn
         assertThat(room.isEngineBusy()).isFalse();
@@ -347,8 +347,8 @@ class CombatTest {
         host.getHand().add(creature("h1", "Mano", 1, 1));
         int gems = EffectEngine.gemsOf(room, "host");
 
-        EffectEngine.sacrificeByPlayer(room, "host", "v");
-        EffectEngine.answer(room, "host", room.getPrompt().getId(), List.of("cue"), List.of());
+        Removals.sacrificeByPlayer(room, "host", "v");
+        Answers.answer(room, "host", room.getPrompt().getId(), List.of("cue"), List.of());
 
         assertThat(cueva.isTapped()).isTrue();
         assertThat(EffectEngine.gemsOf(room, "host")).isEqualTo(gems + 1);
@@ -370,15 +370,15 @@ class CombatTest {
         room.setSharedCounter(-2); // guest has 2 gems
 
         // The host destroys a guest creature
-        EffectEngine.destroyByPlayer(room, "host", "guest", "g1");
+        Removals.destroyByPlayer(room, "host", "guest", "g1");
         Prompt confirm = room.getPrompt();
         assertThat(confirm.getPlayerId()).isEqualTo("guest");
-        EffectEngine.answer(room, "guest", confirm.getId(), List.of("ali"), List.of());
+        Answers.answer(room, "guest", confirm.getId(), List.of("ali"), List.of());
         // "En Juego": un aliado invoca por Ritual
-        EffectEngine.answer(room, "guest", room.getPrompt().getId(), List.of("zha"), List.of());
+        Answers.answer(room, "guest", room.getPrompt().getId(), List.of("zha"), List.of());
         Prompt summoner = room.getPrompt();
         assertThat(summoner.getValidIds()).containsExactly("g2");
-        EffectEngine.answer(room, "guest", summoner.getId(), List.of("g2"), List.of());
+        Answers.answer(room, "guest", summoner.getId(), List.of("g2"), List.of());
 
         assertThat(guest.getField()).extracting(CardSlot::getInstanceId).containsExactly("zha");
         assertThat(guest.getTributeZone()).extracting(CardSlot::getInstanceId).containsExactly("g2");
@@ -395,8 +395,8 @@ class CombatTest {
         field(guest, creature("small", "Pequeña", 2, 2), FRONT);
 
         assertThat(CardEffects.playCost(room, "host", caza)).isZero();
-        assertThat(EffectEngine.playByPlayer(room, "host", "caza", null, null)).isNull();
-        EffectEngine.answer(room, "host", room.getPrompt().getId(), List.of("a"), List.of());
+        assertThat(Summons.playByPlayer(room, "host", "caza", null, null)).isNull();
+        Answers.answer(room, "host", room.getPrompt().getId(), List.of("a"), List.of());
 
         assertThat(ally.getTurnKeywords()).containsExactly("Provocar 3");
         assertThat(ally.isTapped()).isFalse();
@@ -412,12 +412,12 @@ class CombatTest {
         cazador.setCost(3);
         cazador.getKeywords().add("Celeridad");
         host.getHand().add(cazador);
-        EffectEngine.normalSummon(room, "host", "caz", 50.0, 70.0);
+        Summons.normalSummon(room, "host", "caz", 50.0, 70.0);
         // Both trigger: its own effect (mandatory) is activated first, then Celeridad (optional) asks
         Prompt confirm = room.getPrompt();
         assertThat(confirm.getPurpose()).isEqualTo("OPTIONAL");
         assertThat(confirm.getCardLabels()).containsValue("Celeridad");
-        EffectEngine.answer(room, "host", confirm.getId(), List.of("caz"), List.of());
+        Answers.answer(room, "host", confirm.getId(), List.of("caz"), List.of());
         // Celeridad resolves first (last in the chain)
         assertThat(EffectEngine.inFrontLine(cazador)).isTrue();
         assertThat(room.getPrompt().getChosenLabel()).isEqualTo("Tributar");

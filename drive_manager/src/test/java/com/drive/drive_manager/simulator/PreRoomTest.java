@@ -165,6 +165,13 @@ class PreRoomTest {
         assertThat(made.getClasses()).containsExactly("ente");
         assertThat(made.isFaceDown()).isFalse();
 
+        // After the game, "Cambiar mazo" goes back to the pre-room at once: the owner decides for both sides
+        test.setStatus(GameRoom.RoomStatus.POST_GAME);
+        // (no deck store in these tests: the decks are not reloaded)
+        test.getPlayers().values().forEach(p -> p.setDeckId(null));
+        assertThat(service.applyAction(id, "owner", action("POST_GAME_CHOICE", Map.of("choice", "change_deck"))).getError()).isNull();
+        assertThat(test.getStatus()).isEqualTo(GameRoom.RoomStatus.WAITING);
+
         // The owner leaving closes it
         assertThat(service.applyAction(id, "owner", action("LEAVE_ROOM", Map.of("actAs", RoomService.EDITOR_RIVAL))).getEvent()).isEqualTo("ROOM_CLOSED");
         assertThat(service.getRoom(id)).isNull();

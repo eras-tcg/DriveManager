@@ -12,6 +12,7 @@ import org.springframework.test.util.ReflectionTestUtils;
 import java.io.InputStream;
 import java.util.*;
 
+import static com.drive.drive_manager.simulator.engine.TestTable.*;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /** ST4 (Caballeros) with its real metadata: Ascenso, Enfrentar, Perforante and its effects. */
@@ -38,6 +39,8 @@ class St4IntegrationTest {
             }
         }
         room = service.createRoom();
+        // These tests chain a lone mandatory effect straight away (its confirmation is tested on its own)
+        room.setConfirmMandatory(false);
         host = new PlayerState("host", "Ana");
         guest = new PlayerState("guest", "Beto");
         room.getPlayers().put("host", host);
@@ -64,9 +67,9 @@ class St4IntegrationTest {
         CardSlot ferreo = slot("Caballero Férreo");
         host.getHand().add(ferreo);
         CardSlot peon = onField(host, slot("Peón De Línea Frontal"), FRONT);
-        assertThat(EffectEngine.canSpecial(room, "host", ferreo)).isFalse();
+        assertThat(Summons.canSpecial(room, "host", ferreo)).isFalse();
         onField(host, slot("Espada De Los Leones De Fuego"), BACK);
-        assertThat(EffectEngine.canSpecial(room, "host", ferreo)).isTrue();
+        assertThat(Summons.canSpecial(room, "host", ferreo)).isTrue();
         assertThat(act("host", "RITUAL_SUMMON", Map.of("instanceId", ferreo.getInstanceId(), "summonerId", peon.getInstanceId())).getError()).isNull();
         assertThat(host.getField()).contains(ferreo).doesNotContain(peon);
         assertThat(host.getTributeZone()).contains(peon);
@@ -77,13 +80,13 @@ class St4IntegrationTest {
         CardSlot umbrio = onField(host, slot("Caballero Umbrío"), FRONT);
         CardSlot espada = slot("Espada De Los Leones De Fuego");
         host.getHand().add(espada);
-        EffectEngine.attackByPlayer(room, "host", umbrio.getInstanceId(), null);
+        CombatRules.attackByPlayer(room, "host", umbrio.getInstanceId(), null);
         Prompt offer = room.getPrompt();
         assertThat(offer.getPurpose()).isEqualTo("OPTIONAL");
-        EffectEngine.answer(room, "host", offer.getId(), List.of(umbrio.getInstanceId()), List.of());
+        Answers.answer(room, "host", offer.getId(), List.of(umbrio.getInstanceId()), List.of());
         Prompt pick = room.getPrompt();
         assertThat(pick.getValidIds()).containsExactly(espada.getInstanceId());
-        EffectEngine.answer(room, "host", pick.getId(), List.of(espada.getInstanceId()), List.of());
+        Answers.answer(room, "host", pick.getId(), List.of(espada.getInstanceId()), List.of());
         assertThat(host.getField()).contains(espada);
         assertThat(EffectEngine.inFrontLine(espada)).isTrue();
     }
@@ -94,14 +97,14 @@ class St4IntegrationTest {
         CardSlot luke = slot("Luke El Filo Rojo");
         host.getHand().add(luke);
         int before = EffectEngine.strength(real);
-        EffectEngine.attackByPlayer(room, "host", real.getInstanceId(), null);
-        EffectEngine.answer(room, "host", room.getPrompt().getId(), List.of(real.getInstanceId()), List.of());
-        EffectEngine.answer(room, "host", room.getPrompt().getId(), List.of(luke.getInstanceId()), List.of());
+        CombatRules.attackByPlayer(room, "host", real.getInstanceId(), null);
+        Answers.answer(room, "host", room.getPrompt().getId(), List.of(real.getInstanceId()), List.of());
+        Answers.answer(room, "host", room.getPrompt().getId(), List.of(luke.getInstanceId()), List.of());
         assertThat(EffectEngine.strength(real)).isEqualTo(before + 3);
         assertThat(real.getTurnKeywords()).contains("Perforante");
         // Luke was summoned by effect: Enfrentar 3 (chained) and Celeridad offered; no Celeridad
         assertThat(room.getPrompt().getCardLabels()).containsValue("Celeridad");
-        EffectEngine.answer(room, "host", room.getPrompt().getId(), List.of(), List.of());
+        Answers.answer(room, "host", room.getPrompt().getId(), List.of(), List.of());
         assertThat(luke.getTurnKeywords()).contains("Enfrentar 3");
     }
 
@@ -110,10 +113,10 @@ class St4IntegrationTest {
         CardSlot comandante = onField(host, slot("Comandante De Las Espadas Dragón"), FRONT);
         CardSlot level3 = onField(guest, slot("Zhaglizer"), FRONT);
         CardSlot level4 = onField(guest, slot("Berkelus El Cazarrecompensas Del Bajomundo"), FRONT);
-        assertThat(EffectEngine.attackByPlayer(room, "host", comandante.getInstanceId(), level4.getInstanceId())).contains("agotadas");
+        assertThat(CombatRules.attackByPlayer(room, "host", comandante.getInstanceId(), level4.getInstanceId())).contains("agotadas");
         CardSlot back = onField(guest, slot("Damon"), BACK);
-        assertThat(EffectEngine.attackByPlayer(room, "host", comandante.getInstanceId(), back.getInstanceId())).contains("retaguardia");
-        assertThat(EffectEngine.attackByPlayer(room, "host", comandante.getInstanceId(), level3.getInstanceId())).isNull();
+        assertThat(CombatRules.attackByPlayer(room, "host", comandante.getInstanceId(), back.getInstanceId())).contains("retaguardia");
+        assertThat(CombatRules.attackByPlayer(room, "host", comandante.getInstanceId(), level3.getInstanceId())).isNull();
         assertThat(room.getTimeline()).extracting(GameEvent::getType).contains(GameEvent.ATTACK_DECLARED);
     }
 
@@ -121,14 +124,14 @@ class St4IntegrationTest {
     void perforanteGoesOnToDirectDamageWhenTheBlockerIsDestroyed() {
         CardSlot franchute = onField(host, slot("Franchute"), FRONT);
         onField(guest, slot("Damon"), FRONT);
-        EffectEngine.attackByPlayer(room, "host", franchute.getInstanceId(), null);
+        CombatRules.attackByPlayer(room, "host", franchute.getInstanceId(), null);
         // The guest blocks with Damon
         Prompt block = room.getPrompt();
-        EffectEngine.answer(room, "guest", block.getId(), List.of(block.getValidIds().get(0)), List.of());
+        Answers.answer(room, "guest", block.getId(), List.of(block.getValidIds().get(0)), List.of());
         // Damon's "En Destrucción" for the guest: draw 3, tribute 2
         while (room.getPrompt() != null && "guest".equals(room.getPrompt().getPlayerId())) {
             Prompt p = room.getPrompt();
-            EffectEngine.answer(room, "guest", p.getId(), p.getValidIds().subList(0, p.getMin()), List.of());
+            Answers.answer(room, "guest", p.getId(), p.getValidIds().subList(0, p.getMin()), List.of());
         }
         assertThat(room.getTimeline()).extracting(GameEvent::getType).containsSubsequence(GameEvent.CLASH, GameEvent.LIFE_DAMAGE);
         assertThat(guest.getLifeStack()).hasSize(2);
@@ -142,18 +145,18 @@ class St4IntegrationTest {
         host.getHand().add(slot("Peón De Línea Frontal"));
         host.getTributeZone().add(slot("Luke El Filo Rojo"));
         int gems = EffectEngine.gemsOf(room, "host");
-        EffectEngine.attackByPlayer(room, "host", umbrio.getInstanceId(), null);
-        EffectEngine.answer(room, "host", room.getPrompt().getId(), List.of(umbrio.getInstanceId()), List.of());
+        CombatRules.attackByPlayer(room, "host", umbrio.getInstanceId(), null);
+        Answers.answer(room, "host", room.getPrompt().getId(), List.of(umbrio.getInstanceId()), List.of());
         Prompt pick = room.getPrompt();
-        EffectEngine.answer(room, "host", pick.getId(), List.of(pick.getValidIds().get(0)), List.of());
+        Answers.answer(room, "host", pick.getId(), List.of(pick.getValidIds().get(0)), List.of());
         // Reino Medieval is offered after the summon
         Prompt offer = room.getPrompt();
         assertThat(offer.getValidIds()).contains(reino.getInstanceId());
-        EffectEngine.answer(room, "host", offer.getId(), List.of(reino.getInstanceId()), List.of());
+        Answers.answer(room, "host", offer.getId(), List.of(reino.getInstanceId()), List.of());
         assertThat(reino.isTapped()).isTrue();
         // +1 gem (the summoned creature cost 1: net 0) and Luke back to the hand
         Prompt take = room.getPrompt();
-        EffectEngine.answer(room, "host", take.getId(), List.of(take.getValidIds().get(0)), List.of());
+        Answers.answer(room, "host", take.getId(), List.of(take.getValidIds().get(0)), List.of());
         assertThat(host.getHand()).extracting(CardSlot::getCardName).contains("Luke El Filo Rojo");
         assertThat(EffectEngine.gemsOf(room, "host")).isEqualTo(gems);
     }
@@ -168,8 +171,8 @@ class St4IntegrationTest {
         // A third Red ally: the condition holds after that event
         CardSlot peon = slot("Peón De Línea Frontal");
         host.getHand().add(peon);
-        assertThat(EffectEngine.normalSummon(room, "host", peon.getInstanceId(), 50.0, 75.0)).isNull();
-        while (room.getPrompt() != null) EffectEngine.answer(room, "host", room.getPrompt().getId(), List.of(), List.of());
+        assertThat(Summons.normalSummon(room, "host", peon.getInstanceId(), 50.0, 75.0)).isNull();
+        while (room.getPrompt() != null) Answers.answer(room, "host", room.getPrompt().getId(), List.of(), List.of());
         assertThat(EffectEngine.strength(espada)).isEqualTo(5);
         assertThat(EffectEngine.keywords(espada)).contains("Celeridad");
 
@@ -195,18 +198,18 @@ class St4IntegrationTest {
         CardSlot plata = slot("Espada De Plata");
         host.getHand().addAll(List.of(peon, umbrio, plata));
         room.setSharedCounter(-10);
-        assertThat(EffectEngine.normalSummon(room, "host", franchute.getInstanceId(), 50.0, 75.0)).isNull();
+        assertThat(Summons.normalSummon(room, "host", franchute.getInstanceId(), 50.0, 75.0)).isNull();
 
         Prompt offer = room.getPrompt();
         assertThat(offer.getPurpose()).isEqualTo("OPTIONAL");
-        EffectEngine.answer(room, "host", offer.getId(), List.of(franchute.getInstanceId()), List.of());
+        Answers.answer(room, "host", offer.getId(), List.of(franchute.getInstanceId()), List.of());
         Prompt pick = room.getPrompt();
         assertThat(pick.getValidIds()).containsExactlyInAnyOrder(peon.getInstanceId(), umbrio.getInstanceId(), plata.getInstanceId());
         // Levels 1 + 2 go over 2
-        assertThat(EffectEngine.answer(room, "host", pick.getId(), List.of(peon.getInstanceId(), plata.getInstanceId()), List.of()))
+        assertThat(Answers.answer(room, "host", pick.getId(), List.of(peon.getInstanceId(), plata.getInstanceId()), List.of()))
                 .contains("sumar 2");
         int gems = EffectEngine.gemsOf(room, "host");
-        assertThat(EffectEngine.answer(room, "host", pick.getId(), List.of(peon.getInstanceId(), umbrio.getInstanceId()), List.of())).isNull();
+        assertThat(Answers.answer(room, "host", pick.getId(), List.of(peon.getInstanceId(), umbrio.getInstanceId()), List.of())).isNull();
         assertThat(host.getField()).contains(peon, umbrio);
         assertThat(EffectEngine.gemsOf(room, "host")).isEqualTo(gems);
     }
@@ -218,9 +221,23 @@ class St4IntegrationTest {
         CardSlot franchute = slot("Franchute");
         host.getHand().add(franchute);
         room.setSharedCounter(-10);
-        assertThat(EffectEngine.specialSummonable(room, "host")).contains(franchute.getInstanceId());
-        assertThat(EffectEngine.specialByPlayer(room, "host", franchute.getInstanceId(), luke.getInstanceId())).isNull();
+        assertThat(Summons.specialSummonable(room, "host")).contains(franchute.getInstanceId());
+        assertThat(Summons.specialByPlayer(room, "host", franchute.getInstanceId(), luke.getInstanceId())).isNull();
         assertThat(host.getField()).contains(franchute).doesNotContain(luke);
+    }
+
+    @Test
+    void aPlayerWhoCannotDrawAtTheStartOfTheirTurnLoses() {
+        guest.getDeck().clear();
+        act("host", "ENTER_END_PHASE", Map.of());
+        // The end phase may ask for the move up: answer whatever is pending until the turn passes
+        for (int i = 0; i < 5 && room.getStatus() == GameRoom.RoomStatus.IN_PROGRESS && "host".equals(room.getCurrentTurnUserId()); i++) {
+            if (room.getPrompt() != null) Answers.answer(room, room.getPrompt().getPlayerId(), room.getPrompt().getId(), List.of(), List.of());
+            else act("host", "END_TURN", Map.of());
+        }
+        assertThat(room.getStatus()).isEqualTo(GameRoom.RoomStatus.POST_GAME);
+        assertThat(room.getWinnerId()).isEqualTo("host");
+        assertThat(room.getEndReason()).isEqualTo("deck");
     }
 
     // ------------------------------------------------------------------ Helpers
@@ -243,11 +260,4 @@ class St4IntegrationTest {
         return s;
     }
 
-    private static CardSlot onField(PlayerState p, CardSlot c, double y) {
-        c.setX(50.0);
-        c.setY(y);
-        c.setFaceDown(false);
-        p.getField().add(c);
-        return c;
-    }
 }

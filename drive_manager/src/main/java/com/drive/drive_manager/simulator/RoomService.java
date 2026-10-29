@@ -7,6 +7,12 @@ import com.drive.drive_manager.repository.CardRepository;
 import com.drive.drive_manager.repository.DeckListRepository;
 import com.drive.drive_manager.repository.DriveCardRepository;
 import com.drive.drive_manager.simulator.engine.EffectEngine;
+import com.drive.drive_manager.simulator.engine.TurnRules;
+import com.drive.drive_manager.simulator.engine.Summons;
+import com.drive.drive_manager.simulator.engine.Removals;
+import com.drive.drive_manager.simulator.engine.CombatRules;
+import com.drive.drive_manager.simulator.engine.Chain;
+import com.drive.drive_manager.simulator.engine.Answers;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -100,6 +106,7 @@ public class RoomService {
         pruneRooms();
         GameRoom room = new GameRoom();
         room.setHostId(ownerId);
+        room.setConfirmMandatory(true);
         if (editor) {
             room.setEditor(true);
             PlayerState rival = new PlayerState(EDITOR_RIVAL, "Rival (prueba)");
@@ -175,9 +182,9 @@ public class RoomService {
             case "MOVE_CARD"            -> handleMove(room, userId, action);
             case "FLIP_CARD"            -> handleFlip(room, userId, action);
             case "SHUFFLE_DECK"         -> handleShuffle(room, userId);
-            case "PASS_TURN"            -> handlePassTurn(room, userId);
             case "ENTER_END_PHASE"      -> handleEnterEndPhase(room, userId);
-            case "END_TURN"             -> handleEndTurn(room, userId);
+            // One way to end a turn (rule 8.3: through the end phase); "PASS_TURN" is what older boards send
+            case "END_TURN", "PASS_TURN" -> handleEndTurn(room, userId);
             case "FORFEIT"              -> handleForfeit(room, userId);
             case "SURRENDER"            -> handleSurrender(room, userId);
             case "POST_GAME_CHOICE"     -> handlePostGameChoice(room, userId, action);
@@ -235,7 +242,7 @@ public class RoomService {
             update = handleEnterEndPhase(room, current);
         }
         if (update != null && update.getError() == null) {
-            recordLog(room, update);
+            recordLog(room, update, action);
             update.setEventLog(new ArrayList<>(room.getEventLog()));
         }
         return update;
@@ -247,14 +254,14 @@ public class RoomService {
 
     /** Taking a creature from the hand to the board without an effect is a normal summon (rules engine). */
     private GameStateUpdate handleNormalSummon(GameRoom room, String userId, GameAction action) {
-        String error = EffectEngine.normalSummon(room, userId, action.getString("instanceId"), action.getDouble("x"), action.getDouble("y"));
+        String error = Summons.normalSummon(room, userId, action.getString("instanceId"), action.getDouble("x"), action.getDouble("y"));
         if (error != null) return GameStateUpdate.error(room.getRoomId(), error);
         return GameStateUpdate.from(room, "NORMAL_SUMMON", userId);
     }
 
     /** The player's choice for the effect step the engine is waiting on. */
     private GameStateUpdate handleResolvePrompt(GameRoom room, String userId, GameAction action) {
-        String error = EffectEngine.answer(room, userId, action.getString("promptId"), action.getStringList("chosen"), action.getStringList("order"));
+        String error = Answers.answer(room, userId, action.getString("promptId"), action.getStringList("chosen"), action.getStringList("order"));
         if (error != null) return GameStateUpdate.error(room.getRoomId(), error);
         // The end phase's move up was answered: the turn that was being ended ends now
         if (room.isEndTurnPending() && !room.isEngineBusy()) return passTurn(room, room.getCurrentTurnUserId());
@@ -268,40 +275,40 @@ public class RoomService {
 
     /** Destroys a card on the field (to its owner's Descarte); its "En Destrucción" effects trigger. */
     private GameStateUpdate handleDestroyCard(GameRoom room, String userId, GameAction action) {
-        String error = EffectEngine.destroyByPlayer(room, userId, action.getString("targetPlayerId"), action.getString("instanceId"));
+        String error = Removals.destroyByPlayer(room, userId, action.getString("targetPlayerId"), action.getString("instanceId"));
         if (error != null) return GameStateUpdate.error(room.getRoomId(), error);
         return GameStateUpdate.from(room, "DESTROY_CARD", userId);
     }
 
     /** Sacrifices one of your cards on the field (destroyed, to your Tributos). */
     private GameStateUpdate handleSacrificeCard(GameRoom room, String userId, GameAction action) {
-        String error = EffectEngine.sacrificeByPlayer(room, userId, action.getString("instanceId"));
+        String error = Removals.sacrificeByPlayer(room, userId, action.getString("instanceId"));
         if (error != null) return GameStateUpdate.error(room.getRoomId(), error);
         return GameStateUpdate.from(room, "SACRIFICE_CARD", userId);
     }
 
     /** Declares an attack (rule 10): the engine runs the combat. targetInstanceId null = the opponent. */
     private GameStateUpdate handleAttack(GameRoom room, String userId, GameAction action) {
-        String error = EffectEngine.attackByPlayer(room, userId, action.getString("instanceId"), action.getString("targetInstanceId"));
+        String error = CombatRules.attackByPlayer(room, userId, action.getString("instanceId"), action.getString("targetInstanceId"));
         if (error != null) return GameStateUpdate.error(room.getRoomId(), error);
         return GameStateUpdate.from(room, "ATTACK", userId);
     }
 
     /** Plays a utility or structure from the hand: pays its cost and fires its "En Juego" effects. */
     private GameStateUpdate handlePlayCard(GameRoom room, String userId, GameAction action) {
-        String error = EffectEngine.playByPlayer(room, userId, action.getString("instanceId"), action.getDouble("x"), action.getDouble("y"));
+        String error = Summons.playByPlayer(room, userId, action.getString("instanceId"), action.getDouble("x"), action.getDouble("y"));
         if (error != null) return GameStateUpdate.error(room.getRoomId(), error);
         return GameStateUpdate.from(room, "PLAY_CARD", userId);
     }
 
     private GameStateUpdate handleRitualSummon(GameRoom room, String userId, GameAction action) {
-        String error = EffectEngine.specialByPlayer(room, userId, action.getString("instanceId"), action.getString("summonerId"));
+        String error = Summons.specialByPlayer(room, userId, action.getString("instanceId"), action.getString("summonerId"));
         if (error != null) return GameStateUpdate.error(room.getRoomId(), error);
         return GameStateUpdate.from(room, "RITUAL_SUMMON", userId);
     }
 
     private GameStateUpdate handleActivateEffect(GameRoom room, String userId, GameAction action) {
-        String error = EffectEngine.activateByPlayer(room, userId, action.getString("instanceId"), action.getString("scriptId"));
+        String error = Chain.activateByPlayer(room, userId, action.getString("instanceId"), action.getString("scriptId"));
         if (error != null) return GameStateUpdate.error(room.getRoomId(), error);
         return GameStateUpdate.from(room, "ACTIVATE_EFFECT", userId);
     }
@@ -314,8 +321,24 @@ public class RoomService {
     }
 
     private void recordLog(GameRoom room, GameStateUpdate update) {
+        recordLog(room, update, null);
+    }
+
+    /** A line of the history for an action by hand (or of the room), with the card it was done to when there is one. */
+    private void recordLog(GameRoom room, GameStateUpdate update, GameAction action) {
         if (update.getLogEntry() == null) return;
-        room.getEventLog().add(new GameLogEntry(System.currentTimeMillis(), update.getLogEntry()));
+        GameLogEntry entry = new GameLogEntry(System.currentTimeMillis(), update.getLogEntry());
+        if (action != null) {
+            entry.setKind("MANUAL");
+            String id = action.getString("instanceId");
+            CardSlot card = id == null ? null : EffectEngine.findInRoom(room, id);
+            if (card != null) {
+                entry.setSourceId(id);
+                entry.setSourceName(card.getCardName());
+                entry.setImageUrl(card.getImageUrl());
+            }
+        }
+        room.getEventLog().add(entry);
         if (room.getEventLog().size() > 300) room.getEventLog().remove(0);
     }
 
@@ -561,27 +584,6 @@ public class RoomService {
         GameStateUpdate update = GameStateUpdate.from(room, "SHUFFLE_DECK", userId);
         update.setLogEntry(player.getUsername() + " barajó su mazo");
         return update;
-    }
-
-    private GameStateUpdate handlePassTurn(GameRoom room, String userId) {
-        String opponentId = room.getOpponentId(userId);
-        if (opponentId != null) {
-            PlayerState current = room.getPlayer(userId);
-            current.setResourceCount(0);
-
-            PlayerState opponent = room.getPlayer(opponentId);
-            int newCount = Math.min(5, opponent.getResourceCount() + 1);
-            opponent.setResourceCount(newCount);
-
-            int dir = getPlayerDirection(room, opponentId);
-            int next = room.getSharedCounter() + newCount * dir;
-            room.setSharedCounter(Math.max(-10, Math.min(10, next)));
-
-            room.setCurrentTurnUserId(opponentId);
-            clearTurnKeywords(room);
-            EffectEngine.offerAdvance(room, opponentId, true);
-        }
-        return GameStateUpdate.from(room, "PASS_TURN", userId);
     }
 
     private GameStateUpdate handleForfeit(GameRoom room, String userId) {
@@ -1113,6 +1115,8 @@ public class RoomService {
         // Leaving frees the seat right away: the other player goes back to the pre-room
         if ("exit".equals(choice)) return handleLeaveRoom(room, userId);
         room.getPostGameChoices().put(userId, choice);
+        // A test room: its owner decides for both sides (the rival is not a real player)
+        if (room.isEditor()) room.getPlayers().keySet().forEach(id -> room.getPostGameChoices().put(id, choice));
         if (room.getPostGameChoices().size() >= room.getPlayers().size()) {
             boolean anyExit       = room.getPostGameChoices().values().stream().anyMatch("exit"::equals);
             boolean anyChangeDeck = room.getPostGameChoices().values().stream().anyMatch("change_deck"::equals);
@@ -1314,7 +1318,7 @@ public class RoomService {
             room.setSharedCounter(0);
         }
         room.setCurrentPhase("END_PHASE");
-        EffectEngine.turnEnding(room, userId);
+        TurnRules.turnEnding(room, userId);
         // Rule 8.3: the end phase is closed: once its move up and its triggers are done, the turn ends by itself
         if (room.isEngineBusy()) {
             room.setEndTurnPending(true);
@@ -1354,10 +1358,15 @@ public class RoomService {
         player.setResourceCount(newCount);
         int dir = getPlayerDirection(room, playerId);
         room.setSharedCounter(Math.max(-10, Math.min(10, room.getSharedCounter() + newCount * dir)));
+        // Not being able to draw at the start of the turn loses the game
+        if (player.getDeck().isEmpty()) {
+            EffectEngine.loseByDeckOut(room, playerId);
+            return;
+        }
         autoDraw(player);
         // "no se reactiva al inicio del turno": that card stays exhausted this time
         player.getField().forEach(c -> { if (c.getNoUntap() != 1) c.setTapped(false); });
-        EffectEngine.turnStarted(room, playerId);
+        TurnRules.turnStarted(room, playerId);
         if (room.isEngineBusy()) {
             room.setStartPhasePending(true);
         } else {
@@ -1492,7 +1501,7 @@ public class RoomService {
         if (card == null) return GameStateUpdate.error(room.getRoomId(), "Card not found");
         card.setStrengthModifier(card.getStrengthModifier() + delta);
         // Strength 0: destroyed right away (rule 12.0.0.2)
-        EffectEngine.destroyIfNoStrength(room, userId, player, card);
+        Removals.destroyIfNoStrength(room, userId, player, card);
         return GameStateUpdate.from(room, "MODIFY_STRENGTH", userId);
     }
 
@@ -1629,7 +1638,7 @@ public class RoomService {
         summoned.setX(summoner.getX());
         summoned.setY(summoner.getY());
         // Rule 9.2.0.3: its whole state, also its effects until the end of the turn and its role in a combat
-        EffectEngine.inheritFromSummoner(room, summoned, summoner);
+        Summons.inheritFromSummoner(room, summoned, summoner);
 
         switch (summonType) {
             case "materialization" -> {
@@ -1679,7 +1688,7 @@ public class RoomService {
         player.getField().add(summoned);
         // Recorded by the engine: it offers the move up to the Línea frontal, does the regulatory draw and then
         // fires the summon and sacrifice triggers ("En Invocación", "En Destrucción")
-        EffectEngine.specialSummoned(room, userId, summoned, summoner, summonType,
+        Summons.specialSummoned(room, userId, summoned, summoner, summonType,
                 player.getUsername() + " invocó especialmente a " + cardLabel(summoned)
                         + " (" + summonTypeLabel(summonType) + ") usando " + cardLabel(summoner));
         return GameStateUpdate.from(room, "SPECIAL_SUMMON", userId);
@@ -1956,6 +1965,7 @@ public class RoomService {
             c.setSpecialCost(s.getSpecialCost());
             c.setRequirement(s.getRequirement());
             c.setKeywords(new ArrayList<>(s.getKeywords()));
+            c.setInheritKeywords(new ArrayList<>(s.getInheritKeywords()));
             c.setFaceDown(true);
             return c;
         }).collect(Collectors.toList());
@@ -1978,20 +1988,24 @@ public class RoomService {
         slot.setClasses(meta.getCardClasses() != null ? new ArrayList<>(meta.getCardClasses()) : new ArrayList<>());
         slot.setSpecialCost(meta.getSpecialCost());
         slot.setRequirement(meta.getRequirement());
-        // "Letalidad {cantidad}" + 1 → "Letalidad 1"
-        List<String> keywords = new ArrayList<>();
-        if (meta.getKeywordEffects() != null) {
-            meta.getKeywordEffects().forEach(k -> {
-                if (k.getKeyword() == null) return;
-                String name = k.getKeyword().replaceAll("\\{[^}]*}", k.getNumber() != null ? k.getNumber() : "").trim();
-                keywords.add(name.replaceAll("\\s+", " "));
-            });
-        }
-        slot.setKeywords(keywords);
+        slot.setKeywords(keywordNames(meta.getKeywordEffects()));
+        slot.setInheritKeywords(keywordNames(meta.getInheritKeywordEffects()));
         List<String> colors = new ArrayList<>();
         if (meta.getColorIdentity() != null) colors.add(meta.getColorIdentity());
         if (meta.getColors() != null) meta.getColors().stream().filter(c -> !colors.contains(c)).forEach(colors::add);
         slot.setColors(colors);
+    }
+
+    /** "Letalidad {cantidad}" + 1 → "Letalidad 1". */
+    private static List<String> keywordNames(List<com.drive.drive_manager.dto.CardKeywordEffect> effects) {
+        List<String> keywords = new ArrayList<>();
+        if (effects == null) return keywords;
+        effects.forEach(k -> {
+            if (k.getKeyword() == null) return;
+            String name = k.getKeyword().replaceAll("\\{[^}]*}", k.getNumber() != null ? k.getNumber() : "").trim();
+            keywords.add(name.replaceAll("\\s+", " "));
+        });
+        return keywords;
     }
 
     private List<CardSlot> getZone(PlayerState player, String zoneName) {

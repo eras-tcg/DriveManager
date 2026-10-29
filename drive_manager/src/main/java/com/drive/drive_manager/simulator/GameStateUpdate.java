@@ -1,6 +1,8 @@
 package com.drive.drive_manager.simulator;
 
 import com.drive.drive_manager.simulator.engine.EffectEngine;
+import com.drive.drive_manager.simulator.engine.Summons;
+import com.drive.drive_manager.simulator.engine.Chain;
 import com.drive.drive_manager.simulator.engine.GameEvent;
 import com.drive.drive_manager.simulator.engine.PendingEffect;
 import com.drive.drive_manager.simulator.engine.Prompt;
@@ -52,7 +54,7 @@ public class GameStateUpdate {
     /** The player who can still use the "ventaja del iniciador", if any. */
     private String starterAdvantageUserId;
     /** Slow effects each player can activate right now (rule 11.4.1.1), by player id. */
-    private Map<String, List<EffectEngine.Activatable>> activatable;
+    private Map<String, List<Chain.Activatable>> activatable;
     /** Players who already played a structure normally this turn (one per turn). */
     private List<String> structurePlayed;
     /** Cards each player can special summon now, from the hand or the Tributos, by player id. */
@@ -82,20 +84,20 @@ public class GameStateUpdate {
         u.combat            = room.getCombat();
         u.firstPlayerId     = room.getFirstPlayerId();
         u.starterAdvantageUserId = room.getStarterAdvantageUserId();
-        Map<String, List<EffectEngine.Activatable>> activatable = new LinkedHashMap<>();
+        Map<String, List<Chain.Activatable>> activatable = new LinkedHashMap<>();
         for (String id : room.getPlayers().keySet()) {
-            List<EffectEngine.Activatable> list = EffectEngine.activatable(room, id);
+            List<Chain.Activatable> list = Chain.activatable(room, id);
             if (!list.isEmpty()) activatable.put(id, list);
         }
         u.activatable       = activatable.isEmpty() ? null : activatable;
         Map<String, List<String>> specials = new LinkedHashMap<>();
         for (String id : room.getPlayers().keySet()) {
-            List<String> list = EffectEngine.specialSummonable(room, id);
+            List<String> list = Summons.specialSummonable(room, id);
             if (!list.isEmpty()) specials.put(id, list);
         }
         // Always sent (empty when nobody can): the board relies on it instead of its own checks
         u.specialSummonable = specials;
-        List<String> structures = room.getPlayers().keySet().stream().filter(id -> EffectEngine.structurePlayed(room, id)).toList();
+        List<String> structures = room.getPlayers().keySet().stream().filter(id -> Summons.structurePlayed(room, id)).toList();
         u.structurePlayed   = structures.isEmpty() ? null : structures;
         u.winnerId          = room.getWinnerId();
         u.endReason         = room.getEndReason();

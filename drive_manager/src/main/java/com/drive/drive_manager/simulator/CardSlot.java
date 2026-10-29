@@ -35,6 +35,8 @@ public class CardSlot {
     private String requirement;
     /** Printed keyword abilities ("Provocar", "Letalidad 1", "Imbloqueable"). */
     private List<String> keywords = new ArrayList<>();
+    /** Keyword abilities it gives the creature it is a Recurso of ("Reactivar" heredable). */
+    private List<String> inheritKeywords = new ArrayList<>();
     /** Abilities gained until the end of the turn ("gana Furia 1 hasta el final del turno"). */
     private List<String> turnKeywords = new ArrayList<>();
     /**
