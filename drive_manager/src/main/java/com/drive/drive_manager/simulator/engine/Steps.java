@@ -60,16 +60,14 @@ public final class Steps {
                 name(card) + " va al descarte tras resolverse");
     }
 
-    /** "puedes hacer A para hacer B": every step after IfPossible (from {@code from}) can be done now. */
+    /**
+     * "puedes hacer A para hacer B": A, the step right after IfPossible (from {@code from}), can be done now. A is paid for B and
+     * can be paid even when B would do nothing (designer ruling 2026-10-30, Sombra Errante).
+     */
     static boolean allPossibleAfterIfPossible(GameRoom room, PendingEffect effect, List<EffectStep> steps, int from) {
         for (int i = from; i < steps.size(); i++) {
             if (!(steps.get(i) instanceof IfPossible)) continue;
-            for (EffectStep after : steps.subList(i + 1, steps.size())) {
-                // "Si lo haces: …" depends on what was done: it is not needed to activate
-                if (after instanceof IfDone || after instanceof IfNotDone || after instanceof IfTributed) break;
-                if (!possible(room, effect, after)) return false;
-            }
-            return true;
+            return i + 1 >= steps.size() || possible(room, effect, steps.get(i + 1));
         }
         return true;
     }
@@ -1136,15 +1134,22 @@ public final class Steps {
                 effect.setLastDone(any);
                 return false;
             }
-            case NoUntapChosen ignored -> {
+            case NoUntapChosen noUntap -> {
                 PlayerState opponent = room.getPlayer(room.getOpponentId(userId));
                 for (String id : effect.getTargetIds()) {
                     CardSlot target = opponent == null ? null : find(opponent.getField(), id);
                     if (target == null) continue;
                     // Counted down at each change of turn: it is 1 during its owner's next turn
-                    target.setNoUntap(opponent.getUserId().equals(room.getCurrentTurnUserId()) ? 3 : 2);
-                    floating(target, effect, "No se reactiva durante el próximo turno de " + opponent.getUsername(), "nextTurn", 0, null);
-                    log(room, name(target) + " no se reactivará en el próximo turno de " + opponent.getUsername() + " (" + effect.getSourceName() + ")", null);
+                    int turns = opponent.getUserId().equals(room.getCurrentTurnUserId()) ? 3 : 2;
+                    if (noUntap.wholeTurn()) {
+                        target.setNoUntap(turns);
+                        floating(target, effect, "No se puede reactivar durante el próximo turno de " + opponent.getUsername(), "nextTurn", 0, null);
+                        log(room, name(target) + " no se podrá reactivar durante el próximo turno de " + opponent.getUsername() + " (" + effect.getSourceName() + ")", null);
+                    } else {
+                        target.setNoStartUntap(turns);
+                        floating(target, effect, "No se reactiva al inicio del próximo turno de " + opponent.getUsername(), "nextTurn", 0, null);
+                        log(room, name(target) + " no se reactivará al inicio del próximo turno de " + opponent.getUsername() + " (" + effect.getSourceName() + ")", null);
+                    }
                 }
                 return false;
             }
@@ -1895,6 +1900,13 @@ public final class Steps {
                 card.setY(75.0);
                 card.setReturnAtTurnEnd(true);
                 player.getField().add(card);
+                // Its details show the condition it is placed under (Janne's inherited effect)
+                String from = CardEffects.inheritedFrom(effect.getScriptId());
+                CardSlot holder = from == null ? null : find(player.getField(), effect.getSourceInstanceId());
+                String giver = holder == null ? from : holder.getResources().stream().map(CardSlot::getCardName)
+                        .filter(from::equalsIgnoreCase).findFirst().orElse(from);
+                floating(card, effect, "Colocada hasta el final del turno: entonces vuelve a tu mano" + (giver == null ? "" : " (heredado de " + giver + ")"),
+                        "turn", 0, null);
                 record(room, GameEvent.SEND, userId, card, "hand", "field", effect, Map.of("placed", true),
                         player.getUsername() + " coloca " + name(card) + " en su retaguardia hasta el final del turno (" + effect.getSourceName() + ")");
             }

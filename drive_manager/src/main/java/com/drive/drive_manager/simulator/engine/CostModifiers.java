@@ -137,6 +137,8 @@ public final class CostModifiers {
                 if (m.allyTurn() && !player.getUserId().equals(room.getCurrentTurnUserId())) continue;
                 if (m.condition() != null && !m.condition().test(room, null, holder, player.getUserId())) continue;
                 if (!payable(player, m.payment(), holder)) continue;
+                // "puedes agotar…" the player said no to, for this summon
+                if (m.payment().kind() == PaymentKind.TAP_SELF && card != null && room.getUsedThisTurn().contains(tapKey(holder, card, false))) continue;
                 Use use = new Use(m, holder);
                 if (m.limit() != EffectScript.Limit.NONE && room.getUsedThisTurn().contains(usageKey(player, use))) continue;
                 uses.add(use);
@@ -158,9 +160,27 @@ public final class CostModifiers {
         return applicable(room, player, event, kind, card, summoner).stream().mapToInt(u -> u.modifier().reduce()).sum();
     }
 
+    /** The player's answer to "puedes agotar esta carta para reducir…" for this summon (Bosque Frondoso), until it is used. */
+    static String tapKey(CardSlot holder, CardSlot card, boolean yes) {
+        return (yes ? "cost-tap|" : "cost-tap-no|") + holder.getInstanceId() + "|" + card.getInstanceId();
+    }
+
     /**
-     * Applies those that need no choice while the cost is above 0: a free one (Duregón's) and an exhaustion (a structure,
-     * "puedes agotar": always worth it, so it is not asked). Returns the reduction.
+     * "puedes agotar esta carta para reducir el coste especial en 1" is optional: the first one not answered yet for this card, to
+     * ask before the summon (null when there is none, or the cost is already 0).
+     */
+    static Use unansweredTap(GameRoom room, PlayerState player, Event event, String kind, CardSlot card) {
+        if (card.getSpecialCost() == null || card.getSpecialCost() <= 0) return null;
+        return applicable(room, player, event, kind, card, null).stream()
+                .filter(u -> u.modifier().payment().kind() == PaymentKind.TAP_SELF)
+                .filter(u -> !room.getUsedThisTurn().contains(tapKey(u.holder(), card, true))
+                        && !room.getUsedThisTurn().contains(tapKey(u.holder(), card, false)))
+                .findFirst().orElse(null);
+    }
+
+    /**
+     * Applies those that need no choice while the cost is above 0: a free one (Duregón's) and an exhaustion the player accepted
+     * ("puedes agotar"; one not asked, as in a summon by effect, is used when it lowers the cost). Returns the reduction.
      */
     static int applyAutomatic(GameRoom room, PlayerState player, Event event, String kind, CardSlot card, CardSlot summoner, int cost) {
         int reduced = 0;
@@ -168,6 +188,7 @@ public final class CostModifiers {
             if (cost - reduced <= 0) break;
             if (use.modifier().payment().needsChoice()) continue;
             if (use.modifier().payment().kind() == PaymentKind.TAP_SELF) {
+                room.getUsedThisTurn().remove(tapKey(use.holder(), card, true));
                 use.holder().setTapped(true);
                 EffectEngine.record(room, GameEvent.TAP, player.getUserId(), use.holder(), null, null, null, null,
                         player.getUsername() + " agota " + use.holder().getCardName() + " para reducir en " + use.modifier().reduce() + " el coste");
@@ -175,6 +196,8 @@ public final class CostModifiers {
             reduced += use.modifier().reduce();
             markUsed(room, player, use);
         }
+        // The answers given for this summon are used up
+        if (card != null) room.getUsedThisTurn().removeIf(k -> k.startsWith("cost-tap") && k.endsWith("|" + card.getInstanceId()));
         return reduced;
     }
 

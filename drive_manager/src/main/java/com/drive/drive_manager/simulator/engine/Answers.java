@@ -186,6 +186,24 @@ public final class Answers {
             handRitual(room, player, card, summoner, others);
             return "";
         }
+        if (PURPOSE_COST_TAP.equals(purpose)) {
+            CardSlot card = specialSource(player, prompt.getSubjectId());
+            CardSlot holder = prompt.getValidIds().isEmpty() ? null : find(player.getField(), prompt.getValidIds().get(0));
+            room.setPrompt(null);
+            if (card == null || holder == null) {
+                advance(room);
+                return "";
+            }
+            room.getUsedThisTurn().add(CostModifiers.tapKey(holder, card, !picks.isEmpty()));
+            String error = specialByPlayer(room, userId, card.getInstanceId(), prompt.getSummonerId());
+            if (error != null) {
+                // Without it the summon cannot be paid: ask again
+                room.getUsedThisTurn().remove(CostModifiers.tapKey(holder, card, !picks.isEmpty()));
+                room.setPrompt(prompt);
+                return picks.isEmpty() ? "Sin esa reducción no puedes pagar el coste especial" : error;
+            }
+            return "";
+        }
         if (PURPOSE_SPECIAL.equals(purpose)) {
             CardSlot card = specialSource(player, prompt.getSubjectId());
             if (picks.isEmpty() || card == null) {
@@ -202,10 +220,16 @@ public final class Answers {
                 }
                 return "";
             }
-            boolean noSummoner = NO_SUMMONER.equals(prompt.getSummonerId());
-            CardSlot summoner = noSummoner ? null : find(player.getField(), prompt.getSummonerId());
             SpecialRequirement req = specialRequirement(card);
             List<CardSlot> materials = new ArrayList<>();
+            if (req.declaredSummoner()) {
+                // The summoner declared from the hand or the Tributos is its first material; it enters the Retaguardia
+                CardSlot declared = findDeclared(player, req, prompt.getSummonerId());
+                if (declared == null) return "Esa criatura ya no está disponible";
+                materials.add(declared);
+            }
+            boolean noSummoner = req.declaredSummoner() || NO_SUMMONER.equals(prompt.getSummonerId());
+            CardSlot summoner = noSummoner ? null : find(player.getField(), prompt.getSummonerId());
             for (String id : picks) {
                 CardSlot material = find(player.getTributeZone(), id);
                 if (material == null) material = find(player.getField(), id);
@@ -214,7 +238,8 @@ public final class Answers {
                 materials.add(material);
             }
             if (summoner == null && !noSummoner) return "Esa criatura ya no está disponible";
-            if (noSummoner && materials.size() != req.materialCount()) return "Elige " + req.materialCount() + " criaturas";
+            int expected = req.materialCount() + (req.declaredSummoner() ? 1 : 0);
+            if (noSummoner && materials.size() != expected) return "Elige " + req.materialCount() + " criaturas";
             String wrong = noSummoner ? null : checkMaterials(req, summoner, materials);
             if (wrong != null) return wrong;
             if (!canPay(room, userId, card.getSpecialCost() - CostModifiers.available(room, player, CostModifiers.Event.SPECIAL_SUMMON, "materialization", card, summoner)))

@@ -63,7 +63,7 @@ class E1IntegrationTest {
         enemy.getMaterials().add(card("m", "Material", 1, 1, "R"));
         host.getHand().add(card("cel", "Celeste", 1, 3, "G"));
         host.getHand().add(card("h1", "Mano", 1, 1, "G"));
-        summonInFront("cel");
+        summonByEffectInFront("cel");
         // Cost: tribute 1 from the hand, then choose the target
         Answers.answer(room, "host", room.getPrompt().getId(), List.of("h1"), List.of());
         Answers.answer(room, "host", room.getPrompt().getId(), List.of("e"), List.of());
@@ -71,6 +71,18 @@ class E1IntegrationTest {
         assertThat(guest.getHand()).containsExactly(enemy);
         assertThat(guest.getDiscardPile()).extracting(CardSlot::getInstanceId).containsExactly("m");
         assertThat(enemy.isTapped()).isFalse();
+    }
+
+    @Test
+    void celesteDoesNothingWhenItIsNotSummonedByEffect() {
+        CardSlot enemy = onField(guest, card("e", "Enemigo", 2, 2, "R"), FRONT);
+        enemy.setTapped(true);
+        host.getHand().add(card("cel", "Celeste", 1, 3, "G"));
+        host.getHand().add(card("h1", "Mano", 1, 1, "G"));
+        // "En Invocación por efecto": its Evolución is a special summon by the rules, not by an effect
+        summonInFront("cel");
+        assertThat(room.getPrompt()).isNull();
+        assertThat(guest.getField()).contains(enemy);
     }
 
     @Test
@@ -102,11 +114,12 @@ class E1IntegrationTest {
         Answers.answer(room, "host", room.getPrompt().getId(), List.of("dri"), List.of());
         Answers.answer(room, "host", room.getPrompt().getId(), List.of("h1"), List.of());
 
-        assertThat(weak.getNoUntap()).isEqualTo(2);
-        assertThat(strong.getNoUntap()).isZero();
-        // During its owner's next turn it cannot be reactivated
-        weak.setNoUntap(1);
-        assertThat(EffectEngine.reactivable(weak)).isFalse();
+        assertThat(weak.getNoStartUntap()).isEqualTo(2);
+        assertThat(strong.getNoStartUntap()).isZero();
+        // Only the untap at the start of its owner's next turn: effects can still reactivate it that turn (unlike Uzume)
+        weak.setNoStartUntap(1);
+        assertThat(weak.getNoUntap()).isZero();
+        assertThat(EffectEngine.reactivable(weak)).isTrue();
     }
 
     @Test
@@ -139,9 +152,33 @@ class E1IntegrationTest {
         // 1 gem and a cost of 2: the structure pays the other one
         assertThat(Summons.canSpecial(room, "host", evolved)).isTrue();
         assertThat(Summons.specialByPlayer(room, "host", "evo", "base")).isNull();
+        // "puedes agotar esta carta": it is asked
+        Prompt ask = room.getPrompt();
+        assertThat(ask.getPurpose()).isEqualTo("COST_TAP");
+        // Without it the cost cannot be paid
+        assertThat(Answers.answer(room, "host", ask.getId(), List.of(), List.of())).isNotNull();
+        assertThat(Answers.answer(room, "host", ask.getId(), List.of("bosque"), List.of())).isNull();
         assertThat(host.getField()).contains(evolved);
         assertThat(bosque.isTapped()).isTrue();
         assertThat(EffectEngine.gemsOf(room, "host")).isZero();
+    }
+
+    @Test
+    void bosqueFrondosoCanBeDeclined() {
+        room.setSharedCounter(-3);
+        CardSlot bosque = onField(host, card("bosque", "Bosque Frondoso", 1, 2, "G"), BACK);
+        bosque.setCardType("structure");
+        onField(host, card("base", "Base", 1, 1, "G"), FRONT);
+        CardSlot evolved = card("evo", "Evolución", 2, 2, "G");
+        evolved.setSpecialSummonKind("evolution");
+        evolved.setSpecialCost(2);
+        evolved.setRequirement("criatura nivel 1.");
+        host.getHand().add(evolved);
+        assertThat(Summons.specialByPlayer(room, "host", "evo", "base")).isNull();
+        assertThat(Answers.answer(room, "host", room.getPrompt().getId(), List.of(), List.of())).isNull();
+        assertThat(host.getField()).contains(evolved);
+        assertThat(bosque.isTapped()).isFalse();
+        assertThat(EffectEngine.gemsOf(room, "host")).isEqualTo(1);
     }
 
     @Test
@@ -601,6 +638,15 @@ class E1IntegrationTest {
         host.getHand().remove(card);
         onField(host, card, FRONT);
         Summons.specialSummoned(room, "host", card, null, "special", null);
+    }
+
+    /** As {@link #summonInFront}, but summoned by an effect ("por efecto"). */
+    private void summonByEffectInFront(String id) {
+        CardSlot card = host.getHand().stream().filter(c -> c.getInstanceId().equals(id)).findFirst().orElseThrow();
+        host.getHand().remove(card);
+        onField(host, card, FRONT);
+        EffectEngine.record(room, GameEvent.EFFECT_SUMMON, "host", card, "hand", "field", null, null, null);
+        Chain.advance(room);
     }
 
 }

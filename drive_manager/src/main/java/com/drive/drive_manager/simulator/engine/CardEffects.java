@@ -722,14 +722,10 @@ public final class CardEffects {
     static {
         CardFilter enemy = CardFilter.creatures();
         // E1-P19 Zaranthrax
-        add("zaranthrax", new EffectScript("zaranthrax:en-invocacion", Moment.ON_SUMMON, false, EN_INVOCACION,
-                "(1) Si tu oponente tiene 1 vida: esta carta puede declarar ataque.",
-                List.of(new DeclareAttack()))
-                .when(new LivesAtMost(true, 1))
+        add("zaranthrax", new EffectScript("zaranthrax:en-invocacion", Moment.ON_SUMMON, true, EN_INVOCACION,
+                "(1) Esta carta gana Letalidad 1 hasta el final de su próximo ataque este turno.",
+                List.of(new GainUntilNextAttack(0, "Letalidad 1")))
                 .limited(Limit.ONCE_PER_TURN_BETWEEN_COPIES));
-        continuous("zaranthrax", new Continuous(TODOS, "Esta carta gana fuerza 5 durante el paso de daño directo.", false,
-                new AttackingInDamageStep(),
-                5, List.of()));
         // E1-R6 Sargento Legionario
         add("sargento legionario", new EffectScript("sargento-legionario:en-invocacion", Moment.ON_SUMMON, true, EN_INVOCACION,
                 "Toma 1 carta Roja de tus tributos.",
@@ -763,7 +759,7 @@ public final class CardEffects {
         // E1-G9 Driada: "para elegir" is part of its cost (before the ";")
         add("driada", new EffectScript("driada:en-invocacion", Moment.ON_SUMMON, false, EN_INVOCACION,
                 "Puedes tributar 1 carta de tu mano para elegir el enemigo agotado de menor fuerza; este no se reactiva al inicio del turno oponente.",
-                List.of(new TributeFromHand(1), new ChooseWeakestEnemy(enemy.exhausted())), List.of(new NoUntapChosen())));
+                List.of(new TributeFromHand(1), new ChooseWeakestEnemy(enemy.exhausted())), List.of(new NoUntapChosen(false))));
         inherit("driada", new EffectScript("driada:hereda-todos-los-turnos", Moment.ON_EVENT, false, TODOS,
                 "Heredado de Driada: si esta carta es agotada, puedes tributar el recurso con este efecto; invoca 1 [hada] de tu mano reduciendo su coste en 1.",
                 List.of(new TributeResource("Driada")), List.of(new SummonFromZone("hand", CardFilter.creatures().withClasses("hada"), 1)))
@@ -988,9 +984,10 @@ public final class CardEffects {
                         .when(new Active())
                         .onlyAllyTurn());
         // E1-G14 Celeste (Asalto: keyword)
-        add("celeste", new EffectScript("celeste:en-invocacion", Moment.ON_SUMMON, true, EN_INVOCACION,
+        add("celeste", new EffectScript("celeste:en-invocacion", Moment.ON_SUMMON, true, EN_INVOCACION + " por efecto",
                 "Tributa 1 carta de tu mano y elige 1 enemigo agotado de fuerza 7 o menos; súbelo a la mano.",
-                List.of(new TributeFromHand(1), new ChooseEnemy(1, enemy.withMaxStrength(7).exhausted())), List.of(new BounceChosen())));
+                List.of(new TributeFromHand(1), new ChooseEnemy(1, enemy.withMaxStrength(7).exhausted())), List.of(new BounceChosen()))
+                .when(new SummonedByEffect()));
         // E1-P15 Devorador De Bestias (Celeridad: keyword)
         add("devorador de bestias", new EffectScript("devorador-de-bestias:en-invocacion", Moment.ON_SUMMON, false, EN_INVOCACION,
                 "Puedes sacrificar 1 aliado Violeta nivel 3 que no sea una copia de esta carta para ganar 2 gemas.",
@@ -1149,7 +1146,7 @@ public final class CardEffects {
                         "Al final del turno: puedes enviar 5 de tus tributos Verdes o [shogún] al fondo de tu mazo y elegir 1 enemigo; este no se puede "
                                 + "reactivar durante el próximo turno oponente.",
                         List.of(new SendFromZoneToDeckBottom("tributeZone", 5, CardFilter.colors("G").withClasses("shogún")), new ChooseEnemy(1, enemy)),
-                        List.of(new NoUntapChosen()))
+                        List.of(new NoUntapChosen(true)))
                         .when(new TurnEnds())
                         .onlyAllyTurn());
         // E1-R9 Antorcha Legionaria
@@ -1160,11 +1157,12 @@ public final class CardEffects {
                 .when(all(new TurnEnds(), new InFrontLine(), new CountOnField(CardFilter.creatures().withClasses("legionario"), 3, null)))
                 .onlyAllyTurn());
         // E1-B14 Proto Vigilante H2, E1-R7 Caballero Leal, E1-G10 Deriduragon and E1-G19 Hydra Colosal (inherited): REPLACEMENTS
-        // E1-B17 Roto G0
+        // E1-B17 Roto G0 (corrected 2026-10-30): the tribute is part of the resolution, then as many enemies as materials tributed
         add("roto g0",
                 new EffectScript("roto-g0:en-invocacion", Moment.ON_SUMMON, false, EN_INVOCACION,
-                        "Puedes tributar hasta 3 materiales de esta carta y elegir hasta 3 veces un enemigo; reduce en 2 la fuerza del enemigo elegido.",
-                        List.of(new TributeMaterials(3, true)), List.of(new ReduceRepeatedly(-1, 2, "turn"))),
+                        "Puedes tributar hasta 3 materiales de esta carta. Luego: la misma cantidad de veces elige un enemigo; reduce en 2 la fuerza "
+                                + "del enemigo elegido.",
+                        List.of(new TributeMaterials(3, true), new ReduceRepeatedly(-1, 2, "turn"))),
                 new EffectScript("roto-g0:al-final-del-ataque", Moment.ON_ATTACK_END, false, AL_FINAL,
                         "Puedes subir esta carta a tu mano para ganar 2 gemas.",
                         List.of(new IfPossible(), new ReturnSelfToHand(), new GainGems(2))));
@@ -1811,7 +1809,9 @@ public final class CardEffects {
         /** "puedes tributar todos los recursos [filtro] de esta carta" (resourceFilter; any: all of them). */
         TRIBUTE_RESOURCES,
         /** "puedes colocar hasta 2 criaturas [filtro] de los materiales de esta carta en tu retaguardia" (resourceFilter: which ones). */
-        MATERIALS_TO_BACK
+        MATERIALS_TO_BACK,
+        /** "puede tributar los recursos de esta carta" before it is removed (a reaction: it is still removed; they do not go to the Descarte). */
+        RESOURCES_TO_TRIBUTES_BEFORE
     }
 
     /**
@@ -1825,9 +1825,9 @@ public final class CardEffects {
             this(id, label, text, destroyOnly, byOpponentOnly, limit, cost, CardFilter.any());
         }
 
-        /** "en su lugar": the removal does not happen. A reaction (MATERIALS_TO_BACK) happens before it, and the removal goes on. */
+        /** "en su lugar": the removal does not happen. A reaction (MATERIALS_TO_BACK, RESOURCES_TO_TRIBUTES_BEFORE) happens before it, and the removal goes on. */
         public boolean instead() {
-            return cost != ReplacementCost.MATERIALS_TO_BACK;
+            return cost != ReplacementCost.MATERIALS_TO_BACK && cost != ReplacementCost.RESOURCES_TO_TRIBUTES_BEFORE;
         }
     }
 
@@ -1851,10 +1851,10 @@ public final class CardEffects {
             "hydra colosal", List.of(new Replacement("hydra-colosal:hereda-todos-los-turnos", TODOS,
                     "Heredado de Hydra Colosal: si esta carta fuera a ser destruida, en su lugar, puedes tributar todos los recursos [Hydra] de esta carta.",
                     true, false, Limit.NONE, ReplacementCost.TRIBUTE_RESOURCES, CardFilter.any().withClasses("hydra"))),
-            // E1-G10 Deriduragon
+            // E1-G10 Deriduragon: a reaction, the card is still removed (its Recursos go to the Tributos instead of the Descarte)
             "deriduragon", List.of(new Replacement("deriduragon:hereda-todos-los-turnos", TODOS,
                     "Heredado de Deriduragon: cuando esta carta fuera a ser removida por el oponente, puede tributar los recursos de esta carta.",
-                    false, true, Limit.NONE, ReplacementCost.TRIBUTE_RESOURCES)));
+                    false, true, Limit.NONE, ReplacementCost.RESOURCES_TO_TRIBUTES_BEFORE)));
 
     /** The card's own replacements and those its Recursos give it. */
     public static List<Replacement> replacementsOf(CardSlot card) {
@@ -1865,6 +1865,15 @@ public final class CardEffects {
                 all.addAll(INHERITED_REPLACEMENTS.getOrDefault(resource.getCardName().trim().toLowerCase(Locale.ROOT), List.of()));
         }
         return all;
+    }
+
+    /** The Recurso of the card that gives it that replacement (inherited), or null when it is the card's own. */
+    public static CardSlot replacementGiver(CardSlot card, Replacement replacement) {
+        for (CardSlot resource : card.getResources()) {
+            if (resource.getCardName() != null
+                    && INHERITED_REPLACEMENTS.getOrDefault(resource.getCardName().trim().toLowerCase(Locale.ROOT), List.of()).contains(replacement)) return resource;
+        }
+        return null;
     }
 
     /** "En Mano: al entrar al paso de bloqueo: puedes jugar esta carta pagando su coste." */

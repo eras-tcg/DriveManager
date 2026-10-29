@@ -1416,7 +1416,7 @@ public class RoomService {
         }
         autoDraw(player);
         // "no se reactiva al inicio del turno": that card stays exhausted this time
-        player.getField().forEach(c -> { if (c.getNoUntap() != 1) c.setTapped(false); });
+        player.getField().forEach(c -> { if (c.getNoUntap() != 1 && c.getNoStartUntap() != 1) c.setTapped(false); });
         TurnRules.turnStarted(room, playerId);
         if (room.isEngineBusy()) {
             room.setStartPhasePending(true);
@@ -1443,6 +1443,7 @@ public class RoomService {
             c.getLaterKeywords().clear();
             c.getUntilNextAttack().clear();
             if (c.getNoUntap() > 0) c.setNoUntap(c.getNoUntap() - 1);
+            if (c.getNoStartUntap() > 0) c.setNoStartUntap(c.getNoStartUntap() - 1);
             // What lasts until the end of the next turn now lasts until the end of this one
             c.setTurnStrength(c.getLaterStrength());
             c.setLaterStrength(0);
