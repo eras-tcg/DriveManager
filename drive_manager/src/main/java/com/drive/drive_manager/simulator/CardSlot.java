@@ -78,4 +78,6 @@ public class CardSlot {
     private int noUntap;
     private List<CardSlot> materials = new ArrayList<>();
     private List<CardSlot> resources = new ArrayList<>();
+    /** What of its metadata the rules engine does not run (to be played by hand), null when all of it runs. */
+    private String unprogrammed;
 }

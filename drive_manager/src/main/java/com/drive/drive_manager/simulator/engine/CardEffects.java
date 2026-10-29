@@ -1720,6 +1720,29 @@ public final class CardEffects {
         return all;
     }
 
+    /** Keyword abilities the engine applies (combat rules, {@link #KEYWORDS}, Asalto); the rest are played by hand. */
+    public static final Set<String> ENGINE_KEYWORDS = Set.of("Provocar", "Enfrentar", "Celeridad", "Asalto", "Furia", "Reactivar",
+            "Letalidad", "Imbloqueable", "Perforante", "Alcance", "Protección");
+
+    /**
+     * What of a card's metadata the engine does not run yet (as the vault's status counts it: sync_vault_status.py),
+     * or null when everything is programmed. {@code own}/{@code inherited}: its effects in the metadata.
+     */
+    public static String pending(String cardName, int own, int inherited, List<String> keywords) {
+        String name = cardName == null ? "" : cardName.trim().toLowerCase(Locale.ROOT);
+        int ownDone = BY_NAME.getOrDefault(name, List.of()).size() + CONTINUOUS.getOrDefault(name, List.of()).size()
+                + AURAS.getOrDefault(name, List.of()).size() + CostModifiers.of(name).size()
+                + REPLACEMENTS.getOrDefault(name, List.of()).size() + ruleEffects().getOrDefault(name, List.of()).size();
+        int inheritedDone = INHERITED.getOrDefault(name, List.of()).size() + INHERITED_REPLACEMENTS.getOrDefault(name, List.of()).size();
+        List<String> pending = new ArrayList<>();
+        if (own > ownDone) pending.add((own - ownDone) + " de " + own + " efectos propios");
+        if (inherited > inheritedDone) pending.add((inherited - inheritedDone) + " de " + inherited + " heredados");
+        List<String> manual = keywords.stream().map(k -> k.replaceAll("\\s*\\d+$", "").trim())
+                .filter(k -> !k.isEmpty() && !ENGINE_KEYWORDS.contains(k)).distinct().toList();
+        if (!manual.isEmpty()) pending.add(String.join(", ", manual));
+        return pending.isEmpty() ? null : String.join("; ", pending);
+    }
+
     /** What a card gives the creature it is a Recurso of. */
     public static List<EffectScript> inheritedOf(String name) {
         return name == null ? List.of() : INHERITED.getOrDefault(name.trim().toLowerCase(Locale.ROOT), List.of());

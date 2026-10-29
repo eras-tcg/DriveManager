@@ -154,6 +154,13 @@ class E1BugfixTest {
         assertThat(block.getValidIds()).containsExactly("b");
     }
 
+    @Test
+    void whatTheEngineDoesNotRunIsReportedPerCard() {
+        assertThat(CardEffects.pending("Franchute", 1, 0, List.of("Perforante"))).isNull();
+        assertThat(CardEffects.pending("Carta Sin Programar", 2, 1, List.of("Letalidad 1", "Agrupar")))
+                .isEqualTo("2 de 2 efectos propios; 1 de 1 heredados; Agrupar");
+    }
+
     // ------------------------------------------------------------------ Helpers
 
     private void summonToFront(CardSlot card) {

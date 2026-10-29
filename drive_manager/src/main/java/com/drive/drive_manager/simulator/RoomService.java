@@ -6,6 +6,7 @@ import com.drive.drive_manager.dto.DriveCard;
 import com.drive.drive_manager.repository.CardRepository;
 import com.drive.drive_manager.repository.DeckListRepository;
 import com.drive.drive_manager.repository.DriveCardRepository;
+import com.drive.drive_manager.simulator.engine.CardEffects;
 import com.drive.drive_manager.simulator.engine.EffectEngine;
 import com.drive.drive_manager.simulator.engine.TurnRules;
 import com.drive.drive_manager.simulator.engine.Summons;
@@ -2024,6 +2025,7 @@ public class RoomService {
             c.setRequirement(s.getRequirement());
             c.setKeywords(new ArrayList<>(s.getKeywords()));
             c.setInheritKeywords(new ArrayList<>(s.getInheritKeywords()));
+            c.setUnprogrammed(s.getUnprogrammed());
             c.setFaceDown(true);
             return c;
         }).collect(Collectors.toList());
@@ -2048,6 +2050,11 @@ public class RoomService {
         slot.setRequirement(meta.getRequirement());
         slot.setKeywords(keywordNames(meta.getKeywordEffects()));
         slot.setInheritKeywords(keywordNames(meta.getInheritKeywordEffects()));
+        List<String> allKeywords = new ArrayList<>(slot.getKeywords());
+        allKeywords.addAll(slot.getInheritKeywords());
+        slot.setUnprogrammed(CardEffects.pending(meta.getCardName(),
+                meta.getEffects() == null ? 0 : meta.getEffects().size(),
+                meta.getInheritEffects() == null ? 0 : meta.getInheritEffects().size(), allKeywords));
         List<String> colors = new ArrayList<>();
         if (meta.getColorIdentity() != null) colors.add(meta.getColorIdentity());
         if (meta.getColors() != null) meta.getColors().stream().filter(c -> !colors.contains(c)).forEach(colors::add);
