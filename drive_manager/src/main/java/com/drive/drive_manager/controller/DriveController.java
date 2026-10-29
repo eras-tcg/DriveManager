@@ -26,6 +26,8 @@ import org.slf4j.LoggerFactory;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import java.io.IOException;
+import com.drive.drive_manager.dto.DriveCard;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -91,7 +93,7 @@ public class DriveController {
                 .filter(c -> name == null || (c.getName() != null && c.getName().equalsIgnoreCase(name)))
                 .map(c -> Map.<String, Object>of(
                         "id",             c.getId(),
-                        "image_url",      baseUrl + "/cards/" + c.getId() + ".jpg",
+                        "image_url",      c.imageUrl(baseUrl),
                         "file_name",      c.getFileName() != null ? c.getFileName() : "",
                         "name",           c.getName() != null ? c.getName() : "",
                         "number",         c.getNumber() != null ? c.getNumber() : 0,
@@ -127,6 +129,29 @@ public class DriveController {
      * Delete a drive card's image from R2 and its DB record.
      * DELETE /api/drive/cards/db/{id}
      */
+    /**
+     * Gives the images uploaded before R2Service.CACHE_CONTROL existed that header, a page at a time (call again
+     * with the next offset until it returns done).
+     */
+    @PreAuthorize("hasAuthority('manage_cards')")
+    @PostMapping("/cards/cache-headers")
+    public ResponseEntity<?> refreshCacheHeaders(@RequestParam(defaultValue = "0") int offset, @RequestParam(defaultValue = "100") int limit) {
+        List<String> ids = driveCardRepository.findAll().stream().map(DriveCard::getId).sorted().toList();
+        List<String> page = ids.subList(Math.min(offset, ids.size()), Math.min(offset + Math.max(1, limit), ids.size()));
+        int updated = 0;
+        List<String> failed = new ArrayList<>();
+        for (String id : page) {
+            try {
+                r2Service.setCacheControl(id);
+                updated++;
+            } catch (Exception e) {
+                failed.add(id);
+            }
+        }
+        int next = offset + page.size();
+        return ResponseEntity.ok(Map.of("updated", updated, "failed", failed, "next", next, "total", ids.size(), "done", next >= ids.size()));
+    }
+
     @PreAuthorize("hasAuthority('manage_cards')")
     @DeleteMapping("/cards/db/{id}")
     public ResponseEntity<?> deleteCard(@PathVariable String id) {

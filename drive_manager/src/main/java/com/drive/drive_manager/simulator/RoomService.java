@@ -2116,7 +2116,7 @@ public class RoomService {
             slot.setFaceDown(true);
             DriveCard dc = driveCardMap.get(driveFileId);
             if (dc != null) {
-                slot.setImageUrl(baseUrl + "/cards/" + driveFileId + ".jpg");
+                slot.setImageUrl(dc.imageUrl(baseUrl));
                 if (dc.getName() != null) {
                     slot.setCardName(dc.getName());
                     if (dc.getEdition() != null) {
