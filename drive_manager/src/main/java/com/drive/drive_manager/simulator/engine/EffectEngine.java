@@ -254,15 +254,18 @@ public final class EffectEngine {
             }
             for (CardSlot card : p.getField()) {
                 int strength = aura.getOrDefault(card.getInstanceId(), 0);
+                int level = 0;
                 List<String> keywords = new ArrayList<>();
                 for (CardEffects.Continuous c : CardEffects.continuousOf(card)) {
                     if (!"field".equals(c.zone())) continue;
                     if (c.allyTurn() && !p.getUserId().equals(room.getCurrentTurnUserId())) continue;
                     if (card.isFaceDown() || !c.condition().test(room, null, card, p.getUserId())) continue;
                     strength += c.strength() + (c.bonus() == null ? 0 : c.bonus().of(room, p.getUserId()));
+                    level += c.levelBonus() == null ? 0 : c.levelBonus().of(room, p.getUserId());
                     keywords.addAll(c.keywords());
                 }
                 card.setContinuousStrength(strength);
+                card.setContinuousLevel(level);
                 card.setContinuousKeywords(keywords);
             }
         }

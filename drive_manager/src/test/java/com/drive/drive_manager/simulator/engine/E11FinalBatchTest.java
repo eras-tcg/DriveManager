@@ -189,6 +189,23 @@ class E11FinalBatchTest {
         assertThat(EffectEngine.gemsOf(room, "host")).isEqualTo(gems - 1);
     }
 
+    @Test
+    void xiromorfoGainsALevelAndThreeStrengthPerCopyInTheTributes() {
+        CardSlot xiro = onField(host, withClasses(card("xi", "Xiromorfo", 2, 2, "P"), "bestia", "mutante"));
+        xiro.setStrength(4);
+        host.getTributeZone().addAll(List.of(card("c1", "Xiromorfo", 2, 2, "P"), card("c2", "Xiromorfo", 2, 2, "P")));
+        EffectEngine.refreshContinuous(room);
+        assertThat(xiro.getLevel()).isEqualTo(4);
+        assertThat(xiro.getPrintedLevel()).isEqualTo(2);
+        assertThat(EffectEngine.strength(xiro)).isEqualTo(10);
+        // Every rule reads the level it has now ("nivel 3 o menor" no longer includes it)
+        assertThat(CardFilter.creatures().withMaxLevel(3).matches(xiro)).isFalse();
+        assertThat(CardFilter.creatures().withLevel(4).matches(xiro)).isTrue();
+        // Off the field it is its printed card again
+        Removals.removeFromField(host, xiro);
+        assertThat(xiro.getLevel()).isEqualTo(2);
+    }
+
     // ------------------------------------------------------------------ Helpers
 
     /** Answers "none" to everything else until a prompt of that purpose comes. */

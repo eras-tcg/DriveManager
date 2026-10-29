@@ -54,6 +54,18 @@ public class CardSlot {
     private int laterStrength;
     /** Strength and abilities its continuous effects give it while their condition holds (checked after every event). */
     private int continuousStrength;
+    /** Levels its continuous effects give it now ("gana 1 nivel por cada copia"), added to the printed level. */
+    private int continuousLevel;
+
+    /** Its level now: the printed one plus what its continuous effects give it. Every rule reads this one. */
+    public Integer getLevel() {
+        return level == null ? null : level + continuousLevel;
+    }
+
+    /** The printed level. */
+    public Integer getPrintedLevel() {
+        return level;
+    }
     /** Placed "hasta el final del turno" (Janne): it goes back to its owner's hand when the turn ends. */
     private boolean returnAtTurnEnd;
     private List<String> continuousKeywords = new ArrayList<>();

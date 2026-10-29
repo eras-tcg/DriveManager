@@ -1513,9 +1513,10 @@ public final class CardEffects {
                         new MayDo("¿Mueves esta carta a tu línea frontal?", 1), new MoveSelfToFront()))
                 .onlyAllyTurn()
                 .limited(Limit.ONCE_PER_TURN));
-        // E1.1-P6 Xiromorfo (Celeridad: keyword; its "gana 1 nivel por copia" is not applied yet)
+        // E1.1-P6 Xiromorfo (Celeridad: keyword)
+        Amount xiromorfoCopies = new Amount.InZone("tributeZone", CardFilter.any().named("Xiromorfo"));
         continuous("xiromorfo", new Continuous(TODOS, "Esta carta gana 1 nivel y fuerza 3 por cada copia de esta carta en tus tributos.", false,
-                new Always(), 0, List.of(), new Amount.Times(new Amount.InZone("tributeZone", CardFilter.any().named("Xiromorfo")), 3)));
+                new Always(), 0, List.of(), new Amount.Times(xiromorfoCopies, 3), "field", xiromorfoCopies));
         // E1.1-R15 A La Carga!
         add("a la carga!", new EffectScript("a-la-carga:en-juego", Moment.ON_PLAY, true, EN_JUEGO,
                 "Si tienes al menos 7 aliados Rojos: todos los aliados ganan Furia y Perforante hasta el final del turno.",
@@ -1644,8 +1645,14 @@ public final class CardEffects {
      * checked again after every event, so it stops applying as soon as the condition does.
      */
     /** {@code zone}: where the card has to be for it to apply ("field", or "lifeStack": "mientras esté en tus vidas"). */
+    /** {@code levelBonus}: levels it gains while it applies ("gana 1 nivel por cada copia"), or null. */
     public record Continuous(String label, String text, boolean allyTurn, Condition condition, int strength, List<String> keywords,
-                             Amount bonus, String zone) {
+                             Amount bonus, String zone, Amount levelBonus) {
+        public Continuous(String label, String text, boolean allyTurn, Condition condition, int strength, List<String> keywords,
+                          Amount bonus, String zone) {
+            this(label, text, allyTurn, condition, strength, keywords, bonus, zone, null);
+        }
+
         public Continuous(String label, String text, boolean allyTurn, Condition condition, int strength, List<String> keywords,
                           Amount bonus) {
             this(label, text, allyTurn, condition, strength, keywords, bonus, "field");

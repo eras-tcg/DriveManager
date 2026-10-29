@@ -1966,7 +1966,8 @@ public class RoomService {
             c.setSpecialSummonKind(s.getSpecialSummonKind());
             c.setStarter(s.isStarter());
             c.setCost(s.getCost());
-            c.setLevel(s.getLevel());
+            c.setLevel(s.getPrintedLevel());
+            c.setContinuousLevel(s.getContinuousLevel());
             c.setColors(new ArrayList<>(s.getColors()));
             c.setClasses(new ArrayList<>(s.getClasses()));
             c.setSpecialCost(s.getSpecialCost());

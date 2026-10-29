@@ -122,6 +122,7 @@ public final class Removals {
         card.setLaterStrength(0);
         card.getTurnKeywords().clear();
         card.setContinuousStrength(0);
+        card.setContinuousLevel(0);
         card.getContinuousKeywords().clear();
         card.getFloating().clear();
         card.setReturnAtTurnEnd(false);
