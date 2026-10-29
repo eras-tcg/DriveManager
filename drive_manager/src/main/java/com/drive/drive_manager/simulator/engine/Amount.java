@@ -45,6 +45,13 @@ public sealed interface Amount {
         }
     }
 
+    /** {@code base × factor} ("gana fuerza 3 por cada copia": copias × 3). */
+    record Times(Amount base, int factor) implements Amount {
+        public int of(GameRoom room, String controller) {
+            return base.of(room, controller) * factor;
+        }
+    }
+
     /** One amount while a condition on the table holds, another otherwise ("si tienes 3 o menos vidas: …"). */
     record IfThen(Condition condition, Amount then, Amount otherwise) implements Amount {
         public int of(GameRoom room, String controller) {

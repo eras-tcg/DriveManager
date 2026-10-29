@@ -921,21 +921,18 @@
   "effects": [
    {
     "instance": "Al Final Del Ataque",
-    "ussageLimit": "once per turn between copies",
     "effectBlocks": [
      {
-      "activationCondition": "si tienes 10 o más tributos [bestia]",
+      "activationCondition": "si tienes 10 o más criaturas [bestia] en tus tributos",
       "cost": "",
-      "resolution": "esta carta puede invocar por Ritual 1 criatura de tus tributos reduciendo el coste especial en 1.",
-      "plainEffect": "si tienes 10 o más tributos [bestia]: esta carta puede invocar por Ritual 1 criatura de tus tributos reduciendo el coste especial en 1."
+      "resolution": "esta carta puede invocar por Ritual 1 criatura de tus tributos reduciendo el coste especial en 1."
      }
     ],
     "kind": "disparado",
     "tags": [
      "invocar especial",
      "invocar"
-    ],
-    "plainEffect": "<Al Final Del Ataque> (1) si tienes 10 o más tributos [bestia]: esta carta puede invocar por Ritual 1 criatura de tus tributos reduciendo el coste especial en 1."
+    ]
    }
   ],
   "inheritEffects": [],

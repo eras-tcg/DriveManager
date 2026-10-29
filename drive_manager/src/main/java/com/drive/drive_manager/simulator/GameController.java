@@ -4,7 +4,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.messaging.handler.annotation.DestinationVariable;
 import org.springframework.messaging.handler.annotation.Header;
 import org.springframework.messaging.handler.annotation.MessageMapping;
-import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Controller;
 
 import java.security.Principal;
@@ -14,9 +13,6 @@ public class GameController {
 
     @Autowired
     private RoomService roomService;
-
-    @Autowired
-    private SimpMessagingTemplate messagingTemplate;
 
     @MessageMapping("/room/{roomId}/action")
     public void handleAction(@DestinationVariable String roomId,
@@ -31,7 +27,6 @@ public class GameController {
         // resolved back to a player.
         roomService.registerSession(sessionId, roomId, userId);
 
-        GameStateUpdate update = roomService.applyAction(roomId, userId, action);
-        messagingTemplate.convertAndSend("/topic/room/" + roomId, update);
+        roomService.applyAndBroadcast(roomId, userId, action);
     }
 }

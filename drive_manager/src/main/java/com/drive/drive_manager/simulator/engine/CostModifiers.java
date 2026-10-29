@@ -27,7 +27,7 @@ public final class CostModifiers {
      */
     public enum Holder { SUMMONER, FIELD, SELF }
 
-    public enum PaymentKind { NONE, TAP_SELF, TRIBUTES_TO_DECK_BOTTOM }
+    public enum PaymentKind { NONE, TAP_SELF, TRIBUTES_TO_DECK_BOTTOM, TRIBUTE_AS_RESOURCE }
 
     /** What the modifier asks for, if anything. */
     public record Payment(PaymentKind kind, int count, CardFilter filter) {
@@ -45,9 +45,14 @@ public final class CostModifiers {
             return new Payment(PaymentKind.TRIBUTES_TO_DECK_BOTTOM, count, filter);
         }
 
+        /** "puedes añadir 1 de tus tributos [filtro] como recurso de esta carta": the summoner, before the summon. */
+        public static Payment tributeAsResource(CardFilter filter) {
+            return new Payment(PaymentKind.TRIBUTE_AS_RESOURCE, 1, filter);
+        }
+
         /** The player has to choose the cards (the others are applied on their own). */
         public boolean needsChoice() {
-            return kind == PaymentKind.TRIBUTES_TO_DECK_BOTTOM;
+            return kind == PaymentKind.TRIBUTES_TO_DECK_BOTTOM || kind == PaymentKind.TRIBUTE_AS_RESOURCE;
         }
     }
 
@@ -59,7 +64,22 @@ public final class CostModifiers {
      * @param reduce    how much it lowers the cost
      */
     public record CostModifier(String label, Event event, Set<String> kinds, Holder holder, boolean allyTurn,
-                               Condition condition, Payment payment, int reduce) {}
+                               Condition condition, Payment payment, int reduce, EffectScript.Limit limit) {
+        public CostModifier(String label, Event event, Set<String> kinds, Holder holder, boolean allyTurn, Condition condition, Payment payment,
+                            int reduce) {
+            this(label, event, kinds, holder, allyTurn, condition, payment, reduce, EffectScript.Limit.NONE);
+        }
+    }
+
+    /** The mark of a limited modifier used this turn (between copies: by the card's name). */
+    static String usageKey(PlayerState player, Use use) {
+        return player.getUserId() + "|cost-modifier|" + use.holder().getCardName().trim().toLowerCase(Locale.ROOT);
+    }
+
+    /** A limited modifier was used: it is not offered again this turn. */
+    static void markUsed(GameRoom room, PlayerState player, Use use) {
+        if (use.modifier().limit() != EffectScript.Limit.NONE) room.getUsedThisTurn().add(usageKey(player, use));
+    }
 
     /** A modifier that applies now, with the card that has it. */
     public record Use(CostModifier modifier, CardSlot holder) {}
@@ -117,7 +137,9 @@ public final class CostModifiers {
                 if (m.allyTurn() && !player.getUserId().equals(room.getCurrentTurnUserId())) continue;
                 if (m.condition() != null && !m.condition().test(room, null, holder, player.getUserId())) continue;
                 if (!payable(player, m.payment(), holder)) continue;
-                uses.add(new Use(m, holder));
+                Use use = new Use(m, holder);
+                if (m.limit() != EffectScript.Limit.NONE && room.getUsedThisTurn().contains(usageKey(player, use))) continue;
+                uses.add(use);
             }
         }
         return uses;
@@ -127,7 +149,7 @@ public final class CostModifiers {
         return switch (payment.kind()) {
             case NONE -> true;
             case TAP_SELF -> !holder.isTapped();
-            case TRIBUTES_TO_DECK_BOTTOM -> player.getTributeZone().stream().filter(payment.filter()::matches).count() >= payment.count();
+            case TRIBUTES_TO_DECK_BOTTOM, TRIBUTE_AS_RESOURCE -> player.getTributeZone().stream().filter(payment.filter()::matches).count() >= payment.count();
         };
     }
 
@@ -151,6 +173,7 @@ public final class CostModifiers {
                         player.getUsername() + " agota " + use.holder().getCardName() + " para reducir en " + use.modifier().reduce() + " el coste");
             }
             reduced += use.modifier().reduce();
+            markUsed(room, player, use);
         }
         return reduced;
     }
@@ -164,13 +187,16 @@ public final class CostModifiers {
     /** The cards that can pay it. */
     static List<CardSlot> paymentOptions(PlayerState player, Use use) {
         Payment payment = use.modifier().payment();
-        return payment.kind() == PaymentKind.TRIBUTES_TO_DECK_BOTTOM
-                ? player.getTributeZone().stream().filter(payment.filter()::matches).toList() : List.of();
+        return payment.needsChoice() ? player.getTributeZone().stream().filter(payment.filter()::matches).toList() : List.of();
     }
 
     /** What is asked, for the choice. */
     static String describe(Use use) {
         Payment payment = use.modifier().payment();
+        if (payment.kind() == PaymentKind.TRIBUTE_AS_RESOURCE) {
+            return "Puedes añadir 1 de tus tributos " + payment.filter().describe() + " como recurso de " + use.holder().getCardName()
+                    + " antes de la invocación. Elige 1, o ninguna.";
+        }
         String what = payment.kind() == PaymentKind.TRIBUTES_TO_DECK_BOTTOM
                 ? "enviar " + payment.count() + " de tus tributos " + payment.filter().describe() + " al fondo de tu mazo" : "pagarlo";
         return "Puedes " + what + " para reducir en " + use.modifier().reduce() + " el coste. Elige " + payment.count()

@@ -13,7 +13,10 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.security.GeneralSecurityException;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 @Service
 public class StagedChangeService {
@@ -24,6 +27,24 @@ public class StagedChangeService {
     private final DriveCardRepository driveCardRepository;
     private final DriveClientFactory driveClientFactory;
     private final R2Service r2Service;
+    /** Applying everything runs here, one change at a time, while the page asks how it goes. */
+    private final ExecutorService worker = Executors.newSingleThreadExecutor(r -> {
+        Thread t = new Thread(r, "staged-apply");
+        t.setDaemon(true);
+        return t;
+    });
+    private volatile ApplyProgress progress = ApplyProgress.idle();
+
+    /**
+     * How applying all the changes goes: it runs on the server, so leaving the page (or reloading it) does not
+     * stop it, and the page shows it again when it comes back.
+     */
+    public record ApplyProgress(boolean running, int total, int done, int failed, String current, List<String> errors,
+                                Instant startedAt, Instant finishedAt) {
+        static ApplyProgress idle() {
+            return new ApplyProgress(false, 0, 0, 0, null, List.of(), null, null);
+        }
+    }
 
     public StagedChangeService(StagedChangeRepository stagedChangeRepository,
                                DriveCardRepository driveCardRepository,
@@ -39,13 +60,41 @@ public class StagedChangeService {
         return stagedChangeRepository.findAll();
     }
 
-    /** Apply all staged changes. Returns count of applied entries. */
-    public int applyAll() throws GeneralSecurityException, IOException {
+    public ApplyProgress progress() {
+        return progress;
+    }
+
+    /**
+     * Starts applying every staged change in the background (one image at a time: one request for all of them
+     * timed out). Returns how it goes; if it is already running, nothing new starts.
+     */
+    public synchronized ApplyProgress startApplyAll() {
+        if (progress.running()) return progress;
         List<StagedChange> all = stagedChangeRepository.findAll();
+        progress = new ApplyProgress(true, all.size(), 0, 0, null, List.of(), Instant.now(), null);
+        worker.submit(() -> applyInBackground(all));
+        return progress;
+    }
+
+    private void applyInBackground(List<StagedChange> all) {
+        int done = 0;
+        int failed = 0;
+        List<String> errors = new ArrayList<>();
+        Instant started = progress.startedAt();
         for (StagedChange change : all) {
-            applySingle(change);
+            String label = change.getName() != null ? change.getName() : change.getFileName();
+            progress = new ApplyProgress(true, all.size(), done, failed, label, List.copyOf(errors), started, null);
+            try {
+                // Discarded or applied by hand meanwhile: nothing to do
+                if (stagedChangeRepository.existsById(change.getId())) applySingle(change);
+                done++;
+            } catch (Exception e) {
+                failed++;
+                logger.error("Failed to apply staged change {}", change.getId(), e);
+                if (errors.size() < 20) errors.add(label + ": " + (e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName()));
+            }
         }
-        return all.size();
+        progress = new ApplyProgress(false, all.size(), done, failed, null, List.copyOf(errors), started, Instant.now());
     }
 
     /** Apply one staged change by Drive file ID. */

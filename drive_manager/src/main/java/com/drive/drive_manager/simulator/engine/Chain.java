@@ -47,13 +47,15 @@ public final class Chain {
             if (top != null && paying(top)) {
                 // The effect just activated pays its cost before anything else, choices included
                 if (!run(room, top, script(top).cost().get(top.getCostIndex()))) top.setCostIndex(top.getCostIndex() + 1);
-            } else if (!resolving && !room.getPendingEvents().isEmpty()) {
+            } else if (chain.isEmpty() && !room.getPendingEvents().isEmpty()) {
                 queueTriggers(room);
             } else if (!resolving && !room.getTriggerQueue().isEmpty()) {
                 activateNext(room);
             } else if (!chain.isEmpty()) {
                 if (offerPriority(room)) return;
                 stepTop(room);
+            } else if (room.getPendingAscension() != null) {
+                completeAscension(room);
             } else if (room.getCombat() != null) {
                 combatStep(room);
             } else {
@@ -154,6 +156,7 @@ public final class Chain {
 
     static String usageKey(PendingEffect e, EffectScript script) {
         if (script.limit() == Limit.DEFINITIVE) return e.getControllerId() + "|" + DEFINITIVE_USED;
+        if (script.limit() == Limit.ONE_EFFECT_OF_NAME_PER_TURN) return e.getControllerId() + "|name:" + e.getSourceName().toLowerCase(java.util.Locale.ROOT);
         return script.limit() == Limit.ONCE_PER_TURN_BETWEEN_COPIES
                 ? e.getControllerId() + "|" + script.id()
                 : e.getControllerId() + "|" + e.getSourceInstanceId() + "|" + script.id();
@@ -318,13 +321,32 @@ public final class Chain {
     }
 
     /** An optional effect is offered only when its cost can be paid and its choices have something to choose. */
+    /** How many of the next steps a connector makes conditional (0 for any other step). */
+    static int covers(EffectStep step) {
+        return switch (step) {
+            case EffectStep.IfDone s -> s.covers();
+            case EffectStep.IfNotDone s -> s.covers();
+            case EffectStep.IfTributed s -> s.covers();
+            case EffectStep.IfCondition s -> s.covers();
+            case EffectStep.IfChosenGone s -> s.covers();
+            case EffectStep.MayDo s -> s.covers();
+            default -> 0;
+        };
+    }
+
     static boolean canActivate(GameRoom room, PendingEffect effect, EffectScript script) {
         for (EffectStep step : script.cost()) if (!possible(room, effect, step)) return false;
         if (!allPossibleAfterIfPossible(room, effect, script.steps(), 0)) return false;
         // "Si ningún enemigo fue …: …" (IfNotDone): the effect does something even when there is nothing to choose
         if (script.steps().stream().anyMatch(s -> s instanceof IfNotDone)) return true;
-        for (EffectStep step : script.steps()) {
-            if (step instanceof NeedsTarget && !possible(room, effect, step)) return false;
+        List<EffectStep> steps = script.steps();
+        for (int i = 0; i < steps.size(); i++) {
+            int covers = covers(steps.get(i));
+            if (covers > 0) {
+                i += covers;
+                continue;
+            }
+            if (steps.get(i) instanceof NeedsTarget && !possible(room, effect, steps.get(i))) return false;
         }
         return true;
     }

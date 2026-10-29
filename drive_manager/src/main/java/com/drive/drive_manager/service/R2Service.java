@@ -6,7 +6,9 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.s3.model.CopyObjectRequest;
 import software.amazon.awssdk.services.s3.model.DeleteObjectRequest;
+import software.amazon.awssdk.services.s3.model.MetadataDirective;
 import software.amazon.awssdk.services.s3.model.GetObjectRequest;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 
@@ -17,6 +19,8 @@ public class R2Service {
 
     private static final Logger logger = LoggerFactory.getLogger(R2Service.class);
     private static final String KEY_PREFIX = "cards/";
+    /** Card image URLs carry their version (DriveCard.imageUrl): the same URL is always the same image. */
+    static final String CACHE_CONTROL = "public, max-age=31536000, immutable";
 
     private final S3Client r2Client;
 
@@ -42,6 +46,7 @@ public class R2Service {
                         .bucket(bucketName)
                         .key(key)
                         .contentType("image/jpeg")
+                        .cacheControl(CACHE_CONTROL)
                         .contentLength(size)
                         .build(),
                 RequestBody.fromInputStream(content, size));
@@ -49,6 +54,18 @@ public class R2Service {
         String url = publicBaseUrl.stripTrailing() + "/" + key;
         logger.info("Uploaded to R2: {}", url);
         return url;
+    }
+
+    /** Gives an image already in R2 the long cache header (copies it onto itself with new metadata). */
+    public void setCacheControl(String fileId) {
+        String key = KEY_PREFIX + fileId + ".jpg";
+        r2Client.copyObject(CopyObjectRequest.builder()
+                .sourceBucket(bucketName).sourceKey(key)
+                .destinationBucket(bucketName).destinationKey(key)
+                .metadataDirective(MetadataDirective.REPLACE)
+                .contentType("image/jpeg")
+                .cacheControl(CACHE_CONTROL)
+                .build());
     }
 
     /**

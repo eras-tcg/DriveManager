@@ -74,6 +74,8 @@ public record EffectScript(String id, Moment moment, boolean mandatory, String l
     public enum Limit {
         NONE, ONCE_PER_TURN, ONCE_PER_TURN_BETWEEN_COPIES,
         /** "Efecto Definitivo": a player can activate only 1 of them per turn, whatever card it is. */
-        DEFINITIVE
+        DEFINITIVE,
+        /** "Solo puedes activar 1 efecto de «X» por turno": one of the card's effects, whichever, between copies. */
+        ONE_EFFECT_OF_NAME_PER_TURN
     }
 }

@@ -39,6 +39,10 @@ public class CardSlot {
     private List<String> inheritKeywords = new ArrayList<>();
     /** Abilities gained until the end of the turn ("gana Furia 1 hasta el final del turno"). */
     private List<String> turnKeywords = new ArrayList<>();
+    /** Abilities until the end of the next turn ("hasta el final del turno oponente"): they become turnKeywords when this turn ends. */
+    private List<String> laterKeywords = new ArrayList<>();
+    /** What lasts "hasta el final del turno o de su próximo ataque" ("Provocar", "fuerza:3"): it ends with its next attack too. */
+    private List<String> untilNextAttack = new ArrayList<>();
     /**
      * Timeline seq when it entered the field: a card on the field only reacts to events from then on (an event
      * that happened before it was there, like the sacrifice of its own Ritual summoner, cannot trigger it).
@@ -50,6 +54,18 @@ public class CardSlot {
     private int laterStrength;
     /** Strength and abilities its continuous effects give it while their condition holds (checked after every event). */
     private int continuousStrength;
+    /** Levels its continuous effects give it now ("gana 1 nivel por cada copia"), added to the printed level. */
+    private int continuousLevel;
+
+    /** Its level now: the printed one plus what its continuous effects give it. Every rule reads this one. */
+    public Integer getLevel() {
+        return level == null ? null : level + continuousLevel;
+    }
+
+    /** The printed level. */
+    public Integer getPrintedLevel() {
+        return level;
+    }
     /** Placed "hasta el final del turno" (Janne): it goes back to its owner's hand when the turn ends. */
     private boolean returnAtTurnEnd;
     private List<String> continuousKeywords = new ArrayList<>();
@@ -62,4 +78,6 @@ public class CardSlot {
     private int noUntap;
     private List<CardSlot> materials = new ArrayList<>();
     private List<CardSlot> resources = new ArrayList<>();
+    /** What of its metadata the rules engine does not run (to be played by hand), null when all of it runs. */
+    private String unprogrammed;
 }

@@ -20,7 +20,8 @@ import java.util.Map;
  * Manages staged Drive changes before they are applied to drive_cards and uploaded to R2.
  *
  * GET    /api/drive/staged           → list all pending staged changes
- * POST   /api/drive/staged/apply     → apply all staged changes
+ * POST   /api/drive/staged/apply     → start applying all staged changes (background)
+ * GET    /api/drive/staged/apply/status → how applying all of them goes
  * POST   /api/drive/staged/apply/{fileId} → apply one staged change
  * DELETE /api/drive/staged/{fileId}  → discard one staged change
  */
@@ -42,17 +43,17 @@ public class StagedChangeController {
         return ResponseEntity.ok(stagedChangeService.listAll());
     }
 
+    /** Starts applying all of them in the background; GET /apply/status tells how it goes. */
     @PreAuthorize("hasAuthority('manage_cards')")
     @PostMapping("/apply")
-    public ResponseEntity<Map<String, Object>> applyAll() {
-        try {
-            int count = stagedChangeService.applyAll();
-            return ResponseEntity.ok(Map.of("applied", count));
-        } catch (Exception e) {
-            logger.error("Failed to apply all staged changes", e);
-            return ResponseEntity.internalServerError()
-                    .body(Map.of("error", e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName()));
-        }
+    public ResponseEntity<StagedChangeService.ApplyProgress> applyAll() {
+        return ResponseEntity.accepted().body(stagedChangeService.startApplyAll());
+    }
+
+    @PreAuthorize("hasAuthority('manage_cards')")
+    @GetMapping("/apply/status")
+    public ResponseEntity<StagedChangeService.ApplyProgress> applyStatus() {
+        return ResponseEntity.ok(stagedChangeService.progress());
     }
 
     @PreAuthorize("hasAuthority('manage_cards')")
