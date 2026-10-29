@@ -456,4 +456,22 @@ public sealed interface EffectStep {
 
     /** "ninguno puede agotarse hasta el final del turno [oponente]": the chosen targets ({@code until}: "turn" or "nextTurn"). */
     record ChosenCannotBeExhausted(String until) implements EffectStep {}
+
+    /** "para que otro [aliado] a lo más N nivel mayor declare ataque": an ally of the Línea frontal of level up to the sacrificed one's + N. */
+    record PickAllyUpToSacrificedLevel(int plus) implements NeedsTarget {}
+
+    /** "1 aliado como material de otro de nivel mayor": the ally to add, one with an ally of higher level. */
+    record PickAllyWithHigherAlly() implements NeedsTarget {}
+
+    /** "… como material de otro de nivel mayor": the subject becomes a material of an ally of higher level. */
+    record AttachSubjectToHigherAlly() implements EffectStep {}
+
+    /** "algún aliado [con N materiales]": an ally with at least {@code count} materials becomes the subject. */
+    record PickAllyWithMaterials(int count) implements NeedsTarget {}
+
+    /** "tributa N materiales de [dicho aliado]". */
+    record TributeSubjectMaterials(int count) implements EffectStep {}
+
+    /** "dicho aliado inflige daño 1 vez más": one more hit of the direct damage going on. */
+    record ExtraHit() implements EffectStep {}
 }

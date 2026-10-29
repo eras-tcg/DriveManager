@@ -106,6 +106,29 @@ public sealed interface Condition {
         }
     }
 
+    /** "si algún aliado [filtro] inflige daño directo" (by combat). */
+    record AllyDealtDirectDamage(CardFilter filter) implements Condition {
+        public boolean test(GameRoom room, GameEvent event, CardSlot source, String controller) {
+            if (!GameEvent.LIFE_DAMAGE.equals(event.getType()) || !controller.equals(event.getPlayerId()) || event.getData() == null) return false;
+            CardSlot attacker = EffectEngine.findInRoom(room, (String) event.getData().get("attackerId"));
+            return attacker != null && filter.matches(attacker);
+        }
+    }
+
+    /** "si algún enemigo declara ataque". */
+    record EnemyDeclaresAttack() implements Condition {
+        public boolean test(GameRoom room, GameEvent event, CardSlot source, String controller) {
+            return GameEvent.ATTACK_DECLARED.equals(event.getType()) && event.getPlayerId() != null && !controller.equals(event.getPlayerId());
+        }
+    }
+
+    /** "si activaste algún Efecto Definitivo el turno anterior". */
+    record UsedDefinitiveLastTurn() implements Condition {
+        public boolean test(GameRoom room, GameEvent event, CardSlot source, String controller) {
+            return room.getUsedThisTurn().contains(EffectEngine.DEFINITIVE_LAST_TURN + controller);
+        }
+    }
+
     /** "si algún enemigo fue destruido durante el ataque" (at the end of the attack). */
     record EnemyDestroyedInAttack() implements Condition {
         public boolean test(GameRoom room, GameEvent event, CardSlot source, String controller) {

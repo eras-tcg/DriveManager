@@ -74,6 +74,13 @@ public final class Answers {
         if (other != null) return other.isEmpty() ? null : other;
 
         // Combat choices: the blocker, or the enemy forced to block by Provocar
+        if (PURPOSE_BLOCK_SWAP.equals(prompt.getPurpose()) || PURPOSE_DAMAGE_REPLACE.equals(prompt.getPurpose())) {
+            room.setPrompt(null);
+            if (PURPOSE_BLOCK_SWAP.equals(prompt.getPurpose())) CombatRules.swapBlocker(room, player, prompt, picks);
+            else CombatRules.replaceDamage(room, player, picks);
+            advance(room);
+            return null;
+        }
         if (prompt.getPurpose() != null) {
             Combat c = room.getCombat();
             room.setPrompt(null);
@@ -86,6 +93,8 @@ public final class Answers {
                     boolean forced = PURPOSE_PROVOKE.equals(prompt.getPurpose());
                     record(room, GameEvent.BLOCK, defender.getUserId(), blocker, null, null, null, Map.of("forced", forced),
                             name(blocker) + (forced ? " debe bloquear (Provocar)" : " bloquea el ataque"));
+                    // "cuando un aliado sea declarado bloqueador: en su lugar, puedes …" (Comandante Veterano)
+                    if (CombatRules.offerBlockerSwap(room, defender, blocker)) return null;
                 }
             }
             advance(room);
@@ -230,13 +239,22 @@ public final class Answers {
                 return "Sin la reducción no tienes gemas suficientes: elige " + count + " cartas";
             room.setPrompt(null);
             List<CardSlot> paid = new ArrayList<>();
+            boolean asResource = use != null && use.modifier().payment().kind() == CostModifiers.PaymentKind.TRIBUTE_AS_RESOURCE;
             for (String id : picks) {
                 CardSlot c = find(player.getTributeZone(), id);
                 if (c == null) continue;
                 player.getTributeZone().remove(c);
+                paid.add(c);
+                if (asResource) {
+                    // It becomes a Recurso of the summoner, which passes its Recursos on to the creature it summons
+                    c.setFaceDown(false);
+                    summoner.getResources().add(c);
+                    record(room, GameEvent.SEND, userId, c, "tributeZone", "resources", null, Map.of("to", summoner.getInstanceId()),
+                            player.getUsername() + " añade " + name(c) + " como recurso de " + name(summoner));
+                    continue;
+                }
                 c.setFaceDown(true);
                 player.getDeck().add(c);
-                paid.add(c);
                 record(room, GameEvent.SEND, userId, c, "tributeZone", "deck", null, Map.of("position", "bottom"), null);
             }
             if (reduce > 0) log(room, player.getUsername() + " envía " + paid.size() + " tributos al fondo de su mazo: " + name(use.holder())

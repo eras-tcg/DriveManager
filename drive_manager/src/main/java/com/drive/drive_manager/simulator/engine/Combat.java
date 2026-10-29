@@ -31,4 +31,6 @@ public class Combat {
     private boolean enemyDestroyed;
     /** "salta el paso de bloqueo". */
     private boolean skipBlock;
+    /** The defender was offered to replace the direct damage (Mercenario Valeroso). */
+    private boolean damageReplaceAsked;
 }

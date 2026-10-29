@@ -1398,7 +1398,11 @@ public class RoomService {
             c.getFloating().removeIf(f -> !"nextTurn".equals(f.until()));
             c.getFloating().replaceAll(f -> new FloatingEffect(f.text(), f.source(), "turn", f.strength(), f.keyword()));
         }));
+        // "el turno anterior": who used a Definitive effect this turn is remembered for the next one
+        List<String> definitive = room.getUsedThisTurn().stream().filter(k -> k.endsWith("|" + EffectEngine.DEFINITIVE_USED))
+                .map(k -> EffectEngine.DEFINITIVE_LAST_TURN + k.substring(0, k.indexOf('|'))).toList();
         room.getUsedThisTurn().clear();
+        room.getUsedThisTurn().addAll(definitive);
     }
 
     private int getPlayerDirection(GameRoom room, String userId) {

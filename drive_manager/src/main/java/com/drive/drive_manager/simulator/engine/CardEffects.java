@@ -38,6 +38,16 @@ import com.drive.drive_manager.simulator.engine.EffectStep.ActivateTributedSummo
 import com.drive.drive_manager.simulator.engine.EffectStep.TributeAllyMaterialWhere;
 import com.drive.drive_manager.simulator.engine.EffectStep.SummonFromZoneBy;
 import com.drive.drive_manager.simulator.engine.EffectStep.FilterBy;
+import com.drive.drive_manager.simulator.engine.EffectStep.PickAllyUpToSacrificedLevel;
+import com.drive.drive_manager.simulator.engine.EffectStep.PickAllyWithHigherAlly;
+import com.drive.drive_manager.simulator.engine.EffectStep.AttachSubjectToHigherAlly;
+import com.drive.drive_manager.simulator.engine.EffectStep.PickAllyWithMaterials;
+import com.drive.drive_manager.simulator.engine.EffectStep.TributeSubjectMaterials;
+import com.drive.drive_manager.simulator.engine.EffectStep.ExtraHit;
+import com.drive.drive_manager.simulator.engine.EffectStep.SummonSelfFree;
+import com.drive.drive_manager.simulator.engine.EffectStep.SendSelfTo;
+import com.drive.drive_manager.simulator.engine.EffectStep.SacrificeAlly;
+import com.drive.drive_manager.simulator.engine.EffectStep.MayDo;
 import com.drive.drive_manager.simulator.engine.EffectStep.ActivateSubjectSummonEffect;
 import com.drive.drive_manager.simulator.engine.EffectStep.AlliesGain;
 import com.drive.drive_manager.simulator.engine.EffectStep.GainUntilNextTurn;
@@ -81,19 +91,15 @@ import com.drive.drive_manager.simulator.engine.EffectStep.SendSelfFromFieldTo;
 import com.drive.drive_manager.simulator.engine.EffectStep.SummonFreeLevelSum;
 import com.drive.drive_manager.simulator.engine.EffectStep.IfDone;
 import com.drive.drive_manager.simulator.engine.EffectStep.IfPossible;
-import com.drive.drive_manager.simulator.engine.EffectStep.SummonSelfFree;
 import com.drive.drive_manager.simulator.engine.EffectStep.TakeFromZone;
 import com.drive.drive_manager.simulator.engine.EffectStep.DestroyEnemy;
 import com.drive.drive_manager.simulator.engine.EffectStep.Draw;
 import com.drive.drive_manager.simulator.engine.EffectStep.GainGems;
 import com.drive.drive_manager.simulator.engine.EffectStep.LookTop;
-import com.drive.drive_manager.simulator.engine.EffectStep.MayDo;
 import com.drive.drive_manager.simulator.engine.EffectStep.MoveSelfToFront;
 import com.drive.drive_manager.simulator.engine.EffectStep.RitualFromZone;
-import com.drive.drive_manager.simulator.engine.EffectStep.SacrificeAlly;
 import com.drive.drive_manager.simulator.engine.EffectStep.SacrificeSelf;
 import com.drive.drive_manager.simulator.engine.EffectStep.SendFromZoneToDeckBottom;
-import com.drive.drive_manager.simulator.engine.EffectStep.SendSelfTo;
 import com.drive.drive_manager.simulator.engine.EffectStep.TakeFromLookedRestToBottom;
 import com.drive.drive_manager.simulator.engine.EffectStep.TapSelf;
 import com.drive.drive_manager.simulator.engine.EffectStep.TributeFromHand;
@@ -1234,11 +1240,20 @@ public final class CardEffects {
                         + "cartas igual a la cantidad de vidas que tiene su oponente.",
                 List.of(new HandsToBottomDrawOpponentLives()))
                 .limited(Limit.DEFINITIVE));
-        // E1 Fuego Perforante (utility; its "En Tributos" is not applied yet)
-        add("fuego perforante", new EffectScript("fuego-perforante:en-juego", Moment.ON_PLAY, true, EN_JUEGO,
-                "Tributa esta carta; roba 1 carta.",
-                List.of(new SendSelfFromFieldTo("tributeZone")), List.of(new Draw(1)))
-                .limited(Limit.ONCE_PER_TURN_BETWEEN_COPIES));
+        // E1.1-G14 Fuego Perforante (utility): "Solo puedes activar 1 efecto de «Fuego Perforante» por turno"
+        CardFilter dragonTributes = CardFilter.any().withClasses("dragón");
+        add("fuego perforante",
+                new EffectScript("fuego-perforante:en-juego", Moment.ON_PLAY, true, EN_JUEGO,
+                        "Tributa esta carta; roba 1 carta.",
+                        List.of(new SendSelfFromFieldTo("tributeZone")), List.of(new Draw(1)))
+                        .limited(Limit.ONE_EFFECT_OF_NAME_PER_TURN),
+                new EffectScript("fuego-perforante:en-tributos", Moment.ON_EVENT, false, "En Tributos",
+                        "Si algún aliado [dragón] inflige daño directo: puedes enviar al fondo de tu mazo 10 de tus tributos [dragón], incluida esta "
+                                + "carta; dicho aliado inflige daño 1 vez más.",
+                        List.of(new SendSelfTo("deck"), new SendFromZoneToDeckBottom("tributeZone", 9, dragonTributes)), List.of(new ExtraHit()))
+                        .when(new AllyDealtDirectDamage(CardFilter.creatures().withClasses("dragón")))
+                        .fromZone("tributeZone")
+                        .limited(Limit.ONE_EFFECT_OF_NAME_PER_TURN));
     }
 
     static {
@@ -1264,12 +1279,18 @@ public final class CardEffects {
         add("spentalos", new EffectScript("spentalos:en-invocacion", Moment.ON_SUMMON, false, EN_INVOCACION,
                 "Puedes tributar 2 materiales de esta carta para ganar 1 gema.",
                 List.of(new IfPossible(), new TributeMaterials(2, false), new GainGems(1))));
-        // E1.1-B14 Composición Refractaria (its "En Mano" is not applied yet)
-        add("composición refractaria", new EffectScript("composicion-refractaria:en-juego", Moment.ON_PLAY, true, EN_JUEGO,
-                "(1) Si tienes 5 o menos vidas: coloca la carta del tope de tu mazo al tope de tus vidas bocabajo.",
-                List.of(new DeckTopToLife()))
-                .when(new LivesAtMost(false, 5))
-                .limited(Limit.ONCE_PER_TURN_BETWEEN_COPIES));
+        // E1.1-B14 Composición Refractaria
+        add("composición refractaria",
+                new EffectScript("composicion-refractaria:en-juego", Moment.ON_PLAY, true, EN_JUEGO,
+                        "(1) Si tienes 5 o menos vidas: coloca la carta del tope de tu mazo al tope de tus vidas bocabajo.",
+                        List.of(new DeckTopToLife()))
+                        .when(new LivesAtMost(false, 5))
+                        .limited(Limit.ONCE_PER_TURN_BETWEEN_COPIES),
+                new EffectScript("composicion-refractaria:en-mano", Moment.ON_EVENT, false, "En Mano",
+                        "Si alguna carta es removida de tus vidas: puedes tributar 2 materiales de algún aliado para jugar esta carta sin pagar su coste.",
+                        List.of(new IfPossible(), new PickAllyWithMaterials(2), new TributeSubjectMaterials(2), new PlaySelfFree()))
+                        .when(new LifeRemoved())
+                        .fromZone("hand"));
         // E1.1-G2 Dragón Goloso
         add("dragón goloso", new EffectScript("dragon-goloso:al-atacar", Moment.ON_ATTACK, true, AL_ATACAR,
                 "Elige 1 enemigo de fuerza 4 o menos; destrúyelo.",
@@ -1374,18 +1395,32 @@ public final class CardEffects {
                         List.of(new IfPossible(), new TapSelf(), new GainGems(1)))
                         .when(any(new AllySummonedByEffect(caballero), new YouSpecialSummonedAs("promotion", caballero)))
                         .onlyAllyTurn());
-        // E1.1-W5 Escudos Leales (its "En Mano" is not applied yet)
-        add("escudos leales", new EffectScript("escudos-leales:en-juego", Moment.ON_PLAY, true, EN_JUEGO,
-                "Efecto Definitivo. Reactiva hasta 2 aliados.",
-                List.of(new UntapAlly(), new UntapAlly()))
-                .limited(Limit.DEFINITIVE));
+        // E1.1-W5 Escudos Leales
+        add("escudos leales",
+                new EffectScript("escudos-leales:en-juego", Moment.ON_PLAY, true, EN_JUEGO,
+                        "Efecto Definitivo. Reactiva hasta 2 aliados.",
+                        List.of(new UntapAlly(), new UntapAlly()))
+                        .limited(Limit.DEFINITIVE),
+                new EffectScript("escudos-leales:en-mano", Moment.ON_EVENT, false, "En Mano",
+                        "Si no activaste algún Efecto Definitivo el turno anterior y algún enemigo declara ataque mientras tienes 2 o menos vidas: "
+                                + "puedes jugar esta carta sin pagar su coste.",
+                        List.of(new PlaySelfFree()))
+                        .when(all(new EnemyDeclaresAttack(), new LivesAtMost(false, 2), not(new UsedDefinitiveLastTurn())))
+                        .fromZone("hand"));
 
         // ---- E1.1, second batch: new steps and conditions
-        // E1.1-B1 Zamaranzas (its "Turno Aliado / En Mano" is not applied yet)
-        add("zamaranzas", new EffectScript("zamaranzas:en-invocacion", Moment.ON_SUMMON, false, EN_INVOCACION,
-                "Puedes añadir esta carta como material a 1 aliado [ente] nivel 3 o menor; activa 1 de sus efectos En Invocación.",
-                List.of(new PickAllyWhere(CardFilter.creatures().withClasses("ente").withMaxLevel(3)), new AttachSelfToSubject()),
-                List.of(new ActivateSubjectSummonEffect())));
+        // E1.1-B1 Zamaranzas
+        add("zamaranzas",
+                new EffectScript("zamaranzas:en-invocacion", Moment.ON_SUMMON, false, EN_INVOCACION,
+                        "Puedes añadir esta carta como material a 1 aliado [ente] nivel 3 o menor; activa 1 de sus efectos En Invocación.",
+                        List.of(new PickAllyWhere(CardFilter.creatures().withClasses("ente").withMaxLevel(3)), new AttachSelfToSubject()),
+                        List.of(new ActivateSubjectSummonEffect())),
+                new EffectScript("zamaranzas:en-mano", Moment.ACTIVATED, false, "Turno Aliado / En Mano",
+                        "(1) Puedes añadir 1 aliado como material de otro de nivel mayor para invocar esta carta sin pagar su coste.",
+                        List.of(new IfPossible(), new PickAllyWithHigherAlly(), new AttachSubjectToHigherAlly(), new SummonSelfFree()))
+                        .fromZone("hand")
+                        .onlyAllyTurn()
+                        .limited(Limit.ONCE_PER_TURN_BETWEEN_COPIES));
         // E1.1-B5 Soléo
         add("soléo", new EffectScript("soleo:al-atacar", Moment.ON_ATTACK, false, AL_ATACAR,
                 "Puedes tributar hasta 2 materiales de esta carta: por cada material tributado elige 1 enemigo distinto; reduce en 2 su fuerza.",
@@ -1486,6 +1521,17 @@ public final class CardEffects {
                 "Si tienes al menos 7 aliados Rojos: todos los aliados ganan Furia y Perforante hasta el final del turno.",
                 List.of(new AlliesGain(CardFilter.creatures(), "Furia", "turn"), new AlliesGain(CardFilter.creatures(), "Perforante", "turn")))
                 .when(new CountOnField(CardFilter.creatures().withColors("R"), 7, null)));
+        // E1.1-P14 Festin
+        add("festin", new EffectScript("festin:en-juego", Moment.ON_PLAY, true, EN_JUEGO,
+                "(1) Si tienes 0 o más gemas: puedes sacrificar 1 aliado para que otro a lo más 1 nivel mayor declare ataque.",
+                List.of(new MayDo("¿Sacrificas 1 aliado para que otro de, a lo más, 1 nivel mayor declare ataque?", 3), new SacrificeAlly(false),
+                        new PickAllyUpToSacrificedLevel(1), new DeclareAttack(false)))
+                .when(new GemsAtLeast(0))
+                .limited(Limit.ONCE_PER_TURN_BETWEEN_COPIES));
+        // E1.1-G7 Wyverno Rapaz: "cuando esta carta fuera a invocar por Evolución: puedes añadir 1 de tus tributos de fuerza 6 o menos
+        // como recurso de esta carta" (a Reacción before the summon: its Recursos pass on to the creature it summons)
+        costModifier("wyverno rapaz", new CostModifier(TODOS, CostModifiers.Event.SPECIAL_SUMMON, Set.of("evolution"), CostModifiers.Holder.SUMMONER,
+                false, null, Payment.tributeAsResource(CardFilter.creatures().withMaxStrength(6)), 0));
         // E1.1-W1 Hechizo Premonitorio
         add("hechizo premonitorio", new EffectScript("hechizo-premonitorio:en-juego", Moment.ON_PLAY, true, EN_JUEGO,
                 "Efecto Definitivo. Mira las primeras 2 cartas de tu mazo: devuélvelas al tope o envíalas al fondo de tu mazo. Luego: roba 1 carta.",
@@ -1662,6 +1708,10 @@ public final class CardEffects {
         Map<String, List<String>> all = new TreeMap<>();
         SPECIAL_FROM_TRIBUTES.forEach(n -> all.computeIfAbsent(n, k -> new ArrayList<>()).add("En Tributos: cuenta como en la mano para invocaciones especiales"));
         ALIASES.forEach((n, alias) -> all.computeIfAbsent(n, k -> new ArrayList<>()).add("puede ser tratada como \"" + alias + "\""));
+        BLOCKER_SWAP.forEach(n -> all.computeIfAbsent(n, k -> new ArrayList<>()).add("cambia al bloqueador declarado por otro aliado"));
+        DAMAGE_REPLACEMENTS.forEach((n, r) -> all.computeIfAbsent(n, k -> new ArrayList<>()).add("se invoca en lugar de recibir " + r.maxDamage() + " o menos de daño"));
+        // The usage limit printed as its own line ("Solo puedes activar 1 efecto de «X» por turno"): Limit.ONE_EFFECT_OF_NAME_PER_TURN
+        all.computeIfAbsent("fuego perforante", k -> new ArrayList<>()).add("solo 1 de sus efectos por turno");
         return all;
     }
 
@@ -1796,6 +1846,22 @@ public final class CardEffects {
                 List.of(new PlaySelfFromZone("hand", false)))
                 .when(new CombatStep(Combat.Step.BLOCK, Combat.Phase.ENTER))
                 .fromZone("hand");
+    }
+
+    /** "cuando un aliado sea declarado bloqueador: en su lugar, puedes reactivarlo y elegir otro aliado …" (CombatRules.offerBlockerSwap). */
+    private static final Set<String> BLOCKER_SWAP = Set.of("comandante veterano");
+
+    static boolean swapsBlocker(CardSlot card) {
+        return card.getCardName() != null && BLOCKER_SWAP.contains(card.getCardName().trim().toLowerCase(Locale.ROOT));
+    }
+
+    /** "cuando fueras a recibir N o menos de daño directo por ataque: en su lugar, puedes invocar esta carta … reduciendo su coste en M". */
+    public record DamageReplacement(int maxDamage, int reduce) {}
+
+    private static final Map<String, DamageReplacement> DAMAGE_REPLACEMENTS = Map.of("mercenario valeroso", new DamageReplacement(8, 1));
+
+    static DamageReplacement damageReplacement(CardSlot card) {
+        return card.getCardName() == null ? null : DAMAGE_REPLACEMENTS.get(card.getCardName().trim().toLowerCase(Locale.ROOT));
     }
 
     /** "Esta carta puede ser tratada como «X»": the name it also answers to. */

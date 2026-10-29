@@ -60,7 +60,7 @@ public final class EffectEngine {
     static final String PURPOSE_REINFORCE = "REINFORCE";
     static final String PURPOSE_LIFE_PLAY = "LIFE_PLAY";
     /** Turn-scoped marks in usedThisTurn: a Definitive effect used, Última Línea's extra hit, the turn to end. */
-    static final String DEFINITIVE_USED = "definitive";
+    public static final String DEFINITIVE_USED = "definitive";
     static final String EXTRA_HIT = "extra-hit|";
     public static final String END_TURN_REQUESTED = "end-turn|";
     static final String PURPOSE_ORDER = "ORDER";
@@ -78,6 +78,10 @@ public final class EffectEngine {
     /** "no puede ser removido por efectos oponentes". */
     static final String UNREMOVABLE = "Irremovible por efectos oponentes";
     static final String PURPOSE_REPLACE_MATERIALS = "REPLACE_MATERIALS";
+    /** Marks in usedThisTurn: a Definitive effect used the turn before ("definitive-last|player"). */
+    public static final String DEFINITIVE_LAST_TURN = "definitive-last|";
+    static final String PURPOSE_BLOCK_SWAP = "BLOCK_SWAP";
+    static final String PURPOSE_DAMAGE_REPLACE = "DAMAGE_REPLACE";
     /** An "until the end of the attack" entry that is strength, not an ability ("id|fuerza:3"). */
     static final String STRENGTH_ENTRY = "fuerza:";
 

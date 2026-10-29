@@ -27,7 +27,7 @@ public final class CostModifiers {
      */
     public enum Holder { SUMMONER, FIELD, SELF }
 
-    public enum PaymentKind { NONE, TAP_SELF, TRIBUTES_TO_DECK_BOTTOM }
+    public enum PaymentKind { NONE, TAP_SELF, TRIBUTES_TO_DECK_BOTTOM, TRIBUTE_AS_RESOURCE }
 
     /** What the modifier asks for, if anything. */
     public record Payment(PaymentKind kind, int count, CardFilter filter) {
@@ -45,9 +45,14 @@ public final class CostModifiers {
             return new Payment(PaymentKind.TRIBUTES_TO_DECK_BOTTOM, count, filter);
         }
 
+        /** "puedes añadir 1 de tus tributos [filtro] como recurso de esta carta": the summoner, before the summon. */
+        public static Payment tributeAsResource(CardFilter filter) {
+            return new Payment(PaymentKind.TRIBUTE_AS_RESOURCE, 1, filter);
+        }
+
         /** The player has to choose the cards (the others are applied on their own). */
         public boolean needsChoice() {
-            return kind == PaymentKind.TRIBUTES_TO_DECK_BOTTOM;
+            return kind == PaymentKind.TRIBUTES_TO_DECK_BOTTOM || kind == PaymentKind.TRIBUTE_AS_RESOURCE;
         }
     }
 
@@ -127,7 +132,7 @@ public final class CostModifiers {
         return switch (payment.kind()) {
             case NONE -> true;
             case TAP_SELF -> !holder.isTapped();
-            case TRIBUTES_TO_DECK_BOTTOM -> player.getTributeZone().stream().filter(payment.filter()::matches).count() >= payment.count();
+            case TRIBUTES_TO_DECK_BOTTOM, TRIBUTE_AS_RESOURCE -> player.getTributeZone().stream().filter(payment.filter()::matches).count() >= payment.count();
         };
     }
 
@@ -164,13 +169,16 @@ public final class CostModifiers {
     /** The cards that can pay it. */
     static List<CardSlot> paymentOptions(PlayerState player, Use use) {
         Payment payment = use.modifier().payment();
-        return payment.kind() == PaymentKind.TRIBUTES_TO_DECK_BOTTOM
-                ? player.getTributeZone().stream().filter(payment.filter()::matches).toList() : List.of();
+        return payment.needsChoice() ? player.getTributeZone().stream().filter(payment.filter()::matches).toList() : List.of();
     }
 
     /** What is asked, for the choice. */
     static String describe(Use use) {
         Payment payment = use.modifier().payment();
+        if (payment.kind() == PaymentKind.TRIBUTE_AS_RESOURCE) {
+            return "Puedes añadir 1 de tus tributos " + payment.filter().describe() + " como recurso de " + use.holder().getCardName()
+                    + " antes de la invocación. Elige 1, o ninguna.";
+        }
         String what = payment.kind() == PaymentKind.TRIBUTES_TO_DECK_BOTTOM
                 ? "enviar " + payment.count() + " de tus tributos " + payment.filter().describe() + " al fondo de tu mazo" : "pagarlo";
         return "Puedes " + what + " para reducir en " + use.modifier().reduce() + " el coste. Elige " + payment.count()

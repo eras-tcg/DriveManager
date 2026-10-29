@@ -198,6 +198,10 @@ public final class Steps {
                     && untap.filter().matches(c));
             case TributeResources tr -> onField != null && onField.getResources().stream().filter(tr.filter()::matches).count() >= tr.count();
             case ChooseCreatureOnField choose -> choose.upTo() || !creaturesOnField(room, effect, choose.filter()).isEmpty();
+            case PickAllyUpToSacrificedLevel pick -> allies(player).stream().anyMatch(EffectEngine::inFrontLine);
+            case PickAllyWithHigherAlly ignored -> !withHigherAlly(player).isEmpty();
+            case PickAllyWithMaterials pick -> allies(player).stream().anyMatch(c -> c.getMaterials().size() >= pick.count());
+            case ExtraHit ignored -> room.getCombat() != null && room.getCombat().getStep() == Combat.Step.DAMAGE;
             case PlaceSelfInFrontLine place -> find(zone(player, place.zone()), effect.getSourceInstanceId()) != null;
             default -> true;
         };
@@ -324,6 +328,49 @@ public final class Steps {
                 pick(room, effect, "Tributa " + n + " " + plural(n, "carta", "cartas") + " de tu mano (el nivel de " + name(subject) + ").", "Tributar",
                         player.getHand(), ids(valid), Math.min(n, valid.size()));
                 return true;
+            }
+            case PickAllyUpToSacrificedLevel pick -> {
+                CardSlot sacrificed = effect.getLastTributed().isEmpty() ? null : findAnywhere(room, userId, effect.getLastTributed().get(0));
+                int max = (sacrificed == null || sacrificed.getLevel() == null ? 0 : sacrificed.getLevel()) + pick.plus();
+                List<CardSlot> valid = allies(player).stream().filter(c -> inFrontLine(c) && c.getLevel() != null && c.getLevel() <= max).toList();
+                if (valid.isEmpty()) return false;
+                pick(room, effect, "Elige 1 aliado de tu línea frontal nivel " + max + " o menor: declarará ataque.", "Elegido", player.getField(), ids(valid), 1);
+                return true;
+            }
+            case PickAllyWithHigherAlly ignored -> {
+                List<CardSlot> valid = withHigherAlly(player);
+                if (valid.isEmpty()) return false;
+                pick(room, effect, "Elige el aliado que será material de otro de nivel mayor.", "Material", player.getField(), ids(valid), 1);
+                return true;
+            }
+            case AttachSubjectToHigherAlly ignored -> {
+                CardSlot subject = subject(room, effect);
+                if (subject == null) return false;
+                List<CardSlot> valid = higherThan(player, subject);
+                if (valid.isEmpty()) return false;
+                pick(room, effect, "Elige el aliado de nivel mayor que recibe a " + name(subject) + " como material.", "Recibe", player.getField(), ids(valid), 1);
+                return true;
+            }
+            case PickAllyWithMaterials pick -> {
+                List<CardSlot> valid = allies(player).stream().filter(c -> c.getMaterials().size() >= pick.count()).toList();
+                if (valid.isEmpty()) return false;
+                pick(room, effect, "Elige 1 aliado con " + pick.count() + " o más materiales.", "Elegido", player.getField(), ids(valid), 1);
+                return true;
+            }
+            case TributeSubjectMaterials tm -> {
+                CardSlot subject = subject(room, effect);
+                if (subject == null || subject.getMaterials().size() < tm.count()) return false;
+                pick(room, effect, "Tributa " + tm.count() + " materiales de " + name(subject) + ".", "Tributar", subject.getMaterials(),
+                        ids(subject.getMaterials()), tm.count());
+                return true;
+            }
+            case ExtraHit ignored -> {
+                Combat c = room.getCombat();
+                if (c == null || c.getStep() != Combat.Step.DAMAGE) return false;
+                c.setHitsLeft((c.getHitsLeft() == null ? 0 : c.getHitsLeft()) + 1);
+                c.setPhase(Combat.Phase.ACT);
+                log(room, "El atacante inflige daño 1 vez más (" + effect.getSourceName() + ")", null);
+                return false;
             }
             case SkipBlockStep ignored -> {
                 if (room.getCombat() != null) {
@@ -1540,6 +1587,17 @@ public final class Steps {
                 player.getUsername() + " añade " + name(self) + " como " + (asMaterial ? "material" : "recurso") + " de " + name(ally));
     }
 
+    /** Allies with another ally of higher level ("1 aliado como material de otro de nivel mayor"). */
+    static List<CardSlot> withHigherAlly(PlayerState player) {
+        return allies(player).stream().filter(c -> !higherThan(player, c).isEmpty()).toList();
+    }
+
+    /** The player's other creatures of a higher level than {@code card}. */
+    static List<CardSlot> higherThan(PlayerState player, CardSlot card) {
+        int level = card.getLevel() == null ? 0 : card.getLevel();
+        return allies(player).stream().filter(c -> c != card && c.getLevel() != null && c.getLevel() > level).toList();
+    }
+
     /** Whether the step at {@code index} is covered by an earlier connector ("Si lo haces:", "puedes …", "Si …:"). */
     static boolean conditional(List<EffectStep> steps, int index) {
         for (int i = 0; i < index; i++) {
@@ -1655,6 +1713,43 @@ public final class Steps {
                     record(room, GameEvent.TARGET, userId, target, null, null, effect, Map.of("targetIds", picks),
                             player.getUsername() + " elige a " + name(target) + " (" + effect.getSourceName() + ")");
                 }
+            }
+            case PickAllyUpToSacrificedLevel ignored -> {
+                if (find(player.getField(), picks.get(0)) == null) return "Ese aliado ya no está en el campo";
+                effect.setSubjectId(picks.get(0));
+            }
+            case PickAllyWithHigherAlly ignored -> {
+                if (find(player.getField(), picks.get(0)) == null) return "Ese aliado ya no está en el campo";
+                effect.setSubjectId(picks.get(0));
+            }
+            case AttachSubjectToHigherAlly ignored -> {
+                CardSlot subject = subject(room, effect);
+                CardSlot holder = find(player.getField(), picks.get(0));
+                if (subject == null || holder == null || !higherThan(player, subject).contains(holder)) return "Debe ser un aliado de nivel mayor";
+                removeFromField(player, subject);
+                subject.setFaceDown(false);
+                holder.getMaterials().add(subject);
+                effect.setLastDone(true);
+                record(room, GameEvent.SEND, userId, subject, "field", "materials", effect, Map.of("to", holder.getInstanceId()),
+                        player.getUsername() + " añade " + name(subject) + " como material de " + name(holder) + " (" + effect.getSourceName() + ")");
+            }
+            case PickAllyWithMaterials ignored -> {
+                if (find(player.getField(), picks.get(0)) == null) return "Ese aliado ya no está en el campo";
+                effect.setSubjectId(picks.get(0));
+            }
+            case TributeSubjectMaterials ignored -> {
+                CardSlot subject = subject(room, effect);
+                if (subject == null || !allIn(subject.getMaterials(), picks)) return "Ese material ya no está";
+                for (String id : picks) {
+                    CardSlot material = find(subject.getMaterials(), id);
+                    subject.getMaterials().remove(material);
+                    material.setFaceDown(false);
+                    player.getTributeZone().add(material);
+                    record(room, GameEvent.TRIBUTE, userId, material, "materials", "tributeZone", effect, Map.of("byCard", subject.getInstanceId()),
+                            player.getUsername() + " tributa " + name(material) + " de los materiales de " + name(subject));
+                }
+                effect.setLastTributed(new ArrayList<>(picks));
+                effect.setLastDone(true);
             }
             case TributeFromHandAsSubjectLevel ignored -> {
                 if (!allIn(player.getHand(), picks)) return "Esa carta ya no está en tu mano";
@@ -1913,6 +2008,7 @@ public final class Steps {
             case SacrificeAlly ignored -> {
                 CardSlot ally = find(player.getField(), picks.get(0));
                 if (ally == null) return "Ese aliado ya no está en el campo";
+                effect.setLastTributed(new ArrayList<>(List.of(ally.getInstanceId())));
                 destroy(room, ally, player, true, CAUSE_EFFECT, userId, null, effect);
             }
             case TributeMaterials ignored -> {
@@ -2091,6 +2187,7 @@ public final class Steps {
             case SacrificeAllyWhere ignored -> {
                 CardSlot ally = find(player.getField(), picks.get(0));
                 if (ally == null) return "Ese aliado ya no está en el campo";
+                effect.setLastTributed(new ArrayList<>(List.of(ally.getInstanceId())));
                 destroy(room, ally, player, true, CAUSE_EFFECT, userId, null, effect);
             }
             case TributeAlly ignored -> {

@@ -154,6 +154,7 @@ public final class Chain {
 
     static String usageKey(PendingEffect e, EffectScript script) {
         if (script.limit() == Limit.DEFINITIVE) return e.getControllerId() + "|" + DEFINITIVE_USED;
+        if (script.limit() == Limit.ONE_EFFECT_OF_NAME_PER_TURN) return e.getControllerId() + "|name:" + e.getSourceName().toLowerCase(java.util.Locale.ROOT);
         return script.limit() == Limit.ONCE_PER_TURN_BETWEEN_COPIES
                 ? e.getControllerId() + "|" + script.id()
                 : e.getControllerId() + "|" + e.getSourceInstanceId() + "|" + script.id();
