@@ -127,7 +127,11 @@ public sealed interface EffectStep {
     record ReduceChosen(int amount, boolean untilNextTurn) implements EffectStep {}
 
     /** "elige todos los enemigos en la línea frontal" (no choice: they are the targets). */
-    record TargetAllEnemies() implements EffectStep {}
+    record TargetAllEnemies(CardFilter filter) implements EffectStep {
+        public TargetAllEnemies() {
+            this(CardFilter.creatures());
+        }
+    }
 
     /** "reducirla a 0": the enemy whose strength was reduced in the triggering event. */
     record ReduceTriggerToZero() implements EffectStep {}
@@ -405,8 +409,8 @@ public sealed interface EffectStep {
     /** "reduce en N su fuerza por cada material removido": N times the last count, on the chosen targets. */
     record ReduceChosenPerCount(int each) implements EffectStep {}
 
-    /** "todos los aliados [filtro] ganan [habilidad] hasta el final del turno". */
-    record AlliesGainUntilEndOfTurn(CardFilter filter, String keyword) implements EffectStep {}
+    /** "todos los aliados [filtro] ganan [habilidad] hasta el final del turno [oponente]" ({@code until}: "turn" or "nextTurn"). */
+    record AlliesGain(CardFilter filter, String keyword, String until) implements EffectStep {}
 
     /** "tributa tu mano": all of it. */
     record TributeHand() implements EffectStep {}
@@ -428,4 +432,28 @@ public sealed interface EffectStep {
 
     /** "esta carta …" again after a step that chose another card (a sacrifice, an ally): the next steps act on this card. */
     record SubjectIsThisCard() implements EffectStep {}
+
+    /** "gana [habilidad] hasta el final del turno oponente": the subject (this card or the chosen ally). */
+    record GainUntilNextTurn(String keyword) implements EffectStep {}
+
+    /** "gana fuerza N y [habilidad] hasta el final del turno o de su próximo ataque". */
+    record GainUntilNextAttack(int strength, String keyword) implements EffectStep {}
+
+    /** "elige 1 criatura [filtro] en el campo": yours, or an enemy's when this card and it are both in the Línea frontal. */
+    record ChooseCreatureOnField(CardFilter filter, boolean upTo) implements NeedsTarget {}
+
+    /** "sacrifícala": the chosen creatures are sacrificed, each to its owner's Tributos. */
+    record SacrificeChosen() implements EffectStep {}
+
+    /** "tributa tantas cartas de tu mano como nivel tenga [el aliado elegido]". */
+    record TributeFromHandAsSubjectLevel() implements EffectStep {}
+
+    /** "salta el paso de bloqueo" (of the attack going on). */
+    record SkipBlockStep() implements EffectStep {}
+
+    /** "Si reduces su fuerza a 0 / si fue destruido:": the next {@code covers} steps only if no chosen target is still on the field. */
+    record IfChosenGone(int covers) implements EffectStep {}
+
+    /** "ninguno puede agotarse hasta el final del turno [oponente]": the chosen targets ({@code until}: "turn" or "nextTurn"). */
+    record ChosenCannotBeExhausted(String until) implements EffectStep {}
 }

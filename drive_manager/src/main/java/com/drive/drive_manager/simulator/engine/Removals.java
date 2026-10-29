@@ -80,6 +80,11 @@ public final class Removals {
      */
     static GameEvent destroy(GameRoom room, CardSlot card, PlayerState owner, boolean sacrifice, String cause, String byId,
                              String byCard, PendingEffect effect) {
+        // "no puede ser removido por efectos oponentes"
+        if (effect != null && byId != null && !byId.equals(owner.getUserId()) && keywords(card).contains(UNREMOVABLE)) {
+            log(room, name(card) + " no puede ser removida por efectos oponentes", null);
+            return null;
+        }
         // A replacement ("en su lugar", Protección): its owner chooses first; the destruction waits
         if (!sacrifice && deferRemoval(room, card, owner, true, cause, byId, byCard, effect)) return null;
         owner.getField().remove(card);
@@ -157,6 +162,7 @@ public final class Removals {
                 case TRIBUTE_TWO_MATERIALS -> card.getMaterials().size() >= 2;
                 case TRIBUTE_ONE_FROM_HAND -> !owner.getHand().isEmpty();
                 case TRIBUTE_RESOURCES -> card.getResources().stream().anyMatch(r.resourceFilter()::matches);
+                case MATERIALS_TO_BACK -> card.getMaterials().stream().anyMatch(m -> "creature".equals(m.getCardType()) && r.resourceFilter().matches(m));
             };
             if (payable) options.add(new ReplacementOption(r.id() + "@" + card.getInstanceId(), card, r, r.label(), r.text()));
         }
@@ -191,8 +197,8 @@ public final class Removals {
         }
         List<CardSlot> sources = options.stream().map(ReplacementOption::source).distinct().toList();
         rulesPrompt(room, owner.getUserId(), PURPOSE_REPLACE, name(card) + (pending.destroy() ? " va a ser destruida" : " va a ser removida"),
-                "Puedes evitarlo con 1 de estos efectos (en su lugar), o dejar que " + (pending.destroy() ? "sea destruida." : "sea removida."),
-                "En su lugar", sources, sources);
+                "Puedes usar 1 de estos efectos, o dejar que " + (pending.destroy() ? "sea destruida." : "sea removida."),
+                "Usar", sources, sources);
         room.getPrompt().setSubjectId(card.getInstanceId());
         room.getPrompt().setEffects(options.stream()
                 .map(o -> new Prompt.OfferedEffect(o.key(), o.source().getInstanceId(), name(o.source()), o.label(), o.text(), null, null)).toList());
@@ -205,6 +211,26 @@ public final class Removals {
         }
         PendingRemoval pending = room.getPendingRemovals().get(0);
         CardSlot card = find(player.getField(), pending.cardId());
+        if (PURPOSE_REPLACE_MATERIALS.equals(prompt.getPurpose())) {
+            // Gémini: the chosen materials go to the Retaguardia, then the destruction goes on (a reaction, not "en su lugar")
+            room.setPrompt(null);
+            room.getPendingRemovals().remove(0);
+            if (card == null) return null;
+            for (String id : picks) {
+                CardSlot m = find(card.getMaterials(), id);
+                if (m == null) continue;
+                card.getMaterials().remove(m);
+                m.setFaceDown(false);
+                m.setTapped(false);
+                m.setX(50.0);
+                m.setY(75.0);
+                player.getField().add(m);
+                record(room, GameEvent.SEND, player.getUserId(), m, "materials", "field", null, Map.of("from", card.getInstanceId()),
+                        player.getUsername() + " coloca " + name(m) + " (material de " + name(card) + ") en su retaguardia");
+            }
+            executeRemoval(room, pending, player, card);
+            return null;
+        }
         if (PURPOSE_REPLACE_HAND.equals(prompt.getPurpose())) {
             // Caballero Leal: the hand card tributed instead
             CardSlot paid = picks.isEmpty() ? null : find(player.getHand(), picks.get(0));
@@ -259,6 +285,14 @@ public final class Removals {
                 }
                 log(room, player.getUsername() + " tributa " + paid.size() + " " + plural(paid.size(), "recurso", "recursos") + " de " + name(card)
                         + ": no es " + (pending.destroy() ? "destruida" : "removida") + names(paid), null);
+            }
+            case MATERIALS_TO_BACK -> {
+                List<CardSlot> valid = card.getMaterials().stream().filter(m -> "creature".equals(m.getCardType()) && r.resourceFilter().matches(m)).toList();
+                rulesPrompt(room, player.getUserId(), PURPOSE_REPLACE_MATERIALS, name(card) + " · " + r.label(),
+                        "Coloca hasta 2 de estas criaturas en tu retaguardia; luego " + name(card) + " es destruida.", "A la retaguardia", valid, card.getMaterials());
+                room.getPrompt().setMin(1);
+                room.getPrompt().setMax(Math.min(2, valid.size()));
+                return null;
             }
             case TRIBUTE_ONE_FROM_HAND -> {
                 // The hand card is chosen next; the removal stays pending until then

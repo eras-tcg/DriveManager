@@ -39,6 +39,10 @@ public class CardSlot {
     private List<String> inheritKeywords = new ArrayList<>();
     /** Abilities gained until the end of the turn ("gana Furia 1 hasta el final del turno"). */
     private List<String> turnKeywords = new ArrayList<>();
+    /** Abilities until the end of the next turn ("hasta el final del turno oponente"): they become turnKeywords when this turn ends. */
+    private List<String> laterKeywords = new ArrayList<>();
+    /** What lasts "hasta el final del turno o de su próximo ataque" ("Provocar", "fuerza:3"): it ends with its next attack too. */
+    private List<String> untilNextAttack = new ArrayList<>();
     /**
      * Timeline seq when it entered the field: a card on the field only reacts to events from then on (an event
      * that happened before it was there, like the sacrifice of its own Ritual summoner, cannot trigger it).

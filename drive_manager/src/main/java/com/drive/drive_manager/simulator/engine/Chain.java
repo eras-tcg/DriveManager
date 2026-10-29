@@ -318,13 +318,32 @@ public final class Chain {
     }
 
     /** An optional effect is offered only when its cost can be paid and its choices have something to choose. */
+    /** How many of the next steps a connector makes conditional (0 for any other step). */
+    static int covers(EffectStep step) {
+        return switch (step) {
+            case EffectStep.IfDone s -> s.covers();
+            case EffectStep.IfNotDone s -> s.covers();
+            case EffectStep.IfTributed s -> s.covers();
+            case EffectStep.IfCondition s -> s.covers();
+            case EffectStep.IfChosenGone s -> s.covers();
+            case EffectStep.MayDo s -> s.covers();
+            default -> 0;
+        };
+    }
+
     static boolean canActivate(GameRoom room, PendingEffect effect, EffectScript script) {
         for (EffectStep step : script.cost()) if (!possible(room, effect, step)) return false;
         if (!allPossibleAfterIfPossible(room, effect, script.steps(), 0)) return false;
         // "Si ningún enemigo fue …: …" (IfNotDone): the effect does something even when there is nothing to choose
         if (script.steps().stream().anyMatch(s -> s instanceof IfNotDone)) return true;
-        for (EffectStep step : script.steps()) {
-            if (step instanceof NeedsTarget && !possible(room, effect, step)) return false;
+        List<EffectStep> steps = script.steps();
+        for (int i = 0; i < steps.size(); i++) {
+            int covers = covers(steps.get(i));
+            if (covers > 0) {
+                i += covers;
+                continue;
+            }
+            if (steps.get(i) instanceof NeedsTarget && !possible(room, effect, steps.get(i))) return false;
         }
         return true;
     }

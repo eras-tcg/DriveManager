@@ -1388,6 +1388,9 @@ public class RoomService {
         }));
         room.getPlayers().values().forEach(p -> p.getField().forEach(c -> {
             c.getTurnKeywords().clear();
+            c.getTurnKeywords().addAll(c.getLaterKeywords());
+            c.getLaterKeywords().clear();
+            c.getUntilNextAttack().clear();
             if (c.getNoUntap() > 0) c.setNoUntap(c.getNoUntap() - 1);
             // What lasts until the end of the next turn now lasts until the end of this one
             c.setTurnStrength(c.getLaterStrength());

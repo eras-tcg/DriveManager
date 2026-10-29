@@ -97,6 +97,15 @@ public sealed interface Condition {
         }
     }
 
+    /** "si destruyes alguna criatura [por efecto]": yours or an enemy's. */
+    record YouDestroyedCreature(boolean byEffect) implements Condition {
+        public boolean test(GameRoom room, GameEvent event, CardSlot source, String controller) {
+            if (!isDestruction(event) || !controller.equals(event.getPlayerId()) || (byEffect && event.getEffectId() == null)) return false;
+            CardSlot destroyed = EffectEngine.eventCard(room, event);
+            return destroyed != null && "creature".equals(destroyed.getCardType());
+        }
+    }
+
     /** "si algún enemigo fue destruido durante el ataque" (at the end of the attack). */
     record EnemyDestroyedInAttack() implements Condition {
         public boolean test(GameRoom room, GameEvent event, CardSlot source, String controller) {

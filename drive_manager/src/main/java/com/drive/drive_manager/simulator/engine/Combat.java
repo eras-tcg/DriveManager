@@ -29,4 +29,6 @@ public class Combat {
     private java.util.List<String> untilEndOfAttack = new java.util.ArrayList<>();
     /** An enemy of the attacker was destroyed during this attack. */
     private boolean enemyDestroyed;
+    /** "salta el paso de bloqueo". */
+    private boolean skipBlock;
 }

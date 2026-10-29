@@ -136,7 +136,7 @@ public final class Answers {
     static String answerRules(GameRoom room, Prompt prompt, PlayerState player, List<String> picks) {
         String userId = player.getUserId();
         String purpose = prompt.getPurpose();
-        if (PURPOSE_REPLACE.equals(purpose) || PURPOSE_REPLACE_HAND.equals(purpose)) {
+        if (PURPOSE_REPLACE.equals(purpose) || PURPOSE_REPLACE_HAND.equals(purpose) || PURPOSE_REPLACE_MATERIALS.equals(purpose)) {
             String error = answerRemoval(room, prompt, player, picks);
             if (error != null) return error;
             advance(room);

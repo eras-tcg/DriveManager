@@ -39,7 +39,23 @@ import com.drive.drive_manager.simulator.engine.EffectStep.TributeAllyMaterialWh
 import com.drive.drive_manager.simulator.engine.EffectStep.SummonFromZoneBy;
 import com.drive.drive_manager.simulator.engine.EffectStep.FilterBy;
 import com.drive.drive_manager.simulator.engine.EffectStep.ActivateSubjectSummonEffect;
-import com.drive.drive_manager.simulator.engine.EffectStep.AlliesGainUntilEndOfTurn;
+import com.drive.drive_manager.simulator.engine.EffectStep.AlliesGain;
+import com.drive.drive_manager.simulator.engine.EffectStep.GainUntilNextTurn;
+import com.drive.drive_manager.simulator.engine.EffectStep.GainUntilNextAttack;
+import com.drive.drive_manager.simulator.engine.EffectStep.ChooseCreatureOnField;
+import com.drive.drive_manager.simulator.engine.EffectStep.SacrificeChosen;
+import com.drive.drive_manager.simulator.engine.EffectStep.TributeFromHandAsSubjectLevel;
+import com.drive.drive_manager.simulator.engine.EffectStep.SkipBlockStep;
+import com.drive.drive_manager.simulator.engine.EffectStep.IfChosenGone;
+import com.drive.drive_manager.simulator.engine.EffectStep.ChosenCannotBeExhausted;
+import com.drive.drive_manager.simulator.engine.EffectStep.SpecialFromZone;
+import com.drive.drive_manager.simulator.engine.EffectStep.PlaySelfFree;
+import com.drive.drive_manager.simulator.engine.EffectStep.PickAlly;
+import com.drive.drive_manager.simulator.engine.EffectStep.GainUntilEndOfTurn;
+import com.drive.drive_manager.simulator.engine.EffectStep.GainStrength;
+import com.drive.drive_manager.simulator.engine.EffectStep.DestroyChosen;
+import com.drive.drive_manager.simulator.engine.EffectStep.PickAllyWhere;
+import com.drive.drive_manager.simulator.engine.EffectStep.SummonFromZone;
 import com.drive.drive_manager.simulator.engine.EffectStep.AttachSelfAsResourceToSubject;
 import com.drive.drive_manager.simulator.engine.EffectStep.ChooseEnemiesPerCount;
 import com.drive.drive_manager.simulator.engine.EffectStep.EndYourTurn;
@@ -63,28 +79,21 @@ import com.drive.drive_manager.simulator.engine.EffectStep.DiscardLookedRestTop;
 import com.drive.drive_manager.simulator.engine.EffectStep.TakeFromLookedLikeSubject;
 import com.drive.drive_manager.simulator.engine.EffectStep.SendSelfFromFieldTo;
 import com.drive.drive_manager.simulator.engine.EffectStep.SummonFreeLevelSum;
-import com.drive.drive_manager.simulator.engine.EffectStep.GainStrength;
 import com.drive.drive_manager.simulator.engine.EffectStep.IfDone;
 import com.drive.drive_manager.simulator.engine.EffectStep.IfPossible;
-import com.drive.drive_manager.simulator.engine.EffectStep.SpecialFromZone;
 import com.drive.drive_manager.simulator.engine.EffectStep.SummonSelfFree;
 import com.drive.drive_manager.simulator.engine.EffectStep.TakeFromZone;
-import com.drive.drive_manager.simulator.engine.EffectStep.DestroyChosen;
 import com.drive.drive_manager.simulator.engine.EffectStep.DestroyEnemy;
 import com.drive.drive_manager.simulator.engine.EffectStep.Draw;
 import com.drive.drive_manager.simulator.engine.EffectStep.GainGems;
-import com.drive.drive_manager.simulator.engine.EffectStep.GainUntilEndOfTurn;
 import com.drive.drive_manager.simulator.engine.EffectStep.LookTop;
 import com.drive.drive_manager.simulator.engine.EffectStep.MayDo;
 import com.drive.drive_manager.simulator.engine.EffectStep.MoveSelfToFront;
-import com.drive.drive_manager.simulator.engine.EffectStep.PickAlly;
-import com.drive.drive_manager.simulator.engine.EffectStep.PlaySelfFree;
 import com.drive.drive_manager.simulator.engine.EffectStep.RitualFromZone;
 import com.drive.drive_manager.simulator.engine.EffectStep.SacrificeAlly;
 import com.drive.drive_manager.simulator.engine.EffectStep.SacrificeSelf;
 import com.drive.drive_manager.simulator.engine.EffectStep.SendFromZoneToDeckBottom;
 import com.drive.drive_manager.simulator.engine.EffectStep.SendSelfTo;
-import com.drive.drive_manager.simulator.engine.EffectStep.SummonFromZone;
 import com.drive.drive_manager.simulator.engine.EffectStep.TakeFromLookedRestToBottom;
 import com.drive.drive_manager.simulator.engine.EffectStep.TapSelf;
 import com.drive.drive_manager.simulator.engine.EffectStep.TributeFromHand;
@@ -100,7 +109,6 @@ import com.drive.drive_manager.simulator.engine.EffectStep.IfNotDone;
 import com.drive.drive_manager.simulator.engine.EffectStep.MaterialToBack;
 import com.drive.drive_manager.simulator.engine.EffectStep.MaterialsToHand;
 import com.drive.drive_manager.simulator.engine.EffectStep.NoUntapChosen;
-import com.drive.drive_manager.simulator.engine.EffectStep.PickAllyWhere;
 import com.drive.drive_manager.simulator.engine.EffectStep.PlaceSelfOnField;
 import com.drive.drive_manager.simulator.engine.EffectStep.PlayFromZone;
 import com.drive.drive_manager.simulator.engine.EffectStep.ReduceChosenToZero;
@@ -185,10 +193,9 @@ public final class CardEffects {
                 List.of(new DestroyChosen())));
         // ST3-8 Zohx
         add("zohx", new EffectScript("zohx:al-final-del-ataque", Moment.ON_ATTACK_END, false, AL_FINAL,
-                "(1) Si tienes 10 o más tributos [bestia]: esta carta puede invocar por Ritual 1 criatura de tus tributos reduciendo el coste especial en 1.",
+                "Si tienes 10 o más criaturas [bestia] en tus tributos: esta carta puede invocar por Ritual 1 criatura de tus tributos reduciendo el coste especial en 1.",
                 List.of(new RitualFromZone("tributeZone", true, 1)))
-                .when(new CountInZone("tributeZone", CardFilter.any().withClasses("bestia"), 10))
-                .limited(Limit.ONCE_PER_TURN_BETWEEN_COPIES));
+                .when(new CountInZone("tributeZone", CardFilter.creatures().withClasses("bestia"), 10)));
         // ST3-9 Zhaglizer
         add("zhaglizer", new EffectScript("zhaglizer:al-atacar", Moment.ON_ATTACK, true, AL_ATACAR,
                 "Elige 1 enemigo nivel 2 o menor; destrúyelo.",
@@ -1300,12 +1307,6 @@ public final class CardEffects {
                 new EffectScript("krull:al-atacar", Moment.ON_ATTACK, true, AL_ATACAR,
                         "Roba 1 carta. Luego: tributa 1 carta de tu mano.",
                         List.of(new Draw(1), new TributeFromHand(1))));
-        // E1.1-P7 Zohx (printed "Sohx" in the vault: name to check against the image)
-        add("zohx", new EffectScript("zohx:al-final-del-ataque", Moment.ON_ATTACK_END, false, AL_FINAL,
-                "(1) Si tienes 10 o más tributos [bestia]: esta carta puede invocar por Ritual 1 criatura de tus tributos reduciendo el coste especial en 1.",
-                List.of(new RitualFromZone("tributeZone", true, 1)))
-                .when(new CountInZone("tributeZone", CardFilter.any().withClasses("bestia"), 10))
-                .limited(Limit.ONCE_PER_TURN_BETWEEN_COPIES));
         // E1.1-P9 Aracnopanto
         add("aracnopanto",
                 new EffectScript("aracnopanto:en-invocacion", Moment.ON_SUMMON, false, EN_INVOCACION,
@@ -1314,11 +1315,6 @@ public final class CardEffects {
                 new EffectScript("aracnopanto:en-destruccion", Moment.ON_DESTROY, false, EN_DESTRUCCION,
                         "Puedes invocar 1 [bestia] nivel 1 de tu descarte sin pagar su coste.",
                         List.of(new SummonFromZone("discardPile", CardFilter.creatures().withClasses("bestia").withLevel(1), SummonFromZone.FREE, false))));
-        // E1.1-P13 Cueva De Bestias (structure)
-        add("cueva de bestias", new EffectScript("cueva-de-bestias:todos-los-turnos", Moment.ON_EVENT, false, TODOS,
-                "Si algún aliado Violeta es destruido: puedes agotar esta carta para ganar 1 gema y robar 1 carta. Si lo haces: tributa 1 carta de tu mano.",
-                List.of(new IfPossible(), new TapSelf(), new GainGems(1), new Draw(1), new IfDone(1), new TributeFromHand(1)))
-                .when(new AllyDestroyed(CardFilter.colors("P"), false, false)));
         // E1.1-R1 Peón Experimentado
         add("peón experimentado",
                 new EffectScript("peon-experimentado:en-invocacion", Moment.ON_SUMMON, true, EN_INVOCACION,
@@ -1488,12 +1484,80 @@ public final class CardEffects {
         // E1.1-R15 A La Carga!
         add("a la carga!", new EffectScript("a-la-carga:en-juego", Moment.ON_PLAY, true, EN_JUEGO,
                 "Si tienes al menos 7 aliados Rojos: todos los aliados ganan Furia y Perforante hasta el final del turno.",
-                List.of(new AlliesGainUntilEndOfTurn(CardFilter.creatures(), "Furia"), new AlliesGainUntilEndOfTurn(CardFilter.creatures(), "Perforante")))
+                List.of(new AlliesGain(CardFilter.creatures(), "Furia", "turn"), new AlliesGain(CardFilter.creatures(), "Perforante", "turn")))
                 .when(new CountOnField(CardFilter.creatures().withColors("R"), 7, null)));
         // E1.1-W1 Hechizo Premonitorio
         add("hechizo premonitorio", new EffectScript("hechizo-premonitorio:en-juego", Moment.ON_PLAY, true, EN_JUEGO,
                 "Efecto Definitivo. Mira las primeras 2 cartas de tu mazo: devuélvelas al tope o envíalas al fondo de tu mazo. Luego: roba 1 carta.",
                 List.of(new LookTop(2), new LookedToTopOrBottom(), new Draw(1)))
+                .limited(Limit.DEFINITIVE));
+        // ---- E1.1, third batch: rulings of 2026-10-29 and new mechanics
+        // E1.1-B3 Remnis: "al inicio del turno" is any turn's
+        add("remnis", new EffectScript("remnis:en-tributos", Moment.ON_EVENT, false, "En Tributos",
+                "(1) Al inicio del turno, si el oponente no controla criaturas en su línea frontal: puedes añadir esta carta como material a 1 aliado "
+                        + "Azul. Si lo haces: dicho aliado puede invocar por Materialización 1 criatura en tu mano o tributos reduciendo el coste especial en 1.",
+                List.of(new PickAllyWhere(CardFilter.creatures().withColors("B")), new AttachSelfToSubject(), new IfDone(1),
+                        new SpecialFromZone("materialization", "hand,tributeZone", 1, "subject", CardFilter.any())))
+                .when(all(new TurnStarts(false), new NoEnemiesInFrontLine()))
+                .fromZone("tributeZone")
+                .limited(Limit.ONCE_PER_TURN_BETWEEN_COPIES));
+        // E1.1-B11 HE 110: "no puede ser objetivo de efectos de cartas oponentes nivel 4 o menor"
+        continuous("he 110", new Continuous(TODOS, "Esta carta no puede ser objetivo de efectos de cartas oponentes nivel 4 o menor.", false,
+                new Always(), 0, List.of(EffectEngine.IMMUNE + " 4")));
+        // E1.1-B12 Lesvik (Letalidad 1: keyword)
+        add("lesvik", new EffectScript("lesvik:al-atacar", Moment.ON_ATTACK, false, AL_ATACAR,
+                "Puedes tributar 2 materiales de esta carta para elegir 1 enemigo; reduce en 8 su fuerza. Si reduces su fuerza a 0: salta el paso de bloqueo.",
+                List.of(new TributeMaterials(2, false), new ChooseEnemy(1, enemy)),
+                List.of(new ReduceChosen(8, false), new IfChosenGone(1), new SkipBlockStep())));
+        // E1.1-G11 Lectranatus
+        add("lectranatus", new EffectScript("lectranatus:en-invocacion", Moment.ON_SUMMON, true, EN_INVOCACION,
+                "Elige 1 enemigo de fuerza 9 o menos; destrúyelo. Luego: elige todos los enemigos de fuerza 3 o menos; ninguno puede agotarse hasta "
+                        + "el final del turno oponente.",
+                List.of(new ChooseEnemy(1, enemy.withMaxStrength(9))),
+                List.of(new DestroyChosen(), new TargetAllEnemies(enemy.withMaxStrength(3)), new ChosenCannotBeExhausted("nextTurn"))));
+        inherit("lectranatus", new EffectScript("lectranatus:hereda-al-atacar", Moment.ON_ATTACK, true, AL_ATACAR,
+                "Heredado de Lectranatus: elige 1 enemigo de fuerza 9 o menos; este no puede agotarse hasta el final del turno.",
+                List.of(new ChooseEnemy(1, enemy.withMaxStrength(9))), List.of(new ChosenCannotBeExhausted("turn"))));
+        // E1.1-P8 Kagravú: yours or an enemy's (both in the Línea frontal); a sacrificed enemy goes to its owner's Tributos
+        add("kagravú",
+                new EffectScript("kagravu:en-invocacion", Moment.ON_SUMMON, false, EN_INVOCACION,
+                        "Puedes elegir 1 criatura nivel 1 o menor en el campo. Si lo haces: sacrifícala.",
+                        List.of(new ChooseCreatureOnField(CardFilter.creatures().withMaxLevel(1), true), new IfDone(1), new SacrificeChosen())),
+                new EffectScript("kagravu:todos-los-turnos", Moment.ON_EVENT, false, TODOS,
+                        "Una vez por turno: si destruyes alguna criatura por efecto: puedes invocar 1 criatura Violeta nivel 1 de tus tributos o descarte "
+                                + "reduciendo su coste en 1.",
+                        List.of(new SummonFromZone("tributeZone,discardPile", CardFilter.creatures().withColors("P").withLevel(1), 1, false)))
+                        .when(new YouDestroyedCreature(true))
+                        .limited(Limit.ONCE_PER_TURN));
+        // E1.1-R4 Escudo Jurado
+        continuous("escudo jurado", new Continuous(TODOS,
+                "Mientras controles algún aliado nivel 4 o mayor: esta carta no puede ser objetivo de efectos oponentes.", false,
+                new CountOnField(CardFilter.creatures().withMinLevel(4), 1, null), 0, List.of(EffectEngine.IMMUNE)));
+        // E1.1-R9 Principe Charles Di Castirion (its reaction when it would be ascended is not applied yet)
+        add("principe charles di castirion", new EffectScript("principe-charles:en-invocacion", Moment.ON_SUMMON, true, EN_INVOCACION,
+                "Todos tus aliados [caballero] o [armada] ganan Reactivar hasta el final del turno oponente.",
+                List.of(new AlliesGain(CardFilter.creatures().withClasses("caballero", "armada"), "Reactivar", "nextTurn"))));
+        // E1.1-R13 Valor Del Heroe: no duration written means "por el turno"
+        add("valor del heroe",
+                new EffectScript("valor-del-heroe:en-juego", Moment.ON_PLAY, true, EN_JUEGO,
+                        "Elige 1 aliado para que gane fuerza 3 y Furia 1 por el turno.",
+                        List.of(new PickAlly(false), new GainStrength(3), new GainUntilEndOfTurn("Furia 1"))),
+                new EffectScript("valor-del-heroe:en-mano", Moment.ON_EVENT, false, "En Mano",
+                        "(1) Si invocas algún [caballero] por efecto: puedes jugar esta carta sin pagar su coste.",
+                        List.of(new PlaySelfFree()))
+                        .when(new AllySummonedByEffect(CardFilter.creatures().withClasses("caballero")))
+                        .fromZone("hand")
+                        .limited(Limit.ONCE_PER_TURN_BETWEEN_COPIES));
+        // E1.1-W2 Barrera Refractora
+        add("barrera refractora", new EffectScript("barrera-refractora:en-juego", Moment.ON_PLAY, true, EN_JUEGO,
+                "Efecto Definitivo. Elige 1 aliado: tributa tantas cartas de tu mano como nivel tenga; dicho aliado no puede ser removido por efectos "
+                        + "oponentes hasta el final del turno oponente.",
+                List.of(new PickAlly(false), new TributeFromHandAsSubjectLevel()), List.of(new GainUntilNextTurn(EffectEngine.UNREMOVABLE)))
+                .limited(Limit.DEFINITIVE));
+        // E1.1-W4 Emboscada Al Carromato: until the end of the turn or of its next attack, whichever comes first
+        add("emboscada al carromato", new EffectScript("emboscada-al-carromato:en-juego", Moment.ON_PLAY, true, EN_JUEGO,
+                "Efecto Definitivo. Elige 1 aliado; este gana fuerza 3 y Provocar hasta el final del turno o de su próximo ataque.",
+                List.of(new PickAlly(false)), List.of(new GainUntilNextAttack(3, "Provocar")))
                 .limited(Limit.DEFINITIVE));
         // E1.1-W3 Ascenso Espectral
         add("ascenso espectral", new EffectScript("ascenso-espectral:en-juego", Moment.ON_PLAY, true, EN_JUEGO,
@@ -1506,11 +1570,11 @@ public final class CardEffects {
 
     /** Adds effects for a card name (tests use it for mechanics no printed card has yet). */
     static void register(String name, EffectScript... scripts) {
-        add(name, scripts);
+        BY_NAME.put(name, List.of(scripts));
     }
 
     private static void add(String name, EffectScript... scripts) {
-        BY_NAME.put(name, List.of(scripts));
+        if (BY_NAME.putIfAbsent(name, List.of(scripts)) != null) throw new IllegalStateException("Carta registrada dos veces: " + name);
     }
 
     public static List<EffectScript> of(String cardName) {
@@ -1519,7 +1583,7 @@ public final class CardEffects {
     }
 
     private static void inherit(String name, EffectScript... scripts) {
-        INHERITED.put(name, List.of(scripts));
+        if (INHERITED.putIfAbsent(name, List.of(scripts)) != null) throw new IllegalStateException("Carta registrada dos veces: " + name);
     }
 
     /**
@@ -1540,14 +1604,14 @@ public final class CardEffects {
     }
 
     private static void continuous(String name, Continuous... effects) {
-        CONTINUOUS.put(name, List.of(effects));
+        if (CONTINUOUS.putIfAbsent(name, List.of(effects)) != null) throw new IllegalStateException("Carta registrada dos veces: " + name);
     }
 
     /** A continuous effect on other cards: while its condition holds, the allies that match get that strength. */
     public record Aura(String label, String text, boolean allyTurn, Condition condition, CardFilter targets, int strength) {}
 
     private static void aura(String name, Aura... auras) {
-        AURAS.put(name, List.of(auras));
+        if (AURAS.putIfAbsent(name, List.of(auras)) != null) throw new IllegalStateException("Carta registrada dos veces: " + name);
     }
 
     public static List<Aura> aurasOf(CardSlot card) {
@@ -1660,7 +1724,9 @@ public final class CardEffects {
         /** "puedes tributar 1 carta de tu mano" (the owner picks it). */
         TRIBUTE_ONE_FROM_HAND,
         /** "puedes tributar todos los recursos [filtro] de esta carta" (resourceFilter; any: all of them). */
-        TRIBUTE_RESOURCES
+        TRIBUTE_RESOURCES,
+        /** "puedes colocar hasta 2 criaturas [filtro] de los materiales de esta carta en tu retaguardia" (resourceFilter: which ones). */
+        MATERIALS_TO_BACK
     }
 
     /**
@@ -1673,6 +1739,11 @@ public final class CardEffects {
         public Replacement(String id, String label, String text, boolean destroyOnly, boolean byOpponentOnly, Limit limit, ReplacementCost cost) {
             this(id, label, text, destroyOnly, byOpponentOnly, limit, cost, CardFilter.any());
         }
+
+        /** "en su lugar": the removal does not happen. A reaction (MATERIALS_TO_BACK) happens before it, and the removal goes on. */
+        public boolean instead() {
+            return cost != ReplacementCost.MATERIALS_TO_BACK;
+        }
     }
 
     private static final Map<String, List<Replacement>> REPLACEMENTS = Map.of(
@@ -1683,7 +1754,11 @@ public final class CardEffects {
             // E1-R7 Caballero Leal
             "caballero leal", List.of(new Replacement("caballero-leal:todos-los-turnos", TODOS,
                     "(1) Cuando esta carta fuera a ser destruida: en su lugar puedes tributar 1 carta de tu mano.", true, false,
-                    Limit.ONCE_PER_TURN_BETWEEN_COPIES, ReplacementCost.TRIBUTE_ONE_FROM_HAND)));
+                    Limit.ONCE_PER_TURN_BETWEEN_COPIES, ReplacementCost.TRIBUTE_ONE_FROM_HAND)),
+            // E1.1-B6 Gémini: a reaction, the destruction still happens
+            "gémini", List.of(new Replacement("gemini:todos-los-turnos", TODOS,
+                    "Cuando esta carta fuera a ser destruida: puedes colocar hasta 2 criaturas nivel 1 de los materiales de esta carta en tu retaguardia.",
+                    true, false, Limit.NONE, ReplacementCost.MATERIALS_TO_BACK, CardFilter.creatures().withLevel(1))));
 
     /** Replacements a card gives as a Recurso (inherited). */
     private static final Map<String, List<Replacement>> INHERITED_REPLACEMENTS = Map.of(

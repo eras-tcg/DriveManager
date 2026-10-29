@@ -71,6 +71,13 @@ public final class EffectEngine {
     static final String PURPOSE_PRIORITY = "PRIORITY";
     /** Gained by a creature that cannot declare an attack this turn. */
     static final String NO_ATTACK = "No puede atacar";
+    /** "no puede agotarse": it cannot be exhausted (by effects, nor to declare an attack). */
+    static final String CANNOT_TAP = "No puede agotarse";
+    /** "no puede ser objetivo de efectos de cartas oponentes [nivel N o menor]": "Inmune" or "Inmune N". */
+    static final String IMMUNE = "Inmune";
+    /** "no puede ser removido por efectos oponentes". */
+    static final String UNREMOVABLE = "Irremovible por efectos oponentes";
+    static final String PURPOSE_REPLACE_MATERIALS = "REPLACE_MATERIALS";
     /** An "until the end of the attack" entry that is strength, not an ability ("id|fuerza:3"). */
     static final String STRENGTH_ENTRY = "fuerza:";
 
@@ -219,6 +226,7 @@ public final class EffectEngine {
         List<String> all = new ArrayList<>(card.getKeywords());
         for (CardSlot resource : card.getResources()) all.addAll(resource.getInheritKeywords());
         all.addAll(card.getTurnKeywords());
+        all.addAll(card.getLaterKeywords());
         all.addAll(card.getContinuousKeywords());
         return all;
     }
@@ -378,6 +386,16 @@ public final class EffectEngine {
         PlayerState player = room.getPlayer(playerId);
         return player == null ? 0 : player.getField().stream().filter(c -> "creature".equals(c.getCardType()) && filter.matches(c))
                 .mapToInt(c -> c.getLevel() == null ? 0 : c.getLevel()).sum();
+    }
+
+    /** The card cannot be targeted by an effect of an opponent's card of that level ("Inmune", "Inmune 4"). */
+    static boolean immuneTo(CardSlot card, int sourceLevel) {
+        for (String k : keywords(card)) {
+            if (!k.startsWith(IMMUNE)) continue;
+            Matcher m = Pattern.compile("(\\d+)").matcher(k);
+            if (!m.find() || sourceLevel <= Integer.parseInt(m.group(1))) return true;
+        }
+        return false;
     }
 
     /** How many lives the player has. */

@@ -40,7 +40,8 @@ public final class CombatRules {
         if (attacker == null || !"creature".equals(attacker.getCardType())) return "Solo tus criaturas del campo pueden atacar";
         if (!inFrontLine(attacker)) return "Solo las criaturas de la línea frontal pueden atacar";
         if (attacker.isTapped()) return "Esa criatura está agotada";
-        if (keywords(attacker).contains(NO_ATTACK)) return name(attacker) + " no puede declarar ataque este turno";
+        if (keywords(attacker).contains(NO_ATTACK)) return name(attacker) + " no puede declarar ataque";
+        if (keywords(attacker).contains(CANNOT_TAP)) return name(attacker) + " no puede agotarse para declarar ataque";
         if (!attackGemsOk(room, userId, attacker)) {
             Integer furia = furia(attacker);
             return furia == null ? "Para declarar un ataque necesitas 0 o más gemas"
@@ -96,6 +97,9 @@ public final class CombatRules {
         combat.setStep(Combat.Step.ATTACK);
         combat.setPhase(Combat.Phase.EXIT);
         room.setCombat(combat);
+        // "hasta el final del turno o de su próximo ataque": this is that attack
+        attacker.getUntilNextAttack().forEach(entry -> combat.getUntilEndOfAttack().add(attacker.getInstanceId() + "|" + entry));
+        attacker.getUntilNextAttack().clear();
         CardSlot target = targetId == null || opponent == null ? null : find(opponent.getField(), targetId);
         Map<String, Object> data = new HashMap<>();
         data.put("byEffect", byEffect);
@@ -147,7 +151,7 @@ public final class CombatRules {
 
     static Combat.Step nextStep(Combat c, PlayerState defender, CardSlot attacker) {
         return switch (c.getStep()) {
-            case ATTACK -> Combat.Step.BLOCK;
+            case ATTACK -> c.isSkipBlock() ? Combat.Step.DAMAGE : Combat.Step.BLOCK;
             // Rule 10.1.3.1: the clash only happens if there is a blocker when the step starts
             case BLOCK -> c.getBlockerId() != null && find(defender.getField(), c.getBlockerId()) != null
                     ? Combat.Step.CLASH : Combat.Step.DAMAGE;
