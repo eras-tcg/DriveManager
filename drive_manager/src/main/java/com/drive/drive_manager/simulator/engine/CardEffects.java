@@ -1297,6 +1297,18 @@ public final class CardEffects {
         return all;
     }
 
+    /**
+     * Card effects the engine runs as a rule of its own rather than a script, by card name in lower case: "puede
+     * considerarse como si estuviera en tu mano" ({@link #SPECIAL_FROM_TRIBUTES}) and "puede ser tratada como"
+     * ({@link #ALIASES}). With {@link #definitions()}, everything programmed for a card.
+     */
+    public static Map<String, List<String>> ruleEffects() {
+        Map<String, List<String>> all = new TreeMap<>();
+        SPECIAL_FROM_TRIBUTES.forEach(n -> all.computeIfAbsent(n, k -> new ArrayList<>()).add("En Tributos: cuenta como en la mano para invocaciones especiales"));
+        ALIASES.forEach((n, alias) -> all.computeIfAbsent(n, k -> new ArrayList<>()).add("puede ser tratada como \"" + alias + "\""));
+        return all;
+    }
+
     /** What a card gives the creature it is a Recurso of. */
     public static List<EffectScript> inheritedOf(String name) {
         return name == null ? List.of() : INHERITED.getOrDefault(name.trim().toLowerCase(Locale.ROOT), List.of());
