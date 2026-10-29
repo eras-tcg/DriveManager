@@ -178,6 +178,37 @@ class PreRoomTest {
     }
 
     @Test
+    void aTestRoomMovesAWholeDeckAtOnceAndSurvivesAReconnectedSocket() {
+        GameRoom test = service.createRoom("owner", true);
+        String id = test.getRoomId();
+        service.applyAction(id, "owner", action("JOIN_ROOM", Map.of("username", "owner")));
+        for (String side : List.of("owner", RoomService.EDITOR_RIVAL)) {
+            PlayerState p = test.getPlayer(side);
+            p.setDeckId("deck");
+            for (int i = 0; i < 30; i++) p.getDeck().add(card("plain", false));
+            p.getDeck().add(card("starter-a", true));
+            p.setStarterCardId("starter-a");
+        }
+        service.applyAction(id, "owner", action("SET_READY", Map.of("ready", true)));
+        PlayerState owner = test.getPlayer("owner");
+        List<String> deck = owner.getDeck().stream().map(CardSlot::getInstanceId).toList();
+        GameStateUpdate moved = service.applyAction(id, "owner", action("BULK_MOVE", Map.of("instanceIds", deck, "fromZone", "deck", "toZone", "tributeZone")));
+        assertThat(moved.getError()).isNull();
+        assertThat(owner.getDeck()).isEmpty();
+        assertThat(owner.getTributeZone()).extracting(CardSlot::getInstanceId).containsExactlyElementsOf(deck);
+        assertThat(owner.getTributeZone()).noneMatch(CardSlot::isFaceDown);
+
+        // The socket dropped and reconnected by itself (no JOIN_ROOM): acting again keeps the room open
+        service.registerSession("s1", id, "owner");
+        service.handleSessionDisconnect("s1");
+        assertThat(owner.isConnected()).isFalse();
+        assertThat(test.getEmptySince()).isNotNull();
+        service.registerSession("s2", id, "owner");
+        assertThat(owner.isConnected()).isTrue();
+        assertThat(test.getEmptySince()).isNull();
+    }
+
+    @Test
     void anOwnerWaitingAloneCanPlayBothSides() {
         GameRoom waiting = service.createRoom("owner");
         service.applyAction(waiting.getRoomId(), "owner", action("JOIN_ROOM", Map.of("username", "owner")));

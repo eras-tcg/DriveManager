@@ -64,9 +64,7 @@ public class RoomService {
         pruneRooms();
         long now = System.currentTimeMillis();
         for (GameRoom room : new ArrayList<>(rooms.values())) {
-            GameStateUpdate update;
-            synchronized (room) { update = checkOwner(room, now); }
-            if (update != null && messagingTemplate != null) messagingTemplate.convertAndSend("/topic/room/" + room.getRoomId(), update);
+            synchronized (room) { broadcast(room.getRoomId(), checkOwner(room, now)); }
         }
     }
 
@@ -138,6 +136,20 @@ public class RoomService {
     private void pruneRooms() {
         java.time.Instant limit = java.time.Instant.now().minus(EMPTY_ROOM_TTL);
         rooms.values().removeIf(r -> r.getEmptySince() != null && r.getEmptySince().isBefore(limit));
+    }
+
+    /**
+     * Applies an action and sends the room its update while still holding the room's lock: the update refers to
+     * the room's live lists, so it is serialized before the next action can change them.
+     */
+    public void applyAndBroadcast(String roomId, String userId, GameAction action) {
+        GameRoom lock = rooms.get(roomId);
+        if (lock == null) { broadcast(roomId, applyAction(roomId, userId, action)); return; }
+        synchronized (lock) { broadcast(roomId, applyAction(roomId, userId, action)); }
+    }
+
+    private void broadcast(String roomId, GameStateUpdate update) {
+        if (update != null && messagingTemplate != null) messagingTemplate.convertAndSend("/topic/room/" + roomId, update);
     }
 
     public GameStateUpdate applyAction(String roomId, String userId, GameAction action) {
@@ -230,6 +242,7 @@ public class RoomService {
             case "VIEW_LIFE_STACK"              -> handleViewLifeStack(room, userId);
             case "VIEW_LIFE_CARD"               -> handleViewLifeCard(room, userId);
             case "BULK_TO_DECK_BOTTOM"           -> handleBulkToDeckBottom(room, userId, action);
+            case "BULK_MOVE"                     -> handleBulkMove(room, userId, action);
             case "CREATE_DUMMY"                  -> handleCreateDummy(room, userId, action);
             default                             -> GameStateUpdate.error(roomId, "Unknown action: " + action.getType());
         };
@@ -594,17 +607,28 @@ public class RoomService {
     public void registerSession(String sessionId, String roomId, String userId) {
         if (sessionId == null) return;
         sessionRegistry.put(sessionId, new String[]{roomId, userId});
+        GameRoom room = rooms.get(roomId);
+        if (room == null) return;
+        synchronized (room) {
+            PlayerState player = room.getPlayer(userId);
+            if (player != null && !player.isConnected()) {
+                player.setConnected(true);
+                room.setEmptySince(null);
+            }
+        }
     }
 
     /** Called from GameDisconnectListener when a STOMP session drops (browser closed, network lost). */
-    public GameStateUpdate handleSessionDisconnect(String sessionId) {
+    public void handleSessionDisconnect(String sessionId) {
         String[] info = sessionRegistry.remove(sessionId);
-        if (info == null) return null;
-        String roomId = info[0];
-        String userId = info[1];
+        if (info == null) return;
+        GameRoom room = rooms.get(info[0]);
+        if (room == null) return;
+        synchronized (room) { broadcast(room.getRoomId(), sessionDisconnected(room, info[1])); }
+    }
 
-        GameRoom room = rooms.get(roomId);
-        if (room == null) return null;
+    private GameStateUpdate sessionDisconnected(GameRoom room, String userId) {
+        String roomId = room.getRoomId();
         PlayerState player = room.getPlayer(userId);
         if (player == null) return null;
 
@@ -739,6 +763,32 @@ public class RoomService {
         GameStateUpdate update = GameStateUpdate.from(room, "BULK_TO_DECK_BOTTOM", userId);
         update.setLogEntry(player.getUsername() + " envió " + ordered.size() + " carta(s) desde " + zoneLabel(zoneName)
                 + " al fondo del mazo en orden " + (random ? "aleatorio" : "de la lista"));
+        return update;
+    }
+
+    /**
+     * Moves a selection of cards from one zone to another in one action (instead of one MOVE_CARD per card),
+     * each as MOVE_CARD would; one line of history for all of them.
+     */
+    private GameStateUpdate handleBulkMove(GameRoom room, String userId, GameAction action) {
+        List<String> instanceIds = action.getStringList("instanceIds");
+        if (instanceIds == null || instanceIds.isEmpty()) return GameStateUpdate.error(room.getRoomId(), "No cards specified");
+        int moved = 0;
+        for (String id : instanceIds) {
+            Map<String, Object> payload = new HashMap<>(action.getPayload());
+            payload.remove("instanceIds");
+            payload.put("instanceId", id);
+            GameAction one = new GameAction();
+            one.setType("MOVE_CARD");
+            one.setPayload(payload);
+            if (handleMove(room, userId, one).getError() == null) moved++;
+        }
+        if (moved == 0) return GameStateUpdate.error(room.getRoomId(), "Cards not found");
+        String tp = action.getString("targetPlayerId");
+        PlayerState player = room.getPlayer(tp != null ? tp : userId);
+        GameStateUpdate update = GameStateUpdate.from(room, "BULK_MOVE", userId);
+        update.setLogEntry(player.getUsername() + " envió " + moved + " carta(s) desde " + zoneLabel(action.getString("fromZone"))
+                + " a " + zoneLabel(action.getString("toZone")));
         return update;
     }
 
