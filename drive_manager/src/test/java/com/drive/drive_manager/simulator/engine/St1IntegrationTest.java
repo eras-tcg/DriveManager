@@ -441,7 +441,7 @@ class St1IntegrationTest {
     @Test
     void arcXiomaGoesToTheDeckOnlyWhenItResolves() {
         CardSlot mihel = onField(host, slot("Mihel"), 75.0);
-        CardSlot arc = slot("Arc xioma");
+        CardSlot arc = slot("Arc-xioma");
         host.getTributeZone().add(arc);
         CardSlot damon = reduceWithMathausAcceptingAll(5);
         // Both trigger at 2; whichever resolves first destroys Damon and the other one does nothing (it is not paid)
