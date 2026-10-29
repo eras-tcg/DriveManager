@@ -66,6 +66,11 @@ public final class CostModifiers {
 
     private static final Map<String, List<CostModifier>> BY_NAME = new HashMap<>();
 
+    static {
+        // The cards register their modifiers when CardEffects loads: load it before the first lookup
+        CardEffects.load();
+    }
+
     private CostModifiers() {}
 
     static void register(String cardName, CostModifier... modifiers) {

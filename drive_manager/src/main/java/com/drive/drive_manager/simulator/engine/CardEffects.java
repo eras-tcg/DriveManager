@@ -1278,6 +1278,10 @@ public final class CardEffects {
         return null;
     }
 
+    /** Loads the cards (their static registrations), for registries filled from here such as {@link CostModifiers}. */
+    static void load() {
+    }
+
     /** Everything programmed, card by card (by name in lower case), as data: see {@link EffectJson}. */
     public static Map<String, CardDefinition> definitions() {
         Set<String> names = new TreeSet<>();
