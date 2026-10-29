@@ -1,0 +1,878 @@
+[
+ {
+  "cardName": "Fhalid",
+  "cardType": "creature",
+  "strength": 3,
+  "cost": 1,
+  "level": 2,
+  "starter": false,
+  "cardClasses": [
+   "ente"
+  ],
+  "edition": "ST1",
+  "colorIdentity": "B",
+  "cardNumber": 7,
+  "regulation": "A",
+  "effects": [],
+  "inheritEffects": [],
+  "keywordEffects": [],
+  "inheritKeywordEffects": [],
+  "specialCost": 1,
+  "specialSummonKind": "materialization",
+  "requirement": "criatura niel 1 + material nivel 1 en tributos o campo.",
+  "rarity": "C",
+  "colors": [
+   "B"
+  ],
+  "id": "69b354e7b45d6126806bbbe9"
+ },
+ {
+  "cardName": "Sahiel",
+  "cardType": "creature",
+  "strength": 9,
+  "cost": 3,
+  "level": 3,
+  "starter": false,
+  "cardClasses": [
+   "ente"
+  ],
+  "edition": "ST1",
+  "colorIdentity": "B",
+  "cardNumber": 10,
+  "regulation": "A",
+  "effects": [
+   {
+    "instance": "En Invocación",
+    "effectBlocks": [
+     {
+      "activationCondition": "si tienes 5 o menos vidas",
+      "cost": "puedes tributar 2 materiales de esta carta",
+      "resolution": "coloca la carta del tope de tu mazo al tope de tus vidas bocabajo."
+     }
+    ],
+    "kind": "disparado",
+    "tags": [
+     "defensivo",
+     "recuperación"
+    ]
+   }
+  ],
+  "inheritEffects": [],
+  "keywordEffects": [
+   {
+    "keyword": "Reactivar"
+   }
+  ],
+  "inheritKeywordEffects": [],
+  "specialCost": 2,
+  "specialSummonKind": "materialization",
+  "requirement": "criatura nivel 2 + material nivel 2 en campo o tributos.",
+  "rarity": "R",
+  "colors": [
+   "B"
+  ],
+  "id": "69b355dfb45d6126806bbbec"
+ },
+ {
+  "cardName": "Falanx",
+  "cardType": "creature",
+  "strength": 12,
+  "cost": 6,
+  "level": 4,
+  "starter": false,
+  "cardClasses": [
+   "ente"
+  ],
+  "edition": "ST1",
+  "colorIdentity": "B",
+  "cardNumber": 13,
+  "regulation": "A",
+  "effects": [
+   {
+    "instance": "En Tributos",
+    "effectBlocks": [
+     {
+      "activationCondition": "",
+      "cost": "",
+      "resolution": "esta carta puede considerarse como si estuviera en tu mano para invocaciones especiales."
+     }
+    ],
+    "kind": "continuo",
+    "tags": []
+   },
+   {
+    "instance": "Todos Los Turnos",
+    "effectBlocks": [
+     {
+      "activationCondition": "si esta carta es agotada",
+      "cost": "puedes tributar 2 materiales de esta carta y elegir 1 enemigo activo",
+      "resolution": "reduce en 4 su fuerza hasta el final del próximo turno."
+     }
+    ],
+    "kind": "disparado",
+    "tags": [
+     "remoción"
+    ]
+   }
+  ],
+  "inheritEffects": [],
+  "keywordEffects": [],
+  "inheritKeywordEffects": [],
+  "specialCost": 1,
+  "specialSummonKind": "materialization",
+  "requirement": "aliados que sumen 6 en nivel, incluido el invocar nivel 3 o mayor.",
+  "rarity": "SR",
+  "colors": [
+   "B"
+  ],
+  "id": "69b3788db1f266700290ecc6"
+ },
+ {
+  "cardName": "Bertalum",
+  "cardType": "creature",
+  "strength": 7,
+  "cost": 3,
+  "level": 3,
+  "starter": false,
+  "cardClasses": [
+   "ente"
+  ],
+  "edition": "ST1",
+  "colorIdentity": "B",
+  "cardNumber": 9,
+  "regulation": "A",
+  "effects": [
+   {
+    "instance": "En Invocación",
+    "effectBlocks": [
+     {
+      "activationCondition": "",
+      "cost": "puedes tributar 2 materiales de esta carta para elegir 1 enemigo",
+      "resolution": "reduce en 4 su fuerza hasta el final del turno."
+     }
+    ],
+    "kind": "disparado",
+    "tags": [
+     "remoción"
+    ]
+   }
+  ],
+  "inheritEffects": [],
+  "keywordEffects": [],
+  "inheritKeywordEffects": [],
+  "specialCost": 2,
+  "specialSummonKind": "materialization",
+  "requirement": "criatura nivel 2 + material nivel 2 en campo o tributos.",
+  "rarity": "UC",
+  "colors": [
+   "B"
+  ],
+  "id": "69b35596b45d6126806bbbeb"
+ },
+ {
+  "cardName": "Hez",
+  "cardType": "creature",
+  "strength": 10,
+  "cost": 6,
+  "level": 5,
+  "starter": false,
+  "cardClasses": [
+   "ente"
+  ],
+  "edition": "ST1",
+  "colorIdentity": "B",
+  "cardNumber": 15,
+  "regulation": "A",
+  "effects": [
+   {
+    "instance": "Todos Los Turnos",
+    "effectBlocks": [
+     {
+      "activationCondition": "al inicio del turno",
+      "cost": "puedes tributar 2 materiales de esta carta para elegir todos los enemigos en la línea frontal",
+      "resolution": "reduce en 4 su fuerza hasta el final del turno."
+     }
+    ],
+    "kind": "disparado",
+    "tags": [
+     "remoción"
+    ]
+   }
+  ],
+  "inheritEffects": [],
+  "keywordEffects": [
+   {
+    "keyword": "Reactivar"
+   }
+  ],
+  "inheritKeywordEffects": [],
+  "specialCost": 3,
+  "specialSummonKind": "materialization",
+  "requirement": "criaturan nivel 4 + material nivel 4 en campo o tributos.",
+  "rarity": "R",
+  "colors": [
+   "B"
+  ],
+  "id": "69b37e08b1f266700290ecc8"
+ },
+ {
+  "cardName": "Portal Al Mundo Espiritual",
+  "cardType": "structure",
+  "cost": 1,
+  "level": 2,
+  "starter": false,
+  "cardClasses": [],
+  "edition": "ST1",
+  "colorIdentity": "B",
+  "cardNumber": 16,
+  "regulation": "A",
+  "effects": [
+   {
+    "instance": "Todos Los Turnos",
+    "effectBlocks": [
+     {
+      "activationCondition": "si algún aliado [ente] es invocado por efecto",
+      "cost": "puedes agotar esta carta",
+      "resolution": "añadele 1 criatura [ente] de menor nivel de tus tributos como material para ganar 1 gema."
+     }
+    ],
+    "kind": "disparado",
+    "tags": [
+     "gana gemas",
+     "invocar"
+    ]
+   }
+  ],
+  "inheritEffects": [],
+  "keywordEffects": [],
+  "inheritKeywordEffects": [],
+  "rarity": "UC",
+  "colors": [
+   "B"
+  ],
+  "id": "69b37e76b1f266700290ecc9"
+ },
+ {
+  "cardName": "Jhav",
+  "cardType": "creature",
+  "strength": 2,
+  "cost": 1,
+  "level": 1,
+  "starter": false,
+  "cardClasses": [
+   "ente"
+  ],
+  "edition": "ST1",
+  "colorIdentity": "B",
+  "cardNumber": 2,
+  "regulation": "A",
+  "effects": [
+   {
+    "instance": "En Invocación",
+    "effectBlocks": [
+     {
+      "activationCondition": "",
+      "cost": "",
+      "resolution": "toma hasta 1 carta Azul de tus tributos."
+     },
+     {
+      "activationCondition": "Luego",
+      "cost": "",
+      "resolution": "tributa 1 carta de tu mano."
+     },
+     {
+      "activationCondition": "Si tributaste 1 carta [ente]",
+      "cost": "",
+      "resolution": "roba 1 carta."
+     }
+    ],
+    "kind": "disparado",
+    "tags": [
+     "busqueda tributos"
+    ]
+   }
+  ],
+  "inheritEffects": [],
+  "keywordEffects": [],
+  "inheritKeywordEffects": [],
+  "rarity": "C",
+  "colors": [
+   "B"
+  ],
+  "id": "69acb9ef5ad1fe1f295f441e"
+ },
+ {
+  "cardName": "Mihel",
+  "cardType": "creature",
+  "strength": 2,
+  "cost": 1,
+  "level": 1,
+  "starter": false,
+  "cardClasses": [
+   "ente"
+  ],
+  "edition": "ST1",
+  "colorIdentity": "B",
+  "cardNumber": 3,
+  "regulation": "A",
+  "effects": [
+   {
+    "instance": "En Invocación",
+    "effectBlocks": [
+     {
+      "activationCondition": "",
+      "cost": "",
+      "resolution": "roba 2 cartas."
+     },
+     {
+      "activationCondition": "Luego",
+      "cost": "",
+      "resolution": "tributa 2 cartas de tu mano."
+     }
+    ],
+    "kind": "disparado",
+    "tags": [
+     "robo",
+     "tributo"
+    ]
+   },
+   {
+    "instance": "Todos Los Turnos",
+    "effectBlocks": [
+     {
+      "activationCondition": "si reduces la fuerza de algún enemigo",
+      "cost": "",
+      "resolution": "puedes añadir esta carta como material a un aliado para reducir su fuerza en 2 más."
+     }
+    ],
+    "kind": "disparado",
+    "tags": [
+     "remoción"
+    ]
+   }
+  ],
+  "inheritEffects": [],
+  "keywordEffects": [],
+  "inheritKeywordEffects": [],
+  "rarity": "R",
+  "colors": [
+   "B"
+  ],
+  "id": "69ad077be263676627212327"
+ },
+ {
+  "cardName": "Galafendrax El Transmutador",
+  "cardType": "creature",
+  "strength": 13,
+  "cost": 8,
+  "level": 5,
+  "starter": false,
+  "cardClasses": [
+   "ente"
+  ],
+  "edition": "ST1",
+  "colorIdentity": "B",
+  "cardNumber": 14,
+  "regulation": "A",
+  "effects": [
+   {
+    "instance": "En Invocación",
+    "effectBlocks": [
+     {
+      "activationCondition": "",
+      "cost": "",
+      "resolution": "coloca hasta 1 [ente] nivel 4 de los materiales de esta carta en tu línea frontal. Luego: añádele todos los materiales de esta carta como materiales."
+     }
+    ],
+    "kind": "disparado",
+    "tags": [
+     "colocar"
+    ]
+   },
+   {
+    "instance": "Todos Los Turnos",
+    "ussageLimit": "once per turn",
+    "effectBlocks": [
+     {
+      "activationCondition": "si reduces a 0 la fuerza de algún enemigo",
+      "cost": "",
+      "resolution": " puedes reactivar esta carta."
+     }
+    ],
+    "kind": "disparado",
+    "tags": [
+     "reactivo"
+    ]
+   }
+  ],
+  "inheritEffects": [],
+  "keywordEffects": [],
+  "inheritKeywordEffects": [],
+  "specialCost": 3,
+  "specialSummonKind": "materialization",
+  "requirement": "criatura nivel 4 + material nivel 4 en campo o tributos.",
+  "rarity": "UC",
+  "colors": [
+   "B"
+  ],
+  "id": "69bb32626cdb8c5e49c20973"
+ },
+ {
+  "cardName": "Zula",
+  "cardType": "creature",
+  "strength": 5,
+  "cost": 2,
+  "level": 2,
+  "starter": false,
+  "cardClasses": [
+   "ente"
+  ],
+  "edition": "ST1",
+  "colorIdentity": "B",
+  "cardNumber": 6,
+  "regulation": "A",
+  "effects": [
+   {
+    "instance": "En Invocación",
+    "effectBlocks": [
+     {
+      "activationCondition": "si tienes 4 o menos vidas",
+      "cost": "puedes tributar 1 material de esta carta",
+      "resolution": "coloca hasta 1 material de esta carta al tope de tus vidas bocarriba."
+     }
+    ],
+    "kind": "disparado",
+    "tags": [
+     "defensivo",
+     "recuperación"
+    ]
+   }
+  ],
+  "inheritEffects": [],
+  "keywordEffects": [],
+  "inheritKeywordEffects": [],
+  "specialCost": 1,
+  "specialSummonKind": "materialization",
+  "requirement": "criatura nivel 1 + material nivel 1 en tributos o campo.",
+  "rarity": "C",
+  "colors": [
+   "B"
+  ],
+  "id": "69acafc0f0b478a3f5ab2350"
+ },
+ {
+  "cardName": "Falis",
+  "cardType": "creature",
+  "strength": 6,
+  "cost": 3,
+  "level": 3,
+  "starter": false,
+  "cardClasses": [
+   "ente"
+  ],
+  "edition": "ST1",
+  "colorIdentity": "B",
+  "cardNumber": 11,
+  "regulation": "A",
+  "effects": [
+   {
+    "instance": "En Tributos",
+    "ussageLimit": "once per turn between copies",
+    "effectBlocks": [
+     {
+      "activationCondition": "si reduces a 0 la fuerza de algún enemigo",
+      "cost": "",
+      "resolution": "puedes invocar esta carta reduciendo su coste en 2."
+     }
+    ],
+    "kind": "disparado",
+    "tags": [
+     "invocar",
+     "invocar efecto"
+    ]
+   }
+  ],
+  "inheritEffects": [],
+  "keywordEffects": [],
+  "inheritKeywordEffects": [],
+  "specialCost": 1,
+  "specialSummonKind": "materialization",
+  "requirement": "criatura nivel 2 + material nivel 2 en campo o tributos.",
+  "rarity": "C",
+  "colors": [
+   "B"
+  ],
+  "id": "69b37448b1f266700290ecc4"
+ },
+ {
+  "cardName": "Eisten",
+  "cardType": "creature",
+  "strength": 3,
+  "cost": 1,
+  "level": 1,
+  "starter": false,
+  "cardClasses": [
+   "ente"
+  ],
+  "edition": "ST1",
+  "colorIdentity": "B",
+  "cardNumber": 1,
+  "regulation": "A",
+  "effects": [
+   {
+    "instance": "En Invocación",
+    "effectBlocks": [
+     {
+      "activationCondition": "",
+      "cost": "",
+      "resolution": "tributa 4 cartas del tope de tu mazo."
+     },
+     {
+      "activationCondition": "Luego",
+      "cost": "",
+      "resolution": "toma hasta 1 carta Azúl de tus tributos."
+     }
+    ],
+    "kind": "disparado",
+    "tags": [
+     "busqueda tributos",
+     "tributo"
+    ]
+   }
+  ],
+  "inheritEffects": [],
+  "keywordEffects": [],
+  "inheritKeywordEffects": [],
+  "rarity": "UC",
+  "colors": [
+   "B"
+  ],
+  "id": "69acb5165ad1fe1f295f441d"
+ },
+ {
+  "cardName": "Flureteus",
+  "cardType": "creature",
+  "strength": 1,
+  "cost": 1,
+  "level": 1,
+  "starter": true,
+  "cardClasses": [
+   "ente"
+  ],
+  "edition": "ST1",
+  "colorIdentity": "B",
+  "cardNumber": 4,
+  "regulation": "A",
+  "effects": [
+   {
+    "instance": "En Invocación",
+    "effectBlocks": [
+     {
+      "activationCondition": "",
+      "cost": "",
+      "resolution": "mira las primeras 5 cartas de tu mazo: de ellas toma hasta 2 cartas Azules o Blancas. Envía el resto al fondo de tu mazo."
+     },
+     {
+      "activationCondition": "Luego",
+      "cost": "",
+      "resolution": "tributa 2 cartas de tu mano."
+     }
+    ],
+    "kind": "disparado",
+    "tags": [
+     "busqueda",
+     "tributo"
+    ]
+   },
+   {
+    "instance": "Turno Aliado",
+    "effectBlocks": [
+     {
+      "activationCondition": "si invocas 1 criatura por efecto",
+      "cost": "",
+      "resolution": "puedes invocar 1 criatura [ente] nivel 2 de tus tributos en tu línea frontal sin pagar su coste."
+     },
+     {
+      "activationCondition": "Si lo haces",
+      "cost": "",
+      "resolution": "añade esta carta como material a un aliado."
+     }
+    ],
+    "kind": "disparado",
+    "tags": [
+     "invocar efecto",
+     "invocar"
+    ]
+   }
+  ],
+  "inheritEffects": [],
+  "keywordEffects": [],
+  "inheritKeywordEffects": [],
+  "rarity": "SR",
+  "colors": [
+   "B"
+  ],
+  "id": "69b35409b45d6126806bbbe7"
+ },
+ {
+  "cardName": "Flarix",
+  "cardType": "creature",
+  "strength": 5,
+  "cost": 2,
+  "level": 2,
+  "starter": false,
+  "cardClasses": [
+   "ente"
+  ],
+  "edition": "ST1",
+  "colorIdentity": "B",
+  "cardNumber": 5,
+  "regulation": "A",
+  "effects": [
+   {
+    "instance": "En Invocación",
+    "effectBlocks": [
+     {
+      "activationCondition": "",
+      "cost": "puedes tributar hasta 2 materiales de esta carta",
+      "resolution": "toma 1 carta Azul de tus tributos por cada material tributado."
+     }
+    ],
+    "kind": "disparado",
+    "tags": [
+     "tributo",
+     "busqueda tributos"
+    ]
+   },
+   {
+    "instance": "En Tributos",
+    "ussageLimit": "once per turn between copies",
+    "effectBlocks": [
+     {
+      "activationCondition": "si reduces a 0 la fuerza de algún enemigo",
+      "cost": "",
+      "resolution": "puedes enviar esta carta al fondo de tu mazo para infringir 9 de daño directo."
+     }
+    ],
+    "kind": "disparado",
+    "tags": [
+     "inflingir daño",
+     "ofensivo"
+    ]
+   }
+  ],
+  "inheritEffects": [],
+  "keywordEffects": [],
+  "inheritKeywordEffects": [],
+  "specialCost": 1,
+  "specialSummonKind": "materialization",
+  "requirement": "criatura nivel 1 + material nivel 1 en tributos o campo.",
+  "rarity": "UC",
+  "colors": [
+   "B"
+  ],
+  "id": "69b354a7b45d6126806bbbe8"
+ },
+ {
+  "cardName": "Mathaus",
+  "cardType": "creature",
+  "strength": 10,
+  "cost": 4,
+  "level": 4,
+  "starter": false,
+  "cardClasses": [
+   "ente"
+  ],
+  "edition": "ST1",
+  "colorIdentity": "B",
+  "cardNumber": 12,
+  "regulation": "A",
+  "effects": [
+   {
+    "instance": "Turno Aliado",
+    "ussageLimit": "once per turn",
+    "effectBlocks": [
+     {
+      "activationCondition": "",
+      "cost": "puedes tributar 2 materiales de esta carta",
+      "resolution": "elige 1 enemigo para reducir su fuerza en 3 hasta el final del turno oponente."
+     }
+    ],
+    "kind": "activado",
+    "tags": [
+     "remoción"
+    ]
+   }
+  ],
+  "inheritEffects": [],
+  "keywordEffects": [
+   {
+    "keyword": "Letalidad {cantidad}",
+    "number": "1"
+   }
+  ],
+  "inheritKeywordEffects": [],
+  "specialCost": 2,
+  "specialSummonKind": "materialization",
+  "requirement": "criatura nivel 3 + material nivel en tributos o campo.",
+  "rarity": "C",
+  "colors": [
+   "B"
+  ],
+  "id": "69b37822b1f266700290ecc5"
+ },
+ {
+  "cardName": "Composición Adimensional",
+  "cardType": "utility",
+  "cost": 1,
+  "level": 2,
+  "starter": false,
+  "cardClasses": [],
+  "edition": "ST1",
+  "colorIdentity": "B",
+  "cardNumber": 17,
+  "regulation": "A",
+  "effects": [
+   {
+    "instance": "En Juego",
+    "effectBlocks": [
+     {
+      "activationCondition": "",
+      "cost": "",
+      "resolution": "tributa hasta 3 cartas de tu mano."
+     },
+     {
+      "activationCondition": "Luego",
+      "cost": "",
+      "resolution": "roba la misma cantidad y coloca esta carta agotada en tu retaguardia."
+     }
+    ],
+    "kind": "disparado",
+    "tags": [
+     "robo",
+     "tributo"
+    ]
+   },
+   {
+    "instance": "Turno Aliado",
+    "effectBlocks": [
+     {
+      "activationCondition": "",
+      "cost": "",
+      "resolution": "puedes añadir esta carta como material a un aliado para que invoque por Materialización 1 criatura en tu mano o tributos reduciendo el coste especial en 1."
+     }
+    ],
+    "kind": "activado",
+    "tags": [
+     "invocar especial"
+    ]
+   }
+  ],
+  "inheritEffects": [],
+  "keywordEffects": [],
+  "inheritKeywordEffects": [],
+  "rarity": "C",
+  "colors": [
+   "B"
+  ],
+  "id": "69b37f18b1f266700290ecca"
+ },
+ {
+  "cardName": "Paso Interdimensional",
+  "cardType": "utility",
+  "cost": 1,
+  "level": 4,
+  "starter": false,
+  "cardClasses": [],
+  "edition": "ST1",
+  "colorIdentity": "B",
+  "cardNumber": 18,
+  "regulation": "A",
+  "effects": [
+   {
+    "instance": "En Juego",
+    "ussageLimit": "once per turn between copies",
+    "effectBlocks": [
+     {
+      "activationCondition": "",
+      "cost": "elige 1 aliado",
+      "resolution": "invoca 1 criatura [ente] del mismo nivel y distinto nombre de tus tributos en tu línea frontal sin pagar su coste."
+     },
+     {
+      "activationCondition": "Si lo haces",
+      "cost": "",
+      "resolution": "añádele el aliado elegido con todos sus materiales como materiales del aliado invocado."
+     }
+    ],
+    "kind": "disparado",
+    "tags": [
+     "invocar efecto"
+    ]
+   }
+  ],
+  "inheritEffects": [],
+  "keywordEffects": [],
+  "inheritKeywordEffects": [],
+  "rarity": "SR",
+  "colors": [
+   "B"
+  ],
+  "id": "69b37f8bb1f266700290eccb"
+ },
+ {
+  "cardName": "Arc xioma",
+  "cardType": "creature",
+  "strength": 4,
+  "cost": 2,
+  "level": 2,
+  "starter": false,
+  "cardClasses": [
+   "ente"
+  ],
+  "edition": "ST1",
+  "colorIdentity": "B",
+  "cardNumber": 8,
+  "regulation": "A",
+  "effects": [
+   {
+    "instance": "En Invocación",
+    "effectBlocks": [
+     {
+      "activationCondition": "",
+      "cost": "puedes tributar 1 material de esta carta y elegir 1 enemigo",
+      "resolution": "reduce su fuerza en 3 hasta le final del turno."
+     }
+    ],
+    "kind": "disparado",
+    "tags": [
+     "remoción"
+    ]
+   },
+   {
+    "instance": "En Tributos",
+    "effectBlocks": [
+     {
+      "activationCondition": "si reduces a 2 o menos la fuerza de algún enemigo",
+      "cost": "",
+      "resolution": "puedes enviar esta carta al fondo de tu mazo para reducirla a 0."
+     }
+    ],
+    "kind": "disparado",
+    "tags": [
+     "ofensivo"
+    ]
+   }
+  ],
+  "inheritEffects": [],
+  "keywordEffects": [],
+  "inheritKeywordEffects": [],
+  "specialCost": 1,
+  "specialSummonKind": "materialization",
+  "requirement": "criatura nivel 1 + material nivel 1 de tributos o campo.",
+  "rarity": "R",
+  "colors": [
+   "B"
+  ],
+  "id": "69b35556b45d6126806bbbea"
+ }
+]

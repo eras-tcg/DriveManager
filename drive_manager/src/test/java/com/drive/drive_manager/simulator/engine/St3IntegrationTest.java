@@ -12,6 +12,7 @@ import org.springframework.test.util.ReflectionTestUtils;
 import java.io.InputStream;
 import java.util.*;
 
+import static com.drive.drive_manager.simulator.engine.TestTable.*;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
@@ -36,6 +37,8 @@ class St3IntegrationTest {
             list.forEach(c -> cards.put(c.getCardName(), c));
         }
         room = service.createRoom();
+        // These tests chain a lone mandatory effect straight away (its confirmation is tested on its own)
+        room.setConfirmMandatory(false);
         host = new PlayerState("host", "Ana");
         guest = new PlayerState("guest", "Beto");
         room.getPlayers().put("host", host);
@@ -86,7 +89,7 @@ class St3IntegrationTest {
         assertThat(destroy.getValidIds()).containsExactly(damon.getInstanceId());
         // Clients receive it as JSON
         String sent = json.writeValueAsString(attack);
-        assertThat(sent).contains("\"combat\"").contains("\"chosenLabel\":\"Destruir\"");
+        assertThat(sent).contains("\"combat\"").contains("\"chosenLabel\":\"Objetivo\"");
 
         GameStateUpdate destroyed = act("host", "RESOLVE_PROMPT", Map.of("promptId", destroy.getId(), "chosen", List.of(damon.getInstanceId())));
         assertThat(destroyed.getError()).isNull();
@@ -132,8 +135,8 @@ class St3IntegrationTest {
         GameStateUpdate sacrificed = act("host", "SACRIFICE_CARD", Map.of("instanceId", carnhaus.getInstanceId()));
         // Carnhaus' own "En Destrucción" (mandatory) goes first; Cueva (optional) asks
         Prompt confirm = sacrificed.getPrompt();
-        assertThat(confirm.getKind()).isEqualTo(Prompt.Kind.CONFIRM);
-        assertThat(confirm.getSourceName()).isEqualTo("Cueva De Bestias");
+        assertThat(confirm.getPurpose()).isEqualTo("OPTIONAL");
+        assertThat(confirm.getValidIds()).containsExactly(cueva.getInstanceId());
         act("host", "RESOLVE_PROMPT", Map.of("promptId", confirm.getId(), "chosen", List.of(cueva.getInstanceId())));
         assertThat(cueva.isTapped()).isTrue();
         assertThat(EffectEngine.gemsOf(room, "host")).isEqualTo(gems);
@@ -143,6 +146,8 @@ class St3IntegrationTest {
     void endingTheTurnOffersTheNextPlayerToMoveUp() {
         onField(guest, slot("Damon"), 75.0);
         GameStateUpdate ended = act("host", "END_TURN", Map.of());
+        // The start of the guest's turn waits for the move up before the main phase
+        assertThat(room.getCurrentPhase()).isEqualTo("START");
         assertThat(ended.getPrompt()).isNotNull();
         assertThat(ended.getPrompt().getPlayerId()).isEqualTo("guest");
         assertThat(ended.getPrompt().getPurpose()).isEqualTo("ADVANCE");
@@ -150,6 +155,7 @@ class St3IntegrationTest {
         assertThat(act("guest", "DRAW_CARD", Map.of()).getError()).isNotNull();
         assertThat(act("guest", "RESOLVE_PROMPT", Map.of("promptId", ended.getPrompt().getId(), "chosen", List.of())).getError()).isNull();
         assertThat(room.isEngineBusy()).isFalse();
+        assertThat(room.getCurrentPhase()).isEqualTo("MAIN");
     }
 
     @Test
@@ -176,10 +182,25 @@ class St3IntegrationTest {
     }
 
     @Test
-    void aRematchDrawsWhoStartsAgain() {
+    void endingTheTurnFromTheMainPhaseOffersTheMoveUpFirst() {
+        CardSlot damon = onField(host, slot("Damon"), 75.0);
+        GameStateUpdate ending = act("host", "END_TURN", Map.of());
+        assertThat(room.getCurrentTurnUserId()).isEqualTo("host");
+        assertThat(room.getCurrentPhase()).isEqualTo("END_PHASE");
+        assertThat(ending.getPrompt().getPurpose()).isEqualTo("ADVANCE");
+        assertThat(ending.getPrompt().getPlayerId()).isEqualTo("host");
+        act("host", "RESOLVE_PROMPT", Map.of("promptId", ending.getPrompt().getId(), "chosen", List.of(damon.getInstanceId())));
+        assertThat(EffectEngine.inFrontLine(damon)).isTrue();
+        // Answered: the turn ends
+        assertThat(room.getCurrentTurnUserId()).isEqualTo("guest");
+        assertThat(room.isEndTurnPending()).isFalse();
+    }
+
+    @Test
+    void aRematchDrawsWhoStartsAgainAndGoesStraightToTheMulligan() {
         room.setStatus(GameRoom.RoomStatus.POST_GAME);
         for (PlayerState p : List.of(host, guest)) assertThat(act(p.getUserId(), "POST_GAME_CHOICE", Map.of("choice", "rematch")).getError()).isNull();
-        assertThat(room.getStatus()).isEqualTo(GameRoom.RoomStatus.SELECTING_STARTER);
+        assertThat(room.getStatus()).isEqualTo(GameRoom.RoomStatus.MULLIGAN);
         assertThat(room.getCurrentTurnUserId()).isIn("host", "guest");
         assertThat(room.getFirstPlayerId()).isEqualTo(room.getCurrentTurnUserId());
         assertThat(room.getStarterAdvantageUserId()).isEqualTo(room.getOpponentId(room.getCurrentTurnUserId()));
@@ -225,11 +246,4 @@ class St3IntegrationTest {
         return s;
     }
 
-    private static CardSlot onField(PlayerState p, CardSlot c, double y) {
-        c.setX(50.0);
-        c.setY(y);
-        c.setFaceDown(false);
-        p.getField().add(c);
-        return c;
-    }
 }

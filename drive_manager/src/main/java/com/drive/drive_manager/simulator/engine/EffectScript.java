@@ -1,8 +1,5 @@
 package com.drive.drive_manager.simulator.engine;
 
-import com.drive.drive_manager.simulator.CardSlot;
-import com.drive.drive_manager.simulator.GameRoom;
-
 import java.util.List;
 
 /**
@@ -74,15 +71,9 @@ public record EffectScript(String id, Moment moment, boolean mandatory, String l
     }
 
     /** Rule 11.8: "una vez por turno" (that copy) and "una vez por turno entre copias" (same original name). */
-    public enum Limit { NONE, ONCE_PER_TURN, ONCE_PER_TURN_BETWEEN_COPIES }
-
-    @FunctionalInterface
-    public interface Condition {
-        /**
-         * @param event      the event that would trigger it
-         * @param source     the card with the effect
-         * @param controller who controls it
-         */
-        boolean test(GameRoom room, GameEvent event, CardSlot source, String controller);
+    public enum Limit {
+        NONE, ONCE_PER_TURN, ONCE_PER_TURN_BETWEEN_COPIES,
+        /** "Efecto Definitivo": a player can activate only 1 of them per turn, whatever card it is. */
+        DEFINITIVE
     }
 }

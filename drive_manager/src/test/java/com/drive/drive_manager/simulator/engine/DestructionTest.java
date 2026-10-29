@@ -9,6 +9,7 @@ import org.junit.jupiter.api.Test;
 import java.util.ArrayList;
 import java.util.List;
 
+import static com.drive.drive_manager.simulator.engine.TestTable.*;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /** Destruction, sacrifice, "En Destrucción" triggers and the ST3 "En Invocación" effects. */
@@ -20,20 +21,10 @@ class DestructionTest {
 
     @BeforeEach
     void setUp() {
-        room = new GameRoom();
-        room.setRoomId("r1");
-        host = new PlayerState("host", "Ana");
-        guest = new PlayerState("guest", "Beto");
-        room.getPlayers().put("host", host);
-        room.getPlayers().put("guest", guest);
-        room.setStatus(GameRoom.RoomStatus.IN_PROGRESS);
-        room.setCurrentTurnUserId("host");
-        room.setCurrentPhase("MAIN");
-        // 5 gems for the host (first player counts negatively)
-        room.setSharedCounter(-5);
-        host.setResourceCount(5);
-        host.setDeck(deck("hd", 6));
-        guest.setDeck(deck("gd", 6));
+        TestTable table = TestTable.inProgress(5, 6);
+        room = table.room();
+        host = table.host();
+        guest = table.guest();
     }
 
     // ------------------------------------------------------------------ Destroy and sacrifice
@@ -43,7 +34,7 @@ class DestructionTest {
         CardSlot damon = onField(host, card("damon", "Damon", 1, 1, "P"), 20.0);
         host.getHand().add(card("h1", "Uno", 1, 1, "P"));
 
-        assertThat(EffectEngine.destroyByPlayer(room, "guest", "host", "damon")).isNull();
+        assertThat(Removals.destroyByPlayer(room, "guest", "host", "damon")).isNull();
 
         assertThat(host.getField()).isEmpty();
         assertThat(host.getDiscardPile()).containsExactly(damon);
@@ -58,7 +49,7 @@ class DestructionTest {
         assertThat(tribute.getPlayerId()).isEqualTo("host");
         assertThat(tribute.getKind()).isEqualTo(Prompt.Kind.PICK);
         assertThat(tribute.getMin()).isEqualTo(2);
-        assertThat(EffectEngine.answer(room, "host", tribute.getId(), List.of("h1", "hd1"), List.of())).isNull();
+        assertThat(Answers.answer(room, "host", tribute.getId(), List.of("h1", "hd1"), List.of())).isNull();
         assertThat(host.getTributeZone()).extracting(CardSlot::getInstanceId).containsExactly("h1", "hd1");
         assertThat(room.isEngineBusy()).isFalse();
         assertThat(room.getTimeline()).extracting(GameEvent::getType).containsExactly(
@@ -71,8 +62,8 @@ class DestructionTest {
         CardSlot carnhaus = onField(host, card("c1", "Carnhaus", 1, 1, "P"), 70.0);
         carnhaus.getMaterials().add(card("m1", "Material", 1, 1, "P"));
 
-        assertThat(EffectEngine.sacrificeByPlayer(room, "guest", "c1")).contains("tus cartas");
-        assertThat(EffectEngine.sacrificeByPlayer(room, "host", "c1")).isNull();
+        assertThat(Removals.sacrificeByPlayer(room, "guest", "c1")).contains("tus cartas");
+        assertThat(Removals.sacrificeByPlayer(room, "host", "c1")).isNull();
 
         assertThat(host.getTributeZone()).containsExactly(carnhaus);
         // Materials go to the Descarte (rule 6.4.0.5)
@@ -92,7 +83,7 @@ class DestructionTest {
         weak.setStrength(3);
         weak.setStrengthModifier(-3);
 
-        EffectEngine.destroyIfNoStrength(room, "host", guest, weak);
+        Removals.destroyIfNoStrength(room, "host", guest, weak);
 
         assertThat(guest.getDiscardPile()).containsExactly(weak);
         assertThat(weak.getStrengthModifier()).isZero();
@@ -103,9 +94,9 @@ class DestructionTest {
     void cannotDestroyWhileAnEffectResolves() {
         onField(host, card("damon", "Damon", 1, 1, "P"), 20.0);
         onField(host, card("other", "Otra", 1, 1, "P"), 20.0);
-        EffectEngine.destroyByPlayer(room, "host", "host", "damon");
+        Removals.destroyByPlayer(room, "host", "host", "damon");
         assertThat(room.isEngineBusy()).isTrue();
-        assertThat(EffectEngine.destroyByPlayer(room, "host", "host", "other")).contains("resolviéndose");
+        assertThat(Removals.destroyByPlayer(room, "host", "host", "other")).contains("resolviéndose");
     }
 
     // ------------------------------------------------------------------ ST3 "En Invocación"
@@ -123,18 +114,18 @@ class DestructionTest {
         onField(guest, card("lvl2", "Grande", 2, 2, "R"), 20.0);
         onField(guest, card("back", "Atrás", 1, 1, "R"), 80.0);
 
-        assertThat(EffectEngine.ritualByPlayer(room, "host", "kro", "sum")).isNull();
+        assertThat(Summons.ritualByPlayer(room, "host", "kro", "sum")).isNull();
 
         // Optional: asks first
         Prompt confirm = room.getPrompt();
-        assertThat(confirm.getKind()).isEqualTo(Prompt.Kind.CONFIRM);
-        assertThat(EffectEngine.answer(room, "host", confirm.getId(), List.of("kro"), List.of())).isNull();
+        assertThat(confirm.getPurpose()).isEqualTo("OPTIONAL");
+        assertThat(Answers.answer(room, "host", confirm.getId(), List.of("kro"), List.of())).isNull();
 
         // Only the level 1 enemy of the Línea frontal
         Prompt target = room.getPrompt();
         assertThat(target.getCards()).extracting(CardSlot::getInstanceId).containsExactly("ec", "lvl2");
         assertThat(target.getValidIds()).containsExactly("ec");
-        assertThat(EffectEngine.answer(room, "host", target.getId(), List.of("ec"), List.of())).isNull();
+        assertThat(Answers.answer(room, "host", target.getId(), List.of("ec"), List.of())).isNull();
         assertThat(guest.getDiscardPile()).containsExactly(enemy);
 
         // The destroyed Carnhaus resolves its own "En Destrucción" for its owner, after Krokler's effect
@@ -152,7 +143,7 @@ class DestructionTest {
     void kroklerIsNotOfferedWithoutATarget() {
         host.getHand().add(card("kro", "Krokler", 2, 2, "P"));
         onField(guest, card("back", "Atrás", 1, 1, "R"), 80.0);
-        EffectEngine.normalSummon(room, "host", "kro", 50.0, 70.0);
+        Summons.normalSummon(room, "host", "kro", 50.0, 70.0);
         assertThat(room.getPrompt()).isNull();
         assertThat(room.isEngineBusy()).isFalse();
     }
@@ -162,7 +153,7 @@ class DestructionTest {
         host.getHand().add(card("kro", "Krokler", 2, 2, "P"));
         onField(guest, card("ec", "Carnhaus", 1, 1, "P"), 20.0);
         // A normal summon enters the Retaguardia: its effect is not even offered
-        EffectEngine.normalSummon(room, "host", "kro", 50.0, 70.0);
+        Summons.normalSummon(room, "host", "kro", 50.0, 70.0);
         assertThat(room.getPrompt()).isNull();
         assertThat(guest.getField()).hasSize(1);
     }
@@ -171,8 +162,8 @@ class DestructionTest {
     void kroklerCanBeDeclined() {
         onField(host, card("kro", "Krokler", 2, 2, "P"), 20.0);
         onField(guest, card("ec", "Carnhaus", 1, 1, "P"), 20.0);
-        EffectEngine.specialSummoned(room, "host", host.getField().get(0), card("x", "Nadie", 1, 1, "P"), "special", null);
-        assertThat(EffectEngine.answer(room, "host", room.getPrompt().getId(), List.of(), List.of())).isNull();
+        Summons.specialSummoned(room, "host", host.getField().get(0), card("x", "Nadie", 1, 1, "P"), "special", null);
+        assertThat(Answers.answer(room, "host", room.getPrompt().getId(), List.of(), List.of())).isNull();
         assertThat(guest.getField()).hasSize(1);
         assertThat(room.isEngineBusy()).isFalse();
         assertThat(room.getTimeline()).extracting(GameEvent::getType).contains(GameEvent.EFFECT_DECLINED);
@@ -182,13 +173,13 @@ class DestructionTest {
     void bajmutTributesOneAndCazadorDrawsThreeThenTributesTwo() {
         host.getHand().add(card("baj", "Bajmut Pútrido", 0, 1, "P"));
         host.getHand().add(card("h1", "Uno", 1, 1, "P"));
-        EffectEngine.normalSummon(room, "host", "baj", 50.0, 70.0);
+        Summons.normalSummon(room, "host", "baj", 50.0, 70.0);
         assertThat(room.getPrompt().getMin()).isEqualTo(1);
-        EffectEngine.answer(room, "host", room.getPrompt().getId(), List.of("h1"), List.of());
+        Answers.answer(room, "host", room.getPrompt().getId(), List.of("h1"), List.of());
         assertThat(host.getTributeZone()).extracting(CardSlot::getInstanceId).containsExactly("h1");
 
         host.getHand().add(card("caz", "Cazador De Bestias", 3, 3, "P"));
-        EffectEngine.normalSummon(room, "host", "caz", 50.0, 70.0);
+        Summons.normalSummon(room, "host", "caz", 50.0, 70.0);
         assertThat(host.getHand()).hasSize(3);
         assertThat(room.getPrompt().getMin()).isEqualTo(2);
     }
@@ -202,16 +193,16 @@ class DestructionTest {
             beast.getClasses().add("bestia");
             host.getTributeZone().add(beast);
         }
-        EffectEngine.normalSummon(room, "host", "ber", 50.0, 70.0);
+        Summons.normalSummon(room, "host", "ber", 50.0, 70.0);
 
         Prompt may = room.getPrompt();
         assertThat(may.getKind()).isEqualTo(Prompt.Kind.CONFIRM);
-        EffectEngine.answer(room, "host", may.getId(), List.of("ber"), List.of());
+        Answers.answer(room, "host", may.getId(), List.of("ber"), List.of());
         Prompt send = room.getPrompt();
         assertThat(send.getMin()).isEqualTo(10);
         List<String> ten = new ArrayList<>();
         for (int i = 0; i < 10; i++) ten.add("b" + i);
-        assertThat(EffectEngine.answer(room, "host", send.getId(), ten, List.of())).isNull();
+        assertThat(Answers.answer(room, "host", send.getId(), ten, List.of())).isNull();
 
         assertThat(host.getTributeZone()).extracting(CardSlot::getInstanceId).containsExactly("b10");
         assertThat(host.getDeck().subList(host.getDeck().size() - 10, host.getDeck().size()))
@@ -226,7 +217,7 @@ class DestructionTest {
     @Test
     void berkelusSkipsTheChoiceWithoutTenBeasts() {
         host.getHand().add(card("ber", "Berkelus El Cazarrecompensas Del Bajomundo", 3, 5, "P"));
-        EffectEngine.normalSummon(room, "host", "ber", 50.0, 70.0);
+        Summons.normalSummon(room, "host", "ber", 50.0, 70.0);
         assertThat(room.getPrompt()).isNull();
         assertThat(room.isEngineBusy()).isFalse();
     }
@@ -239,17 +230,17 @@ class DestructionTest {
         host.getTributeZone().add(card("carn", "Carnhaus", 1, 1, "P"));
         host.getTributeZone().add(card("roja", "Roja", 1, 1, "R"));
 
-        EffectEngine.sacrificeByPlayer(room, "host", "sli");
+        Removals.sacrificeByPlayer(room, "host", "sli");
         Prompt confirm = room.getPrompt();
-        assertThat(confirm.getKind()).isEqualTo(Prompt.Kind.CONFIRM);
-        EffectEngine.answer(room, "host", confirm.getId(), List.of("sli"), List.of());
+        assertThat(confirm.getPurpose()).isEqualTo("OPTIONAL");
+        Answers.answer(room, "host", confirm.getId(), List.of("sli"), List.of());
 
         // Cost paid on activation: Slicker goes from the Tributos to the Descarte
         assertThat(host.getDiscardPile()).extracting(CardSlot::getInstanceId).containsExactly("sli");
         Prompt summon = room.getPrompt();
         assertThat(summon.getValidIds()).containsExactly("carn");
         int gems = EffectEngine.gemsOf(room, "host");
-        EffectEngine.answer(room, "host", summon.getId(), List.of("carn"), List.of());
+        Answers.answer(room, "host", summon.getId(), List.of("carn"), List.of());
 
         // Cost 1 reduced by 1, Retaguardia, regulatory draw, then Carnhaus' own "En Invocación"
         assertThat(EffectEngine.gemsOf(room, "host")).isEqualTo(gems);
@@ -266,7 +257,7 @@ class DestructionTest {
     void destroyedSlickerCannotPayFromTheDescarte() {
         onField(host, card("sli", "Slicker", 2, 2, "P"), 20.0);
         host.getTributeZone().add(card("carn", "Carnhaus", 1, 1, "P"));
-        EffectEngine.destroyByPlayer(room, "guest", "host", "sli");
+        Removals.destroyByPlayer(room, "guest", "host", "sli");
         assertThat(room.getPrompt()).isNull();
         assertThat(room.isEngineBusy()).isFalse();
     }
@@ -279,51 +270,27 @@ class DestructionTest {
         host.getField().add(summoned);
         host.getHand().add(card("h1", "Uno", 1, 1, "P"));
 
-        EffectEngine.specialSummoned(room, "host", summoned, summoner, "ritual", "Ana invocó a Cazador");
+        Summons.specialSummoned(room, "host", summoned, summoner, "ritual", "Ana invocó a Cazador");
 
         assertThat(room.getTimeline()).extracting(GameEvent::getType).startsWith(GameEvent.SACRIFICE, GameEvent.SPECIAL_SUMMON);
         // First the move up (declined) and the regulatory draw; only then do the effects trigger
         Prompt front = room.getPrompt();
         assertThat(front.getPurpose()).isEqualTo("SPECIAL_FRONT");
         assertThat(room.getChain()).isEmpty();
-        EffectEngine.answer(room, "host", front.getId(), List.of(), List.of());
+        Answers.answer(room, "host", front.getId(), List.of(), List.of());
         assertThat(room.getTimeline()).extracting(GameEvent::getType).containsSubsequence(GameEvent.SPECIAL_SUMMON, GameEvent.DRAW);
         // Two mandatory effects of the same player: the player orders them
         Prompt order = room.getPrompt();
         assertThat(order.getPurpose()).isEqualTo("ORDER");
         assertThat(order.getValidIds()).containsExactlyInAnyOrder("carn", "caz");
-        EffectEngine.answer(room, "host", order.getId(), List.of("carn"), List.of());
-        // Both triggered together: the chain resolves the last activated first
+        // One at a time: Carnhaus now; Cazador, the only one left, follows on its own
+        assertThat(order.getMax()).isEqualTo(1);
+        Answers.answer(room, "host", order.getId(), List.of("carn"), List.of());
+        // Both are chained (Cadena 1 Carnhaus, Cadena 2 Cazador): the chain resolves the last link first
         assertThat(room.getChain()).extracting(PendingEffect::getSourceName).containsExactly("Carnhaus", "Cazador De Bestias");
+        assertThat(room.getChain()).extracting(PendingEffect::getLink).containsExactly(1, 2);
     }
 
     // ------------------------------------------------------------------ Helpers
 
-    private static CardSlot onField(PlayerState p, CardSlot c, double y) {
-        c.setX(50.0);
-        c.setY(y);
-        c.setFaceDown(false);
-        p.getField().add(c);
-        return c;
-    }
-
-    private static List<CardSlot> deck(String prefix, int n) {
-        List<CardSlot> cards = new ArrayList<>();
-        for (int i = 1; i <= n; i++) cards.add(card(prefix + i, "Carta " + i, 1, 1, "R"));
-        return cards;
-    }
-
-    private static CardSlot card(String id, String name, Integer cost, int level, String color) {
-        CardSlot c = new CardSlot();
-        c.setInstanceId(id);
-        c.setCardId("file-" + id);
-        c.setCardName(name);
-        c.setCardType("creature");
-        c.setCost(cost);
-        c.setLevel(level);
-        c.setStrength(3);
-        c.setColors(new ArrayList<>(List.of(color)));
-        c.setFaceDown(true);
-        return c;
-    }
 }

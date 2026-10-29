@@ -19,6 +19,16 @@ public class PendingEffect {
     private String text;
     /** Timeline seq of the event that triggered it. */
     private long triggerSeq;
+    /** Its link in the chain: 1 for the first one activated (resolves last). */
+    private int link;
+
+    /** Cost steps already paid: the cost is paid right after it is activated, choices included (rule 11.2.0.2). */
+    private int costIndex;
+    /** Targets chosen when it was activated ("elige 1 enemigo …;"), acted on when it resolves (rule 11.10.1). */
+    private List<String> targetIds = new ArrayList<>();
+    /** How many times a repeated choice was already made ("hasta 2 veces", "tantas veces como quieras"). */
+    @JsonIgnore
+    private int repeatsDone;
 
     // --- Resolution progress (set while it resolves) ---
     private String resolutionId;
@@ -27,12 +37,31 @@ public class PendingEffect {
     private String subjectId;
     /** Ritual by effect: the creature chosen to be summoned, before choosing who meets its Requerimiento. */
     private String ritualTargetId;
+    /** Ritual by effect with a level sum: the summoner, chosen before the other creatures used. */
+    private String ritualSummonerId;
+    /** The creature the effect just summoned ("añádele … como materiales del aliado invocado"). */
+    private String summonedId;
     /** Cards taken out of the deck by "mira las primeras N", waiting for the next step. Owner-only info. */
     @JsonIgnore
     private List<CardSlot> looked = new ArrayList<>();
     /** Its controller already chose it to activate next among simultaneous triggers (rule 11.7.0.5). */
     @JsonIgnore
     private boolean ordered;
+    /** An optional effect its controller already chose to activate (in the combined order choice). */
+    @JsonIgnore
+    private boolean confirmed;
+    /** The last "puedes …" step was done, for "Si lo haces:" (IfDone). */
+    @JsonIgnore
+    private boolean lastDone;
+    /** How many cards the last step moved ("toma 1 carta por cada material tributado", "roba la misma cantidad"). */
+    @JsonIgnore
+    private int lastCount;
+    /** The cards the last tribute step tributed ("si tributaste 1 carta [ente]"). */
+    @JsonIgnore
+    private List<String> lastTributed = new ArrayList<>();
+    /** A utility that stays on the field after resolving ("coloca esta carta agotada en tu retaguardia"). */
+    @JsonIgnore
+    private boolean keepOnField;
     /** Players who passed priority while it was the last effect in the chain (rule 11.3.0.3). */
     @JsonIgnore
     private java.util.Set<String> passed = new java.util.HashSet<>();

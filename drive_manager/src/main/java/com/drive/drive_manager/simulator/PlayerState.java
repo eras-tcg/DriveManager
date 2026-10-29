@@ -10,8 +10,15 @@ public class PlayerState {
     private String userId;
     private String username;
     private boolean connected;
+    /** When they lost their connection (0 while connected): the owner passes on after a while (a reload is not leaving). */
+    @com.fasterxml.jackson.annotation.JsonIgnore
+    private long disconnectedAt;
 
     private String deckId;
+    /** Pre-room: the deck's name, the starter chosen (a card id of the deck, its first Iniciador by default) and ready. */
+    private String deckName;
+    private String starterCardId;
+    private boolean ready;
     private int    resourceCount = 0;
 
     private List<CardSlot> hand         = new ArrayList<>();

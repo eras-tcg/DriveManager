@@ -1,0 +1,837 @@
+[
+ {
+  "cardName": "Peón De Línea Frontal",
+  "cardType": "creature",
+  "strength": 4,
+  "cost": 1,
+  "level": 1,
+  "starter": false,
+  "cardClasses": [
+   "caballero",
+   "armada"
+  ],
+  "edition": "ST4",
+  "colorIdentity": "R",
+  "cardNumber": 2,
+  "regulation": "A",
+  "effects": [],
+  "inheritEffects": [],
+  "keywordEffects": [
+   {
+    "keyword": "Enfrentar"
+   }
+  ],
+  "inheritKeywordEffects": [],
+  "rarity": "C",
+  "colors": [
+   "R"
+  ],
+  "id": "69af74e8b936d08fbc6c4f04"
+ },
+ {
+  "cardName": "Caballería Cruzada",
+  "cardType": "creature",
+  "strength": 9,
+  "cost": 3,
+  "level": 3,
+  "starter": false,
+  "cardClasses": [
+   "caballero"
+  ],
+  "edition": "ST4",
+  "colorIdentity": "R",
+  "cardNumber": 9,
+  "regulation": "A",
+  "effects": [
+   {
+    "instance": "En Invocación",
+    "effectBlocks": [
+     {
+      "activationCondition": "",
+      "cost": "",
+      "resolution": "reactiva 1 aliado."
+     }
+    ],
+    "kind": "disparado",
+    "tags": [
+     "reactivo"
+    ]
+   }
+  ],
+  "inheritEffects": [],
+  "keywordEffects": [],
+  "inheritKeywordEffects": [],
+  "specialCost": 2,
+  "specialSummonKind": "promotion",
+  "requirement": "criatura nivel 2, mientras tus aliados suman 4 o más en nivel.",
+  "rarity": "UC",
+  "colors": [
+   "R"
+  ],
+  "id": "69b464a8b1f266700290ecf1"
+ },
+ {
+  "cardName": "Rey Franco",
+  "cardType": "creature",
+  "strength": 13,
+  "cost": 7,
+  "level": 5,
+  "starter": false,
+  "cardClasses": [
+   "caballero"
+  ],
+  "edition": "ST4",
+  "colorIdentity": "R",
+  "cardNumber": 15,
+  "regulation": "A",
+  "effects": [
+   {
+    "instance": "Todos Los Turnos",
+    "ussageLimit": "once per turn",
+    "effectBlocks": [
+     {
+      "activationCondition": "si esta carta entra en combate",
+      "cost": "",
+      "resolution": "puedes reactivar esta carta."
+     }
+    ],
+    "kind": "disparado",
+    "tags": [
+     "reactivo"
+    ]
+   },
+   {
+    "instance": "Turno Aliado",
+    "effectBlocks": [
+     {
+      "activationCondition": "al final del turno",
+      "cost": "",
+      "resolution": "1 aliado puede invocar por Ascenso una criatura de tu mano reduciendo el coste especial en 2."
+     }
+    ],
+    "kind": "disparado",
+    "tags": [
+     "invocar",
+     "invocar especial"
+    ]
+   }
+  ],
+  "inheritEffects": [],
+  "keywordEffects": [],
+  "inheritKeywordEffects": [],
+  "specialCost": 4,
+  "specialSummonKind": "promotion",
+  "requirement": "criaturas nivel 4, mientras tus aliados suman 7 o más en nivel.",
+  "rarity": "R",
+  "colors": [
+   "R"
+  ],
+  "id": "69b4d8e8577b3e04954e33d1"
+ },
+ {
+  "cardName": "Espada De Primera Línea",
+  "cardType": "creature",
+  "strength": 3,
+  "cost": 1,
+  "level": 1,
+  "starter": false,
+  "cardClasses": [
+   "caballero"
+  ],
+  "edition": "ST4",
+  "colorIdentity": "R",
+  "cardNumber": 4,
+  "regulation": "A",
+  "effects": [
+   {
+    "instance": "En Invocación",
+    "effectBlocks": [
+     {
+      "activationCondition": "",
+      "cost": "",
+      "resolution": "roba 2 cartas."
+     },
+     {
+      "activationCondition": "Luego",
+      "cost": "",
+      "resolution": "tributa 1 carta de tu mano."
+     }
+    ],
+    "kind": "disparado",
+    "tags": [
+     "robo",
+     "tributo"
+    ]
+   },
+   {
+    "instance": "Turno Aliado",
+    "effectBlocks": [
+     {
+      "activationCondition": "mientras controles 3 o más aliados Rojos",
+      "cost": "",
+      "resolution": "esta carta gana fuerza 2 y tiene [[Celeridad]]."
+     }
+    ],
+    "kind": "continuo",
+    "tags": [
+     "ofensivo"
+    ]
+   }
+  ],
+  "inheritEffects": [],
+  "keywordEffects": [],
+  "inheritKeywordEffects": [],
+  "rarity": "SR",
+  "colors": [
+   "R"
+  ],
+  "id": "69b41390b1f266700290ecef"
+ },
+ {
+  "cardName": "Armadura De Plata",
+  "cardType": "creature",
+  "strength": 4,
+  "cost": 2,
+  "level": 2,
+  "starter": false,
+  "cardClasses": [
+   "caballero"
+  ],
+  "edition": "ST4",
+  "colorIdentity": "R",
+  "cardNumber": 8,
+  "regulation": "A",
+  "effects": [
+   {
+    "instance": "En Invocación",
+    "ussageLimit": "once per turn between copies",
+    "effectBlocks": [
+     {
+      "activationCondition": "",
+      "cost": "",
+      "resolution": "otro aliado puede invocar por Ascenso 1 criatura de tu mano reduciendo el coste especial en 1."
+     }
+    ],
+    "kind": "disparado",
+    "tags": [
+     "invocar especial"
+    ]
+   }
+  ],
+  "inheritEffects": [],
+  "keywordEffects": [],
+  "inheritKeywordEffects": [],
+  "specialCost": 1,
+  "specialSummonKind": "promotion",
+  "requirement": "criatura nivel 1, mientras tus aliados suman 2 o más en nivel.",
+  "rarity": "R",
+  "colors": [
+   "R"
+  ],
+  "id": "69b4739c577b3e04954e33cd"
+ },
+ {
+  "cardName": "Reino Medieval",
+  "cardType": "structure",
+  "cost": 1,
+  "level": 2,
+  "starter": false,
+  "cardClasses": [],
+  "edition": "ST4",
+  "colorIdentity": "R",
+  "cardNumber": 16,
+  "regulation": "A",
+  "effects": [
+   {
+    "instance": "Todos Los Turnos",
+    "effectBlocks": [
+     {
+      "activationCondition": "si algún aliado Rojo es invocado por efecto",
+      "cost": "",
+      "resolution": "puedes agotar esta carta para ganar 1 gema y tomar 1 carta Roja de tus tributos."
+     },
+     {
+      "activationCondition": "Si lo haces",
+      "cost": "",
+      "resolution": "tributa 1 carta de tu mano."
+     }
+    ],
+    "kind": "disparado",
+    "tags": [
+     "busqueda tributos",
+     "gana gemas",
+     "tributo"
+    ]
+   }
+  ],
+  "inheritEffects": [],
+  "keywordEffects": [],
+  "inheritKeywordEffects": [],
+  "rarity": "UC",
+  "colors": [
+   "R"
+  ],
+  "id": "69b4d9ff577b3e04954e33d2"
+ },
+ {
+  "cardName": "Caballero Umbrío",
+  "cardType": "creature",
+  "strength": 3,
+  "cost": 1,
+  "level": 1,
+  "starter": true,
+  "cardClasses": [
+   "caballero",
+   "mercenario"
+  ],
+  "edition": "ST4",
+  "colorIdentity": "R",
+  "cardNumber": 1,
+  "regulation": "A",
+  "effects": [
+   {
+    "instance": "En Invocación",
+    "effectBlocks": [
+     {
+      "activationCondition": "",
+      "cost": "",
+      "resolution": "mira las primeras 4 cartas de tu mazo: de ellas toma hasta 2 cartas Rojas o Blancas. Envía el resto al fondo de tu mazo."
+     },
+     {
+      "activationCondition": "Luego",
+      "cost": "",
+      "resolution": "tributa 1 carta de tu mano."
+     }
+    ],
+    "kind": "disparado",
+    "tags": [
+     "busqueda",
+     "tributo"
+    ]
+   },
+   {
+    "instance": "Al Atacar",
+    "effectBlocks": [
+     {
+      "activationCondition": "",
+      "cost": "",
+      "resolution": "puedes invocar 1 criatura Roja, [caballero] o [mercenario] de tu mano en tu línea frontal pagando su coste."
+     }
+    ],
+    "kind": "disparado",
+    "tags": [
+     "ofensivo",
+     "invocar",
+     "invocar efecto"
+    ]
+   }
+  ],
+  "inheritEffects": [],
+  "keywordEffects": [],
+  "inheritKeywordEffects": [],
+  "rarity": "UC",
+  "colors": [
+   "R"
+  ],
+  "id": "69af461ad60f9452c3dc20f1"
+ },
+ {
+  "cardName": "Caballero Real",
+  "cardType": "creature",
+  "strength": 13,
+  "cost": 6,
+  "level": 5,
+  "starter": false,
+  "cardClasses": [
+   "caballero"
+  ],
+  "edition": "ST4",
+  "colorIdentity": "R",
+  "cardNumber": 14,
+  "regulation": "A",
+  "effects": [
+   {
+    "instance": "Al Atacar",
+    "ussageLimit": "once per turn",
+    "effectBlocks": [
+     {
+      "activationCondition": "",
+      "cost": "",
+      "resolution": "puedes invocar 1 criatura Roja nivel 3 de tu mano reduciendo su coste en 2."
+     },
+     {
+      "activationCondition": "Si lo haces",
+      "cost": "",
+      "resolution": "esta carta gana fuerza 3 y [[Perforante]] hasta el final del turno."
+     }
+    ],
+    "kind": "disparado",
+    "tags": [
+     "invocar efecto",
+     "invocar",
+     "ofensivo"
+    ]
+   }
+  ],
+  "inheritEffects": [],
+  "keywordEffects": [],
+  "inheritKeywordEffects": [],
+  "specialCost": 3,
+  "specialSummonKind": "promotion",
+  "requirement": "criatura nivel 4, mientras tus aliados suman 7 o más en nivel.",
+  "rarity": "SR",
+  "colors": [
+   "R"
+  ],
+  "id": "69b4d7f0577b3e04954e33d0"
+ },
+ {
+  "cardName": "Investidura",
+  "cardType": "utility",
+  "cost": 1,
+  "level": 4,
+  "starter": false,
+  "cardClasses": [],
+  "edition": "ST4",
+  "colorIdentity": "R",
+  "cardNumber": 18,
+  "regulation": "A",
+  "effects": [
+   {
+    "instance": "En Juego",
+    "ussageLimit": "once per turn between copies",
+    "effectBlocks": [
+     {
+      "activationCondition": "",
+      "cost": "",
+      "resolution": "puedes tributar 1 carta de tu mano para tomar 1 carta de tus tributos."
+     },
+     {
+      "activationCondition": "Luego",
+      "cost": "",
+      "resolution": "1 aliado puede invocar por Ascenso 1 criatura en tu mano reduciendo su coste especial en 1."
+     }
+    ],
+    "kind": "disparado",
+    "tags": [
+     "tributo",
+     "invocar especial",
+     "invocar",
+     "busqueda tributos"
+    ]
+   },
+   {
+    "instance": "En Mano",
+    "effectBlocks": [
+     {
+      "activationCondition": "si algún aliado es invocado por efecto",
+      "cost": "",
+      "resolution": "puedes jugar esta carta sin pagar su coste."
+     }
+    ],
+    "kind": "disparado",
+    "tags": [
+     "counter"
+    ]
+   }
+  ],
+  "inheritEffects": [],
+  "keywordEffects": [],
+  "inheritKeywordEffects": [],
+  "rarity": "SR",
+  "colors": [
+   "R"
+  ],
+  "id": "69b4db29577b3e04954e33d4"
+ },
+ {
+  "cardName": "Espada De Plata",
+  "cardType": "creature",
+  "strength": 5,
+  "cost": 2,
+  "level": 2,
+  "starter": false,
+  "cardClasses": [
+   "caballero"
+  ],
+  "edition": "ST4",
+  "colorIdentity": "R",
+  "cardNumber": 6,
+  "regulation": "A",
+  "effects": [
+   {
+    "instance": "En Destrucción",
+    "effectBlocks": [
+     {
+      "activationCondition": "",
+      "cost": "",
+      "resolution": ""
+     }
+    ],
+    "kind": "disparado",
+    "tags": [
+     "invocar especial"
+    ]
+   }
+  ],
+  "inheritEffects": [],
+  "keywordEffects": [],
+  "inheritKeywordEffects": [],
+  "specialCost": 1,
+  "specialSummonKind": "promotion",
+  "requirement": "criatura nivel 1, mientras tus aliados suman 2 o más en nivel.",
+  "rarity": "C",
+  "colors": [
+   "R"
+  ],
+  "id": "69b4652db1f266700290ecf2"
+ },
+ {
+  "cardName": "Caballeros De La Primera Línea",
+  "cardType": "utility",
+  "cost": 1,
+  "level": 1,
+  "starter": false,
+  "cardClasses": [],
+  "edition": "ST4",
+  "colorIdentity": "R",
+  "cardNumber": 17,
+  "regulation": "A",
+  "effects": [
+   {
+    "instance": "En Juego",
+    "effectBlocks": [
+     {
+      "activationCondition": "",
+      "cost": "",
+      "resolution": "puedes invocar 1 criatura Roja de tu mano reduciendo su coste en 1."
+     }
+    ],
+    "kind": "disparado",
+    "tags": [
+     "invocar efecto"
+    ]
+   },
+   {
+    "instance": "En Mano",
+    "ussageLimit": "once per turn between copies",
+    "effectBlocks": [
+     {
+      "activationCondition": "si algún aliado es destruido",
+      "cost": "",
+      "resolution": "puedes jugar esta carta sin pagar su coste."
+     }
+    ],
+    "kind": "disparado",
+    "tags": [
+     "counter"
+    ]
+   }
+  ],
+  "inheritEffects": [],
+  "keywordEffects": [],
+  "inheritKeywordEffects": [],
+  "rarity": "C",
+  "colors": [
+   "R"
+  ],
+  "id": "69b4da84577b3e04954e33d3"
+ },
+ {
+  "cardName": "Espada De Los Leones De Fuego",
+  "cardType": "creature",
+  "strength": 3,
+  "cost": 1,
+  "level": 1,
+  "starter": false,
+  "cardClasses": [
+   "caballero"
+  ],
+  "edition": "ST4",
+  "colorIdentity": "R",
+  "cardNumber": 3,
+  "regulation": "A",
+  "effects": [
+   {
+    "instance": "En Mano",
+    "ussageLimit": "once per turn between copies",
+    "effectBlocks": [
+     {
+      "activationCondition": "si algún aliado es invocado por efecto y controlas algún [caballero] nivel 4 o mayor",
+      "cost": "",
+      "resolution": "puedes invocar esta carta sin pagar su coste."
+     }
+    ],
+    "kind": "disparado",
+    "tags": [
+     "invocar",
+     "invocar efecto"
+    ]
+   }
+  ],
+  "inheritEffects": [],
+  "keywordEffects": [],
+  "inheritKeywordEffects": [],
+  "rarity": "C",
+  "colors": [
+   "R"
+  ],
+  "id": "69af7664b936d08fbc6c4f07"
+ },
+ {
+  "cardName": "Luke El Filo Rojo",
+  "cardType": "creature",
+  "strength": 9,
+  "cost": 3,
+  "level": 3,
+  "starter": false,
+  "cardClasses": [
+   "caballero",
+   "retador"
+  ],
+  "edition": "ST4",
+  "colorIdentity": "R",
+  "cardNumber": 10,
+  "regulation": "A",
+  "effects": [
+   {
+    "instance": "En Invocación",
+    "effectBlocks": [
+     {
+      "activationCondition": "por efecto",
+      "cost": "",
+      "resolution": "esa carta gana [[Enfrentar {nivel}:3]] hasta el final del turno."
+     }
+    ],
+    "kind": "disparado",
+    "tags": [
+     "ofensivo"
+    ]
+   }
+  ],
+  "inheritEffects": [],
+  "keywordEffects": [
+   {
+    "keyword": "Celeridad"
+   }
+  ],
+  "inheritKeywordEffects": [],
+  "rarity": "C",
+  "colors": [
+   "R"
+  ],
+  "id": "69b3a5e4b1f266700290ecec"
+ },
+ {
+  "cardName": "Caballero Férreo",
+  "cardType": "creature",
+  "strength": 4,
+  "cost": 2,
+  "level": 2,
+  "starter": false,
+  "cardClasses": [
+   "caballero",
+   "armada"
+  ],
+  "edition": "ST4",
+  "colorIdentity": "R",
+  "cardNumber": 5,
+  "regulation": "A",
+  "effects": [
+   {
+    "effectBlocks": [
+     {
+      "activationCondition": "",
+      "cost": "",
+      "resolution": "reactiva 1 aliado nivel 2 o menor."
+     }
+    ],
+    "tags": [
+     "reactivo"
+    ]
+   }
+  ],
+  "inheritEffects": [],
+  "keywordEffects": [],
+  "inheritKeywordEffects": [],
+  "specialCost": 1,
+  "specialSummonKind": "promotion",
+  "requirement": "criatura nivel 1, mientras tus aliados suman 2 o más en nivel.",
+  "rarity": "UC",
+  "colors": [
+   "R"
+  ],
+  "id": "69b41748b1f266700290ecf0"
+ },
+ {
+  "cardName": "Ballesta Montada",
+  "cardType": "creature",
+  "strength": 8,
+  "cost": 3,
+  "level": 3,
+  "starter": false,
+  "cardClasses": [
+   "caballero"
+  ],
+  "edition": "ST4",
+  "colorIdentity": "R",
+  "cardNumber": 11,
+  "regulation": "A",
+  "effects": [
+   {
+    "instance": "Turno Aliado",
+    "effectBlocks": [
+     {
+      "activationCondition": "al final del turno",
+      "cost": "",
+      "resolution": "esta carta activa puede atacar al oponente sin agotarse."
+     }
+    ],
+    "kind": "disparado",
+    "tags": [
+     "ofensivo"
+    ]
+   }
+  ],
+  "inheritEffects": [],
+  "keywordEffects": [],
+  "inheritKeywordEffects": [],
+  "specialCost": 2,
+  "specialSummonKind": "promotion",
+  "requirement": "criatura nivel 2, mientras tus aliados suman 3 o más en nivel.",
+  "rarity": "C",
+  "colors": [
+   "R"
+  ],
+  "id": "69b471f3577b3e04954e33ca"
+ },
+ {
+  "cardName": "Filo Vengativo",
+  "cardType": "creature",
+  "strength": 6,
+  "cost": 2,
+  "level": 2,
+  "starter": false,
+  "cardClasses": [
+   "caballero",
+   "retador"
+  ],
+  "edition": "ST4",
+  "colorIdentity": "R",
+  "cardNumber": 7,
+  "regulation": "A",
+  "effects": [],
+  "inheritEffects": [],
+  "keywordEffects": [
+   {
+    "keyword": "Celeridad"
+   }
+  ],
+  "inheritKeywordEffects": [],
+  "specialCost": 1,
+  "specialSummonKind": "promotion",
+  "requirement": "criatura nivel 1",
+  "rarity": "C",
+  "colors": [
+   "R"
+  ],
+  "id": "69af196cd60f9452c3dc20eb"
+ },
+ {
+  "cardName": "Franchute",
+  "cardType": "creature",
+  "strength": 11,
+  "cost": 5,
+  "level": 4,
+  "starter": false,
+  "cardClasses": [
+   "caballero",
+   "armada"
+  ],
+  "edition": "ST4",
+  "colorIdentity": "R",
+  "cardNumber": 12,
+  "regulation": "A",
+  "effects": [
+   {
+    "instance": "En Invocación",
+    "effectBlocks": [
+     {
+      "activationCondition": "",
+      "cost": "",
+      "resolution": "puedes invocar criaturas Rojas que en nivel sumen hasta 2 de tu mano sin pagar sus costes."
+     }
+    ],
+    "kind": "disparado",
+    "tags": [
+     "invocar efecto",
+     "invocar"
+    ]
+   }
+  ],
+  "inheritEffects": [],
+  "keywordEffects": [
+   {
+    "keyword": "Perforante"
+   }
+  ],
+  "inheritKeywordEffects": [],
+  "specialCost": 3,
+  "specialSummonKind": "promotion",
+  "requirement": "criatura nivel 3, mientras tus aliados suman 5 o más en nivel.",
+  "rarity": "C",
+  "colors": [
+   "R"
+  ],
+  "id": "69b476bb577b3e04954e33ce"
+ },
+ {
+  "cardName": "Comandante De Las Espadas Dragón",
+  "cardType": "creature",
+  "strength": 10,
+  "cost": 5,
+  "level": 4,
+  "starter": false,
+  "cardClasses": [
+   "caballero"
+  ],
+  "edition": "ST4",
+  "colorIdentity": "R",
+  "cardNumber": 13,
+  "regulation": "A",
+  "effects": [
+   {
+    "instance": "Al Atacar",
+    "ussageLimit": "once per turn",
+    "effectBlocks": [
+     {
+      "activationCondition": "",
+      "cost": "",
+      "resolution": "puedes invocar 1 criatura Roja nivel 2 o menor de tu mano reduciendo su coste en 1."
+     }
+    ],
+    "kind": "disparado",
+    "tags": [
+     "invocar",
+     "invocar efecto"
+    ]
+   }
+  ],
+  "inheritEffects": [],
+  "keywordEffects": [
+   {
+    "keyword": "Enfrentar {nivel}",
+    "number": "3"
+   }
+  ],
+  "inheritKeywordEffects": [],
+  "specialCost": 2,
+  "specialSummonKind": "promotion",
+  "requirement": "criatura nivel 3, mientras tus aliados suman 5 o más en nivel.",
+  "rarity": "R",
+  "colors": [
+   "R"
+  ],
+  "id": "69b4d72a577b3e04954e33cf"
+ }
+]

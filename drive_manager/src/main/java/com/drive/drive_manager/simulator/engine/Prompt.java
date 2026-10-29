@@ -46,8 +46,21 @@ public class Prompt {
     private int max;
     /** The cards that are not chosen can be reordered (they go to the deck bottom in that order). */
     private boolean reorderRest;
+    /** The cards not chosen go back to the deck top instead of its bottom (in the order given, the first one on top). */
+    private boolean restToTop;
     /** The card the choice is about (the creature being summoned by Ritual, the life card…). */
     private String subjectId;
     /** Ritual from the hand: the summoner already chosen (dropped onto it). */
     private String summonerId;
+    /** What each card stands for in this choice (the effects it triggered), by instance id. */
+    private java.util.Map<String, String> cardLabels;
+    /** The effects offered in this choice, with their whole text (chaining choices). */
+    private List<OfferedEffect> effects;
+    /** The whole text of the effect this choice belongs to (an effect resolving or paying its cost). */
+    private String effectText;
+
+    /** An effect offered to be chained; {@code effectId} is what the player picks to chain it. */
+    /** {@code inheritedFrom*}: the Recurso that gives it, for an inherited effect. */
+    public record OfferedEffect(String effectId, String sourceId, String sourceName, String label, String text,
+                                String inheritedFromName, String inheritedFromImage) {}
 }

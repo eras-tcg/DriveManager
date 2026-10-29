@@ -47,6 +47,14 @@ public class GameEvent {
     public static final String COMBAT_STEP      = "COMBAT_STEP";
     public static final String GAME_LOST        = "GAME_LOST";
     public static final String TAP              = "TAP";
+    /** Targets chosen when an effect is activated. data: targetIds. */
+    public static final String TARGET = "TARGET";
+    /** The start of a player's turn (rule 8.1): start-of-turn effects trigger from it. */
+    public static final String TURN_START = "TURN_START";
+    /** The end phase of a player's turn (rule 8.3): end-of-turn effects trigger from it. */
+    public static final String TURN_END = "TURN_END";
+    /** A creature's strength was reduced by an effect. data: amount, to (its strength now), ownerId. */
+    public static final String STRENGTH_REDUCED = "STRENGTH_REDUCED";
     public static final String MOVE             = "MOVE";
     public static final String GAIN_GEMS        = "GAIN_GEMS";
 
