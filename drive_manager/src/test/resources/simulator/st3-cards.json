@@ -1,0 +1,952 @@
+[
+ {
+  "id": "69b39d39b1f266700290ecdf",
+  "cardName": "Slicker",
+  "cardType": "creature",
+  "strength": 4,
+  "cost": 2,
+  "level": 2,
+  "starter": false,
+  "cardClasses": [
+   "bestia"
+  ],
+  "edition": "ST3",
+  "subEdition": null,
+  "colorIdentity": "P",
+  "cardNumber": 5,
+  "regulation": "A",
+  "effects": [
+   {
+    "instance": null,
+    "ussageLimit": null,
+    "effectBlocks": [
+     {
+      "activationCondition": "En Destruccion",
+      "cost": "",
+      "resolution": "puedes enviar esta carta a tu descarte para invocar 1 criatura Violeta de tus tributos reduciendo su coste en 1.",
+      "plainEffect": "En Destruccion: puedes enviar esta carta a tu descarte para invocar 1 criatura Violeta de tus tributos reduciendo su coste en 1."
+     }
+    ],
+    "kind": null,
+    "tags": [
+     "invocar efecto"
+    ],
+    "plainEffect": "En Destruccion: puedes enviar esta carta a tu descarte para invocar 1 criatura Violeta de tus tributos reduciendo su coste en 1."
+   }
+  ],
+  "inheritEffects": [],
+  "keywordEffects": [],
+  "inheritKeywordEffects": [],
+  "specialCost": 1,
+  "specialSummonKind": "ritual",
+  "requirement": "Criatura nivel 1.",
+  "rarity": "SR",
+  "colors": [
+   "P"
+  ]
+ },
+ {
+  "id": "69b6185c577b3e04954e33e7",
+  "cardName": "Hong",
+  "cardType": "creature",
+  "strength": 8,
+  "cost": 3,
+  "level": 3,
+  "starter": false,
+  "cardClasses": [
+   "bestia"
+  ],
+  "edition": "ST3",
+  "subEdition": null,
+  "colorIdentity": "P",
+  "cardNumber": 10,
+  "regulation": "A",
+  "effects": [
+   {
+    "instance": "Todos Los Turnos",
+    "ussageLimit": "once per turn",
+    "effectBlocks": [
+     {
+      "activationCondition": "si destruyes algún enemigo",
+      "cost": "puedes elegir 1 enemigo nivel 1",
+      "resolution": "destrúyelo.",
+      "plainEffect": "si destruyes algún enemigo: puedes elegir 1 enemigo nivel 1; destrúyelo."
+     }
+    ],
+    "kind": "disparado",
+    "tags": [
+     "remoción"
+    ],
+    "plainEffect": "<Todos Los Turnos> [once per turn] si destruyes algún enemigo: puedes elegir 1 enemigo nivel 1; destrúyelo."
+   }
+  ],
+  "inheritEffects": [],
+  "keywordEffects": [
+   {
+    "keyword": "Letalidad {cantidad}",
+    "number": "1"
+   }
+  ],
+  "inheritKeywordEffects": [],
+  "specialCost": 2,
+  "specialSummonKind": "ritual",
+  "requirement": "criatura nivel 2.",
+  "rarity": "R",
+  "colors": [
+   "P"
+  ]
+ },
+ {
+  "id": "69b61864577b3e04954e33e8",
+  "cardName": "Alimento De Las Sombras",
+  "cardType": "utility",
+  "strength": null,
+  "cost": 1,
+  "level": 1,
+  "starter": false,
+  "cardClasses": [],
+  "edition": "ST3",
+  "subEdition": null,
+  "colorIdentity": "P",
+  "cardNumber": 17,
+  "regulation": "A",
+  "effects": [
+   {
+    "instance": "En Juego",
+    "ussageLimit": null,
+    "effectBlocks": [
+     {
+      "activationCondition": "",
+      "cost": "",
+      "resolution": "un aliado invoca por Ritual 1 criatura de tus tributos reduciendo su coste especial en 1.",
+      "plainEffect": "un aliado invoca por Ritual 1 criatura de tus tributos reduciendo su coste especial en 1."
+     }
+    ],
+    "kind": "disparado",
+    "tags": [
+     "invocar especial"
+    ],
+    "plainEffect": "<En Juego> un aliado invoca por Ritual 1 criatura de tus tributos reduciendo su coste especial en 1."
+   },
+   {
+    "instance": "En Mano",
+    "ussageLimit": "once per turn between copies",
+    "effectBlocks": [
+     {
+      "activationCondition": "si algún aliado es destruido por el oponente",
+      "cost": "",
+      "resolution": "puedes jugar esta carta sin pagar su coste.",
+      "plainEffect": "si algún aliado es destruido por el oponente: puedes jugar esta carta sin pagar su coste."
+     }
+    ],
+    "kind": null,
+    "tags": [
+     "counter"
+    ],
+    "plainEffect": "<En Mano> (1) si algún aliado es destruido por el oponente: puedes jugar esta carta sin pagar su coste."
+   }
+  ],
+  "inheritEffects": [],
+  "keywordEffects": [],
+  "inheritKeywordEffects": [],
+  "specialCost": null,
+  "specialSummonKind": null,
+  "requirement": null,
+  "rarity": "C",
+  "colors": [
+   "P"
+  ]
+ },
+ {
+  "id": "69ae2297b6195bf6c9126e1f",
+  "cardName": "Berkelus El Cazarrecompensas Del Bajomundo",
+  "cardType": "creature",
+  "strength": 12,
+  "cost": 6,
+  "level": 5,
+  "starter": false,
+  "cardClasses": [
+   "bestia"
+  ],
+  "edition": "ST3",
+  "subEdition": null,
+  "colorIdentity": "P",
+  "cardNumber": 15,
+  "regulation": "A",
+  "effects": [
+   {
+    "instance": "En Invocación",
+    "ussageLimit": null,
+    "effectBlocks": [
+     {
+      "activationCondition": "",
+      "cost": "",
+      "resolution": "reactiva esta carta.",
+      "plainEffect": "reactiva esta carta."
+     },
+     {
+      "activationCondition": "Luego",
+      "cost": "puedes enviar 10 criaturas [bestia] de tus tributos al fondo de tu mazo",
+      "resolution": "esta carta declara taque y gana [[Furia {gemas}:1]] hasta el final del turno.",
+      "plainEffect": "Luego: puedes enviar 10 criaturas [bestia] de tus tributos al fondo de tu mazo; esta carta declara taque y gana Furia 1 hasta el final del turno."
+     }
+    ],
+    "kind": "disparado",
+    "tags": [
+     "defensivo",
+     "ofensivo",
+     "reactivo",
+     "declara ataque"
+    ],
+    "plainEffect": "<En Invocación> reactiva esta carta. Luego: puedes enviar 10 criaturas [bestia] de tus tributos al fondo de tu mazo; esta carta declara taque y gana Furia 1 hasta el final del turno."
+   }
+  ],
+  "inheritEffects": [],
+  "keywordEffects": [],
+  "inheritKeywordEffects": [],
+  "specialCost": 3,
+  "specialSummonKind": "ritual",
+  "requirement": "criatura nivel 4",
+  "rarity": "UC",
+  "colors": [
+   "P"
+  ]
+ },
+ {
+  "id": "69af735ef38364333abc2ec5",
+  "cardName": "Damon",
+  "cardType": "creature",
+  "strength": 3,
+  "cost": 1,
+  "level": 1,
+  "starter": false,
+  "cardClasses": [
+   "bestia"
+  ],
+  "edition": "ST3",
+  "subEdition": null,
+  "colorIdentity": "P",
+  "cardNumber": 2,
+  "regulation": "A",
+  "effects": [
+   {
+    "instance": "En Destrucción",
+    "ussageLimit": null,
+    "effectBlocks": [
+     {
+      "activationCondition": "",
+      "cost": "",
+      "resolution": "roba 3 cartas.",
+      "plainEffect": "roba 3 cartas."
+     },
+     {
+      "activationCondition": "Luego",
+      "cost": "",
+      "resolution": "tributa 2 cartas de tu mano.",
+      "plainEffect": "Luego: tributa 2 cartas de tu mano."
+     }
+    ],
+    "kind": "disparado",
+    "tags": [
+     "robo",
+     "tributo"
+    ],
+    "plainEffect": "<En Destrucción> roba 3 cartas. Luego: tributa 2 cartas de tu mano."
+   }
+  ],
+  "inheritEffects": [],
+  "keywordEffects": [],
+  "inheritKeywordEffects": [],
+  "specialCost": null,
+  "specialSummonKind": null,
+  "requirement": null,
+  "rarity": "C",
+  "colors": [
+   "P"
+  ]
+ },
+ {
+  "id": "69b39ed0b1f266700290ece3",
+  "cardName": "Virdris",
+  "cardType": "creature",
+  "strength": 6,
+  "cost": 2,
+  "level": 2,
+  "starter": false,
+  "cardClasses": [
+   "bestia"
+  ],
+  "edition": "ST3",
+  "subEdition": null,
+  "colorIdentity": "P",
+  "cardNumber": 6,
+  "regulation": "A",
+  "effects": [
+   {
+    "instance": "En Destrucción",
+    "ussageLimit": null,
+    "effectBlocks": [
+     {
+      "activationCondition": "",
+      "cost": "",
+      "resolution": "roba 3 cartas.",
+      "plainEffect": "roba 3 cartas."
+     },
+     {
+      "activationCondition": "Luego",
+      "cost": "",
+      "resolution": "tributa 2 cartas de tu mano.",
+      "plainEffect": "Luego: tributa 2 cartas de tu mano."
+     }
+    ],
+    "kind": "disparado",
+    "tags": [
+     "robo",
+     "tributo"
+    ],
+    "plainEffect": "<En Destrucción> roba 3 cartas. Luego: tributa 2 cartas de tu mano."
+   }
+  ],
+  "inheritEffects": [],
+  "keywordEffects": [],
+  "inheritKeywordEffects": [],
+  "specialCost": 1,
+  "specialSummonKind": "ritual",
+  "requirement": "criatura nivel 1",
+  "rarity": "C",
+  "colors": [
+   "P"
+  ]
+ },
+ {
+  "id": "69b61165577b3e04954e33d9",
+  "cardName": "Mawser",
+  "cardType": "creature",
+  "strength": 14,
+  "cost": 7,
+  "level": 5,
+  "starter": false,
+  "cardClasses": [
+   "bestia"
+  ],
+  "edition": "ST3",
+  "subEdition": null,
+  "colorIdentity": "P",
+  "cardNumber": 14,
+  "regulation": "A",
+  "effects": [
+   {
+    "instance": "Todos Los Turnos",
+    "ussageLimit": "once per turn",
+    "effectBlocks": [
+     {
+      "activationCondition": "si esta carta destruye algún enemigo",
+      "cost": "elige 1 enemigo nivel 3 o menor",
+      "resolution": "destrúyelo.",
+      "plainEffect": "si esta carta destruye algún enemigo: elige 1 enemigo nivel 3 o menor; destrúyelo."
+     }
+    ],
+    "kind": "activado",
+    "tags": [
+     "remoción"
+    ],
+    "plainEffect": "<Todos Los Turnos> [once per turn] si esta carta destruye algún enemigo: elige 1 enemigo nivel 3 o menor; destrúyelo."
+   }
+  ],
+  "inheritEffects": [],
+  "keywordEffects": [
+   {
+    "keyword": "Provocar",
+    "number": null
+   }
+  ],
+  "inheritKeywordEffects": [],
+  "specialCost": 3,
+  "specialSummonKind": "ritual",
+  "requirement": "criaturas que en nivel sumen 6.",
+  "rarity": "R",
+  "colors": [
+   "P"
+  ]
+ },
+ {
+  "id": "69af4202d60f9452c3dc20ee",
+  "cardName": "Carnhaus",
+  "cardType": "creature",
+  "strength": 3,
+  "cost": 1,
+  "level": 1,
+  "starter": true,
+  "cardClasses": [
+   "bestia"
+  ],
+  "edition": "ST3",
+  "subEdition": null,
+  "colorIdentity": "P",
+  "cardNumber": 1,
+  "regulation": "A",
+  "effects": [
+   {
+    "instance": "En Invocación",
+    "ussageLimit": null,
+    "effectBlocks": [
+     {
+      "activationCondition": "",
+      "cost": "",
+      "resolution": "mira las primeras 4 cartas de tu mazo: de ellas toma hasta 1 carta Violeta o Blanca. Envía el resto al fondo de tu mazo.",
+      "plainEffect": "mira las primeras 4 cartas de tu mazo: de ellas toma hasta 1 carta Violeta o Blanca. Envía el resto al fondo de tu mazo."
+     },
+     {
+      "activationCondition": "Luego",
+      "cost": "",
+      "resolution": "tributa 1 carta de tu mano.",
+      "plainEffect": "Luego: tributa 1 carta de tu mano."
+     }
+    ],
+    "kind": "disparado",
+    "tags": [
+     "busqueda",
+     "tributo"
+    ],
+    "plainEffect": "<En Invocación> mira las primeras 4 cartas de tu mazo: de ellas toma hasta 1 carta Violeta o Blanca. Envía el resto al fondo de tu mazo. Luego: tributa 1 carta de tu mano."
+   },
+   {
+    "instance": "En Destrucción",
+    "ussageLimit": null,
+    "effectBlocks": [
+     {
+      "activationCondition": "",
+      "cost": "",
+      "resolution": "roba 1 carta.",
+      "plainEffect": "roba 1 carta."
+     },
+     {
+      "activationCondition": "Luego",
+      "cost": "",
+      "resolution": "tributa 1 carta de tu mano.",
+      "plainEffect": "Luego: tributa 1 carta de tu mano."
+     }
+    ],
+    "kind": "disparado",
+    "tags": [
+     "robo",
+     "tributo"
+    ],
+    "plainEffect": "<En Destrucción> roba 1 carta. Luego: tributa 1 carta de tu mano."
+   }
+  ],
+  "inheritEffects": [],
+  "keywordEffects": [],
+  "inheritKeywordEffects": [],
+  "specialCost": null,
+  "specialSummonKind": null,
+  "requirement": null,
+  "rarity": "UC",
+  "colors": [
+   "P"
+  ]
+ },
+ {
+  "id": "69b614eb577b3e04954e33df",
+  "cardName": "Caza Nocturna",
+  "cardType": "utility",
+  "strength": null,
+  "cost": 1,
+  "level": 3,
+  "starter": false,
+  "cardClasses": [],
+  "edition": "ST3",
+  "subEdition": null,
+  "colorIdentity": "P",
+  "cardNumber": 18,
+  "regulation": "A",
+  "effects": [
+   {
+    "instance": null,
+    "ussageLimit": null,
+    "effectBlocks": [
+     {
+      "activationCondition": "cuando fueras a jugar esta carta, si tienes menos de 0 gemas",
+      "cost": "",
+      "resolution": "reduce su coste en 1.",
+      "plainEffect": "cuando fueras a jugar esta carta, si tienes menos de 0 gemas: reduce su coste en 1."
+     }
+    ],
+    "kind": null,
+    "tags": [
+     "ofensivo"
+    ],
+    "plainEffect": "cuando fueras a jugar esta carta, si tienes menos de 0 gemas: reduce su coste en 1."
+   },
+   {
+    "instance": "En Juego",
+    "ussageLimit": "once per turn between copies",
+    "effectBlocks": [
+     {
+      "activationCondition": "",
+      "cost": "",
+      "resolution": "elige 1 aliado para que gane [[Provocar {nivel}:3]] hasta el final del turno y declare ataque.",
+      "plainEffect": "elige 1 aliado para que gane Provocar 3 hasta el final del turno y declare ataque."
+     }
+    ],
+    "kind": "disparado",
+    "tags": [
+     "ofensivo"
+    ],
+    "plainEffect": "<En Juego> (1) elige 1 aliado para que gane Provocar 3 hasta el final del turno y declare ataque."
+   }
+  ],
+  "inheritEffects": [],
+  "keywordEffects": [],
+  "inheritKeywordEffects": [],
+  "specialCost": null,
+  "specialSummonKind": null,
+  "requirement": null,
+  "rarity": "SR",
+  "colors": [
+   "P"
+  ]
+ },
+ {
+  "id": "69b6186b577b3e04954e33e9",
+  "cardName": "Rhogler",
+  "cardType": "creature",
+  "strength": 11,
+  "cost": 5,
+  "level": 4,
+  "starter": false,
+  "cardClasses": [
+   "bestia"
+  ],
+  "edition": "ST3",
+  "subEdition": null,
+  "colorIdentity": "P",
+  "cardNumber": 12,
+  "regulation": "A",
+  "effects": [
+   {
+    "instance": "Al Final Del Ataque",
+    "ussageLimit": "once per turn between copies",
+    "effectBlocks": [
+     {
+      "activationCondition": "",
+      "cost": "puedes sacrificar esta carta",
+      "resolution": "invoca 1 criatura [bestia] nivel 3 de tus tributos reduciendo su coste en 3.",
+      "plainEffect": "puedes sacrificar esta carta; invoca 1 criatura [bestia] nivel 3 de tus tributos reduciendo su coste en 3."
+     }
+    ],
+    "kind": "disparado",
+    "tags": [
+     "invocar efecto"
+    ],
+    "plainEffect": "<Al Final Del Ataque> (1) puedes sacrificar esta carta; invoca 1 criatura [bestia] nivel 3 de tus tributos reduciendo su coste en 3."
+   }
+  ],
+  "inheritEffects": [],
+  "keywordEffects": [],
+  "inheritKeywordEffects": [],
+  "specialCost": 2,
+  "specialSummonKind": "ritual",
+  "requirement": "criatura nivel 3.",
+  "rarity": "C",
+  "colors": [
+   "P"
+  ]
+ },
+ {
+  "id": "69b39cc8b1f266700290ecde",
+  "cardName": "Buratán",
+  "cardType": "creature",
+  "strength": 4,
+  "cost": 1,
+  "level": 1,
+  "starter": false,
+  "cardClasses": [
+   "bestia"
+  ],
+  "edition": "ST3",
+  "subEdition": null,
+  "colorIdentity": "P",
+  "cardNumber": 4,
+  "regulation": "A",
+  "effects": [],
+  "inheritEffects": [],
+  "keywordEffects": [
+   {
+    "keyword": "Provocar",
+    "number": null
+   }
+  ],
+  "inheritKeywordEffects": [],
+  "specialCost": null,
+  "specialSummonKind": null,
+  "requirement": null,
+  "rarity": "R",
+  "colors": [
+   "P"
+  ]
+ },
+ {
+  "id": "69b3a242b1f266700290ece8",
+  "cardName": "Zhaglizer",
+  "cardType": "creature",
+  "strength": 8,
+  "cost": 3,
+  "level": 3,
+  "starter": false,
+  "cardClasses": [
+   "bestia"
+  ],
+  "edition": "ST3",
+  "subEdition": null,
+  "colorIdentity": "P",
+  "cardNumber": 9,
+  "regulation": "A",
+  "effects": [
+   {
+    "instance": "Al Atacar",
+    "ussageLimit": null,
+    "effectBlocks": [
+     {
+      "activationCondition": "",
+      "cost": "elige 1 enemigo nivel 2 o menor",
+      "resolution": "destrúyelo.",
+      "plainEffect": "elige 1 enemigo nivel 2 o menor; destrúyelo."
+     }
+    ],
+    "kind": "disparado",
+    "tags": [
+     "remoción"
+    ],
+    "plainEffect": "<Al Atacar> elige 1 enemigo nivel 2 o menor; destrúyelo."
+   }
+  ],
+  "inheritEffects": [],
+  "keywordEffects": [],
+  "inheritKeywordEffects": [],
+  "specialCost": 2,
+  "specialSummonKind": "ritual",
+  "requirement": "criatura nivel 2.",
+  "rarity": "UC",
+  "colors": [
+   "P"
+  ]
+ },
+ {
+  "id": "69af7613b936d08fbc6c4f06",
+  "cardName": "Bajmut Pútrido",
+  "cardType": "creature",
+  "strength": 3,
+  "cost": 0,
+  "level": 1,
+  "starter": false,
+  "cardClasses": [
+   "bestia"
+  ],
+  "edition": "ST3",
+  "subEdition": null,
+  "colorIdentity": "P",
+  "cardNumber": 3,
+  "regulation": "A",
+  "effects": [
+   {
+    "instance": "En Invocación",
+    "ussageLimit": null,
+    "effectBlocks": [
+     {
+      "activationCondition": "",
+      "cost": "",
+      "resolution": "tributa 1 carta de tu mano.",
+      "plainEffect": "tributa 1 carta de tu mano."
+     }
+    ],
+    "kind": "disparado",
+    "tags": [
+     "tributo"
+    ],
+    "plainEffect": "<En Invocación> tributa 1 carta de tu mano."
+   }
+  ],
+  "inheritEffects": [],
+  "keywordEffects": [
+   {
+    "keyword": "Imbloqueable",
+    "number": null
+   }
+  ],
+  "inheritKeywordEffects": [],
+  "specialCost": null,
+  "specialSummonKind": null,
+  "requirement": null,
+  "rarity": "UC",
+  "colors": [
+   "P"
+  ]
+ },
+ {
+  "id": "69b3a433b1f266700290ecea",
+  "cardName": "Cazador De Bestias",
+  "cardType": "creature",
+  "strength": 9,
+  "cost": 3,
+  "level": 3,
+  "starter": false,
+  "cardClasses": [
+   "bestia"
+  ],
+  "edition": "ST3",
+  "subEdition": null,
+  "colorIdentity": "P",
+  "cardNumber": 11,
+  "regulation": "A",
+  "effects": [
+   {
+    "instance": null,
+    "ussageLimit": null,
+    "effectBlocks": [
+     {
+      "activationCondition": "En Invocacion",
+      "cost": "",
+      "resolution": "robar 3 cartas.",
+      "plainEffect": "En Invocacion: robar 3 cartas."
+     },
+     {
+      "activationCondition": "Luego",
+      "cost": "",
+      "resolution": "tributa 2 cartas de tu mano.",
+      "plainEffect": "Luego: tributa 2 cartas de tu mano."
+     }
+    ],
+    "kind": null,
+    "tags": [
+     "robo",
+     "tributo"
+    ],
+    "plainEffect": "En Invocacion: robar 3 cartas. Luego: tributa 2 cartas de tu mano."
+   }
+  ],
+  "inheritEffects": [],
+  "keywordEffects": [
+   {
+    "keyword": "Celeridad",
+    "number": null
+   }
+  ],
+  "inheritKeywordEffects": [],
+  "specialCost": 2,
+  "specialSummonKind": "ritual",
+  "requirement": "criatura nivel 2.",
+  "rarity": "C",
+  "colors": [
+   "P"
+  ]
+ },
+ {
+  "id": "69b61021577b3e04954e33d7",
+  "cardName": "Zhauz",
+  "cardType": "creature",
+  "strength": 11,
+  "cost": 5,
+  "level": 4,
+  "starter": false,
+  "cardClasses": [
+   "bestia"
+  ],
+  "edition": "ST3",
+  "subEdition": null,
+  "colorIdentity": "P",
+  "cardNumber": 13,
+  "regulation": "A",
+  "effects": [
+   {
+    "instance": "Al Atacar",
+    "ussageLimit": "once per turn",
+    "effectBlocks": [
+     {
+      "activationCondition": "",
+      "cost": "puedes sacrificar 1 aliado para elegir 1 enemigo nivel 3 o menor",
+      "resolution": "destrúyelo.",
+      "plainEffect": "puedes sacrificar 1 aliado para elegir 1 enemigo nivel 3 o menor; destrúyelo."
+     }
+    ],
+    "kind": "disparado",
+    "tags": [
+     "remoción"
+    ],
+    "plainEffect": "<Al Atacar> [once per turn] puedes sacrificar 1 aliado para elegir 1 enemigo nivel 3 o menor; destrúyelo."
+   },
+   {
+    "instance": "Turno Aliado",
+    "ussageLimit": "once per turn",
+    "effectBlocks": [
+     {
+      "activationCondition": "Si algún aliado es destruido",
+      "cost": "",
+      "resolution": "reactiva esta carta.",
+      "plainEffect": "Si algún aliado es destruido: reactiva esta carta."
+     }
+    ],
+    "kind": "disparado",
+    "tags": [
+     "reactivo"
+    ],
+    "plainEffect": "<Turno Aliado> [once per turn] Si algún aliado es destruido: reactiva esta carta."
+   }
+  ],
+  "inheritEffects": [],
+  "keywordEffects": [],
+  "inheritKeywordEffects": [],
+  "specialCost": 3,
+  "specialSummonKind": "ritual",
+  "requirement": "criatura nivel 3.",
+  "rarity": "SR",
+  "colors": [
+   "P"
+  ]
+ },
+ {
+  "id": "69b61293577b3e04954e33dc",
+  "cardName": "Cueva De Bestias",
+  "cardType": "structure",
+  "strength": null,
+  "cost": 1,
+  "level": 2,
+  "starter": false,
+  "cardClasses": [],
+  "edition": "ST3",
+  "subEdition": null,
+  "colorIdentity": "P",
+  "cardNumber": 16,
+  "regulation": "A",
+  "effects": [
+   {
+    "instance": "Todos Los Turnos",
+    "ussageLimit": null,
+    "effectBlocks": [
+     {
+      "activationCondition": "si algún aliado Violetta es destruido",
+      "cost": "puedes agotar esta carta",
+      "resolution": "gana 1 gema y roba 1 carta.",
+      "plainEffect": "si algún aliado Violetta es destruido: puedes agotar esta carta; gana 1 gema y roba 1 carta."
+     },
+     {
+      "activationCondition": "si lo haces",
+      "cost": "",
+      "resolution": "tributa 1 carta de tu mano.",
+      "plainEffect": "si lo haces: tributa 1 carta de tu mano."
+     }
+    ],
+    "kind": "activado",
+    "tags": [
+     "robo",
+     "tributo",
+     "gana gemas"
+    ],
+    "plainEffect": "<Todos Los Turnos> si algún aliado Violetta es destruido: puedes agotar esta carta; gana 1 gema y roba 1 carta. si lo haces: tributa 1 carta de tu mano."
+   }
+  ],
+  "inheritEffects": [],
+  "keywordEffects": [],
+  "inheritKeywordEffects": [],
+  "specialCost": null,
+  "specialSummonKind": null,
+  "requirement": null,
+  "rarity": "UC",
+  "colors": [
+   "P"
+  ]
+ },
+ {
+  "id": "69b39f1ab1f266700290ece4",
+  "cardName": "Krokler",
+  "cardType": "creature",
+  "strength": 5,
+  "cost": 2,
+  "level": 2,
+  "starter": false,
+  "cardClasses": [
+   "bestia"
+  ],
+  "edition": "ST3",
+  "subEdition": null,
+  "colorIdentity": "P",
+  "cardNumber": 7,
+  "regulation": "A",
+  "effects": [
+   {
+    "instance": "En Invocación",
+    "ussageLimit": null,
+    "effectBlocks": [
+     {
+      "activationCondition": "",
+      "cost": "puedes elegir 1 enemigo nivel 1;",
+      "resolution": "destrúyelo.",
+      "plainEffect": "puedes elegir 1 enemigo nivel 1;; destrúyelo."
+     }
+    ],
+    "kind": "disparado",
+    "tags": [
+     "remoción"
+    ],
+    "plainEffect": "<En Invocación> puedes elegir 1 enemigo nivel 1;; destrúyelo."
+   }
+  ],
+  "inheritEffects": [],
+  "keywordEffects": [],
+  "inheritKeywordEffects": [],
+  "specialCost": 1,
+  "specialSummonKind": "ritual",
+  "requirement": "criatura nivel 1.",
+  "rarity": "C",
+  "colors": [
+   "P"
+  ]
+ },
+ {
+  "id": "69b3a16db1f266700290ece6",
+  "cardName": "Zohx",
+  "cardType": "creature",
+  "strength": 6,
+  "cost": 2,
+  "level": 2,
+  "starter": false,
+  "cardClasses": [
+   "bestia"
+  ],
+  "edition": "ST3",
+  "subEdition": null,
+  "colorIdentity": "P",
+  "cardNumber": 8,
+  "regulation": "A",
+  "effects": [
+   {
+    "instance": "Al Final Del Ataque",
+    "ussageLimit": "once per turn between copies",
+    "effectBlocks": [
+     {
+      "activationCondition": "si tienes 10 o más tributos [bestia]",
+      "cost": "",
+      "resolution": "esta carta puede invocar por Ritual 1 criatura de tus tributos reduciendo el coste especial en 1.",
+      "plainEffect": "si tienes 10 o más tributos [bestia]: esta carta puede invocar por Ritual 1 criatura de tus tributos reduciendo el coste especial en 1."
+     }
+    ],
+    "kind": "disparado",
+    "tags": [
+     "invocar especial",
+     "invocar"
+    ],
+    "plainEffect": "<Al Final Del Ataque> (1) si tienes 10 o más tributos [bestia]: esta carta puede invocar por Ritual 1 criatura de tus tributos reduciendo el coste especial en 1."
+   }
+  ],
+  "inheritEffects": [],
+  "keywordEffects": [],
+  "inheritKeywordEffects": [],
+  "specialCost": 1,
+  "specialSummonKind": "ritual",
+  "requirement": "criatura nivel 1.",
+  "rarity": "R",
+  "colors": [
+   "P"
+  ]
+ }
+]

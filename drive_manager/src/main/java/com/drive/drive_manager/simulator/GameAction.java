@@ -24,6 +24,13 @@ public class GameAction {
         return val instanceof Number n ? n.intValue() : defaultValue;
     }
 
+    /** A list of strings (ids) from the payload; empty when missing. */
+    public java.util.List<String> getStringList(String key) {
+        Object val = payload != null ? payload.get(key) : null;
+        if (!(val instanceof java.util.List<?> list)) return java.util.List.of();
+        return list.stream().filter(String.class::isInstance).map(String.class::cast).toList();
+    }
+
     public boolean getBoolean(String key, boolean defaultValue) {
         Object val = payload != null ? payload.get(key) : null;
         return val instanceof Boolean b ? b : defaultValue;
