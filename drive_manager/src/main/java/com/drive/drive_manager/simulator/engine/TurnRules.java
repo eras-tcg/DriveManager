@@ -54,7 +54,7 @@ public final class TurnRules {
         // Reactivar: "al inicio del turno: reactiva esta carta" (any turn)
         for (PlayerState p : room.getPlayers().values()) {
             for (CardSlot c : p.getField()) {
-                if (c.isTapped() && keywordLevel(c, "Reactivar") != null) {
+                if (reactivable(c) && keywordLevel(c, "Reactivar") != null) {
                     c.setTapped(false);
                     record(room, GameEvent.UNTAP, p.getUserId(), c, null, null, null, Map.of("keyword", "Reactivar"),
                             name(c) + " se reactiva (Reactivar)");

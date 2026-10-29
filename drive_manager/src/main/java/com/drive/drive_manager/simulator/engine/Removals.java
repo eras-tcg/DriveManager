@@ -162,7 +162,7 @@ public final class Removals {
             boolean payable = switch (r.cost()) {
                 case TRIBUTE_TWO_MATERIALS -> card.getMaterials().size() >= 2;
                 case TRIBUTE_ONE_FROM_HAND -> !owner.getHand().isEmpty();
-                case TRIBUTE_RESOURCES -> card.getResources().stream().anyMatch(r.resourceFilter()::matches);
+                case TRIBUTE_RESOURCES, RESOURCES_TO_TRIBUTES_BEFORE -> card.getResources().stream().anyMatch(r.resourceFilter()::matches);
                 case MATERIALS_TO_BACK -> card.getMaterials().stream().anyMatch(m -> "creature".equals(m.getCardType()) && r.resourceFilter().matches(m));
             };
             if (payable) options.add(new ReplacementOption(r.id() + "@" + card.getInstanceId(), card, r, r.label(), r.text()));
@@ -202,7 +202,12 @@ public final class Removals {
                 "Usar", sources, sources);
         room.getPrompt().setSubjectId(card.getInstanceId());
         room.getPrompt().setEffects(options.stream()
-                .map(o -> new Prompt.OfferedEffect(o.key(), o.source().getInstanceId(), name(o.source()), o.label(), o.text(), null, null)).toList());
+                .map(o -> {
+                    // An inherited replacement (Deriduragon): the Recurso that gives it, small on the card
+                    CardSlot giver = o.replacement() == null ? null : CardEffects.replacementGiver(o.source(), o.replacement());
+                    return new Prompt.OfferedEffect(o.key(), o.source().getInstanceId(), name(o.source()), o.label(), o.text(),
+                            giver == null ? null : giver.getCardName(), giver == null ? null : giver.getImageUrl());
+                }).toList());
     }
 
     static String answerRemoval(GameRoom room, Prompt prompt, PlayerState player, List<String> picks) {
@@ -242,6 +247,7 @@ public final class Removals {
             player.getTributeZone().add(paid);
             record(room, GameEvent.TRIBUTE, player.getUserId(), paid, "hand", "tributeZone", null, null,
                     player.getUsername() + " tributa " + name(paid) + " de su mano: " + (card == null ? "la carta" : name(card)) + " no es destruida");
+            if (card != null) destroyIfStillNoStrength(room, pending, player, card);
             return null;
         }
         room.setPrompt(null);
@@ -263,6 +269,7 @@ public final class Removals {
             room.getPendingRemovals().remove(0);
             log(room, name(chosen.source()) + " protege a " + name(card) + ": es destruida en su lugar", null);
             destroy(room, chosen.source(), player, false, CAUSE_EFFECT, player.getUserId(), card.getInstanceId(), null);
+            destroyIfStillNoStrength(room, pending, player, card);
             return null;
         }
         CardEffects.Replacement r = chosen.replacement();
@@ -287,6 +294,21 @@ public final class Removals {
                 log(room, player.getUsername() + " tributa " + paid.size() + " " + plural(paid.size(), "recurso", "recursos") + " de " + name(card)
                         + ": no es " + (pending.destroy() ? "destruida" : "removida") + names(paid), null);
             }
+            case RESOURCES_TO_TRIBUTES_BEFORE -> {
+                // A reaction: the Recursos go to the Tributos first, then the removal goes on
+                List<CardSlot> paid = card.getResources().stream().filter(r.resourceFilter()::matches).toList();
+                card.getResources().removeAll(paid);
+                for (CardSlot c : paid) {
+                    c.setFaceDown(false);
+                    player.getTributeZone().add(c);
+                    record(room, GameEvent.TRIBUTE, player.getUserId(), c, "resources", "tributeZone", null, Map.of("byCard", card.getInstanceId()), null);
+                }
+                log(room, player.getUsername() + " tributa " + paid.size() + " " + plural(paid.size(), "recurso", "recursos") + " de " + name(card)
+                        + " antes de que sea " + (pending.destroy() ? "destruida" : "removida") + names(paid), null);
+                room.getPendingRemovals().remove(0);
+                executeRemoval(room, pending, player, card);
+                return null;
+            }
             case MATERIALS_TO_BACK -> {
                 List<CardSlot> valid = card.getMaterials().stream().filter(m -> "creature".equals(m.getCardType()) && r.resourceFilter().matches(m)).toList();
                 rulesPrompt(room, player.getUserId(), PURPOSE_REPLACE_MATERIALS, name(card) + " · " + r.label(),
@@ -304,7 +326,19 @@ public final class Removals {
             }
         }
         room.getPendingRemovals().remove(0);
+        destroyIfStillNoStrength(room, pending, player, card);
         return null;
+    }
+
+    /**
+     * Rule 12.0.0.2 is checked again after a destruction is replaced: a creature that is still at strength 0 is destroyed anyway
+     * (designer ruling 2026-10-30). It may be replaced again if its owner can pay once more.
+     */
+    static void destroyIfStillNoStrength(GameRoom room, PendingRemoval pending, PlayerState owner, CardSlot card) {
+        if (!"creature".equals(card.getCardType()) || card.getStrength() == null || strength(card) > 0) return;
+        if (find(owner.getField(), card.getInstanceId()) == null) return;
+        log(room, name(card) + " sigue con fuerza 0: es destruida", null);
+        destroy(room, card, owner, false, CAUSE_EFFECT, pending.byId(), null, null);
     }
 
     /** The removal that was waiting, as it was going to happen. */

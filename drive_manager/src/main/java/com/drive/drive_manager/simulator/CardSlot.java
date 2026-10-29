@@ -76,6 +76,8 @@ public class CardSlot {
      * (it is not reactivated then), 0 otherwise. Counted down when the turn changes.
      */
     private int noUntap;
+    /** "no se reactiva al inicio del turno oponente": like {@link #noUntap}, but only the untap at the start of that turn. */
+    private int noStartUntap;
     private List<CardSlot> materials = new ArrayList<>();
     private List<CardSlot> resources = new ArrayList<>();
     /** What of its metadata the rules engine does not run (to be played by hand), null when all of it runs. */
