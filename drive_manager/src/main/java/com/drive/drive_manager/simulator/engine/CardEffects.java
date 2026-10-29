@@ -294,11 +294,14 @@ public final class CardEffects {
         add("espada de primera línea", new EffectScript("espada-primera-linea:en-invocacion", Moment.ON_SUMMON, true, EN_INVOCACION,
                 "Roba 2 cartas. Luego: tributa 1 carta de tu mano.",
                 List.of(new Draw(2), new TributeFromHand(1))));
-        // ST4-5 Caballero Férreo (the moment is missing in its metadata: taken as En Invocación)
+        // ST4-5 Caballero Férreo
         add("caballero férreo", new EffectScript("caballero-ferreo:en-invocacion", Moment.ON_SUMMON, true, EN_INVOCACION,
                 "Reactiva 1 aliado nivel 2 o menor.",
                 List.of(new UntapAlly(CardFilter.any().withMaxLevel(2)))));
-        // ST4-6 Espada De Plata: its "En Destrucción" has no text in the metadata
+        // ST4-6 Espada De Plata: once destroyed it is not on the field, so the summoner is any ally that meets the requirement
+        add("espada de plata", new EffectScript("espada-de-plata:en-destruccion", Moment.ON_DESTROY, false, EN_DESTRUCCION,
+                "Puedes invocar por Ascenso 1 criatura Roja de tu mano reduciendo el coste especial en 1.",
+                List.of(new SpecialFromZone("promotion", "hand", 1, "any", CardFilter.creatures().withColors("R")))));
         // ST4-7 Filo Vengativo: Celeridad (keyword)
         // ST4-8 Armadura De Plata
         add("armadura de plata", new EffectScript("armadura-de-plata:en-invocacion", Moment.ON_SUMMON, false, EN_INVOCACION,

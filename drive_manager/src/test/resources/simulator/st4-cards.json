@@ -465,7 +465,7 @@
      {
       "activationCondition": "",
       "cost": "",
-      "resolution": ""
+      "resolution": "puedes invocar por Ascenso 1 criatura Roja de tu mano reduciendo el coste especial en 1."
      }
     ],
     "kind": "disparado",
@@ -639,6 +639,7 @@
   "regulation": "A",
   "effects": [
    {
+    "instance": "En Invocación",
     "effectBlocks": [
      {
       "activationCondition": "",
@@ -646,6 +647,7 @@
       "resolution": "reactiva 1 aliado nivel 2 o menor."
      }
     ],
+    "kind": "disparado",
     "tags": [
      "reactivo"
     ]
