@@ -17,17 +17,17 @@
   "regulation": "A",
   "effects": [
    {
-    "instance": null,
+    "instance": "En Destrucción",
     "ussageLimit": null,
     "effectBlocks": [
      {
-      "activationCondition": "En Destruccion",
+      "activationCondition": "",
       "cost": "",
       "resolution": "puedes enviar esta carta a tu descarte para invocar 1 criatura Violeta de tus tributos reduciendo su coste en 1.",
       "plainEffect": "En Destruccion: puedes enviar esta carta a tu descarte para invocar 1 criatura Violeta de tus tributos reduciendo su coste en 1."
      }
     ],
-    "kind": null,
+    "kind": "disparado",
     "tags": [
      "invocar efecto"
     ],
@@ -139,7 +139,7 @@
       "plainEffect": "si algún aliado es destruido por el oponente: puedes jugar esta carta sin pagar su coste."
      }
     ],
-    "kind": null,
+    "kind": "disparado",
     "tags": [
      "counter"
     ],
@@ -472,7 +472,7 @@
       "plainEffect": "cuando fueras a jugar esta carta, si tienes menos de 0 gemas: reduce su coste en 1."
      }
     ],
-    "kind": null,
+    "kind": "reactivo-modificador",
     "tags": [
      "ofensivo"
     ],
@@ -701,11 +701,11 @@
   "regulation": "A",
   "effects": [
    {
-    "instance": null,
+    "instance": "En Invocación",
     "ussageLimit": null,
     "effectBlocks": [
      {
-      "activationCondition": "En Invocacion",
+      "activationCondition": "",
       "cost": "",
       "resolution": "robar 3 cartas.",
       "plainEffect": "En Invocacion: robar 3 cartas."
@@ -717,7 +717,7 @@
       "plainEffect": "Luego: tributa 2 cartas de tu mano."
      }
     ],
-    "kind": null,
+    "kind": "disparado",
     "tags": [
      "robo",
      "tributo"

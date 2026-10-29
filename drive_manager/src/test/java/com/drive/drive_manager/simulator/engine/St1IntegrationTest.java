@@ -422,10 +422,11 @@ class St1IntegrationTest {
         CardSlot first = onField(host, slot("Mihel"), 75.0);
         CardSlot second = onField(host, slot("Mihel"), 75.0);
         CardSlot damon = reduceWithMathausAcceptingAll(5);
-        // 5 - 3 = 2: both Mihels trigger; the first to resolve takes it to 0, the other can no longer reduce it
+        // 5 - 3 = 2: both Mihels trigger; the first to resolve takes it to 0. The other one is still paid ("puedes A para B":
+        // A can be paid when B does nothing, designer ruling 2026-10-30), so both become materials
         assertThat(guest.getDiscardPile()).contains(damon);
         long left = host.getField().stream().filter(c -> c == first || c == second).count();
-        assertThat(left).isEqualTo(1);
+        assertThat(left).isZero();
     }
 
     @Test
@@ -444,12 +445,11 @@ class St1IntegrationTest {
         CardSlot arc = slot("Arc-xioma");
         host.getTributeZone().add(arc);
         CardSlot damon = reduceWithMathausAcceptingAll(5);
-        // Both trigger at 2; whichever resolves first destroys Damon and the other one does nothing (it is not paid)
+        // Both trigger at 2; whichever resolves first destroys Damon. The other one is still paid though it does nothing
+        // ("puedes A para B", designer ruling 2026-10-30)
         assertThat(guest.getDiscardPile()).contains(damon);
-        boolean arcResolved = host.getDeck().contains(arc);
-        boolean mihelResolved = !host.getField().contains(mihel);
-        assertThat(arcResolved ^ mihelResolved).isTrue();
-        if (!arcResolved) assertThat(host.getTributeZone()).contains(arc);
+        assertThat(host.getDeck()).contains(arc);
+        assertThat(host.getField()).doesNotContain(mihel);
     }
 
     // ------------------------------------------------------------------ Helpers

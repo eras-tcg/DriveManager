@@ -69,8 +69,11 @@ public sealed interface EffectStep {
     /** "súbelo a la mano": the chosen targets go back to their owner's hand; "Si lo haces" when any did. */
     record BounceChosen() implements EffectStep {}
 
-    /** "este no se reactiva al inicio del turno oponente / no se puede reactivar durante el próximo turno oponente". */
-    record NoUntapChosen() implements EffectStep {}
+    /**
+     * "este no se reactiva al inicio del turno oponente" (only that untap, Driada) / "no se puede reactivar durante el próximo turno
+     * oponente" ({@code wholeTurn}: no effect can reactivate it either, Uzume).
+     */
+    record NoUntapChosen(boolean wholeTurn) implements EffectStep {}
 
     /** "elige el enemigo [activo / agotado] de menor fuerza" (a tie: the controller picks among them). */
     record ChooseWeakestEnemy(CardFilter filter) implements NeedsTarget {}

@@ -336,11 +336,16 @@ public final class Chain {
 
     static boolean canActivate(GameRoom room, PendingEffect effect, EffectScript script) {
         for (EffectStep step : script.cost()) if (!possible(room, effect, step)) return false;
+        // Designer ruling (2026-10-30): the cost can be paid to activate an effect even when its resolution would do nothing
+        // (Sacerdotisa Del Portal Del Eclipse with no valid creature in the Tributos)
+        if (!script.cost().isEmpty()) return true;
         if (!allPossibleAfterIfPossible(room, effect, script.steps(), 0)) return false;
         // "Si ningún enemigo fue …: …" (IfNotDone): the effect does something even when there is nothing to choose
         if (script.steps().stream().anyMatch(s -> s instanceof IfNotDone)) return true;
         List<EffectStep> steps = script.steps();
         for (int i = 0; i < steps.size(); i++) {
+            // "puedes A para B": A was checked; what B needs does not stop it
+            if (steps.get(i) instanceof IfPossible) return true;
             int covers = covers(steps.get(i));
             if (covers > 0) {
                 i += covers;

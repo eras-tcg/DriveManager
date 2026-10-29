@@ -52,6 +52,8 @@ public final class EffectEngine {
     static final String PURPOSE_RITUAL = "RITUAL";
     /** Evolución, Ascenso and Materialización from the hand: the summoner, then (Materialización) the material. */
     static final String PURPOSE_SPECIAL = "SPECIAL";
+    /** "puedes agotar esta carta para reducir el coste especial" (Bosque Frondoso): asked before a special summon from the hand. */
+    static final String PURPOSE_COST_TAP = "COST_TAP";
     /** Key in the room's per-turn usage: the player already played a structure normally this turn. */
     static final String STRUCTURE_PLAYED = "structure-played|";
     static final String PURPOSE_SPECIAL_FRONT = "SPECIAL_FRONT";
