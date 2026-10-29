@@ -35,4 +35,13 @@ public class DriveCard {
 
     @Field("time_stamp")
     private Instant timeStamp;
+
+    /**
+     * Its image in R2, versioned by when it was uploaded: a corrected image gets a new URL, so browsers can keep
+     * each one for good (R2Service.CACHE_CONTROL).
+     */
+    public String imageUrl(String r2PublicUrl) {
+        String url = r2PublicUrl.stripTrailing() + "/cards/" + id + ".jpg";
+        return timeStamp == null ? url : url + "?v=" + timeStamp.getEpochSecond();
+    }
 }

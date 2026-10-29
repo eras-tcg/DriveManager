@@ -40,7 +40,8 @@ public final class CombatRules {
         if (attacker == null || !"creature".equals(attacker.getCardType())) return "Solo tus criaturas del campo pueden atacar";
         if (!inFrontLine(attacker)) return "Solo las criaturas de la línea frontal pueden atacar";
         if (attacker.isTapped()) return "Esa criatura está agotada";
-        if (attacker.getTurnKeywords().contains(NO_ATTACK)) return name(attacker) + " no puede declarar ataque este turno";
+        if (keywords(attacker).contains(NO_ATTACK)) return name(attacker) + " no puede declarar ataque";
+        if (keywords(attacker).contains(CANNOT_TAP)) return name(attacker) + " no puede agotarse para declarar ataque";
         if (!attackGemsOk(room, userId, attacker)) {
             Integer furia = furia(attacker);
             return furia == null ? "Para declarar un ataque necesitas 0 o más gemas"
@@ -96,6 +97,9 @@ public final class CombatRules {
         combat.setStep(Combat.Step.ATTACK);
         combat.setPhase(Combat.Phase.EXIT);
         room.setCombat(combat);
+        // "hasta el final del turno o de su próximo ataque": this is that attack
+        attacker.getUntilNextAttack().forEach(entry -> combat.getUntilEndOfAttack().add(attacker.getInstanceId() + "|" + entry));
+        attacker.getUntilNextAttack().clear();
         CardSlot target = targetId == null || opponent == null ? null : find(opponent.getField(), targetId);
         Map<String, Object> data = new HashMap<>();
         data.put("byEffect", byEffect);
@@ -147,7 +151,7 @@ public final class CombatRules {
 
     static Combat.Step nextStep(Combat c, PlayerState defender, CardSlot attacker) {
         return switch (c.getStep()) {
-            case ATTACK -> Combat.Step.BLOCK;
+            case ATTACK -> c.isSkipBlock() ? Combat.Step.DAMAGE : Combat.Step.BLOCK;
             // Rule 10.1.3.1: the clash only happens if there is a blocker when the step starts
             case BLOCK -> c.getBlockerId() != null && find(defender.getField(), c.getBlockerId()) != null
                     ? Combat.Step.CLASH : Combat.Step.DAMAGE;
@@ -178,6 +182,7 @@ public final class CombatRules {
                     Integer provoke = keywordLevel(attacker, "Provocar");
                     if (provoke != null && c.getBlockerId() == null) {
                         List<CardSlot> options = blockers(defender).stream()
+                                .filter(b -> !b.getInstanceId().equals(c.getTargetId()))
                                 .filter(b -> provoke == 0 || (b.getLevel() != null && b.getLevel() <= provoke)).toList();
                         if (!options.isEmpty()) {
                             rulesPrompt(room, owner.getUserId(), PURPOSE_PROVOKE, name(attacker) + " · Provocar",
@@ -190,7 +195,8 @@ public final class CombatRules {
                 // Rule 10.1.2.3: the defender may declare a blocker, unless one was already declared
                 if (c.getBlockerId() == null && !c.isBlockAsked()) {
                     c.setBlockAsked(true);
-                    List<CardSlot> options = keywordLevel(attacker, "Imbloqueable") != null ? List.of() : blockers(defender);
+                    List<CardSlot> options = keywordLevel(attacker, "Imbloqueable") != null ? List.of()
+                            : blockers(defender).stream().filter(b -> !b.getInstanceId().equals(c.getTargetId())).toList();
                     if (!options.isEmpty()) {
                         rulesPrompt(room, defender.getUserId(), PURPOSE_BLOCK, name(attacker) + " ataca",
                                 "Puedes elegir 1 criatura activa de tu línea frontal para bloquear (se agota), o ninguna.",
@@ -256,6 +262,7 @@ public final class CombatRules {
             }
         }
         int damage = strength(attacker);
+        if (offerDamageReplacement(room, c, defender, damage)) return false;
         while (c.getHitsLeft() > 0 && !defender.getLifeStack().isEmpty()) {
             c.setHitsLeft(c.getHitsLeft() - 1);
             CardSlot life = defender.getLifeStack().remove(0);
@@ -283,6 +290,81 @@ public final class CombatRules {
         }
         if (defender.getLifeStack().isEmpty()) loseByLives(room, defender);
         return true;
+    }
+
+    /**
+     * Comandante Veterano: "Turno Oponente: una vez por turno, cuando un aliado sea declarado bloqueador: en su lugar, puedes
+     * reactivarlo y elegir otro aliado para que sea declarado bloqueador". Offered to the defender after a block.
+     *
+     * @return true when it waits for the defender's answer
+     */
+    static boolean offerBlockerSwap(GameRoom room, PlayerState defender, CardSlot blocker) {
+        CardSlot holder = defender.getField().stream().filter(c -> !c.isFaceDown() && CardEffects.swapsBlocker(c)).findFirst().orElse(null);
+        if (holder == null || room.getUsedThisTurn().contains(defender.getUserId() + "|blocker-swap")) return false;
+        Combat combat = room.getCombat();
+        List<CardSlot> others = blockers(defender).stream()
+                .filter(b -> b != blocker && (combat == null || !b.getInstanceId().equals(combat.getTargetId()))).toList();
+        if (others.isEmpty()) return false;
+        rulesPrompt(room, defender.getUserId(), PURPOSE_BLOCK_SWAP, name(holder) + " · Turno Oponente",
+                "En lugar de " + name(blocker) + ", puedes reactivarlo y elegir otro aliado para que bloquee. O ninguno.", "Bloquea", others,
+                defender.getField());
+        room.getPrompt().setSubjectId(blocker.getInstanceId());
+        room.getPrompt().setMin(0);
+        return true;
+    }
+
+    static void swapBlocker(GameRoom room, PlayerState defender, Prompt prompt, List<String> picks) {
+        Combat c = room.getCombat();
+        CardSlot first = find(defender.getField(), prompt.getSubjectId());
+        CardSlot other = picks.isEmpty() ? null : find(defender.getField(), picks.get(0));
+        if (c == null || first == null || other == null) return;
+        room.getUsedThisTurn().add(defender.getUserId() + "|blocker-swap");
+        first.setTapped(false);
+        other.setTapped(true);
+        c.setBlockerId(other.getInstanceId());
+        record(room, GameEvent.UNTAP, defender.getUserId(), first, null, null, null, null, defender.getUsername() + " reactiva a " + name(first));
+        record(room, GameEvent.BLOCK, defender.getUserId(), other, null, null, null, Map.of("forced", false),
+                name(other) + " bloquea el ataque en lugar de " + name(first));
+    }
+
+    /**
+     * Mercenario Valeroso: "En Mano: una vez por turno entre copias, cuando fueras a recibir 8 o menos de daño directo por ataque:
+     * en su lugar, puedes invocar esta carta agotada en tu línea frontal reduciendo su coste en 1". Offered before the first hit.
+     *
+     * @return true when it waits for the defender's answer
+     */
+    static boolean offerDamageReplacement(GameRoom room, Combat c, PlayerState defender, int damage) {
+        if (c.isDamageReplaceAsked()) return false;
+        c.setDamageReplaceAsked(true);
+        List<CardSlot> options = defender.getHand().stream().filter(card -> {
+            CardEffects.DamageReplacement r = CardEffects.damageReplacement(card);
+            return r != null && damage <= r.maxDamage() && card.getCost() != null
+                    && !room.getUsedThisTurn().contains(defender.getUserId() + "|damage-replace|" + card.getCardName())
+                    && canPay(room, defender.getUserId(), Math.max(0, card.getCost() - r.reduce()));
+        }).toList();
+        if (options.isEmpty()) return false;
+        rulesPrompt(room, defender.getUserId(), PURPOSE_DAMAGE_REPLACE, "Daño directo: " + damage,
+                "En lugar de recibir el daño, puedes invocar 1 de estas cartas agotada en tu línea frontal reduciendo su coste. O ninguna.",
+                "Invocar", options, options);
+        room.getPrompt().setMin(0);
+        return true;
+    }
+
+    static void replaceDamage(GameRoom room, PlayerState defender, List<String> picks) {
+        Combat c = room.getCombat();
+        CardSlot card = picks.isEmpty() ? null : find(defender.getHand(), picks.get(0));
+        CardEffects.DamageReplacement r = card == null ? null : CardEffects.damageReplacement(card);
+        if (c == null || r == null) return;
+        room.getUsedThisTurn().add(defender.getUserId() + "|damage-replace|" + card.getCardName());
+        PendingEffect effect = new PendingEffect();
+        effect.setId(room.nextId("eff"));
+        effect.setControllerId(defender.getUserId());
+        effect.setSourceInstanceId(card.getInstanceId());
+        effect.setSourceName(name(card));
+        summonByEffect(room, effect, defender, card, "hand", r.reduce(), true);
+        card.setTapped(true);
+        c.setHitsLeft(0);
+        log(room, name(card) + " entra en lugar del daño directo: " + defender.getUsername() + " no recibe daño", null);
     }
 
     static void lifePrompt(GameRoom room, PlayerState defender, CardSlot life, String purpose, String title,

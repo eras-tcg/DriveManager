@@ -227,6 +227,43 @@ class St4IntegrationTest {
     }
 
     @Test
+    void espadaDePlataDestroyedLetsAnAllyAscendARedCreatureFromTheHandForOneLess() {
+        CardSlot plata = onField(host, slot("Espada De Plata"), FRONT);
+        CardSlot peon = onField(host, slot("Peón De Línea Frontal"), FRONT);
+        onField(host, slot("Espada De Los Leones De Fuego"), BACK);
+        CardSlot ferreo = slot("Caballero Férreo");
+        host.getHand().add(ferreo);
+        int gems = EffectEngine.gemsOf(room, "host");
+
+        assertThat(act("host", "DESTROY_CARD", Map.of("instanceId", plata.getInstanceId())).getError()).isNull();
+        // "puedes": it asks first
+        Prompt offer = room.getPrompt();
+        assertThat(offer.getPurpose()).isEqualTo("OPTIONAL");
+        Answers.answer(room, "host", offer.getId(), List.of(plata.getInstanceId()), List.of());
+        // A Red creature of the hand, then the summoner that meets its Ascenso (Espada De Plata is no longer on the field)
+        Prompt pick = room.getPrompt();
+        assertThat(pick.getValidIds()).containsExactly(ferreo.getInstanceId());
+        Answers.answer(room, "host", pick.getId(), List.of(ferreo.getInstanceId()), List.of());
+        Prompt summoner = room.getPrompt();
+        assertThat(summoner.getValidIds()).contains(peon.getInstanceId()).doesNotContain(plata.getInstanceId());
+        Answers.answer(room, "host", summoner.getId(), List.of(peon.getInstanceId()), List.of());
+
+        assertThat(host.getField()).contains(ferreo).doesNotContain(peon, plata);
+        assertThat(host.getTributeZone()).contains(peon);
+        // Its special cost of 1 gem, reduced by 1
+        assertThat(EffectEngine.gemsOf(room, "host")).isEqualTo(gems);
+    }
+
+    @Test
+    void espadaDePlataDoesNothingWithoutARedCreatureInTheHand() {
+        CardSlot plata = onField(host, slot("Espada De Plata"), FRONT);
+        onField(host, slot("Peón De Línea Frontal"), FRONT);
+        assertThat(act("host", "DESTROY_CARD", Map.of("instanceId", plata.getInstanceId())).getError()).isNull();
+        assertThat(room.getPrompt()).isNull();
+        assertThat(room.getChain()).isEmpty();
+    }
+
+    @Test
     void aPlayerWhoCannotDrawAtTheStartOfTheirTurnLoses() {
         guest.getDeck().clear();
         act("host", "ENTER_END_PHASE", Map.of());

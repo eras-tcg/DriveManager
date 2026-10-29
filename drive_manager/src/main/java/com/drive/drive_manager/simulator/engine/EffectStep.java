@@ -127,7 +127,11 @@ public sealed interface EffectStep {
     record ReduceChosen(int amount, boolean untilNextTurn) implements EffectStep {}
 
     /** "elige todos los enemigos en la línea frontal" (no choice: they are the targets). */
-    record TargetAllEnemies() implements EffectStep {}
+    record TargetAllEnemies(CardFilter filter) implements EffectStep {
+        public TargetAllEnemies() {
+            this(CardFilter.creatures());
+        }
+    }
 
     /** "reducirla a 0": the enemy whose strength was reduced in the triggering event. */
     record ReduceTriggerToZero() implements EffectStep {}
@@ -210,7 +214,7 @@ public sealed interface EffectStep {
     record ReduceRepeatedly(int times, int amount, String until) implements EffectStep {}
 
     /** "tantas veces como quieras: descarta N tributos [filtro]; esta carta gana [habilidad] 1 hasta el final del ataque" (it adds up). */
-    record DiscardTributesForKeyword(int count, CardFilter filter, String keyword) implements EffectStep {}
+    record TributesToDeckBottomForKeyword(int count, CardFilter filter, String keyword) implements EffectStep {}
 
     /** "tributa N o más aliados [filtro] que sumen M o más en nivel" (a cost). */
     record TributeAlliesLevelSum(int minCount, int minSum, CardFilter filter) implements EffectStep {}
@@ -342,7 +346,11 @@ public sealed interface EffectStep {
     record SummonedCannotAttack() implements EffectStep {}
 
     /** "puedes subir los materiales de esta carta a tu mano": all of them; they are the last "tributed" for {@link IfTributed}. */
-    record MaterialsToHand() implements EffectStep {}
+    record MaterialsToHand(boolean upTo) implements EffectStep {
+        public MaterialsToHand() {
+            this(false);
+        }
+    }
 
     /** "coloca esta carta al tope de tus vidas bocabajo". */
     record SelfToLife() implements EffectStep {}
@@ -386,4 +394,88 @@ public sealed interface EffectStep {
      * steps (A and B) are skipped.
      */
     record MayDo(String question, int covers) implements EffectStep {}
+
+    /** {@link LookTop} whose count depends on the game ("mira 1 carta más por cada copia de esta carta en tus tributos"). */
+    record LookTopBy(Amount count) implements EffectStep {}
+
+    /** "envíalas al tope o al fondo de tu mazo" / "devuélvelas al tope o envíalas al fondo": the looked cards, all together. */
+    record LookedToTopOrBottom() implements EffectStep {}
+
+    /** "de ellas toma hasta N [filtro]. Tributa el resto." (after {@link LookTop}). */
+    record TakeFromLookedRestToTributes(int max, CardFilter filter) implements EffectStep {}
+
+    /** "Si [condición sobre la mesa]:": the next {@code covers} steps only if it holds now. */
+    record IfCondition(Condition condition, int covers) implements EffectStep {}
+
+    /** "por cada material tributado elige 1 enemigo distinto": as many enemies as the last count (lastCount). */
+    record ChooseEnemiesPerCount(CardFilter filter) implements NeedsTarget {}
+
+    /** "reduce en N su fuerza por cada material removido": N times the last count, on the chosen targets. */
+    record ReduceChosenPerCount(int each) implements EffectStep {}
+
+    /** "todos los aliados [filtro] ganan [habilidad] hasta el final del turno [oponente]" ({@code until}: "turn" or "nextTurn"). */
+    record AlliesGain(CardFilter filter, String keyword, String until) implements EffectStep {}
+
+    /** "tributa tu mano": all of it. */
+    record TributeHand() implements EffectStep {}
+
+    /** "termina tu turno": once nothing is pending, the turn goes on to its end phase. */
+    record EndYourTurn() implements EffectStep {}
+
+    /** "coloca esta carta en tu línea frontal [agotada]" from a zone (placed, not summoned). */
+    record PlaceSelfInFrontLine(String zone, boolean exhausted) implements EffectStep {}
+
+    /** "añádele esta carta como recurso": this card becomes a Recurso of the subject (the ally of the trigger, or the chosen one). */
+    record AttachSelfAsResourceToSubject() implements EffectStep {}
+
+    /** "tributa N recursos [filtro] de esta carta". */
+    record TributeResources(int count, CardFilter filter) implements EffectStep {}
+
+    /** "activa 1 de sus efectos En Invocación": the subject activates its own "En Invocación" as a new link. */
+    record ActivateSubjectSummonEffect() implements EffectStep {}
+
+    /** "esta carta …" again after a step that chose another card (a sacrifice, an ally): the next steps act on this card. */
+    record SubjectIsThisCard() implements EffectStep {}
+
+    /** "gana [habilidad] hasta el final del turno oponente": the subject (this card or the chosen ally). */
+    record GainUntilNextTurn(String keyword) implements EffectStep {}
+
+    /** "gana fuerza N y [habilidad] hasta el final del turno o de su próximo ataque". */
+    record GainUntilNextAttack(int strength, String keyword) implements EffectStep {}
+
+    /** "elige 1 criatura [filtro] en el campo": yours, or an enemy's when this card and it are both in the Línea frontal. */
+    record ChooseCreatureOnField(CardFilter filter, boolean upTo) implements NeedsTarget {}
+
+    /** "sacrifícala": the chosen creatures are sacrificed, each to its owner's Tributos. */
+    record SacrificeChosen() implements EffectStep {}
+
+    /** "tributa tantas cartas de tu mano como nivel tenga [el aliado elegido]". */
+    record TributeFromHandAsSubjectLevel() implements EffectStep {}
+
+    /** "salta el paso de bloqueo" (of the attack going on). */
+    record SkipBlockStep() implements EffectStep {}
+
+    /** "Si reduces su fuerza a 0 / si fue destruido:": the next {@code covers} steps only if no chosen target is still on the field. */
+    record IfChosenGone(int covers) implements EffectStep {}
+
+    /** "ninguno puede agotarse hasta el final del turno [oponente]": the chosen targets ({@code until}: "turn" or "nextTurn"). */
+    record ChosenCannotBeExhausted(String until) implements EffectStep {}
+
+    /** "para que otro [aliado] a lo más N nivel mayor declare ataque": an ally of the Línea frontal of level up to the sacrificed one's + N. */
+    record PickAllyUpToSacrificedLevel(int plus) implements NeedsTarget {}
+
+    /** "1 aliado como material de otro de nivel mayor": the ally to add, one with an ally of higher level. */
+    record PickAllyWithHigherAlly() implements NeedsTarget {}
+
+    /** "… como material de otro de nivel mayor": the subject becomes a material of an ally of higher level. */
+    record AttachSubjectToHigherAlly() implements EffectStep {}
+
+    /** "algún aliado [con N materiales]": an ally with at least {@code count} materials becomes the subject. */
+    record PickAllyWithMaterials(int count) implements NeedsTarget {}
+
+    /** "tributa N materiales de [dicho aliado]". */
+    record TributeSubjectMaterials(int count) implements EffectStep {}
+
+    /** "dicho aliado inflige daño 1 vez más": one more hit of the direct damage going on. */
+    record ExtraHit() implements EffectStep {}
 }

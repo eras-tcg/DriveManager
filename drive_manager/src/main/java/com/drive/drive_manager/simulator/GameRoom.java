@@ -59,6 +59,8 @@ public class GameRoom {
     private long idSeq = 0;
     /** Removals waiting for their owner to choose a replacement, in order. */
     private List<com.drive.drive_manager.simulator.engine.PendingRemoval> pendingRemovals = new ArrayList<>();
+    /** An Ascenso that waits for the attack its summoner declared before it (Príncipe Charles). */
+    private com.drive.drive_manager.simulator.engine.PendingAscension pendingAscension;
     /** Cards whose owner already chose not to replace their removal: it happens now. */
     private Set<String> removalDecided = new HashSet<>();
     /** The combat in progress (rule 10), if any. */
@@ -79,7 +81,7 @@ public class GameRoom {
 
     /** Closed game state (rule 7.2): a chain or a choice is pending, so no new actions can start. */
     public boolean isEngineBusy() {
-        return prompt != null || !chain.isEmpty() || !triggerQueue.isEmpty() || combat != null || !pendingRemovals.isEmpty();
+        return prompt != null || !chain.isEmpty() || !triggerQueue.isEmpty() || combat != null || !pendingRemovals.isEmpty() || pendingAscension != null;
     }
 
     public String nextId(String prefix) {

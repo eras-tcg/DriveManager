@@ -58,6 +58,8 @@ public class Prompt {
     private List<OfferedEffect> effects;
     /** The whole text of the effect this choice belongs to (an effect resolving or paying its cost). */
     private String effectText;
+    /** The levels of the cards chosen may add up to this at most (the board locks those that would pass it). */
+    private Integer maxLevelSum;
 
     /** An effect offered to be chained; {@code effectId} is what the player picks to chain it. */
     /** {@code inheritedFrom*}: the Recurso that gives it, for an inherited effect. */

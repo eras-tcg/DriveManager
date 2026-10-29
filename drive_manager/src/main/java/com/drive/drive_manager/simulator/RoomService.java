@@ -6,6 +6,7 @@ import com.drive.drive_manager.dto.DriveCard;
 import com.drive.drive_manager.repository.CardRepository;
 import com.drive.drive_manager.repository.DeckListRepository;
 import com.drive.drive_manager.repository.DriveCardRepository;
+import com.drive.drive_manager.simulator.engine.CardEffects;
 import com.drive.drive_manager.simulator.engine.EffectEngine;
 import com.drive.drive_manager.simulator.engine.TurnRules;
 import com.drive.drive_manager.simulator.engine.Summons;
@@ -50,7 +51,7 @@ public class RoomService {
     /** The rival of a test room: its owner plays it (actions with "actAs"). */
     public static final String EDITOR_RIVAL = "editor-rival";
     /** What the owner of a test room always does as themselves, whichever side they are playing. */
-    private static final Set<String> OWNER_ONLY = Set.of("JOIN_ROOM", "LEAVE_ROOM", "KICK_PLAYER", "CLOSE_ROOM");
+    private static final Set<String> OWNER_ONLY = Set.of("JOIN_ROOM", "LEAVE_ROOM", "KICK_PLAYER", "CLOSE_ROOM", "SET_FIRST_PLAYER");
 
     /** An owner disconnected this long has left: another player owns the room. */
     private static final long OWNER_GRACE_MS = 15_000;
@@ -64,9 +65,7 @@ public class RoomService {
         pruneRooms();
         long now = System.currentTimeMillis();
         for (GameRoom room : new ArrayList<>(rooms.values())) {
-            GameStateUpdate update;
-            synchronized (room) { update = checkOwner(room, now); }
-            if (update != null && messagingTemplate != null) messagingTemplate.convertAndSend("/topic/room/" + room.getRoomId(), update);
+            synchronized (room) { broadcast(room.getRoomId(), checkOwner(room, now)); }
         }
     }
 
@@ -138,6 +137,20 @@ public class RoomService {
     private void pruneRooms() {
         java.time.Instant limit = java.time.Instant.now().minus(EMPTY_ROOM_TTL);
         rooms.values().removeIf(r -> r.getEmptySince() != null && r.getEmptySince().isBefore(limit));
+    }
+
+    /**
+     * Applies an action and sends the room its update while still holding the room's lock: the update refers to
+     * the room's live lists, so it is serialized before the next action can change them.
+     */
+    public void applyAndBroadcast(String roomId, String userId, GameAction action) {
+        GameRoom lock = rooms.get(roomId);
+        if (lock == null) { broadcast(roomId, applyAction(roomId, userId, action)); return; }
+        synchronized (lock) { broadcast(roomId, applyAction(roomId, userId, action)); }
+    }
+
+    private void broadcast(String roomId, GameStateUpdate update) {
+        if (update != null && messagingTemplate != null) messagingTemplate.convertAndSend("/topic/room/" + roomId, update);
     }
 
     public GameStateUpdate applyAction(String roomId, String userId, GameAction action) {
@@ -230,6 +243,7 @@ public class RoomService {
             case "VIEW_LIFE_STACK"              -> handleViewLifeStack(room, userId);
             case "VIEW_LIFE_CARD"               -> handleViewLifeCard(room, userId);
             case "BULK_TO_DECK_BOTTOM"           -> handleBulkToDeckBottom(room, userId, action);
+            case "BULK_MOVE"                     -> handleBulkMove(room, userId, action);
             case "CREATE_DUMMY"                  -> handleCreateDummy(room, userId, action);
             default                             -> GameStateUpdate.error(roomId, "Unknown action: " + action.getType());
         };
@@ -594,17 +608,28 @@ public class RoomService {
     public void registerSession(String sessionId, String roomId, String userId) {
         if (sessionId == null) return;
         sessionRegistry.put(sessionId, new String[]{roomId, userId});
+        GameRoom room = rooms.get(roomId);
+        if (room == null) return;
+        synchronized (room) {
+            PlayerState player = room.getPlayer(userId);
+            if (player != null && !player.isConnected()) {
+                player.setConnected(true);
+                room.setEmptySince(null);
+            }
+        }
     }
 
     /** Called from GameDisconnectListener when a STOMP session drops (browser closed, network lost). */
-    public GameStateUpdate handleSessionDisconnect(String sessionId) {
+    public void handleSessionDisconnect(String sessionId) {
         String[] info = sessionRegistry.remove(sessionId);
-        if (info == null) return null;
-        String roomId = info[0];
-        String userId = info[1];
+        if (info == null) return;
+        GameRoom room = rooms.get(info[0]);
+        if (room == null) return;
+        synchronized (room) { broadcast(room.getRoomId(), sessionDisconnected(room, info[1])); }
+    }
 
-        GameRoom room = rooms.get(roomId);
-        if (room == null) return null;
+    private GameStateUpdate sessionDisconnected(GameRoom room, String userId) {
+        String roomId = room.getRoomId();
         PlayerState player = room.getPlayer(userId);
         if (player == null) return null;
 
@@ -739,6 +764,32 @@ public class RoomService {
         GameStateUpdate update = GameStateUpdate.from(room, "BULK_TO_DECK_BOTTOM", userId);
         update.setLogEntry(player.getUsername() + " envió " + ordered.size() + " carta(s) desde " + zoneLabel(zoneName)
                 + " al fondo del mazo en orden " + (random ? "aleatorio" : "de la lista"));
+        return update;
+    }
+
+    /**
+     * Moves a selection of cards from one zone to another in one action (instead of one MOVE_CARD per card),
+     * each as MOVE_CARD would; one line of history for all of them.
+     */
+    private GameStateUpdate handleBulkMove(GameRoom room, String userId, GameAction action) {
+        List<String> instanceIds = action.getStringList("instanceIds");
+        if (instanceIds == null || instanceIds.isEmpty()) return GameStateUpdate.error(room.getRoomId(), "No cards specified");
+        int moved = 0;
+        for (String id : instanceIds) {
+            Map<String, Object> payload = new HashMap<>(action.getPayload());
+            payload.remove("instanceIds");
+            payload.put("instanceId", id);
+            GameAction one = new GameAction();
+            one.setType("MOVE_CARD");
+            one.setPayload(payload);
+            if (handleMove(room, userId, one).getError() == null) moved++;
+        }
+        if (moved == 0) return GameStateUpdate.error(room.getRoomId(), "Cards not found");
+        String tp = action.getString("targetPlayerId");
+        PlayerState player = room.getPlayer(tp != null ? tp : userId);
+        GameStateUpdate update = GameStateUpdate.from(room, "BULK_MOVE", userId);
+        update.setLogEntry(player.getUsername() + " envió " + moved + " carta(s) desde " + zoneLabel(action.getString("fromZone"))
+                + " a " + zoneLabel(action.getString("toZone")));
         return update;
     }
 
@@ -1388,6 +1439,9 @@ public class RoomService {
         }));
         room.getPlayers().values().forEach(p -> p.getField().forEach(c -> {
             c.getTurnKeywords().clear();
+            c.getTurnKeywords().addAll(c.getLaterKeywords());
+            c.getLaterKeywords().clear();
+            c.getUntilNextAttack().clear();
             if (c.getNoUntap() > 0) c.setNoUntap(c.getNoUntap() - 1);
             // What lasts until the end of the next turn now lasts until the end of this one
             c.setTurnStrength(c.getLaterStrength());
@@ -1395,7 +1449,11 @@ public class RoomService {
             c.getFloating().removeIf(f -> !"nextTurn".equals(f.until()));
             c.getFloating().replaceAll(f -> new FloatingEffect(f.text(), f.source(), "turn", f.strength(), f.keyword()));
         }));
+        // "el turno anterior": who used a Definitive effect this turn is remembered for the next one
+        List<String> definitive = room.getUsedThisTurn().stream().filter(k -> k.endsWith("|" + EffectEngine.DEFINITIVE_USED))
+                .map(k -> EffectEngine.DEFINITIVE_LAST_TURN + k.substring(0, k.indexOf('|'))).toList();
         room.getUsedThisTurn().clear();
+        room.getUsedThisTurn().addAll(definitive);
     }
 
     private int getPlayerDirection(GameRoom room, String userId) {
@@ -1959,13 +2017,15 @@ public class RoomService {
             c.setSpecialSummonKind(s.getSpecialSummonKind());
             c.setStarter(s.isStarter());
             c.setCost(s.getCost());
-            c.setLevel(s.getLevel());
+            c.setLevel(s.getPrintedLevel());
+            c.setContinuousLevel(s.getContinuousLevel());
             c.setColors(new ArrayList<>(s.getColors()));
             c.setClasses(new ArrayList<>(s.getClasses()));
             c.setSpecialCost(s.getSpecialCost());
             c.setRequirement(s.getRequirement());
             c.setKeywords(new ArrayList<>(s.getKeywords()));
             c.setInheritKeywords(new ArrayList<>(s.getInheritKeywords()));
+            c.setUnprogrammed(s.getUnprogrammed());
             c.setFaceDown(true);
             return c;
         }).collect(Collectors.toList());
@@ -1990,6 +2050,11 @@ public class RoomService {
         slot.setRequirement(meta.getRequirement());
         slot.setKeywords(keywordNames(meta.getKeywordEffects()));
         slot.setInheritKeywords(keywordNames(meta.getInheritKeywordEffects()));
+        List<String> allKeywords = new ArrayList<>(slot.getKeywords());
+        allKeywords.addAll(slot.getInheritKeywords());
+        slot.setUnprogrammed(CardEffects.pending(meta.getCardName(),
+                meta.getEffects() == null ? 0 : meta.getEffects().size(),
+                meta.getInheritEffects() == null ? 0 : meta.getInheritEffects().size(), allKeywords));
         List<String> colors = new ArrayList<>();
         if (meta.getColorIdentity() != null) colors.add(meta.getColorIdentity());
         if (meta.getColors() != null) meta.getColors().stream().filter(c -> !colors.contains(c)).forEach(colors::add);
@@ -2051,7 +2116,7 @@ public class RoomService {
             slot.setFaceDown(true);
             DriveCard dc = driveCardMap.get(driveFileId);
             if (dc != null) {
-                slot.setImageUrl(baseUrl + "/cards/" + driveFileId + ".jpg");
+                slot.setImageUrl(dc.imageUrl(baseUrl));
                 if (dc.getName() != null) {
                     slot.setCardName(dc.getName());
                     if (dc.getEdition() != null) {
