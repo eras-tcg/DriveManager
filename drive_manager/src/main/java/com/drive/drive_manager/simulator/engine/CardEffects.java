@@ -1529,6 +1529,13 @@ public final class CardEffects {
                         List.of(new SummonFromZone("tributeZone,discardPile", CardFilter.creatures().withColors("P").withLevel(1), 1, false)))
                         .when(new YouDestroyedCreature(true))
                         .limited(Limit.ONCE_PER_TURN));
+        // E1.1-P11 Hominox (Provocar 4: keyword): a summon by effect from the Tributos, so to the Retaguardia
+        add("hominox", new EffectScript("hominox:todos-los-turnos", Moment.ON_EVENT, false, TODOS,
+                "Si esta carta destruye un enemigo: puedes invocar 1 criatura [mutante] de tus tributos de nivel igual o menor a la cantidad de "
+                        + "copias de esta carta en tus tributos.",
+                List.of(new SummonFromZoneBy("tributeZone", new FilterBy(CardFilter.creatures().withClasses("mutante"), null,
+                        new Amount.InZone("tributeZone", CardFilter.any().named("Hominox"))), 0)))
+                .when(new ThisDestroyedEnemy(false)));
         // E1.1-R4 Escudo Jurado
         continuous("escudo jurado", new Continuous(TODOS,
                 "Mientras controles algún aliado nivel 4 o mayor: esta carta no puede ser objetivo de efectos oponentes.", false,

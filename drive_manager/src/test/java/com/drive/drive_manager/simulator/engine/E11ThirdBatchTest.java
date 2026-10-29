@@ -181,6 +181,31 @@ class E11ThirdBatchTest {
         assertThat(EffectEngine.keywords(knight)).contains("Reactivar");
     }
 
+    @Test
+    void hominoxSummonsAMutantFromTheTributesUpToTheCopiesThereWhenItDestroysAnEnemy() {
+        CardSlot hominox = onField(host, withClasses(card("hx", "Hominox", 7, 4, "P"), "bestia", "mutante"));
+        hominox.setStrength(12);
+        host.getTributeZone().addAll(List.of(card("c1", "Hominox", 7, 4, "P"), card("c2", "Hominox", 7, 4, "P")));
+        CardSlot level2 = withClasses(card("m2", "Mutante 2", 1, 2, "P"), "mutante");
+        CardSlot level3 = withClasses(card("m3", "Mutante 3", 1, 3, "P"), "mutante");
+        host.getTributeZone().addAll(List.of(level2, level3));
+        CardSlot enemy = onField(guest, card("e", "Enemigo", 1, 1, "R"));
+        enemy.setTapped(true);
+        assertThat(CombatRules.attackByPlayer(room, "host", "hx", "e")).isNull();
+        for (int i = 0; i < 10 && room.getCombat() != null && (room.getPrompt() == null || !"OPTIONAL".equals(room.getPrompt().getPurpose())); i++) {
+            if (room.getPrompt() != null) Answers.answer(room, room.getPrompt().getPlayerId(), room.getPrompt().getId(), List.of(), List.of());
+            else Chain.advance(room);
+        }
+        assertThat(guest.getField()).doesNotContain(enemy);
+        accept(hominox);
+        // 2 copies in the Tributos: level 2 or less
+        Prompt pick = room.getPrompt();
+        assertThat(pick.getValidIds()).containsExactly("m2");
+        answer(pick, "m2");
+        assertThat(host.getField()).contains(level2);
+        assertThat(EffectEngine.inFrontLine(level2)).isFalse();
+    }
+
     // ------------------------------------------------------------------ Helpers
 
     /** Summons the card from the hand to the Línea frontal by effect (a test card's En Invocación), for effects that reach enemies. */
