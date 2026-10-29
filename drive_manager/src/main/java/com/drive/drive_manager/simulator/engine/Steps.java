@@ -871,6 +871,7 @@ public final class Steps {
                                 + " que en nivel sumen hasta " + sum.maxLevelSum() + ", sin pagar sus costes. Entran en Retaguardia y robas 1 carta por cada una.",
                         "Invocar", zone(player, sum.zone()), ids(valid), valid.size());
                 room.getPrompt().setMin(0);
+                room.getPrompt().setMaxLevelSum(sum.maxLevelSum());
                 return true;
             }
             case TributeTop top -> {

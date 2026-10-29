@@ -50,7 +50,7 @@ public class RoomService {
     /** The rival of a test room: its owner plays it (actions with "actAs"). */
     public static final String EDITOR_RIVAL = "editor-rival";
     /** What the owner of a test room always does as themselves, whichever side they are playing. */
-    private static final Set<String> OWNER_ONLY = Set.of("JOIN_ROOM", "LEAVE_ROOM", "KICK_PLAYER", "CLOSE_ROOM");
+    private static final Set<String> OWNER_ONLY = Set.of("JOIN_ROOM", "LEAVE_ROOM", "KICK_PLAYER", "CLOSE_ROOM", "SET_FIRST_PLAYER");
 
     /** An owner disconnected this long has left: another player owns the room. */
     private static final long OWNER_GRACE_MS = 15_000;

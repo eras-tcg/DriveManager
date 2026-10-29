@@ -189,6 +189,9 @@ class PreRoomTest {
             p.getDeck().add(card("starter-a", true));
             p.setStarterCardId("starter-a");
         }
+        // Playing the rival's side (choosing its deck), the owner still picks who goes first
+        assertThat(service.applyAction(id, "owner", action("SET_FIRST_PLAYER", Map.of("actAs", RoomService.EDITOR_RIVAL, "choice", RoomService.EDITOR_RIVAL))).getError()).isNull();
+        assertThat(test.getFirstChoice()).isEqualTo(RoomService.EDITOR_RIVAL);
         service.applyAction(id, "owner", action("SET_READY", Map.of("ready", true)));
         PlayerState owner = test.getPlayer("owner");
         List<String> deck = owner.getDeck().stream().map(CardSlot::getInstanceId).toList();
