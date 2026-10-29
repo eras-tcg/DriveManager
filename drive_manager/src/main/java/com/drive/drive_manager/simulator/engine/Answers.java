@@ -202,17 +202,20 @@ public final class Answers {
                 }
                 return "";
             }
-            CardSlot summoner = find(player.getField(), prompt.getSummonerId());
+            boolean noSummoner = NO_SUMMONER.equals(prompt.getSummonerId());
+            CardSlot summoner = noSummoner ? null : find(player.getField(), prompt.getSummonerId());
             SpecialRequirement req = specialRequirement(card);
             List<CardSlot> materials = new ArrayList<>();
             for (String id : picks) {
                 CardSlot material = find(player.getTributeZone(), id);
                 if (material == null) material = find(player.getField(), id);
+                if (material == null) material = find(player.getHand(), id);
                 if (material == null) return "Esa criatura ya no está disponible";
                 materials.add(material);
             }
-            if (summoner == null) return "Esa criatura ya no está disponible";
-            String wrong = checkMaterials(req, summoner, materials);
+            if (summoner == null && !noSummoner) return "Esa criatura ya no está disponible";
+            if (noSummoner && materials.size() != req.materialCount()) return "Elige " + req.materialCount() + " criaturas";
+            String wrong = noSummoner ? null : checkMaterials(req, summoner, materials);
             if (wrong != null) return wrong;
             if (!canPay(room, userId, card.getSpecialCost() - CostModifiers.available(room, player, CostModifiers.Event.SPECIAL_SUMMON, "materialization", card, summoner)))
                 return "Ya no tienes gemas suficientes";
