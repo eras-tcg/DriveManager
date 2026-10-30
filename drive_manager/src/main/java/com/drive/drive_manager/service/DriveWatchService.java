@@ -338,6 +338,11 @@ public class DriveWatchService implements ApplicationRunner, DisposableBean {
         }
 
         String subEdition = resolveSubEdition(drive, file);
+        // A copy left in another SUB folder: its name says the real sub-edition (DriveParser does the same)
+        if (!java.util.Objects.equals(parsed.subEdition(), subEdition)) {
+            logger.warn("Skipping {}: it is in the folder of sub-edition {} but its name says {}", file.getName(), subEdition, parsed.subEdition());
+            return null;
+        }
 
         StagedChange staged = new StagedChange(
                 fileId,

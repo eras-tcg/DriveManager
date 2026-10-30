@@ -993,6 +993,10 @@ public class RoomService {
         if (deckId == null) return GameStateUpdate.error(room.getRoomId(), "Falta el mazo");
         List<CardSlot> slots = resolveDeck(deckId);
         if (slots.isEmpty()) return GameStateUpdate.error(room.getRoomId(), "No se encontró el mazo");
+        // Cards the engine does not run cannot be played; a test room plays them by hand (it is where they are tried)
+        String unplayable = room.isEditor() ? null : unprogrammedIn(slots);
+        if (unplayable != null) return GameStateUpdate.error(room.getRoomId(),
+                "Este mazo tiene cartas que todavía no se pueden jugar en el simulador: " + unplayable);
         player.setDeckId(deckId);
         player.setDeckName(deckListRepo.findById(deckId).map(DeckList::getDeckName).orElse(null));
         player.setDeck(new ArrayList<>(slots));
@@ -1000,6 +1004,15 @@ public class RoomService {
         player.setStarterCardId(slots.stream().filter(CardSlot::isStarter).map(CardSlot::getCardId).findFirst().orElse(null));
         player.setReady(false);
         return GameStateUpdate.from(room, "SET_DECK", userId);
+    }
+
+    /** The names of a deck's cards the engine does not run in full ("×2 Roto-G0, Sicario R3-D"), or null. */
+    static String unprogrammedIn(List<CardSlot> slots) {
+        Map<String, Integer> names = new LinkedHashMap<>();
+        for (CardSlot s : slots) if (s.getUnprogrammed() != null) names.merge(s.getCardName() != null ? s.getCardName() : "?", 1, Integer::sum);
+        if (names.isEmpty()) return null;
+        return names.entrySet().stream().map(e -> e.getValue() > 1 ? "×" + e.getValue() + " " + e.getKey() : e.getKey())
+                .collect(Collectors.joining(", "));
     }
 
     private GameStateUpdate handleSetStarter(GameRoom room, String userId, GameAction action) {

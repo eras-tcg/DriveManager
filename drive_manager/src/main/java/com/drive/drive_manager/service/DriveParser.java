@@ -20,6 +20,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -238,6 +239,13 @@ public class DriveParser {
                         ParsedFileName parsed = withRealName(parseFileName(file.name), file.name, folder.realNames());
                         if (parsed == null) {
                             logger.warn("Could not parse filename: {}", file.name);
+                            continue;
+                        }
+                        // The file name says its sub-edition ("E1_3-…"): a copy left in another SUB folder must not
+                        // become a card of that sub-edition
+                        if (!Objects.equals(parsed.subEdition, subEditionValue)) {
+                            logger.warn("{} is in {}/{} but its name says sub-edition {}: skipped", file.name, section, color,
+                                    parsed.subEdition == null ? "MAIN" : parsed.subEdition);
                             continue;
                         }
                         staged.add(new StagedChange(
