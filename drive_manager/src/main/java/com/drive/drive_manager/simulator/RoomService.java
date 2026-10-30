@@ -59,6 +59,10 @@ public class RoomService {
     @Autowired(required = false)
     private org.springframework.messaging.simp.SimpMessagingTemplate messagingTemplate;
 
+    /** Simulator actions count as someone using the site (a server that sleeps waits for nobody to be left). */
+    @Autowired(required = false)
+    private com.drive.drive_manager.service.ActivityTracker activityTracker;
+
     /** Every few seconds: closes rooms left empty and passes on the ownership of owners who left. */
     @org.springframework.scheduling.annotation.Scheduled(fixedDelay = 5000)
     public void sweepRooms() {
@@ -143,6 +147,11 @@ public class RoomService {
      * Applies an action and sends the room its update while still holding the room's lock: the update refers to
      * the room's live lists, so it is serialized before the next action can change them.
      */
+    /** Rooms with someone connected: a server that sleeps does not go to sleep while there is a game. */
+    public long activeRooms() {
+        return rooms.values().stream().filter(r -> r.getPlayers().values().stream().anyMatch(PlayerState::isConnected)).count();
+    }
+
     public void applyAndBroadcast(String roomId, String userId, GameAction action) {
         GameRoom lock = rooms.get(roomId);
         if (lock == null) { broadcast(roomId, applyAction(roomId, userId, action)); return; }
@@ -154,6 +163,7 @@ public class RoomService {
     }
 
     public GameStateUpdate applyAction(String roomId, String userId, GameAction action) {
+        if (activityTracker != null) activityTracker.touch();
         // One action at a time per room (the sweep below changes rooms too)
         GameRoom lock = rooms.get(roomId);
         GameStateUpdate update;

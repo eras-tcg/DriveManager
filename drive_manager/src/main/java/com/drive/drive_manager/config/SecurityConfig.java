@@ -39,9 +39,11 @@ public class SecurityConfig {
                 .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
                         // The whole site needs a session: only the deploy health check, the Drive webhook
-                        // (validated by its channel token) and the simulator socket are open.
+                        // (validated by its channel token), the idle check and the simulator socket are open.
                         .requestMatchers(HttpMethod.GET, "/api/drive/health").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/drive/webhook").permitAll()
+                        // A server that sleeps asks it to know whether anybody is still using the site
+                        .requestMatchers(HttpMethod.GET, "/api/system/activity").permitAll()
                         .requestMatchers("/ws/**").permitAll()
                         .anyRequest().authenticated()
                 )
