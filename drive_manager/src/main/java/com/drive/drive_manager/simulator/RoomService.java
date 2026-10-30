@@ -221,6 +221,7 @@ public class RoomService {
             case "SELECT_STARTER"       -> handleSelectStarter(room, userId, action);
             case "CONFIRM_MULLIGAN"     -> handleConfirmMulligan(room, userId, action);
             case "SET_MARKER"           -> handleSetMarker(room, userId, action);
+            case "SET_SKIP_OPTIONAL"    -> handleSetSkipOptional(room, userId, action);
             case "LIFE_HEAL"            -> handleLifeHeal(room, userId);
             case "LIFE_SHUFFLE"         -> handleLifeShuffle(room, userId);
             case "LIFE_ALL_DOWN"        -> handleLifeAllDown(room, userId);
@@ -1215,6 +1216,18 @@ public class RoomService {
         return update;
     }
 
+    /** Turns the offer of the player's optional triggered effects off or on (in a test room, of both sides). */
+    private GameStateUpdate handleSetSkipOptional(GameRoom room, String userId, GameAction action) {
+        PlayerState player = room.getPlayer(userId);
+        if (player == null) return GameStateUpdate.error(room.getRoomId(), "Jugador no encontrado");
+        boolean skip = action.getBoolean("value", false);
+        if (room.isEditor()) room.getPlayers().values().forEach(p -> p.setSkipOptional(skip));
+        else player.setSkipOptional(skip);
+        GameStateUpdate update = GameStateUpdate.from(room, "SET_SKIP_OPTIONAL", userId);
+        update.setLogEntry(player.getUsername() + (skip ? " apagó" : " encendió") + " los efectos opcionales");
+        return update;
+    }
+
     private void resetGameState(GameRoom room, boolean keepDecks) {
         room.getPlayers().values().forEach(player -> {
             player.getHand().clear();
@@ -2070,6 +2083,23 @@ public class RoomService {
         if (meta.getColorIdentity() != null) colors.add(meta.getColorIdentity());
         if (meta.getColors() != null) meta.getColors().stream().filter(c -> !colors.contains(c)).forEach(colors::add);
         slot.setColors(colors);
+    }
+
+    /**
+     * The cards whose metadata the engine does not run in full, by metadata id, with what is missing (as a card in
+     * play shows it). Cards that are fully programmed are left out.
+     */
+    public Map<String, String> unprogrammedCards() {
+        Map<String, String> pending = new java.util.LinkedHashMap<>();
+        for (Card meta : cardRepo.findAll()) {
+            List<String> keywords = new ArrayList<>(keywordNames(meta.getKeywordEffects()));
+            keywords.addAll(keywordNames(meta.getInheritKeywordEffects()));
+            String missing = CardEffects.pending(meta.getCardName(),
+                    meta.getEffects() == null ? 0 : meta.getEffects().size(),
+                    meta.getInheritEffects() == null ? 0 : meta.getInheritEffects().size(), keywords);
+            if (missing != null) pending.put(meta.getId(), missing);
+        }
+        return pending;
     }
 
     /** "Letalidad {cantidad}" + 1 → "Letalidad 1". */

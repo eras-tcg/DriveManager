@@ -102,6 +102,26 @@ class DestructionTest {
     // ------------------------------------------------------------------ ST3 "En Invocación"
 
     @Test
+    void withTheOptionalEffectsOffKroklersEffectIsNotOffered() {
+        host.setSkipOptional(true);
+        CardSlot krokler = card("kro", "Krokler", 2, 2, "P");
+        krokler.setSpecialSummonKind("ritual");
+        krokler.setSpecialCost(1);
+        krokler.setRequirement("Criatura nivel 1.");
+        host.getHand().add(krokler);
+        onField(host, card("sum", "Invocador", 1, 1, "P"), 20.0);
+        onField(guest, card("ec", "Carnhaus", 1, 1, "P"), 20.0);
+
+        assertThat(Summons.ritualByPlayer(room, "host", "kro", "sum")).isNull();
+
+        // It loses its moment: nothing to answer, the enemy stays and the history says why
+        assertThat(room.getPrompt()).isNull();
+        assertThat(room.isEngineBusy()).isFalse();
+        assertThat(guest.getField()).extracting(CardSlot::getInstanceId).contains("ec");
+        assertThat(room.getEventLog()).anyMatch(l -> l.getText().contains("efectos opcionales apagados"));
+    }
+
+    @Test
     void kroklerMayDestroyAFrontLineLevel1EnemyAndItsEffectThenResolves() {
         // By Ritual onto a creature of the Línea frontal: Krokler takes its place there
         CardSlot krokler = card("kro", "Krokler", 2, 2, "P");

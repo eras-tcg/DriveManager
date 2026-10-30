@@ -20,11 +20,17 @@ public class CardService {
     @Autowired
     private CardRepository cardRepository;
 
+    @Autowired
+    private CardNames cardNames;
+
     /**
      * Create a new card.
      */
     public Card createCard(Card card) {
-        return cardRepository.save(card);
+        Card saved = cardRepository.save(card);
+        // Its image takes the printed name (the file name has no real hyphens)
+        cardNames.syncImages(saved);
+        return saved;
     }
 
     /**
@@ -110,7 +116,9 @@ public class CardService {
                 card.setColors(cardDetails.getColors());
             }
 
-            return Optional.of(cardRepository.save(card));
+            Card saved = cardRepository.save(card);
+            cardNames.syncImages(saved);
+            return Optional.of(saved);
         }
         return Optional.empty();
     }

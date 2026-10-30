@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -20,7 +21,7 @@ import java.util.Map;
  * Manages staged Drive changes before they are applied to drive_cards and uploaded to R2.
  *
  * GET    /api/drive/staged           → list all pending staged changes
- * POST   /api/drive/staged/apply     → start applying all staged changes (background)
+ * POST   /api/drive/staged/apply     → start applying all staged changes, or {"ids": [...]} only those (background, in batches)
  * GET    /api/drive/staged/apply/status → how applying all of them goes
  * POST   /api/drive/staged/apply/{fileId} → apply one staged change
  * DELETE /api/drive/staged/{fileId}  → discard one staged change
@@ -43,11 +44,14 @@ public class StagedChangeController {
         return ResponseEntity.ok(stagedChangeService.listAll());
     }
 
-    /** Starts applying all of them in the background; GET /apply/status tells how it goes. */
+    /** Starts applying all of them (or the given ids) in the background; GET /apply/status tells how it goes. */
     @PreAuthorize("hasAuthority('manage_cards')")
     @PostMapping("/apply")
-    public ResponseEntity<StagedChangeService.ApplyProgress> applyAll() {
-        return ResponseEntity.accepted().body(stagedChangeService.startApplyAll());
+    public ResponseEntity<StagedChangeService.ApplyProgress> applyAll(@RequestBody(required = false) ApplyRequest request) {
+        return ResponseEntity.accepted().body(stagedChangeService.startApply(request != null ? request.ids() : null));
+    }
+
+    public record ApplyRequest(List<String> ids) {
     }
 
     @PreAuthorize("hasAuthority('manage_cards')")
