@@ -77,6 +77,8 @@ public final class Summons {
         // Only one structure can be played normally per turn (by effect or from a life it does not count)
         boolean structure = "structure".equals(card.getCardType());
         if (structure && structurePlayed(room, userId)) return "Solo puedes jugar una estructura por turno";
+        String blocked = Chain.cannotActivateOnPlay(room, userId, card);
+        if (blocked != null) return blocked;
         int cost = CardEffects.playCost(room, userId, card);
         if (!canPay(room, userId, cost)) return "No tienes gemas suficientes: tienes " + gemsOf(room, userId) + " y cuesta " + cost;
         pay(room, userId, cost);
@@ -84,6 +86,14 @@ public final class Summons {
         play(room, player, card, cost, x, y, null);
         advance(room);
         return null;
+    }
+
+    /** Utilities in the player's hand whose "En Juego" cannot be activated now: the board does not offer to play them. */
+    public static List<String> unplayable(GameRoom room, String userId) {
+        PlayerState player = room.getPlayer(userId);
+        if (player == null || room.getStatus() != GameRoom.RoomStatus.IN_PROGRESS) return List.of();
+        return new ArrayList<>(player.getHand()).stream().filter(c -> Chain.cannotActivateOnPlay(room, userId, c) != null)
+                .map(CardSlot::getInstanceId).toList();
     }
 
     /** The player already played a structure normally this turn. */

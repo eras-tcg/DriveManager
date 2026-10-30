@@ -158,6 +158,7 @@ public final class Removals {
         for (CardEffects.Replacement r : CardEffects.replacementsOf(card)) {
             if (r.destroyOnly() && !destroy) continue;
             if (r.byOpponentOnly() && !byOpponent) continue;
+            if (r.limit() == Limit.DEFINITIVE && room.isFirstTurn()) continue;
             if (r.limit() != Limit.NONE && room.getUsedThisTurn().contains(replacementKey(owner, card, r))) continue;
             boolean payable = switch (r.cost()) {
                 case TRIBUTE_TWO_MATERIALS -> card.getMaterials().size() >= 2;
@@ -182,6 +183,8 @@ public final class Removals {
     }
 
     static String replacementKey(PlayerState owner, CardSlot card, CardEffects.Replacement r) {
+        // A Definitive one counts as the player's Definitive effect of the turn (only 1 per turn, whichever card)
+        if (r.limit() == Limit.DEFINITIVE) return owner.getUserId() + "|" + EffectEngine.DEFINITIVE_USED;
         return r.limit() == Limit.ONCE_PER_TURN_BETWEEN_COPIES ? owner.getUserId() + "|" + r.id() : owner.getUserId() + "|" + card.getInstanceId() + "|" + r.id();
     }
 

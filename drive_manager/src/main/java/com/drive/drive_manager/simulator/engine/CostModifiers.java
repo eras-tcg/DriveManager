@@ -73,6 +73,8 @@ public final class CostModifiers {
 
     /** The mark of a limited modifier used this turn (between copies: by the card's name). */
     static String usageKey(PlayerState player, Use use) {
+        // A Definitive one counts as the player's Definitive effect of the turn (only 1 per turn, whichever card)
+        if (use.modifier().limit() == EffectScript.Limit.DEFINITIVE) return player.getUserId() + "|" + EffectEngine.DEFINITIVE_USED;
         return player.getUserId() + "|cost-modifier|" + use.holder().getCardName().trim().toLowerCase(Locale.ROOT);
     }
 
@@ -140,6 +142,7 @@ public final class CostModifiers {
                 // "puedes agotar…" the player said no to, for this summon
                 if (m.payment().kind() == PaymentKind.TAP_SELF && card != null && room.getUsedThisTurn().contains(tapKey(holder, card, false))) continue;
                 Use use = new Use(m, holder);
+                if (m.limit() == EffectScript.Limit.DEFINITIVE && room.isFirstTurn()) continue;
                 if (m.limit() != EffectScript.Limit.NONE && room.getUsedThisTurn().contains(usageKey(player, use))) continue;
                 uses.add(use);
             }

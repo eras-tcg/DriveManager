@@ -365,7 +365,7 @@
      {
       "activationCondition": "Luego",
       "cost": "",
-      "resolution": "toma 1 carta Verde o [dragón] nivel 1 de tus tributos reduciendo su coste en 1."
+      "resolution": "toma 1 carta Verde o [dragón] de tus tributos y coloca esta carta en tu retaguardia agotada."
      }
     ],
     "kind": "disparado",

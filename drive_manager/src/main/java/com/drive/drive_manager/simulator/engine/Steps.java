@@ -173,7 +173,10 @@ public final class Steps {
             case UntapAlly untap -> allies(player).stream().anyMatch(c -> reactivable(c) && untap.filter().matches(c));
             case PickAlly pick -> !pickable(room, effect, player, pick).isEmpty();
             case MoveSelfToFront ignored -> onField != null && !inFrontLine(onField);
-            case PlaySelfFree ignored -> find(player.getHand(), effect.getSourceInstanceId()) != null;
+            case PlaySelfFree ignored -> {
+                CardSlot self = find(player.getHand(), effect.getSourceInstanceId());
+                yield self != null && Chain.cannotActivateOnPlay(room, player.getUserId(), self) == null;
+            }
             case ChooseWeakestEnemy weakest -> !enemyTargets(room, effect, weakest.filter()).isEmpty();
             case SummonSelf ss -> {
                 CardSlot self = find(zone(player, ss.zone()), effect.getSourceInstanceId());
@@ -1504,6 +1507,7 @@ public final class Steps {
         return zone(player, play.zone()).stream()
                 .filter(c -> ("utility".equals(c.getCardType()) || "structure".equals(c.getCardType())) && play.filter().matches(c))
                 .filter(c -> canPay(room, player.getUserId(), Math.max(0, (c.getCost() == null ? 0 : c.getCost()) - play.reduce())))
+                .filter(c -> Chain.cannotActivateOnPlay(room, player.getUserId(), c) == null)
                 .toList();
     }
 
