@@ -107,6 +107,14 @@ public class DriveParser {
      */
     public SyncResult syncCards(List<String> editions, List<String> subEditions, List<String> colors)
             throws IOException {
+        List<StagedChange> staged = scan(editions, subEditions, colors);
+        stagedChangeRepository.saveAll(staged);
+        logger.info("Staged {} file(s) from Drive bulk scan.", staged.size());
+        return new SyncResult(staged.size(), staged);
+    }
+
+    /** Every matching card image in Drive, as an upsert (nothing is saved). Empty filters: all of them. */
+    public List<StagedChange> scan(List<String> editions, List<String> subEditions, List<String> colors) throws IOException {
         try {
             Drive drive = driveClientFactory.create();
 
@@ -129,9 +137,7 @@ public class DriveParser {
                 staged.addAll(stageEditions(drive, eds, subs, cols, now));
             }
 
-            stagedChangeRepository.saveAll(staged);
-            logger.info("Staged {} file(s) from Drive bulk scan.", staged.size());
-            return new SyncResult(staged.size(), staged);
+            return staged;
 
         } catch (GeneralSecurityException e) {
             throw new IOException("Security error creating Drive client", e);
