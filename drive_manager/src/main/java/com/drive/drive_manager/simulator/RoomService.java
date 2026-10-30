@@ -1678,19 +1678,24 @@ public class RoomService {
         return GameStateUpdate.from(room, "ADD_RESOURCE", userId);
     }
 
+    /** "material" or "materials" (the page sends the plural, as the attachment lists are named); else resources. */
+    static boolean isMaterial(String attachmentType) {
+        return attachmentType != null && attachmentType.startsWith("material");
+    }
+
     private GameStateUpdate handleMoveFromAttachment(GameRoom room, String userId, GameAction action) {
         String tp = action.getString("targetPlayerId");
         PlayerState player = room.getPlayer(tp != null ? tp : userId);
         if (player == null) return GameStateUpdate.error(room.getRoomId(), "Player not in room");
         String instanceId      = action.getString("instanceId");
         String attachmentOf    = action.getString("attachmentOf");
-        String attachmentType  = action.getString("attachmentType"); // material | resource
+        String attachmentType  = action.getString("attachmentType"); // material(s) | resource(s)
         String toZone          = action.getString("toZone");
 
         CardSlot parent = player.getField().stream().filter(c -> attachmentOf.equals(c.getInstanceId())).findFirst().orElse(null);
         if (parent == null) return GameStateUpdate.error(room.getRoomId(), "Parent not found");
 
-        List<CardSlot> list = "material".equals(attachmentType) ? parent.getMaterials() : parent.getResources();
+        List<CardSlot> list = isMaterial(attachmentType) ? parent.getMaterials() : parent.getResources();
         CardSlot card = list.stream().filter(c -> instanceId.equals(c.getInstanceId())).findFirst().orElse(null);
         if (card == null) return GameStateUpdate.error(room.getRoomId(), "Card not found");
 
@@ -1812,7 +1817,7 @@ public class RoomService {
                 .filter(c -> parentId.equals(c.getInstanceId())).findFirst().orElse(null);
         if (parent == null) return GameStateUpdate.error(room.getRoomId(), "Main card not found");
 
-        List<CardSlot> list = "material".equals(attachmentType) ? parent.getMaterials() : parent.getResources();
+        List<CardSlot> list = isMaterial(attachmentType) ? parent.getMaterials() : parent.getResources();
         CardSlot attachment = list.stream()
                 .filter(c -> instanceId.equals(c.getInstanceId())).findFirst().orElse(null);
         if (attachment == null) return GameStateUpdate.error(room.getRoomId(), "Attachment not found");
@@ -1837,7 +1842,7 @@ public class RoomService {
         parent.setTapped(false); parent.setFaceDown(false); parent.setStrengthModifier(0);
 
         // Parent goes into the same attachment type it came from
-        if ("material".equals(attachmentType)) {
+        if (isMaterial(attachmentType)) {
             inheritedMaterials.add(parent);
             attachment.setMaterials(inheritedMaterials);
             attachment.setResources(inheritedResources);
@@ -1944,7 +1949,7 @@ public class RoomService {
                 .findFirst().orElse(null);
         if (parent == null) return GameStateUpdate.error(room.getRoomId(), "Card not found");
 
-        List<CardSlot> attachments = "material".equals(attachmentType)
+        List<CardSlot> attachments = isMaterial(attachmentType)
                 ? parent.getMaterials() : parent.getResources();
 
         Map<String, CardSlot> map = new LinkedHashMap<>();
@@ -1967,15 +1972,15 @@ public class RoomService {
 
         String parentId   = action.getString("parentId");
         String instanceId = action.getString("instanceId");
-        String fromType   = action.getString("fromType"); // "material" | "resource"
+        String fromType   = action.getString("fromType"); // "material(s)" | "resource(s)"
 
         CardSlot parent = player.getField().stream()
                 .filter(c -> parentId.equals(c.getInstanceId()))
                 .findFirst().orElse(null);
         if (parent == null) return GameStateUpdate.error(room.getRoomId(), "Parent card not found");
 
-        List<CardSlot> fromList = "material".equals(fromType) ? parent.getMaterials() : parent.getResources();
-        List<CardSlot> toList   = "material".equals(fromType) ? parent.getResources() : parent.getMaterials();
+        List<CardSlot> fromList = isMaterial(fromType) ? parent.getMaterials() : parent.getResources();
+        List<CardSlot> toList   = isMaterial(fromType) ? parent.getResources() : parent.getMaterials();
 
         CardSlot card = fromList.stream()
                 .filter(c -> instanceId.equals(c.getInstanceId()))

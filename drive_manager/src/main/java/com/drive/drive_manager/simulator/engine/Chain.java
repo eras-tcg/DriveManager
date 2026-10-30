@@ -224,6 +224,8 @@ public final class Chain {
                 boolean used = s.limit() != Limit.NONE && room.getUsedThisTurn().contains(usageKey(e, s));
                 if (used || !canActivate(room, e, s)) {
                     room.getTriggerQueue().remove(e);
+                    // Said in the history: otherwise the player only sees that nothing happened
+                    log(room, e.getSourceName() + ": " + e.getLabel() + (used ? " ya se usó este turno" : " no puede activarse (no se puede pagar su coste o no hay objetivos válidos)"), null);
                     dropped = true;
                 }
             }
