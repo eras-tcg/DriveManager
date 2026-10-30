@@ -1,4 +1,5 @@
-# Build on GitHub, publish to GHCR, deploy with eras-tcg/infra (self-hosted runner in the VPS).
+# Build on GitHub, publish to GHCR, deploy to AWS with eras-tcg/infra (deploy-aws.yml: image copied to ECR,
+# eras-deploy on the server through SSM with healthcheck and rollback).
 #   PR to develop/main -> tests + build only
 #   push to develop    -> build + push + deploy staging
 #   push to main       -> build + push + deploy production (waits for approval)
@@ -99,11 +100,12 @@ jobs:
     permissions:
       contents: read
       packages: read
-    uses: eras-tcg/infra/.github/workflows/deploy.yml@main
+    uses: eras-tcg/infra/.github/workflows/deploy-aws.yml@main
+    secrets: inherit
     with:
       service: drive-manager
       environment: staging
-      image: ${{ needs.build.outputs.image }}
+      image_tag: ${{ github.sha }}
 
   deploy-production:
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
@@ -111,19 +113,21 @@ jobs:
     permissions:
       contents: read
       packages: read
-    uses: eras-tcg/infra/.github/workflows/deploy.yml@main
+    uses: eras-tcg/infra/.github/workflows/deploy-aws.yml@main
+    secrets: inherit
     with:
       service: drive-manager
       environment: production
-      image: ${{ needs.build.outputs.image }}
+      image_tag: ${{ github.sha }}
 
   redeploy:
     if: github.event_name == 'workflow_dispatch'
     permissions:
       contents: read
       packages: read
-    uses: eras-tcg/infra/.github/workflows/deploy.yml@main
+    uses: eras-tcg/infra/.github/workflows/deploy-aws.yml@main
+    secrets: inherit
     with:
       service: drive-manager
       environment: ${{ inputs.environment }}
-      image: ghcr.io/eras-tcg/drive-manager:${{ inputs.image_tag }}
+      image_tag: ${{ inputs.image_tag }}
