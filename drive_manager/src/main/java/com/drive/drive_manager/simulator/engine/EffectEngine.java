@@ -270,6 +270,7 @@ public final class EffectEngine {
             for (CardSlot source : p.getField()) {
                 if (source.isFaceDown()) continue;
                 for (CardEffects.Aura a : CardEffects.aurasOf(source)) {
+                    if (a.enemies()) continue;
                     if (a.allyTurn() && !p.getUserId().equals(room.getCurrentTurnUserId())) continue;
                     if (a.condition() != null && !a.condition().test(room, null, source, p.getUserId())) continue;
                     for (CardSlot ally : p.getField()) if (a.targets().matches(ally)) aura.merge(ally.getInstanceId(), a.strength(), Integer::sum);
@@ -295,6 +296,26 @@ public final class EffectEngine {
                 card.setContinuousStrength(strength);
                 card.setContinuousLevel(level);
                 card.setContinuousKeywords(keywords);
+            }
+        }
+        // Then what cards do to their enemies, with the enemies' strength already worked out
+        for (PlayerState p : room.getPlayers().values()) {
+            PlayerState opponent = room.getPlayer(room.getOpponentId(p.getUserId()));
+            if (opponent == null) continue;
+            for (CardSlot source : p.getField()) {
+                if (source.isFaceDown()) continue;
+                for (CardEffects.Aura a : CardEffects.aurasOf(source)) {
+                    if (!a.enemies()) continue;
+                    if (a.allyTurn() && !p.getUserId().equals(room.getCurrentTurnUserId())) continue;
+                    if (a.condition() != null && !a.condition().test(room, null, source, p.getUserId())) continue;
+                    for (CardSlot enemy : opponent.getField()) {
+                        if (!a.targets().matches(enemy)) continue;
+                        List<String> keywords = new ArrayList<>(enemy.getContinuousKeywords());
+                        keywords.addAll(a.keywords());
+                        enemy.setContinuousKeywords(keywords);
+                        enemy.setContinuousStrength(enemy.getContinuousStrength() + a.strength());
+                    }
+                }
             }
         }
     }

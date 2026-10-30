@@ -1317,13 +1317,9 @@ public final class CardEffects {
                 "Heredado de Wyverno De Las Nubes: tributa 3 cartas del tope de tu mazo.",
                 List.of(new TributeTop(3))));
         // E1.1-P3 Krull
-        add("krull",
-                new EffectScript("krull:en-invocacion", Moment.ON_SUMMON, true, EN_INVOCACION,
-                        "Mira las primeras 3 cartas de tu mazo: de ellas toma hasta 1 [bestia]. Envía el resto al fondo de tu mazo.",
-                        List.of(new LookTop(3), new TakeFromLookedRestToBottom(1, CardFilter.any().withClasses("bestia")))),
-                new EffectScript("krull:al-atacar", Moment.ON_ATTACK, true, AL_ATACAR,
-                        "Roba 1 carta. Luego: tributa 1 carta de tu mano.",
-                        List.of(new Draw(1), new TributeFromHand(1))));
+        add("krull", new EffectScript("krull:al-atacar", Moment.ON_ATTACK, true, AL_ATACAR,
+                "Tributa 1 carta de tu mano.",
+                List.of(new TributeFromHand(1))));
         // E1.1-P9 Aracnopanto
         add("aracnopanto",
                 new EffectScript("aracnopanto:en-invocacion", Moment.ON_SUMMON, false, EN_INVOCACION,
@@ -1492,17 +1488,20 @@ public final class CardEffects {
                 List.of(new LookTopBy(new Amount.Scaled(new Amount.InZone("tributeZone", CardFilter.any().named("Jábalix")), 1, 3)),
                         new TakeFromLookedRestToBottom(1, CardFilter.colors("P", "W").withClasses("mutante")), new TributeFromHand(1))));
         // E1.1-P4 Cofre Mímico
-        add("cofre mímico", new EffectScript("cofre-mimico:tributada", Moment.ON_EVENT, false, "En Tributos",
-                "Si esta carta es tributada desde tus vidas: puedes invocarla. Si lo haces: puedes elegir 1 enemigo nivel 1; destrúyelo.",
-                List.of(new SummonSelf("tributeZone", Amount.fixed(0), false), new IfDone(2), new ChooseEnemy(1, enemy.withLevel(1), true),
-                        new DestroyChosen()))
-                .when(new ThisTributed("lifeStack", null, null))
-                .fromZone("tributeZone"));
+        add("cofre mímico",
+                new EffectScript("cofre-mimico:tributada", Moment.ON_EVENT, false, "En Tributos",
+                        "Si esta carta es tributada desde tus vidas: puedes invocarla en tu línea frontal.",
+                        List.of(new SummonSelf("tributeZone", Amount.fixed(0), true)))
+                        .when(new ThisTributed("lifeStack", null, null))
+                        .fromZone("tributeZone"),
+                new EffectScript("cofre-mimico:en-invocacion", Moment.ON_SUMMON, false, EN_INVOCACION,
+                        "Puedes elegir 1 enemigo nivel 1; destrúyelo.",
+                        List.of(new ChooseEnemy(1, enemy.withLevel(1), true)), List.of(new DestroyChosen())));
         // E1.1-P5 Lomo Plateado
         add("lomo plateado", new EffectScript("lomo-plateado:turno-aliado", Moment.ACTIVATED, false, "Turno Aliado",
-                "Una vez por turno: puedes sacrificar 1 aliado para que esta carta gane fuerza 3 hasta el final del turno. Si lo haces: puedes mover "
-                        + "esta carta a tu línea frontal.",
-                List.of(new IfPossible(), new SacrificeAlly(false), new SubjectIsThisCard(), new GainStrength(3),
+                "Una vez por turno: puedes sacrificar 1 otro aliado para que esta carta gane fuerza 3 hasta el final del turno. Si lo haces: puedes "
+                        + "mover esta carta a tu línea frontal.",
+                List.of(new IfPossible(), new SacrificeAlly(false, true), new SubjectIsThisCard(), new GainStrength(3),
                         new MayDo("¿Mueves esta carta a tu línea frontal?", 1), new MoveSelfToFront()))
                 .onlyAllyTurn()
                 .limited(Limit.ONCE_PER_TURN));
@@ -1528,7 +1527,7 @@ public final class CardEffects {
                 false, null, Payment.tributeAsResource(CardFilter.creatures().withMaxStrength(6)), 0));
         // E1.1-W1 Hechizo Premonitorio
         add("hechizo premonitorio", new EffectScript("hechizo-premonitorio:en-juego", Moment.ON_PLAY, true, EN_JUEGO,
-                "Efecto Definitivo. Mira las primeras 2 cartas de tu mazo: devuélvelas al tope o envíalas al fondo de tu mazo. Luego: roba 1 carta.",
+                "Efecto Definitivo. Mira las primeras 2 cartas de tu mazo: devuélvelas al tope o al fondo de tu mazo. Luego: roba 1 carta.",
                 List.of(new LookTop(2), new LookedToTopOrBottom(), new Draw(1)))
                 .limited(Limit.DEFINITIVE));
         // ---- E1.1, third batch: rulings of 2026-10-29 and new mechanics
@@ -1551,10 +1550,11 @@ public final class CardEffects {
                 List.of(new ReduceChosen(8, false), new IfChosenGone(1), new SkipBlockStep())));
         // E1.1-G11 Lectranatus
         add("lectranatus", new EffectScript("lectranatus:en-invocacion", Moment.ON_SUMMON, true, EN_INVOCACION,
-                "Elige 1 enemigo de fuerza 9 o menos; destrúyelo. Luego: elige todos los enemigos de fuerza 3 o menos; ninguno puede agotarse hasta "
-                        + "el final del turno oponente.",
-                List.of(new ChooseEnemy(1, enemy.withMaxStrength(9))),
-                List.of(new DestroyChosen(), new TargetAllEnemies(enemy.withMaxStrength(3)), new ChosenCannotBeExhausted("nextTurn"))));
+                "Elige hasta 1 enemigo de fuerza 9 o menos; destrúyelo.",
+                List.of(new ChooseEnemy(1, enemy.withMaxStrength(9), true)), List.of(new DestroyChosen())));
+        // "Todos Los Turnos: los enemigos de fuerza 3 o menos no pueden declarar ataque" (continuous, on the opponent's creatures)
+        aura("lectranatus", new Aura(TODOS, "Los enemigos de fuerza 3 o menos no pueden declarar ataque.", false, null,
+                CardFilter.creatures().withMaxStrength(3), 0, true, List.of(EffectEngine.NO_ATTACK)));
         inherit("lectranatus", new EffectScript("lectranatus:hereda-al-atacar", Moment.ON_ATTACK, true, AL_ATACAR,
                 "Heredado de Lectranatus: elige 1 enemigo de fuerza 9 o menos; este no puede agotarse hasta el final del turno.",
                 List.of(new ChooseEnemy(1, enemy.withMaxStrength(9))), List.of(new ChosenCannotBeExhausted("turn"))));
@@ -1660,8 +1660,20 @@ public final class CardEffects {
         if (CONTINUOUS.putIfAbsent(name, List.of(effects)) != null) throw new IllegalStateException("Carta registrada dos veces: " + name);
     }
 
-    /** A continuous effect on other cards: while its condition holds, the allies that match get that strength. */
-    public record Aura(String label, String text, boolean allyTurn, Condition condition, CardFilter targets, int strength) {}
+    /**
+     * A continuous effect on other cards: while its condition holds, the cards that match get that strength and those
+     * keywords — its allies, or with {@code enemies} the opponent's ("los enemigos de fuerza 3 o menos no pueden declarar ataque").
+     */
+    public record Aura(String label, String text, boolean allyTurn, Condition condition, CardFilter targets, int strength,
+                       boolean enemies, List<String> keywords) {
+        public Aura(String label, String text, boolean allyTurn, Condition condition, CardFilter targets, int strength) {
+            this(label, text, allyTurn, condition, targets, strength, false, List.of());
+        }
+
+        public Aura {
+            keywords = keywords == null ? List.of() : List.copyOf(keywords);
+        }
+    }
 
     private static void aura(String name, Aura... auras) {
         if (AURAS.putIfAbsent(name, List.of(auras)) != null) throw new IllegalStateException("Carta registrada dos veces: " + name);

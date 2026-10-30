@@ -221,4 +221,12 @@ class DesignerRulingsBatch2Test {
         assertThat(hebi).extracting(EffectScript::moment).containsExactly(EffectScript.Moment.ON_SUMMON, EffectScript.Moment.ON_ATTACK_END);
         assertThat(hebi.get(1).limit()).isEqualTo(EffectScript.Limit.ONCE_PER_TURN);
     }
+
+    @Test
+    void cofreMimicoEntersTheFrontLineFromTheTributosAndItsEnInvocacionIsApart() {
+        List<EffectScript> cofre = CardEffects.of(card("cm", "Cofre Mímico", 1, 1, "P"));
+        assertThat(cofre).extracting(EffectScript::moment).containsExactly(EffectScript.Moment.ON_EVENT, EffectScript.Moment.ON_SUMMON);
+        assertThat(cofre.get(0).sourceZone()).isEqualTo("tributeZone");
+        assertThat(cofre.get(0).steps()).containsExactly(new EffectStep.SummonSelf("tributeZone", Amount.fixed(0), true));
+    }
 }

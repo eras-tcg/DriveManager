@@ -169,7 +169,7 @@ public final class Steps {
             case SendFromZoneToDeckBottom send -> zone(player, send.zone()).stream().filter(send.filter()::matches).count() >= send.count();
             case TapSelf ignored -> onField != null && !onField.isTapped();
             case SacrificeSelf ignored -> onField != null;
-            case SacrificeAlly sacrifice -> !keepForB(effect, sacrifice.toUntapAnother() ? sacrificeToUntap(player) : allies(player)).isEmpty();
+            case SacrificeAlly sacrifice -> !sacrificable(effect, player, sacrifice).isEmpty();
             case UntapAlly untap -> allies(player).stream().anyMatch(c -> reactivable(c) && untap.filter().matches(c));
             case PickAlly pick -> !pickable(room, effect, player, pick).isEmpty();
             case MoveSelfToFront ignored -> onField != null && !inFrontLine(onField);
@@ -183,8 +183,8 @@ public final class Steps {
                 yield self != null && "creature".equals(self.getCardType()) && self.getCost() != null
                         && canPay(room, player.getUserId(), Math.max(0, self.getCost() - ss.reduce().of(room, player.getUserId())));
             }
-            case SacrificeAllyWhere sacrifice -> keepForB(effect, allies(player)).stream().anyMatch(sacrifice.filter()::matches);
-            case TributeAlly tribute -> keepForB(effect, allies(player)).stream().anyMatch(tribute.filter()::matches);
+            case SacrificeAllyWhere sacrifice -> allies(player).stream().anyMatch(sacrifice.filter()::matches);
+            case TributeAlly tribute -> allies(player).stream().anyMatch(tribute.filter()::matches);
             case TributeAllyMaterial ignored -> !allyMaterials(player).isEmpty();
             case PickAllyWhere pick -> !pickableWhere(room, effect, player, pick).isEmpty();
             case MaterialsToHand ignored -> onField != null && !onField.getMaterials().isEmpty();
@@ -1072,7 +1072,7 @@ public final class Steps {
                 return false;
             }
             case SacrificeAlly sacrifice -> {
-                List<CardSlot> valid = keepForB(effect, sacrifice.toUntapAnother() ? sacrificeToUntap(player) : allies(player));
+                List<CardSlot> valid = sacrificable(effect, player, sacrifice);
                 if (valid.isEmpty()) return false;
                 pick(room, effect, sacrifice.toUntapAnother()
                         ? "Sacrifica 1 aliado. No puede ser el único aliado agotado que queda por reactivar."
@@ -1204,13 +1204,13 @@ public final class Steps {
                 return false;
             }
             case SacrificeAllyWhere sacrifice -> {
-                List<CardSlot> valid = keepForB(effect, allies(player)).stream().filter(sacrifice.filter()::matches).toList();
+                List<CardSlot> valid = allies(player).stream().filter(sacrifice.filter()::matches).toList();
                 if (valid.isEmpty()) return false;
                 pick(room, effect, "Sacrifica 1 aliado " + sacrifice.filter().describe() + ".", "Sacrificar", player.getField(), ids(valid), 1);
                 return true;
             }
             case TributeAlly tribute -> {
-                List<CardSlot> valid = keepForB(effect, allies(player)).stream().filter(tribute.filter()::matches).toList();
+                List<CardSlot> valid = allies(player).stream().filter(tribute.filter()::matches).toList();
                 if (valid.isEmpty()) return false;
                 pick(room, effect, "Tributa 1 aliado " + tribute.filter().describe() + ": va a tus tributos.", "Tributar", player.getField(), ids(valid), 1);
                 return true;
@@ -1403,20 +1403,10 @@ public final class Steps {
         }
     }
 
-    /** Steps that act on the effect's own card ("esta carta"). */
-    private static boolean onThisCard(EffectStep step) {
-        return step instanceof SubjectIsThisCard || step instanceof MoveSelfToFront || step instanceof UntapSelf || step instanceof TapSelf;
-    }
-
-    /**
-     * "Puedes A para B": both must be possible (designer ruling 2026-10-30). When B acts on this card, A cannot remove
-     * this card (Lomo Plateado: "sacrifica 1 aliado para que esta carta gane fuerza 3" cannot sacrifice itself).
-     */
-    static List<CardSlot> keepForB(PendingEffect effect, List<CardSlot> candidates) {
-        EffectScript script = script(effect);
-        if (script == null) return candidates;
-        boolean selfLater = java.util.stream.Stream.concat(script.cost().stream(), script.steps().stream()).anyMatch(Steps::onThisCard);
-        return selfLater ? candidates.stream().filter(c -> !c.getInstanceId().equals(effect.getSourceInstanceId())).toList() : candidates;
+    /** Allies "sacrifica 1 [otro] aliado" may take. */
+    static List<CardSlot> sacrificable(PendingEffect effect, PlayerState player, SacrificeAlly sacrifice) {
+        List<CardSlot> all = sacrifice.toUntapAnother() ? sacrificeToUntap(player) : allies(player);
+        return sacrifice.other() ? all.stream().filter(c -> !c.getInstanceId().equals(effect.getSourceInstanceId())).toList() : all;
     }
 
     static void pick(GameRoom room, PendingEffect effect, String instruction, String chosenLabel,

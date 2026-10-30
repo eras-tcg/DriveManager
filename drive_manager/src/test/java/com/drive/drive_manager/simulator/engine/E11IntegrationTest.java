@@ -56,18 +56,9 @@ class E11IntegrationTest {
     }
 
     @Test
-    void krullTakesABeastFromTheTopThree() {
-        host.getDeck().clear();
-        host.getDeck().addAll(List.of(card("d1", "Otra", 1, 1, "P"), withClasses(card("d2", "Bestia", 1, 1, "P"), "bestia"),
-                card("d3", "Otra más", 1, 1, "P"), card("d4", "Cuarta", 1, 1, "P")));
-        CardSlot krull = card("k", "Krull", 1, 1, "P");
-        host.getHand().add(krull);
-        assertThat(Summons.normalSummon(room, "host", "k", 50.0, 75.0)).isNull();
-        Prompt take = room.getPrompt();
-        assertThat(take.getValidIds()).containsExactly("d2");
-        Answers.answer(room, "host", take.getId(), List.of("d2"), List.of("d1", "d3"));
-        assertThat(host.getHand()).extracting(CardSlot::getInstanceId).contains("d2");
-        assertThat(host.getDeck()).extracting(CardSlot::getInstanceId).endsWith("d1", "d3");
+    void krullHasNoEnInvocacionNow() {
+        // The reprinted card only keeps "Al Atacar: tributa 1 carta de tu mano"
+        assertThat(CardEffects.of(card("k", "Krull", 1, 1, "P"))).extracting(EffectScript::moment).containsExactly(EffectScript.Moment.ON_ATTACK);
     }
 
     @Test

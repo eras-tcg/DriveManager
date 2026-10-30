@@ -319,10 +319,11 @@ public sealed interface EffectStep {
     /**
      * "sacrifica 1 aliado": the controller picks one of their creatures on the field. With {@code toUntapAnother}
      * ("sacrifica 1 aliado para reactivar otro") both must be possible: the one sacrificed cannot be the only
-     * ally left to reactivate.
+     * ally left to reactivate. With {@code other} ("sacrifica 1 otro aliado") it cannot be this card.
      */
-    record SacrificeAlly(boolean toUntapAnother) implements NeedsTarget {
-        public SacrificeAlly() { this(false); }
+    record SacrificeAlly(boolean toUntapAnother, boolean other) implements NeedsTarget {
+        public SacrificeAlly() { this(false, false); }
+        public SacrificeAlly(boolean toUntapAnother) { this(toUntapAnother, false); }
     }
 
     /** "reactiva 1 aliado" / "reactivar otro": the controller picks an exhausted ally that can be reactivated. */

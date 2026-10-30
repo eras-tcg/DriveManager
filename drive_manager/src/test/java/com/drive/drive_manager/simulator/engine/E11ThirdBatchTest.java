@@ -160,17 +160,26 @@ class E11ThirdBatchTest {
     }
 
     @Test
-    void lectranatusLeavesTheWeakEnemiesUnableToBeExhausted() {
+    void lectranatusDestroysUpToOneAndWeakEnemiesCannotDeclareAttacks() {
         CardSlot strong = onField(guest, card("s", "Fuerte", 1, 1, "R"));
         strong.setStrength(9);
         CardSlot weak = onField(guest, card("w", "Débil", 1, 1, "R"));
+        weak.setStrength(2);
         CardSlot lect = withClasses(card("lc", "Lectranatus", 6, 4, "G"), "dragón");
         summonToFront(lect);
         answer(room.getPrompt(), "s");
         assertThat(guest.getField()).doesNotContain(strong);
-        assertThat(EffectEngine.keywords(weak)).contains(EffectEngine.CANNOT_TAP);
+        // Continuous: any enemy of strength 3 or less, also one that enters later
+        CardSlot later = onField(guest, card("l", "Llega después", 1, 1, "R"));
+        later.setStrength(3);
+        EffectEngine.refreshContinuous(room);
         room.setCurrentTurnUserId("guest");
-        assertThat(CombatRules.attackByPlayer(room, "guest", "w", null)).contains("no puede agotarse");
+        assertThat(CombatRules.attackByPlayer(room, "guest", "w", null)).contains("no puede declarar ataque");
+        assertThat(CombatRules.attackByPlayer(room, "guest", "l", null)).contains("no puede declarar ataque");
+        // Gone from the field, the enemies are free again
+        host.getField().remove(lect);
+        EffectEngine.refreshContinuous(room);
+        assertThat(EffectEngine.keywords(weak)).doesNotContain(EffectEngine.NO_ATTACK);
     }
 
     @Test
