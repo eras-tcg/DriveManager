@@ -368,17 +368,24 @@ public class RoomService {
         if (room.getEventLog().size() > 300) room.getEventLog().remove(0);
     }
 
+    /** A player's icon as the profile stores it ("icon:color"), or null when it is not one. */
+    static String validAvatar(String avatar) {
+        return avatar != null && avatar.matches("[a-z][a-z-]{0,23}:[BGPRW]") ? avatar : null;
+    }
+
     private GameStateUpdate handleJoin(GameRoom room, String userId, GameAction action) {
         if (room.isFull() && !room.getPlayers().containsKey(userId)) {
             return GameStateUpdate.error(room.getRoomId(), "Room is full");
         }
         String username = action.getString("username");
         String deckId   = action.getString("deckId");
+        String avatar   = validAvatar(action.getString("avatar"));
         room.setEmptySince(null);
 
         if (room.getPlayers().containsKey(userId)) {
             PlayerState existing = room.getPlayer(userId);
             existing.setConnected(true);
+            existing.setAvatar(avatar);
             if (room.getStatus() == GameRoom.RoomStatus.WAITING && deckId != null) {
                 existing.setDeckId(deckId);
                 List<CardSlot> slots = resolveDeck(deckId);
@@ -391,6 +398,7 @@ public class RoomService {
 
         PlayerState player = new PlayerState(userId, username);
         player.setConnected(true);
+        player.setAvatar(avatar);
 
         if (deckId != null) {
             player.setDeckId(deckId);
