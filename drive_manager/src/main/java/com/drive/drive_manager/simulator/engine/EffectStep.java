@@ -97,7 +97,7 @@ public sealed interface EffectStep {
      */
     record SummonSelf(String zone, Amount reduce, boolean toFront) implements NeedsTarget {}
 
-    /** "invoca esta carta sin pagar su coste" from the hand: a summon by effect. */
+    /** "invoca esta carta sin pagar su coste" from the zone it is in (hand, Tributos…): a summon by effect. */
     record SummonSelfFree() implements NeedsTarget {}
 
     /**
@@ -328,6 +328,11 @@ public sealed interface EffectStep {
     /** "reactiva 1 aliado" / "reactivar otro": the controller picks an exhausted ally that can be reactivated. */
     record UntapAlly(CardFilter filter) implements NeedsTarget {
         public UntapAlly() { this(CardFilter.any()); }
+    }
+
+    /** "reactiva hasta N aliados": the controller picks them all at once (none is fine). */
+    record UntapAllies(int max, CardFilter filter) implements EffectStep {
+        public UntapAllies(int max) { this(max, CardFilter.any()); }
     }
 
     /** "elige 1 aliado [filtro]": like {@link PickAlly}, among those that match. */

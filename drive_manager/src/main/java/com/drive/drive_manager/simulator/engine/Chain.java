@@ -523,7 +523,8 @@ public final class Chain {
         PlayerState player = room.getPlayer(userId);
         if (player == null) return List.of();
         List<PendingEffect> result = new ArrayList<>();
-        for (String zone : List.of("field", "hand")) {
+        // "En Tributos" / "En Descarte" effects are activated from those zones too (Zamaranzas)
+        for (String zone : List.of("field", "hand", "tributeZone", "discardPile")) {
             for (CardSlot card : zone(player, zone)) {
                 for (EffectScript script : CardEffects.of(card)) {
                     if (script.moment() != EffectScript.Moment.ACTIVATED || !script.sourceZone().equals(zone)) continue;

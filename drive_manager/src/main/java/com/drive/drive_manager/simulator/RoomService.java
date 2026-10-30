@@ -462,7 +462,10 @@ public class RoomService {
             card.getResources().forEach(r -> { r.setFaceDown(false); r.setTapped(false); player.getDiscardPile().add(r); });
             card.setMaterials(new ArrayList<>());
             card.setResources(new ArrayList<>());
-            card.setStrengthModifier(0);
+            // A creature removed from the field loses its floating effects (what is decided below keeps its face)
+            boolean faceDown = card.isFaceDown();
+            com.drive.drive_manager.simulator.engine.Removals.leaveField(card);
+            card.setFaceDown(faceDown);
         }
 
         if ("discardPile".equals(toZone) || "tributeZone".equals(toZone)) {
@@ -1277,6 +1280,7 @@ public class RoomService {
         room.getPendingEvents().clear();
         room.setCombat(null);
         room.getUsedThisTurn().clear();
+        room.getFieldGrants().clear();
         room.getTimeline().clear();
     }
 
@@ -1468,10 +1472,7 @@ public class RoomService {
         // "Al final del turno súbelo a tu mano" (placed by Janne's inherited effect)
         room.getPlayers().values().forEach(p -> new ArrayList<>(p.getField()).stream().filter(CardSlot::isReturnAtTurnEnd).forEach(c -> {
             p.getField().remove(c);
-            c.setReturnAtTurnEnd(false);
-            c.setX(null);
-            c.setY(null);
-            c.setTapped(false);
+            com.drive.drive_manager.simulator.engine.Removals.leaveField(c);
             p.getHand().add(c);
             room.getEventLog().add(new GameLogEntry(System.currentTimeMillis(), c.getCardName() + " vuelve a la mano de " + p.getUsername()));
         }));
@@ -1488,6 +1489,9 @@ public class RoomService {
             c.getFloating().removeIf(f -> !"nextTurn".equals(f.until()));
             c.getFloating().replaceAll(f -> new FloatingEffect(f.text(), f.source(), "turn", f.strength(), f.keyword()));
         }));
+        // What was given to the table "hasta el final del turno" ends; "del turno oponente" now lasts until the end of this one
+        room.getFieldGrants().removeIf(g -> "turn".equals(g.until()));
+        room.getFieldGrants().replaceAll(g -> new com.drive.drive_manager.simulator.engine.FieldGrant(g.controllerId(), g.filter(), g.keyword(), "turn", g.source()));
         // "el turno anterior": who used a Definitive effect this turn is remembered for the next one
         List<String> definitive = room.getUsedThisTurn().stream().filter(k -> k.endsWith("|" + EffectEngine.DEFINITIVE_USED))
                 .map(k -> EffectEngine.DEFINITIVE_LAST_TURN + k.substring(0, k.indexOf('|'))).toList();
@@ -1670,7 +1674,9 @@ public class RoomService {
             card.getResources().forEach(r -> { r.setFaceDown(false); player.getDiscardPile().add(r); });
             card.setMaterials(new ArrayList<>());
             card.setResources(new ArrayList<>());
-            card.setStrengthModifier(0);
+            boolean faceDown = card.isFaceDown();
+            com.drive.drive_manager.simulator.engine.Removals.leaveField(card);
+            card.setFaceDown(faceDown);
         }
         card.setFaceDown(false);
         card.setTapped(false);

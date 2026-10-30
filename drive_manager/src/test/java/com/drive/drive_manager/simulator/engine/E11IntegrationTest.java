@@ -124,11 +124,16 @@ class E11IntegrationTest {
         a.setTapped(true);
         b.setTapped(true);
         TurnRules.turnEnding(room, "host");
-        for (int i = 0; i < 4 && room.getPrompt() != null; i++) {
-            Prompt p = room.getPrompt();
-            List<String> pick = p.getValidIds().stream().filter(id -> id.startsWith("a")).limit(Math.max(1, p.getMin())).toList();
-            Answers.answer(room, p.getPlayerId(), p.getId(), pick.isEmpty() ? List.of() : pick, List.of());
+        // "hasta 2": both chosen in the same choice
+        Prompt p = room.getPrompt();
+        while (p != null && p.getMax() < 2) {
+            Answers.answer(room, p.getPlayerId(), p.getId(), p.getValidIds().isEmpty() ? List.of() : List.of(p.getValidIds().get(0)), List.of());
+            p = room.getPrompt();
         }
+        assertThat(p).isNotNull();
+        assertThat(p.getMin()).isZero();
+        assertThat(p.getValidIds()).containsExactlyInAnyOrder("a1", "a2");
+        Answers.answer(room, p.getPlayerId(), p.getId(), List.of("a1", "a2"), List.of());
         assertThat(a.isTapped()).isFalse();
         assertThat(b.isTapped()).isFalse();
     }

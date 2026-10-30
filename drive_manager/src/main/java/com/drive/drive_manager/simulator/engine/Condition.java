@@ -52,6 +52,16 @@ public sealed interface Condition {
         }
     }
 
+    /**
+     * "Inmediatamente después de que X": X must be the last thing that happened (rule of the vault "Efectos, cadenas y
+     * resolución"); if anything else happened after it in the same resolution, the effect misses its moment.
+     */
+    record Immediately(Condition condition) implements Condition {
+        public boolean test(GameRoom room, GameEvent event, CardSlot source, String controller) {
+            return event != null && condition.test(room, event, source, controller) && EffectEngine.lastThingHappened(room, event);
+        }
+    }
+
     static Condition any(Condition... conditions) {
         return new Any(List.of(conditions));
     }

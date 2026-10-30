@@ -177,8 +177,14 @@ class E11ThirdBatchTest {
     void principeCharlesGivesReactivarUntilTheEndOfTheOpponentsTurn() {
         CardSlot knight = onField(host, withClasses(card("k", "Caballero", 1, 1, "R"), "caballero"));
         summonToFront(withClasses(card("pc", "Principe Charles Di Castirion", 4, 4, "R"), "armada", "caballero"));
-        assertThat(knight.getLaterKeywords()).contains("Reactivar");
         assertThat(EffectEngine.keywords(knight)).contains("Reactivar");
+        // It affects the table: a [caballero] that enters later gets it too (designer ruling 2026-10-30)
+        CardSlot later = onField(host, withClasses(card("k2", "Caballero 2", 1, 1, "R"), "caballero"));
+        EffectEngine.refreshContinuous(room);
+        assertThat(EffectEngine.keywords(later)).contains("Reactivar");
+        CardSlot other = onField(host, card("o", "Otro", 1, 1, "R"));
+        EffectEngine.refreshContinuous(room);
+        assertThat(EffectEngine.keywords(other)).doesNotContain("Reactivar");
     }
 
     @Test

@@ -147,8 +147,8 @@ public final class Steps {
             case PlaySelfFromZone play -> find(zone(player, play.zone()), effect.getSourceInstanceId()) != null;
             case SummonFromZone summon -> !summonable(room, effect, summon).isEmpty();
             case SummonSelfFree ignored -> {
-                CardSlot self = find(player.getHand(), effect.getSourceInstanceId());
-                yield self != null && "creature".equals(self.getCardType()) && self.getCost() != null;
+                Located at = locate(player, effect.getSourceInstanceId());
+                yield at != null && !"field".equals(at.zone()) && "creature".equals(at.card().getCardType()) && at.card().getCost() != null;
             }
             case SpecialFromZone special -> !specialTargets(room, effect, special).isEmpty();
             case TakeFromZone take -> zone(player, take.zone()).stream().anyMatch(take.filter()::matches);
@@ -234,6 +234,15 @@ public final class Steps {
             }
             case LookedToTopOrBottom ignored -> {
                 if (effect.getLooked().isEmpty()) return false;
+                // Then their order, when there are several (repeatsDone: 1 to the top, 2 to the bottom)
+                if (effect.getRepeatsDone() > 0) {
+                    boolean top = effect.getRepeatsDone() == 1;
+                    pick(room, effect, "Ordena las cartas: van " + (top ? "al tope" : "al fondo") + " de tu mazo en ese orden (la de la izquierda "
+                            + "queda más arriba).", null, effect.getLooked(), List.of(), 0);
+                    room.getPrompt().setReorderRest(true);
+                    room.getPrompt().setRestToTop(top);
+                    return true;
+                }
                 Prompt prompt = prompt(room, effect, Prompt.Kind.CONFIRM,
                         "¿Devuelves estas cartas al tope de tu mazo? Si no, van al fondo.");
                 prompt.setCards(new ArrayList<>(effect.getLooked()));
@@ -258,17 +267,14 @@ public final class Steps {
                 return false;
             }
             case AlliesGain gain -> {
-                boolean later = "nextTurn".equals(gain.until());
-                String until = later ? "hasta el final del turno oponente" : "hasta el final del turno";
-                int n = 0;
-                for (CardSlot ally : allies(player)) {
-                    if (!gain.filter().matches(ally)) continue;
-                    (later ? ally.getLaterKeywords() : ally.getTurnKeywords()).add(gain.keyword());
-                    floating(ally, effect, "Gana " + gain.keyword() + " " + until, gain.until(), 0, gain.keyword());
-                    n++;
-                }
+                // On the table: the allies that enter later get it too (refreshContinuous gives it)
+                String until = "nextTurn".equals(gain.until()) ? "hasta el final del turno oponente" : "hasta el final del turno";
+                room.getFieldGrants().add(new FieldGrant(userId, gain.filter(), gain.keyword(), gain.until(), effect.getSourceName()));
+                refreshContinuous(room);
+                int n = (int) allies(player).stream().filter(gain.filter()::matches).count();
                 record(room, GameEvent.GAIN, userId, null, null, null, effect, Map.of("keyword", gain.keyword(), "count", n),
-                        n + " " + plural(n, "aliado gana", "aliados ganan") + " " + gain.keyword() + " " + until + " (" + effect.getSourceName() + ")");
+                        player.getUsername() + ": sus aliados ganan " + gain.keyword() + " " + until + ", también los que entren después ("
+                                + effect.getSourceName() + ")");
                 return false;
             }
             case GainUntilNextTurn gain -> {
@@ -663,9 +669,9 @@ public final class Steps {
                 return true;
             }
             case SummonSelfFree ignored -> {
-                CardSlot self = find(player.getHand(), effect.getSourceInstanceId());
-                if (self == null || self.getCost() == null) return false;
-                summonByEffect(room, effect, player, self, "hand", self.getCost(), false);
+                Located at = locate(player, effect.getSourceInstanceId());
+                if (at == null || "field".equals(at.zone()) || at.card().getCost() == null) return false;
+                summonByEffect(room, effect, player, at.card(), at.zone(), at.card().getCost(), false);
                 effect.setLastDone(true);
                 return false;
             }
@@ -1080,6 +1086,18 @@ public final class Steps {
                 }
                 String which = untap.filter().describe();
                 pick(room, effect, "Reactiva 1 aliado agotado" + (which.isEmpty() ? "" : " " + which) + ".", "Reactivar", player.getField(), ids(valid), 1);
+                return true;
+            }
+            case UntapAllies untap -> {
+                List<CardSlot> valid = allies(player).stream().filter(c -> reactivable(c) && untap.filter().matches(c)).toList();
+                if (valid.isEmpty()) {
+                    log(room, "No hay aliados agotados que reactivar (" + effect.getSourceName() + ")", null);
+                    return false;
+                }
+                int max = Math.min(untap.max(), valid.size());
+                pick(room, effect, "Reactiva hasta " + untap.max() + " " + plural(untap.max(), "aliado agotado", "aliados agotados") + ".", "Reactivar",
+                        player.getField(), ids(valid), max);
+                room.getPrompt().setMin(0);
                 return true;
             }
             case MoveSelfToFront ignored -> {
@@ -1698,8 +1716,16 @@ public final class Steps {
         step = resolved(room, effect, step);
         switch (step) {
             case LookedToTopOrBottom ignored -> {
-                List<CardSlot> looked = new ArrayList<>(effect.getLooked());
-                boolean top = !picks.isEmpty();
+                boolean ordering = effect.getRepeatsDone() > 0;
+                boolean top = ordering ? effect.getRepeatsDone() == 1 : !picks.isEmpty();
+                // "devuélvelas al tope o envíalas al fondo": in the order the player chooses
+                if (!ordering && effect.getLooked().size() > 1) {
+                    effect.setRepeatsDone(top ? 1 : 2);
+                    repeat[0] = true;
+                    return null;
+                }
+                effect.setRepeatsDone(0);
+                List<CardSlot> looked = ordering ? inOrder(effect.getLooked(), order) : new ArrayList<>(effect.getLooked());
                 looked.forEach(c -> c.setFaceDown(true));
                 if (top) player.getDeck().addAll(0, looked);
                 else player.getDeck().addAll(looked);
@@ -2208,6 +2234,19 @@ public final class Steps {
                 ally.setTapped(false);
                 record(room, GameEvent.UNTAP, userId, ally, null, null, effect, null,
                         player.getUsername() + " reactiva " + name(ally) + " (" + effect.getSourceName() + ")");
+            }
+            case UntapAllies untap -> {
+                if (picks.size() > untap.max()) return "Elige hasta " + untap.max();
+                for (String id : picks) {
+                    CardSlot ally = find(player.getField(), id);
+                    if (ally == null || !reactivable(ally)) return "Ese aliado ya no puede reactivarse";
+                }
+                for (String id : picks) {
+                    CardSlot ally = find(player.getField(), id);
+                    ally.setTapped(false);
+                    record(room, GameEvent.UNTAP, userId, ally, null, null, effect, null,
+                            player.getUsername() + " reactiva " + name(ally) + " (" + effect.getSourceName() + ")");
+                }
             }
             case DeclareAttack ignored -> {
                 CardSlot subject = subject(room, effect);

@@ -104,6 +104,7 @@ import com.drive.drive_manager.simulator.engine.EffectStep.TakeFromLookedRestToB
 import com.drive.drive_manager.simulator.engine.EffectStep.TapSelf;
 import com.drive.drive_manager.simulator.engine.EffectStep.TributeFromHand;
 import com.drive.drive_manager.simulator.engine.EffectStep.UntapAlly;
+import com.drive.drive_manager.simulator.engine.EffectStep.UntapAllies;
 import com.drive.drive_manager.simulator.engine.EffectStep.UntapSelf;
 import com.drive.drive_manager.simulator.engine.EffectStep.AddResourceFrom;
 import com.drive.drive_manager.simulator.engine.EffectStep.BounceChosen;
@@ -1346,7 +1347,7 @@ public final class CardEffects {
         add("espada ferrea", new EffectScript("espada-ferrea:en-mano", Moment.ON_EVENT, false, "Turno Aliado / En Mano",
                 "Inmediatamente después de que un aliado sea invocado por efecto: puedes invocar esta carta en tu línea frontal pagando su coste.",
                 List.of(new SummonSelf("hand", Amount.fixed(0), true)))
-                .when(new AllySummonedByEffect(CardFilter.any()))
+                .when(new Immediately(new AllySummonedByEffect(CardFilter.any())))
                 .fromZone("hand")
                 .onlyAllyTurn());
         // E1.1-R3 Peón De Los Leones De Fuego
@@ -1359,7 +1360,7 @@ public final class CardEffects {
         // E1.1-R7 Sereno Fronterizo
         add("sereno fronterizo", new EffectScript("sereno-fronterizo:final-del-turno", Moment.ON_EVENT, true, "Turno Aliado",
                 "Al final del turno, si esta carta está en tu línea frontal: reactiva hasta 2 aliados.",
-                List.of(new UntapAlly(), new UntapAlly()))
+                List.of(new UntapAllies(2)))
                 .when(all(new TurnEnds(), new InFrontLine()))
                 .onlyAllyTurn());
         // E1.1-R8 Alabarda De Ala Blanca
@@ -1372,7 +1373,7 @@ public final class CardEffects {
                 new EffectScript("alabarda-ala-blanca:al-final-del-ataque", Moment.ON_ATTACK_END, false, AL_FINAL,
                         "Puedes tributar esta carta para ganar 2 gemas.",
                         List.of(new IfPossible(), new SendSelfFromFieldTo("tributeZone"), new GainGems(2))));
-        // E1.1-R10 Comandante Veterano (its "Turno Oponente" blocker swap is not applied yet)
+        // E1.1-R10 Comandante Veterano (its "Turno Oponente" blocker swap: BLOCKER_SWAP, CombatRules.offerBlockerSwap)
         add("comandante veterano", new EffectScript("comandante-veterano:en-mano", Moment.ACTIVATED, false, "Turno Aliado / En Mano",
                 "Si no controlas copias de esta carta y controlas algún [caballero] o [armada] nivel 4 o mayor: puedes invocar esta carta reduciendo su coste en 3.",
                 List.of(new SummonSelf("hand", Amount.fixed(3), false)))
@@ -1394,7 +1395,7 @@ public final class CardEffects {
         add("escudos leales",
                 new EffectScript("escudos-leales:en-juego", Moment.ON_PLAY, true, EN_JUEGO,
                         "Efecto Definitivo. Reactiva hasta 2 aliados.",
-                        List.of(new UntapAlly(), new UntapAlly()))
+                        List.of(new UntapAllies(2)))
                         .limited(Limit.DEFINITIVE),
                 new EffectScript("escudos-leales:en-mano", Moment.ON_EVENT, false, "En Mano",
                         "Si no activaste algún Efecto Definitivo el turno anterior y algún enemigo declara ataque mientras tienes 2 o menos vidas: "
@@ -1410,10 +1411,10 @@ public final class CardEffects {
                         "Puedes añadir esta carta como material a 1 aliado [ente] nivel 3 o menor; activa 1 de sus efectos En Invocación.",
                         List.of(new PickAllyWhere(CardFilter.creatures().withClasses("ente").withMaxLevel(3)), new AttachSelfToSubject()),
                         List.of(new ActivateSubjectSummonEffect())),
-                new EffectScript("zamaranzas:en-mano", Moment.ACTIVATED, false, "Turno Aliado / En Mano",
+                new EffectScript("zamaranzas:en-tributos", Moment.ACTIVATED, false, "Turno Aliado / En Tributos",
                         "(1) Puedes añadir 1 aliado como material de otro de nivel mayor para invocar esta carta sin pagar su coste.",
                         List.of(new IfPossible(), new PickAllyWithHigherAlly(), new AttachSubjectToHigherAlly(), new SummonSelfFree()))
-                        .fromZone("hand")
+                        .fromZone("tributeZone")
                         .onlyAllyTurn()
                         .limited(Limit.ONCE_PER_TURN_BETWEEN_COPIES));
         // E1.1-B5 Soléo
