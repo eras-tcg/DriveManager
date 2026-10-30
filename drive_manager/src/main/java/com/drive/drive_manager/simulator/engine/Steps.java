@@ -1420,6 +1420,8 @@ public final class Steps {
         p.setPlayerId(effect.getControllerId());
         p.setEffectId(effect.getId());
         p.setSourceName(effect.getSourceName());
+        CardSlot source = findAnywhere(room, effect.getControllerId(), effect.getSourceInstanceId());
+        p.setSourceImageUrl(source == null ? null : source.getImageUrl());
         p.setTitle((effect.getLink() > 0 ? "Cadena " + effect.getLink() + " · " : "") + effect.getSourceName() + " · " + effect.getLabel());
         p.setEffectText(effect.getText());
         p.setInstruction(instruction);
