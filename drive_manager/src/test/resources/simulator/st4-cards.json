@@ -31,7 +31,7 @@
  {
   "cardName": "Caballería Cruzada",
   "cardType": "creature",
-  "strength": 9,
+  "strength": 8,
   "cost": 3,
   "level": 3,
   "starter": false,
