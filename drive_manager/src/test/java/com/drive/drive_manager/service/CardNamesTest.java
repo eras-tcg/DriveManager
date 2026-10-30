@@ -46,6 +46,17 @@ class CardNamesTest {
     }
 
     @Test
+    void metadataOfAnotherCardDoesNotRenameTheImage() {
+        when(cards.findByEdition("E2")).thenReturn(List.of(meta("Damon", "E2", 2, null, "P")));
+        assertThat(names.nameFor("E2", 2, null, "P", "Bruja Mensajera")).isEqualTo("Bruja Mensajera");
+
+        DriveCard bruja = image("a", "Bruja Mensajera", "E2", 2, null, "P");
+        when(images.findByEditionAndNumber("E2", 2)).thenReturn(List.of(bruja));
+        assertThat(names.syncImages(meta("Damon", "E2", 2, null, "P"))).isZero();
+        assertThat(bruja.getName()).isEqualTo("Bruja Mensajera");
+    }
+
+    @Test
     void nothingToRenameWithoutANameOrANumber() {
         assertThat(names.syncImages(meta(null, "E2", 9, null, "B"))).isZero();
         assertThat(names.syncImages(meta("X", "E2", null, null, "B"))).isZero();

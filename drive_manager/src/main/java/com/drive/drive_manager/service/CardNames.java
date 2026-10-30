@@ -12,8 +12,9 @@ import java.util.Objects;
 /**
  * The real name of a card image. Drive's .jpg files are exported with every space turned into a hyphen
  * ("E2-B05-Roto-G0.jpg"), so the file name cannot tell "Roto-G0" from "Roto G0": the card's metadata, typed from
- * the printed card, is the name. The image and its metadata are joined by edition, number, sub-edition and color,
- * never by name, so changing it does not break that link.
+ * the printed card, is the name when it is the same but for hyphens and spaces. A name that really differs is left
+ * alone: metadata left from another card of the slot must not rename the image. The image and its metadata are
+ * joined by edition, number, sub-edition and color, never by name, so changing it does not break that link.
  */
 @Service
 public class CardNames {
@@ -26,13 +27,13 @@ public class CardNames {
         this.driveCardRepository = driveCardRepository;
     }
 
-    /** The metadata's name for this image, or the name read from its file when it has no metadata yet. */
+    /** The metadata's name for this image when it only adds the hyphens; otherwise the name read from its file. */
     public String nameFor(String edition, Integer number, String subEdition, String color, String fileName) {
         if (edition == null || number == null) return fileName;
         return cardRepository.findByEdition(edition).stream()
                 .filter(c -> sameImage(c, edition, number, subEdition, color))
                 .map(Card::getCardName)
-                .filter(n -> n != null && !n.isBlank())
+                .filter(n -> n != null && !n.isBlank() && (fileName == null || sameButHyphens(n, fileName)))
                 .findFirst()
                 .orElse(fileName);
     }
@@ -44,6 +45,7 @@ public class CardNames {
         List<DriveCard> changed = driveCardRepository.findByEditionAndNumber(meta.getEdition(), meta.getCardNumber()).stream()
                 .filter(d -> sameImage(meta, d.getEdition(), d.getNumber(), d.getSubEdition(), d.getColorIdentity()))
                 .filter(d -> !meta.getCardName().equals(d.getName()))
+                .filter(d -> d.getName() == null || sameButHyphens(meta.getCardName(), d.getName()))
                 .toList();
         changed.forEach(d -> d.setName(meta.getCardName()));
         driveCardRepository.saveAll(changed);
@@ -55,6 +57,15 @@ public class CardNames {
                 && Objects.equals(meta.getCardNumber(), number)
                 && Objects.equals(blankToNull(meta.getSubEdition()), blankToNull(subEdition))
                 && (meta.getColorIdentity() == null || color == null || meta.getColorIdentity().equalsIgnoreCase(color));
+    }
+
+    /** "Roto-G0" and "Roto G0": the same name once hyphens and spaces are alike. */
+    static boolean sameButHyphens(String a, String b) {
+        return plain(a).equals(plain(b));
+    }
+
+    private static String plain(String s) {
+        return s.replaceAll("[-\\s]+", " ").trim().toLowerCase(java.util.Locale.ROOT);
     }
 
     private static String blankToNull(String s) {
