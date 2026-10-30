@@ -246,4 +246,15 @@ class PreRoomTest {
         a.setPayload(new HashMap<>(payload));
         return a;
     }
+
+    @Test
+    void aDeckWithCardsTheEngineDoesNotRunCannotBeChosen() {
+        CardSlot done = new CardSlot();
+        done.setCardName("Eisten");
+        CardSlot roto = new CardSlot();
+        roto.setCardName("Roto-G0");
+        roto.setUnprogrammed("1 de 1 efectos propios");
+        assertThat(RoomService.unprogrammedIn(java.util.List.of(done, roto, roto))).isEqualTo("×2 Roto-G0");
+        assertThat(RoomService.unprogrammedIn(java.util.List.of(done))).isNull();
+    }
 }

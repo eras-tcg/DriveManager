@@ -170,8 +170,8 @@ class E11SecondBatchTest {
 
     @Test
     void jabalixLooksOneMoreCardPerCopyInTheTributes() {
-        host.getTributeZone().add(card("jc", "Jabalix", 1, 1, "P"));
-        host.getHand().add(card("jb", "Jabalix", 1, 1, "P"));
+        host.getTributeZone().add(card("jc", "Jábalix", 1, 1, "P"));
+        host.getHand().add(card("jb", "Jábalix", 1, 1, "P"));
         assertThat(Summons.normalSummon(room, "host", "jb", 50.0, 75.0)).isNull();
         assertThat(room.getPrompt().getCards()).hasSize(4);
     }

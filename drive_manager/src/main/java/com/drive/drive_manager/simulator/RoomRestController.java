@@ -57,6 +57,12 @@ public class RoomRestController {
         return body;
     }
 
+    /** Cards the engine does not run in full (metadata id → what is missing), for the card catalog's warning. */
+    @GetMapping("/unprogrammed")
+    public ResponseEntity<Map<String, String>> unprogrammed() {
+        return ResponseEntity.ok(roomService.unprogrammedCards());
+    }
+
     @GetMapping("/rooms/{id}")
     public ResponseEntity<Map<String, Object>> getRoom(@PathVariable String id) {
         GameRoom room = roomService.getRoom(id);

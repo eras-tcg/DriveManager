@@ -221,6 +221,7 @@ public class RoomService {
             case "SELECT_STARTER"       -> handleSelectStarter(room, userId, action);
             case "CONFIRM_MULLIGAN"     -> handleConfirmMulligan(room, userId, action);
             case "SET_MARKER"           -> handleSetMarker(room, userId, action);
+            case "SET_SKIP_OPTIONAL"    -> handleSetSkipOptional(room, userId, action);
             case "LIFE_HEAL"            -> handleLifeHeal(room, userId);
             case "LIFE_SHUFFLE"         -> handleLifeShuffle(room, userId);
             case "LIFE_ALL_DOWN"        -> handleLifeAllDown(room, userId);
@@ -992,6 +993,10 @@ public class RoomService {
         if (deckId == null) return GameStateUpdate.error(room.getRoomId(), "Falta el mazo");
         List<CardSlot> slots = resolveDeck(deckId);
         if (slots.isEmpty()) return GameStateUpdate.error(room.getRoomId(), "No se encontró el mazo");
+        // Cards the engine does not run cannot be played; a test room plays them by hand (it is where they are tried)
+        String unplayable = room.isEditor() ? null : unprogrammedIn(slots);
+        if (unplayable != null) return GameStateUpdate.error(room.getRoomId(),
+                "Este mazo tiene cartas que todavía no se pueden jugar en el simulador: " + unplayable);
         player.setDeckId(deckId);
         player.setDeckName(deckListRepo.findById(deckId).map(DeckList::getDeckName).orElse(null));
         player.setDeck(new ArrayList<>(slots));
@@ -999,6 +1004,15 @@ public class RoomService {
         player.setStarterCardId(slots.stream().filter(CardSlot::isStarter).map(CardSlot::getCardId).findFirst().orElse(null));
         player.setReady(false);
         return GameStateUpdate.from(room, "SET_DECK", userId);
+    }
+
+    /** The names of a deck's cards the engine does not run in full ("×2 Roto-G0, Sicario R3-D"), or null. */
+    static String unprogrammedIn(List<CardSlot> slots) {
+        Map<String, Integer> names = new LinkedHashMap<>();
+        for (CardSlot s : slots) if (s.getUnprogrammed() != null) names.merge(s.getCardName() != null ? s.getCardName() : "?", 1, Integer::sum);
+        if (names.isEmpty()) return null;
+        return names.entrySet().stream().map(e -> e.getValue() > 1 ? "×" + e.getValue() + " " + e.getKey() : e.getKey())
+                .collect(Collectors.joining(", "));
     }
 
     private GameStateUpdate handleSetStarter(GameRoom room, String userId, GameAction action) {
@@ -1212,6 +1226,18 @@ public class RoomService {
         player.setResourceCount(Math.min(5, Math.max(0, d.intValue())));
         GameStateUpdate update = GameStateUpdate.from(room, "SET_MARKER", userId);
         update.setLogEntry(player.getUsername() + " ajustó su marcador de recursos de " + prev + " a " + player.getResourceCount());
+        return update;
+    }
+
+    /** Turns the offer of the player's optional triggered effects off or on (in a test room, of both sides). */
+    private GameStateUpdate handleSetSkipOptional(GameRoom room, String userId, GameAction action) {
+        PlayerState player = room.getPlayer(userId);
+        if (player == null) return GameStateUpdate.error(room.getRoomId(), "Jugador no encontrado");
+        boolean skip = action.getBoolean("value", false);
+        if (room.isEditor()) room.getPlayers().values().forEach(p -> p.setSkipOptional(skip));
+        else player.setSkipOptional(skip);
+        GameStateUpdate update = GameStateUpdate.from(room, "SET_SKIP_OPTIONAL", userId);
+        update.setLogEntry(player.getUsername() + (skip ? " apagó" : " encendió") + " los efectos opcionales");
         return update;
     }
 
@@ -2070,6 +2096,23 @@ public class RoomService {
         if (meta.getColorIdentity() != null) colors.add(meta.getColorIdentity());
         if (meta.getColors() != null) meta.getColors().stream().filter(c -> !colors.contains(c)).forEach(colors::add);
         slot.setColors(colors);
+    }
+
+    /**
+     * The cards whose metadata the engine does not run in full, by metadata id, with what is missing (as a card in
+     * play shows it). Cards that are fully programmed are left out.
+     */
+    public Map<String, String> unprogrammedCards() {
+        Map<String, String> pending = new java.util.LinkedHashMap<>();
+        for (Card meta : cardRepo.findAll()) {
+            List<String> keywords = new ArrayList<>(keywordNames(meta.getKeywordEffects()));
+            keywords.addAll(keywordNames(meta.getInheritKeywordEffects()));
+            String missing = CardEffects.pending(meta.getCardName(),
+                    meta.getEffects() == null ? 0 : meta.getEffects().size(),
+                    meta.getInheritEffects() == null ? 0 : meta.getInheritEffects().size(), keywords);
+            if (missing != null) pending.put(meta.getId(), missing);
+        }
+        return pending;
     }
 
     /** "Letalidad {cantidad}" + 1 → "Letalidad 1". */
