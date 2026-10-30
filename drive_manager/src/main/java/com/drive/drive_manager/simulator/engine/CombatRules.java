@@ -280,7 +280,8 @@ public final class CombatRules {
                         + " tiene más fuerza que el daño y va a tu mano. ¿Refuerzas con ella? Se coloca bocarriba al fondo de tu pila de vidas.", "Reforzar");
                 return false;
             }
-            if ("utility".equals(life.getCardType()) || "structure".equals(life.getCardType())) {
+            if (("utility".equals(life.getCardType()) || "structure".equals(life.getCardType()))
+                    && Chain.cannotActivateOnPlay(room, defender.getUserId(), life) == null) {
                 lifePrompt(room, defender, life, PURPOSE_LIFE_PLAY, "Vida revelada",
                         "¿Juegas " + name(life) + " sin pagar su coste? Si no, queda en tu mano.", "Jugar");
                 return false;

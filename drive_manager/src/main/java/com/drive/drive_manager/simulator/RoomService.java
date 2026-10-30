@@ -342,6 +342,7 @@ public class RoomService {
     private void setFirstPlayer(GameRoom room, String firstPlayerId) {
         room.setCurrentTurnUserId(firstPlayerId);
         room.setFirstPlayerId(firstPlayerId);
+        room.setFirstTurn(true);
         room.setStarterAdvantageUserId(room.getOpponentId(firstPlayerId));
     }
 
@@ -994,9 +995,8 @@ public class RoomService {
         List<CardSlot> slots = resolveDeck(deckId);
         if (slots.isEmpty()) return GameStateUpdate.error(room.getRoomId(), "No se encontró el mazo");
         // Cards the engine does not run cannot be played; a test room plays them by hand (it is where they are tried)
-        String unplayable = room.isEditor() ? null : unprogrammedIn(slots);
-        if (unplayable != null) return GameStateUpdate.error(room.getRoomId(),
-                "Este mazo tiene cartas que todavía no se pueden jugar en el simulador: " + unplayable);
+        if (!room.isEditor() && unprogrammedIn(slots) != null) return GameStateUpdate.error(room.getRoomId(),
+                "Este mazo tiene cartas que todavía no están programadas en el simulador");
         player.setDeckId(deckId);
         player.setDeckName(deckListRepo.findById(deckId).map(DeckList::getDeckName).orElse(null));
         player.setDeck(new ArrayList<>(slots));
@@ -1260,6 +1260,7 @@ public class RoomService {
         room.setSharedCounter(0);
         room.setCurrentTurnUserId(null);
         room.setFirstPlayerId(null);
+        room.setFirstTurn(false);
         room.setStarterAdvantageUserId(null);
         room.setWinnerId(null);
         room.setEndReason(null);
@@ -1439,6 +1440,7 @@ public class RoomService {
     private void startTurn(GameRoom room, String playerId) {
         PlayerState player = room.getPlayer(playerId);
         room.setCurrentTurnUserId(playerId);
+        room.setFirstTurn(false);
         room.setCurrentPhase("START");
         clearTurnKeywords(room);
         int newCount = Math.min(5, player.getResourceCount() + 1);

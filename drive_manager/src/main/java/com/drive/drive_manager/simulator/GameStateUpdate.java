@@ -59,6 +59,8 @@ public class GameStateUpdate {
     private List<String> structurePlayed;
     /** Cards each player can special summon now, from the hand or the Tributos, by player id. */
     private Map<String, List<String>> specialSummonable;
+    /** Utilities in each player's hand that cannot be played now (their "En Juego" cannot be activated), by player id. */
+    private Map<String, List<String>> unplayable;
     /** Who won the game that just ended, and why ("lives", "surrender"). */
     private String winnerId;
     private String endReason;
@@ -97,6 +99,12 @@ public class GameStateUpdate {
         }
         // Always sent (empty when nobody can): the board relies on it instead of its own checks
         u.specialSummonable = specials;
+        Map<String, List<String>> unplayable = new LinkedHashMap<>();
+        for (String id : room.getPlayers().keySet()) {
+            List<String> list = Summons.unplayable(room, id);
+            if (!list.isEmpty()) unplayable.put(id, list);
+        }
+        u.unplayable        = unplayable;
         List<String> structures = room.getPlayers().keySet().stream().filter(id -> Summons.structurePlayed(room, id)).toList();
         u.structurePlayed   = structures.isEmpty() ? null : structures;
         u.winnerId          = room.getWinnerId();
