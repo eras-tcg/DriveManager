@@ -421,8 +421,13 @@ public sealed interface EffectStep {
     /** "reduce en N su fuerza por cada material removido": N times the last count, on the chosen targets. */
     record ReduceChosenPerCount(int each) implements EffectStep {}
 
-    /** "todos los aliados [filtro] ganan [habilidad] hasta el final del turno [oponente]" ({@code until}: "turn" or "nextTurn"). */
-    record AlliesGain(CardFilter filter, String keyword, String until) implements EffectStep {}
+    /**
+     * "todos [tus otros] aliados [filtro] ganan [habilidad] hasta el final del turno [oponente]" ({@code until}: "turn" or
+     * "nextTurn"; {@code others}: not this card).
+     */
+    record AlliesGain(CardFilter filter, String keyword, String until, boolean others) implements EffectStep {
+        public AlliesGain(CardFilter filter, String keyword, String until) { this(filter, keyword, until, false); }
+    }
 
     /** "tributa tu mano": all of it. */
     record TributeHand() implements EffectStep {}

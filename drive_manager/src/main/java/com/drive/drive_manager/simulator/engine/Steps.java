@@ -269,11 +269,12 @@ public final class Steps {
             case AlliesGain gain -> {
                 // On the table: the allies that enter later get it too (refreshContinuous gives it)
                 String until = "nextTurn".equals(gain.until()) ? "hasta el final del turno oponente" : "hasta el final del turno";
-                room.getFieldGrants().add(new FieldGrant(userId, gain.filter(), gain.keyword(), gain.until(), effect.getSourceName()));
+                String except = gain.others() ? effect.getSourceInstanceId() : null;
+                room.getFieldGrants().add(new FieldGrant(userId, gain.filter(), gain.keyword(), gain.until(), effect.getSourceName(), except));
                 refreshContinuous(room);
-                int n = (int) allies(player).stream().filter(gain.filter()::matches).count();
+                int n = (int) allies(player).stream().filter(c -> gain.filter().matches(c) && !c.getInstanceId().equals(except)).count();
                 record(room, GameEvent.GAIN, userId, null, null, null, effect, Map.of("keyword", gain.keyword(), "count", n),
-                        player.getUsername() + ": sus aliados ganan " + gain.keyword() + " " + until + ", también los que entren después ("
+                        player.getUsername() + ": sus " + (gain.others() ? "otros " : "") + "aliados ganan " + gain.keyword() + " " + until + ", también los que entren después ("
                                 + effect.getSourceName() + ")");
                 return false;
             }

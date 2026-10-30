@@ -1412,7 +1412,7 @@ public final class CardEffects {
                         List.of(new PickAllyWhere(CardFilter.creatures().withClasses("ente").withMaxLevel(3)), new AttachSelfToSubject()),
                         List.of(new ActivateSubjectSummonEffect())),
                 new EffectScript("zamaranzas:en-tributos", Moment.ACTIVATED, false, "Turno Aliado / En Tributos",
-                        "(1) Puedes añadir 1 aliado como material de otro de nivel mayor para invocar esta carta sin pagar su coste.",
+                        "(1) Puedes añadir 1 aliado como material a otro de nivel mayor para invocar esta carta sin pagar su coste.",
                         List.of(new IfPossible(), new PickAllyWithHigherAlly(), new AttachSubjectToHigherAlly(), new SummonSelfFree()))
                         .fromZone("tributeZone")
                         .onlyAllyTurn()
@@ -1582,8 +1582,8 @@ public final class CardEffects {
                 new CountOnField(CardFilter.creatures().withMinLevel(4), 1, null), 0, List.of(EffectEngine.IMMUNE)));
         // E1.1-R9 Principe Charles Di Castirion (its attack before being ascended: ATTACK_BEFORE_ASCENDED)
         add("principe charles di castirion", new EffectScript("principe-charles:en-invocacion", Moment.ON_SUMMON, true, EN_INVOCACION,
-                "Todos tus aliados [caballero] o [armada] ganan Reactivar hasta el final del turno oponente.",
-                List.of(new AlliesGain(CardFilter.creatures().withClasses("caballero", "armada"), "Reactivar", "nextTurn"))));
+                "Todos tus otros aliados [caballero] o [armada] ganan Reactivar hasta el final del turno oponente.",
+                List.of(new AlliesGain(CardFilter.creatures().withClasses("caballero", "armada"), "Reactivar", "nextTurn", true))));
         // E1.1-R13 Valor Del Heroe: no duration written means "por el turno"
         add("valor del heroe",
                 new EffectScript("valor-del-heroe:en-juego", Moment.ON_PLAY, true, EN_JUEGO,

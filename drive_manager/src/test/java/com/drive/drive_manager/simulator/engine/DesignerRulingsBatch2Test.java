@@ -145,7 +145,7 @@ class DesignerRulingsBatch2Test {
 
     @Test
     void whatWasGivenToTheTableEndsWithItsTurn() {
-        room.getFieldGrants().add(new FieldGrant("host", CardFilter.creatures(), "Furia", "turn", "A La Carga!"));
+        room.getFieldGrants().add(new FieldGrant("host", CardFilter.creatures(), "Furia", "turn", "A La Carga!", null));
         CardSlot c = onField(host, card("c", "Criatura", 1, 1, "R"));
         EffectEngine.refreshContinuous(room);
         assertThat(EffectEngine.keywords(c)).contains("Furia");
