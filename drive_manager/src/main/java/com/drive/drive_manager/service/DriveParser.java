@@ -15,6 +15,7 @@ import java.security.GeneralSecurityException;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
@@ -38,6 +39,12 @@ public class DriveParser {
     // Pattern: {edition}-{color}{number}-{name}.jpg  (dash separator = sRGB web image)
     // Files using a space separator are CMYK print files and are intentionally ignored.
     // edition = ST\d+ | E\d+ | E\d+_\d+  (underscore used instead of dot to avoid filesystem ambiguity)
+    /** "E2-B05 Roto-G0.psd": the code, a space and the printed name. */
+    private static final Pattern REAL_NAME_PATTERN = Pattern.compile(
+            "^((?:ST|E)\\d+(?:_\\d+)?-[BGPRW]\\d+) (.+)\\.(?:psd|jpe?g)$", Pattern.CASE_INSENSITIVE);
+    /** The code at the start of an exported file name ("E2-B05" of "E2-B05-Roto-G0.jpg"). */
+    private static final Pattern FILE_CODE_PATTERN = Pattern.compile("^((?:ST|E)\\d+(?:_\\d+)?-[BGPRW]\\d+)-", Pattern.CASE_INSENSITIVE);
+
     private static final Pattern FILE_NAME_PATTERN = Pattern.compile(
             "^((?:ST|E)\\d+(?:_\\d+)?)-([BGPRW])(\\d+)-(.+)\\.jpe?g$",
             Pattern.CASE_INSENSITIVE
@@ -168,8 +175,9 @@ public class DriveParser {
 
         List<StagedChange> staged = new ArrayList<>();
         for (FolderInfo stFolder : stFolders) {
-            for (RawFile file : listRawFiles(drive, stFolder.id)) {
-                ParsedFileName parsed = parseFileName(file.name);
+            FolderFiles folder = listFolderFiles(drive, stFolder.id);
+            for (RawFile file : folder.jpgs()) {
+                ParsedFileName parsed = withRealName(parseFileName(file.name), file.name, folder.realNames());
                 if (parsed == null) {
                     logger.warn("Could not parse filename: {}", file.name);
                     continue;
@@ -225,8 +233,9 @@ public class DriveParser {
                     FolderInfo colorFolder = colorFolders.get(color);
                     if (colorFolder == null) continue;
 
-                    for (RawFile file : listRawFiles(drive, colorFolder.id)) {
-                        ParsedFileName parsed = parseFileName(file.name);
+                    FolderFiles folder = listFolderFiles(drive, colorFolder.id);
+                    for (RawFile file : folder.jpgs()) {
+                        ParsedFileName parsed = withRealName(parseFileName(file.name), file.name, folder.realNames());
                         if (parsed == null) {
                             logger.warn("Could not parse filename: {}", file.name);
                             continue;
@@ -390,9 +399,14 @@ public class DriveParser {
         return images;
     }
 
-    private List<RawFile> listRawFiles(Drive drive, String folderId) throws IOException {
+    /** A folder's .jpg files, and the real names its "<code> <name>" files (.psd or .jpg) give. */
+    record FolderFiles(List<RawFile> jpgs, Map<String, String> realNames) {
+    }
+
+    private FolderFiles listFolderFiles(Drive drive, String folderId) throws IOException {
         String pageToken = null;
         List<RawFile> files = new ArrayList<>();
+        List<String> allNames = new ArrayList<>();
         do {
             FileList fileList = drive.files().list()
                     .setQ("'" + folderId + "' in parents and trashed = false")
@@ -401,6 +415,7 @@ public class DriveParser {
                     .execute();
             if (fileList.getFiles() != null) {
                 for (com.google.api.services.drive.model.File file : fileList.getFiles()) {
+                    if (file.getName() != null) allNames.add(file.getName());
                     if (isJpg(file)) {
                         files.add(new RawFile(file.getId(), file.getName(), buildDownloadUrl(file)));
                     }
@@ -410,7 +425,32 @@ public class DriveParser {
         } while (pageToken != null);
 
         files.sort(Comparator.comparing(f -> f.name));
-        return files;
+        return new FolderFiles(files, realNames(allNames));
+    }
+
+    /**
+     * The exported .jpg ("E2-B05-Roto-G0.jpg") turns every space into a hyphen; its Photoshop file next to it keeps the
+     * printed name after a space ("E2-B05 Roto-G0.psd", and a .jpg named the same way). Code ("E2-B05") → real name.
+     */
+    static Map<String, String> realNames(List<String> fileNames) {
+        Map<String, String> names = new HashMap<>();
+        for (String fileName : fileNames) {
+            Matcher m = REAL_NAME_PATTERN.matcher(fileName);
+            // The .psd wins over a .jpg of the same code
+            if (m.matches() && (fileName.toLowerCase(Locale.ROOT).endsWith(".psd") || !names.containsKey(m.group(1).toUpperCase(Locale.ROOT)))) {
+                names.put(m.group(1).toUpperCase(Locale.ROOT), m.group(2).trim());
+            }
+        }
+        return names;
+    }
+
+    /** The parsed name, replaced by the real one when the folder has it for this code. */
+    static ParsedFileName withRealName(ParsedFileName parsed, String fileName, Map<String, String> realNames) {
+        if (parsed == null) return null;
+        Matcher m = FILE_CODE_PATTERN.matcher(fileName);
+        String real = m.find() ? realNames.get(m.group(1).toUpperCase(Locale.ROOT)) : null;
+        if (real == null || real.isBlank()) return parsed;
+        return new ParsedFileName(parsed.edition, parsed.subEdition, parsed.color, parsed.number, real);
     }
 
     private boolean isJpg(com.google.api.services.drive.model.File file) {
