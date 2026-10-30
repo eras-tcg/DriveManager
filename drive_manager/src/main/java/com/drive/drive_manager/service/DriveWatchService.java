@@ -26,6 +26,8 @@ import java.io.IOException;
 import java.security.GeneralSecurityException;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Locale;
 import java.util.UUID;
 
@@ -263,22 +265,36 @@ public class DriveWatchService implements ApplicationRunner, DisposableBean {
         }
 
         logger.info("Processing Drive changes for channel: {}", incomingChannelId);
-        Drive drive = driveClientFactory.create();
-        String token = state.getPageToken();
-        ChangeList result;
-        int totalChanges = 0;
+        ChangesResult result = fetchChanges(state.getPageToken());
+        state.setPageToken(result.nextToken());
+        syncStateRepository.save(state);
+        logger.info("Drive changes processed. Total: {}. Page token advanced.", result.staged().size());
+    }
 
+    /** The changes staged by reading Drive's change list from a page token, and the token to continue from next time. */
+    public record ChangesResult(List<StagedChange> staged, String nextToken) {}
+
+    /**
+     * Reads every change since {@code token} (all its pages) and stages the card images among them. Used by the webhook and
+     * by the catch-up when the server wakes up (it receives no webhook while it sleeps).
+     */
+    public ChangesResult fetchChanges(String token) throws GeneralSecurityException, IOException {
+        Drive drive = driveClientFactory.create();
+        List<StagedChange> staged = new ArrayList<>();
+        ChangeList result;
         do {
             result = drive.changes().list(token)
                     .setFields(CHANGES_FIELDS)
                     .execute();
 
             int pageSize = result.getChanges() != null ? result.getChanges().size() : 0;
-            totalChanges += pageSize;
-            logger.info("Fetched {} change(s) from Drive (page token: {})", pageSize, token);
+            logger.info("Fetched {} change(s) from Drive", pageSize);
 
-            for (Change change : result.getChanges()) {
-                handleChange(drive, change);
+            if (result.getChanges() != null) {
+                for (Change change : result.getChanges()) {
+                    StagedChange one = handleChange(drive, change);
+                    if (one != null) staged.add(one);
+                }
             }
 
             token = result.getNextPageToken() != null
@@ -286,13 +302,15 @@ public class DriveWatchService implements ApplicationRunner, DisposableBean {
                     : result.getNewStartPageToken();
 
         } while (result.getNextPageToken() != null);
-
-        state.setPageToken(token);
-        syncStateRepository.save(state);
-        logger.info("Drive changes processed. Total: {}. Page token advanced.", totalChanges);
+        return new ChangesResult(staged, token);
     }
 
-    private void handleChange(Drive drive, Change change) throws IOException {
+    /** Drive's page token for "from now on" (a fresh start, after a full comparison). */
+    public String startPageToken() throws GeneralSecurityException, IOException {
+        return driveClientFactory.create().changes().getStartPageToken().execute().getStartPageToken();
+    }
+
+    private StagedChange handleChange(Drive drive, Change change) throws IOException {
         String fileId = change.getFileId();
 
         if (Boolean.TRUE.equals(change.getRemoved())) {
@@ -300,23 +318,23 @@ public class DriveWatchService implements ApplicationRunner, DisposableBean {
                     fileId, null, null, null, null, null, null, "delete", Instant.now());
             stagedChangeRepository.save(staged);
             logger.info("Staged DELETE for fileId: {}", fileId);
-            return;
+            return staged;
         }
 
         File file = change.getFile();
         if (file == null) {
             logger.info("Skipping change — file metadata is null for fileId: {}", fileId);
-            return;
+            return null;
         }
         if (!isJpg(file)) {
             logger.info("Skipping non-JPG file in changes: {} (mime={})", file.getName(), file.getMimeType());
-            return;
+            return null;
         }
 
         DriveParser.ParsedFileName parsed = driveParser.parseFileName(file.getName());
         if (parsed == null) {
             logger.info("Skipping non-matching filename pattern: {}", file.getName());
-            return;
+            return null;
         }
 
         String subEdition = resolveSubEdition(drive, file);
@@ -334,6 +352,7 @@ public class DriveWatchService implements ApplicationRunner, DisposableBean {
         );
         stagedChangeRepository.save(staged);
         logger.info("Staged UPSERT for: {}", file.getName());
+        return staged;
     }
 
     /**
