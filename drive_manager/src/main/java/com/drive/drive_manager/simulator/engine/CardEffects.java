@@ -1445,12 +1445,10 @@ public final class CardEffects {
                         List.of(new IfPossible(), new SubjectFromTrigger(), new AttachSelfAsResourceToSubject(), new GainGems(1)))
                         .when(new AllySummoned(CardFilter.creatures()))
                         .limited(Limit.ONCE_PER_TURN_BETWEEN_COPIES));
-        // E1.1-G3 Cría De Dragón Rúnico: "Si esta carta tiene algún recurso: en su lugar, envía el resto al fondo"
-        add("cría de dragón rúnico", new EffectScript("cria-dragon-runico:en-invocacion", Moment.ON_SUMMON, true, EN_INVOCACION,
-                "Mira las primeras 3 cartas de tu mazo: de ellas toma hasta 1 [dragón]. Tributa el resto. Si esta carta tiene algún recurso: "
-                        + "en su lugar, envía el resto al fondo de tu mazo.",
-                List.of(new LookTop(3), new IfCondition(not(new HasResources()), 1), new TakeFromLookedRestToTributes(1, dragons),
-                        new IfCondition(new HasResources(), 1), new TakeFromLookedRestToBottom(1, dragons))));
+        // E1.1-G3 Cría De Dragón Rúnico: "Todos Los Turnos: cuando esta carta fuera a invocar por Evolución: puedes enviar 5 de tus
+        // tributos [dragón] al fondo de tu mazo para reducir el coste especial en 1" (a Reactivo–Modificador, like Flambreik's)
+        costModifier("cría de dragón rúnico", new CostModifier(TODOS, CostModifiers.Event.SPECIAL_SUMMON, Set.of("evolution"),
+                CostModifiers.Holder.SUMMONER, false, null, Payment.tributesToDeckBottom(5, CardFilter.any().withClasses("dragón")), 1));
         // E1.1-G4 Rosedrake
         add("rosedrake", new EffectScript("rosedrake:tributada", Moment.ON_EVENT, false, "En Tributos",
                 "(1) Si esta carta es tributada, excepto desde tu mano: puedes tributar 1 carta de tu mano para tomar 1 carta Verde de tus tributos.",
@@ -1474,13 +1472,12 @@ public final class CardEffects {
         // E1.1-G12 Hebi
         add("hebi",
                 new EffectScript("hebi:en-invocacion", Moment.ON_SUMMON, false, EN_INVOCACION,
-                        "Puedes añadir hasta 2 criaturas [hydra] de tus tributos como recurso de esta carta.",
-                        List.of(new AddResourceFrom("tributeZone", CardFilter.creatures().withClasses("hydra")),
-                                new MayDo("¿Añades otra criatura [hydra] de tus tributos como recurso?", 1),
-                                new AddResourceFrom("tributeZone", CardFilter.creatures().withClasses("hydra")))),
-                new EffectScript("hebi:al-atacar", Moment.ON_ATTACK, false, AL_ATACAR,
-                        "Puedes tributar 2 recursos [dragón] o [hydra] de esta carta para reactivar esta carta.",
-                        List.of(new IfPossible(), new TributeResources(2, CardFilter.any().withClasses("dragón", "hydra")), new UntapSelf())));
+                        "Puedes añadir hasta 1 criatura [hydra] o [dragón] de tus tributos como recurso de esta carta.",
+                        List.of(new AddResourceFrom("tributeZone", CardFilter.creatures().withClasses("hydra", "dragón")))),
+                new EffectScript("hebi:al-final-del-ataque", Moment.ON_ATTACK_END, false, AL_FINAL,
+                        "Una vez por turno: puedes tributar 2 recursos [hydra] o [dragón] de esta carta para reactivarla.",
+                        List.of(new IfPossible(), new TributeResources(2, CardFilter.any().withClasses("hydra", "dragón")), new UntapSelf()))
+                        .limited(Limit.ONCE_PER_TURN));
         // E1.1-P1 Niobats
         add("niobats", new EffectScript("niobats:tributada", Moment.ON_EVENT, false, "En Tributos",
                 "(1) Si esta carta es tributada por efecto de 1 [bestia]: puedes tributar 1 carta de tu mano para tomar 1 carta Violeta de tus tributos.",

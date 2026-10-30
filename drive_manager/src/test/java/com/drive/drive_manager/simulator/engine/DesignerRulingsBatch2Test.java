@@ -26,6 +26,11 @@ class DesignerRulingsBatch2Test {
         guest = table.guest();
     }
 
+    private static CardSlot withClasses(CardSlot card, String... classes) {
+        card.setClasses(new java.util.ArrayList<>(List.of(classes)));
+        return card;
+    }
+
     private GameEvent event(long seq, String type, String cardId, String resolution) {
         GameEvent e = new GameEvent();
         e.setSeq(seq);
@@ -148,5 +153,72 @@ class DesignerRulingsBatch2Test {
         CardSlot rival = onField(guest, card("r", "Rival", 1, 1, "R"));
         EffectEngine.refreshContinuous(room);
         assertThat(EffectEngine.keywords(rival)).doesNotContain("Furia");
+    }
+
+    @Test
+    void beingSacrificedOrLosingALifeToTheTributosCountsAsBeingTributed() {
+        CardSlot niobats = card("nb", "Niobats", 1, 1, "P");
+        host.getTributeZone().add(niobats);
+        CardSlot beast = onField(host, withClasses(card("bs", "Bestia", 1, 1, "P"), "bestia"));
+        GameEvent sacrificed = event(1, GameEvent.SACRIFICE, "nb", "r1");
+        sacrificed.setEffectId("eff-1");
+        sacrificed.setFromZone("field");
+        sacrificed.setToZone("tributeZone");
+        sacrificed.setData(java.util.Map.of("byCard", beast.getInstanceId()));
+        assertThat(new Condition.ThisTributed(null, null, CardFilter.any().withClasses("bestia")).test(room, sacrificed, niobats, "host")).isTrue();
+
+        // Cofre Mímico: a life lost to direct damage that goes to the Tributos is tributed from the lives
+        CardSlot cofre = card("cm", "Cofre Mímico", 1, 1, "P");
+        GameEvent lost = event(2, GameEvent.LIFE_DAMAGE, "cm", null);
+        lost.setFromZone("lifeStack");
+        lost.setToZone("tributeZone");
+        assertThat(new Condition.ThisTributed("lifeStack", null, null).test(room, lost, cofre, "host")).isTrue();
+        lost.setToZone("hand");
+        assertThat(new Condition.ThisTributed("lifeStack", null, null).test(room, lost, cofre, "host")).isFalse();
+    }
+
+    @Test
+    void lomoPlateadoCannotSacrificeItselfAndAgainWhenItComesBack() {
+        CardSlot lomo = onField(host, withClasses(card("lp", "Lomo Plateado", 2, 2, "P"), "bestia"), BACK);
+        onField(host, card("a1", "Aliado 1", 1, 1, "P"));
+        onField(host, card("a2", "Aliado 2", 1, 1, "P"));
+        assertThat(Chain.activateByPlayer(room, "host", "lp", "lomo-plateado:turno-aliado")).isNull();
+        Prompt sacrifice = room.getPrompt();
+        // "para que esta carta gane fuerza 3": it cannot be the one sacrificed
+        assertThat(sacrifice.getValidIds()).containsExactlyInAnyOrder("a1", "a2");
+        Answers.answer(room, "host", sacrifice.getId(), List.of("a1"), List.of());
+        while (room.getPrompt() != null) Answers.answer(room, "host", room.getPrompt().getId(), List.of(), List.of());
+        assertThat(Chain.activatable(room, "host")).noneMatch(a -> "lp".equals(a.instanceId()));
+
+        // "Una vez por turno" belongs to that card on the field: back on the field it is a new one
+        lomo.setFieldSeq(lomo.getFieldSeq() + 100);
+        assertThat(Chain.activatable(room, "host")).anyMatch(a -> "lp".equals(a.instanceId()));
+    }
+
+    @Test
+    void ritualRequirementsReadOMayorAndAStrengthLimit() {
+        CardSlot zaranthrax = card("zx", "Zaranthrax", 1, 4, "P");
+        zaranthrax.setRequirement("criatura nivel 3 o mayor.");
+        Summons.Requirement req = Summons.requirement(zaranthrax);
+        assertThat(req.fits(card("l3", "Nivel 3", 1, 3, "P"))).isTrue();
+        assertThat(req.fits(card("l5", "Nivel 5", 1, 5, "P"))).isTrue();
+        assertThat(req.fits(card("l2", "Nivel 2", 1, 2, "P"))).isFalse();
+
+        CardSlot krull = card("kr", "Krull", 1, 3, "P");
+        krull.setRequirement("criatura nivel 1 de fuerza 3 o menos.");
+        Summons.Requirement krullReq = Summons.requirement(krull);
+        CardSlot weak = card("w", "Débil", 1, 1, "P");
+        weak.setStrength(3);
+        CardSlot strong = card("s", "Fuerte", 1, 1, "P");
+        strong.setStrength(4);
+        assertThat(krullReq.fits(weak)).isTrue();
+        assertThat(krullReq.fits(strong)).isFalse();
+    }
+
+    @Test
+    void hebiAddsOneHydraOrDragonAndUntapsAtTheEndOfItsAttackOncePerTurn() {
+        List<EffectScript> hebi = CardEffects.of(card("hb", "Hebi", 6, 5, "G"));
+        assertThat(hebi).extracting(EffectScript::moment).containsExactly(EffectScript.Moment.ON_SUMMON, EffectScript.Moment.ON_ATTACK_END);
+        assertThat(hebi.get(1).limit()).isEqualTo(EffectScript.Limit.ONCE_PER_TURN);
     }
 }

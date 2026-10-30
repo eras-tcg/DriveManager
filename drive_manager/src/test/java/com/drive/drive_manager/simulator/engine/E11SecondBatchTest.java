@@ -75,19 +75,6 @@ class E11SecondBatchTest {
     }
 
     @Test
-    void criaDeDragonRunicoTakesADragonAndTributesTheRestWithoutResources() {
-        host.getDeck().add(0, withClasses(card("dr", "Dragón", 1, 1, "G"), "dragón"));
-        List<String> others = host.getDeck().subList(1, 3).stream().map(CardSlot::getInstanceId).toList();
-        host.getHand().add(withClasses(card("cr", "Cría De Dragón Rúnico", 1, 1, "G"), "dragón"));
-        assertThat(Summons.normalSummon(room, "host", "cr", 50.0, 75.0)).isNull();
-        Prompt take = room.getPrompt();
-        assertThat(take.getValidIds()).containsExactly("dr");
-        answer(take, "dr");
-        assertThat(host.getHand()).extracting(CardSlot::getInstanceId).contains("dr");
-        assertThat(host.getTributeZone()).extracting(CardSlot::getInstanceId).containsAll(others);
-    }
-
-    @Test
     void soleoChoosesOneEnemyPerMaterialTributed() {
         CardSlot soleo = onField(host, card("so", "Soléo", 2, 2, "B"));
         soleo.getMaterials().addAll(List.of(card("m1", "M1", 1, 1, "B"), card("m2", "M2", 1, 1, "B")));

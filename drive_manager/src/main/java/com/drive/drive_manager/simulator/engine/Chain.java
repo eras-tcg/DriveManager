@@ -221,7 +221,8 @@ public final class Chain {
         if (script.limit() == Limit.ONE_EFFECT_OF_NAME_PER_TURN) return e.getControllerId() + "|name:" + e.getSourceName().toLowerCase(java.util.Locale.ROOT);
         return script.limit() == Limit.ONCE_PER_TURN_BETWEEN_COPIES
                 ? e.getControllerId() + "|" + script.id()
-                : e.getControllerId() + "|" + e.getSourceInstanceId() + "|" + script.id();
+                // "Una vez por turno" belongs to this card while it stays on the field (rule 11.8: back on the field it is a new card)
+                : e.getControllerId() + "|" + e.getSourceInstanceId() + "@" + e.getSourceFieldSeq() + "|" + script.id();
     }
 
     static int rank(PendingEffect e, String active) {
@@ -443,6 +444,7 @@ public final class Chain {
         e.setScriptId(script.id());
         e.setControllerId(controllerId);
         e.setSourceInstanceId(source.getInstanceId());
+        e.setSourceFieldSeq(source.getFieldSeq());
         e.setSourceName(name(source));
         e.setLabel(script.label());
         e.setText(script.text());

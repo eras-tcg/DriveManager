@@ -198,7 +198,7 @@ public final class Removals {
     static String replacementKey(PlayerState owner, CardSlot card, CardEffects.Replacement r) {
         // A Definitive one counts as the player's Definitive effect of the turn (only 1 per turn, whichever card)
         if (r.limit() == Limit.DEFINITIVE) return owner.getUserId() + "|" + EffectEngine.DEFINITIVE_USED;
-        return r.limit() == Limit.ONCE_PER_TURN_BETWEEN_COPIES ? owner.getUserId() + "|" + r.id() : owner.getUserId() + "|" + card.getInstanceId() + "|" + r.id();
+        return r.limit() == Limit.ONCE_PER_TURN_BETWEEN_COPIES ? owner.getUserId() + "|" + r.id() : owner.getUserId() + "|" + card.getInstanceId() + "@" + card.getFieldSeq() + "|" + r.id();
     }
 
     /** Asks the owner of the first pending removal whether to replace it; a removal with nothing left to replace it happens now. */

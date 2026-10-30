@@ -212,7 +212,7 @@ public final class Summons {
             if (summoner == null) return "El invocador debe ser una criatura de tu campo";
             if (!materials.contains(summoner)) return name(summoner) + " no comparte tipo ni color con " + name(card);
             if (!req.sum()) {
-                if (summoner.getLevel() != req.level()) return missing;
+                if (!req.fits(summoner)) return missing;
                 handRitual(room, player, card, summoner, List.of());
                 return null;
             }
@@ -229,9 +229,9 @@ public final class Summons {
 
         // Rule 9.2.0.13: first the summoner (it must meet part of the Requerimiento), then the rest
         List<CardSlot> valid = req.sum() ? summonerCandidates(materials, req.level())
-                : materials.stream().filter(c -> c.getLevel() == req.level()).toList();
+                : materials.stream().filter(req::fits).toList();
         if (valid.isEmpty()) return missing;
-        ritualPrompt(room, player, card, null, valid, "Elige el invocador" + (req.sum() ? "" : ": 1 criatura nivel " + req.level())
+        ritualPrompt(room, player, card, null, valid, "Elige el invocador" + (req.sum() ? "" : ": 1 criatura nivel " + req.level() + (req.atLeast() ? " o mayor" : ""))
                 + ". Se sacrifica y " + name(card) + " ocupa su lugar y hereda su estado.", 1);
         room.getPrompt().setChosenLabel("Invocador");
         return null;
@@ -800,7 +800,7 @@ public final class Summons {
         if (player == null || req == null || card.getSpecialCost() == null || !"ritual".equalsIgnoreCase(card.getSpecialSummonKind())) return false;
         if (!canPay(room, userId, ritualCost(room, userId, card))) return false;
         List<CardSlot> materials = ritualMaterials(player, card);
-        return req.sum() ? sumsExactly(materials, req.level()) : materials.stream().anyMatch(c -> c.getLevel() == req.level());
+        return req.sum() ? sumsExactly(materials, req.level()) : materials.stream().anyMatch(req::fits);
     }
 
     static int ritualCost(GameRoom room, String userId, CardSlot card) {
@@ -837,7 +837,17 @@ public final class Summons {
     // ------------------------------------------------------------------ Ritual by effect (rule 9.3)
 
     /** Requerimiento of a Ritual: one creature of level X, or several whose levels add up to X. */
-    record Requirement(boolean sum, int level) {}
+    /**
+     * A Ritual's Requerimiento: "criatura nivel N [o mayor] [de fuerza M o menos]" or "criaturas que [en nivel] sumen N".
+     */
+    record Requirement(boolean sum, int level, boolean atLeast, Integer maxStrength) {
+        /** The creature alone meets a single-creature Requerimiento. */
+        boolean fits(CardSlot c) {
+            if (c.getLevel() == null) return false;
+            boolean level = atLeast ? c.getLevel() >= this.level : c.getLevel() == this.level;
+            return level && (maxStrength == null || strength(c) <= maxStrength);
+        }
+    }
 
     static Requirement requirement(CardSlot card) {
         if (card.getRequirement() == null) return null;
@@ -845,7 +855,9 @@ public final class Summons {
         Matcher m = Pattern.compile("nivel\\s*(\\d+)|sumen\\s*(\\d+)").matcher(text);
         if (!m.find()) return null;
         int level = Integer.parseInt(m.group(1) != null ? m.group(1) : m.group(2));
-        return new Requirement(text.contains("sum"), level);
+        boolean atLeast = Pattern.compile("nivel\\s*\\d+\\s*o\\s*mayor").matcher(text).find();
+        Matcher strength = Pattern.compile("fuerza\\s*(\\d+)\\s*o\\s*menos").matcher(text);
+        return new Requirement(text.contains("sum"), level, atLeast, strength.find() ? Integer.valueOf(strength.group(1)) : null);
     }
 
     /** Creatures that can be the summoner of a level-sum Ritual: the rest of the field can complete the sum exactly. */
@@ -889,11 +901,11 @@ public final class Summons {
         if (ritual.selfSummoner()) {
             CardSlot self = find(materials, effect.getSourceInstanceId());
             if (self == null) return false;
-            if (!req.sum()) return self.getLevel() == req.level();
+            if (!req.sum()) return req.fits(self);
             // The summoner is one of them: the others make up the rest
             return self.getLevel() <= req.level() && sumsExactly(materials.stream().filter(c -> c != self).toList(), req.level() - self.getLevel());
         }
-        if (!req.sum()) return materials.stream().anyMatch(c -> c.getLevel() == req.level());
+        if (!req.sum()) return materials.stream().anyMatch(req::fits);
         return sumsExactly(materials, req.level());
     }
 
@@ -931,8 +943,8 @@ public final class Summons {
         if (summoner == null) {
             effect.setRitualSummonerId(null);
             List<CardSlot> valid = req.sum() ? summonerCandidates(materials, req.level())
-                    : materials.stream().filter(c -> c.getLevel() == req.level()).toList();
-            Prompt prompt = prompt(room, effect, Prompt.Kind.PICK, "Elige el invocador" + (req.sum() ? "" : ": 1 criatura nivel " + req.level())
+                    : materials.stream().filter(req::fits).toList();
+            Prompt prompt = prompt(room, effect, Prompt.Kind.PICK, "Elige el invocador" + (req.sum() ? "" : ": 1 criatura nivel " + req.level() + (req.atLeast() ? " o mayor" : ""))
                     + ". Se sacrifica y " + name(target) + " ocupa su lugar y hereda su estado.");
             prompt.setCards(new ArrayList<>(player.getField()));
             prompt.setValidIds(new ArrayList<>(ids(valid)));

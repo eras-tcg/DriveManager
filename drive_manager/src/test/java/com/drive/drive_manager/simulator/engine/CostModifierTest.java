@@ -56,6 +56,27 @@ class CostModifierTest {
     }
 
     @Test
+    void criaDeDragonRunicoMayPayFiveDragonsToReduceItsEvolutionCostOnAnyTurn() {
+        // "Todos Los Turnos: cuando esta carta fuera a invocar por Evolución…": also on the opponent's turn
+        room.setCurrentTurnUserId("guest");
+        room.setSharedCounter(-1);
+        onField(host, card("cr", "Cría De Dragón Rúnico", 1, 1, "G")).setClasses(new ArrayList<>(List.of("dragón")));
+        for (int i = 0; i < 5; i++) {
+            CardSlot dragon = card("t" + i, "Dragón " + i, 1, 1, "G");
+            dragon.setClasses(new ArrayList<>(List.of("dragón")));
+            host.getTributeZone().add(dragon);
+        }
+        CardSlot evolved = card("evo", "Evolución", 3, 2, "G");
+        evolved.setSpecialSummonKind("evolution");
+        evolved.setSpecialCost(2);
+        evolved.setRequirement("criatura nivel 1.");
+        host.getHand().add(evolved);
+
+        assertThat(CostModifiers.available(room, host, CostModifiers.Event.SPECIAL_SUMMON, "evolution", evolved,
+                host.getField().get(0))).isEqualTo(1);
+    }
+
+    @Test
     void duregonOnlyLowersTheEvolutionCostOnItsControllersTurn() {
         // "Turno Aliado": on the opponent's turn the summon costs it all
         for (int i = 0; i < 5; i++) {
