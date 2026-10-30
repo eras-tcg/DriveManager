@@ -90,6 +90,18 @@ class UtilityActivationTest {
     }
 
     @Test
+    void theBoardIsToldWhichUtilitiesCannotBePlayed() {
+        CardSlot nexo = utility("nx", "Nexo Del Inframundo Material");
+        host.getHand().addAll(List.of(nexo, utility("hp", "Hechizo Premonitorio"), card("cr", "Criatura", 1, 1, "R")));
+
+        assertThat(Summons.unplayable(room, "host")).containsExactly("nx");
+        assertThat(host.getHand()).first().isSameAs(nexo);
+
+        onField(host, card("al", "Aliado", 1, 1, "R"), FRONT);
+        assertThat(Summons.unplayable(room, "host")).isEmpty();
+    }
+
+    @Test
     void theFirstTurnStopsDefinitiveEffectsOfAnyMoment() {
         CardSlot creature = onField(host, card("cr", "Criatura", 1, 1, "R"), FRONT);
         EffectScript activated = new EffectScript("prueba:turno-aliado", Moment.ACTIVATED, false, "Turno Aliado",

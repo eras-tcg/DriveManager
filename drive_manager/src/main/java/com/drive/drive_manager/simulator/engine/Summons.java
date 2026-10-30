@@ -88,6 +88,14 @@ public final class Summons {
         return null;
     }
 
+    /** Utilities in the player's hand whose "En Juego" cannot be activated now: the board does not offer to play them. */
+    public static List<String> unplayable(GameRoom room, String userId) {
+        PlayerState player = room.getPlayer(userId);
+        if (player == null || room.getStatus() != GameRoom.RoomStatus.IN_PROGRESS) return List.of();
+        return new ArrayList<>(player.getHand()).stream().filter(c -> Chain.cannotActivateOnPlay(room, userId, c) != null)
+                .map(CardSlot::getInstanceId).toList();
+    }
+
     /** The player already played a structure normally this turn. */
     public static boolean structurePlayed(GameRoom room, String userId) {
         return room.getUsedThisTurn().contains(STRUCTURE_PLAYED + userId);
