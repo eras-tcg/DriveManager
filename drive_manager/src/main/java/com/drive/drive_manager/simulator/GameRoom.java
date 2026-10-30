@@ -69,6 +69,8 @@ public class GameRoom {
     private Set<String> usedThisTurn = new HashSet<>();
     /** Who took the first turn of the game (rule 3.0.1). */
     private String firstPlayerId;
+    /** The first turn of the game is in progress: no Definitive effect can be activated (designer ruling 2026-10-30). */
+    private boolean firstTurn;
     /** The second player while they still have the "ventaja del iniciador" (rule 6.2.1.4); null once used. */
     private String starterAdvantageUserId;
     /** "Terminar turno" from the main phase went through the end phase and waits for its move up to be answered. */

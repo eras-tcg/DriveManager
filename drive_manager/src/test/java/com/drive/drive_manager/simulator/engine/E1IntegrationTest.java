@@ -272,17 +272,17 @@ class E1IntegrationTest {
     // ------------------------------------------------------------------ White: Definitive effects
 
     @Test
-    void onlyOneDefinitiveEffectPerTurnTheSecondUtilityGoesToTheDescarte() {
+    void onlyOneDefinitiveEffectPerTurnTheSecondUtilityCannotBePlayed() {
         // Mandato Imperial resolves (nobody in the front line, nothing in the opponent's Retaguardia to move)
         CardSlot mandato = utility("mi", "Mandato Imperial");
         CardSlot caos = utility("ca", "Llegada Del Ciclo Del Caos");
         host.getHand().addAll(List.of(mandato, caos));
         assertThat(Summons.playByPlayer(room, "host", "mi", 50.0, BACK)).isNull();
         assertThat(host.getDiscardPile()).contains(mandato);
-        assertThat(Summons.playByPlayer(room, "host", "ca", 50.0, BACK)).isNull();
-        // Its Definitive effect cannot be activated this turn: nothing to choose, it goes to the Descarte
-        assertThat(room.getPrompt()).isNull();
-        assertThat(host.getDiscardPile()).contains(caos);
+        // Its Definitive effect cannot be activated this turn, so it cannot be played (designer ruling 2026-10-30)
+        assertThat(Summons.playByPlayer(room, "host", "ca", 50.0, BACK)).contains("ya activaste un Efecto Definitivo");
+        assertThat(host.getHand()).contains(caos);
+        assertThat(host.getDiscardPile()).doesNotContain(caos);
     }
 
     @Test

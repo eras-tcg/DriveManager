@@ -77,6 +77,8 @@ public final class Summons {
         // Only one structure can be played normally per turn (by effect or from a life it does not count)
         boolean structure = "structure".equals(card.getCardType());
         if (structure && structurePlayed(room, userId)) return "Solo puedes jugar una estructura por turno";
+        String blocked = Chain.cannotActivateOnPlay(room, userId, card);
+        if (blocked != null) return blocked;
         int cost = CardEffects.playCost(room, userId, card);
         if (!canPay(room, userId, cost)) return "No tienes gemas suficientes: tienes " + gemsOf(room, userId) + " y cuesta " + cost;
         pay(room, userId, cost);

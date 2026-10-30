@@ -146,12 +146,74 @@ public final class Chain {
                                       CardSlot source, String controllerId) {
         if (script.condition() != null && !script.condition().test(room, event, source, controllerId)) return;
         PendingEffect e = pending(room, script, controllerId, source, event.getSeq());
-        if (script.limit() != Limit.NONE && room.getUsedThisTurn().contains(usageKey(e, script))) {
-            if (script.limit() == Limit.DEFINITIVE)
-                log(room, name(source) + ": ya activaste un Efecto Definitivo este turno (solo 1 por turno)", null);
+        if (limitReached(room, e, script)) {
+            if (script.limit() == Limit.DEFINITIVE) log(room, name(source) + ": " + limitText(room, e, script), null);
             return;
         }
         result.add(e);
+    }
+
+    /**
+     * The effect's activation limit stops it now (rule 11.8): already used this turn, or a Definitive effect — of any
+     * card and moment — on the first turn of the game (designer ruling 2026-10-30).
+     */
+    static boolean limitReached(GameRoom room, PendingEffect e, EffectScript script) {
+        if (script.limit() == Limit.DEFINITIVE && room.isFirstTurn()) return true;
+        return script.limit() != Limit.NONE && room.getUsedThisTurn().contains(usageKey(e, script));
+    }
+
+    /** Why {@link #limitReached} stops it, for the player. */
+    static String limitText(GameRoom room, PendingEffect e, EffectScript script) {
+        if (script.limit() != Limit.DEFINITIVE) return "su efecto ya se usó este turno";
+        return room.isFirstTurn() ? "no se pueden activar Efectos Definitivos en el primer turno de la partida"
+                : "ya activaste un Efecto Definitivo este turno (solo 1 por turno)";
+    }
+
+    /**
+     * Designer ruling (2026-10-30): a utility can be played only if its "En Juego" can be activated — its activation
+     * limit allows it, its activation condition holds and its cost can be paid (what the resolution does is not checked). It is checked as if the utility were
+     * already on the field.
+     *
+     * @return why it cannot be played now, or null
+     */
+    public static String cannotActivateOnPlay(GameRoom room, String userId, CardSlot card) {
+        if (!"utility".equals(card.getCardType())) return null;
+        List<EffectScript> onPlay = CardEffects.of(card).stream().filter(s -> s.moment() == EffectScript.Moment.ON_PLAY).toList();
+        PlayerState player = room.getPlayer(userId);
+        if (onPlay.isEmpty() || player == null) return null;
+        List<CardSlot> from = Arrays.asList(player.getHand(), player.getTributeZone(), player.getDiscardPile(), player.getDeck(),
+                player.getLifeStack()).stream().filter(z -> z.contains(card)).findFirst().orElse(null);
+        int at = from == null ? -1 : from.indexOf(card);
+        if (from != null) from.remove(at);
+        player.getField().add(card);
+        try {
+            GameEvent played = new GameEvent();
+            played.setType(GameEvent.PLAY);
+            played.setPlayerId(userId);
+            played.setCardInstanceId(card.getInstanceId());
+            played.setCardName(card.getCardName());
+            played.setFromZone("hand");
+            played.setToZone("field");
+            played.setSeq(Long.MAX_VALUE);
+            String reason = null;
+            for (EffectScript script : onPlay) {
+                String why = whyNot(room, userId, card, script, played);
+                if (why == null) return null;
+                if (reason == null) reason = why;
+            }
+            return name(card) + " no se puede jugar: " + reason;
+        } finally {
+            player.getField().remove(card);
+            if (from != null) from.add(at, card);
+        }
+    }
+
+    private static String whyNot(GameRoom room, String userId, CardSlot card, EffectScript script, GameEvent played) {
+        PendingEffect e = candidate(script, userId, card, played.getSeq());
+        if (limitReached(room, e, script)) return limitText(room, e, script);
+        if (script.condition() != null && !script.condition().test(room, played, card, userId)) return "no se cumple la condición de su efecto";
+        for (EffectStep step : script.cost()) if (!possible(room, e, step)) return "no puedes pagar el coste de su efecto";
+        return null;
     }
 
     static String usageKey(PendingEffect e, EffectScript script) {
@@ -172,7 +234,7 @@ public final class Chain {
     static void activateNext(GameRoom room) {
         PendingEffect effect = room.getTriggerQueue().get(0);
         EffectScript script = script(effect);
-        if (script.limit() != Limit.NONE && room.getUsedThisTurn().contains(usageKey(effect, script))) {
+        if (limitReached(room, effect, script)) {
             // Another copy used it meanwhile
             room.getTriggerQueue().remove(0);
             return;
@@ -221,11 +283,11 @@ public final class Chain {
             if (dropped) return;
             for (PendingEffect e : group) {
                 EffectScript s = script(e);
-                boolean used = s.limit() != Limit.NONE && room.getUsedThisTurn().contains(usageKey(e, s));
+                boolean used = limitReached(room, e, s);
                 if (used || !canActivate(room, e, s)) {
                     room.getTriggerQueue().remove(e);
                     // Said in the history: otherwise the player only sees that nothing happened
-                    log(room, e.getSourceName() + ": " + e.getLabel() + (used ? " ya se usó este turno" : " no puede activarse (no se puede pagar su coste o no hay objetivos válidos)"), null);
+                    log(room, e.getSourceName() + ": " + e.getLabel() + (used ? ": " + limitText(room, e, s) : " no puede activarse (no se puede pagar su coste o no hay objetivos válidos)"), null);
                     dropped = true;
                 }
             }
@@ -434,7 +496,7 @@ public final class Chain {
                     if (script.allyTurn() && !playerId.equals(room.getCurrentTurnUserId())) continue;
                     if (script.condition() != null && (activation == null || !script.condition().test(room, activation, card, playerId))) continue;
                     PendingEffect e = candidate(script, playerId, card, activation == null ? room.getEventSeq() : activation.getSeq());
-                    if (script.limit() != Limit.NONE && room.getUsedThisTurn().contains(usageKey(e, script))) continue;
+                    if (limitReached(room, e, script)) continue;
                     if (canActivate(room, e, script)) result.add(e);
                 }
             }
@@ -468,7 +530,7 @@ public final class Chain {
                     if (script.allyTurn() && !userId.equals(room.getCurrentTurnUserId())) continue;
                     if (script.condition() != null && !script.condition().test(room, null, card, userId)) continue;
                     PendingEffect e = candidate(script, userId, card, room.getEventSeq());
-                    if (script.limit() != Limit.NONE && room.getUsedThisTurn().contains(usageKey(e, script))) continue;
+                    if (limitReached(room, e, script)) continue;
                     if (canActivate(room, e, script)) result.add(e);
                 }
             }

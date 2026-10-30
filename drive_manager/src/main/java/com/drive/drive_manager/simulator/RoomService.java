@@ -342,6 +342,7 @@ public class RoomService {
     private void setFirstPlayer(GameRoom room, String firstPlayerId) {
         room.setCurrentTurnUserId(firstPlayerId);
         room.setFirstPlayerId(firstPlayerId);
+        room.setFirstTurn(true);
         room.setStarterAdvantageUserId(room.getOpponentId(firstPlayerId));
     }
 
@@ -1260,6 +1261,7 @@ public class RoomService {
         room.setSharedCounter(0);
         room.setCurrentTurnUserId(null);
         room.setFirstPlayerId(null);
+        room.setFirstTurn(false);
         room.setStarterAdvantageUserId(null);
         room.setWinnerId(null);
         room.setEndReason(null);
@@ -1439,6 +1441,7 @@ public class RoomService {
     private void startTurn(GameRoom room, String playerId) {
         PlayerState player = room.getPlayer(playerId);
         room.setCurrentTurnUserId(playerId);
+        room.setFirstTurn(false);
         room.setCurrentPhase("START");
         clearTurnKeywords(room);
         int newCount = Math.min(5, player.getResourceCount() + 1);
