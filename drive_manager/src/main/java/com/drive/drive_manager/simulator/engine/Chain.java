@@ -206,13 +206,26 @@ public final class Chain {
             }
         }
         if (!script.mandatory() && !effect.isConfirmed()) {
-            // Optional effects that cannot be activated now (cost, nothing to do, limit) lose their moment
+            // Optional effects that cannot be activated now (cost, nothing to do, limit) lose their moment, and so do
+            // those of a player who turned the optional effects off (except "En Juego": the card was played for it)
+            PlayerState controller = room.getPlayer(effect.getControllerId());
+            boolean skip = controller != null && controller.isSkipOptional();
             boolean dropped = false;
+            for (PendingEffect e : group) {
+                if (skip && script(e).moment() != EffectScript.Moment.ON_PLAY) {
+                    room.getTriggerQueue().remove(e);
+                    log(room, e.getSourceName() + ": " + e.getLabel() + " no se activa (efectos opcionales apagados)", null);
+                    dropped = true;
+                }
+            }
+            if (dropped) return;
             for (PendingEffect e : group) {
                 EffectScript s = script(e);
                 boolean used = s.limit() != Limit.NONE && room.getUsedThisTurn().contains(usageKey(e, s));
                 if (used || !canActivate(room, e, s)) {
                     room.getTriggerQueue().remove(e);
+                    // Said in the history: otherwise the player only sees that nothing happened
+                    log(room, e.getSourceName() + ": " + e.getLabel() + (used ? " ya se usó este turno" : " no puede activarse (no se puede pagar su coste o no hay objetivos válidos)"), null);
                     dropped = true;
                 }
             }

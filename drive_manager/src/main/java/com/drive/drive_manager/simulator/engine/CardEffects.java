@@ -1487,11 +1487,11 @@ public final class CardEffects {
                 .when(new ThisTributed(null, null, CardFilter.any().withClasses("bestia")))
                 .fromZone("tributeZone")
                 .limited(Limit.ONCE_PER_TURN_BETWEEN_COPIES));
-        // E1.1-P2 Jabalix (Iniciador; printed "Jábalix" in the vault)
-        add("jabalix", new EffectScript("jabalix:en-invocacion", Moment.ON_SUMMON, true, EN_INVOCACION,
+        // E1.1-P2 Jábalix (Iniciador)
+        add("jábalix", new EffectScript("jabalix:en-invocacion", Moment.ON_SUMMON, true, EN_INVOCACION,
                 "Mira las primeras 3 cartas de tu mazo: de ellas toma hasta 1 carta Violeta, Blanca o [mutante]. Envía el resto al fondo de tu mazo. "
                         + "Luego: tributa 1 carta de tu mano. Por cada copia de esta carta en tus tributos: mira 1 carta más con este efecto.",
-                List.of(new LookTopBy(new Amount.Scaled(new Amount.InZone("tributeZone", CardFilter.any().named("Jabalix")), 1, 3)),
+                List.of(new LookTopBy(new Amount.Scaled(new Amount.InZone("tributeZone", CardFilter.any().named("Jábalix")), 1, 3)),
                         new TakeFromLookedRestToBottom(1, CardFilter.colors("P", "W").withClasses("mutante")), new TributeFromHand(1))));
         // E1.1-P4 Cofre Mímico
         add("cofre mímico", new EffectScript("cofre-mimico:tributada", Moment.ON_EVENT, false, "En Tributos",

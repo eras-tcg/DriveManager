@@ -19,6 +19,12 @@ public class PlayerState {
     private String deckName;
     private String starterCardId;
     private boolean ready;
+    /**
+     * "Efectos opcionales apagados": the engine does not offer this player's optional triggered effects (they lose
+     * their moment); "En Juego" effects of the cards they play are still offered. The page remembers it on the device
+     * and sets it on every game.
+     */
+    private boolean skipOptional;
     private int    resourceCount = 0;
 
     private List<CardSlot> hand         = new ArrayList<>();

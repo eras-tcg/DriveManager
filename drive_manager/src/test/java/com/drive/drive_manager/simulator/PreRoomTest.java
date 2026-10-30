@@ -246,4 +246,33 @@ class PreRoomTest {
         a.setPayload(new HashMap<>(payload));
         return a;
     }
+
+    @Test
+    void aDeckWithCardsTheEngineDoesNotRunCannotBeChosen() {
+        CardSlot done = new CardSlot();
+        done.setCardName("Eisten");
+        CardSlot roto = new CardSlot();
+        roto.setCardName("Roto-G0");
+        roto.setUnprogrammed("1 de 1 efectos propios");
+        assertThat(RoomService.unprogrammedIn(java.util.List.of(done, roto, roto))).isEqualTo("×2 Roto-G0");
+        assertThat(RoomService.unprogrammedIn(java.util.List.of(done))).isNull();
+    }
+
+    @Test
+    void aMaterialSentFromItsCardByHandIsFoundWithThePagesPluralType() {
+        room.setStatus(GameRoom.RoomStatus.IN_PROGRESS);
+        CardSlot arc = card("arc", false);
+        arc.setFaceDown(false);
+        CardSlot material = card("mat", false);
+        arc.getMaterials().add(material);
+        room.getPlayer("host").getField().add(arc);
+
+        var update = service.applyAction(room.getRoomId(), "host", action("MOVE_FROM_ATTACHMENT", Map.of(
+                "instanceId", material.getInstanceId(), "attachmentOf", arc.getInstanceId(), "attachmentType", "materials",
+                "toZone", "tributeZone", "faceDown", false, "position", "bottom")));
+
+        assertThat(update.getError()).isNull();
+        assertThat(arc.getMaterials()).isEmpty();
+        assertThat(room.getPlayer("host").getTributeZone()).containsExactly(material);
+    }
 }
