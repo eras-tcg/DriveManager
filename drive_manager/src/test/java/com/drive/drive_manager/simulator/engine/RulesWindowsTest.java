@@ -223,9 +223,10 @@ class RulesWindowsTest {
         assertThat(Summons.ritualByPlayer(room, "host", "maw", "a")).contains("Requerimiento");
         field(host, creature("c", "C", 2, 3), BACK);
         assertThat(Summons.ritualByPlayer(room, "host", "maw", "a")).isNull();
-        // Dropped onto A (4): only C (2) completes it exactly
-        assertThat(room.getPrompt().getValidIds()).containsExactly("b", "c");
-        assertThat(Answers.answer(room, "host", room.getPrompt().getId(), List.of("b"), List.of())).contains("exactamente 6");
+        // Dropped onto A (4): only C (2) completes it exactly, so only C is offered (B, 3, would pass 6)
+        assertThat(room.getPrompt().getValidIds()).containsExactly("c");
+        assertThat(room.getPrompt().getMaxLevelSum()).isEqualTo(2);
+        assertThat(Answers.answer(room, "host", room.getPrompt().getId(), List.of("b"), List.of())).isNotNull();
         assertThat(Answers.answer(room, "host", room.getPrompt().getId(), List.of("c"), List.of())).isNull();
         assertThat(host.getField()).extracting(CardSlot::getInstanceId).containsExactlyInAnyOrder("maw", "b");
     }

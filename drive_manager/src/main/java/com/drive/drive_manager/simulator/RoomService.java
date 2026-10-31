@@ -59,6 +59,10 @@ public class RoomService {
     @Autowired(required = false)
     private org.springframework.messaging.simp.SimpMessagingTemplate messagingTemplate;
 
+    /** The players' icons, looked up when they join. */
+    @Autowired(required = false)
+    private com.drive.drive_manager.service.AvatarService avatarService;
+
     /** Simulator actions count as someone using the site (a server that sleeps waits for nobody to be left). */
     @Autowired(required = false)
     private com.drive.drive_manager.service.ActivityTracker activityTracker;
@@ -368,18 +372,13 @@ public class RoomService {
         if (room.getEventLog().size() > 300) room.getEventLog().remove(0);
     }
 
-    /** A player's icon as the profile stores it ("icon:color"), or null when it is not one. */
-    static String validAvatar(String avatar) {
-        return avatar != null && avatar.matches("[a-z][a-z-]{0,23}:[BGPRW]") ? avatar : null;
-    }
-
     private GameStateUpdate handleJoin(GameRoom room, String userId, GameAction action) {
         if (room.isFull() && !room.getPlayers().containsKey(userId)) {
             return GameStateUpdate.error(room.getRoomId(), "Room is full");
         }
         String username = action.getString("username");
         String deckId   = action.getString("deckId");
-        String avatar   = validAvatar(action.getString("avatar"));
+        String avatar   = avatarService == null ? null : avatarService.urlOf(userId);
         room.setEmptySince(null);
 
         if (room.getPlayers().containsKey(userId)) {

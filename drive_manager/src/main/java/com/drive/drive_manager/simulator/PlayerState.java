@@ -9,7 +9,7 @@ import java.util.List;
 public class PlayerState {
     private String userId;
     private String username;
-    /** The player's icon, "icon:color" (from their profile); null for the default. */
+    /** The player's icon (an image URL from their profile); null for none. */
     private String avatar;
     private boolean connected;
     /** When they lost their connection (0 while connected): the owner passes on after a while (a reload is not leaving). */
