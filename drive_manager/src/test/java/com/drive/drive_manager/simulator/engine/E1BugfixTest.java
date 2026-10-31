@@ -102,6 +102,51 @@ class E1BugfixTest {
     }
 
     @Test
+    void exploradorTemerarioAscendsOnlyWhileYouControlTwoCreatures() {
+        CardSlot explorer = knight(promotion(card("ex2", "Explorador Temerario", 2, 2, "R"), 1, "criatura nivel 1, mientras controlas al menos 2 criaturas."));
+        host.getHand().add(explorer);
+        CardSlot summoner = onField(host, card("s1", "Nivel 1", 1, 1, "R"));
+        // The summoner alone is one creature: not enough
+        assertThat(Summons.canSpecial(room, "host", explorer)).isFalse();
+        assertThat(Summons.specialByPlayer(room, "host", "ex2", summoner.getInstanceId())).contains("al menos 2 criaturas");
+        onField(host, card("o1", "Otra", 1, 3, "R"), BACK);
+        assertThat(Summons.canSpecial(room, "host", explorer)).isTrue();
+    }
+
+    @Test
+    void theSummonerHandsItsFloatingEffectsToTheCreatureItAscendsTo() {
+        CardSlot summoner = onField(host, knight(card("al", "Alabarda", 2, 2, "R")));
+        onField(host, card("o2", "Otra", 1, 1, "R"), BACK);
+        summoner.setTurnStrength(2);
+        summoner.getTurnKeywords().add("Provocar");
+        EffectEngine.floating(summoner, null, "Gana fuerza 2 hasta el final del turno", "turn", 2, null);
+        CardSlot promoted = knight(promotion(card("as", "Ascendida", 4, 3, "R"), 0, "criatura nivel 2."));
+        host.getHand().add(promoted);
+        assertThat(Summons.specialByPlayer(room, "host", "as", "al")).isNull();
+        answerAll();
+        assertThat(host.getField()).contains(promoted);
+        assertThat(promoted.getTurnStrength()).isEqualTo(2);
+        assertThat(promoted.getTurnKeywords()).contains("Provocar");
+        assertThat(promoted.getFloating()).extracting(f -> f.strength()).contains(2);
+    }
+
+    @Test
+    void ritualOffersOnlyTheSacrificesThatFitWhatTheSummonerLeaves() {
+        CardSlot kagravu = card("kg", "Kagravú", 5, 3, "R");
+        kagravu.setSpecialSummonKind("ritual");
+        kagravu.setSpecialCost(0);
+        kagravu.setRequirement("criaturas que sumen 2 en nivel incluido el invocador.");
+        host.getHand().add(kagravu);
+        CardSlot one = onField(host, card("l1", "Nivel 1", 1, 1, "R"));
+        CardSlot other = onField(host, card("l1b", "Otro nivel 1", 1, 1, "R"), BACK);
+        CardSlot three = onField(host, card("l3", "Nivel 3", 1, 3, "R"), BACK);
+        assertThat(Summons.ritualByPlayer(room, "host", "kg", "l1")).isNull();
+        // The level 3 does not fit what is left (1); at most 1 level more
+        assertThat(room.getPrompt().getValidIds()).containsExactly(other.getInstanceId()).doesNotContain(three.getInstanceId(), one.getInstanceId());
+        assertThat(room.getPrompt().getMaxLevelSum()).isEqualTo(1);
+    }
+
+    @Test
     void imperialAscendsOnlyFromTheStrongestAlly() {
         CardSlot imperial = promotion(card("im", "Imperial De La Llama Eterna", 6, 5, "R"), 4,
                 "criatura nivel 4 con fuerza igual o mayor que la de cualquier otro aliado.");

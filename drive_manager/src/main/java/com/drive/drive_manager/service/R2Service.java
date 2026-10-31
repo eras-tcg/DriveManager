@@ -98,6 +98,12 @@ public class R2Service {
         ).asByteArray();
     }
 
+    /** Deletes an object by its full key (no prefix added). Silently ignores if it does not exist. */
+    public void deleteRaw(String key) {
+        r2Client.deleteObject(DeleteObjectRequest.builder().bucket(bucketName).key(key).build());
+        logger.info("Deleted from R2: {}", key);
+    }
+
     /**
      * Deletes the image from R2. Silently ignores if the object does not exist.
      */

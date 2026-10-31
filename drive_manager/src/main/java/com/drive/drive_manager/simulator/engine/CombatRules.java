@@ -303,8 +303,11 @@ public final class CombatRules {
         CardSlot holder = defender.getField().stream().filter(c -> !c.isFaceDown() && CardEffects.swapsBlocker(c)).findFirst().orElse(null);
         if (holder == null || room.getUsedThisTurn().contains(defender.getUserId() + "|blocker-swap")) return false;
         Combat combat = room.getCombat();
-        List<CardSlot> others = blockers(defender).stream()
-                .filter(b -> b != blocker && (combat == null || !b.getInstanceId().equals(combat.getTargetId()))).toList();
+        // Declared by the effect, not by the rules: an exhausted creature of the Línea frontal can be the new blocker too
+        // (designer ruling 2026-10-30)
+        List<CardSlot> others = defender.getField().stream()
+                .filter(b -> "creature".equals(b.getCardType()) && inFrontLine(b) && b != blocker
+                        && (combat == null || !b.getInstanceId().equals(combat.getTargetId()))).toList();
         if (others.isEmpty()) return false;
         rulesPrompt(room, defender.getUserId(), PURPOSE_BLOCK_SWAP, name(holder) + " · Turno Oponente",
                 "En lugar de " + name(blocker) + ", puedes reactivarlo y elegir otro aliado para que bloquee. O ninguno.", "Bloquea", others,
@@ -321,7 +324,7 @@ public final class CombatRules {
         if (c == null || first == null || other == null) return;
         room.getUsedThisTurn().add(defender.getUserId() + "|blocker-swap");
         first.setTapped(false);
-        other.setTapped(true);
+        // The effect declares it: it is not exhausted for blocking (an active one stays active)
         c.setBlockerId(other.getInstanceId());
         record(room, GameEvent.UNTAP, defender.getUserId(), first, null, null, null, null, defender.getUsername() + " reactiva a " + name(first));
         record(room, GameEvent.BLOCK, defender.getUserId(), other, null, null, null, Map.of("forced", false),

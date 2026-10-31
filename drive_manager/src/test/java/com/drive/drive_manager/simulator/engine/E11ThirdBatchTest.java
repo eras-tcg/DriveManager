@@ -160,25 +160,43 @@ class E11ThirdBatchTest {
     }
 
     @Test
-    void lectranatusLeavesTheWeakEnemiesUnableToBeExhausted() {
+    void lectranatusDestroysUpToOneAndWeakEnemiesCannotDeclareAttacks() {
         CardSlot strong = onField(guest, card("s", "Fuerte", 1, 1, "R"));
         strong.setStrength(9);
         CardSlot weak = onField(guest, card("w", "Débil", 1, 1, "R"));
+        weak.setStrength(2);
         CardSlot lect = withClasses(card("lc", "Lectranatus", 6, 4, "G"), "dragón");
         summonToFront(lect);
         answer(room.getPrompt(), "s");
         assertThat(guest.getField()).doesNotContain(strong);
-        assertThat(EffectEngine.keywords(weak)).contains(EffectEngine.CANNOT_TAP);
+        // Continuous: any enemy of strength 3 or less, also one that enters later
+        CardSlot later = onField(guest, card("l", "Llega después", 1, 1, "R"));
+        later.setStrength(3);
+        EffectEngine.refreshContinuous(room);
         room.setCurrentTurnUserId("guest");
-        assertThat(CombatRules.attackByPlayer(room, "guest", "w", null)).contains("no puede agotarse");
+        assertThat(CombatRules.attackByPlayer(room, "guest", "w", null)).contains("no puede declarar ataque");
+        assertThat(CombatRules.attackByPlayer(room, "guest", "l", null)).contains("no puede declarar ataque");
+        // Gone from the field, the enemies are free again
+        host.getField().remove(lect);
+        EffectEngine.refreshContinuous(room);
+        assertThat(EffectEngine.keywords(weak)).doesNotContain(EffectEngine.NO_ATTACK);
     }
 
     @Test
     void principeCharlesGivesReactivarUntilTheEndOfTheOpponentsTurn() {
         CardSlot knight = onField(host, withClasses(card("k", "Caballero", 1, 1, "R"), "caballero"));
-        summonToFront(withClasses(card("pc", "Principe Charles Di Castirion", 4, 4, "R"), "armada", "caballero"));
-        assertThat(knight.getLaterKeywords()).contains("Reactivar");
+        CardSlot charles = withClasses(card("pc", "Principe Charles Di Castirion", 4, 4, "R"), "armada", "caballero");
+        summonToFront(charles);
         assertThat(EffectEngine.keywords(knight)).contains("Reactivar");
+        // "todos tus otros aliados": not Charles himself
+        assertThat(EffectEngine.keywords(charles)).doesNotContain("Reactivar");
+        // It affects the table: a [caballero] that enters later gets it too (designer ruling 2026-10-30)
+        CardSlot later = onField(host, withClasses(card("k2", "Caballero 2", 1, 1, "R"), "caballero"));
+        EffectEngine.refreshContinuous(room);
+        assertThat(EffectEngine.keywords(later)).contains("Reactivar");
+        CardSlot other = onField(host, card("o", "Otro", 1, 1, "R"));
+        EffectEngine.refreshContinuous(room);
+        assertThat(EffectEngine.keywords(other)).doesNotContain("Reactivar");
     }
 
     @Test

@@ -45,6 +45,8 @@ public final class EffectEngine {
     public static final String CAUSE_BATTLE = "BATTLE";
     public static final String CAUSE_RITUAL = "RITUAL";
     public static final String CAUSE_MANUAL = "MANUAL";
+    /** Destroyed by the game's rules, not by an effect nor a player: strength 0 after the effect's destruction was prevented. */
+    public static final String CAUSE_RULES = "RULES";
 
     static final String PURPOSE_BLOCK = "BLOCK";
     static final String PURPOSE_PROVOKE = "PROVOKE";
@@ -214,6 +216,24 @@ public final class EffectEngine {
     }
 
     /** The card an event is about, where it is now (its zone after the event). */
+    /** Records that are not things that happen in the game: activating and resolving effects, choosing targets, combat steps. */
+    private static final Set<String> BOOKKEEPING = Set.of(GameEvent.EFFECT_TRIGGERED, GameEvent.EFFECT_ACTIVATED, GameEvent.EFFECT_RESOLVED,
+            GameEvent.EFFECT_DECLINED, GameEvent.TARGET, GameEvent.COMBAT_STEP);
+
+    /**
+     * Nothing else happened after {@code event} in its resolution ("lo último que ocurrió"). What happens together with it
+     * does not count: the regulatory draw of a summon is part of the same event.
+     */
+    static boolean lastThingHappened(GameRoom room, GameEvent event) {
+        for (GameEvent later : room.getTimeline()) {
+            if (later.getSeq() <= event.getSeq() || BOOKKEEPING.contains(later.getType())) continue;
+            if (event.getResolutionId() != null && !event.getResolutionId().equals(later.getResolutionId())) continue;
+            if (GameEvent.DRAW.equals(later.getType()) && later.getData() != null && Boolean.TRUE.equals(later.getData().get("regulatory"))) continue;
+            return false;
+        }
+        return true;
+    }
+
     public static CardSlot eventCard(GameRoom room, GameEvent event) {
         String owner = ownerOf(event) != null ? ownerOf(event) : event.getPlayerId();
         String zone = event.getToZone() != null ? event.getToZone() : "field";
@@ -250,6 +270,7 @@ public final class EffectEngine {
             for (CardSlot source : p.getField()) {
                 if (source.isFaceDown()) continue;
                 for (CardEffects.Aura a : CardEffects.aurasOf(source)) {
+                    if (a.enemies()) continue;
                     if (a.allyTurn() && !p.getUserId().equals(room.getCurrentTurnUserId())) continue;
                     if (a.condition() != null && !a.condition().test(room, null, source, p.getUserId())) continue;
                     for (CardSlot ally : p.getField()) if (a.targets().matches(ally)) aura.merge(ally.getInstanceId(), a.strength(), Integer::sum);
@@ -267,9 +288,34 @@ public final class EffectEngine {
                     level += c.levelBonus() == null ? 0 : c.levelBonus().of(room, p.getUserId());
                     keywords.addAll(c.keywords());
                 }
+                // "Todos tus aliados … ganan …" on this side of the table
+                for (FieldGrant g : room.getFieldGrants()) {
+                    if (g.controllerId().equals(p.getUserId()) && !card.isFaceDown() && g.filter().matches(card)
+                            && !card.getInstanceId().equals(g.exceptId())) keywords.add(g.keyword());
+                }
                 card.setContinuousStrength(strength);
                 card.setContinuousLevel(level);
                 card.setContinuousKeywords(keywords);
+            }
+        }
+        // Then what cards do to their enemies, with the enemies' strength already worked out
+        for (PlayerState p : room.getPlayers().values()) {
+            PlayerState opponent = room.getPlayer(room.getOpponentId(p.getUserId()));
+            if (opponent == null) continue;
+            for (CardSlot source : p.getField()) {
+                if (source.isFaceDown()) continue;
+                for (CardEffects.Aura a : CardEffects.aurasOf(source)) {
+                    if (!a.enemies()) continue;
+                    if (a.allyTurn() && !p.getUserId().equals(room.getCurrentTurnUserId())) continue;
+                    if (a.condition() != null && !a.condition().test(room, null, source, p.getUserId())) continue;
+                    for (CardSlot enemy : opponent.getField()) {
+                        if (!a.targets().matches(enemy)) continue;
+                        List<String> keywords = new ArrayList<>(enemy.getContinuousKeywords());
+                        keywords.addAll(a.keywords());
+                        enemy.setContinuousKeywords(keywords);
+                        enemy.setContinuousStrength(enemy.getContinuousStrength() + a.strength());
+                    }
+                }
             }
         }
     }

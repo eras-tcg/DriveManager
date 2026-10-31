@@ -49,20 +49,25 @@ class E11FinalBatchTest {
     }
 
     @Test
-    void zamaranzasFromTheHandAddsAnAllyAsMaterialOfAHigherOneAndEntersForFree() {
+    void zamaranzasFromTheTributosAddsAnAllyAsMaterialOfAHigherOneAndEntersForFree() {
         CardSlot low = onField(host, card("lo", "Bajo", 1, 1, "B"));
         CardSlot high = onField(host, card("hi", "Alto", 2, 2, "B"));
         CardSlot zam = withClasses(card("za", "Zamaranzas", 1, 1, "B"), "ente");
-        host.getHand().add(zam);
+        host.getTributeZone().add(zam);
         int gems = EffectEngine.gemsOf(room, "host");
-        assertThat(Chain.activateByPlayer(room, "host", "za", "zamaranzas:en-mano")).isNull();
+        assertThat(Chain.activateByPlayer(room, "host", "za", "zamaranzas:en-tributos")).isNull();
         answer(room.getPrompt(), "lo");
         Prompt holder = room.getPrompt();
         assertThat(holder.getValidIds()).containsExactly("hi");
         answer(holder, "hi");
         assertThat(high.getMaterials()).contains(low);
         assertThat(host.getField()).contains(zam);
+        assertThat(host.getTributeZone()).doesNotContain(zam);
         assertThat(EffectEngine.gemsOf(room, "host")).isEqualTo(gems);
+        // Printed "Turno Aliado / En Tributos": not from the hand
+        CardSlot other = withClasses(card("z2", "Zamaranzas", 1, 1, "B"), "ente");
+        host.getHand().add(other);
+        assertThat(Chain.activatable(room, "host")).noneMatch(a -> "z2".equals(a.instanceId()));
     }
 
     @Test

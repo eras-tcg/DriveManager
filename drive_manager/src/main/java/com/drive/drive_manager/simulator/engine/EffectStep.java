@@ -97,7 +97,7 @@ public sealed interface EffectStep {
      */
     record SummonSelf(String zone, Amount reduce, boolean toFront) implements NeedsTarget {}
 
-    /** "invoca esta carta sin pagar su coste" from the hand: a summon by effect. */
+    /** "invoca esta carta sin pagar su coste" from the zone it is in (hand, Tributos…): a summon by effect. */
     record SummonSelfFree() implements NeedsTarget {}
 
     /**
@@ -319,15 +319,21 @@ public sealed interface EffectStep {
     /**
      * "sacrifica 1 aliado": the controller picks one of their creatures on the field. With {@code toUntapAnother}
      * ("sacrifica 1 aliado para reactivar otro") both must be possible: the one sacrificed cannot be the only
-     * ally left to reactivate.
+     * ally left to reactivate. With {@code other} ("sacrifica 1 otro aliado") it cannot be this card.
      */
-    record SacrificeAlly(boolean toUntapAnother) implements NeedsTarget {
-        public SacrificeAlly() { this(false); }
+    record SacrificeAlly(boolean toUntapAnother, boolean other) implements NeedsTarget {
+        public SacrificeAlly() { this(false, false); }
+        public SacrificeAlly(boolean toUntapAnother) { this(toUntapAnother, false); }
     }
 
     /** "reactiva 1 aliado" / "reactivar otro": the controller picks an exhausted ally that can be reactivated. */
     record UntapAlly(CardFilter filter) implements NeedsTarget {
         public UntapAlly() { this(CardFilter.any()); }
+    }
+
+    /** "reactiva hasta N aliados": the controller picks them all at once (none is fine). */
+    record UntapAllies(int max, CardFilter filter) implements EffectStep {
+        public UntapAllies(int max) { this(max, CardFilter.any()); }
     }
 
     /** "elige 1 aliado [filtro]": like {@link PickAlly}, among those that match. */
@@ -416,8 +422,13 @@ public sealed interface EffectStep {
     /** "reduce en N su fuerza por cada material removido": N times the last count, on the chosen targets. */
     record ReduceChosenPerCount(int each) implements EffectStep {}
 
-    /** "todos los aliados [filtro] ganan [habilidad] hasta el final del turno [oponente]" ({@code until}: "turn" or "nextTurn"). */
-    record AlliesGain(CardFilter filter, String keyword, String until) implements EffectStep {}
+    /**
+     * "todos [tus otros] aliados [filtro] ganan [habilidad] hasta el final del turno [oponente]" ({@code until}: "turn" or
+     * "nextTurn"; {@code others}: not this card).
+     */
+    record AlliesGain(CardFilter filter, String keyword, String until, boolean others) implements EffectStep {
+        public AlliesGain(CardFilter filter, String keyword, String until) { this(filter, keyword, until, false); }
+    }
 
     /** "tributa tu mano": all of it. */
     record TributeHand() implements EffectStep {}

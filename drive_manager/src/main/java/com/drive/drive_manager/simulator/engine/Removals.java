@@ -83,6 +83,9 @@ public final class Removals {
         // "no puede ser removido por efectos oponentes"
         if (effect != null && byId != null && !byId.equals(owner.getUserId()) && keywords(card).contains(UNREMOVABLE)) {
             log(room, name(card) + " no puede ser removida por efectos oponentes", null);
+            // At strength 0 the rules destroy it anyway: not the effect, so nothing that reacts to a destruction by effect
+            if ("creature".equals(card.getCardType()) && card.getStrength() != null && strength(card) <= 0)
+                return destroy(room, card, owner, false, CAUSE_RULES, null, null, null);
             return null;
         }
         // A replacement ("en su lugar", Protección): its owner chooses first; the destruction waits
@@ -102,7 +105,8 @@ public final class Removals {
         String why = effect != null ? " (" + effect.getSourceName() + ")"
                 : CAUSE_BATTLE.equals(cause) ? " en el enfrentamiento"
                 : CAUSE_RITUAL.equals(cause) ? " para el Ritual"
-                : CAUSE_EFFECT.equals(cause) ? " (fuerza 0)" : "";
+                : CAUSE_EFFECT.equals(cause) ? " (fuerza 0)"
+                : CAUSE_RULES.equals(cause) ? " por tener fuerza 0" : "";
         String text = sacrifice ? who + " sacrifica " + name(card) + why : who + " destruye " + name(card) + whose + why;
         Map<String, Object> data = new HashMap<>();
         data.put("cause", cause);
@@ -114,13 +118,22 @@ public final class Removals {
         return record(room, sacrifice ? GameEvent.SACRIFICE : GameEvent.DESTROY, byId, card, "field", toZone, effect, data, text);
     }
 
-    static void leaveField(CardSlot card) {
+    /**
+     * A card that leaves the field is a new object (rule 6.3.0.5): it loses everything that applied to it there — the
+     * floating effects, gained keywords and strength, exhausted state. Field effects (Príncipe Charles) apply again
+     * when it comes back, since they look at the field.
+     */
+    public static void leaveField(CardSlot card) {
         card.setFaceDown(false);
         card.setTapped(false);
         card.setStrengthModifier(0);
         card.setTurnStrength(0);
         card.setLaterStrength(0);
         card.getTurnKeywords().clear();
+        card.getLaterKeywords().clear();
+        card.getUntilNextAttack().clear();
+        card.setNoUntap(0);
+        card.setNoStartUntap(0);
         card.setContinuousStrength(0);
         card.setContinuousLevel(0);
         card.getContinuousKeywords().clear();
@@ -185,7 +198,7 @@ public final class Removals {
     static String replacementKey(PlayerState owner, CardSlot card, CardEffects.Replacement r) {
         // A Definitive one counts as the player's Definitive effect of the turn (only 1 per turn, whichever card)
         if (r.limit() == Limit.DEFINITIVE) return owner.getUserId() + "|" + EffectEngine.DEFINITIVE_USED;
-        return r.limit() == Limit.ONCE_PER_TURN_BETWEEN_COPIES ? owner.getUserId() + "|" + r.id() : owner.getUserId() + "|" + card.getInstanceId() + "|" + r.id();
+        return r.limit() == Limit.ONCE_PER_TURN_BETWEEN_COPIES ? owner.getUserId() + "|" + r.id() : owner.getUserId() + "|" + card.getInstanceId() + "@" + card.getFieldSeq() + "|" + r.id();
     }
 
     /** Asks the owner of the first pending removal whether to replace it; a removal with nothing left to replace it happens now. */
@@ -335,13 +348,14 @@ public final class Removals {
 
     /**
      * Rule 12.0.0.2 is checked again after a destruction is replaced: a creature that is still at strength 0 is destroyed anyway
-     * (designer ruling 2026-10-30). It may be replaced again if its owner can pay once more.
+     * (designer ruling 2026-10-30), by the rules and not by the effect (no "destruida por efecto" triggers). It may be replaced
+     * again if its owner can pay once more.
      */
     static void destroyIfStillNoStrength(GameRoom room, PendingRemoval pending, PlayerState owner, CardSlot card) {
         if (!"creature".equals(card.getCardType()) || card.getStrength() == null || strength(card) > 0) return;
         if (find(owner.getField(), card.getInstanceId()) == null) return;
         log(room, name(card) + " sigue con fuerza 0: es destruida", null);
-        destroy(room, card, owner, false, CAUSE_EFFECT, pending.byId(), null, null);
+        destroy(room, card, owner, false, CAUSE_RULES, null, null, null);
     }
 
     /** The removal that was waiting, as it was going to happen. */
