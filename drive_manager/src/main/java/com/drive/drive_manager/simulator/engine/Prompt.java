@@ -34,6 +34,8 @@ public class Prompt {
      */
     private String purpose;
     private String sourceName;
+    /** The art of the card whose effect asks it, so the player sees at a glance what is resolving. */
+    private String sourceImageUrl;
     private String title;
     /** What the player is asked to do, in Spanish. */
     private String instruction;

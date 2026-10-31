@@ -52,6 +52,16 @@ public sealed interface Condition {
         }
     }
 
+    /**
+     * "Inmediatamente después de que X": X must be the last thing that happened (rule of the vault "Efectos, cadenas y
+     * resolución"); if anything else happened after it in the same resolution, the effect misses its moment.
+     */
+    record Immediately(Condition condition) implements Condition {
+        public boolean test(GameRoom room, GameEvent event, CardSlot source, String controller) {
+            return event != null && condition.test(room, event, source, controller) && EffectEngine.lastThingHappened(room, event);
+        }
+    }
+
     static Condition any(Condition... conditions) {
         return new Any(List.of(conditions));
     }
@@ -167,7 +177,12 @@ public sealed interface Condition {
      */
     record ThisTributed(String fromZone, String exceptZone, CardFilter by) implements Condition {
         public boolean test(GameRoom room, GameEvent event, CardSlot source, String controller) {
-            if (!GameEvent.TRIBUTE.equals(event.getType()) || !source.getInstanceId().equals(event.getCardInstanceId())) return false;
+            // Being sacrificed is being tributed too (designer ruling 2026-10-30, Niobats), and a life lost to direct damage that
+            // goes to the Tributos is tributed from the lives (rule 10.1.4, Cofre Mímico)
+            String type = event.getType();
+            boolean tributed = GameEvent.TRIBUTE.equals(type) || GameEvent.SACRIFICE.equals(type)
+                    || (GameEvent.LIFE_DAMAGE.equals(type) && "tributeZone".equals(event.getToZone()));
+            if (!tributed || !source.getInstanceId().equals(event.getCardInstanceId())) return false;
             if (fromZone != null && !fromZone.equals(event.getFromZone())) return false;
             if (exceptZone != null && exceptZone.equals(event.getFromZone())) return false;
             if (by == null) return true;

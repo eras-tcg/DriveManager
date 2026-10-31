@@ -7,7 +7,10 @@ import org.apache.pdfbox.pdmodel.PDPage;
 import org.apache.pdfbox.pdmodel.PDPageContentStream;
 import org.apache.pdfbox.pdmodel.common.PDRectangle;
 import org.apache.pdfbox.pdmodel.graphics.image.PDImageXObject;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -19,6 +22,11 @@ import java.awt.image.BufferedImage;
 import java.awt.image.RescaleOp;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import java.time.Duration;
 import java.util.Arrays;
 import java.util.List;
 
@@ -31,8 +39,15 @@ public class ProxyPrintController {
     private static final float CARD_H        = 3.5f * PTS;
     private static final float DEFAULT_MARGIN = 0.5f;   // inches
 
+    private static final Logger log = LoggerFactory.getLogger(ProxyPrintController.class);
+    private static final HttpClient HTTP = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(10)).build();
+
     @Autowired
     private R2Service r2Service;
+
+    /** The bucket's public address, the same the site loads the images from. */
+    @Value("${r2.public-url:}")
+    private String r2PublicUrl;
 
     @PostMapping(value = "/proxy-print", produces = "application/pdf")
     public ResponseEntity<byte[]> generateProxyPdf(@RequestBody ProxyPrintRequest request) throws Exception {
@@ -66,11 +81,12 @@ public class ProxyPrintController {
                 float y = pageSize.getHeight() - margin - (pos / cols + 1) * CARD_H;
 
                 try {
-                    byte[] imgBytes = r2Service.getImage(cardIds.get(i));
+                    byte[] imgBytes = image(cardIds.get(i));
                     if (adjust) imgBytes = adjustImage(imgBytes, brightness, contrast);
                     PDImageXObject img = PDImageXObject.createFromByteArray(doc, imgBytes, cardIds.get(i));
                     cs.drawImage(img, x, y, CARD_W, CARD_H);
                 } catch (Exception e) {
+                    log.warn("Proxy without image for card {}: {}", cardIds.get(i), e.toString());
                     cs.setStrokingColor(Color.LIGHT_GRAY);
                     cs.addRect(x, y, CARD_W, CARD_H);
                     cs.stroke();
@@ -86,6 +102,24 @@ public class ProxyPrintController {
                     .contentType(MediaType.APPLICATION_PDF)
                     .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"proxies.pdf\"")
                     .body(baos.toByteArray());
+        }
+    }
+
+    /**
+     * The card's image: from the bucket's API, or else from its public address (the one the site shows), so a problem
+     * with the API keys does not leave the sheet blank.
+     */
+    private byte[] image(String cardId) throws Exception {
+        try {
+            return r2Service.getImage(cardId);
+        } catch (Exception e) {
+            if (r2PublicUrl == null || r2PublicUrl.isBlank()) throw e;
+            log.warn("R2 API read failed for card {} ({}); using the public address", cardId, e.toString());
+            HttpRequest request = HttpRequest.newBuilder(URI.create(r2PublicUrl.strip().replaceAll("/+$", "") + "/cards/" + cardId + ".jpg"))
+                    .timeout(Duration.ofSeconds(20)).GET().build();
+            HttpResponse<byte[]> response = HTTP.send(request, HttpResponse.BodyHandlers.ofByteArray());
+            if (response.statusCode() != 200) throw new IllegalStateException("public image answered " + response.statusCode());
+            return response.body();
         }
     }
 

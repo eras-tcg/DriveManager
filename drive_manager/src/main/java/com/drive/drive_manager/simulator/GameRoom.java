@@ -65,6 +65,8 @@ public class GameRoom {
     private Set<String> removalDecided = new HashSet<>();
     /** The combat in progress (rule 10), if any. */
     private com.drive.drive_manager.simulator.engine.Combat combat;
+    /** "Todos tus aliados … ganan …": what applies to a player's side of the table until the turn ends. */
+    private List<com.drive.drive_manager.simulator.engine.FieldGrant> fieldGrants = new ArrayList<>();
     /** Effects already used this turn (rule 11.8), keyed by the engine. Cleared when the turn changes. */
     private Set<String> usedThisTurn = new HashSet<>();
     /** Who took the first turn of the game (rule 3.0.1). */

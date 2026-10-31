@@ -35,6 +35,9 @@ class E11SecondBatchTest {
         Prompt choice = room.getPrompt();
         assertThat(choice.getKind()).isEqualTo(Prompt.Kind.CONFIRM);
         answer(choice, choice.getValidIds().get(0));
+        // Their order, as they were
+        assertThat(room.getPrompt().isRestToTop()).isTrue();
+        answer(room.getPrompt());
         // Back on top, then those three are the ones tributed
         assertThat(host.getTributeZone()).extracting(CardSlot::getInstanceId).containsExactlyElementsOf(top);
     }
@@ -47,21 +50,28 @@ class E11SecondBatchTest {
         host.getHand().add(hechizo);
         assertThat(Summons.playByPlayer(room, "host", "hp", 50.0, 75.0)).isNull();
         answer(room.getPrompt());
+        // Then their order: kept as they were
+        Prompt order = room.getPrompt();
+        assertThat(order.isReorderRest()).isTrue();
+        assertThat(order.isRestToTop()).isFalse();
+        answer(order);
         assertThat(host.getHand()).extracting(CardSlot::getInstanceId).contains(third);
         assertThat(host.getDeck()).extracting(CardSlot::getInstanceId).endsWith(firstTwo.toArray(String[]::new));
     }
 
     @Test
-    void criaDeDragonRunicoTakesADragonAndTributesTheRestWithoutResources() {
-        host.getDeck().add(0, withClasses(card("dr", "Dragón", 1, 1, "G"), "dragón"));
-        List<String> others = host.getDeck().subList(1, 3).stream().map(CardSlot::getInstanceId).toList();
-        host.getHand().add(withClasses(card("cr", "Cría De Dragón Rúnico", 1, 1, "G"), "dragón"));
-        assertThat(Summons.normalSummon(room, "host", "cr", 50.0, 75.0)).isNull();
-        Prompt take = room.getPrompt();
-        assertThat(take.getValidIds()).containsExactly("dr");
-        answer(take, "dr");
-        assertThat(host.getHand()).extracting(CardSlot::getInstanceId).contains("dr");
-        assertThat(host.getTributeZone()).extracting(CardSlot::getInstanceId).containsAll(others);
+    void hechizoPremonitorioReturnsTheTwoToTheTopInTheChosenOrder() {
+        List<String> firstTwo = host.getDeck().subList(0, 2).stream().map(CardSlot::getInstanceId).toList();
+        host.getHand().add(utility("hp", "Hechizo Premonitorio"));
+        assertThat(Summons.playByPlayer(room, "host", "hp", 50.0, 75.0)).isNull();
+        Prompt topOrBottom = room.getPrompt();
+        answer(topOrBottom, topOrBottom.getValidIds().get(0));
+        Prompt order = room.getPrompt();
+        assertThat(order.isRestToTop()).isTrue();
+        assertThat(Answers.answer(room, "host", order.getId(), List.of(), List.of(firstTwo.get(1), firstTwo.get(0)))).isNull();
+        // The second one went on top and was drawn; the first one is now the top card
+        assertThat(host.getHand()).extracting(CardSlot::getInstanceId).contains(firstTwo.get(1));
+        assertThat(host.getDeck().get(0).getInstanceId()).isEqualTo(firstTwo.get(0));
     }
 
     @Test

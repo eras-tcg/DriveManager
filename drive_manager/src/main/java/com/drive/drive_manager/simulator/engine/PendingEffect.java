@@ -14,6 +14,8 @@ public class PendingEffect {
     private String scriptId;
     private String controllerId;
     private String sourceInstanceId;
+    /** When its card entered the field: a card that leaves and comes back is a new one, with its own "una vez por turno". */
+    private long sourceFieldSeq;
     private String sourceName;
     private String label;
     private String text;
