@@ -114,6 +114,26 @@ public interface EffectContext {
     /** A play by effect. */
     void play(CardSlot card, int reduce);
 
+    /** Which action of a sequence is running. */
+    int sequenceIndex();
+
+    void sequenceIndex(int index);
+
+    /** The effect stays on this instruction after this answer: the sequence goes on. */
+    void goOn();
+
+    java.util.List<CardSlot> specialOptions(com.drive.drive_manager.simulator.engine.effects.model.Selector.Special special);
+
+    java.util.List<CardSlot> specialShown(com.drive.drive_manager.simulator.engine.effects.model.Selector.Special special);
+
+    int[] specialBounds(com.drive.drive_manager.simulator.engine.effects.model.Selector.Special special, int available);
+
+    String specialInstruction(com.drive.drive_manager.simulator.engine.effects.model.Selector.Special special);
+
+    String specialCheck(com.drive.drive_manager.simulator.engine.effects.model.Selector.Special special, List<String> picks);
+
+    void summonSpecial(com.drive.drive_manager.simulator.engine.effects.model.SpecialRule rule);
+
     /** How many cards the last action acted on. */
     void counted(int count);
 

@@ -21,6 +21,7 @@ public final class SelectHandler implements ActionHandler<Select> {
     @Override
     public boolean possible(EffectContext ctx, Select action) {
         Selector selector = action.selector();
+        if (selector.special() != null) return !Selection.candidates(ctx, selector, false).isEmpty();
         // It depends on the ally chosen by an action before it, not chosen yet
         if (selector.waitsFor(Memory.SUBJECT) && ctx.saved(Memory.SUBJECT).isEmpty()) return true;
         List<CardSlot> found = Selection.candidates(ctx, selector, action.target());
@@ -37,6 +38,11 @@ public final class SelectHandler implements ActionHandler<Select> {
         if (selector.mode() == Selector.Mode.ALL) {
             answer(ctx, action, new Answer(valid.stream().map(CardSlot::getInstanceId).toList(), List.of()));
             return false;
+        }
+        if (selector.special() != null) {
+            int[] bounds = ctx.specialBounds(selector.special(), valid.size());
+            ctx.ask(ctx.specialInstruction(selector.special()), action.label(), Selection.pool(ctx, selector), valid, bounds[0], bounds[1]);
+            return true;
         }
         int max = Math.min(ctx.amount(selector.max()), valid.size());
         int min = Math.min(ctx.amount(selector.min()), max);
@@ -57,6 +63,10 @@ public final class SelectHandler implements ActionHandler<Select> {
         if (action.selector().self() == Selector.Self.REQUIRE && !picks.isEmpty()
                 && valid.stream().noneMatch(c -> ctx.isSelf(c) && picks.contains(c.getInstanceId()))) {
             return "Debes incluir esta carta";
+        }
+        if (action.selector().special() != null) {
+            String wrong = ctx.specialCheck(action.selector().special(), picks);
+            if (wrong != null) return wrong;
         }
         String saveAs = action.saveAs() != null ? action.saveAs() : action.target() ? Memory.TARGETS : Memory.LAST;
         ctx.save(saveAs, picks);

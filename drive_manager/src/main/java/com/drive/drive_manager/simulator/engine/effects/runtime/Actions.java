@@ -8,7 +8,9 @@ import com.drive.drive_manager.simulator.engine.effects.actions.LookHandler;
 import com.drive.drive_manager.simulator.engine.effects.actions.ModifyHandler;
 import com.drive.drive_manager.simulator.engine.effects.actions.MoveHandler;
 import com.drive.drive_manager.simulator.engine.effects.actions.PlayHandler;
+import com.drive.drive_manager.simulator.engine.effects.actions.SequenceHandler;
 import com.drive.drive_manager.simulator.engine.effects.actions.SetTappedHandler;
+import com.drive.drive_manager.simulator.engine.effects.actions.SummonSpecialHandler;
 import com.drive.drive_manager.simulator.engine.effects.actions.SummonHandler;
 import com.drive.drive_manager.simulator.engine.effects.actions.SelectHandler;
 import com.drive.drive_manager.simulator.engine.effects.model.Action;
@@ -30,7 +32,9 @@ public final class Actions {
             Map.entry(Action.Modify.class, new ModifyHandler()),
             Map.entry(Action.Destroy.class, new DestroyHandler()),
             Map.entry(Action.Summon.class, new SummonHandler()),
-            Map.entry(Action.Play.class, new PlayHandler()));
+            Map.entry(Action.Play.class, new PlayHandler()),
+            Map.entry(Action.Sequence.class, new SequenceHandler()),
+            Map.entry(Action.SummonSpecial.class, new SummonSpecialHandler()));
 
     private Actions() {}
 

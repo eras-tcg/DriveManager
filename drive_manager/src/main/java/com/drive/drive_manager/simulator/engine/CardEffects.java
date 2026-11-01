@@ -28,7 +28,6 @@ import com.drive.drive_manager.simulator.engine.EffectStep.AlliesGain;
 import com.drive.drive_manager.simulator.engine.EffectStep.SkipBlockStep;
 import com.drive.drive_manager.simulator.engine.EffectStep.IfChosenGone;
 import static com.drive.drive_manager.simulator.engine.Compose.*;
-import com.drive.drive_manager.simulator.engine.EffectStep.SpecialFromZone;
 import com.drive.drive_manager.simulator.engine.EffectStep.PickAlly;
 import com.drive.drive_manager.simulator.engine.EffectStep.PickAllyWhere;
 import com.drive.drive_manager.simulator.engine.EffectStep.EndYourTurn;
@@ -254,12 +253,12 @@ public final class CardEffects {
         // ST4-6 Espada De Plata: once destroyed it is not on the field, so the summoner is any ally that meets the requirement
         add("espada de plata", new EffectScript("espada-de-plata:en-destruccion", Moment.ON_DESTROY, false, EN_DESTRUCCION,
                 "Puedes invocar por Ascenso 1 criatura Roja de tu mano reduciendo el coste especial en 1.",
-                List.of(new SpecialFromZone("promotion", "hand", 1, "any", CardFilter.creatures().withColors("R")))));
+                List.of(specialFromZone("promotion", "hand", 1, "any", CardFilter.creatures().withColors("R")))));
         // ST4-7 Filo Vengativo: Celeridad (keyword)
         // ST4-8 Armadura De Plata
         add("armadura de plata", new EffectScript("armadura-de-plata:en-invocacion", Moment.ON_SUMMON, false, EN_INVOCACION,
                 "(1) Otro aliado puede invocar por Ascenso 1 criatura de tu mano reduciendo el coste especial en 1.",
-                List.of(new SpecialFromZone("promotion", "hand", 1, true)))
+                List.of(specialFromZone("promotion", "hand", 1, true)))
                 .limited(Limit.ONCE_PER_TURN_BETWEEN_COPIES));
         // ST4-9 Caballería Cruzada
         add("caballería cruzada", new EffectScript("caballeria-cruzada:en-invocacion", Moment.ON_SUMMON, true, EN_INVOCACION,
@@ -301,7 +300,7 @@ public final class CardEffects {
                         .limited(Limit.ONCE_PER_TURN),
                 new EffectScript("rey-franco:final-del-turno", Moment.ON_EVENT, false, "Turno Aliado",
                         "Al final del turno: 1 aliado puede invocar por Ascenso una criatura de tu mano reduciendo el coste especial en 2.",
-                        List.of(new SpecialFromZone("promotion", "hand", 2, false)))
+                        List.of(specialFromZone("promotion", "hand", 2, false)))
                         .when(new TurnEnds())
                         .onlyAllyTurn());
         // ST4-16 Reino Medieval (structure)
@@ -330,7 +329,7 @@ public final class CardEffects {
                                 + "1 criatura en tu mano reduciendo su coste especial en 1.",
                         List.of(new MayDo("¿Tributas 1 carta de tu mano para tomar 1 carta de tus tributos?", 2),
                                 tributeFromHand(1), takeFromZone("tributeZone", CardFilter.any(), 1, false),
-                                new SpecialFromZone("promotion", "hand", 1, false)))
+                                specialFromZone("promotion", "hand", 1, false)))
                         .limited(Limit.ONCE_PER_TURN_BETWEEN_COPIES),
                 new EffectScript("investidura:en-mano", Moment.ON_EVENT, false, "En Mano",
                         "Si algún aliado es invocado por efecto: puedes jugar esta carta sin pagar su coste.",
@@ -366,7 +365,7 @@ public final class CardEffects {
         // ST2-3 Flamagón
         add("flamagón", new EffectScript("flamagon:al-atacar", Moment.ON_ATTACK, false, AL_ATACAR,
                 "Esta carta puede invocar por Evolución 1 [dragón] de tu mano reduciendo el coste especial en 1.",
-                List.of(new SpecialFromZone("evolution", "hand", 1, "self", dragon))));
+                List.of(specialFromZone("evolution", "hand", 1, "self", dragon))));
         inherit("flamagón", new EffectScript("flamagon:hereda-todos-los-turnos", Moment.ON_EVENT, false, TODOS,
                 "Heredado de Flamagón: si algún enemigo es destruido por tus efectos, puedes tomar 1 carta Verde de tus tributos.",
                 List.of(takeFromZone("tributeZone", CardFilter.colors("G"), 1, false)))
@@ -443,7 +442,7 @@ public final class CardEffects {
         // ST2-13 Saildreik
         add("saildreik", new EffectScript("saildreik:al-atacar", Moment.ON_ATTACK, false, AL_ATACAR,
                 "Esta carta puede invocar por Evolución 1 [dragón] de tus tributos reduciendo su coste especial en 1.",
-                List.of(new SpecialFromZone("evolution", "tributeZone", 1, "self", dragon))));
+                List.of(specialFromZone("evolution", "tributeZone", 1, "self", dragon))));
         inherit("saildreik", new EffectScript("saildreik:hereda-al-final-del-ataque", Moment.ON_ATTACK_END, true, AL_FINAL,
                 "Heredado de Saildreik: elige 1 enemigo de fuerza 8 o menos; destrúyelo.",
                 List.of(chooseEnemy(1, CardFilter.creatures().withMaxStrength(8))), List.of(destroyChosen())));
@@ -632,7 +631,7 @@ public final class CardEffects {
                         "Puedes añadir esta carta activa como material a un aliado para que invoque por Materialización 1 criatura en tu mano o "
                                 + "tributos reduciendo el coste especial en 1.",
                         List.of(new IfPossible(), new PickAlly(), attachSelfToSubject(),
-                                new SpecialFromZone("materialization", "hand,tributeZone", 1, "subject", CardFilter.any())))
+                                specialFromZone("materialization", "hand,tributeZone", 1, "subject", CardFilter.any())))
                         // "esta carta activa": not while it is exhausted (it stays exhausted after being played)
                         .when(new Active())
                         .onlyAllyTurn());
@@ -698,7 +697,7 @@ public final class CardEffects {
                 List.of(lookTop(4), takeFromLookedRestToBottom(1, CardFilter.colors("G")))));
         inherit("dragón rúnico", new EffectScript("dragon-runico:hereda-en-destruccion", Moment.ON_DESTROY, false, EN_DESTRUCCION,
                 "Heredado de Dragón Rúnico: un aliado puede invocar por Evolución un \"Dragón Rúnico\" en tus tributos reduciendo el coste especial en 1.",
-                List.of(new SpecialFromZone("evolution", "tributeZone", 1, "any", CardFilter.creatures().named("Dragón Rúnico")))));
+                List.of(specialFromZone("evolution", "tributeZone", 1, "any", CardFilter.creatures().named("Dragón Rúnico")))));
         // E1-R25 Fervor De Guerra
         add("fervor de guerra", playAtBlockStep("fervor-de-guerra"), new EffectScript("fervor-de-guerra:en-juego", Moment.ON_PLAY, true, EN_JUEGO,
                 "(1) Elige 1 aliado Rojo nivel 3 o menor; reactívalo.",
@@ -1031,7 +1030,7 @@ public final class CardEffects {
         // E1-R16 Caballeria Frontal
         add("caballeria frontal", new EffectScript("caballeria-frontal:en-invocacion", Moment.ON_SUMMON, false, EN_INVOCACION,
                 "1 aliado nivel 1 puede invocar por Ascenso 1 criatura en tu mano reduciendo el coste especial en 1.",
-                List.of(new SpecialFromZone("promotion", "hand", 1, "level:1", CardFilter.any()))));
+                List.of(specialFromZone("promotion", "hand", 1, "level:1", CardFilter.any()))));
         // E1-P4 Albigio (Provocar 4: combat rule)
         add("albigio", new EffectScript("albigio:en-invocacion", Moment.ON_SUMMON, false, EN_INVOCACION + " por efecto",
                 "Celeridad: puede subir a tu línea frontal.",
@@ -1123,7 +1122,7 @@ public final class CardEffects {
                         List.of(tributeTop(3), chooseEnemy(1, enemy.withMaxStrength(7)), destroyChosen())),
                 new EffectScript("hydra-colosal:al-atacar", Moment.ON_ATTACK, false, AL_ATACAR,
                         "Esta carta puede invocar por Evolución una criatura en tus tributos reduciendo su coste especial en 1.",
-                        List.of(new SpecialFromZone("evolution", "tributeZone", 1, "self", CardFilter.creatures()))));
+                        List.of(specialFromZone("evolution", "tributeZone", 1, "self", CardFilter.creatures()))));
         // E1-R19 Dante Di Castirion (Letalidad 1: combat rule)
         add("dante di castirion", new EffectScript("dante-castirion:en-mano", Moment.ACTIVATED, false, "Turno Aliado / En Mano",
                 "(1) Puedes tributar 3 o más aliados Rojos que sumen 5 o más en nivel para invocar esta carta en tu línea frontal reduciendo su coste en 3.",
@@ -1463,7 +1462,7 @@ public final class CardEffects {
                 "(1) Al inicio del turno, si el oponente no controla criaturas en su línea frontal: puedes añadir esta carta como material a 1 aliado "
                         + "Azul. Si lo haces: dicho aliado puede invocar por Materialización 1 criatura en tu mano o tributos reduciendo el coste especial en 1.",
                 List.of(new PickAllyWhere(CardFilter.creatures().withColors("B")), attachSelfToSubject(), new IfDone(1),
-                        new SpecialFromZone("materialization", "hand,tributeZone", 1, "subject", CardFilter.any())))
+                        specialFromZone("materialization", "hand,tributeZone", 1, "subject", CardFilter.any())))
                 .when(all(new TurnStarts(false), new NoEnemiesInFrontLine()))
                 .fromZone("tributeZone")
                 .limited(Limit.ONCE_PER_TURN_BETWEEN_COPIES));
@@ -1978,7 +1977,7 @@ public final class CardEffects {
                 List.of(new MayDo("¿Envías 5 cartas [necrómata] de tus tributos o descarte al fondo de tu mazo para ganar 1 gema?", 2),
                         sendFromZoneToDeckBottom("tributeZone,discardPile", 5, CardFilter.any().withClasses("necrómata")), gainGems(1),
                         new MayDo("¿Destruyes 1 aliado para que Freud invoque de forma especial 1 criatura Azul o [necrómata] de tu mano o descarte?", 2),
-                        destroyAlly(CardFilter.creatures()), new SpecialFromZone("any", "hand,discardPile", 1, "self", blueNecro))));
+                        destroyAlly(CardFilter.creatures()), specialFromZone("any", "hand,discardPile", 1, "self", blueNecro))));
         // E1.3-B10 Velkerop-1
         add("velkerop 1",
                 new EffectScript("velkerop-1:en-descarte", Moment.ACTIVATED, false, "Turno Aliado / En Descarte",
@@ -2036,12 +2035,12 @@ public final class CardEffects {
         // E1.3-G03 Mono De Pantano
         inherit("mono de pantano", new EffectScript("mono-de-pantano:hereda-al-atacar", Moment.ON_ATTACK, false, AL_ATACAR,
                 "Heredado de Mono De Pantano: esta carta puede invocar por Evolución una carta de tu mano.",
-                List.of(new SpecialFromZone("evolution", "hand", 0, "self", CardFilter.any()))));
+                List.of(specialFromZone("evolution", "hand", 0, "self", CardFilter.any()))));
         // E1.3-G04 Veleaf
         add("veleaf", new EffectScript("veleaf:turno-aliado", Moment.ON_EVENT, false, "Turno Aliado",
                 "Si esta carta sube a la línea frontal: esta carta puede invocar por Evolución una criatura en tu mano reduciendo el coste especial "
                         + "en 1. Si lo haces: roba 1 carta.",
-                List.of(new SpecialFromZone("evolution", "hand", 1, "self", CardFilter.creatures()), new IfDone(1), draw(1)))
+                List.of(specialFromZone("evolution", "hand", 1, "self", CardFilter.creatures()), new IfDone(1), draw(1)))
                 .when(new ThisMovedToFront())
                 .onlyAllyTurn());
         // E1.3-G05 Fiorvo
@@ -2091,7 +2090,7 @@ public final class CardEffects {
                 new EffectScript("druida-antiguo:todos-los-turnos", Moment.ON_EVENT, false, TODOS,
                         "Si esta carta es agotada: puedes agotar 1 de tus estructuras para invocar por Evolución una criatura en tu mano reduciendo el "
                                 + "coste especial en 2.",
-                        List.of(new IfPossible(), tapOwnCard(structure), new SpecialFromZone("evolution", "hand", 2, "any", CardFilter.creatures())))
+                        List.of(new IfPossible(), tapOwnCard(structure), specialFromZone("evolution", "hand", 2, "any", CardFilter.creatures())))
                         .when(new ThisExhausted()));
         // E1.3-G14 Mensaje De Los Espiritus Protectores (utility)
         add("mensaje de los espiritus protectores",
@@ -2236,7 +2235,7 @@ public final class CardEffects {
                 new EffectScript("caballero-leon-dorado:tributada", Moment.ON_EVENT, false, "En Tributos",
                         "Si esta carta es tributada desde el campo y tienes menos vidas que tu oponente: un aliado puede invocar especialmente 1 criatura "
                                 + "en tu mano reduciendo el coste especial en 1.",
-                        List.of(new SpecialFromZone("any", "hand", 1, "any", CardFilter.creatures())))
+                        List.of(specialFromZone("any", "hand", 1, "any", CardFilter.creatures())))
                         .when(all(new ThisTributed("field", null, null), new FewerLivesThanOpponent()))
                         .fromZone("tributeZone"),
                 new EffectScript("caballero-leon-dorado:en-invocacion", Moment.ON_SUMMON, false, EN_INVOCACION,
@@ -2420,7 +2419,7 @@ public final class CardEffects {
                 new EffectScript("clarice:todos-los-turnos", Moment.ON_EVENT, false, TODOS,
                         "Si un [artefacto] entra tu línea frontal: esta carta puede invocar especialmente 1 criatura de tu mano reduciendo en 2 el coste "
                                 + "especial.",
-                        List.of(new SpecialFromZone("any", "hand", 2, "self", CardFilter.creatures())))
+                        List.of(specialFromZone("any", "hand", 2, "self", CardFilter.creatures())))
                         .when(new EntersFrontLine(false, artefacto)));
         // E2-B06 Unidad Heróica V10-L3T
         add("unidad heróica v10-l3t",

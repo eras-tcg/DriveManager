@@ -19,6 +19,7 @@ public final class Selection {
 
     /** The cards shown for the choice: what is in the selector's zones within reach, whether or not it can be picked. */
     public static List<CardSlot> pool(EffectContext ctx, Selector selector) {
+        if (selector.special() != null) return ctx.specialShown(selector.special());
         List<CardSlot> pool = new ArrayList<>();
         if (selector.owner() != Selector.Owner.OPPONENT) addZones(pool, ctx, ctx.player(), selector.zones(), false);
         if (selector.owner() != Selector.Owner.YOU && ctx.opponent() != null) addZones(pool, ctx, ctx.opponent(), selector.zones(), true);
@@ -27,6 +28,7 @@ public final class Selection {
 
     /** The cards that can be picked now. */
     public static List<CardSlot> candidates(EffectContext ctx, Selector selector, boolean target) {
+        if (selector.special() != null) return ctx.specialOptions(selector.special());
         List<CardSlot> found = new ArrayList<>();
         for (CardSlot card : pool(ctx, selector)) {
             boolean self = ctx.isSelf(card);

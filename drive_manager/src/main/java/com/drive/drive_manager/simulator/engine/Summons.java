@@ -7,6 +7,7 @@ import com.drive.drive_manager.simulator.GameRoom;
 import com.drive.drive_manager.simulator.PlayerState;
 import com.drive.drive_manager.simulator.engine.EffectScript.Limit;
 import com.drive.drive_manager.simulator.engine.EffectStep.*;
+import com.drive.drive_manager.simulator.engine.effects.model.SpecialRule;
 
 import java.util.*;
 import java.util.regex.Matcher;
@@ -938,7 +939,7 @@ public final class Summons {
     }
 
     /** Creatures an effect lets be summoned by a special summon of that kind, from that zone. */
-    static List<CardSlot> specialTargets(GameRoom room, PendingEffect effect, SpecialFromZone special) {
+    static List<CardSlot> specialTargets(GameRoom room, PendingEffect effect, SpecialRule special) {
         PlayerState player = room.getPlayer(effect.getControllerId());
         if (player == null) return List.of();
         return specialZones(player, special).stream()
@@ -960,7 +961,7 @@ public final class Summons {
     }
 
     /** "esta carta puede invocar…" (only this card), "otro aliado…" (not this card) or "1 aliado…" (any). */
-    static boolean summonerAllowed(SpecialFromZone special, CardSlot summoner, PendingEffect effect) {
+    static boolean summonerAllowed(SpecialRule special, CardSlot summoner, PendingEffect effect) {
         boolean self = summoner.getInstanceId().equals(effect.getSourceInstanceId());
         return switch (special.summoner()) {
             case "self" -> self;
@@ -981,62 +982,14 @@ public final class Summons {
         return source == null || source.getLevel() == null ? 0 : source.getLevel();
     }
 
-    /** "puede invocar por Ascenso…": the creature (or none), then its summoner. */
-    static boolean runSpecialFromZone(GameRoom room, PendingEffect effect, PlayerState player, SpecialFromZone special) {
-        CardSlot target = effect.getRitualTargetId() == null ? null : find(specialZones(player, special), effect.getRitualTargetId());
-        if (target == null) {
-            List<CardSlot> valid = specialTargets(room, effect, special);
-            if (valid.isEmpty()) {
-                log(room, "No hay criaturas que puedan invocarse por " + kindName(special.kind()) + " (" + effect.getSourceName() + ")", null);
-                return false;
-            }
-            pick(room, effect, "Puedes elegir 1 criatura de tu " + zonesName(special) + " para invocarla por " + kindName(special.kind())
-                    + (special.reduce() > 0 ? " reduciendo su coste especial en " + special.reduce() : "") + ", o ninguna.", "Invocar",
-                    specialZones(player, special), ids(valid), 1);
-            room.getPrompt().setMin(0);
-            return true;
-        }
-        SpecialRequirement req = specialRequirement(target);
-        CardSlot summoner = "subject".equals(special.summoner()) ? subject(room, effect)
-                // "esta carta puede invocar…": no summoner to choose
-                : "self".equals(special.summoner()) ? find(player.getField(), effect.getSourceInstanceId())
-                : find(player.getField(), effect.getRitualSummonerId());
-        if (summoner == null) {
-            List<CardSlot> summoners = specialSummoners(player, target, req).stream()
-                    .filter(s -> summonerAllowed(special, s, effect) && materialsPossible(player, target, req, s)).toList();
-            pick(room, effect, "Elige el invocador: 1 criatura nivel " + req.level() + (req.atLeast() ? " o mayor" : "") + ". " + name(target)
-                            + " ocupa su lugar y hereda su estado.",
-                    "Invocador", player.getField(), ids(summoners), 1);
-            return true;
-        }
-        // The summoner chosen before ("el aliado elegido puede invocar por Evolución…"): no material to ask for
-        if (!"materialization".equals(req.kind())) {
-            String from = find(player.getHand(), target.getInstanceId()) != null ? "hand"
-                    : find(player.getTributeZone(), target.getInstanceId()) != null ? "tributeZone" : special.zone().split(",")[0].trim();
-            effect.setRitualTargetId(null);
-            effect.setRitualSummonerId(null);
-            specialSummon(room, player, target, req, summoner, List.of(), from, special.reduce(), effect);
-            effect.setSummonedId(target.getInstanceId());
-            effect.setLastDone(true);
-            return false;
-        }
-        // Materialización: then the material, from the Tributos or the field
-        List<CardSlot> materials = specialMaterials(player, target, req, summoner);
-        List<CardSlot> shown = new ArrayList<>(player.getTributeZone());
-        shown.addAll(player.getField());
-        pick(room, effect, materialInstruction(req, target, summoner), "Material", shown, ids(materials), req.levelSum() > 0 ? materials.size() : 1);
-        if (req.levelSum() > 0) room.getPrompt().setMin(1);
-        return true;
-    }
-
     /** The zones a special summon by effect takes the creature from ("de tu mano o tributos"). */
-    static List<CardSlot> specialZones(PlayerState player, SpecialFromZone special) {
+    static List<CardSlot> specialZones(PlayerState player, SpecialRule special) {
         List<CardSlot> all = new ArrayList<>();
         for (String z : special.zone().split(",")) all.addAll(zone(player, z.trim()));
         return all;
     }
 
-    static String zonesName(SpecialFromZone special) {
+    static String zonesName(SpecialRule special) {
         return String.join(" o ", Arrays.stream(special.zone().split(",")).map(z -> zoneName(z.trim())).toList());
     }
 

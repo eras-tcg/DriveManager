@@ -8,6 +8,7 @@ import com.drive.drive_manager.simulator.PlayerState;
 import com.drive.drive_manager.simulator.engine.EffectScript.Limit;
 import com.drive.drive_manager.simulator.engine.EffectStep.*;
 import com.drive.drive_manager.simulator.engine.effects.model.Action;
+import com.drive.drive_manager.simulator.engine.effects.model.SpecialRule;
 import com.drive.drive_manager.simulator.engine.effects.runtime.ActionHandler;
 import com.drive.drive_manager.simulator.engine.effects.runtime.Actions;
 
@@ -88,21 +89,6 @@ public final class Steps {
         if (step instanceof RitualFromZone r && r.reduceBy() != null) {
             return new RitualFromZone(r.zone(), r.selfSummoner(), new EngineContext(room, effect).amount(r.reduceBy()), r.filter());
         }
-        if (step instanceof SpecialFromZone s && (s.reduceBy() != null || s.relative() != null || SpecialFromZone.OF_THIS_CARD.equals(s.kind()))) {
-            int reduce = s.reduceBy() == null ? s.reduce() : new EngineContext(room, effect).amount(s.reduceBy());
-            String kind = s.kind();
-            CardFilter filter = s.filter();
-            if (SpecialFromZone.OF_THIS_CARD.equals(kind)) {
-                CardSlot self = findAnywhere(room, effect.getControllerId(), effect.getSourceInstanceId());
-                kind = self == null || self.getSpecialSummonKind() == null ? "any" : self.getSpecialSummonKind();
-                filter = CardFilter.any().named(effect.getSourceName());
-            }
-            if (s.relative() != null) {
-                CardSlot last = new EngineContext(room, effect).relativeTo(s.relative().to());
-                filter = last == null || last.getLevel() == null ? filter.withLevel(-1) : filter.withLevel(last.getLevel()).notNamed(last.getCardName());
-            }
-            return new SpecialFromZone(kind, s.zone(), reduce, s.summoner(), filter);
-        }
         return step;
     }
 
@@ -135,7 +121,6 @@ public final class Steps {
                 PlayerState opponent = room.getPlayer(room.getOpponentId(effect.getControllerId()));
                 yield opponent != null && opponent.getLifeStack().stream().anyMatch(l -> !l.isFaceDown());
             }
-            case SpecialFromZone special -> !specialTargets(room, effect, special).isEmpty();
             case RitualFromZone ritual -> !ritualTargets(room, effect, ritual).isEmpty();
             case TributesToDeckBottomForKeyword d -> player.getTributeZone().stream().filter(d.filter()::matches).count() >= d.count();
             case TributeAlliesLevelSum t -> {
@@ -735,9 +720,6 @@ public final class Steps {
                 }
                 return false;
             }
-            case SpecialFromZone special -> {
-                return runSpecialFromZone(room, effect, player, special);
-            }
             case IfTributed ift -> {
                 boolean match = effect.getLastTributed().stream()
                         .map(id -> findAnywhere(room, userId, id)).anyMatch(c -> c != null && ift.filter().matches(c));
@@ -1080,6 +1062,15 @@ public final class Steps {
                 player.getUsername() + " elige como objetivo a " + name(ally) + " (" + effect.getSourceName() + ")");
     }
 
+    /** The rule of a special summon whose summoner is the ally chosen before; null for any other step. */
+    static SpecialRule subjectSummon(EffectStep step) {
+        if (!(step instanceof Do d) || !(d.action() instanceof Action.Sequence seq)) return null;
+        for (Action a : seq.actions()) {
+            if (a instanceof Action.SummonSpecial summon && "subject".equals(summon.rule().summoner())) return summon.rule();
+        }
+        return null;
+    }
+
     static List<CardSlot> pickable(GameRoom room, PendingEffect effect, PlayerState player, PickAlly pick) {
         List<EffectStep> steps = new ArrayList<>(script(effect).cost());
         steps.addAll(script(effect).steps());
@@ -1091,10 +1082,11 @@ public final class Steps {
                 .toList();
         // "a un aliado para que invoque por …": only an ally that meets the Requerimiento of something it could summon
         List<EffectStep> resolution = script(effect).steps();
-        SpecialFromZone special = resolution.stream().filter(s -> s instanceof SpecialFromZone sp && "subject".equals(sp.summoner()))
-                .map(s -> (SpecialFromZone) s).findFirst().orElse(null);
+        // Its rule, as it reads now, in the sequence that summons
+        EffectStep summonStep = resolution.stream().filter(s -> subjectSummon(s) != null).findFirst().orElse(null);
+        SpecialRule special = summonStep == null ? null : SpecialProcedure.resolve(room, effect, subjectSummon(summonStep));
         // Not when that summon is conditional ("Si lo haces: dicho aliado puede invocar …")
-        if (special == null || conditional(resolution, resolution.indexOf(special))) return valid;
+        if (special == null || conditional(resolution, resolution.indexOf(summonStep))) return valid;
         String chosen = effect.getSubjectId();
         List<CardSlot> result = valid.stream().filter(ally -> {
             effect.setSubjectId(ally.getInstanceId());
@@ -1297,7 +1289,7 @@ public final class Steps {
         switch (step) {
 
             case Do d -> {
-                return Actions.answer(new EngineContext(room, effect), d.action(), new ActionHandler.Answer(picks, order));
+                return Actions.answer(new EngineContext(room, effect, repeat), d.action(), new ActionHandler.Answer(picks, order));
             }
             case SpecialSelfDeclaredSummoner s -> {
                 if (picks.isEmpty()) {
@@ -1737,50 +1729,6 @@ public final class Steps {
                             Map.of("cause", CAUSE_EFFECT, "ownerId", opponent.getUserId(), "byCard", effect.getSourceInstanceId()),
                             player.getUsername() + " destruye la vida " + name(life) + " de " + opponent.getUsername() + " (" + effect.getSourceName() + ")");
                 }
-            }
-            case SpecialFromZone special -> {
-                if (effect.getRitualTargetId() == null) {
-                    if (picks.isEmpty()) return null;
-                    effect.setRitualTargetId(picks.get(0));
-                    repeat[0] = true;
-                    return null;
-                }
-                CardSlot target = find(specialZones(player, special), effect.getRitualTargetId());
-                if (target == null) return "Esa criatura ya no está disponible";
-                SpecialRequirement req = specialRequirement(target);
-                boolean bySubject = "subject".equals(special.summoner()) || "self".equals(special.summoner());
-                CardSlot summoner = "subject".equals(special.summoner()) ? subject(room, effect)
-                        : "self".equals(special.summoner()) ? find(player.getField(), effect.getSourceInstanceId())
-                        : find(player.getField(), effect.getRitualSummonerId());
-                if (summoner == null) {
-                    if (find(player.getField(), picks.get(0)) == null) return "Esa criatura ya no está en el campo";
-                    effect.setRitualSummonerId(picks.get(0));
-                    if ("materialization".equals(req.kind())) {
-                        repeat[0] = true;
-                        return null;
-                    }
-                    summoner = find(player.getField(), picks.get(0));
-                } else if (!"materialization".equals(req.kind())) {
-                    return "Este paso ya tiene invocador";
-                }
-                List<CardSlot> materials = new ArrayList<>();
-                if ("materialization".equals(req.kind()) && !picks.isEmpty() && !picks.get(0).equals(summoner.getInstanceId())) {
-                    for (String id : picks) {
-                        CardSlot material = find(player.getTributeZone(), id);
-                        if (material == null) material = find(player.getField(), id);
-                        if (material == null) return "Ese material ya no está disponible";
-                        materials.add(material);
-                    }
-                    String wrong = checkMaterials(req, summoner, materials);
-                    if (wrong != null) return wrong;
-                }
-                String from = find(player.getHand(), target.getInstanceId()) != null ? "hand"
-                        : find(player.getTributeZone(), target.getInstanceId()) != null ? "tributeZone" : special.zone().split(",")[0].trim();
-                effect.setRitualTargetId(null);
-                effect.setRitualSummonerId(null);
-                specialSummon(room, player, target, req, summoner, materials, from, special.reduce(), effect);
-                effect.setSummonedId(target.getInstanceId());
-                effect.setLastDone(true);
             }
             case DeclareAttack ignored -> {
                 CardSlot subject = subject(room, effect);

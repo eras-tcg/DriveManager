@@ -11,6 +11,17 @@ public sealed interface Action {
         return false;
     }
 
+    /** Several actions that are one instruction of a card. */
+    record Sequence(java.util.List<Action> actions) implements Action {
+        @Override
+        public boolean needsCards() {
+            return true;
+        }
+    }
+
+    /** The special summon itself: the creature, its summoner and its materials were chosen by the actions before it. */
+    record SummonSpecial(SpecialRule rule) implements Action {}
+
     /** "invoca": {@code reduce} lowers its cost, {@link #FREE} is "sin pagar su coste". */
     record Summon(Selector cards, com.drive.drive_manager.simulator.engine.Amount reduce, boolean toFront, boolean required) implements Action {
         public static final int FREE = 1000;

@@ -16,11 +16,26 @@ import com.drive.drive_manager.simulator.engine.CardFilter;
  * @param self   what happens with the effect's own card
  * @param mode   how they are decided
  * @param relative what it asks in relation to another card or to the game; null: nothing
+ * @param special  a choice of a special summon; null: an ordinary one
  */
-public record Selector(String zones, Owner owner, CardFilter filter, Amount min, Amount max, Self self, Mode mode, Relative relative) {
+public record Selector(String zones, Owner owner, CardFilter filter, Amount min, Amount max, Self self, Mode mode, Relative relative, Special special) {
+
+    /** The choices of a special summon by effect. */
+    public enum Stage { CARD, SUMMONER, MATERIAL }
+
+    public record Special(SpecialRule rule, Stage stage) {}
+
+    public Selector(String zones, Owner owner, CardFilter filter, Amount min, Amount max, Self self, Mode mode, Relative relative) {
+        this(zones, owner, filter, min, max, self, mode, relative, null);
+    }
+
+    /** What a special summon's choice offers is said by its rule. */
+    public static Selector of(SpecialRule rule, Stage stage) {
+        return new Selector(rule.zone(), Owner.YOU, CardFilter.any(), new Amount.Fixed(0), new Amount.Fixed(1), Self.ANY, Mode.CHOOSE, null, new Special(rule, stage));
+    }
 
     public Selector(String zones, Owner owner, CardFilter filter, Amount min, Amount max, Self self, Mode mode) {
-        this(zones, owner, filter, min, max, self, mode, null);
+        this(zones, owner, filter, min, max, self, mode, null, null);
     }
 
     public enum Compare { EQUAL, AT_MOST, LESS, GREATER }
@@ -124,24 +139,24 @@ public record Selector(String zones, Owner owner, CardFilter filter, Amount min,
     }
 
     public Selector atLeast(int min) {
-        return new Selector(zones, owner, filter, new Amount.Fixed(min), max, self, mode, relative);
+        return new Selector(zones, owner, filter, new Amount.Fixed(min), max, self, mode, relative, special);
     }
 
     public Selector with(Self self) {
-        return new Selector(zones, owner, filter, min, max, self, mode, relative);
+        return new Selector(zones, owner, filter, min, max, self, mode, relative, special);
     }
 
     public Selector as(Mode mode) {
-        return new Selector(zones, owner, filter, min, max, self, mode, relative);
+        return new Selector(zones, owner, filter, min, max, self, mode, relative, special);
     }
 
     public Selector with(Relative relative) {
-        return new Selector(zones, owner, filter, min, max, self, mode, relative);
+        return new Selector(zones, owner, filter, min, max, self, mode, relative, special);
     }
 
     /** No limit on how many. */
     public Selector upToAll() {
-        return new Selector(zones, owner, filter, min, new Amount.Fixed(Integer.MAX_VALUE), self, mode, relative);
+        return new Selector(zones, owner, filter, min, new Amount.Fixed(Integer.MAX_VALUE), self, mode, relative, special);
     }
 
     /** It acts on what an action before it left in the memory, which is not known until then. */

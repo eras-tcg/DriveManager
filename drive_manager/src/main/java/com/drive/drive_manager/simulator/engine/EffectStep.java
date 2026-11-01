@@ -44,25 +44,6 @@ public sealed interface EffectStep {
 
         /** "sin pagar su coste". */
 
-    /**
-     * "[otro aliado / 1 aliado] puede invocar por [Ascenso / Evolución] 1 criatura de tu [zona] reduciendo el coste
-     * especial en N": the controller may pick the creature (or none), then the summoner.
-     */
-    record SpecialFromZone(String kind, String zone, int reduce, String summoner, CardFilter filter, Amount reduceBy,
-                           com.drive.drive_manager.simulator.engine.effects.model.Selector.Relative relative) implements NeedsTarget {
-        /** {@code kind} {@value #OF_THIS_CARD}: the method this card itself is summoned by. */
-        public static final String OF_THIS_CARD = "ofThisCard";
-
-        public SpecialFromZone(String kind, String zone, int reduce, String summoner, CardFilter filter) {
-            this(kind, zone, reduce, summoner, filter, null, null);
-        }
-
-        /** "otro aliado" (not this card) or "1 aliado" (any). */
-        public SpecialFromZone(String kind, String zone, int reduce, boolean otherAlly) {
-            this(kind, zone, reduce, otherAlly ? "other" : "any", CardFilter.any());
-        }
-    }
-
     /** "Si tributaste 1 carta [filtro]:": the next {@code covers} steps only then. */
     record IfTributed(CardFilter filter, int covers) implements EffectStep {}
 

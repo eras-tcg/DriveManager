@@ -21,9 +21,67 @@ final class EngineContext implements EffectContext {
     private final GameRoom room;
     private final PendingEffect effect;
 
+    /** The materials chosen for a special summon. */
+    static final String SPECIAL_MATERIALS = "specialMaterials";
+    /** The creature and the summoner of a special summon: fields the rules read while it is chosen. */
+    static final String SPECIAL_CARD = "specialCard";
+    static final String SPECIAL_SUMMONER = "specialSummoner";
+
+    private final boolean[] repeat;
+
     EngineContext(GameRoom room, PendingEffect effect) {
+        this(room, effect, new boolean[1]);
+    }
+
+    EngineContext(GameRoom room, PendingEffect effect, boolean[] repeat) {
         this.room = room;
         this.effect = effect;
+        this.repeat = repeat;
+    }
+
+    @Override
+    public int sequenceIndex() {
+        return effect.getSequenceIndex();
+    }
+
+    @Override
+    public void sequenceIndex(int index) {
+        effect.setSequenceIndex(index);
+    }
+
+    @Override
+    public void goOn() {
+        repeat[0] = true;
+    }
+
+    @Override
+    public List<CardSlot> specialOptions(Selector.Special special) {
+        return SpecialProcedure.options(room, effect, special);
+    }
+
+    @Override
+    public List<CardSlot> specialShown(Selector.Special special) {
+        return SpecialProcedure.shown(room, effect, special);
+    }
+
+    @Override
+    public int[] specialBounds(Selector.Special special, int available) {
+        return SpecialProcedure.bounds(room, effect, special, available);
+    }
+
+    @Override
+    public String specialInstruction(Selector.Special special) {
+        return SpecialProcedure.instruction(room, effect, special);
+    }
+
+    @Override
+    public String specialCheck(Selector.Special special, List<String> picks) {
+        return SpecialProcedure.checkMaterials(room, effect, special, picks);
+    }
+
+    @Override
+    public void summonSpecial(com.drive.drive_manager.simulator.engine.effects.model.SpecialRule rule) {
+        SpecialProcedure.summon(room, effect, rule);
     }
 
     @Override
@@ -601,6 +659,12 @@ final class EngineContext implements EffectContext {
     @Override
     public void save(String name, List<String> instanceIds) {
         switch (name) {
+            case SPECIAL_CARD -> {
+                if (!instanceIds.isEmpty()) effect.setRitualTargetId(instanceIds.get(0));
+            }
+            case SPECIAL_SUMMONER -> {
+                if (!instanceIds.isEmpty()) effect.setRitualSummonerId(instanceIds.get(0));
+            }
             // Several choices of one effect add up ("elige hasta 1 enemigo nivel 2 y 1 enemigo nivel 1")
             case Memory.TARGETS -> effect.getTargetIds().addAll(instanceIds);
             case Memory.LAST -> effect.setLastTributed(new ArrayList<>(instanceIds));

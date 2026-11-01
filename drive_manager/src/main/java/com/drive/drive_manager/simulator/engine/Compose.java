@@ -4,6 +4,9 @@ import com.drive.drive_manager.simulator.engine.effects.model.Action;
 import com.drive.drive_manager.simulator.engine.effects.model.Action.Move;
 import com.drive.drive_manager.simulator.engine.effects.model.Memory;
 import com.drive.drive_manager.simulator.engine.effects.model.Selector;
+import com.drive.drive_manager.simulator.engine.effects.model.SpecialRule;
+
+import java.util.List;
 
 /**
  * The usual printed phrases, composed from basic actions, for {@link CardEffects} until the cards become data files (phase 7 of
@@ -782,26 +785,44 @@ final class Compose {
         return act(new Action.Play(Selector.self(zone), new Amount.Fixed(reduce), true));
     }
 
-    // ------------------------------------------------------------------ Special summons: one procedure of the rules, in its variants
+    // ------------------------------------------------------------------ Special summons: the creature, its summoner, its materials, and the summon
+
+    private static EffectStep special(SpecialRule rule) {
+        return act(new Action.Sequence(List.of(
+                new Action.Select(Selector.of(rule, Selector.Stage.CARD), false, EngineContext.SPECIAL_CARD, "Invocar"),
+                new Action.Select(Selector.of(rule, Selector.Stage.SUMMONER), false, EngineContext.SPECIAL_SUMMONER, "Invocador"),
+                new Action.Select(Selector.of(rule, Selector.Stage.MATERIAL), false, EngineContext.SPECIAL_MATERIALS, "Material"),
+                new Action.SummonSpecial(rule))));
+    }
+
+    /** "[1 aliado] puede invocar por [método] 1 criatura [filtro] de tu [zona] reduciendo el coste especial en N". */
+    static EffectStep specialFromZone(String kind, String zone, int reduce, String summoner, CardFilter filter) {
+        return special(new SpecialRule(kind, zone, reduce, summoner, filter));
+    }
+
+    /** "otro aliado" (not this card) or "1 aliado" (any). */
+    static EffectStep specialFromZone(String kind, String zone, int reduce, boolean otherAlly) {
+        return specialFromZone(kind, zone, reduce, otherAlly ? "other" : "any", CardFilter.any());
+    }
 
     /** "un aliado invoca esta carta de forma especial [reduciendo su coste especial en N]". */
     static EffectStep specialSelf(String zone, int reduce) {
-        return new EffectStep.SpecialFromZone(EffectStep.SpecialFromZone.OF_THIS_CARD, zone, reduce, "any", CardFilter.any());
+        return special(new SpecialRule(SpecialRule.OF_THIS_CARD, zone, reduce, "any", CardFilter.any()));
     }
 
     /** "reduciendo el coste especial en X donde X es el nivel del aliado elegido". */
     static EffectStep specialBySubjectLevel(String kind, String zone, CardFilter filter) {
-        return new EffectStep.SpecialFromZone(kind, zone, 0, "subject", filter, new Amount.SubjectLevel(), null);
+        return special(new SpecialRule(kind, zone, 0, "subject", filter, new Amount.SubjectLevel(), null));
     }
 
     /** "reduciendo el coste especial en 1 por cada … tributado". */
     static EffectStep specialByCount(String kind, String zone, String summoner, CardFilter filter) {
-        return new EffectStep.SpecialFromZone(kind, zone, 0, summoner, filter, new Amount.LastCount(), null);
+        return special(new SpecialRule(kind, zone, 0, summoner, filter, new Amount.LastCount(), null));
     }
 
     /** "del mismo nivel, pero distinto nombre [que la carta devuelta]". */
     static EffectStep specialRelativeToLast(String zone, CardFilter filter, int reduce) {
-        return new EffectStep.SpecialFromZone("any", zone, reduce, "any", filter, null, Selector.Relative.sameLevelOtherName("last"));
+        return special(new SpecialRule("any", zone, reduce, "any", filter, null, Selector.Relative.sameLevelOtherName("last")));
     }
 
     static EffectStep ritualFromZoneBy(String zone, boolean selfSummoner, Amount reduce, CardFilter filter) {
