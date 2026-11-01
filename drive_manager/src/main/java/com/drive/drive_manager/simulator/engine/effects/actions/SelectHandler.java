@@ -42,6 +42,7 @@ public final class SelectHandler implements ActionHandler<Select> {
         if (selector.special() != null) {
             int[] bounds = ctx.specialBounds(selector.special(), valid.size());
             ctx.ask(ctx.specialInstruction(selector.special()), action.label(), Selection.pool(ctx, selector), valid, bounds[0], bounds[1]);
+            if (bounds[2] > 0) ctx.limitLevelSum(bounds[2]);
             return true;
         }
         int max = Math.min(ctx.amount(selector.max()), valid.size());

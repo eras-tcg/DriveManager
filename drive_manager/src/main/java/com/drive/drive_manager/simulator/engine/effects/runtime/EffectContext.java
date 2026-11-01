@@ -134,6 +134,9 @@ public interface EffectContext {
 
     void summonSpecial(com.drive.drive_manager.simulator.engine.effects.model.SpecialRule rule);
 
+    /** The choice just asked may add up to that many levels. */
+    void limitLevelSum(int levels);
+
     /** How many cards the last action acted on. */
     void counted(int count);
 

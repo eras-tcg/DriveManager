@@ -163,19 +163,6 @@ public sealed interface EffectStep {
     record SubjectFromTrigger() implements EffectStep {}
 
     /**
-     * "[esta carta / un aliado] invoca por Ritual 1 criatura de tus [zona] reduciendo su coste especial en N"
-     * (rule 9.3): the controller picks the creature, then the summoner and the other creatures that meet its
-     * Requerimiento; they are sacrificed and it is summoned in the summoner's place.
-     */
-    record RitualFromZone(String zone, boolean selfSummoner, int reduce, CardFilter filter, Amount reduceBy) implements NeedsTarget {
-        public RitualFromZone(String zone, boolean selfSummoner, int reduce, CardFilter filter) {
-            this(zone, selfSummoner, reduce, filter, null);
-        }
-
-        public RitualFromZone(String zone, boolean selfSummoner, int reduce) { this(zone, selfSummoner, reduce, CardFilter.any()); }
-    }
-
-    /**
      * "puedes A; B": asks the controller. If they decline, or A cannot be done, the next {@code covers}
      * steps (A and B) are skipped.
      */

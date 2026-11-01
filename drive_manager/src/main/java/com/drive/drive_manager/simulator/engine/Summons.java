@@ -1128,7 +1128,7 @@ public final class Summons {
         return player.getField().stream().filter(c -> "creature".equals(c.getCardType()) && c.getLevel() != null && shares(c, target)).toList();
     }
 
-    static boolean ritualFeasible(GameRoom room, PendingEffect effect, RitualFromZone ritual, PlayerState player, CardSlot target) {
+    static boolean ritualFeasible(GameRoom room, PendingEffect effect, SpecialRule ritual, PlayerState player, CardSlot target) {
         Requirement req = requirement(target);
         if (req == null || target.getSpecialCost() == null) return false;
         if (!canPay(room, player.getUserId(), Math.max(0, target.getSpecialCost() - ritual.reduce()
@@ -1145,7 +1145,7 @@ public final class Summons {
         return sumsExactly(materials, req.level());
     }
 
-    static List<CardSlot> ritualTargets(GameRoom room, PendingEffect effect, RitualFromZone ritual) {
+    static List<CardSlot> ritualTargets(GameRoom room, PendingEffect effect, SpecialRule ritual) {
         PlayerState player = room.getPlayer(effect.getControllerId());
         if (player == null) return List.of();
         return zone(player, ritual.zone()).stream()
@@ -1153,62 +1153,6 @@ public final class Summons {
                 .filter(c -> ritual.filter() == null || ritual.filter().matches(c))
                 .filter(c -> summoningAs(c, () -> ritualFeasible(room, effect, ritual, player, c)))
                 .toList();
-    }
-
-    static boolean runRitual(GameRoom room, PendingEffect effect, PlayerState player, RitualFromZone ritual) {
-        CardSlot target = effect.getRitualTargetId() == null ? null : find(zone(player, ritual.zone()), effect.getRitualTargetId());
-        if (target == null) {
-            effect.setRitualTargetId(null);
-            List<CardSlot> valid = ritualTargets(room, effect, ritual);
-            if (valid.isEmpty()) {
-                log(room, "No hay criaturas que puedan invocarse por Ritual (" + effect.getSourceName() + ")", null);
-                return false;
-            }
-            pick(room, effect, "Elige 1 criatura de tus " + zoneName(ritual.zone()) + " para invocarla por Ritual pagando su coste especial reducido en "
-                    + ritual.reduce() + ".", "Invocar", zone(player, ritual.zone()), ids(valid), 1);
-            return true;
-        }
-        Requirement req = requirement(target);
-        List<CardSlot> materials = ritualMaterials(player, target);
-        if (ritual.selfSummoner() && !req.sum()) {
-            performRitual(room, effect, player, target, ritual, find(player.getField(), effect.getSourceInstanceId()), List.of());
-            return false;
-        }
-        // Rule 9.2.0.13: the summoner is declared first; it must meet part of the Requerimiento
-        CardSlot summoner = ritual.selfSummoner() ? find(player.getField(), effect.getSourceInstanceId())
-                : find(player.getField(), effect.getRitualSummonerId());
-        if (summoner == null) {
-            effect.setRitualSummonerId(null);
-            List<CardSlot> valid = req.sum() ? summonerCandidates(materials, req.level())
-                    : materials.stream().filter(req::fits).toList();
-            Prompt prompt = prompt(room, effect, Prompt.Kind.PICK, "Elige el invocador" + (req.sum() ? "" : ": 1 criatura nivel " + req.level() + (req.atLeast() ? " o mayor" : ""))
-                    + ". Se sacrifica y " + name(target) + " ocupa su lugar y hereda su estado.");
-            prompt.setCards(new ArrayList<>(player.getField()));
-            prompt.setValidIds(new ArrayList<>(ids(valid)));
-            prompt.setMin(1);
-            prompt.setMax(1);
-            prompt.setChosenLabel("Invocador");
-            room.setPrompt(prompt);
-            return true;
-        }
-        if (!req.sum() || hasLevel(summoner, req.level())) {
-            performRitual(room, effect, player, target, ritual, summoner, List.of());
-            effect.setRitualSummonerId(null);
-            return false;
-        }
-        CardSlot chosenSummoner = summoner;
-        int remaining = req.level() - summonerLevel(summoner, materials.stream().filter(c -> c != chosenSummoner).toList(), req.level());
-        List<CardSlot> valid = fittingSacrifices(materials.stream().filter(c -> c != chosenSummoner).toList(), remaining);
-        Prompt prompt = prompt(room, effect, Prompt.Kind.PICK, "Elige las demás criaturas que se sacrifican junto a " + name(summoner)
-                + " (el invocador): sus niveles deben sumar exactamente " + remaining + ".");
-        prompt.setCards(new ArrayList<>(player.getField()));
-        prompt.setValidIds(new ArrayList<>(ids(valid)));
-        prompt.setMin(1);
-        prompt.setMax(valid.size());
-        prompt.setMaxLevelSum(remaining);
-        prompt.setChosenLabel("Sacrificar");
-        room.setPrompt(prompt);
-        return true;
     }
 
     /**
@@ -1279,7 +1223,7 @@ public final class Summons {
     }
 
     /** Ritual by effect (rule 9.3): pays the special cost minus the reduction and summons it. */
-    static void performRitual(GameRoom room, PendingEffect effect, PlayerState player, CardSlot target, RitualFromZone ritual,
+    static void performRitual(GameRoom room, PendingEffect effect, PlayerState player, CardSlot target, SpecialRule ritual,
                                       CardSlot summoner, List<CardSlot> others) {
         int cost = Math.max(0, target.getSpecialCost() - ritual.reduce());
         cost -= CostModifiers.applyAutomatic(room, player, CostModifiers.Event.SPECIAL_SUMMON, "ritual", target, summoner, cost);

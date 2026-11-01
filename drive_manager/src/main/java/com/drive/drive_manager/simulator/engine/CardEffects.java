@@ -45,7 +45,6 @@ import com.drive.drive_manager.simulator.engine.EffectStep.TakeFromLookedLikeSub
 import com.drive.drive_manager.simulator.engine.EffectStep.SummonFreeLevelSum;
 import com.drive.drive_manager.simulator.engine.EffectStep.IfDone;
 import com.drive.drive_manager.simulator.engine.EffectStep.IfPossible;
-import com.drive.drive_manager.simulator.engine.EffectStep.RitualFromZone;
 import com.drive.drive_manager.simulator.engine.EffectStep.BounceChosen;
 import com.drive.drive_manager.simulator.engine.EffectStep.ChooseWeakestEnemy;
 import com.drive.drive_manager.simulator.engine.EffectStep.IfNotDone;
@@ -125,7 +124,7 @@ public final class CardEffects {
         // ST3-8 Zohx
         add("zohx", new EffectScript("zohx:al-final-del-ataque", Moment.ON_ATTACK_END, false, AL_FINAL,
                 "Si tienes 10 o más criaturas [bestia] en tus tributos: esta carta puede invocar por Ritual 1 criatura de tus tributos reduciendo el coste especial en 1.",
-                List.of(new RitualFromZone("tributeZone", true, 1)))
+                List.of(ritualFromZone("tributeZone", true, 1)))
                 .when(new CountInZone("tributeZone", CardFilter.creatures().withClasses("bestia"), 10)));
         // ST3-9 Zhaglizer
         add("zhaglizer", new EffectScript("zhaglizer:al-atacar", Moment.ON_ATTACK, true, AL_ATACAR,
@@ -190,7 +189,7 @@ public final class CardEffects {
         add("alimento de las sombras",
                 new EffectScript("alimento-de-las-sombras:en-juego", Moment.ON_PLAY, true, EN_JUEGO,
                         "Un aliado invoca por Ritual 1 criatura de tus tributos reduciendo su coste especial en 1.",
-                        List.of(new RitualFromZone("tributeZone", false, 1))),
+                        List.of(ritualFromZone("tributeZone", false, 1))),
                 new EffectScript("alimento-de-las-sombras:en-mano", Moment.ON_EVENT, false, "En Mano",
                         "(1) Si algún aliado es destruido por el oponente: puedes jugar esta carta sin pagar su coste.",
                         List.of(playSelfFree()))
@@ -2752,7 +2751,7 @@ public final class CardEffects {
                 Payment.none(), 0, Limit.NONE, null, new Amount.Times(new Amount.Scaled(new Amount.InZone("tributeZone", espectroP), 10, 0), 2)));
         add("alarido espectral", new EffectScript("alarido-espectral:en-invocacion", Moment.ON_SUMMON, false, EN_INVOCACION,
                 "(1) Otro aliado puede invocar por Ritual 1 criatura en tus tributos reduciendo el coste especial en 2.",
-                List.of(new RitualFromZone("tributeZone", false, 2)))
+                List.of(ritualFromZone("tributeZone", false, 2)))
                 .limited(Limit.ONCE_PER_TURN_BETWEEN_COPIES));
         // E2-P09 Lureruri
         CardFilter violetSpell = CardFilter.type("utility").withColors("P").withClasses("brujería");

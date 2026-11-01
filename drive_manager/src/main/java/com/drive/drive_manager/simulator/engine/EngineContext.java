@@ -50,6 +50,11 @@ final class EngineContext implements EffectContext {
     }
 
     @Override
+    public void limitLevelSum(int levels) {
+        room.getPrompt().setMaxLevelSum(levels);
+    }
+
+    @Override
     public void goOn() {
         repeat[0] = true;
     }

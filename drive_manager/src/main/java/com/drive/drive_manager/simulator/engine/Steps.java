@@ -86,9 +86,6 @@ public final class Steps {
 
     /** A step whose details depend on the game, as it is now ({@link ChooseEnemyBy} → {@link ChooseEnemy}). */
     static EffectStep resolved(GameRoom room, PendingEffect effect, EffectStep step) {
-        if (step instanceof RitualFromZone r && r.reduceBy() != null) {
-            return new RitualFromZone(r.zone(), r.selfSummoner(), new EngineContext(room, effect).amount(r.reduceBy()), r.filter());
-        }
         return step;
     }
 
@@ -121,7 +118,6 @@ public final class Steps {
                 PlayerState opponent = room.getPlayer(room.getOpponentId(effect.getControllerId()));
                 yield opponent != null && opponent.getLifeStack().stream().anyMatch(l -> !l.isFaceDown());
             }
-            case RitualFromZone ritual -> !ritualTargets(room, effect, ritual).isEmpty();
             case TributesToDeckBottomForKeyword d -> player.getTributeZone().stream().filter(d.filter()::matches).count() >= d.count();
             case TributeAlliesLevelSum t -> {
                 List<CardSlot> valid = allies(player).stream().filter(t.filter()::matches).toList();
@@ -811,9 +807,6 @@ public final class Steps {
                 if (effect.isLastDone()) effect.setStepIndex(effect.getStepIndex() + ifNot.covers());
                 effect.setLastDone(false);
                 return false;
-            }
-            case RitualFromZone ritual -> {
-                return runRitual(room, effect, player, ritual);
             }
             case DeclareAttack declare -> {
                 CardSlot subject = subject(room, effect);
@@ -1667,35 +1660,6 @@ public final class Steps {
                 summonByEffect(room, effect, player, card, like.zone(), card.getCost(), true);
                 effect.setSummonedId(card.getInstanceId());
                 effect.setLastDone(true);
-            }
-            case RitualFromZone ritual -> {
-                if (effect.getRitualTargetId() == null) {
-                    effect.setRitualTargetId(picks.get(0));
-                    repeat[0] = true;
-                    return null;
-                }
-                CardSlot target = find(zone(player, ritual.zone()), effect.getRitualTargetId());
-                if (target == null) return "Esa criatura ya no está en tus " + zoneName(ritual.zone());
-                Requirement req = requirement(target);
-                CardSlot summoner = ritual.selfSummoner() ? find(player.getField(), effect.getSourceInstanceId())
-                        : find(player.getField(), effect.getRitualSummonerId());
-                if (summoner == null) {
-                    // This answer is the summoner
-                    if (find(player.getField(), picks.get(0)) == null) return "Esa criatura ya no está en el campo";
-                    effect.setRitualSummonerId(picks.get(0));
-                    repeat[0] = true;
-                    return null;
-                }
-                List<CardSlot> others = new ArrayList<>();
-                for (String id : picks) {
-                    CardSlot c = find(player.getField(), id);
-                    if (c == null) return "Esa criatura ya no está en el campo";
-                    if (c != summoner) others.add(c);
-                }
-                int total = summoner.getLevel() + others.stream().mapToInt(CardSlot::getLevel).sum();
-                if (req.sum() && total != req.level()) return "Los niveles suman " + total + ": deben sumar exactamente " + req.level();
-                performRitual(room, effect, player, target, ritual, summoner, others);
-                effect.setRitualSummonerId(null);
             }
             case PickAlly p -> {
                 if (find(player.getField(), picks.get(0)) == null) return "Ese aliado ya no está en el campo";

@@ -825,7 +825,24 @@ final class Compose {
         return special(new SpecialRule("any", zone, reduce, "any", filter, null, Selector.Relative.sameLevelOtherName("last")));
     }
 
+    private static EffectStep ritual(SpecialRule rule) {
+        return act(new Action.Sequence(List.of(
+                new Action.Select(Selector.of(rule, Selector.Stage.CARD), false, EngineContext.SPECIAL_CARD, "Invocar"),
+                new Action.Select(Selector.of(rule, Selector.Stage.SUMMONER), false, EngineContext.SPECIAL_SUMMONER, "Invocador"),
+                new Action.Select(Selector.of(rule, Selector.Stage.MATERIAL), false, EngineContext.SPECIAL_MATERIALS, "Sacrificar"),
+                new Action.SummonSpecial(rule))));
+    }
+
+    /** "[esta carta / un aliado] invoca por Ritual 1 criatura de tus [zona] reduciendo su coste especial en N". */
+    static EffectStep ritualFromZone(String zone, boolean selfSummoner, int reduce) {
+        return ritualFromZone(zone, selfSummoner, reduce, CardFilter.any());
+    }
+
+    static EffectStep ritualFromZone(String zone, boolean selfSummoner, int reduce, CardFilter filter) {
+        return ritual(new SpecialRule(SpecialRule.RITUAL, zone, reduce, selfSummoner ? "self" : "any", filter));
+    }
+
     static EffectStep ritualFromZoneBy(String zone, boolean selfSummoner, Amount reduce, CardFilter filter) {
-        return new EffectStep.RitualFromZone(zone, selfSummoner, 0, filter, reduce);
+        return ritual(new SpecialRule(SpecialRule.RITUAL, zone, 0, selfSummoner ? "self" : "any", filter, reduce, null));
     }
 }
