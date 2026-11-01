@@ -772,9 +772,11 @@ public final class Summons {
             room.getUsedThisTurn().removeIf(k -> k.startsWith(DISCOUNT_MATERIALS + card.getInstanceId() + "|"));
             if (!materials.isEmpty()) room.getUsedThisTurn().add(DISCOUNT_MATERIALS + card.getInstanceId() + "|" + String.join(",", ids(materials)));
             rulesPrompt(room, player.getUserId(), PURPOSE_SUMMONER_DISCOUNT, name(use.holder()) + " · " + use.modifier().label(),
-                    CostModifiers.describe(use), "Pagar", CostModifiers.paymentOptions(player, use), player.getTributeZone());
+                    CostModifiers.describe(use), "Pagar", CostModifiers.paymentOptions(player, use, card), player.getTributeZone());
             room.getPrompt().setMax(use.modifier().payment().count());
             if (use.modifier().payment().kind() == CostModifiers.PaymentKind.SELF_DAMAGE) room.getPrompt().setMin(0);
+            // "puedes enviar 5…": exactly that many, or none to pay it all
+            else room.getPrompt().setExactOrNone(true);
             room.getPrompt().setSubjectId(card.getInstanceId());
             room.getPrompt().setSummonerId(summoner.getInstanceId());
             return;

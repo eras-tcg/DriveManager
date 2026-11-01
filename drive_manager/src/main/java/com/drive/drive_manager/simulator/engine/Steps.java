@@ -1265,22 +1265,16 @@ public final class Steps {
             }
             case LookedToTopOrBottom ignored -> {
                 if (effect.getLooked().isEmpty()) return false;
-                // Then their order, when there are several (repeatsDone: 1 to the top, 2 to the bottom)
-                if (effect.getRepeatsDone() > 0) {
-                    boolean top = effect.getRepeatsDone() == 1;
-                    pick(room, effect, "Ordena las cartas: van " + (top ? "al tope" : "al fondo") + " de tu mazo en ese orden (la de la izquierda "
-                            + "queda más arriba).", null, effect.getLooked(), List.of(), 0);
-                    room.getPrompt().setReorderRest(true);
-                    room.getPrompt().setRestToTop(top);
-                    return true;
-                }
-                Prompt prompt = prompt(room, effect, Prompt.Kind.CONFIRM,
-                        "¿Devuelves estas cartas al tope de tu mazo? Si no, van al fondo.");
+                // One choice: their order and where they go (the first one of the order ends up highest)
+                Prompt prompt = prompt(room, effect, Prompt.Kind.PICK, effect.getLooked().size() > 1
+                        ? "Ordena las cartas (la de la izquierda queda más arriba) y elige si van al tope o al fondo de tu mazo."
+                        : "Elige si la carta va al tope o al fondo de tu mazo.");
                 prompt.setCards(new ArrayList<>(effect.getLooked()));
-                prompt.setValidIds(new ArrayList<>(List.of(effect.getLooked().get(0).getInstanceId())));
+                prompt.setValidIds(new ArrayList<>(ids(effect.getLooked())));
                 prompt.setMin(0);
                 prompt.setMax(1);
-                prompt.setChosenLabel("Al tope");
+                prompt.setReorderRest(true);
+                prompt.setTopOrBottom(true);
                 room.setPrompt(prompt);
                 return true;
             }
@@ -3314,16 +3308,9 @@ public final class Steps {
                 effect.setLastCount(picks.size());
             }
             case LookedToTopOrBottom ignored -> {
-                boolean ordering = effect.getRepeatsDone() > 0;
-                boolean top = ordering ? effect.getRepeatsDone() == 1 : !picks.isEmpty();
-                // "devuélvelas al tope o envíalas al fondo": in the order the player chooses
-                if (!ordering && effect.getLooked().size() > 1) {
-                    effect.setRepeatsDone(top ? 1 : 2);
-                    repeat[0] = true;
-                    return null;
-                }
-                effect.setRepeatsDone(0);
-                List<CardSlot> looked = ordering ? inOrder(effect.getLooked(), order) : new ArrayList<>(effect.getLooked());
+                // "devuélvelas al tope o envíalas al fondo": in the order the player chose
+                boolean top = !picks.isEmpty();
+                List<CardSlot> looked = inOrder(effect.getLooked(), order);
                 looked.forEach(c -> c.setFaceDown(true));
                 if (top) player.getDeck().addAll(0, looked);
                 else player.getDeck().addAll(looked);

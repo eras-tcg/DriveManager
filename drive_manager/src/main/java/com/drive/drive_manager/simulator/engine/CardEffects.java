@@ -1446,7 +1446,7 @@ public final class CardEffects {
                         List.of(new IfPossible(), new SubjectFromTrigger(), new AttachSelfAsResourceToSubject(), new GainGems(1)))
                         .when(new AllySummoned(CardFilter.creatures()))
                         .limited(Limit.ONCE_PER_TURN_BETWEEN_COPIES));
-        // E1.1-G3 Cría De Dragón Rúnico: "Todos Los Turnos: cuando esta carta fuera a invocar por Evolución: puedes enviar 5 de tus
+        // E1.1-G3 Cría De Dragón Rúnico: "Todos Los Turnos: cuando esta carta fuera a invocar por Evolución: puedes enviar otras 5 de tus
         // tributos [dragón] al fondo de tu mazo para reducir el coste especial en 1" (a Reactivo–Modificador, like Flambreik's)
         costModifier("cría de dragón rúnico", new CostModifier(TODOS, CostModifiers.Event.SPECIAL_SUMMON, Set.of("evolution"),
                 CostModifiers.Holder.SUMMONER, false, null, Payment.tributesToDeckBottom(5, CardFilter.any().withClasses("dragón")), 1));

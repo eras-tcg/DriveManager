@@ -23,6 +23,9 @@ public class PendingEffect {
     private long triggerSeq;
     /** Its link in the chain: 1 for the first one activated (resolves last). */
     private int link;
+    /** An inherited effect: the Recurso that gives it (its art too, when it is still attached), shown on its card. */
+    private String inheritedFromName;
+    private String inheritedFromImage;
 
     /** Cost steps already paid: the cost is paid right after it is activated, choices included (rule 11.2.0.2). */
     private int costIndex;

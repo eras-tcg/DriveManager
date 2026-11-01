@@ -191,7 +191,7 @@ class E13CardsTest extends CardBatchSupport {
         host.getDeck().add(0, estr);
         summon(withClasses(card("cv", "Cervalyra", 1, 1, "G"), "fauna", "treant"));
         answer("es");
-        answer();
+        // The rest to the bottom, in one choice
         answer();
         assertThat(host.getHand()).contains(estr).hasSize(2);
     }
@@ -376,7 +376,7 @@ class E13CardsTest extends CardBatchSupport {
         host.getDeck().add(0, withClasses(card("bj", "Brujo", 1, 1, "P"), "brujo"));
         summon(withClasses(card("bm", "Bruja Mensajera", 1, 1, "P"), "brujo"));
         answer("bj");
-        answer();
+        // The rest to the bottom, in one choice
         answer();
         answer("bj");
         assertThat(host.getHand()).extracting(CardSlot::getInstanceId).containsExactly("bj");

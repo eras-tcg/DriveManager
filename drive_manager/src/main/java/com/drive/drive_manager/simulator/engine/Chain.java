@@ -68,11 +68,18 @@ public final class Chain {
         List<GameEvent> events = new ArrayList<>(room.getPendingEvents());
         room.getPendingEvents().clear();
         List<PendingEffect> triggered = new ArrayList<>();
-        Set<String> seen = new HashSet<>();
+        Map<String, Integer> seen = new HashMap<>();
         for (GameEvent event : events) {
+            Map<String, Integer> now = new HashMap<>();
             for (PendingEffect e : triggersOf(room, event)) {
-                // "si …" triggers once per window however many events match (rule 11.7.0.1)
-                if (seen.add(e.getSourceInstanceId() + "|" + e.getScriptId())) triggered.add(e);
+                // "si …" triggers once per window however many events match (rule 11.7.0.1); the same effect given twice
+                // to one card (2 Recursos of the same name) is 2 effects, and both trigger
+                String key = e.getSourceInstanceId() + "|" + e.getScriptId();
+                int n = now.merge(key, 1, Integer::sum);
+                if (n > seen.getOrDefault(key, 0)) {
+                    seen.put(key, n);
+                    triggered.add(e);
+                }
             }
         }
         // Rule 11.7.0.5: mandatory of the active player, mandatory of the opponent, optional of the active
@@ -372,15 +379,9 @@ public final class Chain {
      */
     static void offerEffects(GameRoom room, Prompt prompt, List<PendingEffect> group) {
         prompt.setCardLabels(labels(group));
-        prompt.setEffects(group.stream().map(e -> {
-            // An inherited effect: the Recurso that gives it is shown on the card
-            String from = CardEffects.inheritedFrom(e.getScriptId());
-            CardSlot source = from == null ? null : findAnywhere(room, e.getControllerId(), e.getSourceInstanceId());
-            CardSlot resource = source == null ? null
-                    : source.getResources().stream().filter(r -> from.equalsIgnoreCase(r.getCardName())).findFirst().orElse(null);
-            return new Prompt.OfferedEffect(e.getId(), e.getSourceInstanceId(), e.getSourceName(), e.getLabel(), e.getText(),
-                    from == null ? null : resource != null ? resource.getCardName() : from, resource == null ? null : resource.getImageUrl());
-        }).toList());
+        // An inherited effect: the Recurso that gives it is shown on the card
+        prompt.setEffects(group.stream().map(e -> new Prompt.OfferedEffect(e.getId(), e.getSourceInstanceId(), e.getSourceName(), e.getLabel(),
+                e.getText(), e.getInheritedFromName(), e.getInheritedFromImage())).toList());
     }
 
     /** The effect a chaining choice picked: by its own id, or the first one of the card picked. */
@@ -466,6 +467,12 @@ public final class Chain {
         e.setLabel(script.label());
         e.setText(script.text());
         e.setTriggerSeq(triggerSeq);
+        String from = CardEffects.inheritedFrom(script.id());
+        if (from != null) {
+            CardSlot resource = source.getResources().stream().filter(r -> from.equalsIgnoreCase(r.getCardName())).findFirst().orElse(null);
+            e.setInheritedFromName(resource != null ? resource.getCardName() : from);
+            e.setInheritedFromImage(resource == null ? null : resource.getImageUrl());
+        }
         return e;
     }
 
