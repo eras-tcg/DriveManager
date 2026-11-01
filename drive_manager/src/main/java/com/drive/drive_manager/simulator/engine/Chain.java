@@ -445,7 +445,8 @@ public final class Chain {
                 i += covers;
                 continue;
             }
-            if (steps.get(i) instanceof NeedsTarget && !possible(room, effect, steps.get(i))) return false;
+            boolean needsCards = steps.get(i) instanceof NeedsTarget || (steps.get(i) instanceof EffectStep.Do d && d.action().needsCards());
+            if (needsCards && !possible(room, effect, steps.get(i))) return false;
         }
         return true;
     }

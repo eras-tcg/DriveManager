@@ -57,6 +57,8 @@ import com.drive.drive_manager.simulator.engine.EffectStep.SacrificeChosen;
 import com.drive.drive_manager.simulator.engine.EffectStep.TributeFromHandAsSubjectLevel;
 import com.drive.drive_manager.simulator.engine.EffectStep.SkipBlockStep;
 import com.drive.drive_manager.simulator.engine.EffectStep.IfChosenGone;
+import com.drive.drive_manager.simulator.engine.effects.model.Action;
+import com.drive.drive_manager.simulator.engine.effects.model.Selector;
 import com.drive.drive_manager.simulator.engine.EffectStep.ChosenCannotBeExhausted;
 import com.drive.drive_manager.simulator.engine.EffectStep.SpecialFromZone;
 import com.drive.drive_manager.simulator.engine.EffectStep.PlaySelfFree;
@@ -488,7 +490,8 @@ public final class CardEffects {
         // ST2-9 Fadrake
         add("fadrake", new EffectScript("fadrake:al-atacar", Moment.ON_ATTACK, true, AL_ATACAR,
                 "Una vez por turno: elige 1 enemigo de fuerza 5 o menos; destrúyelo.",
-                List.of(new ChooseEnemy(1, CardFilter.creatures().withMaxStrength(5))), List.of(new DestroyChosen()))
+                List.of(new EffectStep.Do(new Action.Select(Selector.enemies(CardFilter.creatures().withMaxStrength(5), 1), true, null, null))),
+                List.of(new DestroyChosen()))
                 .limited(Limit.ONCE_PER_TURN));
         inherit("fadrake", new EffectScript("fadrake:hereda-al-atacar", Moment.ON_ATTACK, true, AL_ATACAR,
                 "Heredado de Fadrake: elige 1 enemigo de fuerza 5 o menos; destrúyelo.",

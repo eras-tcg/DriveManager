@@ -38,6 +38,8 @@ public class PendingEffect {
     // --- Resolution progress (set while it resolves) ---
     private String resolutionId;
     private int stepIndex;
+    /** What its actions saved by name, other than the fields below (see EngineContext). */
+    private java.util.Map<String, List<String>> saved = new java.util.HashMap<>();
     /** The ally chosen by "elige 1 aliado", which the next steps act on. */
     private String subjectId;
     /** Ritual by effect: the creature chosen to be summoned, before choosing who meets its Requerimiento. */

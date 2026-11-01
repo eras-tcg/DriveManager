@@ -7,6 +7,9 @@ package com.drive.drive_manager.simulator.engine;
  */
 public sealed interface EffectStep {
 
+    /** A basic action of the new effect language, run by its handler. Only until every old step is migrated (vault: Bitácora del refactor). */
+    record Do(com.drive.drive_manager.simulator.engine.effects.model.Action action) implements EffectStep {}
+
     /**
      * A step that acts on something that must be there: a target, a card to summon, play or take, an ally to choose.
      * An optional effect is only offered when such a step has something to act on (rule 11.2.0.2: an effect with nothing

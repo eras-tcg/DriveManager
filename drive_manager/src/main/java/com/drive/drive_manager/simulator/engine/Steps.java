@@ -7,6 +7,8 @@ import com.drive.drive_manager.simulator.GameRoom;
 import com.drive.drive_manager.simulator.PlayerState;
 import com.drive.drive_manager.simulator.engine.EffectScript.Limit;
 import com.drive.drive_manager.simulator.engine.EffectStep.*;
+import com.drive.drive_manager.simulator.engine.effects.runtime.ActionHandler;
+import com.drive.drive_manager.simulator.engine.effects.runtime.Actions;
 
 import java.util.*;
 import java.util.regex.Matcher;
@@ -146,6 +148,7 @@ public final class Steps {
         step = resolved(room, effect, step);
         CardSlot onField = find(player.getField(), effect.getSourceInstanceId());
         return switch (step) {
+            case Do d -> Actions.possible(new EngineContext(room, effect), d.action());
             case DestroyEnemy destroy -> !enemyTargets(room, effect, destroy.filter()).isEmpty();
             // "elige hasta N": choosing none is allowed, so it never stops the effect
             case ChooseEnemy choose -> choose.upTo() || enemyTargets(room, effect, choose.filter()).size() >= choose.count();
@@ -336,6 +339,9 @@ public final class Steps {
 
         switch (step) {
 
+            case Do d -> {
+                return Actions.run(new EngineContext(room, effect), d.action());
+            }
             case ChooseEnemyUpToSummonUsed ignored -> {
                 return false; // worked out as ChooseEnemy
             }
@@ -2768,6 +2774,9 @@ public final class Steps {
         step = resolved(room, effect, step);
         switch (step) {
 
+            case Do d -> {
+                return Actions.answer(new EngineContext(room, effect), d.action(), new ActionHandler.Answer(picks, order));
+            }
             case SpecialSelfDeclaredSummoner s -> {
                 if (picks.isEmpty()) {
                     effect.setRitualSummonerId(null);
