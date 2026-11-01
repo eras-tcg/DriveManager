@@ -1502,8 +1502,11 @@ public class RoomService {
         // "el turno anterior": who used a Definitive effect this turn is remembered for the next one
         List<String> definitive = room.getUsedThisTurn().stream().filter(k -> k.endsWith("|" + EffectEngine.DEFINITIVE_USED))
                 .map(k -> EffectEngine.DEFINITIVE_LAST_TURN + k.substring(0, k.indexOf('|'))).toList();
+        List<String> destroyed = room.getUsedThisTurn().stream().filter(k -> k.startsWith(EffectEngine.ALLY_DESTROYED_BY_OPPONENT))
+                .map(k -> EffectEngine.ALLY_DESTROYED_LAST_TURN + k.substring(EffectEngine.ALLY_DESTROYED_BY_OPPONENT.length())).toList();
         room.getUsedThisTurn().clear();
         room.getUsedThisTurn().addAll(definitive);
+        room.getUsedThisTurn().addAll(destroyed);
     }
 
     private int getPlayerDirection(GameRoom room, String userId) {
@@ -2083,6 +2086,7 @@ public class RoomService {
             c.setKeywords(new ArrayList<>(s.getKeywords()));
             c.setInheritKeywords(new ArrayList<>(s.getInheritKeywords()));
             c.setUnprogrammed(s.getUnprogrammed());
+            c.setMentions(new ArrayList<>(s.getMentions()));
             c.setFaceDown(true);
             return c;
         }).collect(Collectors.toList());
@@ -2112,10 +2116,34 @@ public class RoomService {
         slot.setUnprogrammed(CardEffects.pending(meta.getCardName(),
                 meta.getEffects() == null ? 0 : meta.getEffects().size(),
                 meta.getInheritEffects() == null ? 0 : meta.getInheritEffects().size(), allKeywords));
+        slot.setMentions(mentionedTypes(meta));
         List<String> colors = new ArrayList<>();
         if (meta.getColorIdentity() != null) colors.add(meta.getColorIdentity());
         if (meta.getColors() != null) meta.getColors().stream().filter(c -> !colors.contains(c)).forEach(colors::add);
         slot.setColors(colors);
+    }
+
+    /** The [tipos] written in its effects and inherited effects ("[[Reactivar]]" is a keyword, not a type). */
+    public static List<String> mentionedTypes(Card meta) {
+        List<String> found = new ArrayList<>();
+        java.util.regex.Pattern type = java.util.regex.Pattern.compile("(?<!\\[)\\[([^\\[\\]]+)\\](?!\\])");
+        List<com.drive.drive_manager.dto.Effect> all = new ArrayList<>();
+        if (meta.getEffects() != null) all.addAll(meta.getEffects());
+        if (meta.getInheritEffects() != null) all.addAll(meta.getInheritEffects());
+        for (com.drive.drive_manager.dto.Effect e : all) {
+            if (e.getEffectBlocks() == null) continue;
+            for (com.drive.drive_manager.dto.Effect.effectBlock b : e.getEffectBlocks()) {
+                for (String text : java.util.Arrays.asList(b.getActivationCondition(), b.getCost(), b.getResolution())) {
+                    if (text == null) continue;
+                    java.util.regex.Matcher m = type.matcher(text);
+                    while (m.find()) {
+                        String t = m.group(1).trim().toLowerCase(java.util.Locale.ROOT);
+                        if (!found.contains(t)) found.add(t);
+                    }
+                }
+            }
+        }
+        return found;
     }
 
     /**

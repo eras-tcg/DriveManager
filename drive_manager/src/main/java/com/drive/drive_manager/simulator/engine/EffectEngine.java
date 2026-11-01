@@ -75,19 +75,95 @@ public final class EffectEngine {
     static final String PURPOSE_PRIORITY = "PRIORITY";
     /** Gained by a creature that cannot declare an attack this turn. */
     static final String NO_ATTACK = "No puede atacar";
+    /** "no puede declarar bloqueo" / "no puede bloquear". */
+    static final String NO_BLOCK = "No puede bloquear";
     /** "no puede agotarse": it cannot be exhausted (by effects, nor to declare an attack). */
     static final String CANNOT_TAP = "No puede agotarse";
     /** "no puede ser objetivo de efectos de cartas oponentes [nivel N o menor]": "Inmune" or "Inmune N". */
     static final String IMMUNE = "Inmune";
     /** "no puede ser removido por efectos oponentes". */
     static final String UNREMOVABLE = "Irremovible por efectos oponentes";
+    /** "esta carta solo puede ser afectada por copias de sí misma": other cards' effects (yours too) do nothing to it. */
+    static final String ONLY_COPIES = "Solo la afectan sus copias";
+
+    /** An effect of another card that does nothing to this one ({@link #ONLY_COPIES}). */
+    /**
+     * The card whose rules read the table now: the effect resolving or being checked, or the creature being special summoned. Some cards
+     * count as another level for some cards (Abraza Almas: "puede ser considerada nivel 2 por tus cartas [espectro]").
+     */
+    private static final ThreadLocal<CardSlot> LOOKER = new ThreadLocal<>();
+
+    static <T> T lookingAs(CardSlot looker, java.util.function.Supplier<T> body) {
+        CardSlot previous = LOOKER.get();
+        LOOKER.set(looker);
+        try {
+            return body.get();
+        } finally {
+            if (previous == null) LOOKER.remove();
+            else LOOKER.set(previous);
+        }
+    }
+
+    /** The levels the card can count as for the card looking now: its own, and another one some cards may count as. */
+    public static List<Integer> levels(CardSlot card) {
+        if (card.getLevel() == null) return List.of();
+        Integer other = CardEffects.alternativeLevel(card, LOOKER.get());
+        return other == null || other.equals(card.getLevel()) ? List.of(card.getLevel()) : List.of(card.getLevel(), other);
+    }
+
+    /** The card looking now is being special summoned (not an effect reading the table). */
+    private static final ThreadLocal<Boolean> SUMMONING = new ThreadLocal<>();
+
+    static <T> T summoningAs(CardSlot summoned, java.util.function.Supplier<T> body) {
+        Boolean previous = SUMMONING.get();
+        SUMMONING.set(true);
+        try {
+            return lookingAs(summoned, body);
+        } finally {
+            if (previous == null) SUMMONING.remove();
+            else SUMMONING.set(previous);
+        }
+    }
+
+    /** The strength a card counts as a creature for the effect looking now (Fósil), or null when it does not. */
+    public static Integer creatureForEffects(CardSlot card) {
+        if ("creature".equals(card.getCardType()) || LOOKER.get() == null || Boolean.TRUE.equals(SUMMONING.get())) return null;
+        return CardEffects.creatureStrengthForEffects(card);
+    }
+
+    static boolean hasLevel(CardSlot card, int level) {
+        return levels(card).contains(level);
+    }
+
+    static boolean unaffected(CardSlot card, PendingEffect effect) {
+        return effect != null && card != null && keywords(card).contains(ONLY_COPIES) && card.getCardName() != null
+                && !card.getCardName().equalsIgnoreCase(effect.getSourceName());
+    }
     static final String PURPOSE_REPLACE_MATERIALS = "REPLACE_MATERIALS";
     /** Marks in usedThisTurn: a Definitive effect used the turn before ("definitive-last|player"). */
     public static final String DEFINITIVE_LAST_TURN = "definitive-last|";
+    /** An ally of that player was destroyed by the opponent this turn, and in the turn before ("…|last"). */
+    public static final String ALLY_DESTROYED_BY_OPPONENT = "ally-destroyed-by-opponent|";
+    public static final String ALLY_DESTROYED_LAST_TURN = "ally-destroyed-last|";
     static final String PURPOSE_BLOCK_SWAP = "BLOCK_SWAP";
     static final String PURPOSE_ASCEND_ATTACK = "ASCEND_ATTACK";
     static final String PURPOSE_ASSAULT = "ASSAULT";
     static final String PURPOSE_DAMAGE_REPLACE = "DAMAGE_REPLACE";
+    /** The materials of a special summon made instead of an ally's removal (EXO-91, SARS-2). */
+    static final String PURPOSE_REPLACE_SUMMON = "REPLACE_SUMMON";
+    /** What pays a guard of allies (Albert Collier): 1 material of it and 1 card to sacrifice. */
+    static final String PURPOSE_REPLACE_GUARD = "REPLACE_GUARD";
+    /** A face-up life with less strength until the end of the turn: "life-reduced|instance|amount". */
+    public static final String LIFE_REDUCED = "life-reduced|";
+    /** Sarkhydrax: the Recurso tributed and the one taken before the removal. */
+    static final String PURPOSE_REPLACE_RESOURCES = "REPLACE_RESOURCES";
+    /** Carnirex: the ally sacrificed to summon it ("summon-sacrifice|card|ally or -"). */
+    static final String PURPOSE_SUMMON_SACRIFICE = "SUMMON_SACRIFICE";
+    static final String SUMMON_SACRIFICE = "summon-sacrifice|";
+    /** The cards tributed instead of receiving damage (Estoque De Los Guerreros Jurados). */
+    static final String PURPOSE_DAMAGE_TRIBUTE = "DAMAGE_TRIBUTE";
+    /** The mark of an effect's direct damage that waits for that answer: effect id | damage | controller. */
+    static final String PENDING_EFFECT_DAMAGE = "pending-effect-damage|";
     /** An "until the end of the attack" entry that is strength, not an ability ("id|fuerza:3"). */
     static final String STRENGTH_ENTRY = "fuerza:";
 
@@ -434,7 +510,10 @@ public final class EffectEngine {
     static long countInZone(GameRoom room, String playerId, String zone, CardFilter filter) {
         PlayerState player = room.getPlayer(playerId);
         if (player == null) return 0;
-        List<CardSlot> cards = "tributeZone".equals(zone) ? player.getTributeZone() : "hand".equals(zone) ? player.getHand() : List.of();
+        List<CardSlot> cards = switch (zone) {
+            case "tributeZone", "hand", "discardPile", "deck", "lifeStack", "field" -> zone(player, zone);
+            default -> List.of();
+        };
         return cards.stream().filter(filter::matches).count();
     }
 

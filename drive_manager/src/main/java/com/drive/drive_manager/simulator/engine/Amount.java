@@ -59,6 +59,34 @@ public sealed interface Amount {
         }
     }
 
+    /** How many more lives the opponent has than you (0 when you have as many or more): "por cada vida más que tenga tu oponente que tú". */
+    record LivesBehind(boolean faceDownOnly) implements Amount {
+        public int of(GameRoom room, String controller) {
+            var you = room.getPlayer(controller);
+            var opponent = room.getPlayer(room.getOpponentId(controller));
+            if (you == null || opponent == null) return 0;
+            long mine = you.getLifeStack().stream().filter(l -> !faceDownOnly || l.isFaceDown()).count();
+            long theirs = opponent.getLifeStack().stream().filter(l -> !faceDownOnly || l.isFaceDown()).count();
+            return (int) Math.max(0, theirs - mine);
+        }
+    }
+
+    /** How many cards of several of your zones ("de tu descarte y tributos") match. */
+    record InZones(String zones, CardFilter filter) implements Amount {
+        public int of(GameRoom room, String controller) {
+            int n = 0;
+            for (String z : zones.split(",")) n += (int) EffectEngine.countInZone(room, controller, z.trim(), filter);
+            return n;
+        }
+    }
+
+    /** Your gems now ("el valor de tu marcador de gemas"), 0 when below 0. */
+    record Gems() implements Amount {
+        public int of(GameRoom room, String controller) {
+            return Math.max(0, EffectEngine.gemsOf(room, controller));
+        }
+    }
+
     static Amount fixed(int value) {
         return new Fixed(value);
     }
