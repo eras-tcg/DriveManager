@@ -19,7 +19,7 @@ import java.util.Set;
 public final class CostModifiers {
 
     /** The event whose cost it changes. */
-    public enum Event { SPECIAL_SUMMON, PLAY }
+    public enum Event { SPECIAL_SUMMON, PLAY, SUMMON }
 
     /**
      * Whose it is: the special summon's summoner ("cuando esta carta fuera a invocar…"), any of the player's cards on the
@@ -27,7 +27,7 @@ public final class CostModifiers {
      */
     public enum Holder { SUMMONER, FIELD, SELF }
 
-    public enum PaymentKind { NONE, TAP_SELF, TRIBUTES_TO_DECK_BOTTOM, TRIBUTE_AS_RESOURCE }
+    public enum PaymentKind { NONE, TAP_SELF, TRIBUTES_TO_DECK_BOTTOM, TRIBUTE_AS_RESOURCE, TAP_CARD, SELF_DAMAGE }
 
     /** What the modifier asks for, if anything. */
     public record Payment(PaymentKind kind, int count, CardFilter filter) {
@@ -50,9 +50,28 @@ public final class CostModifiers {
             return new Payment(PaymentKind.TRIBUTE_AS_RESOURCE, 1, filter);
         }
 
+        /** "puedes agotar 1 carta [filtro] bajo tu control": the player picks which (active, on the field). */
+        public static Payment tapCard(CardFilter filter) {
+            return new Payment(PaymentKind.TAP_CARD, 1, filter);
+        }
+
+        /**
+         * "hasta N veces: puedes infligirte X de daño para reducir en 1 el coste especial" (Biok): direct damage by effect to oneself, as many
+         * times as the player picks (up to {@code count}); {@code filter} unused, the damage is in {@link Payment#damage()}.
+         */
+        public static Payment selfDamage(int times, int damage) {
+            return new Payment(PaymentKind.SELF_DAMAGE, times, CardFilter.any().withMaxStrength(damage));
+        }
+
+        /** The damage of a {@link PaymentKind#SELF_DAMAGE} payment. */
+        public int damage() {
+            return filter == null || filter.maxStrength() == null ? 0 : filter.maxStrength();
+        }
+
         /** The player has to choose the cards (the others are applied on their own). */
         public boolean needsChoice() {
-            return kind == PaymentKind.TRIBUTES_TO_DECK_BOTTOM || kind == PaymentKind.TRIBUTE_AS_RESOURCE;
+            return kind == PaymentKind.TRIBUTES_TO_DECK_BOTTOM || kind == PaymentKind.TRIBUTE_AS_RESOURCE || kind == PaymentKind.TAP_CARD
+                    || kind == PaymentKind.SELF_DAMAGE;
         }
     }
 
@@ -62,12 +81,24 @@ public final class CostModifiers {
      * @param allyTurn  only on its controller's turn
      * @param condition the rest of its condition ("si tienes 5 o más tributos [dragón]"), on its holder
      * @param reduce    how much it lowers the cost
+     * @param card      the card whose cost it lowers ("1 criatura Azul nivel 3 o mayor"); null: any
+     * @param amount    a reduction read from the game, added to {@code reduce} ("en 1 por cada [brujería] en tu descarte"); null: none
      */
     public record CostModifier(String label, Event event, Set<String> kinds, Holder holder, boolean allyTurn,
-                               Condition condition, Payment payment, int reduce, EffectScript.Limit limit) {
+                               Condition condition, Payment payment, int reduce, EffectScript.Limit limit, CardFilter card, Amount amount) {
         public CostModifier(String label, Event event, Set<String> kinds, Holder holder, boolean allyTurn, Condition condition, Payment payment,
                             int reduce) {
             this(label, event, kinds, holder, allyTurn, condition, payment, reduce, EffectScript.Limit.NONE);
+        }
+
+        public CostModifier(String label, Event event, Set<String> kinds, Holder holder, boolean allyTurn, Condition condition, Payment payment,
+                            int reduce, EffectScript.Limit limit) {
+            this(label, event, kinds, holder, allyTurn, condition, payment, reduce, limit, null, null);
+        }
+
+        /** How much it lowers the cost now. */
+        public int reduceNow(GameRoom room, String controller) {
+            return reduce + (amount == null ? 0 : amount.of(room, controller));
         }
     }
 
@@ -123,13 +154,15 @@ public final class CostModifiers {
         if (player == null) return List.of();
         List<Use> uses = new ArrayList<>();
         List<CardSlot> holders = new ArrayList<>();
-        if (event == Event.PLAY) holders.add(card);
+        // The card itself ("cuando fueras a jugar / invocar esta carta"), while it is not on the field yet
+        if (card != null && !player.getField().contains(card)) holders.add(card);
         holders.addAll(player.getField());
         for (CardSlot holder : holders) {
             // A card face down on the field has no effects (the one being played is not on the field yet)
             if (holder != card && holder.isFaceDown()) continue;
             for (CostModifier m : of(holder)) {
                 if (m.event() != event || (!m.kinds().isEmpty() && !m.kinds().contains(kind))) continue;
+                if (m.card() != null && (card == null || !m.card().matches(card))) continue;
                 boolean placed = switch (m.holder()) {
                     case SELF -> holder == card;
                     case SUMMONER -> summoner == null ? holder != card : holder == summoner;
@@ -155,12 +188,14 @@ public final class CostModifiers {
             case NONE -> true;
             case TAP_SELF -> !holder.isTapped();
             case TRIBUTES_TO_DECK_BOTTOM, TRIBUTE_AS_RESOURCE -> player.getTributeZone().stream().filter(payment.filter()::matches).count() >= payment.count();
+            case TAP_CARD -> player.getField().stream().filter(c -> !c.isTapped() && payment.filter().matches(c)).count() >= payment.count();
+            case SELF_DAMAGE -> !player.getLifeStack().isEmpty();
         };
     }
 
     /** How much the cost could go down now, all of them used (to tell whether it is affordable). */
     static int available(GameRoom room, PlayerState player, Event event, String kind, CardSlot card, CardSlot summoner) {
-        return applicable(room, player, event, kind, card, summoner).stream().mapToInt(u -> u.modifier().reduce()).sum();
+        return applicable(room, player, event, kind, card, summoner).stream().mapToInt(u -> u.modifier().reduceNow(room, player.getUserId())).sum();
     }
 
     /** The player's answer to "puedes agotar esta carta para reducir…" for this summon (Bosque Frondoso), until it is used. */
@@ -173,7 +208,7 @@ public final class CostModifiers {
      * ask before the summon (null when there is none, or the cost is already 0).
      */
     static Use unansweredTap(GameRoom room, PlayerState player, Event event, String kind, CardSlot card) {
-        if (card.getSpecialCost() == null || card.getSpecialCost() <= 0) return null;
+        // Designer ruling 2026-10-31: a cost can be reduced when it is already 0 (it stays 0), so it is asked anyway
         return applicable(room, player, event, kind, card, null).stream()
                 .filter(u -> u.modifier().payment().kind() == PaymentKind.TAP_SELF)
                 .filter(u -> !room.getUsedThisTurn().contains(tapKey(u.holder(), card, true))
@@ -186,22 +221,32 @@ public final class CostModifiers {
      * ("puedes agotar"; one not asked, as in a summon by effect, is used when it lowers the cost). Returns the reduction.
      */
     static int applyAutomatic(GameRoom room, PlayerState player, Event event, String kind, CardSlot card, CardSlot summoner, int cost) {
+        return applyAutomatic(room, player, event, kind, card, summoner, cost, true);
+    }
+
+    /** {@code taps}: whether "puedes agotar esta carta…" ones may be used (a normal summon uses them only when it could not be paid otherwise). */
+    static int applyAutomatic(GameRoom room, PlayerState player, Event event, String kind, CardSlot card, CardSlot summoner, int cost, boolean taps) {
         int reduced = 0;
         for (Use use : applicable(room, player, event, kind, card, summoner)) {
-            if (cost - reduced <= 0) break;
             if (use.modifier().payment().needsChoice()) continue;
+            if (!taps && use.modifier().payment().kind() == PaymentKind.TAP_SELF) continue;
+            // An exhaustion the player accepted is done even when the cost is already 0; the others only while they lower it
+            boolean accepted = use.modifier().payment().kind() == PaymentKind.TAP_SELF && card != null
+                    && room.getUsedThisTurn().contains(tapKey(use.holder(), card, true));
+            if (cost - reduced <= 0 && !accepted) continue;
             if (use.modifier().payment().kind() == PaymentKind.TAP_SELF) {
                 room.getUsedThisTurn().remove(tapKey(use.holder(), card, true));
                 use.holder().setTapped(true);
                 EffectEngine.record(room, GameEvent.TAP, player.getUserId(), use.holder(), null, null, null, null,
-                        player.getUsername() + " agota " + use.holder().getCardName() + " para reducir en " + use.modifier().reduce() + " el coste");
+                        player.getUsername() + " agota " + use.holder().getCardName() + " para reducir en " + use.modifier().reduceNow(room, player.getUserId()) + " el coste");
             }
-            reduced += use.modifier().reduce();
+            reduced += use.modifier().reduceNow(room, player.getUserId());
             markUsed(room, player, use);
         }
         // The answers given for this summon are used up
         if (card != null) room.getUsedThisTurn().removeIf(k -> k.startsWith("cost-tap") && k.endsWith("|" + card.getInstanceId()));
-        return reduced;
+        // A cost does not go below 0
+        return Math.min(reduced, Math.max(0, cost));
     }
 
     /** The first one that asks the player for its payment (Flambreik's tributes), or null. */
@@ -213,6 +258,9 @@ public final class CostModifiers {
     /** The cards that can pay it. */
     static List<CardSlot> paymentOptions(PlayerState player, Use use) {
         Payment payment = use.modifier().payment();
+        if (payment.kind() == PaymentKind.TAP_CARD) return player.getField().stream().filter(c -> !c.isTapped() && payment.filter().matches(c)).toList();
+        // Each life of the top it may take, one per time
+        if (payment.kind() == PaymentKind.SELF_DAMAGE) return player.getLifeStack().subList(0, Math.min(payment.count(), player.getLifeStack().size()));
         return payment.needsChoice() ? player.getTributeZone().stream().filter(payment.filter()::matches).toList() : List.of();
     }
 
@@ -222,6 +270,14 @@ public final class CostModifiers {
         if (payment.kind() == PaymentKind.TRIBUTE_AS_RESOURCE) {
             return "Puedes añadir 1 de tus tributos " + payment.filter().describe() + " como recurso de " + use.holder().getCardName()
                     + " antes de la invocación. Elige 1, o ninguna.";
+        }
+        if (payment.kind() == PaymentKind.SELF_DAMAGE) {
+            return "Hasta " + payment.count() + " veces: puedes infligirte " + payment.damage() + " de daño directo para reducir en " + use.modifier().reduce()
+                    + " el coste especial. Elige tantas vidas del tope como veces, o ninguna.";
+        }
+        if (payment.kind() == PaymentKind.TAP_CARD) {
+            return "Puedes agotar 1 carta " + payment.filter().describe() + " bajo tu control para reducir en " + use.modifier().reduce()
+                    + " el coste especial. Elige 1, o ninguna.";
         }
         String what = payment.kind() == PaymentKind.TRIBUTES_TO_DECK_BOTTOM
                 ? "enviar " + payment.count() + " de tus tributos " + payment.filter().describe() + " al fondo de tu mazo" : "pagarlo";

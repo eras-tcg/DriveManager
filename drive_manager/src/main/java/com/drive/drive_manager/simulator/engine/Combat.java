@@ -33,4 +33,6 @@ public class Combat {
     private boolean skipBlock;
     /** The defender was offered to replace the direct damage (Mercenario Valeroso). */
     private boolean damageReplaceAsked;
+    /** The hits left when "en su lugar" of the damage was last offered (Estoque): it is offered before each hit. */
+    private Integer damageTributeAskedAt;
 }

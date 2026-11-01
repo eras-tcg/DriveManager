@@ -239,7 +239,7 @@ public final class CombatRules {
     /** Creatures that can block: active, in the Línea frontal (rules 4.0.6.1, 6.2.1.3). */
     static List<CardSlot> blockers(PlayerState defender) {
         return defender.getField().stream()
-                .filter(c -> "creature".equals(c.getCardType()) && inFrontLine(c) && !c.isTapped()).toList();
+                .filter(c -> "creature".equals(c.getCardType()) && inFrontLine(c) && !c.isTapped() && !keywords(c).contains(NO_BLOCK)).toList();
     }
 
     /**
@@ -264,6 +264,12 @@ public final class CombatRules {
         int damage = strength(attacker);
         if (offerDamageReplacement(room, c, defender, damage)) return false;
         while (c.getHitsLeft() > 0 && !defender.getLifeStack().isEmpty()) {
+            // Estoque: offered before each hit
+            if (!c.getHitsLeft().equals(c.getDamageTributeAskedAt()) && !damageTributeCards(defender).isEmpty()) {
+                c.setDamageTributeAskedAt(c.getHitsLeft());
+                offerDamageTribute(room, defender, damage, "combat");
+                return false;
+            }
             c.setHitsLeft(c.getHitsLeft() - 1);
             CardSlot life = defender.getLifeStack().remove(0);
             boolean revealedNow = life.isFaceDown();
@@ -280,10 +286,11 @@ public final class CombatRules {
                         + " tiene más fuerza que el daño y va a tu mano. ¿Refuerzas con ella? Se coloca bocarriba al fondo de tu pila de vidas.", "Reforzar");
                 return false;
             }
+            int lifeCost = CardEffects.lifePlayCost(life);
             if (("utility".equals(life.getCardType()) || "structure".equals(life.getCardType()))
-                    && Chain.cannotActivateOnPlay(room, defender.getUserId(), life) == null) {
+                    && Chain.cannotActivateOnPlay(room, defender.getUserId(), life) == null && canPay(room, defender.getUserId(), lifeCost)) {
                 lifePrompt(room, defender, life, PURPOSE_LIFE_PLAY, "Vida revelada",
-                        "¿Juegas " + name(life) + " sin pagar su coste? Si no, queda en tu mano.", "Jugar");
+                        "¿Juegas " + name(life) + (lifeCost > 0 ? " pagando " + gemsText(lifeCost) : " sin pagar su coste") + "? Si no, queda en tu mano.", "Jugar");
                 return false;
             }
             // The revealed life is fully resolved (its triggers too) before the next hit (Letalidad)
@@ -371,6 +378,67 @@ public final class CombatRules {
         log(room, name(card) + " entra en lugar del daño directo: " + defender.getUsername() + " no recibe daño", null);
     }
 
+    /** The Estoque cards of the hand that can be paid: 2 other [retador] of the hand, the 3 of distinct levels. */
+    static List<CardSlot> damageTributeCards(PlayerState defender) {
+        return defender.getHand().stream().filter(CardEffects::tributesInsteadOfDamage).filter(e -> {
+            List<CardSlot> others = defender.getHand().stream().filter(c -> c != e && retador(c) && c.getLevel() != null && !c.getLevel().equals(e.getLevel())).toList();
+            return others.stream().anyMatch(a -> others.stream().anyMatch(b -> a != b && !a.getLevel().equals(b.getLevel())));
+        }).toList();
+    }
+
+    static boolean retador(CardSlot card) {
+        return card.getClasses() != null && card.getClasses().stream().anyMatch("retador"::equalsIgnoreCase);
+    }
+
+    /** "cuando fueras a recibir daño: en su lugar, puedes tributar esta carta más 2 [retador] de tu mano, todas de distinto nivel". */
+    static void offerDamageTribute(GameRoom room, PlayerState defender, int damage, String context) {
+        List<CardSlot> valid = defender.getHand().stream().filter(c -> CardEffects.tributesInsteadOfDamage(c) || retador(c)).toList();
+        rulesPrompt(room, defender.getUserId(), PURPOSE_DAMAGE_TRIBUTE, "Vas a recibir " + damage + " de daño",
+                "En su lugar, puedes tributar Estoque De Los Guerreros Jurados y 2 [retador] más de tu mano, los 3 de distinto nivel. O ninguna.",
+                "Tributar", valid, defender.getHand());
+        room.getPrompt().setMin(0);
+        room.getPrompt().setMax(3);
+        room.getPrompt().setSubjectId(context);
+    }
+
+    /** Its answer: the 3 cards are tributed and that damage is not received (in an attack, nor the next hits); none: the damage goes on. */
+    static String answerDamageTribute(GameRoom room, Prompt prompt, PlayerState player, List<String> picks) {
+        String effectMark = room.getUsedThisTurn().stream().filter(k -> k.startsWith(PENDING_EFFECT_DAMAGE)).findFirst().orElse(null);
+        if (!picks.isEmpty()) {
+            List<CardSlot> cards = picks.stream().map(id -> find(player.getHand(), id)).toList();
+            if (cards.size() != 3 || cards.contains(null)) return "Elige Estoque y 2 [retador] de tu mano, o ninguna";
+            if (cards.stream().noneMatch(CardEffects::tributesInsteadOfDamage) || !cards.stream().allMatch(CombatRules::retador))
+                return "Elige Estoque De Los Guerreros Jurados y 2 [retador] más";
+            if (cards.stream().map(CardSlot::getLevel).distinct().count() < 3) return "Las 3 cartas deben ser de distinto nivel";
+        }
+        room.setPrompt(null);
+        if (effectMark != null) room.getUsedThisTurn().remove(effectMark);
+        if (picks.isEmpty()) {
+            // Not replaced: an effect's damage happens now (an attack's goes on by itself)
+            if (effectMark != null) {
+                String[] p = effectMark.substring(PENDING_EFFECT_DAMAGE.length()).split("\\|");
+                PendingEffect effect = room.getChain().stream().filter(e -> e.getId().equals(p[0])).findFirst().orElse(null);
+                PlayerState controller = room.getPlayer(p[2]);
+                if (effect != null && controller != null) Steps.damageByEffect(room, effect, controller, Integer.parseInt(p[1]), false);
+            }
+            advance(room);
+            return null;
+        }
+        for (String id : picks) {
+            CardSlot c = find(player.getHand(), id);
+            player.getHand().remove(c);
+            player.getTributeZone().add(c);
+            record(room, GameEvent.TRIBUTE, player.getUserId(), c, "hand", "tributeZone", null, null, null);
+        }
+        log(room, player.getUsername() + " tributa " + String.join(", ", picks.stream().map(id -> name(find(player.getTributeZone(), id))).toList())
+                + " y no recibe el daño", room.getEventSeq());
+        // A prevented hit is no damage received: the next ones of Letalidad do not come
+        Combat c = room.getCombat();
+        if (effectMark == null && c != null) c.setHitsLeft(0);
+        advance(room);
+        return null;
+    }
+
     static void lifePrompt(GameRoom room, PlayerState defender, CardSlot life, String purpose, String title,
                                    String instruction, String label) {
         rulesPrompt(room, defender.getUserId(), purpose, title, instruction, label, List.of(life), List.of(life));
@@ -389,8 +457,26 @@ public final class CombatRules {
                 Map.of("enemyDestroyed", c.isEnemyDestroyed()), "Termina el combate");
     }
 
-    /** "hasta el final del ataque" ends with the combat. */
+    /** "hasta el final del ataque" ends with the combat (and "al final del ataque súbelo a tu mano con todos sus materiales"). */
     static void clearUntilEndOfAttack(GameRoom room, Combat c) {
+        for (String mark : new ArrayList<>(room.getUsedThisTurn())) {
+            if (!mark.startsWith(Steps.RETURN_AT_ATTACK_END)) continue;
+            room.getUsedThisTurn().remove(mark);
+            String[] p = mark.substring(Steps.RETURN_AT_ATTACK_END.length()).split("\\|");
+            PlayerState owner = room.getPlayer(p[0]);
+            CardSlot card = owner == null ? null : find(owner.getField(), p[1]);
+            if (card == null) continue;
+            List<CardSlot> materials = new ArrayList<>(card.getMaterials());
+            card.getMaterials().clear();
+            Removals.removeFromField(owner, card);
+            owner.getHand().add(card);
+            materials.forEach(m -> {
+                m.setFaceDown(false);
+                owner.getHand().add(m);
+            });
+            record(room, GameEvent.SEND, owner.getUserId(), card, "field", "hand", null, null,
+                    owner.getUsername() + " sube " + name(card) + " y sus materiales a su mano al final del ataque");
+        }
         for (String entry : c.getUntilEndOfAttack()) {
             String[] parts = entry.split("\\|", 2);
             for (PlayerState p : room.getPlayers().values()) {

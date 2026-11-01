@@ -142,10 +142,54 @@ public final class Answers {
      *
      * @return null if the prompt is not one of these, "" when done, or an error
      */
+    /** Direct damage of {@code damage} to oneself by an effect (Biok's payment): the top life, as direct damage does. */
+    static void selfDamage(GameRoom room, PlayerState player, CardSlot by, int damage) {
+        CardSlot life = player.getLifeStack().remove(0);
+        life.setFaceDown(false);
+        boolean tribute = "creature".equals(life.getCardType()) && (life.getStrength() == null || CardEffects.lifeStrength(room, player.getUserId(), life) <= damage);
+        (tribute ? player.getTributeZone() : player.getHand()).add(life);
+        record(room, GameEvent.LIFE_DAMAGE, player.getUserId(), life, "lifeStack", tribute ? "tributeZone" : "hand", null,
+                Map.of("damage", damage, "attackerId", by.getInstanceId(), "defenderId", player.getUserId()),
+                player.getUsername() + " se inflige " + damage + " de daño (" + name(by) + "): pierde la vida " + name(life)
+                        + (tribute ? ", que va a sus tributos" : ", que va a su mano"));
+        if (player.getLifeStack().isEmpty()) loseByLives(room, player);
+    }
+
     static String answerRules(GameRoom room, Prompt prompt, PlayerState player, List<String> picks) {
+        CardSlot looker = prompt.getSubjectId() == null ? null : findAnywhere(room, player.getUserId(), prompt.getSubjectId());
+        return lookingAs(looker, () -> answerRulesAs(room, prompt, player, picks));
+    }
+
+    static String answerRulesAs(GameRoom room, Prompt prompt, PlayerState player, List<String> picks) {
         String userId = player.getUserId();
         String purpose = prompt.getPurpose();
-        if (PURPOSE_REPLACE.equals(purpose) || PURPOSE_REPLACE_HAND.equals(purpose) || PURPOSE_REPLACE_MATERIALS.equals(purpose)) {
+        if (PURPOSE_REPLACE_SUMMON.equals(purpose)) {
+            String error = answerSummonInsteadOfRemoval(room, prompt, player, picks);
+            return error == null ? "" : error;
+        }
+        if (PURPOSE_DAMAGE_TRIBUTE.equals(purpose)) {
+            String error = CombatRules.answerDamageTribute(room, prompt, player, picks);
+            return error == null ? "" : error;
+        }
+        if (PURPOSE_SUMMON_SACRIFICE.equals(purpose)) {
+            CardSlot card = find(player.getHand(), prompt.getSubjectId());
+            room.setPrompt(null);
+            if (card == null) {
+                advance(room);
+                return "";
+            }
+            room.getUsedThisTurn().add(SUMMON_SACRIFICE + card.getInstanceId() + "|" + (picks.isEmpty() ? "-" : picks.get(0)));
+            String y = prompt.getSummonerId() == null ? "" : prompt.getSummonerId();
+            String error = normalSummon(room, userId, card.getInstanceId(), 50.0, y.isEmpty() ? null : Double.valueOf(y));
+            if (error != null) {
+                room.getUsedThisTurn().removeIf(k -> k.startsWith(SUMMON_SACRIFICE + card.getInstanceId() + "|"));
+                room.setPrompt(prompt);
+                return error;
+            }
+            return "";
+        }
+        if (PURPOSE_REPLACE.equals(purpose) || PURPOSE_REPLACE_HAND.equals(purpose) || PURPOSE_REPLACE_MATERIALS.equals(purpose)
+                || PURPOSE_REPLACE_GUARD.equals(purpose) || PURPOSE_REPLACE_RESOURCES.equals(purpose)) {
             String error = answerRemoval(room, prompt, player, picks);
             if (error != null) return error;
             advance(room);
@@ -179,8 +223,12 @@ public final class Answers {
             List<CardSlot> others = new ArrayList<>(used);
             others.remove(summoner);
             Requirement req = requirement(card);
-            int total = summoner.getLevel() + others.stream().mapToInt(CardSlot::getLevel).sum();
-            if (req.sum() && total != req.level()) return "Los niveles suman " + total + ": deben sumar exactamente " + req.level();
+            List<CardSlot> all = new ArrayList<>(others);
+            all.add(summoner);
+            if (req.sum() && !addsUpTo(all, req.level())) {
+                int total = all.stream().mapToInt(CardSlot::getLevel).sum();
+                return "Los niveles suman " + total + ": deben sumar exactamente " + req.level();
+            }
             if (!canPay(room, userId, ritualCost(room, userId, card))) return "Ya no tienes gemas suficientes";
             room.setPrompt(null);
             handRitual(room, player, card, summoner, others);
@@ -195,7 +243,10 @@ public final class Answers {
                 return "";
             }
             room.getUsedThisTurn().add(CostModifiers.tapKey(holder, card, !picks.isEmpty()));
-            String error = specialByPlayer(room, userId, card.getInstanceId(), prompt.getSummonerId());
+            String normal = prompt.getSummonerId() != null && prompt.getSummonerId().startsWith(NORMAL_SUMMON)
+                    ? prompt.getSummonerId().substring(NORMAL_SUMMON.length()) : null;
+            String error = normal != null ? normalSummon(room, userId, card.getInstanceId(), 50.0, normal.isEmpty() ? null : Double.valueOf(normal))
+                    : specialByPlayer(room, userId, card.getInstanceId(), prompt.getSummonerId());
             if (error != null) {
                 // Without it the summon cannot be paid: ask again
                 room.getUsedThisTurn().remove(CostModifiers.tapKey(holder, card, !picks.isEmpty()));
@@ -239,10 +290,12 @@ public final class Answers {
             }
             if (summoner == null && !noSummoner) return "Esa criatura ya no está disponible";
             int expected = req.materialCount() + (req.declaredSummoner() ? 1 : 0);
-            if (noSummoner && materials.size() != expected) return "Elige " + req.materialCount() + " criaturas";
+            if (noSummoner && (req.moreMaterials() ? materials.size() < expected : materials.size() != expected))
+                return "Elige " + req.materialCount() + (req.moreMaterials() ? " o más" : "") + " criaturas";
             String wrong = noSummoner ? null : checkMaterials(req, summoner, materials);
             if (wrong != null) return wrong;
-            if (!canPay(room, userId, card.getSpecialCost() - CostModifiers.available(room, player, CostModifiers.Event.SPECIAL_SUMMON, "materialization", card, summoner)))
+            if (!canPay(room, userId, card.getSpecialCost() - fieldPiecesDiscount(player, card, summoner, materials)
+                    - CostModifiers.available(room, player, CostModifiers.Event.SPECIAL_SUMMON, "materialization", card, summoner)))
                 return "Ya no tienes gemas suficientes";
             room.setPrompt(null);
             handSpecial(room, player, card, req, summoner, materials, find(player.getHand(), card.getInstanceId()) != null ? "hand" : "tributeZone");
@@ -293,17 +346,40 @@ public final class Answers {
             SpecialRequirement req = specialRequirement(card);
             CostModifiers.Use use = CostModifiers.choice(room, player, CostModifiers.Event.SPECIAL_SUMMON, req.kind(), card, summoner);
             int count = use == null ? 0 : use.modifier().payment().count();
-            if (!picks.isEmpty() && picks.size() != count) return "Elige " + count + " cartas, o ninguna";
-            int reduce = picks.isEmpty() || use == null ? 0 : use.modifier().reduce();
+            boolean selfDamage = use != null && use.modifier().payment().kind() == CostModifiers.PaymentKind.SELF_DAMAGE;
+            if (!picks.isEmpty() && (selfDamage ? picks.size() > count : picks.size() != count)) return "Elige " + count + " cartas, o ninguna";
+            int reduce = picks.isEmpty() || use == null ? 0 : use.modifier().reduceNow(room, userId) * (selfDamage ? picks.size() : 1);
+            // The materials chosen before this payment (Biok)
+            String kept = room.getUsedThisTurn().stream().filter(k -> k.startsWith(DISCOUNT_MATERIALS + card.getInstanceId() + "|")).findFirst().orElse(null);
+            List<CardSlot> keptMaterials = new ArrayList<>();
+            if (kept != null) {
+                room.getUsedThisTurn().remove(kept);
+                String list = kept.substring((DISCOUNT_MATERIALS + card.getInstanceId() + "|").length());
+                for (String id : list.isEmpty() ? new String[0] : list.split(",")) {
+                    Located at = locate(player, id);
+                    if (at != null) keptMaterials.add(at.card());
+                }
+            }
             if (!picks.isEmpty() && use != null) CostModifiers.markUsed(room, player, use);
             // Without it, the others still apply on their own
             if (!canPay(room, userId, card.getSpecialCost() - reduce - CostModifiers.available(room, player, CostModifiers.Event.SPECIAL_SUMMON, req.kind(), card, summoner)
-                    + (use == null ? 0 : use.modifier().reduce())))
+                    + (use == null ? 0 : use.modifier().reduceNow(room, userId))))
                 return "Sin la reducción no tienes gemas suficientes: elige " + count + " cartas";
             room.setPrompt(null);
             List<CardSlot> paid = new ArrayList<>();
             boolean asResource = use != null && use.modifier().payment().kind() == CostModifiers.PaymentKind.TRIBUTE_AS_RESOURCE;
-            for (String id : picks) {
+            if (selfDamage) {
+                for (int i = 0; i < picks.size() && !player.getLifeStack().isEmpty(); i++) selfDamage(room, player, use.holder(), use.modifier().payment().damage());
+            }
+            for (String id : selfDamage ? List.<String>of() : picks) {
+                // "puedes agotar 1 carta [filtro] bajo tu control para reducir…"
+                if (use != null && use.modifier().payment().kind() == CostModifiers.PaymentKind.TAP_CARD) {
+                    CardSlot t = find(player.getField(), id);
+                    if (t == null || t.isTapped()) continue;
+                    t.setTapped(true);
+                    record(room, GameEvent.TAP, userId, t, null, null, null, null, player.getUsername() + " agota " + name(t) + " para reducir el coste especial");
+                    continue;
+                }
                 CardSlot c = find(player.getTributeZone(), id);
                 if (c == null) continue;
                 player.getTributeZone().remove(c);
@@ -322,7 +398,7 @@ public final class Answers {
             }
             if (reduce > 0) log(room, player.getUsername() + " envía " + paid.size() + " tributos al fondo de su mazo: " + name(use.holder())
                     + " reduce en " + reduce + " el coste especial" + names(paid), room.getEventSeq());
-            specialSummon(room, player, card, req, summoner, List.of(), find(player.getHand(), card.getInstanceId()) != null ? "hand" : "tributeZone",
+            specialSummon(room, player, card, req, summoner, keptMaterials, find(player.getHand(), card.getInstanceId()) != null ? "hand" : "tributeZone",
                     reduce, null);
             advance(room);
             return "";
@@ -352,7 +428,13 @@ public final class Answers {
                     record(room, GameEvent.SEND, userId, card, "hand", "lifeStack", null, Map.of("reinforce", true),
                             player.getUsername() + " refuerza con " + name(card) + ": va bocarriba al fondo de su pila de vidas");
                 } else {
-                    play(room, player, card, 0, null, null, null);
+                    int lifeCost = CardEffects.lifePlayCost(card);
+                    if (!canPay(room, userId, lifeCost)) {
+                        advance(room);
+                        return "";
+                    }
+                    pay(room, userId, lifeCost);
+                    play(room, player, card, lifeCost, null, null, null);
                 }
             }
             advance(room);

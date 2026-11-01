@@ -67,7 +67,9 @@ public record EffectScript(String id, Moment moment, boolean mandatory, String l
          */
         ACTIVATED,
         /** Effects that can be added to a chain being built, in response to its last effect (rule 11.3.0.3). */
-        RESPONSE
+        RESPONSE,
+        /** "al final del turno: …": the rest of another effect of the card, triggered at the end of the turn it was set ({@code AtEndOfTurn}). */
+        DELAYED
     }
 
     /** Rule 11.8: "una vez por turno" (that copy) and "una vez por turno entre copias" (same original name). */

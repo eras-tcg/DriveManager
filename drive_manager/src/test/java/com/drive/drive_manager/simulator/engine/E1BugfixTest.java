@@ -202,8 +202,8 @@ class E1BugfixTest {
     @Test
     void whatTheEngineDoesNotRunIsReportedPerCard() {
         assertThat(CardEffects.pending("Franchute", 1, 0, List.of("Perforante"))).isNull();
-        assertThat(CardEffects.pending("Carta Sin Programar", 2, 1, List.of("Letalidad 1", "Agrupar")))
-                .isEqualTo("2 de 2 efectos propios; 1 de 1 heredados; Agrupar");
+        assertThat(CardEffects.pending("Carta Sin Programar", 2, 1, List.of("Letalidad 1", "Legendaria")))
+                .isEqualTo("2 de 2 efectos propios; 1 de 1 heredados; Legendaria");
     }
 
     // ------------------------------------------------------------------ Helpers
