@@ -97,7 +97,8 @@ class DriveCatchUpServiceTest {
 
     private SyncReport runAndWait() {
         SyncReport running = service.start();
-        assertThat(running.getStatus()).isEqualTo("running");
+        // The background run can finish before this line (a fast runner): both are fine
+        assertThat(running.getStatus()).isIn("running", "done");
         await().atMost(java.time.Duration.ofSeconds(5)).until(() -> !"running".equals(running.getStatus()));
         return running;
     }
