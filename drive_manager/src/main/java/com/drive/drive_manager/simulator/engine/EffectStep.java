@@ -48,7 +48,15 @@ public sealed interface EffectStep {
      * "[otro aliado / 1 aliado] puede invocar por [Ascenso / Evolución] 1 criatura de tu [zona] reduciendo el coste
      * especial en N": the controller may pick the creature (or none), then the summoner.
      */
-    record SpecialFromZone(String kind, String zone, int reduce, String summoner, CardFilter filter) implements NeedsTarget {
+    record SpecialFromZone(String kind, String zone, int reduce, String summoner, CardFilter filter, Amount reduceBy,
+                           com.drive.drive_manager.simulator.engine.effects.model.Selector.Relative relative) implements NeedsTarget {
+        /** {@code kind} {@value #OF_THIS_CARD}: the method this card itself is summoned by. */
+        public static final String OF_THIS_CARD = "ofThisCard";
+
+        public SpecialFromZone(String kind, String zone, int reduce, String summoner, CardFilter filter) {
+            this(kind, zone, reduce, summoner, filter, null, null);
+        }
+
         /** "otro aliado" (not this card) or "1 aliado" (any). */
         public SpecialFromZone(String kind, String zone, int reduce, boolean otherAlly) {
             this(kind, zone, reduce, otherAlly ? "other" : "any", CardFilter.any());
@@ -178,7 +186,11 @@ public sealed interface EffectStep {
      * (rule 9.3): the controller picks the creature, then the summoner and the other creatures that meet its
      * Requerimiento; they are sacrificed and it is summoned in the summoner's place.
      */
-    record RitualFromZone(String zone, boolean selfSummoner, int reduce, CardFilter filter) implements NeedsTarget {
+    record RitualFromZone(String zone, boolean selfSummoner, int reduce, CardFilter filter, Amount reduceBy) implements NeedsTarget {
+        public RitualFromZone(String zone, boolean selfSummoner, int reduce, CardFilter filter) {
+            this(zone, selfSummoner, reduce, filter, null);
+        }
+
         public RitualFromZone(String zone, boolean selfSummoner, int reduce) { this(zone, selfSummoner, reduce, CardFilter.any()); }
     }
 
@@ -233,27 +245,6 @@ public sealed interface EffectStep {
     record ExtraHit() implements EffectStep {}
 
     // ------------------------------------------------------------------ E1.2, E1.3 and E2 (2026-10-31)
-
-    /**
-     * "[el aliado elegido] puede invocar por [método] 1 carta [filtro] en tu [zona] reduciendo el coste especial en X donde X es el nivel
-     * del aliado elegido".
-     */
-    record SpecialBySubjectLevel(String kind, String zone, CardFilter filter) implements NeedsTarget {}
-
-    /**
-     * "[un aliado / esta carta] invoca especialmente 1 criatura [filtro] de tu [zona] reduciendo el coste especial en 1 por cada …
-     * tributado" ({@code lastCount}); {@code kind} "any" for "invoca especialmente".
-     */
-    record SpecialByCount(String kind, String zone, String summoner, CardFilter filter) implements EffectStep {}
-
-    /** "un aliado invoca esta carta de forma especial [reduciendo su coste especial en N]" from the zone it is in. */
-    record SpecialSelf(String zone, int reduce) implements NeedsTarget {}
-
-    /**
-     * "1 aliado puede invocar por Ritual 1 criatura [filtro] de tus [zona] reduciendo el coste especial en X", X read when it is used
-     * ("1 por cada 10 tributos Violeta").
-     */
-    record RitualFromZoneBy(String zone, boolean selfSummoner, Amount reduce, CardFilter filter) implements EffectStep {}
 
     /** "de ellas toma hasta N cartas [filtro] con distinto nivel. Envía el resto al fondo de tu mazo" (after {@link LookTop}). */
     record TakeFromLookedDistinctLevels(int max, CardFilter filter) implements EffectStep {}
@@ -343,12 +334,6 @@ public sealed interface EffectStep {
 
     /** "al final del ataque súbelo a tu mano con todos sus materiales": the subject, when the attack going on ends. */
     record ReturnSubjectAtAttackEnd() implements EffectStep {}
-
-    /**
-     * "invoca de forma especial 1 [filtro] de tu [zona] del mismo nivel, pero distinto nombre [que la carta devuelta] [sin pagar su coste
-     * especial]".
-     */
-    record SpecialRelativeToLast(String zone, CardFilter filter, int reduce) implements EffectStep {}
 
     /** "puedes tributar esta carta" said by an inherited effect when its holder left the field: the Recurso, now in the Descarte. */
     record TributeNamedFromDiscard(String name) implements NeedsTarget {}

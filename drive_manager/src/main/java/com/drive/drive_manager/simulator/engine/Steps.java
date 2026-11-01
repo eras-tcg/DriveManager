@@ -85,23 +85,23 @@ public final class Steps {
 
     /** A step whose details depend on the game, as it is now ({@link ChooseEnemyBy} → {@link ChooseEnemy}). */
     static EffectStep resolved(GameRoom room, PendingEffect effect, EffectStep step) {
-        
-        
-        if (step instanceof SpecialBySubjectLevel s) {
-            CardSlot ally = subject(room, effect);
-            return new SpecialFromZone(s.kind(), s.zone(), ally == null || ally.getLevel() == null ? 0 : ally.getLevel(), "subject", s.filter());
+        if (step instanceof RitualFromZone r && r.reduceBy() != null) {
+            return new RitualFromZone(r.zone(), r.selfSummoner(), new EngineContext(room, effect).amount(r.reduceBy()), r.filter());
         }
-        if (step instanceof SpecialByCount s) return new SpecialFromZone(s.kind(), s.zone(), effect.getLastCount(), s.summoner(), s.filter());
-        if (step instanceof SpecialSelf s) {
-            CardSlot self = findAnywhere(room, effect.getControllerId(), effect.getSourceInstanceId());
-            String kind = self == null || self.getSpecialSummonKind() == null ? "any" : self.getSpecialSummonKind();
-            return new SpecialFromZone(kind, s.zone(), s.reduce(), "any", CardFilter.any().named(effect.getSourceName()));
-        }
-        if (step instanceof RitualFromZoneBy r) return new RitualFromZone(r.zone(), r.selfSummoner(), r.reduce().of(room, effect.getControllerId()), r.filter());
-        if (step instanceof SpecialRelativeToLast s) {
-            CardSlot last = effect.getLastTributed().isEmpty() ? null : findInRoom(room, effect.getLastTributed().get(0));
-            CardFilter filter = last == null || last.getLevel() == null ? s.filter().withLevel(-1) : s.filter().withLevel(last.getLevel()).notNamed(last.getCardName());
-            return new SpecialFromZone("any", s.zone(), s.reduce(), "any", filter);
+        if (step instanceof SpecialFromZone s && (s.reduceBy() != null || s.relative() != null || SpecialFromZone.OF_THIS_CARD.equals(s.kind()))) {
+            int reduce = s.reduceBy() == null ? s.reduce() : new EngineContext(room, effect).amount(s.reduceBy());
+            String kind = s.kind();
+            CardFilter filter = s.filter();
+            if (SpecialFromZone.OF_THIS_CARD.equals(kind)) {
+                CardSlot self = findAnywhere(room, effect.getControllerId(), effect.getSourceInstanceId());
+                kind = self == null || self.getSpecialSummonKind() == null ? "any" : self.getSpecialSummonKind();
+                filter = CardFilter.any().named(effect.getSourceName());
+            }
+            if (s.relative() != null) {
+                CardSlot last = new EngineContext(room, effect).relativeTo(s.relative().to());
+                filter = last == null || last.getLevel() == null ? filter.withLevel(-1) : filter.withLevel(last.getLevel()).notNamed(last.getCardName());
+            }
+            return new SpecialFromZone(kind, s.zone(), reduce, s.summoner(), filter);
         }
         return step;
     }
@@ -217,9 +217,6 @@ public final class Steps {
                 if (req.levelSum() > 0) room.getPrompt().setMaxLevelSum(req.levelSum());
                 return true;
             }
-            case SpecialRelativeToLast ignored -> {
-                return false; // worked out as SpecialFromZone
-            }
             case TakeFromLookedEachRestToBottom take -> {
                 if (effect.getLooked().isEmpty()) return false;
                 List<String> valid = effect.getLooked().stream().filter(c -> take.filters().stream().anyMatch(f -> f.matches(c))).map(CardSlot::getInstanceId).toList();
@@ -329,18 +326,6 @@ public final class Steps {
                         + " gana su fuerza durante el ataque e inflige daño 1 vez extra por cada uno.", "Agotar", player.getField(), ids(valid), Math.min(g.allies(), valid.size()));
                 room.getPrompt().setMin(0);
                 return true;
-            }
-            case SpecialBySubjectLevel ignored -> {
-                return false; // worked out as SpecialFromZone
-            }
-            case SpecialByCount ignored -> {
-                return false; // worked out as SpecialFromZone
-            }
-            case SpecialSelf ignored -> {
-                return false; // worked out as SpecialFromZone
-            }
-            case RitualFromZoneBy ignored -> {
-                return false; // worked out as RitualFromZone
             }
             case TakeFromLookedDistinctLevels take -> {
                 if (effect.getLooked().isEmpty()) return false;

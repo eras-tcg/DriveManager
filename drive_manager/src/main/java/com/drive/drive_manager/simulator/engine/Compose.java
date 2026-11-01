@@ -781,4 +781,30 @@ final class Compose {
     static EffectStep playSelfReduced(String zone, int reduce) {
         return act(new Action.Play(Selector.self(zone), new Amount.Fixed(reduce), true));
     }
+
+    // ------------------------------------------------------------------ Special summons: one procedure of the rules, in its variants
+
+    /** "un aliado invoca esta carta de forma especial [reduciendo su coste especial en N]". */
+    static EffectStep specialSelf(String zone, int reduce) {
+        return new EffectStep.SpecialFromZone(EffectStep.SpecialFromZone.OF_THIS_CARD, zone, reduce, "any", CardFilter.any());
+    }
+
+    /** "reduciendo el coste especial en X donde X es el nivel del aliado elegido". */
+    static EffectStep specialBySubjectLevel(String kind, String zone, CardFilter filter) {
+        return new EffectStep.SpecialFromZone(kind, zone, 0, "subject", filter, new Amount.SubjectLevel(), null);
+    }
+
+    /** "reduciendo el coste especial en 1 por cada … tributado". */
+    static EffectStep specialByCount(String kind, String zone, String summoner, CardFilter filter) {
+        return new EffectStep.SpecialFromZone(kind, zone, 0, summoner, filter, new Amount.LastCount(), null);
+    }
+
+    /** "del mismo nivel, pero distinto nombre [que la carta devuelta]". */
+    static EffectStep specialRelativeToLast(String zone, CardFilter filter, int reduce) {
+        return new EffectStep.SpecialFromZone("any", zone, reduce, "any", filter, null, Selector.Relative.sameLevelOtherName("last"));
+    }
+
+    static EffectStep ritualFromZoneBy(String zone, boolean selfSummoner, Amount reduce, CardFilter filter) {
+        return new EffectStep.RitualFromZone(zone, selfSummoner, 0, filter, reduce);
+    }
 }

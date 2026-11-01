@@ -1702,7 +1702,7 @@ public final class CardEffects {
                 "(1) Elige 1 aliado activo; puede invocar por Evolución 1 carta Verde en tu mano reduciendo el coste especial en X donde X es el "
                         + "nivel del aliado elegido. Si lo hace: agótalo.",
                 List.of(new PickAllyWhere(CardFilter.creatures().active(), true)),
-                List.of(new SpecialBySubjectLevel("evolution", "hand", CardFilter.colors("G")), new IfDone(1), tapSubject()))
+                List.of(specialBySubjectLevel("evolution", "hand", CardFilter.colors("G")), new IfDone(1), tapSubject()))
                 .limited(Limit.ONCE_PER_TURN_BETWEEN_COPIES));
         // E1.2-P01 Abraza Almas: "Si no controlas cartas: esta carta cuesta 1 gema" (its "nivel 2 para tus [espectro]": ALTERNATIVE_LEVELS)
         costModifier("abraza almas", new CostModifier("Absoluto", CostModifiers.Event.SUMMON, Set.of(), CostModifiers.Holder.SELF, false,
@@ -1763,7 +1763,7 @@ public final class CardEffects {
                         + "en 1 por cada 10 tributos Violeta o [espectro] que tengas.",
                 List.of(sendSelfFromFieldTo("tributeZone")),
                 List.of(new MayDo("¿Un aliado invoca por Ritual 1 criatura Violeta o [espectro] de tus tributos?", 1),
-                        new RitualFromZoneBy("tributeZone", false, new Amount.Scaled(new Amount.InZone("tributeZone", espectroP), 10, 0), espectroP)))
+                        ritualFromZoneBy("tributeZone", false, new Amount.Scaled(new Amount.InZone("tributeZone", espectroP), 10, 0), espectroP)))
                 .limited(Limit.ONCE_PER_TURN_BETWEEN_COPIES));
         // E1.2-R01 Estoque De Los Guerreros Jurados (its "En Mano" replacement of damage: DAMAGE_TRIBUTES)
         add("estoque de los guerreros jurados", new EffectScript("estoque:en-invocacion", Moment.ON_SUMMON, true, EN_INVOCACION,
@@ -1983,7 +1983,7 @@ public final class CardEffects {
         add("velkerop 1",
                 new EffectScript("velkerop-1:en-descarte", Moment.ACTIVATED, false, "Turno Aliado / En Descarte",
                         "Puedes destruir un aliado; un aliado invoca esta carta de forma especial reduciendo su coste especial en 1.",
-                        List.of(destroyAlly(CardFilter.creatures())), List.of(new SpecialSelf("discardPile", 1)))
+                        List.of(destroyAlly(CardFilter.creatures())), List.of(specialSelf("discardPile", 1)))
                         .fromZone("discardPile")
                         .onlyAllyTurn(),
                 new EffectScript("velkerop-1:turno-oponente", Moment.ON_EVENT, false, "Turno Oponente",
@@ -2099,7 +2099,7 @@ public final class CardEffects {
                         "(1) Tributa esta carta y hasta 3 recursos [fauna] de un aliado; ese u otro aliado invoca especialmente una criatura de tu mano "
                                 + "reduciendo el coste especial en 1 por cada recurso tributado.",
                         List.of(sendSelfFromFieldTo("tributeZone"), new TributeAllyResources(3, CardFilter.any().withClasses("fauna"))),
-                        List.of(new SubjectIsThisCard(), new SpecialByCount("any", "hand", "any", CardFilter.creatures())))
+                        List.of(new SubjectIsThisCard(), specialByCount("any", "hand", "any", CardFilter.creatures())))
                         .limited(Limit.ONCE_PER_TURN_BETWEEN_COPIES),
                 new EffectScript("mensaje-espiritus:en-tributos", Moment.ACTIVATED, false, "En Tributos",
                         "Puedes enviar esta carta al fondo de tu mazo; añade 1 criatura Verde de tus tributos como recurso de un aliado de nivel mayor.",
@@ -2150,7 +2150,7 @@ public final class CardEffects {
         add("necrobrujo",
                 new EffectScript("necrobrujo:en-tributos", Moment.ON_EVENT, false, "Turno Aliado / En Tributos",
                         "Al inicio del turno: puedes invocar esta carta de forma especial reduciendo su coste especial en 1.",
-                        List.of(new SpecialSelf("tributeZone", 1)))
+                        List.of(specialSelf("tributeZone", 1)))
                         .when(new TurnStarts(true))
                         .fromZone("tributeZone")
                         .onlyAllyTurn(),
@@ -2483,7 +2483,7 @@ public final class CardEffects {
                         .limited(Limit.ONCE_PER_TURN_BETWEEN_COPIES),
                 new EffectScript("a-5h:en-mano", Moment.ON_EVENT, false, "En Mano",
                         "(1) Si un aliado inflige daño directo: puedes invocar esta carta de forma especial reduciendo su coste especial en 2.",
-                        List.of(new SpecialSelf("hand", 2)))
+                        List.of(specialSelf("hand", 2)))
                         .when(new AllyDealtDirectDamage(CardFilter.any()))
                         .fromZone("hand")
                         .limited(Limit.ONCE_PER_TURN_BETWEEN_COPIES));
@@ -2491,7 +2491,7 @@ public final class CardEffects {
         add("helena la pirata de cineria",
                 new EffectScript("helena:en-mano", Moment.ON_EVENT, false, "En Mano",
                         "Si fueron removidos [artefactos] de los materiales de algún aliado por tus efectos: puedes invocar esta carta especialmente.",
-                        List.of(new SpecialSelf("hand", 0)))
+                        List.of(specialSelf("hand", 0)))
                         .when(new MaterialRemovedByYou(artefacto))
                         .fromZone("hand"),
                 new EffectScript("helena:en-invocacion", Moment.ON_SUMMON, true, EN_INVOCACION,
@@ -2559,7 +2559,7 @@ public final class CardEffects {
                 "Elige 1 aliado [neomáquina]; súbelo a tu mano con todos sus materiales. Luego: invoca de forma especial 1 [neomáquina] de tu mano del "
                         + "mismo nivel, pero distinto nombre y sin pagar su coste especial.",
                 List.of(new PickAllyWhere(neomaquina, true)),
-                List.of(returnSubjectMaterialsToHand(), returnSubjectToHand(), new SpecialRelativeToLast("hand", neomaquina, FREE))));
+                List.of(returnSubjectMaterialsToHand(), returnSubjectToHand(), specialRelativeToLast("hand", neomaquina, FREE))));
         // E2-B25 Cianotipo (utility)
         add("cianotipo",
                 new EffectScript("cianotipo:tributada-como-material", Moment.ON_EVENT, true, "En Tributos",
@@ -2658,7 +2658,7 @@ public final class CardEffects {
         // E2-G16 Nereidra (inherited Reactivar: keyword)
         add("nereidra", new EffectScript("nereidra:tributada-como-recurso", Moment.ON_EVENT, false, "En Tributos",
                 "Si esta carta es tributada como recurso: un aliado puede invocarla especialmente sin pagar su coste especial.",
-                List.of(new SpecialSelf("tributeZone", FREE)))
+                List.of(specialSelf("tributeZone", FREE)))
                 .when(new ThisTributed("resources", null, null))
                 .fromZone("tributeZone"));
         // E2-G17 Braquiosaurus
