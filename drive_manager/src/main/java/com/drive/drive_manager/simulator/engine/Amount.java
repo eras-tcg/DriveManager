@@ -24,6 +24,27 @@ public sealed interface Amount {
         }
     }
 
+    /** The level of the ally chosen before, read by EngineContext. */
+    record SubjectLevel() implements Amount {
+        public int of(GameRoom room, String controller) {
+            return 0;
+        }
+    }
+
+    /** "la cantidad de aliados utilizados para invocar esta carta", read by EngineContext. */
+    record UsedToSummon() implements Amount {
+        public int of(GameRoom room, String controller) {
+            return 0;
+        }
+    }
+
+    /** How many cards of your hand are over that number. */
+    record HandOver(int keep) implements Amount {
+        public int of(GameRoom room, String controller) {
+            return Math.max(0, room.getPlayer(controller).getHand().size() - keep);
+        }
+    }
+
     /** A fixed number. */
     record Fixed(int value) implements Amount {
         public int of(GameRoom room, String controller) {

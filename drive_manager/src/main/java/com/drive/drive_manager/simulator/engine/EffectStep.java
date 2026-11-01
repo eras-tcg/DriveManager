@@ -30,17 +30,6 @@ public sealed interface EffectStep {
         }
     }
 
-    /**
-     * "elige N enemigo [filtro];" as a cost: the targets are chosen when the effect is activated (rule 11.10.1);
-     * the effect can only be activated if there are enough of them. Only the opponent's Línea frontal.
-     */
-    record ChooseEnemy(int count, CardFilter filter, boolean upTo) implements NeedsTarget {
-        public ChooseEnemy(int count, CardFilter filter) { this(count, filter, false); }
-    }
-
-    /** {@link ChooseEnemy} whose filter is worked out when it is used. */
-    record ChooseEnemyBy(int count, FilterBy filter, boolean upTo) implements NeedsTarget {}
-
     /** "súbelo a la mano": the chosen targets go back to their owner's hand; "Si lo haces" when any did. */
     record BounceChosen() implements EffectStep {}
 
@@ -86,15 +75,6 @@ public sealed interface EffectStep {
     /** "Si tributaste 1 carta [filtro]:": the next {@code covers} steps only then. */
     record IfTributed(CardFilter filter, int covers) implements EffectStep {}
 
-    /** "elige todos los enemigos en la línea frontal" (no choice: they are the targets). */
-    record TargetAllEnemies(CardFilter filter) implements EffectStep {
-        public TargetAllEnemies() {
-            this(CardFilter.creatures());
-        }
-    }
-
-    /** "reducirla a 0": the enemy whose strength was reduced in the triggering event. */
-    record ReduceTriggerToZero() implements EffectStep {}
 
     /**
      * "puedes hacer A para hacer B": both are done on resolution, and only when both can be (rule of "do A to do
@@ -102,9 +82,6 @@ public sealed interface EffectStep {
      * can no longer be done.
      */
     record IfPossible() implements EffectStep {}
-
-    /** "reduce su fuerza en N más": the enemy of the triggering reduction, for as long as that reduction lasts. */
-    record ReduceTriggerFurther(int amount) implements EffectStep {}
 
     /**
      * "invoca 1 criatura [filtro] del mismo nivel y distinto nombre de tus [zona] en tu línea frontal sin pagar su
@@ -214,8 +191,6 @@ public sealed interface EffectStep {
         public SacrificeAlly(boolean toUntapAnother) { this(toUntapAnother, false); }
     }
 
-
-
     /** "elige 1 aliado [filtro]": like {@link PickAlly}, among those that match. */
     record PickAllyWhere(CardFilter filter) implements NeedsTarget {}
 
@@ -249,9 +224,6 @@ public sealed interface EffectStep {
     /** "Si [condición sobre la mesa]:": the next {@code covers} steps only if it holds now. */
     record IfCondition(Condition condition, int covers) implements EffectStep {}
 
-    /** "por cada material tributado elige 1 enemigo distinto": as many enemies as the last count (lastCount). */
-    record ChooseEnemiesPerCount(CardFilter filter) implements NeedsTarget {}
-
     /**
      * "todos [tus otros] aliados [filtro] ganan [habilidad] hasta el final del turno [oponente]" ({@code until}: "turn" or
      * "nextTurn"; {@code others}: not this card).
@@ -268,12 +240,6 @@ public sealed interface EffectStep {
 
     /** "esta carta …" again after a step that chose another card (a sacrifice, an ally): the next steps act on this card. */
     record SubjectIsThisCard() implements EffectStep {}
-
-    /** "elige 1 criatura [filtro] en el campo": yours, or an enemy's when this card and it are both in the Línea frontal. */
-    record ChooseCreatureOnField(CardFilter filter, boolean upTo) implements NeedsTarget {}
-
-    /** "tributa tantas cartas de tu mano como nivel tenga [el aliado elegido]". */
-    record TributeFromHandAsSubjectLevel() implements EffectStep {}
 
     /** "salta el paso de bloqueo" (of the attack going on). */
     record SkipBlockStep() implements EffectStep {}
@@ -297,12 +263,6 @@ public sealed interface EffectStep {
     record ExtraHit() implements EffectStep {}
 
     // ------------------------------------------------------------------ E1.2, E1.3 and E2 (2026-10-31)
-
-    /** "tribútalo": the chosen creatures (enemies still in the Línea frontal, or yours) go to their owner's Tributos, not destroyed. */
-    record TributeChosen() implements EffectStep {}
-
-    /** "agótalo": the ally chosen before (the subject). */
-    record TapSubject() implements EffectStep {}
 
     /**
      * "[el aliado elegido] puede invocar por [método] 1 carta [filtro] en tu [zona] reduciendo el coste especial en X donde X es el nivel
@@ -331,14 +291,8 @@ public sealed interface EffectStep {
     /** "revela 1 [filtro] y 1 [filtro] de tu mano": one different card for each filter (a cost); the cards stay in the hand. */
     record RevealFromHand(java.util.List<CardFilter> filters) implements NeedsTarget {}
 
-    /** "tributa la carta del tope de tus vidas". */
-    record TributeTopLife() implements EffectStep {}
-
     /** "elige 1 aliado [filtro]; este declara ataque": an ally of the Línea frontal that matches (the subject). */
     record PickAttacker(CardFilter filter) implements NeedsTarget {}
-
-    /** "elige 1 enemigo de nivel igual o menor [que el aliado elegido]" (a cost, after a {@link PickAlly}). */
-    record ChooseEnemyUpToSubjectLevel(boolean lower) implements NeedsTarget {}
 
     /**
      * "al final del turno: …": what follows is another effect of the card ({@code scriptId}, moment {@code DELAYED}) that triggers at the
@@ -348,9 +302,6 @@ public sealed interface EffectStep {
 
     /** "coloca bocabajo una de tus vidas bocarriba" ({@code all}: every one of them, "Luego: baraja tus vidas" with {@code shuffle}). */
     record LivesFaceDown(boolean all, boolean shuffle) implements EffectStep {}
-
-    /** "envía N copias de esta carta en tu retaguardia a tu [zona]" (this card included). */
-    record SendCopiesFromField(int count, String zone) implements EffectStep {}
 
     /** "ambos jugadores descartan N cartas de su mano [bocabajo]": each player chooses theirs. */
     record EachPlayerDiscards(int count) implements EffectStep {}
@@ -370,26 +321,14 @@ public sealed interface EffectStep {
     /** "añade 1 criatura [filtro] de tus [zona] como recurso de un aliado de nivel mayor". */
     record AddResourceToHigherAlly(String zone, CardFilter filter) implements NeedsTarget {}
 
-    /** "sacrifica ambas criaturas": this card and the enemy it clashes with. */
-    record SacrificeClashing() implements EffectStep {}
-
-    /** "Si es [filtro]: muévela a tu línea frontal": the creature this effect summoned. */
-    record MoveSummonedToFrontIf(CardFilter filter) implements EffectStep {}
-
     /** "elige al azar N cartas de la mano del oponente para que las revele; envía 1 de ellas al fondo de su mazo". */
     record RevealOpponentHandSendOneToBottom(int count) implements EffectStep {}
-
-    /** "envía cartas de tu mano al fondo de tu mazo hasta tener N cartas en tu mano". */
-    record HandDownTo(int keep) implements EffectStep {}
 
     /** "elige enemigos que sumen N en nivel" (a cost). */
     record ChooseEnemiesLevelSum(int sum) implements NeedsTarget {}
 
     /** "invoca hasta N criaturas [filtro] de tus [zona] reduciendo sus costes en M". */
     record SummonUpTo(String zone, CardFilter filter, int max, int reduce) implements NeedsTarget {}
-
-    /** "elige N criaturas [filtro] en la línea frontal" (both players'): the targets. */
-    record ChooseFrontLineCreatures(int count, CardFilter filter) implements NeedsTarget {}
 
     /** "Por cada aliado sacrificado de esta forma: gana 1 gema". */
     record GainGemsPerOwnSacrificed() implements EffectStep {}
@@ -409,9 +348,6 @@ public sealed interface EffectStep {
     /** "destruye el tope de las vidas oponentes". */
     record DestroyTopLife() implements EffectStep {}
 
-    /** "sacrifica todas las criaturas [filtro] en la línea frontal" (both players'). */
-    record SacrificeAllInFrontLine(CardFilter filter) implements EffectStep {}
-
     /** "invoca 1 de los recursos de esta carta reduciendo su coste en N". */
     record SummonResource(int reduce) implements NeedsTarget {}
 
@@ -427,23 +363,14 @@ public sealed interface EffectStep {
     /** "invoca esta carta reduciendo su coste en 1 por cada N cartas enviadas" ({@code lastCount} / N). */
     record SummonSelfPerCount(String zone, int per) implements NeedsTarget {}
 
-    /** "agota hasta tantas copias de esta carta como controles": {@code lastCount} how many (this card included). */
-    record TapCopiesUpTo() implements EffectStep {}
-
     /** "invoca de tu [zona], sin pagar su coste, 1 [filtro] de nivel igual a la cantidad de [copias agotadas]" ({@code lastCount}). */
     record SummonLevelLastCount(String zone, CardFilter filter) implements EffectStep {}
-
-    /** "elige 1 enemigo de nivel igual o menor a la cantidad de aliados utilizados para invocar esta carta" (a cost). */
-    record ChooseEnemyUpToSummonUsed() implements NeedsTarget {}
 
     /**
      * Agrupar N: "si esta carta declara ataque: puedes agotar N aliados para que esta carta, durante el ataque, gane su fuerza e inflija daño
      * 1 vez extra en caso de hacerlo" (Letalidad 1 more until the end of the attack).
      */
     record GroupUp(int allies) implements EffectStep {}
-
-    /** "elige 1 aliado del mismo nivel [que la carta revelada]; reactívalo": the last card revealed or tributed gives the level. */
-    record UntapAllySameLevelAsLast() implements EffectStep {}
 
     /** "de ellas toma hasta 1 [filtro] y hasta 1 [filtro]. Envía el resto al fondo de tu mazo" (each card for a different filter). */
     record TakeFromLookedEachRestToBottom(java.util.List<CardFilter> filters) implements EffectStep {}
@@ -457,17 +384,11 @@ public sealed interface EffectStep {
      */
     record ReduceOpponentLivesBy(Amount amount) implements EffectStep {}
 
-    /** "reduce su fuerza en X" on the creature this card clashes with, X read when it resolves (until the end of the turn). */
-    record ReduceClashOpponent(Amount amount) implements EffectStep {}
-
     /**
      * "dicho aliado puede invocar esta carta por Materialización ignorando el requerimiento y sin pagar el coste especial": the ally of
      * the triggering event (the one that destroyed) is the summoner.
      */
     record MaterializeSelfOnTriggerAlly() implements EffectStep {}
-
-    /** "por cada N materiales tributados elige 1 enemigo" ({@code lastCount} / N enemies). */
-    record ChooseEnemiesPerCountEvery(CardFilter filter, int per) implements EffectStep {}
 
     /** "al final del ataque súbelo a tu mano con todos sus materiales": the subject, when the attack going on ends. */
     record ReturnSubjectAtAttackEnd() implements EffectStep {}
@@ -483,9 +404,6 @@ public sealed interface EffectStep {
 
     /** "esta carta [agotada] declara bloqueo" (it blocks the attack going on, even exhausted). */
     record DeclareBlockSelf() implements EffectStep {}
-
-    /** "sacrifica 1 aliado con fuerza menor a esta carta" (a cost). */
-    record SacrificeAllyWeakerThanSelf() implements NeedsTarget {}
 
     /** "ambos jugadores eligen 1 de sus aliados de su línea frontal. Si lo hacen: sacrifican todas las otras criaturas en su línea frontal". */
     record EachPlayerKeepsOneInFrontLine() implements EffectStep {}

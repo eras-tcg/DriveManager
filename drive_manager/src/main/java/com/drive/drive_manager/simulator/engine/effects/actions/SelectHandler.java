@@ -21,6 +21,8 @@ public final class SelectHandler implements ActionHandler<Select> {
     @Override
     public boolean possible(EffectContext ctx, Select action) {
         Selector selector = action.selector();
+        // It depends on the ally chosen by an action before it, not chosen yet
+        if (selector.waitsFor(Memory.SUBJECT) && ctx.saved(Memory.SUBJECT).isEmpty()) return true;
         List<CardSlot> found = Selection.candidates(ctx, selector, action.target());
         if (selector.self() == Selector.Self.REQUIRE && found.stream().noneMatch(ctx::isSelf)) return false;
         return found.size() >= ctx.amount(selector.min());
@@ -31,6 +33,11 @@ public final class SelectHandler implements ActionHandler<Select> {
         Selector selector = action.selector();
         List<CardSlot> valid = Selection.candidates(ctx, selector, action.target());
         if (valid.isEmpty()) return false;
+        // "elige todos los enemigos": no choice, but they are targets
+        if (selector.mode() == Selector.Mode.ALL) {
+            answer(ctx, action, new Answer(valid.stream().map(CardSlot::getInstanceId).toList(), List.of()));
+            return false;
+        }
         int max = Math.min(ctx.amount(selector.max()), valid.size());
         int min = Math.min(ctx.amount(selector.min()), max);
         String instruction = (action.target() ? "Elige " : "Selecciona ") + (min < max ? "hasta " : "") + max + " " + ctx.describe(selector)
@@ -53,6 +60,7 @@ public final class SelectHandler implements ActionHandler<Select> {
         }
         String saveAs = action.saveAs() != null ? action.saveAs() : action.target() ? Memory.TARGETS : Memory.LAST;
         ctx.save(saveAs, picks);
+        ctx.done(!picks.isEmpty());
         if (action.target() && !picks.isEmpty()) {
             List<String> names = picks.stream().map(id -> ctx.name(ctx.find(id))).toList();
             ctx.event(GameEvent.TARGET, ctx.find(picks.get(0)), Map.of("targetIds", picks),

@@ -383,8 +383,8 @@ class St1IntegrationTest {
         damon.setStrength(7);
         // Before ";" (materials and "elegir todos los enemigos") is its cost; after it, the reduction
         EffectScript script = CardEffects.byId("hez:inicio-del-turno").orElseThrow();
-        assertThat(script.cost()).hasAtLeastOneElementOfType(EffectStep.TargetAllEnemies.class);
-        assertThat(script.steps()).noneMatch(EffectStep.TargetAllEnemies.class::isInstance);
+        assertThat(script.cost()).contains(Compose.targetAllEnemies());
+        assertThat(script.steps()).doesNotContain(Compose.targetAllEnemies());
 
         TurnRules.turnStarted(room, "host");
         for (int i = 0; i < 10 && room.getPrompt() != null; i++) {

@@ -33,6 +33,7 @@ public final class Selection {
             if (selector.mode() == Selector.Mode.SELF && !self) continue;
             if (!selector.filter().matches(card) && !(self && selector.self() == Selector.Self.REQUIRE)) continue;
             if (selector.self() == Selector.Self.EXCLUDE && self) continue;
+            if (selector.relative() != null && !relative(ctx, selector.relative(), card)) continue;
             if (ctx.isOpponents(card)) {
                 // An enemy is a creature
                 if (!ctx.isCreature(card)) continue;
@@ -41,6 +42,34 @@ public final class Selection {
             found.add(card);
         }
         return found;
+    }
+
+    private static boolean relative(EffectContext ctx, Selector.Relative r, CardSlot card) {
+        if (r.level() != null && !Integer.valueOf(ctx.amount(r.level())).equals(card.getLevel())) return false;
+        if (r.maxLevel() != null && (card.getLevel() == null || card.getLevel() > ctx.amount(r.maxLevel()))) return false;
+        if (r.to() == null) return true;
+        CardSlot other = ctx.relativeTo(r.to());
+        if (other == null) return false;
+        if (r.compareLevel() != null) {
+            if (card.getLevel() == null) return false;
+            int level = ctx.levelOf(other) + r.plus();
+            boolean holds = switch (r.compareLevel()) {
+                case EQUAL -> card.getLevel() == level;
+                case AT_MOST -> card.getLevel() <= level;
+                case LESS -> card.getLevel() < level;
+                case GREATER -> card.getLevel() > level;
+            };
+            if (!holds) return false;
+        }
+        if (r.compareStrength() == Selector.Compare.LESS && ctx.strength(card) >= ctx.strength(other)) return false;
+        String name = card.getCardName();
+        if (r.differentName() && name != null && name.equalsIgnoreCase(other.getCardName())) return false;
+        if (r.sameName() && (name == null || !name.equalsIgnoreCase(other.getCardName()))) return false;
+        if (r.sharesClass()) {
+            List<String> theirs = other.getClasses() == null ? List.of() : other.getClasses();
+            if (card.getClasses() == null || card.getClasses().stream().noneMatch(t -> theirs.stream().anyMatch(t::equalsIgnoreCase))) return false;
+        }
+        return true;
     }
 
     private static void addZones(List<CardSlot> into, EffectContext ctx, PlayerState whose, String zones, boolean enemy) {
@@ -52,6 +81,22 @@ public final class Selection {
                     // Rule 11.10.2: a target that left the enemy's Línea frontal is no longer valid
                     if (card != null && !(ctx.isOpponents(card) && !ctx.inFrontLine(card))) into.add(card);
                 }
+                continue;
+            }
+            if (zone.equals("clash")) {
+                CardSlot card = ctx.clashing();
+                // Taken once: it belongs to the opponent, whichever side is being read
+                if (card != null && !into.contains(card)) into.add(card);
+                continue;
+            }
+            if (zone.equals("thisCard")) {
+                CardSlot card = enemy ? null : ctx.find(ctx.selfId());
+                if (card != null && ctx.onField(card)) into.add(card);
+                continue;
+            }
+            if (zone.equals("subjectOrSummoned")) {
+                CardSlot card = enemy ? null : ctx.subjectOrSummoned();
+                if (card != null) into.add(card);
                 continue;
             }
             if (zone.equals("subjectOrSelf")) {

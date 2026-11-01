@@ -32,7 +32,11 @@ public sealed interface Action {
     }
 
     /** How long a modification lasts. */
-    enum Until { TURN, NEXT_TURN, ATTACK, NEXT_ATTACK }
+    enum Until {
+        TURN, NEXT_TURN, ATTACK, NEXT_ATTACK,
+        /** "en N más": as long as the reduction that triggered the effect. */
+        AS_EVENT
+    }
 
     /**
      * For a while, cards gain or lose strength, or gain an ability or a restriction.

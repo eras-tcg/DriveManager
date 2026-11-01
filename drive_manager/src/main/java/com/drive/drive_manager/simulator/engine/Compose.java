@@ -578,4 +578,130 @@ final class Compose {
         Selector ally = Selector.yours("allies", CardFilter.any(), 1);
         return sacrifice(other ? ally.with(Selector.Self.EXCLUDE) : ally, true);
     }
+
+    // ------------------------------------------------------------------ Choices that depend on the game or on other cards
+
+    private static EffectStep choose(Selector cards) {
+        return act(new Action.Select(cards, true, null, null));
+    }
+
+    private static Selector exactly(String zones, Selector.Owner owner, CardFilter filter, Amount count) {
+        return new Selector(zones, owner, filter, count, count, Selector.Self.ANY, Selector.Mode.CHOOSE);
+    }
+
+    /** "por cada material tributado elige 1 enemigo distinto". */
+    static EffectStep chooseEnemiesPerCount(CardFilter filter) {
+        return choose(exactly("frontLine", Selector.Owner.OPPONENT, filter, new Amount.LastCount()));
+    }
+
+    static EffectStep chooseEnemiesPerCountEvery(CardFilter filter, int per) {
+        return choose(exactly("frontLine", Selector.Owner.OPPONENT, filter, new Amount.Scaled(new Amount.LastCount(), per, 0)));
+    }
+
+    /** "elige 1 enemigo de nivel igual o menor [que el aliado elegido]". */
+    static EffectStep chooseEnemyUpToSubjectLevel(boolean lower) {
+        return choose(Selector.enemies(CardFilter.creatures(), 1).with(Selector.Relative.level("subject", lower ? Selector.Compare.LESS : Selector.Compare.AT_MOST, 0)));
+    }
+
+    static EffectStep chooseEnemyUpToSummonUsed() {
+        return choose(Selector.enemies(CardFilter.creatures(), 1).with(Selector.Relative.read(null, new Amount.UsedToSummon())));
+    }
+
+    static EffectStep chooseEnemyBy(int count, EffectStep.FilterBy filter) {
+        return chooseEnemyBy(count, filter, false);
+    }
+
+    static EffectStep chooseEnemyBy(int count, EffectStep.FilterBy filter, boolean upTo) {
+        Selector enemies = Selector.enemies(filter.base(), count).with(Selector.Relative.read(filter.level(), filter.maxLevel()));
+        return choose(upTo ? enemies.upTo() : enemies);
+    }
+
+    /** "elige 1 criatura [filtro] en el campo": yours or an enemy's, by the normal rules (designer ruling 2026-10-29). */
+    static EffectStep chooseCreatureOnField(CardFilter filter, boolean upTo) {
+        Selector creatures = exactly("field", Selector.Owner.BOTH, filter.asCreature(), new Amount.Fixed(1)).with(Selector.Self.EXCLUDE);
+        return act(new Action.Select(upTo ? creatures.upTo() : creatures, true, null, "Elegir"));
+    }
+
+    static EffectStep chooseFrontLineCreatures(int count, CardFilter filter) {
+        return choose(exactly("frontLine", Selector.Owner.BOTH, filter.asCreature(), new Amount.Fixed(count)));
+    }
+
+    /** "elige todos los enemigos [filtro] en la línea frontal". */
+    static EffectStep targetAllEnemies(CardFilter filter) {
+        return choose(Selector.enemies(filter, 1).as(Selector.Mode.ALL).atLeast(0).upToAll());
+    }
+
+    static EffectStep targetAllEnemies() {
+        return targetAllEnemies(CardFilter.creatures());
+    }
+
+    // ------------------------------------------------------------------ More phrases
+
+    static EffectStep tributeFromHandAsSubjectLevel() {
+        return move(exactly("hand", Selector.Owner.YOU, CardFilter.any(), new Amount.SubjectLevel()).with(Selector.Self.EXCLUDE), Move.TRIBUTES);
+    }
+
+    /** "envía cartas de tu mano al fondo de tu mazo hasta tener N cartas en tu mano". */
+    static EffectStep handDownTo(int keep) {
+        return move(exactly("hand", Selector.Owner.YOU, CardFilter.any(), new Amount.HandOver(keep)), Move.DECK_BOTTOM);
+    }
+
+    static EffectStep tributeChosen() {
+        return move(Selector.saved(Memory.TARGETS), Move.TRIBUTES);
+    }
+
+    static EffectStep tributeTopLife() {
+        return move(Selector.yours("lifeStack", CardFilter.any(), 1).as(Selector.Mode.TOP), Move.TRIBUTES);
+    }
+
+    /** "Si es [filtro]: muévela a tu línea frontal": the creature this effect summoned. */
+    static EffectStep moveSummonedToFrontIf(CardFilter filter) {
+        return move(new Selector("saved:" + Memory.SUMMONED, Selector.Owner.YOU, filter, new Amount.Fixed(0), new Amount.Fixed(1), Selector.Self.ANY, Selector.Mode.ALL), Move.FRONT);
+    }
+
+    /** "envía N copias de esta carta en tu retaguardia a tu [zona]" (this card included). */
+    static EffectStep sendCopiesFromField(int count, String zone) {
+        return move(Selector.yours("backLine", CardFilter.any(), count).with(Selector.Relative.copiesOf("self")), zone);
+    }
+
+    /** "agota hasta tantas copias de esta carta como controles". */
+    static EffectStep tapCopiesUpTo() {
+        return setTapped(new Selector("field", Selector.Owner.YOU, CardFilter.any(), new Amount.Fixed(1), new Amount.Fixed(Integer.MAX_VALUE), Selector.Self.ANY, Selector.Mode.CHOOSE)
+                .with(Selector.Relative.copiesOf("self")), true, false);
+    }
+
+    static EffectStep tapSubject() {
+        return setTapped(Selector.all("subjectOrSummoned", CardFilter.any()), true, false);
+    }
+
+    static EffectStep untapAllySameLevelAsLast() {
+        return setTapped(Selector.yours("allies", CardFilter.any(), 1).with(Selector.Relative.level("last", Selector.Compare.EQUAL, 0)), false, false);
+    }
+
+    static EffectStep sacrificeAllyWeakerThanSelf() {
+        return sacrifice(Selector.yours("allies", CardFilter.any(), 1).with(Selector.Self.EXCLUDE).with(Selector.Relative.weakerThan("self")), true);
+    }
+
+    static EffectStep sacrificeAllInFrontLine(CardFilter filter) {
+        return sacrifice(new Selector("frontLine", Selector.Owner.BOTH, filter.asCreature(), new Amount.Fixed(0), new Amount.Fixed(Integer.MAX_VALUE), Selector.Self.ANY, Selector.Mode.ALL), false);
+    }
+
+    /** "sacrifica ambas criaturas": the enemy it clashes with and this card. */
+    static EffectStep sacrificeClashing() {
+        return sacrifice(new Selector("clash,thisCard", Selector.Owner.YOU, CardFilter.any(), new Amount.Fixed(0), new Amount.Fixed(2), Selector.Self.ANY, Selector.Mode.ALL), false);
+    }
+
+    /** "reduce su fuerza en X" on the creature this card clashes with. */
+    static EffectStep reduceClashOpponent(Amount amount) {
+        return strength(Selector.all("clash", CardFilter.any()), new Amount.Times(amount, -1), Action.Until.TURN);
+    }
+
+    /** "reducirla a 0": the enemy whose strength was reduced in the triggering event. */
+    static EffectStep reduceTriggerToZero() {
+        return act(new Action.Modify(Selector.all("eventOnField", CardFilter.any()), null, true, null, Action.Until.TURN));
+    }
+
+    static EffectStep reduceTriggerFurther(int amount) {
+        return strength(Selector.all("eventOnField", CardFilter.any()), new Amount.Fixed(-amount), Action.Until.AS_EVENT);
+    }
 }

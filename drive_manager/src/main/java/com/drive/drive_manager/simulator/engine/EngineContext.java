@@ -116,6 +116,11 @@ final class EngineContext implements EffectContext {
             CardSlot host = hostIn(to);
             if (isAttachment(to) && (host == null || host == card)) continue;
             from = origin.zone();
+            boolean enemy = !origin.owner().getUserId().equals(effect.getControllerId());
+            if (enemy && "field".equals(from) && EffectEngine.keywords(card).contains(EffectEngine.UNREMOVABLE)) {
+                EffectEngine.log(room, EffectEngine.name(card) + " no puede ser removida por efectos oponentes", null);
+                continue;
+            }
             // Moving within the field is not leaving it
             if ("field".equals(from) && (Action.Move.FRONT.equals(to) || Action.Move.BACK.equals(to))) {
                 card.setY(Action.Move.FRONT.equals(to) ? 25.0 : 75.0);
@@ -150,8 +155,10 @@ final class EngineContext implements EffectContext {
                 if (Action.Move.DECK_TOP.equals(to) || Action.Move.LIFE_TOP.equals(to)) into.add(0, card);
                 else into.add(card);
             }
+            if ("lifeStack".equals(from)) data.put("defenderId", origin.owner().getUserId());
             EffectEngine.record(room, eventOf(arrives, from), player().getUserId(), card, from, arrives, effect, data, null);
             done.add(card);
+            if ("lifeStack".equals(from) && origin.owner().getLifeStack().isEmpty()) EffectEngine.loseByLives(room, origin.owner());
         }
         if (done.isEmpty()) return done;
         // A card of the hand or the deck stays hidden when it goes to the deck
@@ -174,6 +181,7 @@ final class EngineContext implements EffectContext {
             case "self" -> EffectEngine.find(player().getField(), effect.getSourceInstanceId());
             case "subject" -> effect.getSubjectId() == null ? null : EffectEngine.find(player().getField(), effect.getSubjectId());
             case "last" -> effect.getLastTributed().isEmpty() ? null : EffectEngine.find(player().getField(), effect.getLastTributed().get(0));
+            case "event" -> eventCardOnField();
             default -> null;
         };
     }
@@ -329,7 +337,7 @@ final class EngineContext implements EffectContext {
                 card.setTurnStrength(card.getTurnStrength() + amount);
                 card.getUntilNextAttack().add(EffectEngine.STRENGTH_ENTRY + amount);
             }
-            case TURN -> card.setTurnStrength(card.getTurnStrength() + amount);
+            case TURN, AS_EVENT -> card.setTurnStrength(card.getTurnStrength() + amount);
         }
         EffectEngine.floating(card, effect, "Gana fuerza " + amount + text, floatingUntil(until), amount, null);
         EffectEngine.record(room, GameEvent.GAIN, effect.getControllerId(), card, null, null, effect, Map.of("strength", amount),
@@ -337,6 +345,12 @@ final class EngineContext implements EffectContext {
     }
 
     private void reduce(CardSlot card, PlayerState owner, int amount, Action.Until until) {
+        if (until == Action.Until.AS_EVENT) {
+            GameEvent trigger = EffectEngine.triggerEvent(room, effect);
+            boolean later = trigger != null && trigger.getData() != null && Boolean.TRUE.equals(trigger.getData().get("untilNextTurn"));
+            Steps.reduceStrength(room, effect, owner, card, amount, later);
+            return;
+        }
         if (until != Action.Until.ATTACK) {
             Steps.reduceStrength(room, effect, owner, card, amount, until == Action.Until.NEXT_TURN);
             return;
@@ -363,7 +377,7 @@ final class EngineContext implements EffectContext {
                 card.getTurnKeywords().add(keyword);
                 card.getUntilNextAttack().add(keyword);
             }
-            case TURN -> card.getTurnKeywords().add(keyword);
+            case TURN, AS_EVENT -> card.getTurnKeywords().add(keyword);
         }
         // A restriction already says what happens ("No puede agotarse"); an ability is gained
         String what = (keyword.startsWith("No puede") ? keyword : "Gana " + keyword) + untilText(until);
@@ -373,7 +387,7 @@ final class EngineContext implements EffectContext {
 
     private static String untilText(Action.Until until) {
         return switch (until) {
-            case TURN -> " hasta el final del turno";
+            case TURN, AS_EVENT -> " hasta el final del turno";
             case NEXT_TURN -> " hasta el final del turno oponente";
             case ATTACK -> " hasta el final del ataque";
             case NEXT_ATTACK -> " hasta el final del turno o de su próximo ataque";
@@ -382,7 +396,7 @@ final class EngineContext implements EffectContext {
 
     private static String floatingUntil(Action.Until until) {
         return switch (until) {
-            case TURN -> "turn";
+            case TURN, AS_EVENT -> "turn";
             case NEXT_TURN -> "nextTurn";
             case ATTACK, NEXT_ATTACK -> "attack";
         };
@@ -407,9 +421,47 @@ final class EngineContext implements EffectContext {
     }
 
     @Override
+    public CardSlot relativeTo(String to) {
+        return switch (to) {
+            case "self" -> find(effect.getSourceInstanceId());
+            case "subject" -> effect.getSubjectId() == null ? null : find(effect.getSubjectId());
+            case "last" -> effect.getLastTributed().isEmpty() ? null : find(effect.getLastTributed().get(0));
+            case "event" -> eventCardOnField();
+            default -> null;
+        };
+    }
+
+    @Override
+    public int levelOf(CardSlot card) {
+        return card.getLevel() == null ? 0 : card.getLevel();
+    }
+
+    @Override
+    public CardSlot clashing() {
+        return Steps.clashOpponent(room, effect);
+    }
+
+    @Override
+    public String selfId() {
+        return effect.getSourceInstanceId();
+    }
+
+    @Override
+    public CardSlot subjectOrSummoned() {
+        CardSlot ally = Steps.subject(room, effect);
+        boolean replaced = ally == null || (effect.getSubjectId() != null && EffectEngine.find(player().getField(), effect.getSubjectId()) == null);
+        return replaced && effect.getSummonedId() != null ? EffectEngine.find(player().getField(), effect.getSummonedId()) : ally;
+    }
+
+    @Override
+    public void counted(int count) {
+        effect.setLastCount(count);
+    }
+
+    @Override
     public void done(boolean done) {
         // "Si lo haces" reads what the resolution did, not the cost paid before it
-        if (!Chain.paying(effect)) effect.setLastDone(done);
+        if (effect.getScriptId() == null || !Chain.paying(effect)) effect.setLastDone(done);
     }
 
     @Override
@@ -443,6 +495,14 @@ final class EngineContext implements EffectContext {
         // They may be built on what only the effect knows
         if (amount instanceof Amount.Times t) return amount(t.base()) * t.factor();
         if (amount instanceof Amount.Scaled s) return amount(s.base()) / s.divisor() + s.plus();
+        if (amount instanceof Amount.SubjectLevel) {
+            CardSlot subject = Steps.subject(room, effect);
+            return subject == null || subject.getLevel() == null ? 0 : subject.getLevel();
+        }
+        if (amount instanceof Amount.UsedToSummon) {
+            GameEvent trigger = EffectEngine.triggerEvent(room, effect);
+            return trigger != null && trigger.getData() != null && trigger.getData().get("used") instanceof Number n ? n.intValue() : 0;
+        }
         if (amount instanceof Amount.SourceStrength) {
             CardSlot self = Steps.subject(room, effect);
             if (self == null && effect.getSubjectId() == null) self = EffectEngine.findAnywhere(room, effect.getControllerId(), effect.getSourceInstanceId());

@@ -85,6 +85,22 @@ public interface EffectContext {
     /** The card of the triggering event, on the field. */
     CardSlot eventCardOnField();
 
+    /** The card a relative selector compares with: self, subject, last or event. */
+    CardSlot relativeTo(String to);
+
+    int levelOf(CardSlot card);
+
+    /** The creature this card clashes with. */
+    CardSlot clashing();
+
+    String selfId();
+
+    /** The ally chosen before or, if a special summon replaced it, the creature that took its place. */
+    CardSlot subjectOrSummoned();
+
+    /** How many cards the last action acted on. */
+    void counted(int count);
+
     /** Whether the action did something, for "si lo haces". */
     void done(boolean done);
 

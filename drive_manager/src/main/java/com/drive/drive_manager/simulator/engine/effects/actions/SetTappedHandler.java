@@ -20,6 +20,7 @@ public final class SetTappedHandler implements ActionHandler<SetTapped> {
 
     @Override
     public boolean possible(EffectContext ctx, SetTapped action) {
+        if (action.cards().fromMemory()) return true;
         return candidates(ctx, action).size() >= Math.max(1, ctx.amount(action.cards().min()));
     }
 
@@ -60,5 +61,6 @@ public final class SetTappedHandler implements ActionHandler<SetTapped> {
     private static void apply(EffectContext ctx, SetTapped action, List<CardSlot> cards) {
         for (CardSlot card : new ArrayList<>(cards)) ctx.setTapped(card, action.tapped());
         ctx.done(!cards.isEmpty());
+        ctx.counted(cards.size());
     }
 }

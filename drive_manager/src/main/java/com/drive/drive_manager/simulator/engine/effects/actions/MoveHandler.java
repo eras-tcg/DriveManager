@@ -22,8 +22,8 @@ public final class MoveHandler implements ActionHandler<Move> {
     public boolean possible(EffectContext ctx, Move action) {
         Selector selector = action.cards();
         // Its cards depend on the ally chosen by an action before it, which has not been chosen yet
-        if (selector.zones().contains(":subject") && ctx.saved(Memory.SUBJECT).isEmpty()) return true;
-        if (selector.zones().equals("looked")) return true;
+        if (selector.waitsFor(Memory.SUBJECT) && ctx.saved(Memory.SUBJECT).isEmpty()) return true;
+        if (selector.zones().equals("looked") || selector.fromMemory()) return true;
         List<CardSlot> found = candidates(ctx, action);
         if (selector.self() == Selector.Self.REQUIRE && found.stream().noneMatch(ctx::isSelf)) return false;
         return found.size() >= Math.max(1, ctx.amount(selector.min()));

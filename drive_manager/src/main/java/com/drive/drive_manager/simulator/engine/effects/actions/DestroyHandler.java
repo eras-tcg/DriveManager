@@ -19,6 +19,7 @@ public final class DestroyHandler implements ActionHandler<Destroy> {
 
     @Override
     public boolean possible(EffectContext ctx, Destroy action) {
+        if (action.cards().fromMemory()) return true;
         return candidates(ctx, action).size() >= Math.max(1, ctx.amount(action.cards().min()));
     }
 
