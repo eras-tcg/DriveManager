@@ -22,8 +22,8 @@ class EffectJsonTest {
     @Test
     void stepsAreWrittenByName() {
         String json = EffectJson.write(CardEffects.definitions().get("eisten"));
-        assertTrue(json.contains("\"type\":\"TributeTop\""), json);
-        assertTrue(json.contains("\"count\":4"), json);
+        assertTrue(json.contains("\"type\":\"Move\""), json);
+        assertTrue(json.contains("\"to\":\"tributeZone\""), json);
     }
 
     @Test

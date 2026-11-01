@@ -12,6 +12,29 @@ public sealed interface Action {
     }
 
     /**
+     * Cards go to a zone; the event comes from where they arrive: reaching the Tributos is being tributed, the Descarte being
+     * discarded, whatever the verb (designer ruling 2026-11-01).
+     *
+     * @param cards    which ones; when the player picks them they are not targets (only "elige", {@link Select}, makes targets)
+     * @param to       {@link #TRIBUTES}, {@link #DISCARD}, {@link #DECK_TOP}, {@link #DECK_BOTTOM}, {@link #HAND}
+     * @param random   "en orden aleatorio"; otherwise the order the player gives
+     * @param label    what is shown on a chosen card; null: said by the destination
+     * @param required an optional effect is only offered when there is something to move
+     */
+    record Move(Selector cards, String to, boolean random, String label, boolean required) implements Action {
+        public static final String TRIBUTES = "tributeZone";
+        public static final String DISCARD = "discardPile";
+        public static final String DECK_TOP = "deckTop";
+        public static final String DECK_BOTTOM = "deckBottom";
+        public static final String HAND = "hand";
+
+        @Override
+        public boolean needsCards() {
+            return required;
+        }
+    }
+
+    /**
      * The player picks cards ("elige 1 enemigo", "tributa 1 carta de tu mano": the part that picks) and they are saved for the
      * next actions.
      *

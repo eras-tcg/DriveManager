@@ -22,6 +22,26 @@ public interface EffectContext {
 
     boolean isOpponents(CardSlot card);
 
+    boolean isCreature(CardSlot card);
+
+    /** The materials or resources a selector zone names ("materials", "resources:subject"). */
+    List<CardSlot> attached(String zone);
+
+    /** How a selector's zones read in a sentence. */
+    String describeZones(String zones);
+
+    /** The card is already where a move would leave it. */
+    boolean alreadyIn(CardSlot card, String to);
+
+    /** Moves the cards, one by one in that order, recording each one's event by where it arrives. */
+    void move(List<CardSlot> cards, String to);
+
+    /** What the last action moved, for "si lo haces", "por cada…" and "si tributaste…". */
+    void moved(List<CardSlot> cards);
+
+    /** The card must be among those picked in the choice just asked. */
+    void requireInChoice(CardSlot card);
+
     /** The card cannot be a target of this effect. */
     boolean immune(CardSlot card);
 

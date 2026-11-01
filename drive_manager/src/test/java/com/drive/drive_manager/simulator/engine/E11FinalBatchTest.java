@@ -147,11 +147,26 @@ class E11FinalBatchTest {
         assertThat(CombatRules.attackByPlayer(room, "host", "dr", null)).isNull();
         Prompt offer = untilSourceOffered("fp");
         answer(offer, "fp");
-        Prompt nine = room.getPrompt();
-        answer(nine, nine.getValidIds().toArray(String[]::new));
+        // One choice of the 10, this card included
+        Prompt ten = room.getPrompt();
+        assertThat(ten.getMax()).isEqualTo(10);
+        assertThat(ten.getRequiredIds()).containsExactly("fp");
+        answer(ten, ten.getValidIds().toArray(String[]::new));
         finishCombat();
         assertThat(guest.getLifeStack()).hasSize(1);
         assertThat(host.getDeck()).contains(fuego);
+    }
+
+    @Test
+    void fuegoPerforanteIsNotOfferedWithoutTenDragonsAndCountsItselfWhateverItsTypes() {
+        CardSlot fuego = utility("fp", "Fuego Perforante");
+        host.getTributeZone().add(fuego);
+        for (int i = 0; i < 8; i++) host.getTributeZone().add(withClasses(card("d" + i, "Dragón " + i, 1, 1, "G"), "dragón"));
+        onField(host, withClasses(card("dr", "Dragón Atacante", 1, 1, "G"), "dragón"));
+        assertThat(CombatRules.attackByPlayer(room, "host", "dr", null)).isNull();
+        finishCombat();
+        // 9 in total: nothing is paid, nothing moves
+        assertThat(host.getTributeZone()).contains(fuego).hasSize(9);
     }
 
     @Test

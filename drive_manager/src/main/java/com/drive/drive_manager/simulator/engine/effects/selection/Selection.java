@@ -29,9 +29,15 @@ public final class Selection {
     public static List<CardSlot> candidates(EffectContext ctx, Selector selector, boolean target) {
         List<CardSlot> found = new ArrayList<>();
         for (CardSlot card : pool(ctx, selector)) {
-            if (!selector.filter().matches(card)) continue;
-            if (selector.self() == Selector.Self.EXCLUDE && ctx.isSelf(card)) continue;
-            if (target && ctx.isOpponents(card) && ctx.immune(card)) continue;
+            boolean self = ctx.isSelf(card);
+            if (selector.mode() == Selector.Mode.SELF && !self) continue;
+            if (!selector.filter().matches(card) && !(self && selector.self() == Selector.Self.REQUIRE)) continue;
+            if (selector.self() == Selector.Self.EXCLUDE && self) continue;
+            if (ctx.isOpponents(card)) {
+                // An enemy is a creature
+                if (!ctx.isCreature(card)) continue;
+                if (target && ctx.immune(card)) continue;
+            }
             found.add(card);
         }
         return found;
@@ -40,6 +46,10 @@ public final class Selection {
     private static void addZones(List<CardSlot> into, EffectContext ctx, PlayerState whose, String zones, boolean enemy) {
         for (String raw : zones.split(",")) {
             String zone = raw.trim();
+            if (zone.startsWith("materials") || zone.startsWith("resources")) {
+                if (!enemy) into.addAll(ctx.attached(zone));
+                continue;
+            }
             boolean onField = zone.equals("field") || zone.equals("frontLine") || zone.equals("backLine");
             if (!onField) {
                 into.addAll(ctx.zone(whose, zone));

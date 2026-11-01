@@ -10,6 +10,13 @@ public sealed interface Amount {
 
     int of(GameRoom room, String controller);
 
+    /** How many cards the last action moved ("por cada material tributado"): the effect's own, read by EngineContext. */
+    record LastCount() implements Amount {
+        public int of(GameRoom room, String controller) {
+            return 0;
+        }
+    }
+
     /** A fixed number. */
     record Fixed(int value) implements Amount {
         public int of(GameRoom room, String controller) {

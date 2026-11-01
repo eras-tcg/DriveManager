@@ -1,5 +1,6 @@
 package com.drive.drive_manager.simulator.engine.effects.runtime;
 
+import com.drive.drive_manager.simulator.engine.effects.actions.MoveHandler;
 import com.drive.drive_manager.simulator.engine.effects.actions.SelectHandler;
 import com.drive.drive_manager.simulator.engine.effects.model.Action;
 
@@ -10,7 +11,8 @@ import java.util.Set;
 public final class Actions {
 
     private static final Map<Class<? extends Action>, ActionHandler<?>> HANDLERS = Map.of(
-            Action.Select.class, new SelectHandler());
+            Action.Select.class, new SelectHandler(),
+            Action.Move.class, new MoveHandler());
 
     private Actions() {}
 

@@ -64,6 +64,8 @@ public class Prompt {
     private Integer maxLevelSum;
     /** Exactly {@code max} cards or none ("puedes enviar 5 de tus tributos…"): the board does not confirm a number in between. */
     private boolean exactOrNone;
+    /** Cards that must be among those chosen ("incluida esta carta"). */
+    private List<String> requiredIds;
     /**
      * "envíalas al tope o al fondo de tu mazo": the cards are ordered and sent with one answer, choosing a card (any of
      * {@code validIds}) sends them to the top, choosing none to the bottom; the order is that of every card.

@@ -40,9 +40,6 @@ public sealed interface EffectStep {
      */
     record TakeFromLookedRestToBottom(int max, CardFilter filter) implements EffectStep {}
 
-    /** "tributa N cartas de tu mano": the controller picks exactly N (all of them if the hand has fewer). */
-    record TributeFromHand(int count) implements EffectStep {}
-
     /** "roba N cartas" (fewer if the deck is shorter). */
     record Draw(int count) implements EffectStep {}
 
@@ -113,15 +110,6 @@ public sealed interface EffectStep {
             this(kind, zone, reduce, otherAlly ? "other" : "any", CardFilter.any());
         }
     }
-
-    /** "tributa [hasta] N materiales de esta carta" (a cost); lastCount is how many. */
-    record TributeMaterials(int count, boolean upTo) implements EffectStep {}
-
-    /** "toma 1 carta [filtro] de tus [zona] por cada material tributado" (lastCount). */
-    record TakePerCount(String zone, CardFilter filter) implements EffectStep {}
-
-    /** "tributa hasta N cartas de tu mano"; lastCount is how many. */
-    record TributeFromHandUpTo(int count) implements EffectStep {}
 
     /** "roba la misma cantidad" (lastCount). */
     record DrawLastCount() implements EffectStep {}
@@ -237,20 +225,11 @@ public sealed interface EffectStep {
     /** "para que [dicho aliado] active 1 efecto En Invocación del material tributado": a new link with that effect, for the ally. */
     record ActivateTributedSummonEffect() implements EffectStep {}
 
-    /** "tributa N cartas del tope de tu mazo". */
-    record TributeTop(int count) implements EffectStep {}
-
     /** "envía esta carta (del campo) a tu descarte": a permanent paying with itself. */
     record SendSelfFromFieldTo(String zone) implements EffectStep {}
 
     /** "invoca criaturas … que en nivel sumen hasta N de tu mano sin pagar sus costes" (up to that level sum, all at once). */
     record SummonFreeLevelSum(String zone, CardFilter filter, int maxLevelSum) implements NeedsTarget {}
-
-    /** "coloca [hasta] N cartas de tu [zona] al tope de tu mazo". */
-    record ToDeckTop(String zone, int count, boolean upTo) implements EffectStep {}
-
-    /** "puedes tributar "X" de los recursos de esta carta" (a cost). */
-    record TributeResource(String name) implements EffectStep {}
 
     /** "destruye 1 carta bocarriba en las vidas oponentes". */
     record DestroyFaceUpLife() implements NeedsTarget {}
@@ -261,9 +240,6 @@ public sealed interface EffectStep {
     /** "puedes jugar esta carta [desde zona] reduciendo su coste en el nivel de dicho aliado". */
     record PlaySelfFromZone(String zone, boolean reduceBySourceLevel) implements NeedsTarget {}
 
-    /** "toma N carta [filtro] de tus [zona]": to the hand (up to N when {@code upTo}). */
-    record TakeFromZone(String zone, CardFilter filter, int count, boolean upTo) implements NeedsTarget {}
-
     /** "Si lo haces:": the next {@code covers} steps only if the last optional step was done. */
     record IfDone(int covers) implements EffectStep {}
 
@@ -272,12 +248,6 @@ public sealed interface EffectStep {
 
     /** "gana fuerza N hasta el final del turno": this card or the chosen ally. */
     record GainStrength(int amount) implements EffectStep {}
-
-    /** "envía esta carta a tu [zona]" (Slicker pays its effect this way). Only from another zone. */
-    record SendSelfTo(String zone) implements EffectStep {}
-
-    /** "envía N cartas [filtro] de tus [zona] al fondo de tu mazo": exactly N, in the order chosen. */
-    record SendFromZoneToDeckBottom(String zone, int count, CardFilter filter) implements EffectStep {}
 
     /** "reactiva esta carta". */
     record UntapSelf() implements EffectStep {}
@@ -435,9 +405,6 @@ public sealed interface EffectStep {
         public AlliesGain(CardFilter filter, String keyword, String until) { this(filter, keyword, until, false); }
     }
 
-    /** "tributa tu mano": all of it. */
-    record TributeHand() implements EffectStep {}
-
     /** "termina tu turno": once nothing is pending, the turn goes on to its end phase. */
     record EndYourTurn() implements EffectStep {}
 
@@ -446,9 +413,6 @@ public sealed interface EffectStep {
 
     /** "añádele esta carta como recurso": this card becomes a Recurso of the subject (the ally of the trigger, or the chosen one). */
     record AttachSelfAsResourceToSubject() implements EffectStep {}
-
-    /** "tributa N recursos [filtro] de esta carta". */
-    record TributeResources(int count, CardFilter filter) implements EffectStep {}
 
     /** "activa 1 de sus efectos En Invocación": the subject activates its own "En Invocación" as a new link. */
     record ActivateSubjectSummonEffect() implements EffectStep {}
@@ -492,16 +456,10 @@ public sealed interface EffectStep {
     /** "algún aliado [con N materiales]": an ally with at least {@code count} materials becomes the subject. */
     record PickAllyWithMaterials(int count) implements NeedsTarget {}
 
-    /** "tributa N materiales de [dicho aliado]". */
-    record TributeSubjectMaterials(int count) implements EffectStep {}
-
     /** "dicho aliado inflige daño 1 vez más": one more hit of the direct damage going on. */
     record ExtraHit() implements EffectStep {}
 
     // ------------------------------------------------------------------ E1.2, E1.3 and E2 (2026-10-31)
-
-    /** "tributa N cartas de entre tu mano y los materiales de esta carta": exactly N (all of them if there are fewer). */
-    record TributeFromHandOrMaterials(int count) implements EffectStep {}
 
     /** "reactiva 1 carta [filtro] en tu campo" (any type: creature, structure…); "Si no reactivaste nada" reads it. */
     record UntapOwnCard(CardFilter filter) implements EffectStep {}
@@ -599,14 +557,8 @@ public sealed interface EffectStep {
      */
     record AtEndOfTurn(String scriptId) implements EffectStep {}
 
-    /** "envía esta carta al fondo de tu mazo" from the zone it is in. */
-    record SendSelfToDeckBottom() implements EffectStep {}
-
     /** "coloca bocabajo una de tus vidas bocarriba" ({@code all}: every one of them, "Luego: baraja tus vidas" with {@code shuffle}). */
     record LivesFaceDown(boolean all, boolean shuffle) implements EffectStep {}
-
-    /** "tributa N cartas [filtro] de tu mano" (a cost). */
-    record TributeFromHandWhere(int count, CardFilter filter) implements NeedsTarget {}
 
     /** "envía N copias de esta carta en tu retaguardia a tu [zona]" (this card included). */
     record SendCopiesFromField(int count, String zone) implements EffectStep {}
@@ -626,17 +578,11 @@ public sealed interface EffectStep {
     /** "coloca esta carta al tope de tus vidas [bocarriba]" from the zone it is in (the field, the Descarte…). */
     record SelfToLifeFrom(boolean faceUp) implements EffectStep {}
 
-    /** "descarta N cartas de tu mano": to the Descarte; they are the last "tributed" ({@code IfTributed} reads them). */
-    record DiscardFromHand(int count) implements EffectStep {}
-
     /** "coloca hasta 1 criatura [filtro] de tus [zona] al tope de tus vidas [bocarriba]". */
     record ZoneToLife(String zone, CardFilter filter, boolean faceUp) implements EffectStep {}
 
     /** "destruye 1 aliado [filtro]": by this effect; it is the last "tributed" (its level for "de nivel menor"). */
     record DestroyAlly(CardFilter filter) implements NeedsTarget {}
-
-    /** "descarta N materiales de esta carta" (to the Descarte). */
-    record DiscardMaterials(int count) implements EffectStep {}
 
     /** "añádela como material a esta carta": the card of the triggering event (a life removed…) becomes a material of this card. */
     record AttachTriggerCardAsMaterial() implements EffectStep {}
@@ -683,9 +629,6 @@ public sealed interface EffectStep {
     /** "sube a tu mano 1 aliado del mismo nivel [que la carta colocada / invocada]": {@code lastTributed} is that ally. */
     record ReturnAllyOfSummonedLevel() implements EffectStep {}
 
-    /** "tributa hasta N cartas [filtro] de tu [zona]": {@code lastCount} is how many. */
-    record TributeFromZoneUpTo(String zone, int max, CardFilter filter) implements EffectStep {}
-
     /** "juega 1 carta [filtro] de tus [zona] reduciendo su coste en N por cada carta tributada" (N × {@code lastCount}). */
     record PlayFromZoneByCount(String zone, CardFilter filter, int each) implements EffectStep {}
 
@@ -704,9 +647,6 @@ public sealed interface EffectStep {
     /** "sacrifica todas las criaturas [filtro] en la línea frontal" (both players'). */
     record SacrificeAllInFrontLine(CardFilter filter) implements EffectStep {}
 
-    /** "tributa N materiales [filtro] de esta carta". */
-    record TributeMaterialWhere(CardFilter filter) implements EffectStep {}
-
     /** "sube a tu mano 1 [filtro] bajo tu control" (a cost). */
     record ReturnOwnCardToHand(CardFilter filter) implements NeedsTarget {}
 
@@ -719,9 +659,6 @@ public sealed interface EffectStep {
     /** "añade 1 carta [filtro] de tus [zona] como recurso de esta carta"; {@code upTo}: none is fine. */
     record AddResourceFromZone(String zones, CardFilter filter, boolean upTo) implements EffectStep {}
 
-    /** "envía N cartas de tu mano al fondo de tu mazo" (a cost). */
-    record HandToDeckBottom(int count) implements NeedsTarget {}
-
     /** "añade esta carta (de tu descarte / tributos) como recurso de un aliado". */
     record AttachSelfAsResourceToAlly() implements NeedsTarget {}
 
@@ -730,9 +667,6 @@ public sealed interface EffectStep {
 
     /** "coloca la criatura elegida y esta carta en la línea frontal de sus dueños". */
     record PlaceChosenTributeAndSelf() implements EffectStep {}
-
-    /** "enviar hasta N cartas [filtro] de tus [zona] al fondo de tu mazo": {@code lastCount} how many. */
-    record SendFromZoneToDeckBottomUpTo(String zone, int max, CardFilter filter) implements EffectStep {}
 
     /** "invoca esta carta reduciendo su coste en 1 por cada N cartas enviadas" ({@code lastCount} / N). */
     record SummonSelfPerCount(String zone, int per) implements NeedsTarget {}
@@ -802,9 +736,6 @@ public sealed interface EffectStep {
      * especial]".
      */
     record SpecialRelativeToLast(String zone, CardFilter filter, int reduce) implements EffectStep {}
-
-    /** "tributa hasta N materiales de [dicho aliado]": {@code lastCount} is how many. */
-    record TributeSubjectMaterialsUpTo(int max) implements EffectStep {}
 
     /** "puedes tributar esta carta" said by an inherited effect when its holder left the field: the Recurso, now in the Descarte. */
     record TributeNamedFromDiscard(String name) implements NeedsTarget {}
