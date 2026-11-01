@@ -1364,7 +1364,7 @@ public final class Steps {
             }
             case PickAllyUpToSacrificedLevel pick -> {
                 CardSlot sacrificed = effect.getLastTributed().isEmpty() ? null : findAnywhere(room, userId, effect.getLastTributed().get(0));
-                int max = (sacrificed == null || sacrificed.getLevel() == null ? 0 : sacrificed.getLevel()) + pick.plus();
+                int max = levelWhenRemoved(room, sacrificed) + pick.plus();
                 List<CardSlot> valid = allies(player).stream().filter(c -> inFrontLine(c) && c.getLevel() != null && c.getLevel() <= max).toList();
                 if (valid.isEmpty()) return false;
                 pick(room, effect, "Elige 1 aliado de tu línea frontal nivel " + max + " o menor: declarará ataque.", "Elegido", player.getField(), ids(valid), 1);
@@ -3955,6 +3955,19 @@ public final class Steps {
     }
 
     /** {@code cards} in the order given by {@code order}; ids missing from it keep their place at the end. */
+    /** A card's level as it was on the field when it was last destroyed or sacrificed (its continuous levels included). */
+    static int levelWhenRemoved(GameRoom room, CardSlot card) {
+        if (card == null) return 0;
+        List<GameEvent> timeline = room.getTimeline();
+        for (int i = timeline.size() - 1; i >= 0; i--) {
+            GameEvent e = timeline.get(i);
+            if (!card.getInstanceId().equals(e.getCardInstanceId())) continue;
+            if ((GameEvent.DESTROY.equals(e.getType()) || GameEvent.SACRIFICE.equals(e.getType())) && e.getData() != null
+                    && e.getData().get("level") instanceof Integer level) return level;
+        }
+        return card.getLevel() == null ? 0 : card.getLevel();
+    }
+
     static List<CardSlot> inOrder(List<CardSlot> cards, List<String> order) {
         List<CardSlot> result = new ArrayList<>();
         if (order != null) {

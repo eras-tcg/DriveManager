@@ -95,6 +95,8 @@ public final class Removals {
         }
         // A replacement ("en su lugar", Protección): its owner chooses first; the destruction waits
         if (!sacrifice && deferRemoval(room, card, owner, true, cause, byId, byCard, effect)) return null;
+        // Its level as it was on the field ("1 nivel mayor que el aliado sacrificado"): leaving it, it loses its continuous levels
+        Integer levelThere = card.getLevel();
         owner.getField().remove(card);
         Combat combat = room.getCombat();
         if (combat != null && owner.getUserId().equals(combat.getDefenderId())) combat.setEnemyDestroyed(true);
@@ -122,6 +124,7 @@ public final class Removals {
         Map<String, Object> data = new HashMap<>();
         data.put("cause", cause);
         data.put("ownerId", owner.getUserId());
+        if (levelThere != null) data.put("level", levelThere);
         if (byCard == null && effect != null) byCard = effect.getSourceInstanceId();
         if (byCard != null) data.put("byCard", byCard);
         if (!inherited.isEmpty()) data.put("inherited", inherited);

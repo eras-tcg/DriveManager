@@ -49,6 +49,36 @@ class E11FinalBatchTest {
     }
 
     @Test
+    void festinReadsTheLevelTheSacrificedAllyHadOnTheField() {
+        // Xiromorfo nivel 2 with 2 copies in the Tributos is nivel 4: a nivel 5 may attack after it is sacrificed
+        CardSlot xiromorfo = onField(host, card("x", "Xiromorfo", 2, 2, "P"), BACK);
+        host.getTributeZone().addAll(List.of(card("x1", "Xiromorfo", 2, 2, "P"), card("x2", "Xiromorfo", 2, 2, "P")));
+        onField(host, card("l5", "Nivel 5", 5, 5, "P"));
+        EffectEngine.refreshContinuous(room);
+        assertThat(xiromorfo.getLevel()).isEqualTo(4);
+        host.getHand().add(utility("fe", "Festin"));
+        assertThat(Summons.playByPlayer(room, "host", "fe", 50.0, 75.0)).isNull();
+        answer(room.getPrompt(), "fe");
+        answer(room.getPrompt(), "x");
+        assertThat(room.getPrompt().getValidIds()).containsExactly("l5");
+    }
+
+    @Test
+    void creaturesUsedForARitualByEffectAreNotDestroyedByEffect() {
+        // Kagravú: "si destruyes alguna criatura por efecto" does not count the creatures a Ritual sacrifices
+        GameEvent ritual = new GameEvent();
+        ritual.setType(GameEvent.SACRIFICE);
+        ritual.setPlayerId("host");
+        ritual.setCardInstanceId("c");
+        ritual.setEffectId("eff-1");
+        ritual.setData(new java.util.HashMap<>(java.util.Map.of("cause", EffectEngine.CAUSE_RITUAL, "ownerId", "host")));
+        onField(host, card("c", "Criatura", 1, 1, "P"));
+        assertThat(new Condition.YouDestroyedCreature(true).test(room, ritual, null, "host")).isFalse();
+        ritual.getData().put("cause", EffectEngine.CAUSE_EFFECT);
+        assertThat(new Condition.YouDestroyedCreature(true).test(room, ritual, null, "host")).isTrue();
+    }
+
+    @Test
     void zamaranzasFromTheTributosAddsAnAllyAsMaterialOfAHigherOneAndEntersForFree() {
         CardSlot low = onField(host, card("lo", "Bajo", 1, 1, "B"));
         CardSlot high = onField(host, card("hi", "Alto", 2, 2, "B"));

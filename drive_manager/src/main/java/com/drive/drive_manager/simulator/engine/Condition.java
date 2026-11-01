@@ -94,7 +94,7 @@ public sealed interface Condition {
     record YouDestroyedEnemy(boolean byEffect) implements Condition {
         public boolean test(GameRoom room, GameEvent event, CardSlot source, String controller) {
             return isDestruction(event) && controller.equals(event.getPlayerId()) && !controller.equals(ownerOf(event))
-                    && (!byEffect || event.getEffectId() != null);
+                    && (!byEffect || destroyedByEffect(event));
         }
     }
 
@@ -110,7 +110,7 @@ public sealed interface Condition {
     /** "si destruyes alguna criatura [por efecto]": yours or an enemy's. */
     record YouDestroyedCreature(boolean byEffect) implements Condition {
         public boolean test(GameRoom room, GameEvent event, CardSlot source, String controller) {
-            if (!isDestruction(event) || !controller.equals(event.getPlayerId()) || (byEffect && event.getEffectId() == null)) return false;
+            if (!isDestruction(event) || !controller.equals(event.getPlayerId()) || (byEffect && !destroyedByEffect(event))) return false;
             CardSlot destroyed = EffectEngine.eventCard(room, event);
             return destroyed != null && "creature".equals(destroyed.getCardType());
         }
@@ -149,7 +149,7 @@ public sealed interface Condition {
     /** "En Destrucción por efecto": this card was destroyed by an effect. */
     record DestroyedByEffect() implements Condition {
         public boolean test(GameRoom room, GameEvent event, CardSlot source, String controller) {
-            return event.getEffectId() != null || (event.getData() != null && EffectEngine.CAUSE_EFFECT.equals(event.getData().get("cause"))
+            return destroyedByEffect(event) || (event.getData() != null && EffectEngine.CAUSE_EFFECT.equals(event.getData().get("cause"))
                     && event.getData().get("byCard") != null);
         }
     }
@@ -649,7 +649,7 @@ public sealed interface Condition {
     /** "si algún aliado es destruido por tus efectos". */
     record AllyDestroyedByYourEffect() implements Condition {
         public boolean test(GameRoom room, GameEvent event, CardSlot source, String controller) {
-            return isDestruction(event) && controller.equals(ownerOf(event)) && controller.equals(event.getPlayerId()) && event.getEffectId() != null;
+            return isDestruction(event) && controller.equals(ownerOf(event)) && controller.equals(event.getPlayerId()) && destroyedByEffect(event);
         }
     }
 
@@ -726,6 +726,14 @@ public sealed interface Condition {
             CardSlot card = byId == null ? null : EffectEngine.findInRoom(room, (String) byId);
             return card != null && by.matches(card);
         }
+    }
+
+    /**
+     * Destroyed (or sacrificed) "por efecto": during an effect, and not as the cost of a summon that effect made (the creatures used
+     * for a Ritual are sacrificed by the Ritual's rules, even when an effect summons it).
+     */
+    private static boolean destroyedByEffect(GameEvent event) {
+        return event.getEffectId() != null && !(event.getData() != null && EffectEngine.CAUSE_RITUAL.equals(event.getData().get("cause")));
     }
 
     private static boolean isDestruction(GameEvent event) {
