@@ -777,6 +777,11 @@ public final class Summons {
             if (use.modifier().payment().kind() == CostModifiers.PaymentKind.SELF_DAMAGE) room.getPrompt().setMin(0);
             // "puedes enviar 5…": exactly that many, or none to pay it all
             else room.getPrompt().setExactOrNone(true);
+            // Without this reduction the summon cannot be paid: the payment is not optional any more
+            int others = CostModifiers.available(room, player, CostModifiers.Event.SPECIAL_SUMMON, req.kind(), card, summoner) - use.modifier().reduceNow(room, player.getUserId());
+            if (use.modifier().payment().kind() != CostModifiers.PaymentKind.SELF_DAMAGE && !canPay(room, player.getUserId(), card.getSpecialCost() - others)) {
+                room.getPrompt().setMin(use.modifier().payment().count());
+            }
             room.getPrompt().setSubjectId(card.getInstanceId());
             room.getPrompt().setSummonerId(summoner.getInstanceId());
             return;
