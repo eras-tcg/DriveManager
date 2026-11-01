@@ -1088,6 +1088,13 @@ public final class Steps {
     }
 
     /** Allies "elige 1 aliado" may choose; for an attack, only those in the Línea frontal (rule 10.1.1.1). */
+    /** "elige 1 aliado": the literal word makes it a target (designer ruling 2026-11-01), so "si un aliado es objetivo" reacts. */
+    static void recordAllyTarget(GameRoom room, PendingEffect effect, PlayerState player, String id) {
+        CardSlot ally = find(player.getField(), id);
+        record(room, GameEvent.TARGET, player.getUserId(), ally, null, null, effect, Map.of("targetIds", List.of(id)),
+                player.getUsername() + " elige como objetivo a " + name(ally) + " (" + effect.getSourceName() + ")");
+    }
+
     static List<CardSlot> pickable(GameRoom room, PendingEffect effect, PlayerState player, PickAlly pick) {
         List<EffectStep> steps = new ArrayList<>(script(effect).cost());
         steps.addAll(script(effect).steps());
@@ -1404,9 +1411,10 @@ public final class Steps {
                 effect.setLastTributed(new ArrayList<>(picks));
                 log(room, player.getUsername() + " revela " + String.join(", ", cards.stream().map(EffectEngine::name).toList()) + " (" + effect.getSourceName() + ")", null);
             }
-            case PickAttacker ignored -> {
+            case PickAttacker p -> {
                 if (find(player.getField(), picks.get(0)) == null) return "Ese aliado ya no está en el campo";
                 effect.setSubjectId(picks.get(0));
+                if (p.target()) recordAllyTarget(room, effect, player, picks.get(0));
             }
             case LivesFaceDown ignored -> {
                 CardSlot life = find(player.getLifeStack(), picks.get(0));
@@ -1712,9 +1720,10 @@ public final class Steps {
                 performRitual(room, effect, player, target, ritual, summoner, others);
                 effect.setRitualSummonerId(null);
             }
-            case PickAlly ignored -> {
+            case PickAlly p -> {
                 if (find(player.getField(), picks.get(0)) == null) return "Ese aliado ya no está en el campo";
                 effect.setSubjectId(picks.get(0));
+                if (p.target()) recordAllyTarget(room, effect, player, picks.get(0));
             }
             case SacrificeAlly ignored -> {
                 CardSlot ally = find(player.getField(), picks.get(0));
@@ -1812,9 +1821,10 @@ public final class Steps {
                 record(room, GameEvent.TRIBUTE, userId, material, "materials", "tributeZone", effect, Map.of("byCard", effect.getSourceInstanceId()),
                         player.getUsername() + " tributa " + name(material) + " de los materiales de " + name(holder) + " (" + effect.getSourceName() + ")");
             }
-            case PickAllyWhere ignored -> {
+            case PickAllyWhere p -> {
                 if (find(player.getField(), picks.get(0)) == null) return "Ese aliado ya no está en el campo";
                 effect.setSubjectId(picks.get(0));
+                if (p.target()) recordAllyTarget(room, effect, player, picks.get(0));
             }
             case MayDo may -> {
                 // Declined: skip what it covers

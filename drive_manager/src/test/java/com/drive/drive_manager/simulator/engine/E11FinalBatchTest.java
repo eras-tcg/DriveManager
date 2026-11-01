@@ -170,6 +170,14 @@ class E11FinalBatchTest {
     }
 
     @Test
+    void choosingAnAllyWithTheWordEligeMakesItATarget() {
+        CardSlot ally = onField(host, card("al", "Aliado", 1, 1, "R"));
+        play(utility("vh", "Valor Del Heroe"));
+        answer(room.getPrompt(), ally.getInstanceId());
+        assertThat(room.getTimeline()).filteredOn(e -> GameEvent.TARGET.equals(e.getType())).extracting(GameEvent::getCardInstanceId).contains("al");
+    }
+
+    @Test
     void escudosLealesIsPlayedForFreeWhenAnEnemyAttacksWithTwoLivesOrLess() {
         host.getLifeStack().remove(0);
         room.setCurrentTurnUserId("guest");

@@ -147,8 +147,9 @@ public sealed interface EffectStep {
      * "elige 1 aliado": the ally the next steps act on. With {@code attacker} it is going to declare an attack, so
      * only allies of the Línea frontal can be chosen.
      */
-    record PickAlly(boolean attacker) implements NeedsTarget {
-        public PickAlly() { this(false); }
+    record PickAlly(boolean attacker, boolean target) implements NeedsTarget {
+        public PickAlly() { this(false, false); }
+        public PickAlly(boolean attacker) { this(attacker, false); }
     }
 
     /** "tributa 1 material de 1 aliado". */
@@ -165,7 +166,9 @@ public sealed interface EffectStep {
     }
 
     /** "elige 1 aliado [filtro]": like {@link PickAlly}, among those that match. */
-    record PickAllyWhere(CardFilter filter) implements NeedsTarget {}
+    record PickAllyWhere(CardFilter filter, boolean target) implements NeedsTarget {
+        public PickAllyWhere(CardFilter filter) { this(filter, false); }
+    }
 
     /** "dicho aliado": the card of the event that triggered the effect is the one the next steps act on. */
     record SubjectFromTrigger() implements EffectStep {}
@@ -259,7 +262,9 @@ public sealed interface EffectStep {
     record RevealFromHand(java.util.List<CardFilter> filters) implements NeedsTarget {}
 
     /** "elige 1 aliado [filtro]; este declara ataque": an ally of the Línea frontal that matches (the subject). */
-    record PickAttacker(CardFilter filter) implements NeedsTarget {}
+    record PickAttacker(CardFilter filter, boolean target) implements NeedsTarget {
+        public PickAttacker(CardFilter filter) { this(filter, false); }
+    }
 
     /**
      * "al final del turno: …": what follows is another effect of the card ({@code scriptId}, moment {@code DELAYED}) that triggers at the
