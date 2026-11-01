@@ -125,6 +125,23 @@ public final class Chain {
                 }
             }
         }
+        // "al final del turno: …" set by an effect this turn (AtEndOfTurn): the rest of it, now
+        if (GameEvent.TURN_END.equals(event.getType())) {
+            for (String mark : new ArrayList<>(room.getUsedThisTurn())) {
+                if (!mark.startsWith(Steps.DELAYED)) continue;
+                room.getUsedThisTurn().remove(mark);
+                String[] p = mark.substring(Steps.DELAYED.length()).split("\\|", -1);
+                EffectScript script = CardEffects.byId(p[2]).orElse(null);
+                CardSlot source = findAnywhere(room, p[0], p[1]);
+                if (script == null || source == null) continue;
+                PendingEffect e = pending(room, script, p[0], source, event.getSeq());
+                if (!p[3].isEmpty()) {
+                    e.setSubjectId(p[3]);
+                    e.setSummonedId(p[3]);
+                }
+                result.add(e);
+            }
+        }
         // Passive effects with a trigger condition, from the cards in play (or in the hand for "En Mano")
         for (PlayerState p : room.getPlayers().values()) {
             for (String zone : List.of("field", "hand", "tributeZone", "discardPile")) {

@@ -33,6 +33,9 @@ public final class Summons {
      *
      * @return an error message for the player, or null when done
      */
+    /** The mark of a "puedes agotar…" asked before a normal summon: the summon goes on with the answer (and where it was dropped). */
+    static final String NORMAL_SUMMON = "normal-summon|";
+
     public static String normalSummon(GameRoom room, String userId, String instanceId, Double x, Double y) {
         String error = checkMainPhase(room, userId, "invocar");
         if (error != null) return error;
@@ -45,6 +48,52 @@ public final class Summons {
 
         boolean advantage = starterAdvantage(room, userId, card, card.getCost());
         int cost = card.getCost() - (advantage ? 1 : 0);
+        // Its Reactivo–Modificadores ("cuando fueras a invocar esta carta: reduce su coste…"); "puedes agotar esta carta para reducir…" is asked
+        // first, even when the cost is already 0 (designer ruling 2026-10-31: it stays 0)
+        // Carnirex: the most a sacrifice could lower it
+        CardFilter canSacrifice = CardEffects.sacrificeToSummon(card);
+        int bySacrifice = canSacrifice == null ? 0 : allies(player).stream().filter(c -> canSacrifice.matches(c) && !name(c).equalsIgnoreCase(name(card)))
+                .mapToInt(c -> c.getCost() == null ? 0 : c.getCost()).max().orElse(0);
+        if (!canPay(room, userId, Math.max(0, cost - bySacrifice - CostModifiers.available(room, player, CostModifiers.Event.SUMMON, null, card, null))))
+            return "No tienes gemas suficientes: tienes " + gemsOf(room, userId) + " y cuesta " + cost;
+        // Carnirex: "puedes sacrificar 1 aliado [dinosaurio] activo … para invocar esta carta en tu línea frontal y reducir su coste en su coste"
+        CardFilter sacrifice = CardEffects.sacrificeToSummon(card);
+        CardSlot sacrificed = null;
+        if (sacrifice != null) {
+            List<CardSlot> options = allies(player).stream().filter(c -> sacrifice.matches(c) && !name(c).equalsIgnoreCase(name(card))).toList();
+            String answer = room.getUsedThisTurn().stream().filter(k -> k.startsWith(SUMMON_SACRIFICE + card.getInstanceId() + "|")).findFirst().orElse(null);
+            if (answer == null && !options.isEmpty()) {
+                rulesPrompt(room, userId, PURPOSE_SUMMON_SACRIFICE, name(card) + " · al invocarla",
+                        "Puedes sacrificar 1 aliado [dinosaurio] activo para invocar " + name(card) + " en tu línea frontal reduciendo su coste en el coste "
+                                + "del aliado. O ninguno.", "Sacrificar", options, player.getField());
+                room.getPrompt().setMin(0);
+                room.getPrompt().setSubjectId(card.getInstanceId());
+                room.getPrompt().setSummonerId(y == null ? "" : String.valueOf(y));
+                return null;
+            }
+            if (answer != null) {
+                room.getUsedThisTurn().remove(answer);
+                String id = answer.substring((SUMMON_SACRIFICE + card.getInstanceId() + "|").length());
+                sacrificed = find(options, id);
+            }
+            if (sacrificed != null) {
+                int lower = sacrificed.getCost() == null ? 0 : sacrificed.getCost();
+                if (!canPay(room, userId, Math.max(0, cost - lower))) return "No tienes gemas suficientes: tienes " + gemsOf(room, userId) + " y cuesta " + (cost - lower);
+                destroy(room, sacrificed, player, true, CAUSE_EFFECT, userId, card.getInstanceId(), null);
+                cost = Math.max(0, cost - lower);
+            }
+        }
+        CostModifiers.Use tap = CostModifiers.unansweredTap(room, player, CostModifiers.Event.SUMMON, null, card);
+        if (tap != null) {
+            rulesPrompt(room, userId, PURPOSE_COST_TAP, name(tap.holder()) + " · " + tap.modifier().label(),
+                    "¿Agotas " + name(tap.holder()) + " para reducir en " + tap.modifier().reduceNow(room, userId) + " el coste de " + name(card) + "?",
+                    "Agotar", List.of(tap.holder()), List.of(tap.holder()));
+            room.getPrompt().setKind(Prompt.Kind.CONFIRM);
+            room.getPrompt().setSubjectId(card.getInstanceId());
+            room.getPrompt().setSummonerId(NORMAL_SUMMON + (y == null ? "" : y));
+            return null;
+        }
+        cost = Math.max(0, cost - CostModifiers.applyAutomatic(room, player, CostModifiers.Event.SUMMON, null, card, null, cost));
         if (!canPay(room, userId, cost)) return "No tienes gemas suficientes: tienes " + gemsOf(room, userId) + " y cuesta " + cost;
         pay(room, userId, cost);
         if (advantage) room.setStarterAdvantageUserId(null);
@@ -55,7 +104,8 @@ public final class Summons {
         card.setX(x != null ? x : 50.0);
         // Normal summons enter the Retaguardia (the lower half of the owner's field); Asalto lets it enter the Línea frontal, exhausted
         boolean assault = y != null && y < 55 && keywordLevel(card, "Asalto") != null;
-        card.setY(assault ? y : y != null && y >= 55 ? y : 75.0);
+        // Carnirex by a sacrifice: "invocar esta carta en tu línea frontal" (active, it is not Asalto)
+        card.setY(sacrificed != null ? 25.0 : assault ? y : y != null && y >= 55 ? y : 75.0);
         if (assault) card.setTapped(true);
         player.getField().add(card);
 
@@ -175,7 +225,7 @@ public final class Summons {
         CostModifiers.Use use = CostModifiers.unansweredTap(room, player, CostModifiers.Event.SPECIAL_SUMMON, kind, card);
         if (use == null) return false;
         rulesPrompt(room, player.getUserId(), PURPOSE_COST_TAP, name(use.holder()) + " · " + use.modifier().label(),
-                "¿Agotas " + name(use.holder()) + " para reducir en " + use.modifier().reduce() + " el coste especial de " + name(card) + "?",
+                "¿Agotas " + name(use.holder()) + " para reducir en " + use.modifier().reduceNow(room, player.getUserId()) + " el coste especial de " + name(card) + "?",
                 "Agotar", List.of(use.holder()), List.of(use.holder()));
         room.getPrompt().setKind(Prompt.Kind.CONFIRM);
         room.getPrompt().setSubjectId(card.getInstanceId());
@@ -192,6 +242,11 @@ public final class Summons {
      * with a prompt, and nothing is paid until it is done.
      */
     public static String ritualByPlayer(GameRoom room, String userId, String instanceId, String summonerId) {
+        PlayerState who = room.getPlayer(userId);
+        return summoningAs(who == null ? null : find(who.getHand(), instanceId), () -> ritualByPlayerAs(room, userId, instanceId, summonerId));
+    }
+
+    static String ritualByPlayerAs(GameRoom room, String userId, String instanceId, String summonerId) {
         String error = checkMainPhase(room, userId, "invocar");
         if (error != null) return error;
         PlayerState player = room.getPlayer(userId);
@@ -216,12 +271,12 @@ public final class Summons {
                 handRitual(room, player, card, summoner, List.of());
                 return null;
             }
-            if (summoner.getLevel() == req.level()) {
+            if (hasLevel(summoner, req.level())) {
                 handRitual(room, player, card, summoner, List.of());
                 return null;
             }
             List<CardSlot> others = materials.stream().filter(c -> c != summoner).toList();
-            int remaining = req.level() - summoner.getLevel();
+            int remaining = req.level() - summonerLevel(summoner, others, req.level());
             if (remaining < 0 || !sumsExactly(others, remaining)) return missing;
             // Only those that fit, and no more than the levels left: once they add up, the rest are locked
             List<CardSlot> fitting = fittingSacrifices(others, remaining);
@@ -264,7 +319,15 @@ public final class Summons {
      */
     record SpecialRequirement(String kind, int level, int alliesSum, int materialLevel, int levelSum, boolean atLeast, int maxLevel,
                               int materialCount, List<String> materialZones, boolean noSummoner, SpecialRequirement alternative,
-                              boolean alone, boolean strongest, List<String> summonerZones) {
+                              boolean alone, boolean strongest, List<String> summonerZones, boolean moreMaterials) {
+        /** {@code moreMaterials}: "N o más criaturas" as materials. */
+        SpecialRequirement(String kind, int level, int alliesSum, int materialLevel, int levelSum, boolean atLeast, int maxLevel,
+                           int materialCount, List<String> materialZones, boolean noSummoner, SpecialRequirement alternative,
+                           boolean alone, boolean strongest, List<String> summonerZones) {
+            this(kind, level, alliesSum, materialLevel, levelSum, atLeast, maxLevel, materialCount, materialZones, noSummoner, alternative,
+                    alone, strongest, summonerZones, false);
+        }
+
         SpecialRequirement(String kind, int level, int alliesSum, int materialLevel, int levelSum, boolean atLeast, int maxLevel,
                            int materialCount, List<String> materialZones, boolean noSummoner, SpecialRequirement alternative,
                            boolean alone, boolean strongest) {
@@ -274,7 +337,7 @@ public final class Summons {
 
         SpecialRequirement withAlternative(SpecialRequirement other) {
             return new SpecialRequirement(kind, level, alliesSum, materialLevel, levelSum, atLeast, maxLevel, materialCount, materialZones,
-                    noSummoner, other, alone, strongest, summonerZones);
+                    noSummoner, other, alone, strongest, summonerZones, moreMaterials);
         }
 
         /** The summoner is declared from the hand or the Tributos (not the field). */
@@ -286,6 +349,18 @@ public final class Summons {
         boolean fits(int summonerLevel) {
             return !noSummoner && (atLeast ? summonerLevel >= level : summonerLevel >= level && summonerLevel <= maxLevel);
         }
+    }
+
+    /** A Requerimiento level that any level meets ("2 criaturas en mano"). */
+    static final int ANY_LEVEL = 0;
+
+    static boolean levelMeets(CardSlot card, int level) {
+        return level == ANY_LEVEL || hasLevel(card, level);
+    }
+
+    /** " nivel N", or nothing for any level. */
+    static String levelText(int level) {
+        return level == ANY_LEVEL ? "" : " nivel " + level;
     }
 
     /** The marker of a Materialización without a summoner, in the prompt's summoner. */
@@ -310,14 +385,22 @@ public final class Summons {
         boolean materialization = "materialization".equals(kind);
         // "criatura nivel 3 en mano + 2 criaturas nivel 3 en tu mano o tributos": the summoner is declared from where it says (not
         // the field) and enters with the others as its materials (Roto-G0)
-        Matcher declared = Pattern.compile("^(?:invocador|criatura)\\s+ni\\w*\\s*(\\d+)\\s+(en\\s+[^+]*)\\+\\s*(\\d+)\\s*criaturas?\\s*ni\\w*\\s*(\\d+)(.*)$")
+        // "criatura nivel 3 en mano o campo (invocador) + 1 o más criaturas nivel 3 en mano o campo" (Prototipo XTRM-1N3)
+        Matcher declared = Pattern.compile("^(?:invocador|criatura)\\s+ni\\w*\\s*(\\d+)\\s+(en\\s+[^+]*)\\+\\s*(\\d+)(\\s*o\\s*m[aá]s)?\\s*criaturas?\\s*ni\\w*\\s*(\\d+)(.*)$")
                 .matcher(text);
         if (materialization && declared.find()) {
             List<String> summonerZones = materialZones(declared.group(2));
-            List<String> rest = declared.group(5).isBlank() ? summonerZones : materialZones(declared.group(5));
+            List<String> rest = declared.group(6).isBlank() ? summonerZones : materialZones(declared.group(6));
             int level = Integer.parseInt(declared.group(1));
-            return new SpecialRequirement(kind, level, 0, Integer.parseInt(declared.group(4)), 0, false, level, Integer.parseInt(declared.group(3)),
-                    rest, true, null, false, false, summonerZones);
+            return new SpecialRequirement(kind, level, 0, Integer.parseInt(declared.group(5)), 0, false, level, Integer.parseInt(declared.group(3)),
+                    rest, true, null, false, false, summonerZones, declared.group(4) != null);
+        }
+        // "2 criaturas en mano" (Unidad de Seguridad A-5H): one is the summoner declared from there, the rest its materials, of any level
+        Matcher anyLevel = Pattern.compile("^(\\d+)\\s*criaturas\\s+(en\\s+[^+]*?)\\.?$").matcher(text);
+        if (materialization && anyLevel.find()) {
+            List<String> from = materialZones(anyLevel.group(2));
+            return new SpecialRequirement(kind, ANY_LEVEL, 0, ANY_LEVEL, 0, false, ANY_LEVEL, Integer.parseInt(anyLevel.group(1)) - 1, from, true, null,
+                    false, false, from);
         }
         // "2 criaturas nivel 1 en tu mano o tributos": no summoner
         Matcher many = Pattern.compile("(\\d+)\\s*criaturas\\s*ni\\w*\\s*(\\d+)").matcher(text);
@@ -354,7 +437,7 @@ public final class Summons {
 
     /** "en campo o mano", "en tu mano o tributos", "en el campo"; when it says none, the Tributos or the field. */
     private static List<String> materialZones(String text) {
-        Matcher m = Pattern.compile("en\\s+(?:tu\\s+|tus\\s+|el\\s+)?(campo|mano|tributos)(?:\\s*o\\s+(?:tu\\s+|tus\\s+|el\\s+)?(campo|mano|tributos))?")
+        Matcher m = Pattern.compile("(?:en|de)\\s+(?:tu\\s+|tus\\s+|el\\s+)?(campo|mano|tributos|descarte)(?:\\s*o\\s+(?:tu\\s+|tus\\s+|el\\s+)?(campo|mano|tributos|descarte))?")
                 .matcher(text);
         if (!m.find()) return List.of("tributeZone", "field");
         List<String> zones = new ArrayList<>();
@@ -363,6 +446,7 @@ public final class Summons {
             zones.add(switch (m.group(g)) {
                 case "campo" -> "field";
                 case "mano" -> "hand";
+                case "descarte" -> "discardPile";
                 default -> "tributeZone";
             });
         }
@@ -372,9 +456,9 @@ public final class Summons {
     /** The way of the Requerimiento that summoner meets (the printed one or its alternative), or null. */
     static SpecialRequirement optionFor(SpecialRequirement req, CardSlot summoner) {
         if (summoner == null) return req.noSummoner() ? req : null;
-        int level = summoner.getLevel() == null ? -1 : summoner.getLevel();
-        if (req.fits(level)) return req;
-        return req.alternative() != null && req.alternative().fits(level) ? req.alternative() : null;
+        for (int level : levels(summoner)) if (req.fits(level)) return req;
+        if (req.alternative() != null) for (int level : levels(summoner)) if (req.alternative().fits(level)) return req.alternative();
+        return null;
     }
 
     static String kindName(String kind) {
@@ -382,6 +466,7 @@ public final class Summons {
             case "evolution" -> "Evolución";
             case "promotion" -> "Ascenso";
             case "materialization" -> "Materialización";
+            case "any" -> "invocación especial";
             default -> "Ritual";
         };
     }
@@ -418,7 +503,7 @@ public final class Summons {
         for (String z : option.materialZones()) all.addAll(zone(player, z));
         return all.stream()
                 .filter(c -> c != summoner && c != card && "creature".equals(c.getCardType()) && c.getLevel() != null
-                        && c.getLevel() == option.materialLevel() && shares(c, card))
+                        && levelMeets(c, option.materialLevel()) && shares(c, card))
                 .toList();
     }
 
@@ -428,7 +513,7 @@ public final class Summons {
         SpecialRequirement option = optionFor(req, summoner);
         if (option == null) return false;
         List<CardSlot> materials = specialMaterials(player, card, req, summoner);
-        return option.levelSum() > 0 ? sumsExactly(materials, option.levelSum() - summoner.getLevel()) && option.levelSum() > summoner.getLevel()
+        return option.levelSum() > 0 ? levels(summoner).stream().anyMatch(l -> option.levelSum() > l && sumsExactly(materials, option.levelSum() - l))
                 : materials.size() >= option.materialCount();
     }
 
@@ -440,7 +525,7 @@ public final class Summons {
         List<CardSlot> all = new ArrayList<>();
         for (String z : req.summonerZones()) all.addAll(zone(player, z));
         return all.stream()
-                .filter(c -> c != card && "creature".equals(c.getCardType()) && c.getLevel() != null && c.getLevel() == req.level() && shares(c, card))
+                .filter(c -> c != card && "creature".equals(c.getCardType()) && c.getLevel() != null && levelMeets(c, req.level()) && shares(c, card))
                 .filter(c -> specialMaterials(player, card, req, c).size() >= req.materialCount())
                 .toList();
     }
@@ -460,8 +545,10 @@ public final class Summons {
         SpecialRequirement option = optionFor(req, summoner);
         if (option == null) return "Ese invocador no cumple el Requerimiento";
         if (option.levelSum() > 0) {
-            int sum = summoner.getLevel() + materials.stream().mapToInt(CardSlot::getLevel).sum();
-            return sum == option.levelSum() ? null : "Los niveles deben sumar exactamente " + option.levelSum() + " con el invocador (suman " + sum + ")";
+            List<CardSlot> all = new ArrayList<>(materials);
+            all.add(summoner);
+            int sum = all.stream().mapToInt(CardSlot::getLevel).sum();
+            return addsUpTo(all, option.levelSum()) ? null : "Los niveles deben sumar exactamente " + option.levelSum() + " con el invocador (suman " + sum + ")";
         }
         return materials.size() == option.materialCount() ? null
                 : "Elige " + option.materialCount() + " " + plural(option.materialCount(), "material", "materiales");
@@ -473,17 +560,17 @@ public final class Summons {
         if (option == null) option = req;
         String zones = zonesText(option.materialZones());
         if (req.declaredSummoner() && summoner != null) {
-            return "Elige " + req.materialCount() + " " + plural(req.materialCount(), "criatura", "criaturas") + " nivel " + req.materialLevel() + " de " + zones
+            return "Elige " + req.materialCount() + " " + plural(req.materialCount(), "criatura", "criaturas") + levelText(req.materialLevel()) + " de " + zones
                     + ": con " + name(summoner) + " (el invocador) se convierten en materiales de " + name(card) + ", que entra en tu retaguardia.";
         }
         if (summoner == null) {
-            return "Elige " + option.materialCount() + " criaturas nivel " + option.materialLevel() + " de " + zones + ": se convierten en materiales de "
+            return "Elige " + option.materialCount() + " criaturas" + levelText(option.materialLevel()) + " de " + zones + ": se convierten en materiales de "
                     + name(card) + ", que entra en tu retaguardia.";
         }
         return option.levelSum() > 0
                 ? "Elige los aliados que se convierten en materiales de " + name(card) + ": con " + name(summoner) + " (nivel " + summoner.getLevel()
                         + ") sus niveles deben sumar exactamente " + option.levelSum() + "."
-                : "Elige el material: " + option.materialCount() + " criatura nivel " + option.materialLevel() + " de " + zones
+                : "Elige el material: " + option.materialCount() + " criatura" + levelText(option.materialLevel()) + " de " + zones
                         + ". Se convierte en material de " + name(card) + " junto a " + name(summoner) + ".";
     }
 
@@ -535,6 +622,10 @@ public final class Summons {
 
     /** Whether the card can be summoned now by its special summon (any kind), for the board's legal actions. */
     public static boolean canSpecial(GameRoom room, String userId, CardSlot card) {
+        return summoningAs(card, () -> canSpecialAs(room, userId, card));
+    }
+
+    static boolean canSpecialAs(GameRoom room, String userId, CardSlot card) {
         if ("ritual".equalsIgnoreCase(card.getSpecialSummonKind())) return canRitual(room, userId, card);
         PlayerState player = room.getPlayer(userId);
         SpecialRequirement req = specialRequirement(card);
@@ -552,6 +643,11 @@ public final class Summons {
      * card says. {@code summonerId} is the creature it was dropped onto; whatever is missing is asked for.
      */
     public static String specialByPlayer(GameRoom room, String userId, String instanceId, String summonerId) {
+        PlayerState who = room.getPlayer(userId);
+        return summoningAs(who == null ? null : specialSource(who, instanceId), () -> specialByPlayerAs(room, userId, instanceId, summonerId));
+    }
+
+    static String specialByPlayerAs(GameRoom room, String userId, String instanceId, String summonerId) {
         PlayerState player = room.getPlayer(userId);
         CardSlot card = player == null ? null : specialSource(player, instanceId);
         if (card != null && "ritual".equalsIgnoreCase(card.getSpecialSummonKind())) return ritualByPlayer(room, userId, instanceId, summonerId);
@@ -562,7 +658,8 @@ public final class Summons {
         SpecialRequirement req = specialRequirement(card);
         if (req == null || card.getSpecialCost() == null) return name(card) + " no tiene una invocación especial que el motor conozca";
         String kind = kindName(req.kind());
-        if (!canPay(room, userId, card.getSpecialCost() - CostModifiers.available(room, player, CostModifiers.Event.SPECIAL_SUMMON, req.kind(), card, null)))
+        if (!canPay(room, userId, card.getSpecialCost() - possibleFieldPiecesDiscount(player, card)
+                - CostModifiers.available(room, player, CostModifiers.Event.SPECIAL_SUMMON, req.kind(), card, null)))
             return "No tienes gemas suficientes: tienes " + gemsOf(room, userId) + " y el coste especial es " + card.getSpecialCost();
         if (askTap(room, player, card, req.kind(), summonerId)) return null;
         if ("promotion".equals(req.kind()) && !alliesAddUp(player, req)) return "Para el Ascenso tus aliados deben sumar " + req.alliesSum() + " o más en nivel";
@@ -578,7 +675,8 @@ public final class Summons {
                 shown.remove(card);
                 rulesPrompt(room, userId, PURPOSE_SPECIAL, name(card) + " · " + kind,
                         "Declara el invocador: 1 criatura nivel " + req.level() + " de " + zonesText(req.summonerZones()) + ". Luego eliges "
-                                + req.materialCount() + " " + plural(req.materialCount(), "material", "materiales") + ". Si no eliges ninguna, no se invoca.",
+                                + req.materialCount() + (req.moreMaterials() ? " o más " : " ") + plural(req.materialCount(), "material", "materiales")
+                                + ". Si no eliges ninguna, no se invoca.",
                         "Invocador", summoners, shown);
                 room.getPrompt().setSubjectId(card.getInstanceId());
                 return null;
@@ -589,10 +687,11 @@ public final class Summons {
             for (String z : req.materialZones()) shown.addAll(zone(player, z));
             shown.remove(card);
             shown.remove(summoner);
+            List<CardSlot> materialOptions = specialMaterials(player, card, req, summoner);
             rulesPrompt(room, userId, PURPOSE_SPECIAL, name(card) + " · " + kind, materialInstruction(req, card, summoner), "Material",
-                    specialMaterials(player, card, req, summoner), shown);
+                    materialOptions, shown);
             room.getPrompt().setMin(req.materialCount());
-            room.getPrompt().setMax(req.materialCount());
+            room.getPrompt().setMax(req.moreMaterials() ? materialOptions.size() : req.materialCount());
             room.getPrompt().setSubjectId(card.getInstanceId());
             room.getPrompt().setSummonerId(summoner.getInstanceId());
             return null;
@@ -667,11 +766,15 @@ public final class Summons {
         }
         // A cost modifier that asks for its payment (Flambreik's tributes) is asked before the summon (a Reacción applies
         // before its event); only when no materials are being chosen
-        CostModifiers.Use use = materials.isEmpty() ? CostModifiers.choice(room, player, CostModifiers.Event.SPECIAL_SUMMON, req.kind(), card, summoner) : null;
+        CostModifiers.Use use = CostModifiers.choice(room, player, CostModifiers.Event.SPECIAL_SUMMON, req.kind(), card, summoner);
+        if (use != null && !materials.isEmpty() && use.modifier().payment().kind() != CostModifiers.PaymentKind.SELF_DAMAGE) use = null;
         if (use != null) {
+            room.getUsedThisTurn().removeIf(k -> k.startsWith(DISCOUNT_MATERIALS + card.getInstanceId() + "|"));
+            if (!materials.isEmpty()) room.getUsedThisTurn().add(DISCOUNT_MATERIALS + card.getInstanceId() + "|" + String.join(",", ids(materials)));
             rulesPrompt(room, player.getUserId(), PURPOSE_SUMMONER_DISCOUNT, name(use.holder()) + " · " + use.modifier().label(),
                     CostModifiers.describe(use), "Pagar", CostModifiers.paymentOptions(player, use), player.getTributeZone());
             room.getPrompt().setMax(use.modifier().payment().count());
+            if (use.modifier().payment().kind() == CostModifiers.PaymentKind.SELF_DAMAGE) room.getPrompt().setMin(0);
             room.getPrompt().setSubjectId(card.getInstanceId());
             room.getPrompt().setSummonerId(summoner.getInstanceId());
             return;
@@ -680,10 +783,13 @@ public final class Summons {
         advance(room);
     }
 
+    /** The materials chosen before a payment the player is asked for (Biok): card id | material ids. */
+    static final String DISCOUNT_MATERIALS = "discount-materials|";
+
     static void specialSummon(GameRoom room, PlayerState player, CardSlot card, SpecialRequirement req, CardSlot summoner,
                                       List<CardSlot> materials, String fromZone, int reduce, PendingEffect effect) {
         String userId = player.getUserId();
-        int cost = Math.max(0, card.getSpecialCost() - reduce);
+        int cost = Math.max(0, card.getSpecialCost() - reduce - fieldPiecesDiscount(player, card, summoner, materials));
         // Its cost modifiers that ask for no choice ("reduce en 1 el coste especial", "puedes agotar esta carta para reducir…")
         cost -= CostModifiers.applyAutomatic(room, player, CostModifiers.Event.SPECIAL_SUMMON, req.kind(), card, summoner, cost);
         pay(room, userId, cost);
@@ -697,6 +803,12 @@ public final class Summons {
             card.setY(75.0);
             used = "";
         } else {
+            // "cuando esta carta fuera a ser ascendida: esta carta gana Furia 2 hasta el final del turno" (it passes to the new creature)
+            String gain = "promotion".equals(req.kind()) ? CardEffects.gainBeforeAscended(summoner) : null;
+            if (gain != null && userId.equals(room.getCurrentTurnUserId())) {
+                summoner.getTurnKeywords().add(gain);
+                floating(summoner, null, "Gana " + gain + " hasta el final del turno", "turn", 0, gain);
+            }
             inheritFromSummoner(room, card, summoner);
             player.getField().remove(summoner);
             leaveField(summoner);
@@ -711,7 +823,8 @@ public final class Summons {
             default -> {
                 if (summoner != null) card.getMaterials().add(0, summoner);
                 for (CardSlot material : materials) {
-                    String from = player.getTributeZone().remove(material) ? "tributeZone" : player.getHand().remove(material) ? "hand" : "field";
+                    String from = player.getTributeZone().remove(material) ? "tributeZone" : player.getHand().remove(material) ? "hand"
+                            : player.getDiscardPile().remove(material) ? "discardPile" : "field";
                     // A creature of the field used as a material loses its state; its attachments go to the Descarte
                     if ("field".equals(from)) removeFromField(player, material);
                     material.setFaceDown(false);
@@ -721,10 +834,100 @@ public final class Summons {
             }
         }
         player.getField().add(card);
-        record(room, GameEvent.SPECIAL_SUMMON, userId, card, fromZone, "field", effect, Map.of("summonType", req.kind(), "cost", cost),
+        record(room, GameEvent.SPECIAL_SUMMON, userId, card, fromZone, "field", effect,
+                Map.of("summonType", req.kind(), "cost", cost, "used", (summoner == null ? 0 : 1) + materials.size()),
                 player.getUsername() + " invoca por " + kindName(req.kind()) + " a " + name(card) + " usando " + used + " y pagando "
                         + gemsText(cost) + (effect != null ? " (" + effect.getSourceName() + ")" : ""));
         afterSpecialSummon(room, player, card, effect);
+    }
+
+    /**
+     * "en su lugar, puede invocar especialmente esta carta" (EXO-91, SARS-2): a regular special summon of {@code card} with {@code ally} as its
+     * summoner is possible now: the ally meets the Requerimiento, the materials are there and the cost can be paid.
+     */
+    static boolean canSummonInsteadOfRemoval(GameRoom room, PlayerState player, CardSlot card, CardSlot ally, int reduce) {
+        return summoningAs(card, () -> canSummonInsteadOfRemovalAs(room, player, card, ally, reduce));
+    }
+
+    static boolean canSummonInsteadOfRemovalAs(GameRoom room, PlayerState player, CardSlot card, CardSlot ally, int reduce) {
+        SpecialRequirement req = specialRequirement(card);
+        if (req == null || card.getSpecialCost() == null || "ritual".equals(req.kind()) || req.declaredSummoner() || req.noSummoner()) return false;
+        if (!specialSummoners(player, card, req).contains(ally) || !materialsPossible(player, card, req, ally)) return false;
+        if ("promotion".equals(req.kind()) && !alliesAddUp(player, req)) return false;
+        return canPay(room, player.getUserId(), card.getSpecialCost() - reduce
+                - CostModifiers.available(room, player, CostModifiers.Event.SPECIAL_SUMMON, req.kind(), card, ally));
+    }
+
+    /** Carries out that special summon: asks for the materials when the Requerimiento has some, then summons (the ally takes no other part). */
+    static void summonInsteadOfRemoval(GameRoom room, PlayerState player, CardSlot card, CardSlot ally) {
+        SpecialRequirement req = specialRequirement(card);
+        CardEffects.AllyRemovalSummon s = CardEffects.allyRemovalSummon(card);
+        String from = find(player.getHand(), card.getInstanceId()) != null ? "hand" : "tributeZone";
+        SpecialRequirement option = optionFor(req, ally);
+        if ("materialization".equals(req.kind()) && (option.materialCount() > 0 || option.levelSum() > 0)) {
+            List<CardSlot> materials = specialMaterials(player, card, req, ally);
+            List<CardSlot> shown = new ArrayList<>();
+            for (String z : option.materialZones()) shown.addAll(zone(player, z));
+            shown.remove(card);
+            shown.remove(ally);
+            rulesPrompt(room, player.getUserId(), PURPOSE_REPLACE_SUMMON, name(card) + " · en lugar de que " + name(ally) + " sea removida",
+                    materialInstruction(req, card, ally), "Material", materials, shown);
+            room.getPrompt().setMin(Math.max(1, option.materialCount()));
+            room.getPrompt().setMax(option.levelSum() > 0 ? materials.size() : option.materialCount());
+            room.getPrompt().setSubjectId(card.getInstanceId());
+            room.getPrompt().setSummonerId(ally.getInstanceId());
+            return;
+        }
+        specialSummon(room, player, card, req, ally, List.of(), from, s == null ? 0 : s.reduce(), null);
+    }
+
+    /** The materials chosen for {@link #summonInsteadOfRemoval}. */
+    static String answerSummonInsteadOfRemoval(GameRoom room, Prompt prompt, PlayerState player, List<String> picks) {
+        CardSlot card = find(player.getHand(), prompt.getSubjectId());
+        String from = "hand";
+        if (card == null) {
+            card = find(player.getTributeZone(), prompt.getSubjectId());
+            from = "tributeZone";
+        }
+        CardSlot ally = find(player.getField(), prompt.getSummonerId());
+        if (card == null || ally == null) {
+            room.setPrompt(null);
+            advance(room);
+            return null;
+        }
+        List<CardSlot> materials = new ArrayList<>();
+        for (String id : picks) {
+            CardSlot m = find(player.getTributeZone(), id);
+            if (m == null) m = find(player.getField(), id);
+            if (m == null) m = find(player.getHand(), id);
+            if (m == null) return "Esa criatura ya no está disponible";
+            materials.add(m);
+        }
+        SpecialRequirement req = specialRequirement(card);
+        String wrong = checkMaterials(req, ally, materials);
+        if (wrong != null) return wrong;
+        room.setPrompt(null);
+        CardEffects.AllyRemovalSummon s = CardEffects.allyRemovalSummon(card);
+        specialSummon(room, player, card, req, ally, materials, from, s == null ? 0 : s.reduce(), null);
+        advance(room);
+        return null;
+    }
+
+    /**
+     * "Cuando fueras a invocar esta carta, si utilizas al menos N criaturas en tu campo: reduce el coste especial en M" (Prototipo XTRM-1N3):
+     * the summoner and the materials that come from the field. Designer ruling 2026-10-31.
+     */
+    static int fieldPiecesDiscount(PlayerState player, CardSlot card, CardSlot summoner, List<CardSlot> materials) {
+        CardEffects.FieldPiecesDiscount d = CardEffects.fieldPiecesDiscount(card);
+        if (d == null) return 0;
+        long used = (summoner != null && player.getField().contains(summoner) ? 1 : 0) + materials.stream().filter(player.getField()::contains).count();
+        return used >= d.pieces() ? d.reduce() : 0;
+    }
+
+    /** That discount, when the field could give the pieces (to tell whether the summon is affordable before they are chosen). */
+    static int possibleFieldPiecesDiscount(PlayerState player, CardSlot card) {
+        CardEffects.FieldPiecesDiscount d = CardEffects.fieldPiecesDiscount(card);
+        return d != null && allies(player).size() >= d.pieces() ? d.reduce() : 0;
     }
 
     /** Creatures an effect lets be summoned by a special summon of that kind, from that zone. */
@@ -733,9 +936,11 @@ public final class Summons {
         if (player == null) return List.of();
         return specialZones(player, special).stream()
                 .filter(c -> c != find(player.getField(), effect.getSourceInstanceId()))
-                .filter(c -> special.kind().equalsIgnoreCase(c.getSpecialSummonKind()) && c.getSpecialCost() != null)
+                // "invoca especialmente" (kind "any"): by the method the creature has, other than Ritual (its own rules)
+                .filter(c -> ("any".equals(special.kind()) ? c.getSpecialSummonKind() != null && !"ritual".equalsIgnoreCase(c.getSpecialSummonKind())
+                        : special.kind().equalsIgnoreCase(c.getSpecialSummonKind())) && c.getSpecialCost() != null)
                 .filter(special.filter()::matches)
-                .filter(c -> {
+                .filter(c -> summoningAs(c, () -> {
                     SpecialRequirement req = specialRequirement(c);
                     if (req == null || !canPay(room, player.getUserId(), Math.max(0, c.getSpecialCost() - special.reduce()
                             - CostModifiers.available(room, player, CostModifiers.Event.SPECIAL_SUMMON, req.kind(), c, null)))) return false;
@@ -743,7 +948,7 @@ public final class Summons {
                     if (!enoughCreatures(player, c)) return false;
                     return specialSummoners(player, c, req).stream().anyMatch(s -> summonerAllowed(special, s, effect)
                             && materialsPossible(player, c, req, s));
-                })
+                }))
                 .toList();
     }
 
@@ -785,7 +990,10 @@ public final class Summons {
             return true;
         }
         SpecialRequirement req = specialRequirement(target);
-        CardSlot summoner = "subject".equals(special.summoner()) ? subject(room, effect) : find(player.getField(), effect.getRitualSummonerId());
+        CardSlot summoner = "subject".equals(special.summoner()) ? subject(room, effect)
+                // "esta carta puede invocar…": no summoner to choose
+                : "self".equals(special.summoner()) ? find(player.getField(), effect.getSourceInstanceId())
+                : find(player.getField(), effect.getRitualSummonerId());
         if (summoner == null) {
             List<CardSlot> summoners = specialSummoners(player, target, req).stream()
                     .filter(s -> summonerAllowed(special, s, effect) && materialsPossible(player, target, req, s)).toList();
@@ -793,6 +1001,17 @@ public final class Summons {
                             + " ocupa su lugar y hereda su estado.",
                     "Invocador", player.getField(), ids(summoners), 1);
             return true;
+        }
+        // The summoner chosen before ("el aliado elegido puede invocar por Evolución…"): no material to ask for
+        if (!"materialization".equals(req.kind())) {
+            String from = find(player.getHand(), target.getInstanceId()) != null ? "hand"
+                    : find(player.getTributeZone(), target.getInstanceId()) != null ? "tributeZone" : special.zone().split(",")[0].trim();
+            effect.setRitualTargetId(null);
+            effect.setRitualSummonerId(null);
+            specialSummon(room, player, target, req, summoner, List.of(), from, special.reduce(), effect);
+            effect.setSummonedId(target.getInstanceId());
+            effect.setLastDone(true);
+            return false;
         }
         // Materialización: then the material, from the Tributos or the field
         List<CardSlot> materials = specialMaterials(player, target, req, summoner);
@@ -816,6 +1035,10 @@ public final class Summons {
 
     /** Whether the card can be summoned by Ritual from the hand now, for the board's legal actions. */
     public static boolean canRitual(GameRoom room, String userId, CardSlot card) {
+        return summoningAs(card, () -> canRitualAs(room, userId, card));
+    }
+
+    static boolean canRitualAs(GameRoom room, String userId, CardSlot card) {
         PlayerState player = room.getPlayer(userId);
         Requirement req = requirement(card);
         if (player == null || req == null || card.getSpecialCost() == null || !"ritual".equalsIgnoreCase(card.getSpecialSummonKind())) return false;
@@ -864,8 +1087,7 @@ public final class Summons {
     record Requirement(boolean sum, int level, boolean atLeast, Integer maxStrength) {
         /** The creature alone meets a single-creature Requerimiento. */
         boolean fits(CardSlot c) {
-            if (c.getLevel() == null) return false;
-            boolean level = atLeast ? c.getLevel() >= this.level : c.getLevel() == this.level;
+            boolean level = levels(c).stream().anyMatch(l -> atLeast ? l >= this.level : l == this.level);
             return level && (maxStrength == null || strength(c) <= maxStrength);
         }
     }
@@ -884,7 +1106,7 @@ public final class Summons {
     /** Creatures that can be the summoner of a level-sum Ritual: the rest of the field can complete the sum exactly. */
     static List<CardSlot> summonerCandidates(List<CardSlot> materials, int level) {
         return materials.stream()
-                .filter(s -> s.getLevel() <= level && sumsExactly(materials.stream().filter(c -> c != s).toList(), level - s.getLevel()))
+                .filter(s -> levels(s).stream().anyMatch(l -> l <= level && sumsExactly(materials.stream().filter(c -> c != s).toList(), level - l)))
                 .toList();
     }
 
@@ -895,21 +1117,43 @@ public final class Summons {
      */
     static List<CardSlot> fittingSacrifices(List<CardSlot> others, int remaining) {
         return others.stream()
-                .filter(c -> c.getLevel() != null && c.getLevel() > 0 && c.getLevel() <= remaining)
-                .filter(c -> c.getLevel() == remaining || sumsExactly(others.stream().filter(o -> o != c).toList(), remaining - c.getLevel()))
+                .filter(c -> levels(c).stream().anyMatch(l -> l > 0 && l <= remaining
+                        && (l == remaining || sumsExactly(others.stream().filter(o -> o != c).toList(), remaining - l))))
                 .toList();
     }
 
+    /** Some of the creatures add up exactly to {@code target}, each counting as any level it can (Abraza Almas). */
     static boolean sumsExactly(List<CardSlot> cards, int target) {
         if (target < 0) return false;
         boolean[] reachable = new boolean[target + 1];
         reachable[0] = true;
         for (CardSlot c : cards) {
-            int level = c.getLevel() == null ? 0 : c.getLevel();
-            if (level <= 0) continue;
-            for (int t = target; t >= level; t--) if (reachable[t - level]) reachable[t] = true;
+            boolean[] next = reachable.clone();
+            for (int level : levels(c)) {
+                if (level <= 0) continue;
+                for (int t = target; t >= level; t--) if (reachable[t - level]) next[t] = true;
+            }
+            reachable = next;
         }
         return reachable[target];
+    }
+
+    /** All these creatures together add up exactly to {@code target}, each counting as any level it can. */
+    static boolean addsUpTo(List<CardSlot> cards, int target) {
+        java.util.Set<Integer> sums = new java.util.HashSet<>(List.of(0));
+        for (CardSlot c : cards) {
+            java.util.Set<Integer> next = new java.util.HashSet<>();
+            List<Integer> options = levels(c).isEmpty() ? List.of(0) : levels(c);
+            for (int s : sums) for (int l : options) next.add(s + l);
+            sums = next;
+        }
+        return sums.contains(target);
+    }
+
+    /** The level the summoner of a level-sum Ritual counts as: one the others can complete, else its own. */
+    static int summonerLevel(CardSlot summoner, List<CardSlot> others, int total) {
+        for (int l : levels(summoner)) if (l <= total && sumsExactly(others, total - l)) return l;
+        return summoner.getLevel() == null ? 0 : summoner.getLevel();
     }
 
     /** Rule 9.2.0.10: the cards used must share a type or a color with the summoned creature. */
@@ -935,7 +1179,7 @@ public final class Summons {
             if (self == null) return false;
             if (!req.sum()) return req.fits(self);
             // The summoner is one of them: the others make up the rest
-            return self.getLevel() <= req.level() && sumsExactly(materials.stream().filter(c -> c != self).toList(), req.level() - self.getLevel());
+            return levels(self).stream().anyMatch(l -> l <= req.level() && sumsExactly(materials.stream().filter(c -> c != self).toList(), req.level() - l));
         }
         if (!req.sum()) return materials.stream().anyMatch(req::fits);
         return sumsExactly(materials, req.level());
@@ -946,7 +1190,8 @@ public final class Summons {
         if (player == null) return List.of();
         return zone(player, ritual.zone()).stream()
                 .filter(c -> "creature".equals(c.getCardType()) && "ritual".equalsIgnoreCase(c.getSpecialSummonKind()))
-                .filter(c -> ritualFeasible(room, effect, ritual, player, c))
+                .filter(c -> ritual.filter() == null || ritual.filter().matches(c))
+                .filter(c -> summoningAs(c, () -> ritualFeasible(room, effect, ritual, player, c)))
                 .toList();
     }
 
@@ -986,13 +1231,13 @@ public final class Summons {
             room.setPrompt(prompt);
             return true;
         }
-        if (!req.sum() || summoner.getLevel() == req.level()) {
+        if (!req.sum() || hasLevel(summoner, req.level())) {
             performRitual(room, effect, player, target, ritual, summoner, List.of());
             effect.setRitualSummonerId(null);
             return false;
         }
         CardSlot chosenSummoner = summoner;
-        int remaining = req.level() - summoner.getLevel();
+        int remaining = req.level() - summonerLevel(summoner, materials.stream().filter(c -> c != chosenSummoner).toList(), req.level());
         List<CardSlot> valid = fittingSacrifices(materials.stream().filter(c -> c != chosenSummoner).toList(), remaining);
         Prompt prompt = prompt(room, effect, Prompt.Kind.PICK, "Elige las demás criaturas que se sacrifican junto a " + name(summoner)
                 + " (el invocador): sus niveles deben sumar exactamente " + remaining + ".");
@@ -1097,7 +1342,7 @@ public final class Summons {
         for (CardSlot other : others) destroy(room, other, player, true, CAUSE_RITUAL, player.getUserId(), null, effect);
         player.getField().add(target);
         record(room, GameEvent.SPECIAL_SUMMON, player.getUserId(), target, fromZone, "field", effect,
-                Map.of("summonType", "ritual", "cost", cost), logText);
+                Map.of("summonType", "ritual", "cost", cost, "used", 1 + others.size()), logText);
         afterSpecialSummon(room, player, target, effect);
     }
 

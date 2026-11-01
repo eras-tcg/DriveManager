@@ -82,4 +82,6 @@ public class CardSlot {
     private List<CardSlot> resources = new ArrayList<>();
     /** What of its metadata the rules engine does not run (to be played by hand), null when all of it runs. */
     private String unprogrammed;
+    /** The [tipos] its effects and inherited effects mention ("con [fauna] en su texto"), in lower case. */
+    private List<String> mentions = new ArrayList<>();
 }

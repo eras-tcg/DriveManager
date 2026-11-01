@@ -80,6 +80,11 @@ public final class Removals {
      */
     static GameEvent destroy(GameRoom room, CardSlot card, PlayerState owner, boolean sacrifice, String cause, String byId,
                              String byCard, PendingEffect effect) {
+        // "solo puede ser afectada por copias de sí misma"
+        if (unaffected(card, effect)) {
+            log(room, name(card) + " solo puede ser afectada por sus copias: " + effect.getSourceName() + " no le hace nada", null);
+            return null;
+        }
         // "no puede ser removido por efectos oponentes"
         if (effect != null && byId != null && !byId.equals(owner.getUserId()) && keywords(card).contains(UNREMOVABLE)) {
             log(room, name(card) + " no puede ser removida por efectos oponentes", null);
@@ -94,7 +99,13 @@ public final class Removals {
         Combat combat = room.getCombat();
         if (combat != null && owner.getUserId().equals(combat.getDefenderId())) combat.setEnemyDestroyed(true);
         // Its Recursos leave with it, but what they gave it "En Destrucción" still triggers (rule 11.4.0.3)
+        reactionsBeforeRemoval(room, owner, card, byId);
         List<String> inherited = card.getResources().stream().map(CardSlot::getCardName).filter(Objects::nonNull).toList();
+        List<CardSlot> materials = new ArrayList<>(card.getMaterials());
+        boolean hadMaterials = !materials.isEmpty();
+        // "si algún aliado fue destruido por el oponente el turno anterior"
+        if (byId != null && !byId.equals(owner.getUserId()) && "creature".equals(card.getCardType()))
+            room.getUsedThisTurn().add(ALLY_DESTROYED_BY_OPPONENT + owner.getUserId());
         removeFromField(owner, card);
         String toZone = sacrifice ? "tributeZone" : "discardPile";
         (sacrifice ? owner.getTributeZone() : owner.getDiscardPile()).add(card);
@@ -114,8 +125,41 @@ public final class Removals {
         if (byCard == null && effect != null) byCard = effect.getSourceInstanceId();
         if (byCard != null) data.put("byCard", byCard);
         if (!inherited.isEmpty()) data.put("inherited", inherited);
+        if (hadMaterials) data.put("hadMaterials", true);
         if (combat != null && card.getInstanceId().equals(combat.getAttackerId())) data.put("asAttacker", true);
-        return record(room, sacrifice ? GameEvent.SACRIFICE : GameEvent.DESTROY, byId, card, "field", toZone, effect, data, text);
+        GameEvent removed = record(room, sacrifice ? GameEvent.SACRIFICE : GameEvent.DESTROY, byId, card, "field", toZone, effect, data, text);
+        // Its materials went to the Descarte with it ("si esta carta es enviada a tu descarte como material")
+        for (CardSlot material : materials) {
+            record(room, GameEvent.SEND, owner.getUserId(), material, "materials", "discardPile", null, Map.of("from", card.getInstanceId()), null);
+        }
+        return removed;
+    }
+
+    /**
+     * Mandatory reactions of its Recursos before the card is removed (Fósil: "coloca el recurso de este efecto en tu retaguardia con todos los
+     * recursos [dinosaurio] de esta carta como sus recursos", only when the opponent removes it).
+     */
+    static void reactionsBeforeRemoval(GameRoom room, PlayerState owner, CardSlot card, String byId) {
+        boolean byOpponent = byId != null && !byId.equals(owner.getUserId());
+        for (CardSlot resource : new ArrayList<>(card.getResources())) {
+            if (!card.getResources().contains(resource)) continue;
+            for (CardEffects.Replacement r : CardEffects.replacementsOf(card)) {
+                if (r.cost() != CardEffects.ReplacementCost.RESOURCE_TO_BACK_WITH_OTHERS || (r.byOpponentOnly() && !byOpponent)) continue;
+                if (CardEffects.replacementGiver(card, r) != resource) continue;
+                card.getResources().remove(resource);
+                List<CardSlot> others = card.getResources().stream().filter(r.resourceFilter()::matches).toList();
+                card.getResources().removeAll(others);
+                resource.getResources().addAll(others);
+                resource.setFaceDown(false);
+                resource.setTapped(false);
+                resource.setX(50.0);
+                resource.setY(75.0);
+                owner.getField().add(resource);
+                record(room, GameEvent.SEND, owner.getUserId(), resource, "resources", "field", null, Map.of("from", card.getInstanceId()),
+                        name(resource) + " se coloca en la retaguardia de " + owner.getUsername() + (others.isEmpty() ? "" : " con " + others.size()
+                                + " " + plural(others.size(), "recurso", "recursos")) + " antes de que " + name(card) + " sea removida");
+            }
+        }
     }
 
     /**
@@ -158,14 +202,14 @@ public final class Removals {
                                         String byCard, PendingEffect effect) {
         if (CAUSE_MANUAL.equals(cause) || card == null) return false;
         if (room.getRemovalDecided().remove(card.getInstanceId())) return false;
-        if (replacementOptions(room, card, owner, destroy, byId).isEmpty()) return false;
+        if (replacementOptions(room, card, owner, destroy, byId, effect != null).isEmpty()) return false;
         if (room.getPendingRemovals().stream().anyMatch(r -> r.cardId().equals(card.getInstanceId()))) return true;
         room.getPendingRemovals().add(new PendingRemoval(card.getInstanceId(), owner.getUserId(), destroy, cause, byId, byCard,
                 effect == null ? null : effect.getId()));
         return true;
     }
 
-    static List<ReplacementOption> replacementOptions(GameRoom room, CardSlot card, PlayerState owner, boolean destroy, String byId) {
+    static List<ReplacementOption> replacementOptions(GameRoom room, CardSlot card, PlayerState owner, boolean destroy, String byId, boolean byEffect) {
         List<ReplacementOption> options = new ArrayList<>();
         boolean byOpponent = byId != null && !byId.equals(owner.getUserId());
         for (CardEffects.Replacement r : CardEffects.replacementsOf(card)) {
@@ -178,8 +222,34 @@ public final class Removals {
                 case TRIBUTE_ONE_FROM_HAND -> !owner.getHand().isEmpty();
                 case TRIBUTE_RESOURCES, RESOURCES_TO_TRIBUTES_BEFORE -> card.getResources().stream().anyMatch(r.resourceFilter()::matches);
                 case MATERIALS_TO_BACK -> card.getMaterials().stream().anyMatch(m -> "creature".equals(m.getCardType()) && r.resourceFilter().matches(m));
+                case ALLY_SPECIAL_SUMMON, GUARD_MATERIAL_AND_SACRIFICE, RESOURCE_TO_BACK_WITH_OTHERS -> false;
+                case RESOURCE_TRIBUTED_ANOTHER_TO_HAND -> card.getResources().size() >= 2;
             };
             if (payable) options.add(new ReplacementOption(r.id() + "@" + card.getInstanceId(), card, r, r.label(), r.text()));
+        }
+        // "cuando algún aliado fuera a ser removido: en su lugar, puede invocar especialmente esta carta" (EXO-91 from the Tributos, SARS-2 from the hand)
+        if ("creature".equals(card.getCardType())) {
+            for (String z : List.of("hand", "tributeZone")) {
+                for (CardSlot c : zone(owner, z)) {
+                    CardEffects.AllyRemovalSummon s = CardEffects.allyRemovalSummon(c);
+                    if (s == null || !s.zone().equals(z) || !s.ally().matches(card)) continue;
+                    CardEffects.Replacement r = s.replacement();
+                    if (r.limit() != Limit.NONE && room.getUsedThisTurn().contains(replacementKey(owner, c, r))) continue;
+                    if (!Summons.canSummonInsteadOfRemoval(room, owner, c, card, s.reduce())) continue;
+                    options.add(new ReplacementOption(r.id() + "@" + c.getInstanceId(), c, r, r.label(),
+                            r.text() + " " + name(card) + " es su invocador."));
+                }
+            }
+        }
+        // "cuando uno o más aliados [filtro] fueran a ser removidos por efecto oponente: en su lugar, puedes …" (Albert Collier, itself included)
+        if (byOpponent && byEffect) {
+            for (CardSlot guard : owner.getField()) {
+                CardEffects.AllyGuard g = CardEffects.allyGuard(guard);
+                if (g == null || guard.isFaceDown() || !g.allies().matches(card) || guard.getMaterials().isEmpty()) continue;
+                CardEffects.Replacement r = g.replacement();
+                if (owner.getField().stream().noneMatch(c -> c != card && r.resourceFilter().matches(c))) continue;
+                options.add(new ReplacementOption(r.id() + "@" + guard.getInstanceId(), guard, r, r.label(), r.text()));
+            }
         }
         // Protección [tipo]: "cuando algún aliado [tipo] fuera a ser removido: en su lugar, puedes destruir esta carta"
         for (CardSlot protector : owner.getField()) {
@@ -206,7 +276,8 @@ public final class Removals {
         PendingRemoval pending = room.getPendingRemovals().get(0);
         PlayerState owner = room.getPlayer(pending.ownerId());
         CardSlot card = owner == null ? null : find(owner.getField(), pending.cardId());
-        List<ReplacementOption> options = card == null ? List.of() : replacementOptions(room, card, owner, pending.destroy(), pending.byId());
+        List<ReplacementOption> options = card == null ? List.of() : replacementOptions(room, card, owner, pending.destroy(), pending.byId(),
+                pending.effectId() != null);
         if (options.isEmpty()) {
             room.getPendingRemovals().remove(0);
             if (card != null) executeRemoval(room, pending, owner, card);
@@ -253,6 +324,55 @@ public final class Removals {
             executeRemoval(room, pending, player, card);
             return null;
         }
+        if (PURPOSE_REPLACE_RESOURCES.equals(prompt.getPurpose())) {
+            // Sarkhydrax: the first one picked is tributed, the second goes to the hand; then the removal goes on
+            if (card == null || picks.size() != 2) return "Elige el recurso que tributas y el que añades a tu mano";
+            CardSlot tributed = find(card.getResources(), picks.get(0));
+            CardSlot taken = find(card.getResources(), picks.get(1));
+            if (tributed == null || taken == null || tributed == taken) return "Elige 2 recursos distintos de " + name(card);
+            room.setPrompt(null);
+            room.getPendingRemovals().remove(0);
+            card.getResources().removeAll(List.of(tributed, taken));
+            tributed.setFaceDown(false);
+            player.getTributeZone().add(tributed);
+            record(room, GameEvent.TRIBUTE, player.getUserId(), tributed, "resources", "tributeZone", null, Map.of("byCard", card.getInstanceId()), null);
+            taken.setFaceDown(false);
+            player.getHand().add(taken);
+            record(room, GameEvent.ADD_TO_HAND, player.getUserId(), taken, "resources", "hand", null, null,
+                    player.getUsername() + " tributa " + name(tributed) + " y añade " + name(taken) + " a su mano antes de que " + name(card) + " sea removida");
+            executeRemoval(room, pending, player, card);
+            return null;
+        }
+        if (PURPOSE_REPLACE_GUARD.equals(prompt.getPurpose())) {
+            // Albert Collier: 1 material of it and 1 [artefacto]; paid once, every ally it guards that this effect was removing stays
+            CardSlot guard = find(player.getField(), prompt.getSubjectId());
+            CardEffects.AllyGuard g = guard == null ? null : CardEffects.allyGuard(guard);
+            if (g == null) {
+                room.setPrompt(null);
+                room.getPendingRemovals().remove(0);
+                if (card != null) executeRemoval(room, pending, player, card);
+                return null;
+            }
+            CardSlot material = picks.stream().map(id -> find(guard.getMaterials(), id)).filter(Objects::nonNull).findFirst().orElse(null);
+            CardSlot sacrificed = picks.stream().map(id -> find(player.getField(), id)).filter(c -> c != null && g.replacement().resourceFilter().matches(c))
+                    .findFirst().orElse(null);
+            if (picks.size() != 2 || material == null || sacrificed == null)
+                return "Elige 1 material de " + name(guard) + " y 1 " + g.replacement().resourceFilter().describe() + " bajo tu control";
+            room.setPrompt(null);
+            guard.getMaterials().remove(material);
+            material.setFaceDown(false);
+            player.getTributeZone().add(material);
+            record(room, GameEvent.TRIBUTE, player.getUserId(), material, "materials", "tributeZone", null, Map.of("byCard", guard.getInstanceId()),
+                    player.getUsername() + " tributa " + name(material) + " de los materiales de " + name(guard));
+            List<PendingRemoval> saved = room.getPendingRemovals().stream().filter(p -> p.ownerId().equals(player.getUserId())
+                    && Objects.equals(p.effectId(), pending.effectId()) && find(player.getField(), p.cardId()) != null
+                    && g.allies().matches(find(player.getField(), p.cardId()))).toList();
+            room.getPendingRemovals().removeAll(saved);
+            log(room, name(guard) + ": " + String.join(", ", saved.stream().map(p -> name(find(player.getField(), p.cardId()))).toList())
+                    + " no " + (saved.size() == 1 ? "es removida" : "son removidas"), null);
+            destroy(room, sacrificed, player, true, CAUSE_EFFECT, player.getUserId(), guard.getInstanceId(), null);
+            return null;
+        }
         if (PURPOSE_REPLACE_HAND.equals(prompt.getPurpose())) {
             // Caballero Leal: the hand card tributed instead
             CardSlot paid = picks.isEmpty() ? null : find(player.getHand(), picks.get(0));
@@ -271,7 +391,7 @@ public final class Removals {
             room.getPendingRemovals().remove(0);
             return null;
         }
-        List<ReplacementOption> options = replacementOptions(room, card, player, pending.destroy(), pending.byId());
+        List<ReplacementOption> options = replacementOptions(room, card, player, pending.destroy(), pending.byId(), pending.effectId() != null);
         ReplacementOption chosen = picks.isEmpty() ? null : options.stream()
                 .filter(o -> o.key().equals(picks.get(0)) || o.source().getInstanceId().equals(picks.get(0))).findFirst().orElse(null);
         if (chosen == null) {
@@ -291,6 +411,34 @@ public final class Removals {
         CardEffects.Replacement r = chosen.replacement();
         if (r.limit() != Limit.NONE) room.getUsedThisTurn().add(replacementKey(player, card, r));
         switch (r.cost()) {
+            case RESOURCE_TRIBUTED_ANOTHER_TO_HAND -> {
+                rulesPrompt(room, player.getUserId(), PURPOSE_REPLACE_RESOURCES, name(card) + " · " + r.label(),
+                        "Elige primero el recurso que tributas y después el que añades a tu mano; luego " + name(card) + " es removida.",
+                        "Elegir", card.getResources(), card.getResources());
+                room.getPrompt().setMin(2);
+                room.getPrompt().setMax(2);
+                return null;
+            }
+            case GUARD_MATERIAL_AND_SACRIFICE -> {
+                CardSlot guard = chosen.source();
+                List<CardSlot> valid = new ArrayList<>(guard.getMaterials());
+                valid.addAll(player.getField().stream().filter(c -> c != card && r.resourceFilter().matches(c)).toList());
+                rulesPrompt(room, player.getUserId(), PURPOSE_REPLACE_GUARD, name(guard) + " · " + r.label(),
+                        "Tributa 1 material de " + name(guard) + " y sacrifica 1 " + r.resourceFilter().describe() + " bajo tu control: "
+                                + "no se remueve ningún aliado [" + String.join(", ", CardEffects.allyGuard(guard).allies().classes()) + "] de este efecto.",
+                        "Pagar", valid, valid);
+                room.getPrompt().setMin(2);
+                room.getPrompt().setMax(2);
+                room.getPrompt().setSubjectId(guard.getInstanceId());
+                return null;
+            }
+            case ALLY_SPECIAL_SUMMON -> {
+                // A regular special summon of that card, the ally as its summoner: the ally is not removed
+                room.getPendingRemovals().remove(0);
+                log(room, name(card) + " no es removida: en su lugar, invoca especialmente a " + name(chosen.source()), null);
+                Summons.summonInsteadOfRemoval(room, player, chosen.source(), card);
+                return null;
+            }
             case TRIBUTE_TWO_MATERIALS -> {
                 for (int i = 0; i < 2 && !card.getMaterials().isEmpty(); i++) {
                     CardSlot m = card.getMaterials().remove(0);
