@@ -1426,7 +1426,7 @@ public final class CardEffects {
         add("cragzum", new EffectScript("cragzum:en-invocacion", Moment.ON_SUMMON, false, EN_INVOCACION,
                 "Puedes tributar hasta tantos materiales de esta carta como tenga y elegir 1 enemigo; reduce en 1 su fuerza por cada material removido.",
                 List.of(new TributeMaterials(99, true), new ChooseEnemy(1, enemy)), List.of(new ReduceChosenPerCount(1))));
-        // E1.1-B11 HE 110 (its "no puede ser objetivo" is not applied yet)
+        // E1.1-B11 HE 110 (its "no puede ser objetivo" is a continuous effect, below)
         add("he 110", new EffectScript("he-110:todos-los-turnos", Moment.ON_EVENT, false, TODOS,
                 "Una vez por turno: si alguna de tus vidas es removida: puedes tributar 2 materiales de esta carta; coloca la carta del tope de tu mazo al tope de tus vidas.",
                 List.of(new TributeMaterials(2, false)), List.of(new DeckTopToLife()))

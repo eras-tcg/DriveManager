@@ -183,7 +183,9 @@ public final class CombatRules {
                     if (provoke != null && c.getBlockerId() == null) {
                         List<CardSlot> options = blockers(defender).stream()
                                 .filter(b -> !b.getInstanceId().equals(c.getTargetId()))
-                                .filter(b -> provoke == 0 || (b.getLevel() != null && b.getLevel() <= provoke)).toList();
+                                .filter(b -> provoke == 0 || (b.getLevel() != null && b.getLevel() <= provoke))
+                                // Provocar is an effect of the attacker that targets: "no puede ser objetivo de efectos…" (HE-110) is left out
+                                .filter(b -> !immuneTo(b, attacker.getLevel() == null ? 0 : attacker.getLevel())).toList();
                         if (!options.isEmpty()) {
                             rulesPrompt(room, owner.getUserId(), PURPOSE_PROVOKE, name(attacker) + " · Provocar",
                                     "Puedes elegir 1 enemigo" + (provoke > 0 ? " nivel " + provoke + " o menor" : "") + ": deberá bloquear este ataque.",
