@@ -183,6 +183,19 @@ class E11ThirdBatchTest {
     }
 
     @Test
+    void lectranatusInTheRetaguardiaDoesNotStopEnemiesFromAttacking() {
+        CardSlot weak = onField(guest, card("w", "Débil", 1, 1, "R"));
+        weak.setStrength(2);
+        CardSlot lect = onField(host, withClasses(card("lc", "Lectranatus", 6, 4, "G"), "dragón"), BACK);
+        EffectEngine.refreshContinuous(room);
+        assertThat(EffectEngine.keywords(weak)).doesNotContain(EffectEngine.NO_ATTACK);
+        // In the Línea frontal it does
+        lect.setY(FRONT);
+        EffectEngine.refreshContinuous(room);
+        assertThat(EffectEngine.keywords(weak)).contains(EffectEngine.NO_ATTACK);
+    }
+
+    @Test
     void principeCharlesGivesReactivarUntilTheEndOfTheOpponentsTurn() {
         CardSlot knight = onField(host, withClasses(card("k", "Caballero", 1, 1, "R"), "caballero"));
         CardSlot charles = withClasses(card("pc", "Principe Charles Di Castirion", 4, 4, "R"), "armada", "caballero");

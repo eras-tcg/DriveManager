@@ -382,10 +382,12 @@ public final class EffectEngine {
                 if (source.isFaceDown()) continue;
                 for (CardEffects.Aura a : CardEffects.aurasOf(source)) {
                     if (!a.enemies()) continue;
+                    // A creature in the Retaguardia cannot affect enemies, and a creature in theirs is out of reach (rule 4.0.6.2; designer ruling 2026-11-01)
+                    if ("creature".equals(source.getCardType()) && !inFrontLine(source)) continue;
                     if (a.allyTurn() && !p.getUserId().equals(room.getCurrentTurnUserId())) continue;
                     if (a.condition() != null && !a.condition().test(room, null, source, p.getUserId())) continue;
                     for (CardSlot enemy : opponent.getField()) {
-                        if (!a.targets().matches(enemy)) continue;
+                        if (!a.targets().matches(enemy) || !inFrontLine(enemy)) continue;
                         List<String> keywords = new ArrayList<>(enemy.getContinuousKeywords());
                         keywords.addAll(a.keywords());
                         enemy.setContinuousKeywords(keywords);
