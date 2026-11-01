@@ -172,7 +172,8 @@ class E11FinalBatchTest {
     @Test
     void choosingAnAllyWithTheWordEligeMakesItATarget() {
         CardSlot ally = onField(host, card("al", "Aliado", 1, 1, "R"));
-        play(utility("vh", "Valor Del Heroe"));
+        host.getHand().add(utility("vh", "Valor Del Heroe"));
+        assertThat(Summons.playByPlayer(room, "host", "vh", 50.0, 75.0)).isNull();
         answer(room.getPrompt(), ally.getInstanceId());
         assertThat(room.getTimeline()).filteredOn(e -> GameEvent.TARGET.equals(e.getType())).extracting(GameEvent::getCardInstanceId).contains("al");
     }
