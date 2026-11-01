@@ -42,24 +42,7 @@ public sealed interface EffectStep {
     /** "elige el enemigo [activo / agotado] de menor fuerza" (a tie: the controller picks among them). */
     record ChooseWeakestEnemy(CardFilter filter) implements NeedsTarget {}
 
-    /**
-     * "invoca 1 criatura [filtro] de tus [zona] reduciendo su coste en N": summon by effect (rule 9.1.0.2),
-     * paying the normal cost minus {@code reduce}; it enters the Retaguardia with the regulatory draw.
-     */
-    record SummonFromZone(String zone, CardFilter filter, int reduce, boolean toFront) implements NeedsTarget {
         /** "sin pagar su coste". */
-        public static final int FREE = 1000;
-        public SummonFromZone(String zone, CardFilter filter, int reduce) { this(zone, filter, reduce, false); }
-    }
-
-    /**
-     * "invoca esta carta [en tu línea frontal] reduciendo su coste en N" from a zone: a summon by effect, with the
-     * reduction worked out when it happens ({@link SummonFromZone#FREE}: without paying its cost).
-     */
-    record SummonSelf(String zone, Amount reduce, boolean toFront) implements NeedsTarget {}
-
-    /** "invoca esta carta sin pagar su coste" from the zone it is in (hand, Tributos…): a summon by effect. */
-    record SummonSelfFree() implements NeedsTarget {}
 
     /**
      * "[otro aliado / 1 aliado] puede invocar por [Ascenso / Evolución] 1 criatura de tu [zona] reduciendo el coste
@@ -74,7 +57,6 @@ public sealed interface EffectStep {
 
     /** "Si tributaste 1 carta [filtro]:": the next {@code covers} steps only then. */
     record IfTributed(CardFilter filter, int covers) implements EffectStep {}
-
 
     /**
      * "puedes hacer A para hacer B": both are done on resolution, and only when both can be (rule of "do A to do
@@ -91,9 +73,6 @@ public sealed interface EffectStep {
 
     /** "añádele el aliado elegido con todos sus materiales como materiales del aliado invocado". */
     record AttachSubjectToSummoned() implements EffectStep {}
-
-    /** "puedes invocar esta carta [desde zona] reduciendo su coste en N". */
-    record SummonSelfFromZone(String zone, int reduce) implements NeedsTarget {}
 
     /** "añadele 1 criatura [filtro] de menor nivel de tus tributos como material" (to the ally of the triggering event). */
     record AttachLowerFromTributes(CardFilter filter) implements EffectStep {}
@@ -138,9 +117,6 @@ public sealed interface EffectStep {
     /** "coloca 1 criatura [filtro] de tu mano en tu retaguardia. Al final del turno súbelo a tu mano" (placed, not summoned). */
     record PlaceFromHandUntilTurnEnd(CardFilter filter) implements NeedsTarget {}
 
-    /** {@link SummonFromZone} whose filter is worked out when it is used. */
-    record SummonFromZoneBy(String zone, FilterBy filter, int reduce) implements EffectStep {}
-
     /** "tributa 1 material [filtro] de un aliado [filtro]": that ally is the subject, the material the last tributed. */
     record TributeAllyMaterialWhere(CardFilter ally, CardFilter material) implements NeedsTarget {}
 
@@ -152,9 +128,6 @@ public sealed interface EffectStep {
 
     /** "destruye 1 carta bocarriba en las vidas oponentes". */
     record DestroyFaceUpLife() implements NeedsTarget {}
-
-    /** "puedes jugar esta carta [desde zona] reduciendo su coste en el nivel de dicho aliado". */
-    record PlaySelfFromZone(String zone, boolean reduceBySourceLevel) implements NeedsTarget {}
 
     /** "Si lo haces:": the next {@code covers} steps only if the last optional step was done. */
     record IfDone(int covers) implements EffectStep {}
@@ -196,12 +169,6 @@ public sealed interface EffectStep {
 
     /** "dicho aliado": the card of the event that triggered the effect is the one the next steps act on. */
     record SubjectFromTrigger() implements EffectStep {}
-
-    /** "juega 1 [estructura / utilidad] [filtro] de tus [zona] reduciendo su coste en N". */
-    record PlayFromZone(String zone, CardFilter filter, int reduce) implements NeedsTarget {}
-
-    /** "puedes jugar esta carta sin pagar su coste" (from the hand). */
-    record PlaySelfFree() implements NeedsTarget {}
 
     /**
      * "[esta carta / un aliado] invoca por Ritual 1 criatura de tus [zona] reduciendo su coste especial en N"
@@ -309,12 +276,6 @@ public sealed interface EffectStep {
     /** "tu oponente gana tantas gemas como su contador de gemas diga". */
     record OpponentGainsGemsAsCounter() implements EffectStep {}
 
-    /**
-     * "invoca 1 criatura [filtro] de tus [zona] de nivel menor [que el aliado destruido / devuelto]" ({@code relation} "lower"), or "de
-     * nivel igual o menor, pero distinto nombre" ("upToOtherName"): compared with the last tributed card.
-     */
-    record SummonRelativeToLast(String zone, CardFilter filter, int reduce, boolean toFront, String relation) implements EffectStep {}
-
     /** "tributa hasta N recursos [filtro] de un aliado": the ally is the subject, {@code lastCount} how many. */
     record TributeAllyResources(int max, CardFilter filter) implements NeedsTarget {}
 
@@ -327,17 +288,11 @@ public sealed interface EffectStep {
     /** "elige enemigos que sumen N en nivel" (a cost). */
     record ChooseEnemiesLevelSum(int sum) implements NeedsTarget {}
 
-    /** "invoca hasta N criaturas [filtro] de tus [zona] reduciendo sus costes en M". */
-    record SummonUpTo(String zone, CardFilter filter, int max, int reduce) implements NeedsTarget {}
-
     /** "Por cada aliado sacrificado de esta forma: gana 1 gema". */
     record GainGemsPerOwnSacrificed() implements EffectStep {}
 
     /** "sube a tu mano 1 aliado del mismo nivel [que la carta colocada / invocada]": {@code lastTributed} is that ally. */
     record ReturnAllyOfSummonedLevel() implements EffectStep {}
-
-    /** "juega 1 carta [filtro] de tus [zona] reduciendo su coste en N por cada carta tributada" (N × {@code lastCount}). */
-    record PlayFromZoneByCount(String zone, CardFilter filter, int each) implements EffectStep {}
 
     /** "elige 1 criatura en el campo con fuerza menor a esta carta" (a cost); "Si era un aliado activo" reads it. */
     record ChooseWeakerThanSelf(boolean upTo) implements NeedsTarget {}
@@ -348,9 +303,6 @@ public sealed interface EffectStep {
     /** "destruye el tope de las vidas oponentes". */
     record DestroyTopLife() implements EffectStep {}
 
-    /** "invoca 1 de los recursos de esta carta reduciendo su coste en N". */
-    record SummonResource(int reduce) implements NeedsTarget {}
-
     /** "añade esta carta (de tu descarte / tributos) como recurso de un aliado". */
     record AttachSelfAsResourceToAlly() implements NeedsTarget {}
 
@@ -359,12 +311,6 @@ public sealed interface EffectStep {
 
     /** "coloca la criatura elegida y esta carta en la línea frontal de sus dueños". */
     record PlaceChosenTributeAndSelf() implements EffectStep {}
-
-    /** "invoca esta carta reduciendo su coste en 1 por cada N cartas enviadas" ({@code lastCount} / N). */
-    record SummonSelfPerCount(String zone, int per) implements NeedsTarget {}
-
-    /** "invoca de tu [zona], sin pagar su coste, 1 [filtro] de nivel igual a la cantidad de [copias agotadas]" ({@code lastCount}). */
-    record SummonLevelLastCount(String zone, CardFilter filter) implements EffectStep {}
 
     /**
      * Agrupar N: "si esta carta declara ataque: puedes agotar N aliados para que esta carta, durante el ataque, gane su fuerza e inflija daño
@@ -417,6 +363,4 @@ public sealed interface EffectStep {
      */
     record SpecialSelfDeclaredSummoner(String zones) implements NeedsTarget {}
 
-    /** "juega esta carta [reduciendo su coste en N]" from the zone it is in ({@code FREE}: without paying its cost). */
-    record PlaySelfReduced(String zone, int reduce) implements NeedsTarget {}
 }

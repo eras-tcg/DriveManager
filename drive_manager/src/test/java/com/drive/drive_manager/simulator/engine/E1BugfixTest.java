@@ -211,7 +211,7 @@ class E1BugfixTest {
     private void summonToFront(CardSlot card) {
         CardEffects.register("invocador frontal", new EffectScript("invocador-frontal:en-invocacion", EffectScript.Moment.ON_SUMMON, true,
                 "En Invocación", "Invoca 1 criatura de tu mano en tu línea frontal sin pagar su coste.",
-                List.of(new EffectStep.SummonFromZone("hand", CardFilter.creatures().named(card.getCardName()), EffectStep.SummonFromZone.FREE, true))));
+                List.of(Compose.summonFromZone("hand", CardFilter.creatures().named(card.getCardName()), Compose.FREE, true))));
         host.getHand().addAll(List.of(card, card("iv", "Invocador Frontal", 0, 1, "R")));
         assertThat(Summons.normalSummon(room, "host", "iv", 50.0, 75.0)).isNull();
         answer(room.getPrompt(), card.getInstanceId());

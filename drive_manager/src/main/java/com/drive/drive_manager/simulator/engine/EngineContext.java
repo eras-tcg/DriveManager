@@ -454,6 +454,57 @@ final class EngineContext implements EffectContext {
     }
 
     @Override
+    public boolean canPay(int cost) {
+        return EffectEngine.canPay(room, effect.getControllerId(), cost);
+    }
+
+    @Override
+    public boolean canBePlayed(CardSlot card) {
+        return Chain.cannotActivateOnPlay(room, effect.getControllerId(), card) == null;
+    }
+
+    @Override
+    public boolean delayed() {
+        return effect.getScriptId() != null && EffectEngine.script(effect).moment() == EffectScript.Moment.DELAYED;
+    }
+
+    @Override
+    public void note(String message) {
+        EffectEngine.log(room, message + " (" + effect.getSourceName() + ")", null);
+    }
+
+    /** Out of the card it is attached to, or of its zone: its zone name for the event. */
+    private String detach(CardSlot card) {
+        Origin origin = origin(card);
+        if (origin == null) return null;
+        if (origin.host() == null && !origin.looked()) return origin.zone();
+        (origin.host() != null ? ("materials".equals(origin.zone()) ? origin.host().getMaterials() : origin.host().getResources()) : effect.getLooked()).remove(card);
+        player().getHand().add(card);
+        return "hand";
+    }
+
+    @Override
+    public void summon(CardSlot card, int reduce, boolean toFront) {
+        String from = detach(card);
+        if (from == null) return;
+        Summons.summonByEffect(room, effect, player(), card, from, reduce, toFront);
+        effect.setSummonedId(card.getInstanceId());
+    }
+
+    @Override
+    public void play(CardSlot card, int reduce) {
+        String from = detach(card);
+        if (from == null) return;
+        int cost = Math.max(0, (card.getCost() == null ? 0 : card.getCost()) - reduce);
+        EffectEngine.pay(room, effect.getControllerId(), cost);
+        if (!"hand".equals(from)) {
+            EffectEngine.zone(player(), from).remove(card);
+            player().getHand().add(card);
+        }
+        Summons.play(room, player(), card, cost, null, null, effect);
+    }
+
+    @Override
     public void counted(int count) {
         effect.setLastCount(count);
     }
@@ -495,6 +546,7 @@ final class EngineContext implements EffectContext {
         // They may be built on what only the effect knows
         if (amount instanceof Amount.Times t) return amount(t.base()) * t.factor();
         if (amount instanceof Amount.Scaled s) return amount(s.base()) / s.divisor() + s.plus();
+        if (amount instanceof Amount.TriggerSourceLevel) return Summons.triggerSourceLevel(room, effect);
         if (amount instanceof Amount.SubjectLevel) {
             CardSlot subject = Steps.subject(room, effect);
             return subject == null || subject.getLevel() == null ? 0 : subject.getLevel();

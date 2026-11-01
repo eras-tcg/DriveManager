@@ -13,19 +13,15 @@ import com.drive.drive_manager.simulator.engine.EffectStep.IfTributed;
 import com.drive.drive_manager.simulator.engine.EffectStep.KeepOnField;
 import com.drive.drive_manager.simulator.engine.EffectStep.SummonLikeSubject;
 import com.drive.drive_manager.simulator.engine.EffectStep.AttachSubjectToSummoned;
-import com.drive.drive_manager.simulator.engine.EffectStep.SummonSelfFromZone;
 import com.drive.drive_manager.simulator.engine.EffectStep.DestroyFaceUpLife;
-import com.drive.drive_manager.simulator.engine.EffectStep.PlaySelfFromZone;
 import com.drive.drive_manager.simulator.engine.EffectStep.ActivateTributedSummonEffect;
 import com.drive.drive_manager.simulator.engine.EffectStep.TributeAllyMaterialWhere;
-import com.drive.drive_manager.simulator.engine.EffectStep.SummonFromZoneBy;
 import com.drive.drive_manager.simulator.engine.EffectStep.FilterBy;
 import com.drive.drive_manager.simulator.engine.EffectStep.PickAllyUpToSacrificedLevel;
 import com.drive.drive_manager.simulator.engine.EffectStep.PickAllyWithHigherAlly;
 import com.drive.drive_manager.simulator.engine.EffectStep.AttachSubjectToHigherAlly;
 import com.drive.drive_manager.simulator.engine.EffectStep.PickAllyWithMaterials;
 import com.drive.drive_manager.simulator.engine.EffectStep.ExtraHit;
-import com.drive.drive_manager.simulator.engine.EffectStep.SummonSelfFree;
 import com.drive.drive_manager.simulator.engine.EffectStep.MayDo;
 import com.drive.drive_manager.simulator.engine.EffectStep.ActivateSubjectSummonEffect;
 import com.drive.drive_manager.simulator.engine.EffectStep.AlliesGain;
@@ -33,10 +29,8 @@ import com.drive.drive_manager.simulator.engine.EffectStep.SkipBlockStep;
 import com.drive.drive_manager.simulator.engine.EffectStep.IfChosenGone;
 import static com.drive.drive_manager.simulator.engine.Compose.*;
 import com.drive.drive_manager.simulator.engine.EffectStep.SpecialFromZone;
-import com.drive.drive_manager.simulator.engine.EffectStep.PlaySelfFree;
 import com.drive.drive_manager.simulator.engine.EffectStep.PickAlly;
 import com.drive.drive_manager.simulator.engine.EffectStep.PickAllyWhere;
-import com.drive.drive_manager.simulator.engine.EffectStep.SummonFromZone;
 import com.drive.drive_manager.simulator.engine.EffectStep.EndYourTurn;
 import com.drive.drive_manager.simulator.engine.EffectStep.IfCondition;
 import com.drive.drive_manager.simulator.engine.EffectStep.LookedToTopOrBottom;
@@ -57,9 +51,7 @@ import com.drive.drive_manager.simulator.engine.EffectStep.BounceChosen;
 import com.drive.drive_manager.simulator.engine.EffectStep.ChooseWeakestEnemy;
 import com.drive.drive_manager.simulator.engine.EffectStep.IfNotDone;
 import com.drive.drive_manager.simulator.engine.EffectStep.NoUntapChosen;
-import com.drive.drive_manager.simulator.engine.EffectStep.PlayFromZone;
 import com.drive.drive_manager.simulator.engine.EffectStep.SubjectFromTrigger;
-import com.drive.drive_manager.simulator.engine.EffectStep.SummonSelf;
 import com.drive.drive_manager.simulator.engine.EffectStep.TributeAllyMaterial;
 
 import com.drive.drive_manager.simulator.engine.EffectStep.*;
@@ -121,7 +113,7 @@ public final class CardEffects {
         // ST3-5 Slicker: the cost can only be paid from the Tributos (sacrificed), not from the Descarte
         add("slicker", new EffectScript("slicker:en-destruccion", Moment.ON_DESTROY, false, EN_DESTRUCCION,
                 "Puedes enviar esta carta a tu descarte para invocar 1 criatura Violeta de tus tributos reduciendo su coste en 1.",
-                List.of(new IfPossible(), sendSelfTo("discardPile"), new SummonFromZone("tributeZone", CardFilter.creatures().withColors("P"), 1))));
+                List.of(new IfPossible(), sendSelfTo("discardPile"), summonFromZone("tributeZone", CardFilter.creatures().withColors("P"), 1))));
         // ST3-6 Virdris
         add("virdris", new EffectScript("virdris:en-destruccion", Moment.ON_DESTROY, true, EN_DESTRUCCION,
                 "Roba 3 cartas. Luego: tributa 2 cartas de tu mano.",
@@ -156,7 +148,7 @@ public final class CardEffects {
         add("rhogler", new EffectScript("rhogler:al-final-del-ataque", Moment.ON_ATTACK_END, false, AL_FINAL,
                 "(1) Puedes sacrificar esta carta; invoca 1 criatura [bestia] nivel 3 de tus tributos reduciendo su coste en 3.",
                 List.of(sacrificeSelf()),
-                List.of(new SummonFromZone("tributeZone", CardFilter.creatures().withClasses("bestia").withLevel(3), 3)))
+                List.of(summonFromZone("tributeZone", CardFilter.creatures().withClasses("bestia").withLevel(3), 3)))
                 .limited(Limit.ONCE_PER_TURN_BETWEEN_COPIES));
         // ST3-13 Zhauz
         add("zhauz",
@@ -202,7 +194,7 @@ public final class CardEffects {
                         List.of(new RitualFromZone("tributeZone", false, 1))),
                 new EffectScript("alimento-de-las-sombras:en-mano", Moment.ON_EVENT, false, "En Mano",
                         "(1) Si algún aliado es destruido por el oponente: puedes jugar esta carta sin pagar su coste.",
-                        List.of(new PlaySelfFree()))
+                        List.of(playSelfFree()))
                         .when(new AllyDestroyed(CardFilter.any(), true, false))
                         .fromZone("hand")
                         .limited(Limit.ONCE_PER_TURN_BETWEEN_COPIES));
@@ -219,7 +211,7 @@ public final class CardEffects {
         add("arañador",
                 new EffectScript("aranador:en-invocacion", Moment.ON_SUMMON, false, EN_INVOCACION,
                         "Puedes invocar 1 criatura Violeta nivel 1 de tus tributos reduciendo su coste en 1.",
-                        List.of(new SummonFromZone("tributeZone", CardFilter.creatures().withColors("P").withLevel(1), 1))),
+                        List.of(summonFromZone("tributeZone", CardFilter.creatures().withColors("P").withLevel(1), 1))),
                 // A slow effect (no trigger condition): activated from the board in the open state
                 new EffectScript("aranador:turno-aliado", Moment.ACTIVATED, false, "Turno Aliado",
                         "Una vez por turno: puede sacrificar 1 aliado para reactivar otro.",
@@ -238,12 +230,12 @@ public final class CardEffects {
                         List.of(lookTop(4), takeFromLookedRestToBottom(2, CardFilter.colors("R", "W")), tributeFromHand(1))),
                 new EffectScript("caballero-umbrio:al-atacar", Moment.ON_ATTACK, false, AL_ATACAR,
                         "Puedes invocar 1 criatura Roja, [caballero] o [mercenario] de tu mano en tu línea frontal pagando su coste.",
-                        List.of(new SummonFromZone("hand", CardFilter.creatures().withColors("R").withClasses("caballero", "mercenario"), 0, true))));
+                        List.of(summonFromZone("hand", CardFilter.creatures().withColors("R").withClasses("caballero", "mercenario"), 0, true))));
         // ST4-2 Peón De Línea Frontal: Enfrentar (combat rule)
         // ST4-3 Espada De Los Leones De Fuego
         add("espada de los leones de fuego", new EffectScript("espada-leones:en-mano", Moment.ON_EVENT, false, "En Mano",
                 "(1) Si algún aliado es invocado por efecto y controlas algún [caballero] nivel 4 o mayor: puedes invocar esta carta sin pagar su coste.",
-                List.of(new SummonSelfFree()))
+                List.of(summonSelfFree()))
                 .when(all(new AllySummonedByEffect(CardFilter.any()), new CountOnField(CardFilter.creatures().withClasses("caballero").withMinLevel(4), 1, null)))
                 .fromZone("hand")
                 .limited(Limit.ONCE_PER_TURN_BETWEEN_COPIES));
@@ -291,13 +283,13 @@ public final class CardEffects {
         // ST4-13 Comandante De Las Espadas Dragón (Enfrentar 3: combat rule)
         add("comandante de las espadas dragón", new EffectScript("comandante-espadas-dragon:al-atacar", Moment.ON_ATTACK, false, AL_ATACAR,
                 "Una vez por turno: puedes invocar 1 criatura Roja nivel 2 o menor de tu mano reduciendo su coste en 1.",
-                List.of(new SummonFromZone("hand", CardFilter.creatures().withColors("R").withMaxLevel(2), 1)))
+                List.of(summonFromZone("hand", CardFilter.creatures().withColors("R").withMaxLevel(2), 1)))
                 .limited(Limit.ONCE_PER_TURN));
         // ST4-14 Caballero Real
         add("caballero real", new EffectScript("caballero-real:al-atacar", Moment.ON_ATTACK, false, AL_ATACAR,
                 "Una vez por turno: puedes invocar 1 criatura Roja nivel 3 de tu mano reduciendo su coste en 2. "
                         + "Si lo haces: esta carta gana fuerza 3 y Perforante hasta el final del turno.",
-                List.of(new SummonFromZone("hand", CardFilter.creatures().withColors("R").withLevel(3), 2),
+                List.of(summonFromZone("hand", CardFilter.creatures().withColors("R").withLevel(3), 2),
                         new IfDone(2), gainStrength(3), gainUntilEndOfTurn("Perforante")))
                 .limited(Limit.ONCE_PER_TURN));
         // ST4-15 Rey Franco
@@ -324,10 +316,10 @@ public final class CardEffects {
                 new EffectScript("caballeros-primera-linea:en-juego", Moment.ON_PLAY, true, EN_JUEGO,
                         "Puedes invocar 1 criatura Roja de tu mano reduciendo su coste en 1.",
                         List.of(new MayDo("¿Invocas 1 criatura Roja de tu mano reduciendo su coste en 1?", 1),
-                                new SummonFromZone("hand", CardFilter.creatures().withColors("R"), 1))),
+                                summonFromZone("hand", CardFilter.creatures().withColors("R"), 1))),
                 new EffectScript("caballeros-primera-linea:en-mano", Moment.ON_EVENT, false, "En Mano",
                         "(1) Si algún aliado es destruido: puedes jugar esta carta sin pagar su coste.",
-                        List.of(new PlaySelfFree()))
+                        List.of(playSelfFree()))
                         .when(new AllyDestroyed(CardFilter.any(), false, false))
                         .fromZone("hand")
                         .limited(Limit.ONCE_PER_TURN_BETWEEN_COPIES));
@@ -342,7 +334,7 @@ public final class CardEffects {
                         .limited(Limit.ONCE_PER_TURN_BETWEEN_COPIES),
                 new EffectScript("investidura:en-mano", Moment.ON_EVENT, false, "En Mano",
                         "Si algún aliado es invocado por efecto: puedes jugar esta carta sin pagar su coste.",
-                        List.of(new PlaySelfFree()))
+                        List.of(playSelfFree()))
                         .when(new AllySummonedByEffect(CardFilter.any()))
                         .fromZone("hand"));
     }
@@ -496,14 +488,14 @@ public final class CardEffects {
                 new EffectScript("huevo-de-dragon:turno-aliado", Moment.ACTIVATED, false, "Turno Aliado",
                         "Puedes enviar esta carta activa a tu descarte para invocar 1 [dragón] nivel 1 de tus tributos reduciendo su coste en 1.",
                         List.of(new IfPossible(), sendSelfFromFieldTo("discardPile"),
-                                new SummonFromZone("tributeZone", CardFilter.creatures().withClasses("dragón").withMaxLevel(1), 1, false)))
+                                summonFromZone("tributeZone", CardFilter.creatures().withClasses("dragón").withMaxLevel(1), 1, false)))
                         .when(new Active())
                         .onlyAllyTurn());
         // ST2-18 Llamarada (utility)
         add("llamarada",
                 new EffectScript("llamarada:tributada", Moment.ON_EVENT, false, "En Tributos",
                         "(1) Si esta carta es tributada desde tu mazo por un aliado [dragón]: puedes jugar esta carta reduciendo su coste en el nivel de dicho aliado.",
-                        List.of(new PlaySelfFromZone("tributeZone", true)))
+                        List.of(playSelfFromZone("tributeZone", true)))
                         .when(new TributedFromDeck(CardFilter.creatures().withClasses("dragón")))
                         .fromZone("tributeZone")
                         .limited(Limit.ONCE_PER_TURN_BETWEEN_COPIES),
@@ -542,7 +534,7 @@ public final class CardEffects {
                 new EffectScript("flureteus:turno-aliado", Moment.ON_EVENT, false, "Turno Aliado",
                         "Si invocas 1 criatura por efecto: puedes invocar 1 criatura [ente] nivel 2 de tus tributos en tu línea frontal sin pagar su coste. "
                                 + "Si lo haces: añade esta carta como material a un aliado.",
-                        List.of(new SummonFromZone("tributeZone", CardFilter.creatures().withClasses("ente").withLevel(2), SummonFromZone.FREE, true),
+                        List.of(summonFromZone("tributeZone", CardFilter.creatures().withClasses("ente").withLevel(2), FREE, true),
                                 new IfDone(2), new PickAlly(), attachSelfToSubject()))
                         .when(new AllySummonedByEffect(CardFilter.creatures()))
                         .onlyAllyTurn());
@@ -585,7 +577,7 @@ public final class CardEffects {
         // ST1-11 Falis
         add("falis", new EffectScript("falis:en-tributos", Moment.ON_EVENT, false, "En Tributos",
                 "(1) Si reduces a 0 la fuerza de algún enemigo: puedes invocar esta carta reduciendo su coste en 2.",
-                List.of(new SummonSelfFromZone("tributeZone", 2)))
+                List.of(summonSelfFromZone("tributeZone", 2)))
                 .when(new YouReducedStrength(0, false))
                 .fromZone("tributeZone")
                 .limited(Limit.ONCE_PER_TURN_BETWEEN_COPIES));
@@ -698,7 +690,7 @@ public final class CardEffects {
                 List.of(tributeFromHand(1), new ChooseWeakestEnemy(enemy.exhausted())), List.of(new NoUntapChosen(false))));
         inherit("driada", new EffectScript("driada:hereda-todos-los-turnos", Moment.ON_EVENT, false, TODOS,
                 "Heredado de Driada: si esta carta es agotada, puedes tributar el recurso con este efecto; invoca 1 [hada] de tu mano reduciendo su coste en 1.",
-                List.of(tributeResource("Driada")), List.of(new SummonFromZone("hand", CardFilter.creatures().withClasses("hada"), 1)))
+                List.of(tributeResource("Driada")), List.of(summonFromZone("hand", CardFilter.creatures().withClasses("hada"), 1)))
                 .when(new ThisExhausted()));
         // E1-G16 Dragón Rúnico
         add("dragón rúnico", new EffectScript("dragon-runico:en-invocacion", Moment.ON_SUMMON, true, EN_INVOCACION,
@@ -743,12 +735,12 @@ public final class CardEffects {
         // E1-B8 Delesel
         add("delesel", new EffectScript("delesel:en-destruccion", Moment.ON_DESTROY, false, EN_DESTRUCCION,
                 "Puedes invocar 1 [ente] nivel 2 de tus tributos reduciendo su coste en 2.",
-                List.of(new SummonFromZone("tributeZone", CardFilter.creatures().withClasses("ente").withLevel(2), 2))));
+                List.of(summonFromZone("tributeZone", CardFilter.creatures().withClasses("ente").withLevel(2), 2))));
         // E1-B5 Androide A7
         add("androide a7", new EffectScript("androide-a7:tributada-como-material", Moment.ON_EVENT, false, "En Tributos",
                 "(1) Si esta carta es tributada como material y no controlas copias de esta carta: puedes tributar 1 material de 1 aliado "
                         + "para invocar esta carta en tu línea frontal, reduciendo su coste en 1.",
-                List.of(new IfPossible(), new TributeAllyMaterial(), new SummonSelf("tributeZone", Amount.fixed(1), true)))
+                List.of(new IfPossible(), new TributeAllyMaterial(), summonSelf("tributeZone", Amount.fixed(1), true)))
                 .when(all(new TributedAsMaterial(0), new NoCopies()))
                 .fromZone("tributeZone")
                 .limited(Limit.ONCE_PER_TURN_BETWEEN_COPIES));
@@ -768,7 +760,7 @@ public final class CardEffects {
                 .limited(Limit.ONCE_PER_TURN_BETWEEN_COPIES));
         inherit("lyna", new EffectScript("lyna:hereda-todos-los-turnos", Moment.ON_EVENT, false, TODOS,
                 "Heredado de Lyna: si esta carta es agotada, puedes tributar el recurso con este efecto; invoca 1 [hada] de tu mano reduciendo su coste en 1.",
-                List.of(tributeResource("Lyna")), List.of(new SummonFromZone("hand", CardFilter.creatures().withClasses("hada"), 1)))
+                List.of(tributeResource("Lyna")), List.of(summonFromZone("hand", CardFilter.creatures().withClasses("hada"), 1)))
                 .when(new ThisExhausted()));
         // E1-G13 Hana
         add("hana", new EffectScript("hana:en-invocacion", Moment.ON_SUMMON, false, EN_INVOCACION,
@@ -786,7 +778,7 @@ public final class CardEffects {
         // E1-R7 Caballero Leal (its replacement when it would be destroyed: REPLACEMENTS)
         add("caballero leal", new EffectScript("caballero-leal:en-mano", Moment.ON_EVENT, false, "Turno Aliado / En Mano",
                 "Si algún aliado es invocado por efecto y no controlas copias de esta carta: puedes invocar esta carta reduciendo su coste en 1.",
-                List.of(new SummonSelf("hand", Amount.fixed(1), false)))
+                List.of(summonSelf("hand", Amount.fixed(1), false)))
                 .when(all(new AllySummonedByEffect(CardFilter.any()), new NoCopies()))
                 .fromZone("hand")
                 .onlyAllyTurn());
@@ -798,7 +790,7 @@ public final class CardEffects {
                         .limited(Limit.ONCE_PER_TURN),
                 new EffectScript("convocador-de-sombras:en-destruccion", Moment.ON_DESTROY, false, EN_DESTRUCCION,
                         "Puedes tributar 1 carta de tu mano para invocar 1 criatura nivel 2 de tus tributos reduciendo su coste en 1.",
-                        List.of(new IfPossible(), tributeFromHand(1), new SummonFromZone("tributeZone", CardFilter.creatures().withLevel(2), 1))));
+                        List.of(new IfPossible(), tributeFromHand(1), summonFromZone("tributeZone", CardFilter.creatures().withLevel(2), 1))));
         // E1-P18 Desollador
         add("desollador", new EffectScript("desollador:todos-los-turnos", Moment.ON_EVENT, true, TODOS,
                 "Una vez por turno: si esta carta es agotada y tienes 20 o más tributos Violeta o [espectro], reactiva esta carta.",
@@ -809,13 +801,13 @@ public final class CardEffects {
         add("va 7", new EffectScript("va-7:en-invocacion", Moment.ON_SUMMON, false, EN_INVOCACION,
                 "Puedes tributar 1 material de esta carta; juega 1 estructura Azul de tus tributos reduciendo su coste en 1.",
                 List.of(tributeMaterials(1, false)),
-                List.of(new PlayFromZone("tributeZone", new CardFilter(List.of("B"), List.of(), "structure", null, null), 1))));
+                List.of(playFromZone("tributeZone", new CardFilter(List.of("B"), List.of(), "structure", null, null), 1))));
         // E1-B19 Sacerdotisa Del Portal Del Eclipse (Reactivar: keyword)
         add("sacerdotisa del portal del eclipse", new EffectScript("sacerdotisa-eclipse:turno-aliado", Moment.ACTIVATED, false, "Turno Aliado",
                 "Puedes tributar 3 materiales de esta carta; invoca en tu línea frontal 1 criatura [chamán], [ente] o [ángel] de tus tributos "
                         + "reduciendo su coste en 3, pero no puede declarar ataque este turno.",
                 List.of(tributeMaterials(3, false)),
-                List.of(new SummonFromZone("tributeZone", CardFilter.creatures().withClasses("chamán", "ente", "ángel"), 3, true), summonedCannotAttack()))
+                List.of(summonFromZone("tributeZone", CardFilter.creatures().withClasses("chamán", "ente", "ángel"), 3, true), summonedCannotAttack()))
                 .onlyAllyTurn());
         // E1-B22 Unidad De Emergencia L1
         add("unidad de emergencia l1", new EffectScript("unidad-emergencia-l1:en-invocacion", Moment.ON_SUMMON, true, EN_INVOCACION,
@@ -839,7 +831,7 @@ public final class CardEffects {
         add("fereteus", new EffectScript("fereteus:en-mano", Moment.ACTIVATED, false, "Turno Aliado / En Mano",
                 "(1) Si no controlas copias de esta carta: puedes invocar esta carta reduciendo su coste en X, donde X es la suma del nivel de todos "
                         + "tus aliados Violeta, [espectro] o [fauna].",
-                List.of(new SummonSelf("hand", new Amount.LevelsOnField(CardFilter.colors("P").withClasses("espectro", "fauna")), false)))
+                List.of(summonSelf("hand", new Amount.LevelsOnField(CardFilter.colors("P").withClasses("espectro", "fauna")), false)))
                 .when(new NoCopies())
                 .fromZone("hand")
                 .onlyAllyTurn()
@@ -847,7 +839,7 @@ public final class CardEffects {
         // E1-R10 Martillo Frontal
         add("martillo frontal", new EffectScript("martillo-frontal:al-final-del-ataque", Moment.ON_ATTACK_END, false, AL_FINAL,
                 "Una vez por turno: puedes invocar 1 [guerrero] o [retador] nivel 1 de tu mano reduciendo su coste en 2.",
-                List.of(new SummonFromZone("hand", CardFilter.creatures().withClasses("guerrero", "retador").withLevel(1), 2)))
+                List.of(summonFromZone("hand", CardFilter.creatures().withClasses("guerrero", "retador").withLevel(1), 2)))
                 .limited(Limit.ONCE_PER_TURN));
         // E1-B4 Cazador K3
         add("cazador k3", new EffectScript("cazador-k3:en-invocacion", Moment.ON_SUMMON, true, EN_INVOCACION,
@@ -858,7 +850,7 @@ public final class CardEffects {
         add("sombra errante", new EffectScript("sombra-errante:en-destruccion", Moment.ON_DESTROY, false, EN_DESTRUCCION,
                 "(1) Puedes tributar 1 carta de tu mano para invocar 1 [espectro] nivel 1 de tus tributos sin pagar su coste.",
                 List.of(new IfPossible(), tributeFromHand(1),
-                        new SummonFromZone("tributeZone", CardFilter.creatures().withClasses("espectro").withLevel(1), SummonFromZone.FREE)))
+                        summonFromZone("tributeZone", CardFilter.creatures().withClasses("espectro").withLevel(1), FREE)))
                 .limited(Limit.ONCE_PER_TURN_BETWEEN_COPIES));
         // E1-B10 Phonia
         add("phonia",
@@ -900,7 +892,7 @@ public final class CardEffects {
                         + "1 criatura Verde de tu mano reduciendo su coste en 1.",
                 List.of(chooseEnemy(1, enemy.withMaxStrength(6).exhausted())),
                 List.of(new BounceChosen(), new IfDone(2), new MayDo("¿Invocas 1 criatura Verde de tu mano reduciendo su coste en 1?", 1),
-                        new SummonFromZone("hand", CardFilter.creatures().withColors("G"), 1))));
+                        summonFromZone("hand", CardFilter.creatures().withColors("G"), 1))));
         // E1-R14 Arquero Mítico Errante
         add("arquero mítico errante", new EffectScript("arquero-mitico:en-mano", Moment.ON_EVENT, false, "En Mano",
                 "(1) Si un aliado declara ataque o bloqueo, y no controlas otras criaturas: puedes tributar esta carta; dicho aliado gana fuerza 3 "
@@ -916,7 +908,7 @@ public final class CardEffects {
                         List.of(tributeTop(2), takeFromZone("tributeZone", CardFilter.colors("R"), 1, false), new KeepOnField(true))),
                 new EffectScript("tacticas-de-guerra:turno-aliado", Moment.ACTIVATED, false, "Turno Aliado",
                         "Puedes enviar esta carta activa a tu descarte para invocar 1 criatura Roja de tu mano reduciendo su coste en 1.",
-                        List.of(new IfPossible(), sendSelfFromFieldTo("discardPile"), new SummonFromZone("hand", CardFilter.creatures().withColors("R"), 1)))
+                        List.of(new IfPossible(), sendSelfFromFieldTo("discardPile"), summonFromZone("hand", CardFilter.creatures().withColors("R"), 1)))
                         .when(new Active())
                         .onlyAllyTurn());
         // E1-G14 Celeste (Asalto: keyword)
@@ -944,7 +936,7 @@ public final class CardEffects {
         // E1-B6 Groll Vandálico
         add("groll vandálico", new EffectScript("groll-vandalico:en-mano", Moment.ON_EVENT, false, "En Mano",
                 "(1) Si alguna carta es removida de tus vidas: puedes invocar esta carta en tu línea frontal. Si tienes 3 o menos vidas: reduce en 1 su coste.",
-                List.of(new SummonSelf("hand", new Amount.IfThen(new LivesAtMost(false, 3), Amount.fixed(1), Amount.fixed(0)), true)))
+                List.of(summonSelf("hand", new Amount.IfThen(new LivesAtMost(false, 3), Amount.fixed(1), Amount.fixed(0)), true)))
                 .when(new LifeRemoved())
                 .fromZone("hand")
                 .limited(Limit.ONCE_PER_TURN_BETWEEN_COPIES));
@@ -976,7 +968,7 @@ public final class CardEffects {
         // E1-P9 Ciervo Tejedor
         add("ciervo tejedor", new EffectScript("ciervo-tejedor:en-invocacion", Moment.ON_SUMMON, false, EN_INVOCACION,
                 "Si controlas al menos 3 estructuras: puedes invocar 1 criatura Violeta [bestia] o [fauna] nivel 1 de tus tributos reduciendo en 1 su coste.",
-                List.of(new SummonFromZone("tributeZone", CardFilter.creatures().withLevel(1).colorAndClass("P", "bestia", "fauna"), 1)))
+                List.of(summonFromZone("tributeZone", CardFilter.creatures().withLevel(1).colorAndClass("P", "bestia", "fauna"), 1)))
                 .when(new CountOnField(new CardFilter(List.of(), List.of(), "structure", null, null), 3, null)));
         // E1-P10 Zafrax (Provocar 2: combat rule)
         add("zafrax", new EffectScript("zafrax:todos-los-turnos", Moment.ON_EVENT, true, TODOS,
@@ -988,7 +980,7 @@ public final class CardEffects {
         add("ninfa cantante de dragones", new EffectScript("ninfa-cantante:en-invocacion", Moment.ON_SUMMON, true, EN_INVOCACION,
                 "Tributa las primeras 3 cartas de tu mazo. Luego: puedes invocar una criatura Verde de fuerza 7 o menos de tus tributos reduciendo en 2 su coste.",
                 List.of(tributeTop(3), new MayDo("¿Invocas 1 criatura Verde de fuerza 7 o menos de tus tributos reduciendo su coste en 2?", 1),
-                        new SummonFromZone("tributeZone", CardFilter.creatures().withColors("G").withMaxStrength(7), 2))));
+                        summonFromZone("tributeZone", CardFilter.creatures().withColors("G").withMaxStrength(7), 2))));
         inherit("ninfa cantante de dragones", new EffectScript("ninfa-cantante:hereda-todos-los-turnos", Moment.ON_EVENT, false, TODOS,
                 "Heredado de Ninfa Cantante De Dragones: si algún aliado de fuerza 4 o mayor es invocado por efecto, puedes tributar el recurso de este "
                         + "efecto; reactiva esta carta.",
@@ -1013,7 +1005,7 @@ public final class CardEffects {
                 new EffectScript("caballero-derrotado:en-mano", Moment.ON_EVENT, false, "En Mano",
                         "(1) Si algún aliado nivel 3 o mayor es destruido: puedes tributar 2 cartas de tu mano para invocar esta carta en tu línea frontal "
                                 + "sin pagar su coste.",
-                        List.of(new IfPossible(), tributeFromHand(2), new SummonSelf("hand", Amount.fixed(SummonFromZone.FREE), true)))
+                        List.of(new IfPossible(), tributeFromHand(2), summonSelf("hand", Amount.fixed(FREE), true)))
                         .when(new AllyDestroyed(CardFilter.any().withMinLevel(3), false, false))
                         .fromZone("hand")
                         .limited(Limit.ONCE_PER_TURN_BETWEEN_COPIES),
@@ -1049,8 +1041,8 @@ public final class CardEffects {
         add("necroporx", new EffectScript("necroporx:en-destruccion", Moment.ON_DESTROY, false, EN_DESTRUCCION + " por efecto",
                 "Puedes invocar 1 criatura Violeta nivel 1 de tus tributos sin pagar su coste. Aumenta en 1 el nivel por cada 2 copias de esta "
                         + "carta en tus tributos.",
-                List.of(new SummonFromZoneBy("tributeZone", new FilterBy(CardFilter.creatures().withColors("P"),
-                        new Amount.Scaled(new Amount.InZone("tributeZone", CardFilter.any().named("Necroporx")), 2, 1), null), SummonFromZone.FREE)))
+                List.of(summonFromZoneBy("tributeZone", new FilterBy(CardFilter.creatures().withColors("P"),
+                        new Amount.Scaled(new Amount.InZone("tributeZone", CardFilter.any().named("Necroporx")), 2, 1), null), FREE)))
                 .when(new DestroyedByEffect()));
         // E1-G6 Janne
         inherit("janne", new EffectScript("janne:hereda-al-atacar", Moment.ON_ATTACK, false, AL_ATACAR,
@@ -1089,7 +1081,7 @@ public final class CardEffects {
         add("antorcha legionaria", new EffectScript("antorcha-legionaria:final-del-turno", Moment.ON_EVENT, false, "Turno Aliado",
                 "Al final del turno, si esta carta está en tu línea frontal y controlas 3 o más [legionarios]: puedes invocar 1 [legionario] de tu mano "
                         + "reduciendo su coste en 1.",
-                List.of(new SummonFromZone("hand", CardFilter.creatures().withClasses("legionario"), 1)))
+                List.of(summonFromZone("hand", CardFilter.creatures().withClasses("legionario"), 1)))
                 .when(all(new TurnEnds(), new InFrontLine(), new CountOnField(CardFilter.creatures().withClasses("legionario"), 3, null)))
                 .onlyAllyTurn());
         // E1-B14 Proto Vigilante H2, E1-R7 Caballero Leal, E1-G10 Deriduragon and E1-G19 Hydra Colosal (inherited): REPLACEMENTS
@@ -1136,7 +1128,7 @@ public final class CardEffects {
         add("dante di castirion", new EffectScript("dante-castirion:en-mano", Moment.ACTIVATED, false, "Turno Aliado / En Mano",
                 "(1) Puedes tributar 3 o más aliados Rojos que sumen 5 o más en nivel para invocar esta carta en tu línea frontal reduciendo su coste en 3.",
                 List.of(new TributeAlliesLevelSum(3, 5, CardFilter.creatures().withColors("R"))),
-                List.of(new SummonSelf("hand", Amount.fixed(3), true)))
+                List.of(summonSelf("hand", Amount.fixed(3), true)))
                 .fromZone("hand")
                 .onlyAllyTurn()
                 .limited(Limit.ONCE_PER_TURN_BETWEEN_COPIES));
@@ -1219,7 +1211,7 @@ public final class CardEffects {
                         .limited(Limit.ONCE_PER_TURN_BETWEEN_COPIES),
                 new EffectScript("composicion-refractaria:en-mano", Moment.ON_EVENT, false, "En Mano",
                         "Si alguna carta es removida de tus vidas: puedes tributar 2 materiales de algún aliado para jugar esta carta sin pagar su coste.",
-                        List.of(new IfPossible(), new PickAllyWithMaterials(2), tributeSubjectMaterials(2), new PlaySelfFree()))
+                        List.of(new IfPossible(), new PickAllyWithMaterials(2), tributeSubjectMaterials(2), playSelfFree()))
                         .when(new LifeRemoved())
                         .fromZone("hand"));
         // E1.1-G2 Dragón Goloso
@@ -1262,7 +1254,7 @@ public final class CardEffects {
                         List.of(new IfPossible(), sacrificeAlly(false), untapSelf())),
                 new EffectScript("aracnopanto:en-destruccion", Moment.ON_DESTROY, false, EN_DESTRUCCION,
                         "Puedes invocar 1 [bestia] nivel 1 de tu descarte sin pagar su coste.",
-                        List.of(new SummonFromZone("discardPile", CardFilter.creatures().withClasses("bestia").withLevel(1), SummonFromZone.FREE, false))));
+                        List.of(summonFromZone("discardPile", CardFilter.creatures().withClasses("bestia").withLevel(1), FREE, false))));
         // E1.1-R1 Peón Experimentado
         add("peón experimentado",
                 new EffectScript("peon-experimentado:en-invocacion", Moment.ON_SUMMON, true, EN_INVOCACION,
@@ -1271,20 +1263,20 @@ public final class CardEffects {
                 new EffectScript("peon-experimentado:turno-aliado", Moment.ACTIVATED, false, "Turno Aliado",
                         "Puedes tributar esta carta en tu línea frontal para invocar 1 criatura Roja nivel 2 de tu mano reduciendo su coste en 1.",
                         List.of(new IfPossible(), sendSelfFromFieldTo("tributeZone"),
-                                new SummonFromZone("hand", CardFilter.creatures().withColors("R").withLevel(2), 1, false)))
+                                summonFromZone("hand", CardFilter.creatures().withColors("R").withLevel(2), 1, false)))
                         .when(new InFrontLine())
                         .onlyAllyTurn());
         // E1.1-R2 Espada Ferrea
         add("espada ferrea", new EffectScript("espada-ferrea:en-mano", Moment.ON_EVENT, false, "Turno Aliado / En Mano",
                 "Inmediatamente después de que un aliado sea invocado por efecto: puedes invocar esta carta en tu línea frontal pagando su coste.",
-                List.of(new SummonSelf("hand", Amount.fixed(0), true)))
+                List.of(summonSelf("hand", Amount.fixed(0), true)))
                 .when(new Immediately(new AllySummonedByEffect(CardFilter.any())))
                 .fromZone("hand")
                 .onlyAllyTurn());
         // E1.1-R3 Peón De Los Leones De Fuego
         add("peón de los leones de fuego", new EffectScript("peon-leones-de-fuego:en-mano", Moment.ACTIVATED, false, "Turno Aliado / En Mano",
                 "Si controlas algún [caballero] nivel 4 o mayor: puedes invocar esta carta en tu línea frontal pagando su coste.",
-                List.of(new SummonSelf("hand", Amount.fixed(0), true)))
+                List.of(summonSelf("hand", Amount.fixed(0), true)))
                 .when(new CountOnField(CardFilter.creatures().withClasses("caballero").withMinLevel(4), 1, null))
                 .fromZone("hand")
                 .onlyAllyTurn());
@@ -1298,7 +1290,7 @@ public final class CardEffects {
         add("alabarda de ala blanca",
                 new EffectScript("alabarda-ala-blanca:en-invocacion", Moment.ON_SUMMON, false, EN_INVOCACION,
                         "Por efecto: puedes invocar 1 criatura Roja nivel 3 o menor de tu mano reduciendo su coste en 3. Si lo haces: mueve esta carta a tu línea frontal.",
-                        List.of(new SummonFromZone("hand", CardFilter.creatures().withColors("R").withMaxLevel(3), 3, false), new IfDone(1),
+                        List.of(summonFromZone("hand", CardFilter.creatures().withColors("R").withMaxLevel(3), 3, false), new IfDone(1),
                                 moveSelfToFront()))
                         .when(new SummonedByEffect()),
                 new EffectScript("alabarda-ala-blanca:al-final-del-ataque", Moment.ON_ATTACK_END, false, AL_FINAL,
@@ -1307,7 +1299,7 @@ public final class CardEffects {
         // E1.1-R10 Comandante Veterano (its "Turno Oponente" blocker swap: BLOCKER_SWAP, CombatRules.offerBlockerSwap)
         add("comandante veterano", new EffectScript("comandante-veterano:en-mano", Moment.ACTIVATED, false, "Turno Aliado / En Mano",
                 "Si no controlas copias de esta carta y controlas algún [caballero] o [armada] nivel 4 o mayor: puedes invocar esta carta reduciendo su coste en 3.",
-                List.of(new SummonSelf("hand", Amount.fixed(3), false)))
+                List.of(summonSelf("hand", Amount.fixed(3), false)))
                 .when(all(new NoCopies(), new CountOnField(CardFilter.creatures().withClasses("caballero", "armada").withMinLevel(4), 1, null)))
                 .fromZone("hand")
                 .onlyAllyTurn());
@@ -1331,7 +1323,7 @@ public final class CardEffects {
                 new EffectScript("escudos-leales:en-mano", Moment.ON_EVENT, false, "En Mano",
                         "Si no activaste algún Efecto Definitivo el turno anterior y algún enemigo declara ataque mientras tienes 2 o menos vidas: "
                                 + "puedes jugar esta carta sin pagar su coste.",
-                        List.of(new PlaySelfFree()))
+                        List.of(playSelfFree()))
                         .when(all(new EnemyDeclaresAttack(), new LivesAtMost(false, 2), not(new UsedDefinitiveLastTurn())))
                         .fromZone("hand"));
 
@@ -1344,7 +1336,7 @@ public final class CardEffects {
                         List.of(new ActivateSubjectSummonEffect())),
                 new EffectScript("zamaranzas:en-tributos", Moment.ACTIVATED, false, "Turno Aliado / En Tributos",
                         "(1) Puedes añadir 1 aliado como material a otro de nivel mayor para invocar esta carta sin pagar su coste.",
-                        List.of(new IfPossible(), new PickAllyWithHigherAlly(), new AttachSubjectToHigherAlly(), new SummonSelfFree()))
+                        List.of(new IfPossible(), new PickAllyWithHigherAlly(), new AttachSubjectToHigherAlly(), summonSelfFree()))
                         .fromZone("tributeZone")
                         .onlyAllyTurn()
                         .limited(Limit.ONCE_PER_TURN_BETWEEN_COPIES));
@@ -1426,7 +1418,7 @@ public final class CardEffects {
         add("cofre mímico",
                 new EffectScript("cofre-mimico:tributada", Moment.ON_EVENT, false, "En Tributos",
                         "Si esta carta es tributada desde tus vidas: puedes invocarla en tu línea frontal.",
-                        List.of(new SummonSelf("tributeZone", Amount.fixed(0), true)))
+                        List.of(summonSelf("tributeZone", Amount.fixed(0), true)))
                         .when(new ThisTributed("lifeStack", null, null))
                         .fromZone("tributeZone"),
                 new EffectScript("cofre-mimico:en-invocacion", Moment.ON_SUMMON, false, EN_INVOCACION,
@@ -1501,14 +1493,14 @@ public final class CardEffects {
                 new EffectScript("kagravu:todos-los-turnos", Moment.ON_EVENT, false, TODOS,
                         "Una vez por turno: si destruyes alguna criatura por efecto: puedes invocar 1 criatura Violeta nivel 1 de tus tributos o descarte "
                                 + "reduciendo su coste en 1.",
-                        List.of(new SummonFromZone("tributeZone,discardPile", CardFilter.creatures().withColors("P").withLevel(1), 1, false)))
+                        List.of(summonFromZone("tributeZone,discardPile", CardFilter.creatures().withColors("P").withLevel(1), 1, false)))
                         .when(new YouDestroyedCreature(true))
                         .limited(Limit.ONCE_PER_TURN));
         // E1.1-P11 Hominox (Provocar 4: keyword): a summon by effect from the Tributos, so to the Retaguardia
         add("hominox", new EffectScript("hominox:todos-los-turnos", Moment.ON_EVENT, false, TODOS,
                 "Si esta carta destruye un enemigo: puedes invocar 1 criatura [mutante] de tus tributos de nivel igual o menor a la cantidad de "
                         + "copias de esta carta en tus tributos.",
-                List.of(new SummonFromZoneBy("tributeZone", new FilterBy(CardFilter.creatures().withClasses("mutante"), null,
+                List.of(summonFromZoneBy("tributeZone", new FilterBy(CardFilter.creatures().withClasses("mutante"), null,
                         new Amount.InZone("tributeZone", CardFilter.any().named("Hominox"))), 0)))
                 .when(new ThisDestroyedEnemy(false)));
         // E1.1-R4 Escudo Jurado
@@ -1526,7 +1518,7 @@ public final class CardEffects {
                         List.of(new PickAlly(false), gainStrength(3), gainUntilEndOfTurn("Furia 1"))),
                 new EffectScript("valor-del-heroe:en-mano", Moment.ON_EVENT, false, "En Mano",
                         "(1) Si invocas algún [caballero] por efecto: puedes jugar esta carta sin pagar su coste.",
-                        List.of(new PlaySelfFree()))
+                        List.of(playSelfFree()))
                         .when(new AllySummonedByEffect(CardFilter.creatures().withClasses("caballero")))
                         .fromZone("hand")
                         .limited(Limit.ONCE_PER_TURN_BETWEEN_COPIES));
@@ -1568,9 +1560,9 @@ public final class CardEffects {
                 "Si tienes 4 o más vidas: puedes invocar 1 criatura Azul nivel 1 de tu mano reduciendo en 1 su coste. Si tienes 3 o menos vidas: "
                         + "en su lugar, puedes jugar 1 estructura Azul de tus tributos reduciendo en 1 su coste.",
                 List.of(new IfCondition(not(new LivesAtMost(false, 3)), 1),
-                        new SummonFromZone("hand", CardFilter.creatures().withColors("B").withLevel(1), 1),
+                        summonFromZone("hand", CardFilter.creatures().withColors("B").withLevel(1), 1),
                         new IfCondition(new LivesAtMost(false, 3), 1),
-                        new PlayFromZone("tributeZone", structure.withColors("B"), 1))));
+                        playFromZone("tributeZone", structure.withColors("B"), 1))));
         // E1.2-B05 VS-1 ("En Mano / En Tributos": one script per zone)
         EffectScript vs1Attach = new EffectScript("vs-1:en-mano", Moment.ON_EVENT, false, "En Mano / En Tributos",
                 "Si algún aliado nivel 3 o mayor es invocado y no tiene materiales nivel 2: puedes añadirle esta carta como material.",
@@ -1579,7 +1571,7 @@ public final class CardEffects {
         add("vs 1",
                 new EffectScript("vs-1:en-invocacion", Moment.ON_SUMMON, false, EN_INVOCACION,
                         "Puedes tributar 1 material de esta carta; juega 1 estructura Azul de tus tributos reduciendo su coste en 1.",
-                        List.of(tributeMaterials(1, false)), List.of(new PlayFromZone("tributeZone", structure.withColors("B"), 1))),
+                        List.of(tributeMaterials(1, false)), List.of(playFromZone("tributeZone", structure.withColors("B"), 1))),
                 vs1Attach.fromZone("hand"),
                 new EffectScript("vs-1:en-tributos", vs1Attach.moment(), false, vs1Attach.label(), vs1Attach.text(), vs1Attach.steps())
                         .when(vs1Attach.condition()).fromZone("tributeZone"));
@@ -1592,7 +1584,7 @@ public final class CardEffects {
         // E1.2-B08 EXO-91 (its "En Tributos" replacement for an ally is not applied yet)
         add("exo 91", new EffectScript("exo-91:en-invocacion", Moment.ON_SUMMON, false, EN_INVOCACION,
                 "Puedes tributar 2 materiales de esta carta; juega 1 estructura de tus tributos reduciendo su coste en 2.",
-                List.of(tributeMaterials(2, false)), List.of(new PlayFromZone("tributeZone", structure, 2))));
+                List.of(tributeMaterials(2, false)), List.of(playFromZone("tributeZone", structure, 2))));
         // E1.2-B11 SARS-2 (its "En Mano" replacement for an ally is not applied yet)
         add("sars 2", new EffectScript("sars-2:en-invocacion", Moment.ON_SUMMON, false, EN_INVOCACION,
                 "Puedes tributar hasta 2 materiales de esta carta para elegir la misma cantidad de enemigos; reduce en 2 su fuerza.",
@@ -1623,7 +1615,7 @@ public final class CardEffects {
         // E1.2-G01 Anna
         add("anna", new EffectScript("anna:tributada-como-recurso", Moment.ON_EVENT, false, "En Tributos",
                 "(1) Si esta carta es tributada como recurso: puedes tributar 1 carta de tu mano; invoca 1 [hada] de tu mano reduciendo su coste en 1.",
-                List.of(tributeFromHand(1)), List.of(new SummonFromZone("hand", hada, 1)))
+                List.of(tributeFromHand(1)), List.of(summonFromZone("hand", hada, 1)))
                 .when(new ThisTributed("resources", null, null))
                 .fromZone("tributeZone")
                 .limited(Limit.ONCE_PER_TURN_BETWEEN_COPIES));
@@ -1668,12 +1660,12 @@ public final class CardEffects {
         inherit("violet", new EffectScript("violet:hereda-todos-los-turnos", Moment.ON_EVENT, false, TODOS,
                 "Heredado de Violet: si algún aliado de fuerza 4 o mayor es invocado por efecto, puedes tributar el recurso de este efecto; "
                         + "invoca 1 [hada] nivel 1 de tu mano reduciendo su coste en 1.",
-                List.of(tributeResource("Violet")), List.of(new SummonFromZone("hand", hada.withLevel(1), 1)))
+                List.of(tributeResource("Violet")), List.of(summonFromZone("hand", hada.withLevel(1), 1)))
                 .when(new AllySummonedByEffect(CardFilter.creatures().withMinStrength(4))));
         // E1.2-G11 Leims (printed: a trigger "si esta carta es agotada"; inherited: "gana 1 gema")
         add("leims", new EffectScript("leims:turno-aliado", Moment.ON_EVENT, false, "Turno Aliado",
                 "Una vez por turno: si esta carta es agotada, puedes tributar 1 carta de tu mano; invoca 1 [hada] de tu mano reduciendo su coste en 1.",
-                List.of(tributeFromHand(1)), List.of(new SummonFromZone("hand", hada, 1)))
+                List.of(tributeFromHand(1)), List.of(summonFromZone("hand", hada, 1)))
                 .when(new ThisExhausted())
                 .onlyAllyTurn()
                 .limited(Limit.ONCE_PER_TURN));
@@ -1721,12 +1713,12 @@ public final class CardEffects {
         // E1.2-P02 Zokolok
         add("zokolok", new EffectScript("zokolok:en-destruccion", Moment.ON_DESTROY, false, EN_DESTRUCCION,
                 "(1) Puedes jugar 1 utilidad Violeta de coste 1 o menos de tus tributos sin pagar su coste.",
-                List.of(new PlayFromZone("tributeZone", CardFilter.type("utility").withColors("P").withMaxCost(1), SummonFromZone.FREE)))
+                List.of(playFromZone("tributeZone", CardFilter.type("utility").withColors("P").withMaxCost(1), FREE)))
                 .limited(Limit.ONCE_PER_TURN_BETWEEN_COPIES));
         // E1.2-P04 Phog
         add("phog", new EffectScript("phog:en-mano", Moment.ACTIVATED, false, "Turno Aliado / En Mano",
                 "Puedes sacrificar 1 criatura nivel 2 o mayor en el campo de la que seas dueño para invocar esta carta sin pagar su coste.",
-                List.of(new IfPossible(), sacrificeAllyWhere(CardFilter.creatures().withMinLevel(2)), new SummonSelfFree()))
+                List.of(new IfPossible(), sacrificeAllyWhere(CardFilter.creatures().withMinLevel(2)), summonSelfFree()))
                 .fromZone("hand")
                 .onlyAllyTurn());
         // E1.2-P05 Calox
@@ -1736,7 +1728,7 @@ public final class CardEffects {
         add("augurio floreciente", new EffectScript("augurio-floreciente:en-destruccion", Moment.ON_DESTROY, false, EN_DESTRUCCION + " por efecto o enfrentamiento",
                 "Puedes tributar 1 carta de tu mano; invoca 1 criatura nivel 3 o menor de tus tributos, que no sea una copia de esta carta, reduciendo su coste en 2.",
                 List.of(tributeFromHand(1)),
-                List.of(new SummonFromZone("tributeZone", CardFilter.creatures().withMaxLevel(3).notNamed("Augurio Floreciente"), 2)))
+                List.of(summonFromZone("tributeZone", CardFilter.creatures().withMaxLevel(3).notNamed("Augurio Floreciente"), 2)))
                 .when(any(new DestroyedByEffect(), new DestroyedInClash())));
         // E1.2-P12 Cadaver Corrupto
         add("cadaver corrupto", new EffectScript("cadaver-corrupto:en-invocacion", Moment.ON_SUMMON, false, EN_INVOCACION,
@@ -1758,10 +1750,10 @@ public final class CardEffects {
                 new EffectScript("asedio-del-inframundo:en-juego", Moment.ON_PLAY, true, EN_JUEGO,
                         "Puedes invocar 1 criatura nivel 1 de tus tributos reduciendo en 2 su coste. Luego: tributa esta carta.",
                         List.of(new MayDo("¿Invocas 1 criatura nivel 1 de tus tributos reduciendo en 2 su coste?", 1),
-                                new SummonFromZone("tributeZone", CardFilter.creatures().withLevel(1), 2), sendSelfFromFieldTo("tributeZone"))),
+                                summonFromZone("tributeZone", CardFilter.creatures().withLevel(1), 2), sendSelfFromFieldTo("tributeZone"))),
                 new EffectScript("asedio-del-inframundo:en-mano", Moment.ON_EVENT, false, "En Mano",
                         "(1) Si algún aliado es enviado al descarte: tribútalo; juega esta carta sin pagar su coste.",
-                        List.of(tributeTriggerCard()), List.of(new PlaySelfFree()))
+                        List.of(tributeTriggerCard()), List.of(playSelfFree()))
                         .when(new AllySentToDiscard())
                         .fromZone("hand")
                         .limited(Limit.ONCE_PER_TURN_BETWEEN_COPIES));
@@ -1787,7 +1779,7 @@ public final class CardEffects {
                 new EffectScript("mago-armado-del-ocaso:en-mano", Moment.ACTIVATED, false, "Turno Aliado / En Mano",
                         "(1) Si solo controlas 1 aliado: puedes revelar un [retador] nivel 2 y uno nivel 3 de tu mano; invoca esta carta sin pagar su coste.",
                         List.of(new RevealFromHand(List.of(CardFilter.any().withClasses("retador").withLevel(2),
-                                CardFilter.any().withClasses("retador").withLevel(3)))), List.of(new SummonSelfFree()))
+                                CardFilter.any().withClasses("retador").withLevel(3)))), List.of(summonSelfFree()))
                         .when(new CountOnField(CardFilter.creatures(), 1, 1))
                         .fromZone("hand")
                         .onlyAllyTurn()
@@ -1837,10 +1829,10 @@ public final class CardEffects {
                         List.of(tributeOtherAllies(), gainStrengthPerCount(2))),
                 new EffectScript("comandante-leones-dorados:invoca-retador", Moment.ON_SUMMON, false, EN_INVOCACION,
                         "Puedes invocar 1 [retador] de tu mano reduciendo su coste en 2. Súbelo a tu mano al final de tu turno.",
-                        List.of(new SummonFromZone("hand", CardFilter.creatures().withClasses("retador"), 2), new IfDone(1), new AtEndOfTurn(retadorBack))),
+                        List.of(summonFromZone("hand", CardFilter.creatures().withClasses("retador"), 2), new IfDone(1), new AtEndOfTurn(retadorBack))),
                 new EffectScript("comandante-leones-dorados:al-atacar", Moment.ON_ATTACK, false, AL_ATACAR,
                         "Puedes invocar 1 [retador] de tu mano reduciendo su coste en 2. Súbelo a tu mano al final de tu turno.",
-                        List.of(new SummonFromZone("hand", CardFilter.creatures().withClasses("retador"), 2), new IfDone(1), new AtEndOfTurn(retadorBack))),
+                        List.of(summonFromZone("hand", CardFilter.creatures().withClasses("retador"), 2), new IfDone(1), new AtEndOfTurn(retadorBack))),
                 new EffectScript(retadorBack, Moment.DELAYED, true, "Al final del turno",
                         "Sube a tu mano el [retador] invocado.",
                         List.of(returnSubjectToHand())));
@@ -1919,7 +1911,7 @@ public final class CardEffects {
     private static EffectScript hadaResource(String id, String name) {
         return new EffectScript(id + ":hereda-todos-los-turnos", Moment.ON_EVENT, false, TODOS,
                 "Heredado de " + name + ": si esta carta es agotada, puedes tributar el recurso con este efecto; invoca 1 [hada] de tu mano reduciendo su coste en 1.",
-                List.of(tributeResource(name)), List.of(new SummonFromZone("hand", CardFilter.creatures().withClasses("hada"), 1)))
+                List.of(tributeResource(name)), List.of(summonFromZone("hand", CardFilter.creatures().withClasses("hada"), 1)))
                 .when(new ThisExhausted());
     }
 
@@ -1968,7 +1960,7 @@ public final class CardEffects {
                         "Si esta carta tenía al menos 1 material: puedes descartar 1 carta de tu mano; invoca 1 [necrómata] nivel 2 de tu descarte que no "
                                 + "sea una copia de esta carta, sin pagar su coste.",
                         List.of(discardFromHand(1)),
-                        List.of(new SummonFromZone("discardPile", necro.withLevel(2).notNamed("Recolector De Biomateria"), SummonFromZone.FREE)))
+                        List.of(summonFromZone("discardPile", necro.withLevel(2).notNamed("Recolector De Biomateria"), FREE)))
                         .when(new HadMaterials()));
         // E1.3-B07 Doctor Nuliber
         add("doctor nuliber", new EffectScript("doctor-nuliber:en-invocacion", Moment.ON_SUMMON, true, EN_INVOCACION,
@@ -2025,11 +2017,11 @@ public final class CardEffects {
                         "(1) Destruye 1 aliado Azul o [necrómata]; invoca en tu línea frontal 1 criatura [necrómata] de nivel menor de tu mano o "
                                 + "descarte sin pagar su coste.",
                         List.of(destroyAlly(blueNecro)),
-                        List.of(new SummonRelativeToLast("hand,discardPile", necro, SummonFromZone.FREE, true, "lower")))
+                        List.of(summonRelativeToLast("hand,discardPile", necro, FREE, true, "lower")))
                         .limited(Limit.ONCE_PER_TURN_BETWEEN_COPIES),
                 new EffectScript("ingenieria-neurobionica:en-mano", Moment.ON_EVENT, false, "En Mano",
                         "Si recibes daño directo: puedes jugar esta carta sin pagar su coste.",
-                        List.of(new PlaySelfFree()))
+                        List.of(playSelfFree()))
                         .when(new YouReceivedDirectDamage())
                         .fromZone("hand"));
         // E1.3-G01 Cervalyra (Iniciador): "con [fauna] en su texto" = of that type, in its name or in its effects (designer ruling 2026-10-31)
@@ -2055,7 +2047,7 @@ public final class CardEffects {
         // E1.3-G05 Fiorvo
         add("fiorvo", new EffectScript("fiorvo:en-invocacion", Moment.ON_SUMMON, false, EN_INVOCACION,
                 "(1) Puedes jugar 1 estructura Verde, de tu mano o tributos, reduciendo su coste en 1.",
-                List.of(new PlayFromZone("hand,tributeZone", structure.withColors("G"), 1)))
+                List.of(playFromZone("hand,tributeZone", structure.withColors("G"), 1)))
                 .limited(Limit.ONCE_PER_TURN_BETWEEN_COPIES));
         inherit("fiorvo", new EffectScript("fiorvo:hereda-turno-aliado", Moment.ACTIVATED, false, "Turno Aliado",
                 "Heredado de Fiorvo: (1) puedes tributar el recurso con este efecto; añade 1 criatura nivel 2 de tu mano o tributos como recurso de "
@@ -2075,7 +2067,7 @@ public final class CardEffects {
         inherit("leshy", new EffectScript("leshy:hereda-todos-los-turnos", Moment.ON_EVENT, false, TODOS,
                 "Heredado de Leshy: si esta carta es agotada, puedes tributar el recurso con este efecto; invoca 1 criatura Verde nivel 1 de tu mano "
                         + "reduciendo en 1 su coste.",
-                List.of(tributeResource("Leshy")), List.of(new SummonFromZone("hand", CardFilter.creatures().withColors("G").withLevel(1), 1)))
+                List.of(tributeResource("Leshy")), List.of(summonFromZone("hand", CardFilter.creatures().withColors("G").withLevel(1), 1)))
                 .when(new ThisExhausted()));
         // E1.3-G08 Filyho
         inherit("filyho", new EffectScript("filyho:hereda-en-invocacion", Moment.ON_SUMMON, true, EN_INVOCACION,
@@ -2128,7 +2120,7 @@ public final class CardEffects {
                         .when(all(new CreatureDestroyedOrSpecialSummoned(), new InFrontLine())),
                 new EffectScript("hul:en-destruccion", Moment.ON_DESTROY, false, EN_DESTRUCCION + " por efecto",
                         "El dueño de esta carta puede jugar 1 utilidad de sus tributos reduciendo su coste en 1.",
-                        List.of(new PlayFromZone("tributeZone", CardFilter.type("utility"), 1)))
+                        List.of(playFromZone("tributeZone", CardFilter.type("utility"), 1)))
                         .when(new DestroyedByEffect()));
         // E1.3-P02 Bruja Mensajera (Iniciador)
         add("bruja mensajera",
@@ -2167,7 +2159,7 @@ public final class CardEffects {
                                 + "tus tributos reduciendo su coste en 1.",
                         List.of(draw(2), tributeFromHand(2), new IfTributed(CardFilter.type("utility"), 2),
                                 new MayDo("¿Juegas 1 utilidad de tus tributos reduciendo su coste en 1?", 1),
-                                new PlayFromZone("tributeZone", CardFilter.type("utility"), 1))));
+                                playFromZone("tributeZone", CardFilter.type("utility"), 1))));
         // E1.3-P11 Apostol De La Infamia (Enfrentar: combat rule)
         add("apostol de la infamia",
                 new EffectScript("apostol-de-la-infamia:todos-los-turnos", Moment.ON_EVENT, true, TODOS,
@@ -2176,12 +2168,12 @@ public final class CardEffects {
                         .when(new ThisClashes(CardFilter.creatures().withMinLevel(3), false)),
                 new EffectScript("apostol-de-la-infamia:en-destruccion", Moment.ON_DESTROY, false, EN_DESTRUCCION,
                         "Puedes invocar 1 criatura Violeta nivel 4 o menor de tus tributos reduciendo en 6 su coste. Si es [espectro]: muévela a tu línea frontal.",
-                        List.of(new SummonFromZone("tributeZone", CardFilter.creatures().withColors("P").withMaxLevel(4), 6),
+                        List.of(summonFromZone("tributeZone", CardFilter.creatures().withColors("P").withMaxLevel(4), 6),
                                 moveSummonedToFrontIf(CardFilter.any().withClasses("espectro")))));
         // E1.3-P12 Khaan (Reactivar: keyword)
         add("khaan", new EffectScript("khaan:todos-los-turnos", Moment.ON_EVENT, false, TODOS,
                 "Una vez por turno: si esta carta es agotada, puedes invocar 1 criatura Violeta nivel 2 o menor de tus tributos reduciendo su coste en 2.",
-                List.of(new SummonFromZone("tributeZone", CardFilter.creatures().withColors("P").withMaxLevel(2), 2)))
+                List.of(summonFromZone("tributeZone", CardFilter.creatures().withColors("P").withMaxLevel(2), 2)))
                 .when(new ThisExhausted())
                 .limited(Limit.ONCE_PER_TURN));
         // E1.3-P13 Furia Álmica (utility)
@@ -2209,7 +2201,7 @@ public final class CardEffects {
                 new EffectScript("peon-del-castillo:ascendida", Moment.ON_EVENT, false, "En Tributos",
                         "(1) Si esta carta es ascendida: puedes tributar 1 carta de tu mano para invocar 1 criatura con \"Primera Línea\" en su nombre, "
                                 + "de tu mano reduciendo su coste en 1.",
-                        List.of(new IfPossible(), tributeFromHand(1), new SummonFromZone("hand", primeraLinea, 1)))
+                        List.of(new IfPossible(), tributeFromHand(1), summonFromZone("hand", primeraLinea, 1)))
                         .when(new ThisAscended())
                         .fromZone("tributeZone")
                         .limited(Limit.ONCE_PER_TURN_BETWEEN_COPIES),
@@ -2237,7 +2229,7 @@ public final class CardEffects {
         add("infantería de primera línea", new EffectScript("infanteria-primera-linea:todos-los-turnos", Moment.ON_EVENT, false, TODOS,
                 "Si esta carta es agotada durante un combate: puedes tributar esta carta para invocar 1 criatura nivel 1 con \"Primera Línea\" en su "
                         + "nombre de tu mano sin pagar su coste.",
-                List.of(new IfPossible(), sendSelfFromFieldTo("tributeZone"), new SummonFromZone("hand", primeraLinea.withLevel(1), SummonFromZone.FREE)))
+                List.of(new IfPossible(), sendSelfFromFieldTo("tributeZone"), summonFromZone("hand", primeraLinea.withLevel(1), FREE)))
                 .when(all(new ThisExhausted(), new DuringCombat())));
         // E1.3-R06 Caballero León Dorado
         add("caballero león dorado",
@@ -2260,7 +2252,7 @@ public final class CardEffects {
                 new EffectScript("armadura-alma-impasible:en-mano", Moment.ACTIVATED, false, "Turno Aliado / En Mano",
                         "(1) Si solo controlas 1 aliado: puedes revelar un [retador] nivel 4 y uno nivel 5 de tu mano; invoca esta carta sin pagar su coste.",
                         List.of(new RevealFromHand(List.of(CardFilter.any().withClasses("retador").withLevel(4),
-                                CardFilter.any().withClasses("retador").withLevel(5)))), List.of(new SummonSelfFree()))
+                                CardFilter.any().withClasses("retador").withLevel(5)))), List.of(summonSelfFree()))
                         .when(new CountOnField(CardFilter.creatures(), 1, 1))
                         .fromZone("hand")
                         .onlyAllyTurn()
@@ -2290,11 +2282,11 @@ public final class CardEffects {
                 new EffectScript("fervor-primera-linea:en-juego", Moment.ON_PLAY, true, EN_JUEGO,
                         "(1) Puedes invocar 1 criatura con \"Primera Línea\" en su nombre de tu mano, en tu línea frontal reduciendo su coste en 1.",
                         List.of(new MayDo("¿Invocas 1 criatura con \"Primera Línea\" en su nombre de tu mano en tu línea frontal?", 1),
-                                new SummonFromZone("hand", primeraLinea, 1, true)))
+                                summonFromZone("hand", primeraLinea, 1, true)))
                         .limited(Limit.ONCE_PER_TURN_BETWEEN_COPIES),
                 new EffectScript("fervor-primera-linea:en-mano", Moment.ON_EVENT, false, "En Mano",
                         "Si algún aliado es destruido por el oponente: puedes jugar esta carta sin pagar su coste.",
-                        List.of(new PlaySelfFree()))
+                        List.of(playSelfFree()))
                         .when(new AllyDestroyed(CardFilter.any(), true, false))
                         .fromZone("hand"));
         // E1.3-R15 Investidura De Los Leones Dorados (utility)
@@ -2304,11 +2296,11 @@ public final class CardEffects {
                                 + "o menor, pero distinto nombre de tu mano sin pagar su coste (si tiene).",
                         List.of(new PickAlly(false)),
                         List.of(new IfPossible(), returnSubjectToHand(),
-                                new SummonRelativeToLast("hand", CardFilter.creatures().nameContains("León Dorado"), SummonFromZone.FREE, true, "upToOtherName")))
+                                summonRelativeToLast("hand", CardFilter.creatures().nameContains("León Dorado"), FREE, true, "upToOtherName")))
                         .limited(Limit.ONCE_PER_TURN_BETWEEN_COPIES),
                 new EffectScript("investidura-leones-dorados:en-mano", Moment.ON_EVENT, false, "En Mano",
                         "Inmediatamente después de que un aliado sea objetivo de un efecto: puedes tributar otras 2 cartas de tu mano para jugar esta carta.",
-                        List.of(new IfPossible(), tributeFromHand(2), new PlaySelfFromZone("hand", false)))
+                        List.of(new IfPossible(), tributeFromHand(2), playSelfFromZone("hand", false)))
                         .when(new Immediately(new AllyTargeted()))
                         .fromZone("hand"));
         // E1.3-W01 Viaje Extenso
@@ -2331,7 +2323,7 @@ public final class CardEffects {
         add("promesa rota", new EffectScript("promesa-rota:en-juego", Moment.ON_PLAY, true, EN_JUEGO,
                 "Efecto Definitivo. Si algún aliado fue destruido por el oponente el turno anterior: puedes invocar 1 criatura de tu mano reduciendo su "
                         + "coste en 1.",
-                List.of(new MayDo("¿Invocas 1 criatura de tu mano reduciendo su coste en 1?", 1), new SummonFromZone("hand", CardFilter.creatures(), 1)))
+                List.of(new MayDo("¿Invocas 1 criatura de tu mano reduciendo su coste en 1?", 1), summonFromZone("hand", CardFilter.creatures(), 1)))
                 .when(new AllyDestroyedByOpponentLastTurn())
                 .limited(Limit.DEFINITIVE));
         // E1.3-W04 Condensador De Materia
@@ -2361,7 +2353,7 @@ public final class CardEffects {
         return new EffectScript(id + ":en-tributos", Moment.ON_EVENT, false, "En Tributos",
                 "(1) Si algún enemigo es destruido por tus efectos: puedes invocar esta carta en tu línea frontal reduciendo su coste en 1 por cada 10 "
                         + "tributos Violeta que tengas. Si lo haces: tribútala al final del turno.",
-                List.of(new SummonSelf("tributeZone", new Amount.Scaled(new Amount.InZone("tributeZone", CardFilter.colors("P")), 10, 0), true),
+                List.of(summonSelf("tributeZone", new Amount.Scaled(new Amount.InZone("tributeZone", CardFilter.colors("P")), 10, 0), true),
                         new IfDone(1), new AtEndOfTurn(id + ":final-del-turno")))
                 .when(new YouDestroyedEnemy(true))
                 .fromZone("tributeZone")
@@ -2410,7 +2402,7 @@ public final class CardEffects {
                         + "tributar 1 [artefacto] de los materiales de esta carta para colocar 1 [cineriano] nivel 1 de los materiales de esta carta en tu "
                         + "línea frontal.",
                 List.of(new MayDo("¿Tributas 1 material de Falco para jugar 1 estructura Azul de tu mano?", 2), tributeMaterials(1, false),
-                        new PlayFromZone("hand", CardFilter.type("structure").withColors("B"), 0),
+                        playFromZone("hand", CardFilter.type("structure").withColors("B"), 0),
                         new IfCondition(new CountOnField(CardFilter.creatures(), null, 1), 3),
                         new MayDo("¿Tributas 1 [artefacto] de sus materiales para colocar 1 [cineriano] nivel 1 de sus materiales en tu línea frontal?", 2),
                         tributeMaterialWhere(artefacto), materialToFrontLine(CardFilter.creatures().withClasses("cineriano").withLevel(1))))
@@ -2420,7 +2412,7 @@ public final class CardEffects {
                 new EffectScript("clarice:en-mano", Moment.ACTIVATED, false, "Turno Aliado / En Mano",
                         "(1) Si no controlas copias de esta carta: puedes subir a tu mano 1 [artefacto] bajo tu control para invocar esta carta en tu "
                                 + "línea frontal.",
-                        List.of(new IfPossible(), returnOwnCardToHand(artefacto), new SummonSelf("hand", Amount.fixed(0), true)))
+                        List.of(new IfPossible(), returnOwnCardToHand(artefacto), summonSelf("hand", Amount.fixed(0), true)))
                         .when(new NoCopies())
                         .fromZone("hand")
                         .onlyAllyTurn()
@@ -2455,7 +2447,7 @@ public final class CardEffects {
                 new EffectScript("fausto:turno-aliado", Moment.ACTIVATED, false, "Turno Aliado",
                         "Puedes tributar 2 materiales de esta carta para jugar 1 utilidad Azul o [artefacto] de tu mano o tributos reduciendo en 1 su coste.",
                         List.of(new IfPossible(), tributeMaterials(2, false),
-                                new PlayFromZone("hand,tributeZone", CardFilter.type("utility").withColors("B").withClasses("artefacto"), 1)))
+                                playFromZone("hand,tributeZone", CardFilter.type("utility").withColors("B").withClasses("artefacto"), 1)))
                         .onlyAllyTurn());
         // E2-B10 Unidad de Combate Frontal F1-R3
         add("unidad de combate frontal f1-r3",
@@ -2467,7 +2459,7 @@ public final class CardEffects {
                 new EffectScript("f1-r3:al-atacar", Moment.ON_ATTACK, false, AL_ATACAR,
                         "Puedes tributar 2 materiales de esta carta; juega 1 utilidad o estructura Azul o Blanca de tu mano reduciendo su coste en 1.",
                         List.of(tributeMaterials(2, false)),
-                        List.of(new PlayFromZone("hand", CardFilter.type("utility", "structure").withColors("B", "W"), 1))));
+                        List.of(playFromZone("hand", CardFilter.type("utility", "structure").withColors("B", "W"), 1))));
         // E2-B11 Unidad Policial B1-U3
         add("unidad policial b1-u3",
                 new EffectScript("b1-u3:en-mano", Moment.ON_EVENT, false, "En Mano",
@@ -2552,7 +2544,7 @@ public final class CardEffects {
         add("preparando expedición", new EffectScript("preparando-expedicion:en-juego", Moment.ON_PLAY, true, EN_JUEGO,
                 "(1) Puedes jugar 1 [artefacto] de tu mano. Si lo haces: puedes colocar 1 [artefacto] de los materiales de un aliado agotado en tu "
                         + "retaguardia.",
-                List.of(new MayDo("¿Juegas 1 [artefacto] de tu mano?", 1), new PlayFromZone("hand", artefacto, 0), new IfDone(1),
+                List.of(new MayDo("¿Juegas 1 [artefacto] de tu mano?", 1), playFromZone("hand", artefacto, 0), new IfDone(1),
                         new MaterialOfExhaustedAllyToBack(artefacto)))
                 .limited(Limit.ONCE_PER_TURN_BETWEEN_COPIES));
         // E2-B23 Potencia Nuclear (utility)
@@ -2567,7 +2559,7 @@ public final class CardEffects {
                 "Elige 1 aliado [neomáquina]; súbelo a tu mano con todos sus materiales. Luego: invoca de forma especial 1 [neomáquina] de tu mano del "
                         + "mismo nivel, pero distinto nombre y sin pagar su coste especial.",
                 List.of(new PickAllyWhere(neomaquina)),
-                List.of(returnSubjectMaterialsToHand(), returnSubjectToHand(), new SpecialRelativeToLast("hand", neomaquina, SummonFromZone.FREE))));
+                List.of(returnSubjectMaterialsToHand(), returnSubjectToHand(), new SpecialRelativeToLast("hand", neomaquina, FREE))));
         // E2-B25 Cianotipo (utility)
         add("cianotipo",
                 new EffectScript("cianotipo:tributada-como-material", Moment.ON_EVENT, true, "En Tributos",
@@ -2634,7 +2626,7 @@ public final class CardEffects {
                 "(1) Tributa 3 cartas del tope de tu mazo. Luego: puedes jugar 1 estructura con [dinosaurio] en su texto de tu mano o tributos "
                         + "reduciendo su coste en 1.",
                 List.of(tributeTop(3), new MayDo("¿Juegas 1 estructura [dinosaurio] de tu mano o tributos reduciendo su coste en 1?", 1),
-                        new PlayFromZone("hand,tributeZone", CardFilter.type("structure").mentioning("dinosaurio"), 1)))
+                        playFromZone("hand,tributeZone", CardFilter.type("structure").mentioning("dinosaurio"), 1)))
                 .limited(Limit.ONCE_PER_TURN_BETWEEN_COPIES));
         inherit("petrodalix", dinoGem("petrodalix", "Petrodalix"));
         // E2-G10 Caudapterix, E2-G13 Spinosaurus (Celeridad: keyword)
@@ -2650,7 +2642,7 @@ public final class CardEffects {
         add("yako kitsune", new EffectScript("yako-kitsune:en-invocacion", Moment.ON_SUMMON, true, EN_INVOCACION,
                 "Elige hasta 2 enemigos; puedes invocar 1 recurso de esta carta reduciendo su coste en 2. Si lo haces: reduce la fuerza de los "
                         + "enemigos elegidos en 2 hasta el final del turno.",
-                List.of(chooseEnemy(2, enemy, true)), List.of(new SummonResource(2), new IfDone(1), reduceChosen(2, false))));
+                List.of(chooseEnemy(2, enemy, true)), List.of(summonResource(2), new IfDone(1), reduceChosen(2, false))));
         inherit("yako kitsune", new EffectScript("yako-kitsune:hereda-turno-oponente", Moment.ON_EVENT, false, "Turno Oponente",
                 "Heredado de Yako Kitsune: al entrar al paso de bloqueo, puedes tributar el recurso de este efecto; esta carta agotada declara bloqueo.",
                 List.of(tributeResource("Yako Kitsune")), List.of(new DeclareBlockSelf()))
@@ -2666,7 +2658,7 @@ public final class CardEffects {
         // E2-G16 Nereidra (inherited Reactivar: keyword)
         add("nereidra", new EffectScript("nereidra:tributada-como-recurso", Moment.ON_EVENT, false, "En Tributos",
                 "Si esta carta es tributada como recurso: un aliado puede invocarla especialmente sin pagar su coste especial.",
-                List.of(new SpecialSelf("tributeZone", SummonFromZone.FREE)))
+                List.of(new SpecialSelf("tributeZone", FREE)))
                 .when(new ThisTributed("resources", null, null))
                 .fromZone("tributeZone"));
         // E2-G17 Braquiosaurus
@@ -2697,14 +2689,14 @@ public final class CardEffects {
         add("titanobrachios", new EffectScript("titanobrachios:en-mano", Moment.ACTIVATED, false, "Turno Aliado / En Mano",
                 "Puedes enviar hasta 20 cartas Verdes o [dinosaurio] de tus tributos al fondo de tu mazo en orden aleatorio; invoca esta carta "
                         + "reduciendo su coste en 1 por cada 2 cartas enviadas.",
-                List.of(sendFromZoneToDeckBottomUpTo("tributeZone", 20, CardFilter.colors("G").withClasses("dinosaurio"))), List.of(new SummonSelfPerCount("hand", 2)))
+                List.of(sendFromZoneToDeckBottomUpTo("tributeZone", 20, CardFilter.colors("G").withClasses("dinosaurio"))), List.of(summonSelfPerCount("hand", 2)))
                 .fromZone("hand")
                 .onlyAllyTurn());
         // E2-G23 Tierra Jurásica (structure)
         add("tierra jurásica", new EffectScript("tierra-jurasica:todos-los-turnos", Moment.ON_EVENT, false, TODOS,
                 "(1) Si algún aliado es destruido por tus efectos: puedes agotar hasta tantas copias de esta carta como controles; invoca de tu mano o "
                         + "tributos, sin pagar su coste, 1 [dinosaurio] de nivel igual a la cantidad de copias de esta carta agotadas por este efecto.",
-                List.of(tapCopiesUpTo()), List.of(new SummonLevelLastCount("hand,tributeZone", CardFilter.creatures().withClasses("dinosaurio"))))
+                List.of(tapCopiesUpTo()), List.of(summonLevelLastCount("hand,tributeZone", CardFilter.creatures().withClasses("dinosaurio"))))
                 .when(new AllyDestroyedByYourEffect())
                 .limited(Limit.ONCE_PER_TURN_BETWEEN_COPIES));
         // E2-G24 Primer Aliento (utility that stays)
@@ -2715,7 +2707,7 @@ public final class CardEffects {
                         List.of(lookTop(4), takeFromLookedRestToBottom(2, CardFilter.colors("G")), tributeFromHand(1), new KeepOnField(true))),
                 new EffectScript("primer-aliento:turno-aliado", Moment.ACTIVATED, false, "Turno Aliado",
                         "Puedes enviar esta carta activa a tu descarte para invocar 1 criatura Verde de tu mano reduciendo su coste en 1.",
-                        List.of(new IfPossible(), sendSelfFromFieldTo("discardPile"), new SummonFromZone("hand", CardFilter.creatures().withColors("G"), 1)))
+                        List.of(new IfPossible(), sendSelfFromFieldTo("discardPile"), summonFromZone("hand", CardFilter.creatures().withColors("G"), 1)))
                         .when(new Active())
                         .onlyAllyTurn());
         // E2-G25 Fósil (utility; "considerada criatura de fuerza 1": CREATURE_FOR_EFFECTS; its inherited reaction: INHERITED_REPLACEMENTS)
@@ -2736,7 +2728,7 @@ public final class CardEffects {
                         .limited(Limit.ONCE_PER_TURN_BETWEEN_COPIES),
                 new EffectScript("calavera-errante:final-del-turno", Moment.DELAYED, true, "Al final del turno",
                         "Invoca 1 \"Calavera Errante\" agotado en tu línea frontal, de tu descarte o tributos, sin pagar su coste.",
-                        List.of(new SummonFromZone("discardPile,tributeZone", CardFilter.creatures().named("Calavera Errante"), SummonFromZone.FREE, true),
+                        List.of(summonFromZone("discardPile,tributeZone", CardFilter.creatures().named("Calavera Errante"), FREE, true),
                                 tapSummoned())));
         // E2-P03 Asechador De Las Almas Perdidas
         add("asechador de las almas perdidas", new EffectScript("asechador:tributada", Moment.ON_EVENT, false, "En Tributos",
@@ -2770,12 +2762,12 @@ public final class CardEffects {
                         + "[brujería] de tus tributos reduciendo su coste en 1.",
                 List.of(draw(1), tributeFromHand(1), new IfTributed(violetSpell, 2),
                         new MayDo("¿Juegas 1 utilidad Violeta o [brujería] de tus tributos reduciendo su coste en 1?", 1),
-                        new PlayFromZone("tributeZone", violetSpell, 1))));
+                        playFromZone("tributeZone", violetSpell, 1))));
         // E2-P10 Centauros De La Noche Iluminada
         add("centauros de la noche iluminada",
                 new EffectScript("centauros:en-mano", Moment.ON_EVENT, false, "En Mano",
                         "(1) Si algún aliado nivel 2 o mayor es destruido por el oponente: puedes invocar esta carta en tu línea frontal reduciendo su coste en 2.",
-                        List.of(new SummonSelf("hand", Amount.fixed(2), true)))
+                        List.of(summonSelf("hand", Amount.fixed(2), true)))
                         .when(new AllyDestroyed(CardFilter.creatures().withMinLevel(2), true, false))
                         .fromZone("hand")
                         .limited(Limit.ONCE_PER_TURN_BETWEEN_COPIES),
@@ -2794,7 +2786,7 @@ public final class CardEffects {
                 new EffectScript("esqueleto-mazmorras:final-del-turno", Moment.DELAYED, true, "Al final del turno",
                         "Puedes invocar 1 [muerto viviente] de tributos o descarte agotado en tu línea frontal reduciendo su coste en 2.",
                         List.of(new MayDo("¿Invocas 1 [muerto viviente] de tus tributos o descarte en tu línea frontal reduciendo su coste en 2?", 2),
-                                new SummonFromZone("tributeZone,discardPile", muertoViviente, 2, true), tapSummoned())));
+                                summonFromZone("tributeZone,discardPile", muertoViviente, 2, true), tapSummoned())));
         // E2-P12 Augurio Catastrófico ("Si esta carta fue tributada desde tu descarte: en su lugar, envíala al fondo de tu mazo")
         CardFilter byBrujo = CardFilter.any().withClasses("brujo", "brujería");
         add("augurio catastrófico",
@@ -2825,7 +2817,7 @@ public final class CardEffects {
                                 destroyChosen())),
                 new EffectScript("amalgama:en-destruccion", Moment.ON_DESTROY, false, EN_DESTRUCCION + " por efecto o enfrentamiento",
                         "Puedes tributar 1 carta de tu mano; invoca 1 criatura Violeta nivel 3 de tus tributos reduciendo su coste en 3.",
-                        List.of(tributeFromHand(1)), List.of(new SummonFromZone("tributeZone", CardFilter.creatures().withColors("P").withLevel(3), 3)))
+                        List.of(tributeFromHand(1)), List.of(summonFromZone("tributeZone", CardFilter.creatures().withColors("P").withLevel(3), 3)))
                         .when(any(new DestroyedByEffect(), new DestroyedInClash())));
         // E2-P15 Vigilante Cadavérico (Reactivar: keyword)
         add("vigilante cadavérico",
@@ -2836,14 +2828,14 @@ public final class CardEffects {
                 new EffectScript("vigilante-cadaverico:final-del-turno", Moment.DELAYED, true, "Al final del turno",
                         "Puedes invocar 1 [muerto viviente] nivel 3 de tu descarte o tributos reduciendo su coste en 3.",
                         List.of(new MayDo("¿Invocas 1 [muerto viviente] nivel 3 de tu descarte o tributos reduciendo su coste en 3?", 1),
-                                new SummonFromZone("discardPile,tributeZone", muertoViviente.withLevel(3), 3))));
+                                summonFromZone("discardPile,tributeZone", muertoViviente.withLevel(3), 3))));
         // E2-P16 Conjurado Olvidado
         continuous("conjurado olvidado", new Continuous("Turno Aliado", "Esta carta gana fuerza 1 por cada [brujería] en tus tributos.", true,
                 new Always(), 0, List.of(), new Amount.InZone("tributeZone", brujeria)));
         add("conjurado olvidado", new EffectScript("conjurado-olvidado:al-final-del-ataque", Moment.ON_ATTACK_END, true, AL_FINAL,
                 "Sacrifica esta carta. Si lo haces: puedes jugar 1 [brujería] de tus tributos reduciendo su coste en 2.",
                 List.of(sacrificeSelf(), new MayDo("¿Juegas 1 [brujería] de tus tributos reduciendo su coste en 2?", 1),
-                        new PlayFromZone("tributeZone", brujeria, 2))));
+                        playFromZone("tributeZone", brujeria, 2))));
         // E2-P17 Zombi Berserker
         continuous("zombi berserker", new Continuous(TODOS, "Esta carta no puede declarar bloqueo.", false, new Always(), 0, List.of(EffectEngine.NO_BLOCK)));
         add("zombi berserker",
@@ -2861,12 +2853,12 @@ public final class CardEffects {
                 Payment.none(), 0, Limit.ONCE_PER_TURN_BETWEEN_COPIES, null, new Amount.InZones("discardPile,tributeZone", brujeria)));
         add("liche", new EffectScript("liche:en-invocacion", Moment.ON_SUMMON, true, EN_INVOCACION,
                 "Tributa hasta 4 [brujería] de tu descarte; juega 1 [brujería] de tus tributos reduciendo su coste en 1 por cada carta tributada.",
-                List.of(tributeFromZoneUpTo("discardPile", 4, brujeria)), List.of(new PlayFromZoneByCount("tributeZone", brujeria, 1))));
+                List.of(tributeFromZoneUpTo("discardPile", 4, brujeria)), List.of(playFromZoneByCount("tributeZone", brujeria, 1))));
         // E2-P19 Imperio Desolado (structure)
         add("imperio desolado",
                 new EffectScript("imperio-desolado:en-tributos", Moment.ON_EVENT, false, "En Tributos",
                         "(1) Si algún enemigo es destruido por tus utilidades: puedes jugar esta carta sin pagar su coste.",
-                        List.of(new PlaySelfReduced("tributeZone", SummonFromZone.FREE)))
+                        List.of(playSelfReduced("tributeZone", FREE)))
                         .when(new EnemyDestroyedByYourCard(CardFilter.type("utility")))
                         .fromZone("tributeZone")
                         .limited(Limit.ONCE_PER_TURN_BETWEEN_COPIES),
@@ -2880,18 +2872,18 @@ public final class CardEffects {
         add("llamada de los muertos", new EffectScript("llamada-muertos:en-juego", Moment.ON_PLAY, true, EN_JUEGO,
                 "Tributa 2 cartas de tu mano; invoca hasta 3 criaturas Violeta o [muerto viviente] nivel 1 de tu descarte reduciendo en 1 sus costes.",
                 List.of(tributeFromHand(2)),
-                List.of(new SummonUpTo("discardPile", CardFilter.creatures().withColors("P").withClasses("muerto viviente").withLevel(1), 3, 1))));
+                List.of(summonUpTo("discardPile", CardFilter.creatures().withColors("P").withClasses("muerto viviente").withLevel(1), 3, 1))));
         // E2-P21 Convocación De Muertos (utility)
         add("convocación de muertos",
                 new EffectScript("convocacion-muertos:en-mano", Moment.ON_EVENT, false, "En Mano",
                         "(1) Si invocas algún [brujo] nivel 3 o mayor: puedes jugar esta carta reduciendo su coste en 1.",
-                        List.of(new PlaySelfReduced("hand", 1)))
+                        List.of(playSelfReduced("hand", 1)))
                         .when(new AllySummoned(CardFilter.creatures().withClasses("brujo").withMinLevel(3)))
                         .fromZone("hand")
                         .limited(Limit.ONCE_PER_TURN_BETWEEN_COPIES),
                 new EffectScript("convocacion-muertos:en-juego", Moment.ON_PLAY, true, EN_JUEGO,
                         "Invoca hasta 2 criaturas Violeta de tus tributos reduciendo sus costes en 1.",
-                        List.of(new SummonUpTo("tributeZone", CardFilter.creatures().withColors("P"), 2, 1))));
+                        List.of(summonUpTo("tributeZone", CardFilter.creatures().withColors("P"), 2, 1))));
         // E2-P22 Cosecha De Almas (utility)
         add("cosecha de almas",
                 new EffectScript("cosecha-almas:en-juego", Moment.ON_PLAY, true, EN_JUEGO,
@@ -2900,7 +2892,7 @@ public final class CardEffects {
                         List.of(sacrificeChosen(), new GainGemsPerOwnSacrificed())),
                 new EffectScript("cosecha-almas:en-mano", Moment.ON_EVENT, false, "En Mano",
                         "(1) Si recibes daño directo por el oponente: puedes jugar esta carta reduciendo su coste en 1.",
-                        List.of(new PlaySelfReduced("hand", 1)))
+                        List.of(playSelfReduced("hand", 1)))
                         .when(all(new YouReceivedDirectDamage(), not(new YourTurn())))
                         .fromZone("hand")
                         .limited(Limit.ONCE_PER_TURN_BETWEEN_COPIES));
@@ -3365,7 +3357,7 @@ public final class CardEffects {
     private static EffectScript playAtBlockStep(String id) {
         return new EffectScript(id + ":en-mano", Moment.ON_EVENT, false, "En Mano",
                 "Al entrar al paso de bloqueo: puedes jugar esta carta pagando su coste.",
-                List.of(new PlaySelfFromZone("hand", false)))
+                List.of(playSelfFromZone("hand", false)))
                 .when(new CombatStep(Combat.Step.BLOCK, Combat.Phase.ENTER))
                 .fromZone("hand");
     }

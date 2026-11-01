@@ -45,6 +45,13 @@ public sealed interface Amount {
         }
     }
 
+    /** "en el nivel de dicho aliado": the card of the triggering event, read by EngineContext. */
+    record TriggerSourceLevel() implements Amount {
+        public int of(GameRoom room, String controller) {
+            return 0;
+        }
+    }
+
     /** A fixed number. */
     record Fixed(int value) implements Amount {
         public int of(GameRoom room, String controller) {

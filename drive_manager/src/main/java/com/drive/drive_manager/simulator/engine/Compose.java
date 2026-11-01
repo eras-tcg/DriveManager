@@ -704,4 +704,81 @@ final class Compose {
     static EffectStep reduceTriggerFurther(int amount) {
         return strength(Selector.all("eventOnField", CardFilter.any()), new Amount.Fixed(-amount), Action.Until.AS_EVENT);
     }
+
+    // ------------------------------------------------------------------ Summoning and playing by effect
+
+    /** "sin pagar su coste". */
+    static final int FREE = Action.Summon.FREE;
+
+    private static final String ANYWHERE_BUT_FIELD = "hand,deck,tributeZone,discardPile,lifeStack";
+
+    static EffectStep summonFromZone(String zones, CardFilter filter, int reduce) {
+        return summonFromZone(zones, filter, reduce, false);
+    }
+
+    static EffectStep summonFromZone(String zones, CardFilter filter, int reduce, boolean toFront) {
+        return act(new Action.Summon(Selector.yours(zones, filter, 1), new Amount.Fixed(reduce), toFront, true));
+    }
+
+    static EffectStep summonFromZoneBy(String zones, EffectStep.FilterBy filter, int reduce) {
+        return act(new Action.Summon(Selector.yours(zones, filter.base(), 1).with(Selector.Relative.read(filter.level(), filter.maxLevel())), new Amount.Fixed(reduce), false, true));
+    }
+
+    static EffectStep summonSelf(String zone, Amount reduce, boolean toFront) {
+        return act(new Action.Summon(Selector.self(zone), reduce, toFront, true));
+    }
+
+    static EffectStep summonSelfFree() {
+        return act(new Action.Summon(Selector.self(ANYWHERE_BUT_FIELD), new Amount.Fixed(FREE), false, true));
+    }
+
+    static EffectStep summonSelfFromZone(String zone, int reduce) {
+        return act(new Action.Summon(Selector.self(zone), new Amount.Fixed(reduce), false, true));
+    }
+
+    /** "reduciendo su coste en 1 por cada N cartas enviadas". */
+    static EffectStep summonSelfPerCount(String zone, int per) {
+        return act(new Action.Summon(Selector.self(zone), new Amount.Scaled(new Amount.LastCount(), per, 0), false, false));
+    }
+
+    static EffectStep summonUpTo(String zones, CardFilter filter, int max, int reduce) {
+        return act(new Action.Summon(Selector.yours(zones, filter, max).upTo(), new Amount.Fixed(reduce), false, false));
+    }
+
+    /** "invoca 1 de los recursos de esta carta": none is fine. */
+    static EffectStep summonResource(int reduce) {
+        return act(new Action.Summon(Selector.yours("resources", CardFilter.creatures(), 1).upTo(), new Amount.Fixed(reduce), false, true));
+    }
+
+    /** "de nivel igual a la cantidad de [copias agotadas]", free. */
+    static EffectStep summonLevelLastCount(String zones, CardFilter filter) {
+        return act(new Action.Summon(Selector.yours(zones, filter, 1).with(Selector.Relative.read(new Amount.LastCount(), null)), new Amount.Fixed(FREE), false, true));
+    }
+
+    /** "de nivel menor [que el aliado destruido]" ("lower"), or "de nivel igual o menor, pero distinto nombre". */
+    static EffectStep summonRelativeToLast(String zones, CardFilter filter, int reduce, boolean toFront, String relation) {
+        Selector.Relative relative = "lower".equals(relation) ? Selector.Relative.level("last", Selector.Compare.LESS, 0) : Selector.Relative.upToLevelOtherName("last");
+        return act(new Action.Summon(Selector.yours(zones, filter, 1).with(relative), new Amount.Fixed(reduce), toFront, true));
+    }
+
+    static EffectStep playFromZone(String zones, CardFilter filter, int reduce) {
+        return act(new Action.Play(Selector.yours(zones, filter, 1), new Amount.Fixed(reduce), true));
+    }
+
+    /** "reduciendo su coste en N por cada carta tributada". */
+    static EffectStep playFromZoneByCount(String zones, CardFilter filter, int each) {
+        return act(new Action.Play(Selector.yours(zones, filter, 1), new Amount.Times(new Amount.LastCount(), each), true));
+    }
+
+    static EffectStep playSelfFree() {
+        return act(new Action.Play(Selector.self("hand"), new Amount.Fixed(FREE), true));
+    }
+
+    static EffectStep playSelfFromZone(String zone, boolean reduceBySourceLevel) {
+        return act(new Action.Play(Selector.self(zone), reduceBySourceLevel ? new Amount.TriggerSourceLevel() : new Amount.Fixed(0), true));
+    }
+
+    static EffectStep playSelfReduced(String zone, int reduce) {
+        return act(new Action.Play(Selector.self(zone), new Amount.Fixed(reduce), true));
+    }
 }

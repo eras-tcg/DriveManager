@@ -115,7 +115,7 @@ class E11SecondBatchTest {
         // From the Retaguardia it could not choose an enemy: a test card summons it to the Línea frontal by effect
         CardEffects.register("invocador frontal de prueba", new EffectScript("invocador-frontal:en-invocacion", EffectScript.Moment.ON_SUMMON, true,
                 "En Invocación", "Invoca Cragzum de tu mano en tu línea frontal sin pagar su coste.",
-                List.of(new EffectStep.SummonFromZone("hand", CardFilter.creatures().named("Cragzum"), EffectStep.SummonFromZone.FREE, true))));
+                List.of(Compose.summonFromZone("hand", CardFilter.creatures().named("Cragzum"), Compose.FREE, true))));
         CardSlot cragzum = card("cz", "Cragzum", 3, 3, "B");
         cragzum.getMaterials().addAll(List.of(card("m1", "M1", 1, 1, "B"), card("m2", "M2", 1, 1, "B"), card("m3", "M3", 1, 1, "B")));
         host.getHand().addAll(List.of(cragzum, card("iv", "Invocador Frontal De Prueba", 0, 1, "B")));

@@ -318,7 +318,7 @@ class E12CardsTest extends CardBatchSupport {
         inHand("x", "Descarte", 1, 1, "R");
         CardSlot celius = withClasses(card("ce", "Celius", 2, 2, "G"), "hada");
         CardEffects.register("invocador de prueba", new EffectScript("invocador-prueba:en-invocacion", EffectScript.Moment.ON_SUMMON, true,
-                "En Invocación", "Invoca Celius.", List.of(new EffectStep.SummonFromZone("hand", CardFilter.creatures().named("Celius"), 2, false))));
+                "En Invocación", "Invoca Celius.", List.of(Compose.summonFromZone("hand", CardFilter.creatures().named("Celius"), 2, false))));
         host.getHand().addAll(List.of(celius, card("iv", "Invocador De Prueba", 0, 1, "R")));
         assertThat(Summons.normalSummon(room, "host", "iv", 50.0, 70.0)).isNull();
         answer("ce");

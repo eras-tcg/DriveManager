@@ -51,6 +51,16 @@ public record Selector(String zones, Owner owner, CardFilter filter, Amount min,
             return new Relative(to, null, 0, null, false, true, false, null, null);
         }
 
+        /** "del mismo nivel, pero distinto nombre". */
+        public static Relative sameLevelOtherName(String to) {
+            return new Relative(to, Compare.EQUAL, 0, null, true, false, false, null, null);
+        }
+
+        /** "de nivel igual o menor, pero distinto nombre". */
+        public static Relative upToLevelOtherName(String to) {
+            return new Relative(to, Compare.AT_MOST, 0, null, true, false, false, null, null);
+        }
+
         public static Relative read(Amount level, Amount maxLevel) {
             return new Relative(null, null, 0, null, false, false, false, level, maxLevel);
         }

@@ -134,7 +134,7 @@ class E11IntegrationTest {
         // A test card whose En Invocación summons Alabarda from the hand by effect, without paying
         CardEffects.register("invocador de prueba", new EffectScript("invocador-prueba:en-invocacion", EffectScript.Moment.ON_SUMMON, true,
                 "En Invocación", "Invoca Alabarda De Ala Blanca de tu mano sin pagar su coste.",
-                List.of(new EffectStep.SummonFromZone("hand", CardFilter.creatures().named("Alabarda De Ala Blanca"), EffectStep.SummonFromZone.FREE, false))));
+                List.of(Compose.summonFromZone("hand", CardFilter.creatures().named("Alabarda De Ala Blanca"), Compose.FREE, false))));
         CardSlot red3 = card("r3", "Roja 3", 4, 3, "R");
         CardSlot alabarda = card("al", "Alabarda De Ala Blanca", 4, 3, "R");
         CardSlot summoner = card("iv", "Invocador De Prueba", 0, 1, "R");

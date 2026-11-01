@@ -98,6 +98,22 @@ public interface EffectContext {
     /** The ally chosen before or, if a special summon replaced it, the creature that took its place. */
     CardSlot subjectOrSummoned();
 
+    boolean canPay(int cost);
+
+    /** A utility or structure whose "En Juego" can be activated now. */
+    boolean canBePlayed(CardSlot card);
+
+    /** The effect comes back later ("al final del turno"), so it may act on its own card. */
+    boolean delayed();
+
+    void note(String message);
+
+    /** A summon by effect. */
+    void summon(CardSlot card, int reduce, boolean toFront);
+
+    /** A play by effect. */
+    void play(CardSlot card, int reduce);
+
     /** How many cards the last action acted on. */
     void counted(int count);
 

@@ -11,6 +11,26 @@ public sealed interface Action {
         return false;
     }
 
+    /** "invoca": {@code reduce} lowers its cost, {@link #FREE} is "sin pagar su coste". */
+    record Summon(Selector cards, com.drive.drive_manager.simulator.engine.Amount reduce, boolean toFront, boolean required) implements Action {
+        public static final int FREE = 1000;
+
+        @Override
+        public boolean needsCards() {
+            return required;
+        }
+    }
+
+    /** "juega": a utility or structure. */
+    record Play(Selector cards, com.drive.drive_manager.simulator.engine.Amount reduce, boolean required) implements Action {
+        public static final int FREE = 1000;
+
+        @Override
+        public boolean needsCards() {
+            return required;
+        }
+    }
+
     /** "roba N cartas"; {@code bothPlayers}: "ambos jugadores roban". */
     record Draw(com.drive.drive_manager.simulator.engine.Amount count, boolean bothPlayers) implements Action {}
 

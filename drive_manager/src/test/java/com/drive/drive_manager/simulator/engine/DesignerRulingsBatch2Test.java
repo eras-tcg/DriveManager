@@ -227,6 +227,6 @@ class DesignerRulingsBatch2Test {
         List<EffectScript> cofre = CardEffects.of(card("cm", "Cofre Mímico", 1, 1, "P"));
         assertThat(cofre).extracting(EffectScript::moment).containsExactly(EffectScript.Moment.ON_EVENT, EffectScript.Moment.ON_SUMMON);
         assertThat(cofre.get(0).sourceZone()).isEqualTo("tributeZone");
-        assertThat(cofre.get(0).steps()).containsExactly(new EffectStep.SummonSelf("tributeZone", Amount.fixed(0), true));
+        assertThat(cofre.get(0).steps()).containsExactly(Compose.summonSelf("tributeZone", Amount.fixed(0), true));
     }
 }
