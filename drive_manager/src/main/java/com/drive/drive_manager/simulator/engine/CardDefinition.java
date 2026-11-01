@@ -19,10 +19,11 @@ import java.util.List;
  * @param costModifiers         how it changes costs
  * @param replacements          its own replacements ("en su lugar")
  * @param inheritedReplacements the replacements it gives as a Recurso
+ * @param traits                what it changes in the rules themselves; null: nothing
  */
 public record CardDefinition(String name, List<EffectScript> effects, List<EffectScript> inherited, List<Continuous> continuous,
                              List<Aura> auras, List<CostModifier> costModifiers, List<Replacement> replacements,
-                             List<Replacement> inheritedReplacements) {
+                             List<Replacement> inheritedReplacements, CardTraits traits) {
 
     public CardDefinition {
         effects = effects == null ? List.of() : List.copyOf(effects);
