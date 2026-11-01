@@ -85,6 +85,10 @@ public final class Selection {
                 }
                 continue;
             }
+            if (zone.equals("pickableAllies") || zone.equals("pickableAttackers") || zone.equals("attackers")) {
+                if (!enemy) into.addAll(ctx.pickable(zone));
+                continue;
+            }
             if (zone.equals("clash")) {
                 CardSlot card = ctx.clashing();
                 // Taken once: it belongs to the opponent, whichever side is being read

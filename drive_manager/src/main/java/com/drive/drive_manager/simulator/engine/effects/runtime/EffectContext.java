@@ -137,6 +137,12 @@ public interface EffectContext {
     /** The choice just asked may add up to that many levels. */
     void limitLevelSum(int levels);
 
+    /** The allies an "elige 1 aliado" can choose: those that can do what the effect goes on to ask. */
+    List<CardSlot> pickable(String zone);
+
+    /** The rest of the effect does nothing. */
+    void endEffect();
+
     /** How many cards the last action acted on. */
     void counted(int count);
 

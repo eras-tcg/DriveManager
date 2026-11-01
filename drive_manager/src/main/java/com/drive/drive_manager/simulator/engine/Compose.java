@@ -845,4 +845,39 @@ final class Compose {
     static EffectStep ritualFromZoneBy(String zone, boolean selfSummoner, Amount reduce, CardFilter filter) {
         return ritual(new SpecialRule(SpecialRule.RITUAL, zone, 0, selfSummoner ? "self" : "any", filter, reduce, null));
     }
+
+    // ------------------------------------------------------------------ Choosing an ally the next actions act on
+
+    private static EffectStep pick(String zones, CardFilter filter, boolean target) {
+        return act(new Action.Select(Selector.yours(zones, filter, 1), target, Memory.SUBJECT, "Elegido", true));
+    }
+
+    static EffectStep pickAlly() {
+        return pickAlly(false, false);
+    }
+
+    static EffectStep pickAlly(boolean attacker) {
+        return pickAlly(attacker, false);
+    }
+
+    /** {@code attacker}: it is going to declare an attack; {@code target}: the text says "elige". */
+    static EffectStep pickAlly(boolean attacker, boolean target) {
+        return pick(attacker ? "pickableAttackers" : "pickableAllies", CardFilter.any(), target);
+    }
+
+    static EffectStep pickAllyWhere(CardFilter filter) {
+        return pickAllyWhere(filter, false);
+    }
+
+    static EffectStep pickAllyWhere(CardFilter filter, boolean target) {
+        return pick("pickableAllies", filter, target);
+    }
+
+    static EffectStep pickAttacker(CardFilter filter) {
+        return pickAttacker(filter, false);
+    }
+
+    static EffectStep pickAttacker(CardFilter filter, boolean target) {
+        return pick("attackers", filter, target);
+    }
 }

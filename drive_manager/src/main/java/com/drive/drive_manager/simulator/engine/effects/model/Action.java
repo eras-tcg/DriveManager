@@ -129,8 +129,13 @@ public sealed interface Action {
      *                 word the player still points at a card, but it is not a target (designer ruling 2026-11-01)
      * @param saveAs   the name the next actions read them by; null: {@link Memory#TARGETS} for targets, {@link Memory#LAST} otherwise
      * @param label    what is shown on a chosen card ("Al fondo"); null: "Objetivo" or "Elegida"
+     * @param endsIfNone with nothing to pick, the rest of the effect does nothing ("elige 1 aliado; …")
      */
-    record Select(Selector selector, boolean target, String saveAs, String label) implements Action {
+    record Select(Selector selector, boolean target, String saveAs, String label, boolean endsIfNone) implements Action {
+        public Select(Selector selector, boolean target, String saveAs, String label) {
+            this(selector, target, saveAs, label, false);
+        }
+
         @Override
         public boolean needsCards() {
             return true;

@@ -33,7 +33,13 @@ public final class SelectHandler implements ActionHandler<Select> {
     public boolean run(EffectContext ctx, Select action) {
         Selector selector = action.selector();
         List<CardSlot> valid = Selection.candidates(ctx, selector, action.target());
-        if (valid.isEmpty()) return false;
+        if (valid.isEmpty()) {
+            if (action.endsIfNone()) {
+                ctx.note("No hay aliados que puedan elegirse");
+                ctx.endEffect();
+            }
+            return false;
+        }
         // "elige todos los enemigos": no choice, but they are targets
         if (selector.mode() == Selector.Mode.ALL) {
             answer(ctx, action, new Answer(valid.stream().map(CardSlot::getInstanceId).toList(), List.of()));

@@ -55,6 +55,20 @@ final class EngineContext implements EffectContext {
     }
 
     @Override
+    public List<CardSlot> pickable(String zone) {
+        return switch (zone) {
+            case "attackers" -> Steps.attackers(player(), CardFilter.any());
+            case "pickableAttackers" -> Steps.pickable(room, effect, player(), true);
+            default -> Steps.pickable(room, effect, player(), false);
+        };
+    }
+
+    @Override
+    public void endEffect() {
+        effect.setStepIndex(EffectEngine.script(effect).steps().size() - 1);
+    }
+
+    @Override
     public void goOn() {
         repeat[0] = true;
     }
@@ -628,7 +642,7 @@ final class EngineContext implements EffectContext {
 
     @Override
     public String describe(Selector selector) {
-        String who = selector.owner() == Selector.Owner.OPPONENT ? "enemigo" : "carta";
+        String who = selector.owner() == Selector.Owner.OPPONENT ? "enemigo" : selector.zones().toLowerCase().contains("allies") || selector.zones().contains("ttackers") ? "aliado" : "carta";
         String filter = selector.filter().describe();
         return filter.isBlank() ? who : who + " " + filter;
     }
