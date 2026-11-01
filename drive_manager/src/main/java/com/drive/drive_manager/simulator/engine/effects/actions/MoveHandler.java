@@ -23,6 +23,7 @@ public final class MoveHandler implements ActionHandler<Move> {
         Selector selector = action.cards();
         // Its cards depend on the ally chosen by an action before it, which has not been chosen yet
         if (selector.zones().contains(":subject") && ctx.saved(Memory.SUBJECT).isEmpty()) return true;
+        if (selector.zones().equals("looked")) return true;
         List<CardSlot> found = candidates(ctx, action);
         if (selector.self() == Selector.Self.REQUIRE && found.stream().noneMatch(ctx::isSelf)) return false;
         return found.size() >= Math.max(1, ctx.amount(selector.min()));
@@ -33,6 +34,13 @@ public final class MoveHandler implements ActionHandler<Move> {
         Selector selector = action.cards();
         List<CardSlot> valid = candidates(ctx, action);
         int max = Math.min(ctx.amount(selector.max()), valid.size());
+        // With nothing to pick, the rest of the looked cards are still ordered
+        if (action.rest() != null && !ctx.looked().isEmpty()) {
+            int min = Math.min(ctx.amount(selector.min()), max);
+            ctx.ask(instruction(ctx, action, min, max), action.label() != null ? action.label() : label(action.to()), ctx.looked(), valid, min, max);
+            ctx.asksOrder(Move.DECK_TOP.equals(action.rest()));
+            return true;
+        }
         if (max <= 0) {
             ctx.moved(List.of());
             return false;
@@ -58,19 +66,22 @@ public final class MoveHandler implements ActionHandler<Move> {
         }
         if (action.cards().self() == Selector.Self.REQUIRE && !picked.isEmpty() && picked.stream().noneMatch(ctx::isSelf)) return "Debes incluir esta carta";
         move(ctx, action, picked);
+        if (action.rest() != null) ctx.lookedRestTo(action.rest(), answer.order());
         return null;
     }
 
     /** Never a card already where it is going. */
     private static List<CardSlot> candidates(EffectContext ctx, Move action) {
-        return Selection.candidates(ctx, action.cards(), false).stream().filter(c -> !ctx.alreadyIn(c, action.to())).toList();
+        return Selection.candidates(ctx, action.cards(), false).stream().filter(c -> !ctx.alreadyIn(c, action.to()) && !ctx.unaffected(c)).toList();
     }
 
     private static void move(EffectContext ctx, Move action, List<CardSlot> cards) {
         List<CardSlot> ordered = new ArrayList<>(cards);
         if (action.random()) Collections.shuffle(ordered);
-        ctx.move(ordered, action.to());
-        ctx.moved(ordered);
+        List<CardSlot> done = ctx.move(ordered, action.to(), action.exhausted(), action.faceDown());
+        // "esta carta" is not what "si tributaste…" or "el material tributado" read
+        if (action.cards().mode() == Selector.Mode.SELF) ctx.done(!done.isEmpty());
+        else ctx.moved(done);
     }
 
     private static String label(String to) {
@@ -80,6 +91,9 @@ public final class MoveHandler implements ActionHandler<Move> {
             case Move.DECK_BOTTOM -> "Al fondo";
             case Move.DECK_TOP -> "Al tope";
             case Move.HAND -> "A tu mano";
+            case Move.FRONT -> "A la línea frontal";
+            case Move.BACK -> "A la retaguardia";
+            case Move.LIFE_TOP -> "A tus vidas";
             default -> "Elegida";
         };
     }
@@ -90,12 +104,27 @@ public final class MoveHandler implements ActionHandler<Move> {
         String cards = what + (filter.isBlank() ? "" : " " + filter) + " de " + ctx.describeZones(action.cards().zones());
         if (action.cards().self() == Selector.Self.REQUIRE) cards += ", incluida esta carta";
         String random = action.random() ? " en orden aleatorio" : "";
+        if (action.to().startsWith("materials:") || action.to().startsWith("resources:")) {
+            return "Añade " + cards + " como " + (action.to().startsWith("materials:") ? "material." : "recurso.");
+        }
+        if (action.rest() != null) {
+            String rest = Move.DECK_TOP.equals(action.rest()) ? " Ordena el resto: vuelve al tope de tu mazo (la de la izquierda queda arriba)."
+                    : " Ordena el resto: irá al fondo de tu mazo en ese orden.";
+            return instructionOf(action, cards, random) + rest;
+        }
+        return instructionOf(action, cards, random);
+    }
+
+    private static String instructionOf(Move action, String cards, String random) {
         return switch (action.to()) {
             case Move.TRIBUTES -> "Tributa " + cards + ".";
             case Move.DISCARD -> "Descarta " + cards + ".";
             case Move.DECK_BOTTOM -> "Envía " + cards + " al fondo de tu mazo" + random + ".";
             case Move.DECK_TOP -> "Coloca " + cards + " al tope de tu mazo.";
             case Move.HAND -> "Toma " + cards + " para tu mano.";
+            case Move.FRONT -> "Coloca " + cards + " en tu línea frontal" + (action.exhausted() ? ", agotada." : ".");
+            case Move.BACK -> "Coloca " + cards + " en tu retaguardia" + (action.exhausted() ? ", agotada." : ".");
+            case Move.LIFE_TOP -> "Coloca " + cards + " al tope de tus vidas" + (action.faceDown() ? "." : ", bocarriba.");
             default -> "Elige " + cards + ".";
         };
     }

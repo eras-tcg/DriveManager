@@ -46,11 +46,28 @@ public final class Selection {
     private static void addZones(List<CardSlot> into, EffectContext ctx, PlayerState whose, String zones, boolean enemy) {
         for (String raw : zones.split(",")) {
             String zone = raw.trim();
+            if (zone.startsWith("saved:")) {
+                if (!enemy) for (String id : ctx.saved(zone.substring("saved:".length()))) {
+                    CardSlot card = ctx.find(id);
+                    if (card != null) into.add(card);
+                }
+                continue;
+            }
+            if (zone.equals("event")) {
+                CardSlot card = enemy ? null : ctx.eventCard();
+                if (card != null) into.add(card);
+                continue;
+            }
+            if (zone.equals("looked")) {
+                if (!enemy) into.addAll(ctx.looked());
+                continue;
+            }
             if (zone.startsWith("materials") || zone.startsWith("resources")) {
                 if (!enemy) into.addAll(ctx.attached(zone));
                 continue;
             }
-            boolean onField = zone.equals("field") || zone.equals("frontLine") || zone.equals("backLine");
+            boolean allies = zone.equals("allies");
+            boolean onField = allies || zone.equals("field") || zone.equals("frontLine") || zone.equals("backLine");
             if (!onField) {
                 into.addAll(ctx.zone(whose, zone));
                 continue;
@@ -59,6 +76,7 @@ public final class Selection {
             if (enemy && ctx.inRetaguardia()) continue;
             for (CardSlot card : whose.getField()) {
                 boolean front = ctx.inFrontLine(card);
+                if (allies && !ctx.isCreature(card)) continue;
                 if (zone.equals("frontLine") && !front) continue;
                 if (zone.equals("backLine") && front) continue;
                 if (enemy && !front) continue;

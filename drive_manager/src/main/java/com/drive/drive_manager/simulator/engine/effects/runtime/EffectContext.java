@@ -33,11 +33,29 @@ public interface EffectContext {
     /** The card is already where a move would leave it. */
     boolean alreadyIn(CardSlot card, String to);
 
-    /** Moves the cards, one by one in that order, recording each one's event by where it arrives. */
-    void move(List<CardSlot> cards, String to);
+    /** Moves the cards, one by one in that order, recording each one's event by where it arrives. Returns those that moved. */
+    List<CardSlot> move(List<CardSlot> cards, String to, boolean exhausted, boolean faceDown);
+
+    /** The cards an effect is looking at. */
+    List<CardSlot> looked();
+
+    /** The looked cards not picked go there, in the order the player gave. */
+    void lookedRestTo(String to, List<String> order);
+
+    /** The card of the event that triggered the effect, unless it is on the field. */
+    CardSlot eventCard();
+
+    /** The card only reacts to its copies ("solo puede ser afectada por copias de sí misma"). */
+    boolean unaffected(CardSlot card);
+
+    /** The choice just asked also orders the cards not picked; {@code toTop}: they end up on top of the deck. */
+    void asksOrder(boolean toTop);
 
     /** What the last action moved, for "si lo haces", "por cada…" and "si tributaste…". */
     void moved(List<CardSlot> cards);
+
+    /** Whether the action did something, for "si lo haces". */
+    void done(boolean done);
 
     /** The card must be among those picked in the choice just asked. */
     void requireInChoice(CardSlot card);

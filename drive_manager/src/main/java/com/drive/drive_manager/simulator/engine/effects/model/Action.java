@@ -16,12 +16,23 @@ public sealed interface Action {
      * discarded, whatever the verb (designer ruling 2026-11-01).
      *
      * @param cards    which ones; when the player picks them they are not targets (only "elige", {@link Select}, makes targets)
-     * @param to       {@link #TRIBUTES}, {@link #DISCARD}, {@link #DECK_TOP}, {@link #DECK_BOTTOM}, {@link #HAND}
+     * @param to        {@link #TRIBUTES}, {@link #DISCARD}, {@link #DECK_TOP}, {@link #DECK_BOTTOM}, {@link #HAND}, {@link #FRONT}, {@link #BACK},
+     *                  {@link #LIFE_TOP}, or "materials:x" / "resources:x" of x: self, subject or last
      * @param random   "en orden aleatorio"; otherwise the order the player gives
      * @param label    what is shown on a chosen card; null: said by the destination
      * @param required an optional effect is only offered when there is something to move
+     * @param exhausted "agotada": entering the field that way
+     * @param faceDown  "bocabajo"; cards going to the deck always are
+     * @param rest      looked cards: where those not picked go, in the order the player gives, in the same choice; null: they stay
      */
-    record Move(Selector cards, String to, boolean random, String label, boolean required) implements Action {
+    record Move(Selector cards, String to, boolean random, String label, boolean required, boolean exhausted, boolean faceDown, String rest) implements Action {
+        public Move(Selector cards, String to, boolean random, String label, boolean required) {
+            this(cards, to, random, label, required, false, false, null);
+        }
+
+        public static final String FRONT = "frontLine";
+        public static final String BACK = "backLine";
+        public static final String LIFE_TOP = "lifeTop";
         public static final String TRIBUTES = "tributeZone";
         public static final String DISCARD = "discardPile";
         public static final String DECK_TOP = "deckTop";

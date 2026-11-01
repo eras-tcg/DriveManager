@@ -2,6 +2,7 @@ package com.drive.drive_manager.simulator.engine;
 
 import com.drive.drive_manager.simulator.engine.effects.model.Action;
 import com.drive.drive_manager.simulator.engine.effects.model.Action.Move;
+import com.drive.drive_manager.simulator.engine.effects.model.Memory;
 import com.drive.drive_manager.simulator.engine.effects.model.Selector;
 
 /**
@@ -150,5 +151,182 @@ final class Compose {
     /** "envía esta carta al fondo de tu mazo", from the zone it is in. */
     static EffectStep sendSelfToDeckBottom() {
         return move(Selector.self("hand,tributeZone,discardPile,lifeStack,field"), Move.DECK_BOTTOM);
+    }
+
+    /** "envía esta carta (del campo) a tu descarte": a permanent paying with itself. */
+    static EffectStep sendSelfFromFieldTo(String zone) {
+        return move(Selector.self("field"), zone);
+    }
+
+    static EffectStep returnSelfToHand() {
+        return move(Selector.self("field"), Move.HAND);
+    }
+
+    static EffectStep placeSelf(String zone, boolean toFront, boolean exhausted) {
+        return new EffectStep.Do(new Action.Move(Selector.self(zone), toFront ? Move.FRONT : Move.BACK, false, null, false, exhausted, false, null));
+    }
+
+    static EffectStep placeSelfOnField(String zone) {
+        return placeSelf(zone, false, false);
+    }
+
+    static EffectStep placeSelfInFrontLine(String zone, boolean exhausted) {
+        return placeSelf(zone, true, exhausted);
+    }
+
+    static EffectStep moveSelfToFront() {
+        return move(Selector.self("backLine"), Move.FRONT);
+    }
+
+    static EffectStep selfToLife() {
+        return new EffectStep.Do(new Action.Move(Selector.self("field"), Move.LIFE_TOP, false, null, false, false, true, null));
+    }
+
+    /** "coloca esta carta al tope de tus vidas [bocarriba]", from the zone it is in. */
+    static EffectStep selfToLifeFrom(boolean faceUp) {
+        return new EffectStep.Do(new Action.Move(Selector.self("hand,deck,tributeZone,discardPile,field"), Move.LIFE_TOP, false, null, false, false, !faceUp, null));
+    }
+
+    /** "añade esta carta como material a un aliado" (the ally chosen before). */
+    static EffectStep attachSelfToSubject() {
+        return move(Selector.self("field,tributeZone"), "materials:subject");
+    }
+
+    static EffectStep attachSelfAsResourceToSubject() {
+        return move(Selector.self("hand,deck,tributeZone,discardPile,lifeStack,field"), "resources:subject");
+    }
+
+    // ------------------------------------------------------------------ Others of yours
+
+    /** "tributa 1 [filtro] bajo tu control". */
+    static EffectStep tributeOwnCard(CardFilter filter) {
+        return move(Selector.yours("field", filter, 1).with(Selector.Self.EXCLUDE), Move.TRIBUTES);
+    }
+
+    static EffectStep tributeOtherAllies() {
+        return move(Selector.all("allies", CardFilter.any()).with(Selector.Self.EXCLUDE), Move.TRIBUTES);
+    }
+
+    /** "tribútalo": the card of the triggering event. */
+    static EffectStep tributeTriggerCard() {
+        return move(new Selector("event", Selector.Owner.YOU, CardFilter.any(), new Amount.Fixed(1), new Amount.Fixed(1), Selector.Self.ANY, Selector.Mode.ALL), Move.TRIBUTES);
+    }
+
+    static EffectStep attachTriggerCardAsMaterial() {
+        return move(new Selector("event", Selector.Owner.YOU, CardFilter.any(), new Amount.Fixed(1), new Amount.Fixed(1), Selector.Self.ANY, Selector.Mode.ALL), "materials:self");
+    }
+
+    static EffectStep returnOwnCardToHand(CardFilter filter) {
+        return move(Selector.yours("field", filter, 1).with(Selector.Self.EXCLUDE), Move.HAND);
+    }
+
+    /** "súbelo a tu mano": the ally chosen before. */
+    static EffectStep returnSubjectToHand() {
+        return move(Selector.saved(Memory.SUBJECT), Move.HAND);
+    }
+
+    /** "súbelo con todos sus materiales": its materials first, since a creature leaving the field loses them. */
+    static EffectStep returnSubjectMaterialsToHand() {
+        return move(Selector.all("materials:subject", CardFilter.any()), Move.HAND);
+    }
+
+    static EffectStep placeFromZone(String zones, CardFilter filter, int max, boolean toFront, boolean exhausted) {
+        return new EffectStep.Do(new Action.Move(Selector.yours(zones, filter, max).upTo().with(Selector.Self.EXCLUDE), toFront ? Move.FRONT : Move.BACK, false, null, false, exhausted, false, null));
+    }
+
+    /** "coloca [alguno de ellos] [agotado] en tu línea frontal": up to one of the last moved. */
+    static EffectStep placeLastTributed(CardFilter filter, boolean toFront, boolean exhausted) {
+        return new EffectStep.Do(new Action.Move(Selector.yours("saved:" + Memory.LAST, filter, 1).upTo(), toFront ? Move.FRONT : Move.BACK, false, null, false, exhausted, false, null));
+    }
+
+    static EffectStep moveAllyToFront() {
+        return move(Selector.yours("backLine", CardFilter.creatures(), 1).upTo(), Move.FRONT);
+    }
+
+    // ------------------------------------------------------------------ Materials and resources
+
+    static EffectStep materialToFrontLine(CardFilter filter) {
+        return move(Selector.yours("materials", filter.asCreature(), 1), Move.FRONT);
+    }
+
+    static EffectStep materialToBack(CardFilter filter) {
+        return move(Selector.yours("materials", filter.asCreature(), 1), Move.BACK);
+    }
+
+    /** "coloca hasta 1 [filtro] de los materiales de esta carta en tu línea frontal". */
+    static EffectStep materialUpToToFront(CardFilter filter) {
+        return move(Selector.yours("materials", filter, 1).upTo(), Move.FRONT);
+    }
+
+    /** "añádele todos los materiales de esta carta": to the card just moved. */
+    static EffectStep materialsToLast() {
+        return move(Selector.all("materials", CardFilter.any()), "materials:last");
+    }
+
+    /** "sube los materiales de esta carta a tu mano"; {@code upTo}: those the player picks. */
+    static EffectStep materialsToHand(boolean upTo) {
+        return move(upTo ? new Selector("materials", Selector.Owner.YOU, CardFilter.any(), new Amount.Fixed(0), new Amount.Fixed(Integer.MAX_VALUE), Selector.Self.ANY, Selector.Mode.CHOOSE)
+                : Selector.all("materials", CardFilter.any()), Move.HAND);
+    }
+
+    static EffectStep addResourceFrom(String zones, CardFilter filter) {
+        return addResourceFromZone(zones, filter, false);
+    }
+
+    static EffectStep addResourceFromZone(String zones, CardFilter filter, boolean upTo) {
+        Selector cards = Selector.yours(zones, filter, 1).with(Selector.Self.EXCLUDE);
+        return new EffectStep.Do(new Action.Move(upTo ? cards.upTo() : cards, "resources:self", false, null, !upTo));
+    }
+
+    static EffectStep addAllyAsResource(CardFilter filter) {
+        return move(Selector.yours("allies", filter, 1).with(Selector.Self.EXCLUDE), "resources:self");
+    }
+
+    // ------------------------------------------------------------------ Lives
+
+    static EffectStep deckTopToLife() {
+        return new EffectStep.Do(new Action.Move(Selector.yours("deck", CardFilter.any(), 1).as(Selector.Mode.TOP), Move.LIFE_TOP, false, null, false, false, true, null));
+    }
+
+    static EffectStep materialToLife() {
+        return move(Selector.yours("materials", CardFilter.any(), 1).upTo(), Move.LIFE_TOP);
+    }
+
+    static EffectStep zoneToLife(String zones, CardFilter filter, boolean faceUp) {
+        return new EffectStep.Do(new Action.Move(Selector.yours(zones, filter, 1).upTo().with(Selector.Self.EXCLUDE), Move.LIFE_TOP, false, null, false, false, !faceUp, null));
+    }
+
+    // ------------------------------------------------------------------ Looked cards: one choice, the rest ordered in it
+
+    private static EffectStep fromLooked(CardFilter filter, int min, int max, String to, String rest, boolean faceDown) {
+        Selector looked = new Selector("looked", Selector.Owner.YOU, filter, new Amount.Fixed(min), new Amount.Fixed(max), Selector.Self.ANY, Selector.Mode.CHOOSE);
+        return new EffectStep.Do(new Action.Move(looked, to, false, null, false, false, faceDown, rest));
+    }
+
+    /** "de ellas toma hasta N [filtro]. Envía el resto al fondo de tu mazo". */
+    static EffectStep takeFromLookedRestToBottom(int max, CardFilter filter) {
+        return fromLooked(filter, 0, max, Move.HAND, Move.DECK_BOTTOM, false);
+    }
+
+    /** "de ellas toma hasta N [filtro]" leaving the rest with the effect. */
+    static EffectStep takeFromLooked(int max, CardFilter filter) {
+        return fromLooked(filter, 0, max, Move.HAND, null, false);
+    }
+
+    static EffectStep tributeFromLooked(int max, CardFilter filter) {
+        return fromLooked(filter, 0, max, Move.TRIBUTES, null, false);
+    }
+
+    static EffectStep tributeFromLookedRestToBottom(int count) {
+        return fromLooked(CardFilter.any(), count, count, Move.TRIBUTES, Move.DECK_BOTTOM, false);
+    }
+
+    static EffectStep discardFromLookedRestToBottom(int max) {
+        return fromLooked(CardFilter.any(), 0, max, Move.DISCARD, Move.DECK_BOTTOM, false);
+    }
+
+    /** "de ellas descarta al menos N bocabajo. Coloca el resto al tope de tu mazo en cualquier orden". */
+    static EffectStep discardLookedRestTop(int atLeast) {
+        return fromLooked(CardFilter.any(), atLeast, Integer.MAX_VALUE, Move.DISCARD, Move.DECK_TOP, true);
     }
 }

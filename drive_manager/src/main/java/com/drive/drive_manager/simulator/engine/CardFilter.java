@@ -113,6 +113,12 @@ public record CardFilter(List<String> colors, List<String> classes, String cardT
     }
 
     /** "activo": not exhausted. */
+    /** Only creatures, on top of what it asks. */
+    public CardFilter asCreature() {
+        return new CardFilter(colors, classes, "creature", level, maxLevel, maxStrength, activeOnly, exhaustedOnly, minLevel, minStrength,
+                maxCost, name, notName, starterOnly, colorAndClass, notColors, nameContains, minCost, cardTypes, anyOf, mentions, backOnly);
+    }
+
     public CardFilter active() {
         return new CardFilter(colors, classes, cardType, level, maxLevel, maxStrength, true, exhaustedOnly, minLevel, minStrength,
                 maxCost, name, notName, starterOnly, colorAndClass, notColors, nameContains, minCost, cardTypes, anyOf, mentions, backOnly);

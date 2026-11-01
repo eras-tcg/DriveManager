@@ -74,66 +74,152 @@ final class EngineContext implements EffectContext {
     @Override
     public boolean alreadyIn(CardSlot card, String to) {
         Origin origin = origin(card);
-        return origin != null && origin.zone().equals(destination(to));
+        if (origin == null) return false;
+        if ("field".equals(origin.zone())) {
+            if (Action.Move.FRONT.equals(to)) return EffectEngine.inFrontLine(card);
+            if (Action.Move.BACK.equals(to)) return !EffectEngine.inFrontLine(card);
+        }
+        return !origin.looked() && origin.zone().equals(destination(to));
     }
 
     /** Where a card is now, and the card it is attached to, if any. */
-    private record Origin(PlayerState owner, String zone, CardSlot host) {}
+    private record Origin(PlayerState owner, String zone, CardSlot host, boolean looked) {}
 
     private Origin origin(CardSlot card) {
+        if (EffectEngine.find(effect.getLooked(), card.getInstanceId()) != null) return new Origin(player(), "deck", null, true);
         for (String id : List.of(effect.getControllerId(), room.getOpponentId(effect.getControllerId()) == null ? "" : room.getOpponentId(effect.getControllerId()))) {
             PlayerState p = room.getPlayer(id);
             if (p == null) continue;
             EffectEngine.Located at = EffectEngine.locate(p, card.getInstanceId());
-            if (at != null) return new Origin(p, at.zone(), null);
+            if (at != null) return new Origin(p, at.zone(), null, false);
             for (CardSlot host : p.getField()) {
-                if (EffectEngine.find(host.getMaterials(), card.getInstanceId()) != null) return new Origin(p, "materials", host);
-                if (EffectEngine.find(host.getResources(), card.getInstanceId()) != null) return new Origin(p, "resources", host);
+                if (EffectEngine.find(host.getMaterials(), card.getInstanceId()) != null) return new Origin(p, "materials", host, false);
+                if (EffectEngine.find(host.getResources(), card.getInstanceId()) != null) return new Origin(p, "resources", host, false);
             }
         }
         return null;
     }
 
     private static String destination(String to) {
+        if (Action.Move.LIFE_TOP.equals(to)) return "lifeStack";
         return Action.Move.DECK_TOP.equals(to) || Action.Move.DECK_BOTTOM.equals(to) ? "deck" : to;
     }
 
     @Override
-    public void move(List<CardSlot> cards, String to) {
+    public List<CardSlot> move(List<CardSlot> cards, String to, boolean exhausted, boolean faceDown) {
         String zone = destination(to);
-        List<CardSlot> shown = new ArrayList<>();
+        List<CardSlot> done = new ArrayList<>();
         String from = null;
         for (CardSlot card : cards) {
             Origin origin = origin(card);
             if (origin == null) continue;
+            CardSlot host = hostIn(to);
+            if (isAttachment(to) && (host == null || host == card)) continue;
             from = origin.zone();
-            if (origin.host() != null) ("materials".equals(from) ? origin.host().getMaterials() : origin.host().getResources()).remove(card);
+            // Moving within the field is not leaving it
+            if ("field".equals(from) && (Action.Move.FRONT.equals(to) || Action.Move.BACK.equals(to))) {
+                card.setY(Action.Move.FRONT.equals(to) ? 25.0 : 75.0);
+                EffectEngine.record(room, GameEvent.MOVE, player().getUserId(), card, null, to, effect, Map.of("reason", "effect"), null);
+                done.add(card);
+                continue;
+            }
+            if (origin.looked()) effect.getLooked().remove(card);
+            else if (origin.host() != null) ("materials".equals(from) ? origin.host().getMaterials() : origin.host().getResources()).remove(card);
             else if ("field".equals(from)) Removals.removeFromField(origin.owner(), card);
             else EffectEngine.zone(origin.owner(), from).remove(card);
-            card.setFaceDown("deck".equals(zone));
-            // A card leaving the field or another card always goes to its owner's zones
-            List<CardSlot> into = EffectEngine.zone(origin.owner(), zone);
-            if (Action.Move.DECK_TOP.equals(to)) into.add(0, card);
-            else into.add(card);
+            card.setFaceDown("deck".equals(zone) || faceDown);
             Map<String, Object> data = new java.util.HashMap<>();
             data.put("byCard", origin.host() != null ? origin.host().getInstanceId() : effect.getSourceInstanceId());
+            data.put("ownerId", origin.owner().getUserId());
             if ("deck".equals(zone)) data.put("position", Action.Move.DECK_TOP.equals(to) ? "top" : "bottom");
-            EffectEngine.record(room, eventOf(zone), player().getUserId(), card, from, zone, effect, data, null);
-            shown.add(card);
+            String arrives = zone;
+            if (isAttachment(to)) {
+                (to.startsWith("materials:") ? host.getMaterials() : host.getResources()).add(card);
+                data.put("to", host.getInstanceId());
+                arrives = to.startsWith("materials:") ? "materials" : "resources";
+            } else if (Action.Move.FRONT.equals(to) || Action.Move.BACK.equals(to)) {
+                card.setTapped(exhausted);
+                card.setX(50.0);
+                card.setY(Action.Move.FRONT.equals(to) ? 25.0 : 75.0);
+                origin.owner().getField().add(card);
+                effect.setSummonedId(card.getInstanceId());
+                arrives = "field";
+            } else {
+                // A card always goes to its owner's zones
+                List<CardSlot> into = EffectEngine.zone(origin.owner(), zone);
+                if (Action.Move.DECK_TOP.equals(to) || Action.Move.LIFE_TOP.equals(to)) into.add(0, card);
+                else into.add(card);
+            }
+            EffectEngine.record(room, eventOf(arrives, from), player().getUserId(), card, from, arrives, effect, data, null);
+            done.add(card);
         }
-        if (shown.isEmpty()) return;
+        if (done.isEmpty()) return done;
         // A card of the hand or the deck stays hidden when it goes to the deck
-        boolean hidden = "deck".equals(zone) && ("hand".equals(from) || "deck".equals(from));
-        String origin = "deck".equals(from) ? " del tope de su mazo" : "";
-        EffectEngine.log(room, player().getUsername() + " " + verb(to) + " " + shown.size() + " " + (shown.size() == 1 ? "carta" : "cartas") + origin
-                + " (" + effect.getSourceName() + ")" + (hidden ? "" : EffectEngine.names(shown)), room.getEventSeq());
+        boolean hidden = faceDown || ("deck".equals(zone) && ("hand".equals(from) || "deck".equals(from)));
+        String origin = "deck".equals(from) && !effect.getLooked().isEmpty() ? "" : "deck".equals(from) ? " del tope de su mazo" : "";
+        EffectEngine.log(room, player().getUsername() + " " + verb(to) + " " + done.size() + " " + (done.size() == 1 ? "carta" : "cartas") + origin
+                + " (" + effect.getSourceName() + ")" + (hidden ? "" : EffectEngine.names(done)), room.getEventSeq());
+        return done;
+    }
+
+    private static boolean isAttachment(String to) {
+        return to.startsWith("materials:") || to.startsWith("resources:");
+    }
+
+    /** The card that receives the move: "materials:subject". */
+    private CardSlot hostIn(String to) {
+        if (!isAttachment(to)) return null;
+        String who = to.substring(to.indexOf(':') + 1);
+        return switch (who) {
+            case "self" -> EffectEngine.find(player().getField(), effect.getSourceInstanceId());
+            case "subject" -> effect.getSubjectId() == null ? null : EffectEngine.find(player().getField(), effect.getSubjectId());
+            case "last" -> effect.getLastTributed().isEmpty() ? null : EffectEngine.find(player().getField(), effect.getLastTributed().get(0));
+            default -> null;
+        };
+    }
+
+    @Override
+    public List<CardSlot> looked() {
+        return effect.getLooked();
+    }
+
+    @Override
+    public void lookedRestTo(String to, List<String> order) {
+        List<CardSlot> rest = Steps.inOrder(effect.getLooked(), order);
+        rest.forEach(c -> c.setFaceDown(true));
+        if (Action.Move.DECK_TOP.equals(to)) player().getDeck().addAll(0, rest);
+        else player().getDeck().addAll(rest);
+        effect.getLooked().clear();
+        if (!rest.isEmpty()) {
+            EffectEngine.log(room, player().getUsername() + " " + verb(to) + " " + rest.size() + " " + (rest.size() == 1 ? "carta" : "cartas"), null);
+        }
+    }
+
+    @Override
+    public CardSlot eventCard() {
+        GameEvent trigger = EffectEngine.triggerEvent(room, effect);
+        EffectEngine.Located at = trigger == null ? null : EffectEngine.locate(player(), trigger.getCardInstanceId());
+        return at == null || "field".equals(at.zone()) ? null : at.card();
+    }
+
+    @Override
+    public boolean unaffected(CardSlot card) {
+        return EffectEngine.unaffected(card, effect);
+    }
+
+    @Override
+    public void asksOrder(boolean toTop) {
+        Prompt prompt = room.getPrompt();
+        prompt.setKind(Prompt.Kind.TAKE_REVEALED_REST_BOTTOM);
+        prompt.setReorderRest(true);
+        prompt.setRestToTop(toTop);
     }
 
     /** Rule of the designer (2026-11-01): the event comes from the destination, in this one place, whatever the verb printed. */
-    private static String eventOf(String zone) {
+    private static String eventOf(String zone, String from) {
         return switch (zone) {
             case "tributeZone" -> GameEvent.TRIBUTE;
-            case "hand" -> GameEvent.ADD_TO_HAND;
+            case "hand" -> "field".equals(from) ? GameEvent.SEND : GameEvent.ADD_TO_HAND;
             default -> GameEvent.SEND;
         };
     }
@@ -145,6 +231,9 @@ final class EngineContext implements EffectContext {
             case Action.Move.DECK_TOP -> "coloca al tope de su mazo";
             case Action.Move.DECK_BOTTOM -> "envía al fondo de su mazo";
             case Action.Move.HAND -> "añade a su mano";
+            case Action.Move.FRONT -> "coloca en su línea frontal";
+            case Action.Move.BACK -> "coloca en su retaguardia";
+            case Action.Move.LIFE_TOP -> "coloca al tope de sus vidas";
             default -> "mueve";
         };
     }
@@ -153,8 +242,13 @@ final class EngineContext implements EffectContext {
     public void moved(List<CardSlot> cards) {
         effect.setLastCount(cards.size());
         effect.setLastTributed(new ArrayList<>(EffectEngine.ids(cards)));
+        done(!cards.isEmpty());
+    }
+
+    @Override
+    public void done(boolean done) {
         // "Si lo haces" reads what the resolution did, not the cost paid before it
-        if (!Chain.paying(effect)) effect.setLastDone(!cards.isEmpty());
+        if (!Chain.paying(effect)) effect.setLastDone(done);
     }
 
     @Override
@@ -218,6 +312,7 @@ final class EngineContext implements EffectContext {
             case Memory.TARGETS -> effect.getTargetIds();
             case Memory.LAST -> effect.getLastTributed();
             case Memory.SUBJECT -> effect.getSubjectId() == null ? List.of() : List.of(effect.getSubjectId());
+            case Memory.SUMMONED -> effect.getSummonedId() == null ? List.of() : List.of(effect.getSummonedId());
             default -> effect.getSaved().getOrDefault(name, List.of());
         };
     }

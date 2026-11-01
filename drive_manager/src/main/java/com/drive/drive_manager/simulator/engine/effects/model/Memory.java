@@ -7,6 +7,8 @@ public final class Memory {
     public static final String TARGETS = "targets";
     /** The one card the next actions act on ("dicho aliado", "el aliado elegido"). */
     public static final String SUBJECT = "subject";
+    /** The creature the effect just summoned or placed ("el aliado invocado"). */
+    public static final String SUMMONED = "summoned";
     /** The cards the last action picked or moved ("si tributaste…", "de nivel menor que la carta devuelta"). */
     public static final String LAST = "last";
 

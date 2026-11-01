@@ -33,13 +33,6 @@ public sealed interface EffectStep {
     /** "mira las primeras N cartas de tu mazo" (fewer if the deck is shorter). */
     record LookTop(int count) implements EffectStep {}
 
-    /**
-     * "de ellas toma hasta N cartas [filtro]. Envía el resto al fondo de tu mazo": the controller picks up
-     * to {@code max} looked cards that match the filter to add to the hand, and orders the rest, which go to
-     * the bottom of the deck in that order.
-     */
-    record TakeFromLookedRestToBottom(int max, CardFilter filter) implements EffectStep {}
-
     /** "roba N cartas" (fewer if the deck is shorter). */
     record Draw(int count) implements EffectStep {}
 
@@ -149,18 +142,6 @@ public sealed interface EffectStep {
     /** "añádele el aliado elegido con todos sus materiales como materiales del aliado invocado". */
     record AttachSubjectToSummoned() implements EffectStep {}
 
-    /** "coloca hasta 1 material de esta carta al tope de tus vidas bocarriba". */
-    record MaterialToLife() implements NeedsTarget {}
-
-    /**
-     * "coloca hasta 1 [ente] nivel 4 de los materiales de esta carta en tu línea frontal. Luego: añádele todos los
-     * materiales de esta carta como materiales." It is placed, not summoned.
-     */
-    record MaterialToFront(CardFilter filter, int level) implements EffectStep {}
-
-    /** "coloca la carta del tope de tu mazo al tope de tus vidas bocabajo". */
-    record DeckTopToLife() implements EffectStep {}
-
     /** "infringe N de daño directo" by effect (to the top life). */
     record DamageByEffect(int amount) implements EffectStep {}
 
@@ -170,9 +151,6 @@ public sealed interface EffectStep {
     /** "añadele 1 criatura [filtro] de menor nivel de tus tributos como material" (to the ally of the triggering event). */
     record AttachLowerFromTributes(CardFilter filter) implements EffectStep {}
 
-    /** "añade esta carta como material a un aliado" (the ally chosen with PickAlly). */
-    record AttachSelfToSubject() implements EffectStep {}
-
     /** "coloca esta carta agotada en tu retaguardia": the utility stays on the field. */
     record KeepOnField(boolean exhausted) implements EffectStep {}
 
@@ -181,9 +159,6 @@ public sealed interface EffectStep {
      * aliado elegido. Envía el resto al fondo de tu mazo en orden aleatorio" (after {@link LookTop}).
      */
     record TakeFromLookedLikeSubject(int max) implements EffectStep {}
-
-    /** "de ellas descarta al menos N bocabajo. Coloca el resto al tope de tu mazo en cualquier orden" (after {@link LookTop}). */
-    record DiscardLookedRestTop(int atLeast) implements EffectStep {}
 
     /**
      * "la próxima vez que un aliado inflinja daño directo por combate este turno, inflinge daño 1 vez más. Si lo hace:
@@ -224,9 +199,6 @@ public sealed interface EffectStep {
 
     /** "para que [dicho aliado] active 1 efecto En Invocación del material tributado": a new link with that effect, for the ally. */
     record ActivateTributedSummonEffect() implements EffectStep {}
-
-    /** "envía esta carta (del campo) a tu descarte": a permanent paying with itself. */
-    record SendSelfFromFieldTo(String zone) implements EffectStep {}
 
     /** "invoca criaturas … que en nivel sumen hasta N de tu mano sin pagar sus costes" (up to that level sum, all at once). */
     record SummonFreeLevelSum(String zone, CardFilter filter, int maxLevelSum) implements NeedsTarget {}
@@ -283,9 +255,6 @@ public sealed interface EffectStep {
     /** "sacrifica 1 aliado [filtro]". */
     record SacrificeAllyWhere(CardFilter filter) implements NeedsTarget {}
 
-    /** "tributa 1 aliado [filtro]": one of your creatures on the field goes to your Tributos (not destroyed). */
-    record TributeAlly(CardFilter filter) implements NeedsTarget {}
-
     /** "tributa 1 material de 1 aliado". */
     record TributeAllyMaterial() implements NeedsTarget {}
 
@@ -327,39 +296,11 @@ public sealed interface EffectStep {
     /** "pero no puede declarar ataque este turno": the creature this effect summoned. */
     record SummonedCannotAttack() implements EffectStep {}
 
-    /** "puedes subir los materiales de esta carta a tu mano": all of them; they are the last "tributed" for {@link IfTributed}. */
-    record MaterialsToHand(boolean upTo) implements EffectStep {
-        public MaterialsToHand() {
-            this(false);
-        }
-    }
-
-    /** "coloca esta carta al tope de tus vidas bocabajo". */
-    record SelfToLife() implements EffectStep {}
-
-    /** "coloca 1 criatura [filtro] de los materiales de esta carta en tu retaguardia" (placed, not summoned). */
-    record MaterialToBack(CardFilter filter) implements NeedsTarget {}
-
-    /** "coloca esta carta en tu retaguardia" from a zone (placed, not summoned). */
-    record PlaceSelfOnField(String zone) implements NeedsTarget {}
-
     /** "juega 1 [estructura / utilidad] [filtro] de tus [zona] reduciendo su coste en N". */
     record PlayFromZone(String zone, CardFilter filter, int reduce) implements NeedsTarget {}
 
-    /** "mira las primeras N cartas: de ellas tributa M y envía el resto al fondo de tu mazo en cualquier orden". */
-    record TributeFromLookedRestToBottom(int count) implements EffectStep {}
-
-    /** "añade 1 [aliado / criatura] [filtro] de tus [zonas] como recurso de esta carta". */
-    record AddResourceFrom(String zones, CardFilter filter) implements EffectStep {}
-
-    /** "sube esta carta a tu mano" (from the field). */
-    record ReturnSelfToHand() implements EffectStep {}
-
     /** "reactiva 1 de tus estructuras [filtro]". */
     record UntapStructure(CardFilter filter) implements NeedsTarget {}
-
-    /** Celeridad: "puede subir a tu línea frontal". */
-    record MoveSelfToFront() implements NeedsTarget {}
 
     /** "puedes jugar esta carta sin pagar su coste" (from the hand). */
     record PlaySelfFree() implements NeedsTarget {}
@@ -385,9 +326,6 @@ public sealed interface EffectStep {
     /** "envíalas al tope o al fondo de tu mazo" / "devuélvelas al tope o envíalas al fondo": the looked cards, all together. */
     record LookedToTopOrBottom() implements EffectStep {}
 
-    /** "de ellas toma hasta N [filtro]. Tributa el resto." (after {@link LookTop}). */
-    record TakeFromLookedRestToTributes(int max, CardFilter filter) implements EffectStep {}
-
     /** "Si [condición sobre la mesa]:": the next {@code covers} steps only if it holds now. */
     record IfCondition(Condition condition, int covers) implements EffectStep {}
 
@@ -407,12 +345,6 @@ public sealed interface EffectStep {
 
     /** "termina tu turno": once nothing is pending, the turn goes on to its end phase. */
     record EndYourTurn() implements EffectStep {}
-
-    /** "coloca esta carta en tu línea frontal [agotada]" from a zone (placed, not summoned). */
-    record PlaceSelfInFrontLine(String zone, boolean exhausted) implements EffectStep {}
-
-    /** "añádele esta carta como recurso": this card becomes a Recurso of the subject (the ally of the trigger, or the chosen one). */
-    record AttachSelfAsResourceToSubject() implements EffectStep {}
 
     /** "activa 1 de sus efectos En Invocación": the subject activates its own "En Invocación" as a new link. */
     record ActivateSubjectSummonEffect() implements EffectStep {}
@@ -467,23 +399,14 @@ public sealed interface EffectStep {
     /** "agota 1 de tus [estructuras / cartas] [filtro]" (not this card): a payment; "Si lo haces" reads it. */
     record TapOwnCard(CardFilter filter) implements NeedsTarget {}
 
-    /** "añade 1 aliado [filtro] como recurso de esta carta": another creature of your field leaves it to be a Recurso. */
-    record AddAllyAsResource(CardFilter filter) implements NeedsTarget {}
-
     /** "tribútalo": the chosen creatures (enemies still in the Línea frontal, or yours) go to their owner's Tributos, not destroyed. */
     record TributeChosen() implements EffectStep {}
 
     /** "agótala": the chosen creatures (yours, or enemies still in the Línea frontal); "Si lo haces" when any was exhausted. */
     record TapChosenOnField() implements EffectStep {}
 
-    /** "mueve un aliado de tu retaguardia a tu línea frontal" (up to one). */
-    record MoveAllyToFront() implements EffectStep {}
-
     /** "agótalo": the ally chosen before (the subject). */
     record TapSubject() implements EffectStep {}
-
-    /** "súbelo a tu mano": the subject (the chosen ally) goes back to its owner's hand; it is the last "tributed" (its level). */
-    record ReturnSubjectToHand() implements EffectStep {}
 
     /**
      * "[el aliado elegido] puede invocar por [método] 1 carta [filtro] en tu [zona] reduciendo el coste especial en X donde X es el nivel
@@ -500,15 +423,6 @@ public sealed interface EffectStep {
     /** "un aliado invoca esta carta de forma especial [reduciendo su coste especial en N]" from the zone it is in. */
     record SpecialSelf(String zone, int reduce) implements NeedsTarget {}
 
-    /** "coloca [hasta] N [filtro] de tus [zona] en tu [retaguardia / línea frontal] [agotada]" (placed, not summoned). */
-    record PlaceFromZone(String zone, CardFilter filter, int max, boolean toFront, boolean exhausted) implements NeedsTarget {}
-
-    /** "coloca [alguno de ellos] [agotado] en tu línea frontal": up to one of the last tributed or discarded cards that matches. */
-    record PlaceLastTributed(CardFilter filter, boolean toFront, boolean exhausted) implements EffectStep {}
-
-    /** "tribútalo": the card of the triggering event goes from its zone (the Descarte, the hand…) to the Tributos. */
-    record TributeTriggerCard() implements EffectStep {}
-
     /**
      * "1 aliado puede invocar por Ritual 1 criatura [filtro] de tus [zona] reduciendo el coste especial en X", X read when it is used
      * ("1 por cada 10 tributos Violeta").
@@ -517,15 +431,6 @@ public sealed interface EffectStep {
 
     /** "de ellas toma hasta N cartas [filtro] con distinto nivel. Envía el resto al fondo de tu mazo" (after {@link LookTop}). */
     record TakeFromLookedDistinctLevels(int max, CardFilter filter) implements EffectStep {}
-
-    /** "de ellas toma hasta N cartas [filtro]" leaving the rest with the effect (for "envía el resto al tope o al fondo"). */
-    record TakeFromLooked(int max, CardFilter filter) implements EffectStep {}
-
-    /** "de ellas tributa hasta N cartas [filtro]" leaving the rest with the effect. */
-    record TributeFromLooked(int max, CardFilter filter) implements EffectStep {}
-
-    /** "de ellas envía hasta N a tu descarte. Envía el resto al fondo de tu mazo" (after {@link LookTop}). */
-    record DiscardFromLookedRestToBottom(int max) implements EffectStep {}
 
     /** "revela 1 [filtro] y 1 [filtro] de tu mano": one different card for each filter (a cost); the cards stay in the hand. */
     record RevealFromHand(java.util.List<CardFilter> filters) implements NeedsTarget {}
@@ -541,9 +446,6 @@ public sealed interface EffectStep {
 
     /** "[los elegidos] no pueden bloquear hasta el final del turno". */
     record ChosenCannotBlock() implements EffectStep {}
-
-    /** "tributa todos tus otros aliados": {@code lastCount} is how many. */
-    record TributeOtherAllies() implements EffectStep {}
 
     /** "esta carta gana fuerza N por cada [aliado tributado …] hasta el final del turno" (N × {@code lastCount}). */
     record GainStrengthPerCount(int each) implements EffectStep {}
@@ -575,17 +477,8 @@ public sealed interface EffectStep {
     /** "destruye 1 enemigo en la línea frontal (este efecto no hace objetivo)": the controller picks it; immunity does not stop it. */
     record DestroyEnemyNoTarget() implements EffectStep {}
 
-    /** "coloca esta carta al tope de tus vidas [bocarriba]" from the zone it is in (the field, the Descarte…). */
-    record SelfToLifeFrom(boolean faceUp) implements EffectStep {}
-
-    /** "coloca hasta 1 criatura [filtro] de tus [zona] al tope de tus vidas [bocarriba]". */
-    record ZoneToLife(String zone, CardFilter filter, boolean faceUp) implements EffectStep {}
-
     /** "destruye 1 aliado [filtro]": by this effect; it is the last "tributed" (its level for "de nivel menor"). */
     record DestroyAlly(CardFilter filter) implements NeedsTarget {}
-
-    /** "añádela como material a esta carta": the card of the triggering event (a life removed…) becomes a material of this card. */
-    record AttachTriggerCardAsMaterial() implements EffectStep {}
 
     /**
      * "invoca 1 criatura [filtro] de tus [zona] de nivel menor [que el aliado destruido / devuelto]" ({@code relation} "lower"), or "de
@@ -647,17 +540,8 @@ public sealed interface EffectStep {
     /** "sacrifica todas las criaturas [filtro] en la línea frontal" (both players'). */
     record SacrificeAllInFrontLine(CardFilter filter) implements EffectStep {}
 
-    /** "sube a tu mano 1 [filtro] bajo tu control" (a cost). */
-    record ReturnOwnCardToHand(CardFilter filter) implements NeedsTarget {}
-
-    /** "tributa 1 [filtro] bajo tu control" (any of your cards on the field, a creature or not). */
-    record TributeOwnCard(CardFilter filter) implements NeedsTarget {}
-
     /** "invoca 1 de los recursos de esta carta reduciendo su coste en N". */
     record SummonResource(int reduce) implements NeedsTarget {}
-
-    /** "añade 1 carta [filtro] de tus [zona] como recurso de esta carta"; {@code upTo}: none is fine. */
-    record AddResourceFromZone(String zones, CardFilter filter, boolean upTo) implements EffectStep {}
 
     /** "añade esta carta (de tu descarte / tributos) como recurso de un aliado". */
     record AttachSelfAsResourceToAlly() implements NeedsTarget {}
@@ -698,9 +582,6 @@ public sealed interface EffectStep {
     /** "de ellas toma hasta 1 [filtro] y hasta 1 [filtro]. Envía el resto al fondo de tu mazo" (each card for a different filter). */
     record TakeFromLookedEachRestToBottom(java.util.List<CardFilter> filters) implements EffectStep {}
 
-    /** "coloca 1 [filtro] de los materiales de esta carta en tu línea frontal" (placed, not summoned). */
-    record MaterialToFrontLine(CardFilter filter) implements NeedsTarget {}
-
     /** "puedes colocar 1 [filtro] de los materiales de un aliado agotado en tu retaguardia" (as the card type it is). */
     record MaterialOfExhaustedAllyToBack(CardFilter filter) implements NeedsTarget {}
 
@@ -728,9 +609,6 @@ public sealed interface EffectStep {
     /** "al final del ataque súbelo a tu mano con todos sus materiales": the subject, when the attack going on ends. */
     record ReturnSubjectAtAttackEnd() implements EffectStep {}
 
-    /** "súbelo a tu mano con todos sus materiales": the subject and its materials go to the hand; it is the last tributed (its level). */
-    record ReturnSubjectWithMaterials() implements EffectStep {}
-
     /**
      * "invoca de forma especial 1 [filtro] de tu [zona] del mismo nivel, pero distinto nombre [que la carta devuelta] [sin pagar su coste
      * especial]".
@@ -739,9 +617,6 @@ public sealed interface EffectStep {
 
     /** "puedes tributar esta carta" said by an inherited effect when its holder left the field: the Recurso, now in the Descarte. */
     record TributeNamedFromDiscard(String name) implements NeedsTarget {}
-
-    /** "coloca esta carta [agotada] en tu [retaguardia / línea frontal]" from the zone it is in. */
-    record PlaceSelf(String zone, boolean toFront, boolean exhausted) implements NeedsTarget {}
 
     /** "esta carta [agotada] declara bloqueo" (it blocks the attack going on, even exhausted). */
     record DeclareBlockSelf() implements EffectStep {}
