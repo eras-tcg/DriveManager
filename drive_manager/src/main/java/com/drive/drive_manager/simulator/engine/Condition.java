@@ -76,44 +76,176 @@ public sealed interface Condition {
 
     // ------------------------------------------------------------------ Triggers
 
+    /** Whose: yours, your enemy's or either. */
+    enum Side { YOU, ENEMY, ANY }
+
+    private static boolean sideIs(Side side, String player, String controller) {
+        return switch (side) {
+            case ANY -> true;
+            case YOU -> controller.equals(player);
+            case ENEMY -> player != null && !controller.equals(player);
+        };
+    }
+
     /**
-     * "si algún aliado [filtro] es destruido" (sacrifices included: rule 4.0.4.2); {@code byOpponent}: "por el oponente";
-     * {@code exceptAttacking}: not while it attacked.
+     * "si … es destruido" (sacrifices included: rule 4.0.4.2).
+     *
+     * @param owner          whose card was destroyed
+     * @param by             who destroyed it
+     * @param filter         which card; null: not asked
+     * @param byCard         "por tus [filtro]": the card whose effect did it; null: not asked
+     * @param byThis         "esta carta destruye"
+     * @param cause          "effect", "battle" or null
+     * @param exceptAttacker "excepto como atacante"
      */
-    record AllyDestroyed(CardFilter filter, boolean byOpponent, boolean exceptAttacking) implements Condition {
+    record Destroyed(Side owner, Side by, CardFilter filter, CardFilter byCard, boolean byThis, String cause, boolean exceptAttacker) implements Condition {
         public boolean test(GameRoom room, GameEvent event, CardSlot source, String controller) {
-            if (!isDestruction(event) || !controller.equals(ownerOf(event))) return false;
+            if (event == null || !isDestruction(event)) return false;
+            if (!sideIs(owner, ownerOf(event), controller) || !sideIs(by, event.getPlayerId(), controller)) return false;
+            if ("effect".equals(cause) && !destroyedByEffect(event)) return false;
+            if ("battle".equals(cause) && !(event.getData() != null && EffectEngine.CAUSE_BATTLE.equals(event.getData().get("cause")))) return false;
+            if (byThis && !(event.getData() != null && source.getInstanceId().equals(event.getData().get("byCard")))) return false;
+            if (exceptAttacker && event.getData() != null && Boolean.TRUE.equals(event.getData().get("asAttacker"))) return false;
+            if (byCard != null) {
+                Object id = event.getData() == null ? null : event.getData().get("byCard");
+                CardSlot card = id == null ? null : EffectEngine.findInRoom(room, (String) id);
+                if (card == null || !byCard.matches(card)) return false;
+            }
+            if (filter == null) return true;
             CardSlot destroyed = EffectEngine.eventCard(room, event);
-            if (destroyed == null || !"creature".equals(destroyed.getCardType()) || !filter.matches(destroyed)) return false;
-            if (byOpponent && (event.getPlayerId() == null || controller.equals(event.getPlayerId()))) return false;
-            return !exceptAttacking || !(event.getData() != null && Boolean.TRUE.equals(event.getData().get("asAttacker")));
+            return destroyed != null && filter.matches(destroyed);
         }
     }
 
-    /** "si destruyes algún enemigo"; {@code byEffect}: "por tus efectos". */
-    record YouDestroyedEnemy(boolean byEffect) implements Condition {
+    /**
+     * "si … es invocado".
+     *
+     * @param side   whose summon
+     * @param other  other than this card
+     * @param filter which creature; null: not asked
+     * @param how    "effect", "special" or null: any way
+     * @param kind   the special summon's method; null: any
+     */
+    record Summoned(Side side, boolean other, CardFilter filter, String how, String kind) implements Condition {
         public boolean test(GameRoom room, GameEvent event, CardSlot source, String controller) {
-            return isDestruction(event) && controller.equals(event.getPlayerId()) && !controller.equals(ownerOf(event))
-                    && (!byEffect || destroyedByEffect(event));
+            if (event == null) return false;
+            String type = event.getType();
+            boolean matches = switch (how == null ? "" : how) {
+                case "effect" -> GameEvent.EFFECT_SUMMON.equals(type);
+                case "special" -> GameEvent.SPECIAL_SUMMON.equals(type);
+                default -> GameEvent.NORMAL_SUMMON.equals(type) || GameEvent.SPECIAL_SUMMON.equals(type) || GameEvent.EFFECT_SUMMON.equals(type);
+            };
+            if (!matches || !sideIs(side, event.getPlayerId(), controller)) return false;
+            if (other && source.getInstanceId().equals(event.getCardInstanceId())) return false;
+            if (kind != null && (event.getData() == null || !kind.equals(event.getData().get("summonType")))) return false;
+            if (filter == null) return true;
+            CardSlot summoned = EffectEngine.eventCard(room, event);
+            return summoned != null && filter.matches(summoned);
         }
     }
 
-    /** "si esta carta destruye algún enemigo": in a clash, or by one of its effects; {@code inClash}: "por enfrentamiento". */
-    record ThisDestroyedEnemy(boolean inClash) implements Condition {
+    /** This card moved between zones: "si esta carta es removida de tus vidas", "si sube a la línea frontal". A null zone is not asked. */
+    record ThisMoved(String from, String to) implements Condition {
         public boolean test(GameRoom room, GameEvent event, CardSlot source, String controller) {
-            boolean destroyed = isDestruction(event) && event.getData() != null
-                    && source.getInstanceId().equals(event.getData().get("byCard")) && !controller.equals(ownerOf(event));
-            return destroyed && (!inClash || EffectEngine.CAUSE_BATTLE.equals(event.getData().get("cause")));
+            return event != null && source.getInstanceId().equals(event.getCardInstanceId())
+                    && (from == null || from.equals(event.getFromZone())) && (to == null || to.equals(event.getToZone()));
         }
     }
 
-    /** "si destruyes alguna criatura [por efecto]": yours or an enemy's. */
-    record YouDestroyedCreature(boolean byEffect) implements Condition {
+    /** "si [un aliado / algún enemigo] [filtro] declara ataque". */
+    record DeclaresAttack(Side side, CardFilter filter) implements Condition {
         public boolean test(GameRoom room, GameEvent event, CardSlot source, String controller) {
-            if (!isDestruction(event) || !controller.equals(event.getPlayerId()) || (byEffect && !destroyedByEffect(event))) return false;
-            CardSlot destroyed = EffectEngine.eventCard(room, event);
-            return destroyed != null && "creature".equals(destroyed.getCardType());
+            if (event == null || !GameEvent.ATTACK_DECLARED.equals(event.getType()) || !sideIs(side, event.getPlayerId(), controller)) return false;
+            if (filter == null) return true;
+            CardSlot attacker = EffectEngine.eventCard(room, event);
+            return attacker != null && filter.matches(attacker);
         }
+    }
+
+    // The usual printed phrases
+
+    static Condition allyDestroyed(CardFilter filter, boolean byOpponent, boolean exceptAttacking) {
+        return new Destroyed(Side.YOU, byOpponent ? Side.ENEMY : Side.ANY, filter.asCreature(), null, false, null, exceptAttacking);
+    }
+
+    static Condition youDestroyedEnemy(boolean byEffect) {
+        return new Destroyed(Side.ENEMY, Side.YOU, null, null, false, byEffect ? "effect" : null, false);
+    }
+
+    static Condition thisDestroyedEnemy(boolean inClash) {
+        return new Destroyed(Side.ENEMY, Side.ANY, null, null, true, inClash ? "battle" : null, false);
+    }
+
+    static Condition youDestroyedCreature(boolean byEffect) {
+        return new Destroyed(Side.ANY, Side.YOU, CardFilter.creatures(), null, false, byEffect ? "effect" : null, false);
+    }
+
+    static Condition allyDestroyedByYourEffect() {
+        return new Destroyed(Side.YOU, Side.YOU, null, null, false, "effect", false);
+    }
+
+    static Condition allyDestroyedEnemyInClash() {
+        return new Destroyed(Side.ENEMY, Side.YOU, null, null, false, "battle", false);
+    }
+
+    static Condition enemyDestroyedByYourCard(CardFilter by) {
+        return new Destroyed(Side.ENEMY, Side.YOU, null, by, false, null, false);
+    }
+
+    static Condition allySummoned(CardFilter filter) {
+        return new Summoned(Side.YOU, true, filter, null, null);
+    }
+
+    static Condition allySummonedByEffect(CardFilter filter) {
+        return new Summoned(Side.YOU, false, filter, "effect", null);
+    }
+
+    static Condition youSpecialSummoned(CardFilter filter) {
+        return new Summoned(Side.YOU, false, filter, "special", null);
+    }
+
+    static Condition youSpecialSummonedAs(String kind, CardFilter filter) {
+        return new Summoned(Side.YOU, false, filter, "special", kind);
+    }
+
+    static Condition summonedByEffect() {
+        return new Summoned(Side.ANY, false, null, "effect", null);
+    }
+
+    static Condition specialSummoned() {
+        return new Summoned(Side.ANY, false, null, "special", null);
+    }
+
+    static Condition tributedFromDeck(CardFilter by) {
+        return new ThisTributed("deck", null, by);
+    }
+
+    static Condition tributedAsMaterial(int byLevel) {
+        return new ThisTributed("materials", null, byLevel > 0 ? CardFilter.any().withMinLevel(byLevel) : null);
+    }
+
+    static Condition thisLeftLives() {
+        return new ThisMoved("lifeStack", null);
+    }
+
+    static Condition thisSentToDiscardAsMaterial() {
+        return new ThisMoved("materials", "discardPile");
+    }
+
+    static Condition thisMovedToFront() {
+        return new ThisMoved(null, "frontLine");
+    }
+
+    static Condition anyTurnEnds() {
+        return new TurnEnds(false);
+    }
+
+    static Condition allyDeclaresAttack(CardFilter filter) {
+        return new DeclaresAttack(Side.YOU, filter);
+    }
+
+    static Condition enemyDeclaresAttack() {
+        return new DeclaresAttack(Side.ENEMY, null);
     }
 
     /** "si algún aliado [filtro] inflige daño directo" (by combat). */
@@ -122,13 +254,6 @@ public sealed interface Condition {
             if (!GameEvent.LIFE_DAMAGE.equals(event.getType()) || !controller.equals(event.getPlayerId()) || event.getData() == null) return false;
             CardSlot attacker = EffectEngine.findInRoom(room, (String) event.getData().get("attackerId"));
             return attacker != null && filter.matches(attacker);
-        }
-    }
-
-    /** "si algún enemigo declara ataque". */
-    record EnemyDeclaresAttack() implements Condition {
-        public boolean test(GameRoom room, GameEvent event, CardSlot source, String controller) {
-            return GameEvent.ATTACK_DECLARED.equals(event.getType()) && event.getPlayerId() != null && !controller.equals(event.getPlayerId());
         }
     }
 
@@ -151,22 +276,6 @@ public sealed interface Condition {
         public boolean test(GameRoom room, GameEvent event, CardSlot source, String controller) {
             return destroyedByEffect(event) || (event.getData() != null && EffectEngine.CAUSE_EFFECT.equals(event.getData().get("cause"))
                     && event.getData().get("byCard") != null);
-        }
-    }
-
-    /** "si esta carta es tributada desde tu mazo [por efecto de una carta filtro]"; {@code by} null: by anything. */
-    record TributedFromDeck(CardFilter by) implements Condition {
-        public boolean test(GameRoom room, GameEvent event, CardSlot source, String controller) {
-            if (!GameEvent.TRIBUTE.equals(event.getType()) || !"deck".equals(event.getFromZone())) return false;
-            if (!source.getInstanceId().equals(event.getCardInstanceId())) return false;
-            if (by == null) return true;
-            Object byCard = event.getData() == null ? null : event.getData().get("byCard");
-            for (PlayerState p : room.getPlayers().values()) {
-                for (List<CardSlot> zone : List.of(p.getField(), p.getHand(), p.getTributeZone(), p.getDiscardPile())) {
-                    for (CardSlot c : zone) if (c.getInstanceId().equals(byCard)) return by.matches(c);
-                }
-            }
-            return false;
         }
     }
 
@@ -193,71 +302,10 @@ public sealed interface Condition {
         }
     }
 
-    /** "si algún aliado [filtro] es invocado" (by any method: normal, special or by effect), other than this card. */
-    record AllySummoned(CardFilter filter) implements Condition {
-        public boolean test(GameRoom room, GameEvent event, CardSlot source, String controller) {
-            String type = event.getType();
-            boolean summon = GameEvent.NORMAL_SUMMON.equals(type) || GameEvent.SPECIAL_SUMMON.equals(type) || GameEvent.EFFECT_SUMMON.equals(type);
-            if (!summon || !controller.equals(event.getPlayerId()) || source.getInstanceId().equals(event.getCardInstanceId())) return false;
-            CardSlot summoned = EffectEngine.eventCard(room, event);
-            return summoned != null && filter.matches(summoned);
-        }
-    }
-
-    /** "si algún aliado [filtro] es invocado por [Ascenso / Evolución / Materialización / Ritual]" ({@code kind}: "promotion"…). */
-    record YouSpecialSummonedAs(String kind, CardFilter filter) implements Condition {
-        public boolean test(GameRoom room, GameEvent event, CardSlot source, String controller) {
-            if (!GameEvent.SPECIAL_SUMMON.equals(event.getType()) || !controller.equals(event.getPlayerId())) return false;
-            if (event.getData() == null || !kind.equals(event.getData().get("summonType"))) return false;
-            CardSlot summoned = EffectEngine.eventCard(room, event);
-            return summoned != null && filter.matches(summoned);
-        }
-    }
-
     /** "si esta carta tiene algún recurso". */
     record HasResources() implements Condition {
         public boolean test(GameRoom room, GameEvent event, CardSlot source, String controller) {
             return source != null && !source.getResources().isEmpty();
-        }
-    }
-
-    /** "si esta carta es tributada como material [por efecto de un aliado nivel N o mayor]"; {@code byLevel} 0: by anything. */
-    record TributedAsMaterial(int byLevel) implements Condition {
-        public boolean test(GameRoom room, GameEvent event, CardSlot source, String controller) {
-            if (!GameEvent.TRIBUTE.equals(event.getType()) || !"materials".equals(event.getFromZone())) return false;
-            if (!source.getInstanceId().equals(event.getCardInstanceId())) return false;
-            if (byLevel <= 0) return true;
-            if (event.getEffectId() == null || event.getData() == null) return false;
-            CardSlot by = EffectEngine.findIn(room, controller, "field", (String) event.getData().get("byCard"));
-            return by != null && by.getLevel() != null && by.getLevel() >= byLevel;
-        }
-    }
-
-    /** "si invocas especialmente 1 [filtro]". */
-    record YouSpecialSummoned(CardFilter filter) implements Condition {
-        public boolean test(GameRoom room, GameEvent event, CardSlot source, String controller) {
-            if (!GameEvent.SPECIAL_SUMMON.equals(event.getType()) || !controller.equals(event.getPlayerId())) return false;
-            CardSlot summoned = EffectEngine.eventCard(room, event);
-            return summoned != null && filter.matches(summoned);
-        }
-    }
-
-    /**
-     * A summon by effect: one an effect orders (rule 9.1.0.2). A special summon an effect only enables (a
-     * Materialización by Composición, an Ascenso by Armadura) is not one ("Invocaciones especiales").
-     */
-    record SummonedByEffect() implements Condition {
-        public boolean test(GameRoom room, GameEvent event, CardSlot source, String controller) {
-            return GameEvent.EFFECT_SUMMON.equals(event.getType());
-        }
-    }
-
-    /** "si algún aliado [filtro] es invocado por efecto". */
-    record AllySummonedByEffect(CardFilter filter) implements Condition {
-        public boolean test(GameRoom room, GameEvent event, CardSlot source, String controller) {
-            if (!GameEvent.EFFECT_SUMMON.equals(event.getType()) || !controller.equals(event.getPlayerId())) return false;
-            CardSlot summoned = EffectEngine.eventCard(room, event);
-            return summoned != null && filter.matches(summoned);
         }
     }
 
@@ -281,9 +329,13 @@ public sealed interface Condition {
     }
 
     /** "al final del turno" (of its controller). */
-    record TurnEnds() implements Condition {
+    record TurnEnds(boolean yours) implements Condition {
+        public TurnEnds() {
+            this(true);
+        }
+
         public boolean test(GameRoom room, GameEvent event, CardSlot source, String controller) {
-            return GameEvent.TURN_END.equals(event.getType()) && controller.equals(event.getPlayerId());
+            return event != null && GameEvent.TURN_END.equals(event.getType()) && (!yours || controller.equals(event.getPlayerId()));
         }
     }
 
@@ -322,13 +374,6 @@ public sealed interface Condition {
             if (!"lifeStack".equals(event.getFromZone())) return false;
             Object defender = event.getData() == null ? null : event.getData().get("defenderId");
             return controller.equals(defender) || controller.equals(ownerOf(event));
-        }
-    }
-
-    /** "si esta carta es removida de tus vidas". */
-    record ThisLeftLives() implements Condition {
-        public boolean test(GameRoom room, GameEvent event, CardSlot source, String controller) {
-            return "lifeStack".equals(event.getFromZone()) && source.getInstanceId().equals(event.getCardInstanceId());
         }
     }
 
@@ -455,13 +500,6 @@ public sealed interface Condition {
         }
     }
 
-    /** "En Invocación especial": this card was summoned by a special summon. */
-    record SpecialSummoned() implements Condition {
-        public boolean test(GameRoom room, GameEvent event, CardSlot source, String controller) {
-            return event != null && GameEvent.SPECIAL_SUMMON.equals(event.getType());
-        }
-    }
-
     /** "si esta carta activa [habilidad]" (Agrupar): it used that ability now. */
     record ThisUsedKeyword(String keyword) implements Condition {
         public boolean test(GameRoom room, GameEvent event, CardSlot source, String controller) {
@@ -475,15 +513,6 @@ public sealed interface Condition {
         public boolean test(GameRoom room, GameEvent event, CardSlot source, String controller) {
             return EffectEngine.levelsOnField(room, room.getOpponentId(controller), CardFilter.creatures())
                     >= EffectEngine.levelsOnField(room, controller, CardFilter.creatures()) + by;
-        }
-    }
-
-    /** "si un aliado [filtro] declara ataque". */
-    record AllyDeclaresAttack(CardFilter filter) implements Condition {
-        public boolean test(GameRoom room, GameEvent event, CardSlot source, String controller) {
-            if (event == null || !GameEvent.ATTACK_DECLARED.equals(event.getType()) || !controller.equals(event.getPlayerId())) return false;
-            CardSlot attacker = EffectEngine.eventCard(room, event);
-            return attacker != null && filter.matches(attacker);
         }
     }
 
@@ -514,13 +543,6 @@ public sealed interface Condition {
             if (enemy == controller.equals(owner)) return false;
             CardSlot card = EffectEngine.findInRoom(room, event.getCardInstanceId());
             return card != null && filter.matches(card);
-        }
-    }
-
-    /** "al final del turno" of any turn (not only its controller's: "Todos Los Turnos", "Turno Oponente"). */
-    record AnyTurnEnds() implements Condition {
-        public boolean test(GameRoom room, GameEvent event, CardSlot source, String controller) {
-            return event != null && GameEvent.TURN_END.equals(event.getType());
         }
     }
 
@@ -570,14 +592,6 @@ public sealed interface Condition {
         }
     }
 
-    /** "si esta carta es enviada a tu descarte como material". */
-    record ThisSentToDiscardAsMaterial() implements Condition {
-        public boolean test(GameRoom room, GameEvent event, CardSlot source, String controller) {
-            return event != null && source.getInstanceId().equals(event.getCardInstanceId()) && "materials".equals(event.getFromZone())
-                    && "discardPile".equals(event.getToZone());
-        }
-    }
-
     /** "si juegas alguna [filtro]" (an utility or structure, from the hand or by an effect). */
     record YouPlayed(CardFilter filter) implements Condition {
         public boolean test(GameRoom room, GameEvent event, CardSlot source, String controller) {
@@ -592,14 +606,6 @@ public sealed interface Condition {
         public boolean test(GameRoom room, GameEvent event, CardSlot source, String controller) {
             if (event == null || !GameEvent.LIFE_DAMAGE.equals(event.getType()) || event.getData() == null) return false;
             return controller.equals(event.getData().get("defenderId"));
-        }
-    }
-
-    /** "si esta carta sube a la línea frontal". */
-    record ThisMovedToFront() implements Condition {
-        public boolean test(GameRoom room, GameEvent event, CardSlot source, String controller) {
-            return event != null && GameEvent.MOVE.equals(event.getType()) && "frontLine".equals(event.getToZone())
-                    && source.getInstanceId().equals(event.getCardInstanceId());
         }
     }
 
@@ -643,13 +649,6 @@ public sealed interface Condition {
             if (other == null) return false;
             CardSlot card = EffectEngine.findInRoom(room, other);
             return card != null && enemy.matches(card);
-        }
-    }
-
-    /** "si algún aliado es destruido por tus efectos". */
-    record AllyDestroyedByYourEffect() implements Condition {
-        public boolean test(GameRoom room, GameEvent event, CardSlot source, String controller) {
-            return isDestruction(event) && controller.equals(ownerOf(event)) && controller.equals(event.getPlayerId()) && destroyedByEffect(event);
         }
     }
 
@@ -701,30 +700,12 @@ public sealed interface Condition {
         }
     }
 
-    /** "si algún aliado destruye un enemigo por enfrentamiento". */
-    record AllyDestroyedEnemyInClash() implements Condition {
-        public boolean test(GameRoom room, GameEvent event, CardSlot source, String controller) {
-            return isDestruction(event) && controller.equals(event.getPlayerId()) && !controller.equals(ownerOf(event))
-                    && event.getData() != null && EffectEngine.CAUSE_BATTLE.equals(event.getData().get("cause"));
-        }
-    }
-
     /** "si fueron removidos [filtro] de los materiales de algún aliado por tus efectos". */
     record MaterialRemovedByYou(CardFilter filter) implements Condition {
         public boolean test(GameRoom room, GameEvent event, CardSlot source, String controller) {
             if (event == null || !"materials".equals(event.getFromZone()) || event.getEffectId() == null || !controller.equals(event.getPlayerId())) return false;
             CardSlot card = EffectEngine.eventCard(room, event);
             return card != null && filter.matches(card);
-        }
-    }
-
-    /** "si algún enemigo es destruido por tus [utilidades / filtro]": by an effect of one of your cards that matches. */
-    record EnemyDestroyedByYourCard(CardFilter by) implements Condition {
-        public boolean test(GameRoom room, GameEvent event, CardSlot source, String controller) {
-            if (!isDestruction(event) || !controller.equals(event.getPlayerId()) || controller.equals(ownerOf(event))) return false;
-            Object byId = event.getData() == null ? null : event.getData().get("byCard");
-            CardSlot card = byId == null ? null : EffectEngine.findInRoom(room, (String) byId);
-            return card != null && by.matches(card);
         }
     }
 

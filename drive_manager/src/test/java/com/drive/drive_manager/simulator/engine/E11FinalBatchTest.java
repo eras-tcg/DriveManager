@@ -73,9 +73,9 @@ class E11FinalBatchTest {
         ritual.setEffectId("eff-1");
         ritual.setData(new java.util.HashMap<>(java.util.Map.of("cause", EffectEngine.CAUSE_RITUAL, "ownerId", "host")));
         onField(host, card("c", "Criatura", 1, 1, "P"));
-        assertThat(new Condition.YouDestroyedCreature(true).test(room, ritual, null, "host")).isFalse();
+        assertThat(Condition.youDestroyedCreature(true).test(room, ritual, null, "host")).isFalse();
         ritual.getData().put("cause", EffectEngine.CAUSE_EFFECT);
-        assertThat(new Condition.YouDestroyedCreature(true).test(room, ritual, null, "host")).isTrue();
+        assertThat(Condition.youDestroyedCreature(true).test(room, ritual, null, "host")).isTrue();
     }
 
     @Test

@@ -45,7 +45,7 @@ class DesignerRulingsBatch2Test {
     @Test
     void inmediatamenteMissesItsMomentWhenSomethingElseHappenedAfter() {
         onField(host, card("s", "Invocada", 1, 1, "R"));
-        Condition espada = new Condition.Immediately(new Condition.AllySummonedByEffect(CardFilter.any()));
+        Condition espada = new Condition.Immediately(Condition.allySummonedByEffect(CardFilter.any()));
 
         GameEvent summon = event(1, GameEvent.EFFECT_SUMMON, "s", "r1");
         event(2, GameEvent.EFFECT_RESOLVED, null, "r1");
@@ -55,7 +55,7 @@ class DesignerRulingsBatch2Test {
         event(3, GameEvent.MOVE, "x", "r1");
         assertThat(espada.test(room, summon, null, "host")).isFalse();
         // A plain "si…" is still met
-        assertThat(new Condition.AllySummonedByEffect(CardFilter.any()).test(room, summon, null, "host")).isTrue();
+        assertThat(Condition.allySummonedByEffect(CardFilter.any()).test(room, summon, null, "host")).isTrue();
     }
 
     @Test
