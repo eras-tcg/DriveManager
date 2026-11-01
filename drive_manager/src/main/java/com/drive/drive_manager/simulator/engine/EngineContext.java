@@ -246,6 +246,167 @@ final class EngineContext implements EffectContext {
     }
 
     @Override
+    public void draw(int count, boolean bothPlayers) {
+        for (PlayerState p : bothPlayers ? List.copyOf(room.getPlayers().values()) : List.of(player())) {
+            int n = Math.min(count, p.getDeck().size());
+            for (int i = 0; i < n; i++) Summons.drawOne(room, p, effect, false);
+            if (!bothPlayers) done(n > 0);
+            if (n > 0 || count > 0) EffectEngine.log(room, p.getUsername() + " roba " + n + " " + (n == 1 ? "carta" : "cartas") + " (" + effect.getSourceName() + ")"
+                    + (n < count ? ": su mazo no tenía más" : ""), room.getEventSeq());
+        }
+    }
+
+    @Override
+    public void gainGems(int count) {
+        String userId = player().getUserId();
+        room.setSharedCounter(EffectEngine.clamp(room.getSharedCounter() + count * EffectEngine.direction(room, userId)));
+        EffectEngine.record(room, GameEvent.GAIN_GEMS, userId, null, null, null, effect, Map.of("count", count),
+                player().getUsername() + " gana " + EffectEngine.gemsText(count) + " (" + effect.getSourceName() + ")");
+    }
+
+    @Override
+    public void damage(int amount) {
+        Steps.damageByEffect(room, effect, player(), amount);
+    }
+
+    @Override
+    public void look(int count) {
+        int n = Math.min(count, player().getDeck().size());
+        for (int i = 0; i < n; i++) effect.getLooked().add(player().getDeck().remove(0));
+        EffectEngine.record(room, GameEvent.LOOK_TOP, player().getUserId(), null, "deck", null, effect, Map.of("count", n),
+                player().getUsername() + " mira las primeras " + n + " cartas de su mazo (" + effect.getSourceName() + ")");
+    }
+
+    private PlayerState ownerOnField(CardSlot card) {
+        for (PlayerState p : room.getPlayers().values()) if (EffectEngine.find(p.getField(), card.getInstanceId()) != null) return p;
+        return null;
+    }
+
+    @Override
+    public boolean onField(CardSlot card) {
+        return ownerOnField(card) != null;
+    }
+
+    @Override
+    public boolean canTap(CardSlot card) {
+        return !card.isTapped() && !EffectEngine.keywords(card).contains(EffectEngine.CANNOT_TAP);
+    }
+
+    @Override
+    public boolean canUntap(CardSlot card) {
+        return card.isTapped() && card.getNoUntap() != 1;
+    }
+
+    @Override
+    public void setTapped(CardSlot card, boolean tapped) {
+        PlayerState owner = ownerOnField(card);
+        card.setTapped(tapped);
+        EffectEngine.record(room, tapped ? GameEvent.TAP : GameEvent.UNTAP, player().getUserId(), card, null, null, effect, Map.of("ownerId", owner.getUserId()),
+                player().getUsername() + (tapped ? " agota a " : " reactiva a ") + EffectEngine.name(card) + " (" + effect.getSourceName() + ")");
+    }
+
+    @Override
+    public int strength(CardSlot card) {
+        return Math.max(0, EffectEngine.strength(card));
+    }
+
+    @Override
+    public void changeStrength(CardSlot card, int amount, Action.Until until) {
+        if (amount == 0) return;
+        PlayerState owner = ownerOnField(card);
+        if (amount < 0) {
+            reduce(card, owner, -amount, until);
+            return;
+        }
+        String text = untilText(until);
+        switch (until) {
+            case NEXT_TURN -> card.setLaterStrength(card.getLaterStrength() + amount);
+            case ATTACK -> {
+                card.setTurnStrength(card.getTurnStrength() + amount);
+                if (room.getCombat() != null) room.getCombat().getUntilEndOfAttack().add(card.getInstanceId() + "|" + EffectEngine.STRENGTH_ENTRY + amount);
+            }
+            case NEXT_ATTACK -> {
+                card.setTurnStrength(card.getTurnStrength() + amount);
+                card.getUntilNextAttack().add(EffectEngine.STRENGTH_ENTRY + amount);
+            }
+            case TURN -> card.setTurnStrength(card.getTurnStrength() + amount);
+        }
+        EffectEngine.floating(card, effect, "Gana fuerza " + amount + text, floatingUntil(until), amount, null);
+        EffectEngine.record(room, GameEvent.GAIN, effect.getControllerId(), card, null, null, effect, Map.of("strength", amount),
+                EffectEngine.name(card) + " gana fuerza " + amount + text);
+    }
+
+    private void reduce(CardSlot card, PlayerState owner, int amount, Action.Until until) {
+        if (until != Action.Until.ATTACK) {
+            Steps.reduceStrength(room, effect, owner, card, amount, until == Action.Until.NEXT_TURN);
+            return;
+        }
+        card.setTurnStrength(card.getTurnStrength() - amount);
+        EffectEngine.floating(card, effect, "Pierde " + amount + " de fuerza hasta el final del ataque", "attack", -amount, null);
+        if (room.getCombat() != null) room.getCombat().getUntilEndOfAttack().add(card.getInstanceId() + "|" + EffectEngine.STRENGTH_ENTRY + (-amount));
+        int now = strength(card);
+        EffectEngine.record(room, GameEvent.STRENGTH_REDUCED, effect.getControllerId(), card, null, null, effect,
+                Map.of("amount", amount, "to", now, "ownerId", owner.getUserId(), "untilNextTurn", false),
+                EffectEngine.name(card) + " pierde " + amount + " de fuerza hasta el final del ataque (" + effect.getSourceName() + "): queda en " + now);
+        if (now <= 0) Removals.destroy(room, card, owner, false, EffectEngine.CAUSE_EFFECT, effect.getControllerId(), null, effect);
+    }
+
+    @Override
+    public void grant(CardSlot card, String keyword, Action.Until until) {
+        switch (until) {
+            case NEXT_TURN -> card.getLaterKeywords().add(keyword);
+            case ATTACK -> {
+                card.getTurnKeywords().add(keyword);
+                if (room.getCombat() != null) room.getCombat().getUntilEndOfAttack().add(card.getInstanceId() + "|" + keyword);
+            }
+            case NEXT_ATTACK -> {
+                card.getTurnKeywords().add(keyword);
+                card.getUntilNextAttack().add(keyword);
+            }
+            case TURN -> card.getTurnKeywords().add(keyword);
+        }
+        // A restriction already says what happens ("No puede agotarse"); an ability is gained
+        String what = (keyword.startsWith("No puede") ? keyword : "Gana " + keyword) + untilText(until);
+        EffectEngine.floating(card, effect, what, floatingUntil(until), 0, keyword);
+        EffectEngine.record(room, GameEvent.GAIN, effect.getControllerId(), card, null, null, effect, Map.of("keyword", keyword), EffectEngine.name(card) + ": " + what);
+    }
+
+    private static String untilText(Action.Until until) {
+        return switch (until) {
+            case TURN -> " hasta el final del turno";
+            case NEXT_TURN -> " hasta el final del turno oponente";
+            case ATTACK -> " hasta el final del ataque";
+            case NEXT_ATTACK -> " hasta el final del turno o de su próximo ataque";
+        };
+    }
+
+    private static String floatingUntil(Action.Until until) {
+        return switch (until) {
+            case TURN -> "turn";
+            case NEXT_TURN -> "nextTurn";
+            case ATTACK, NEXT_ATTACK -> "attack";
+        };
+    }
+
+    @Override
+    public void destroy(CardSlot card, boolean sacrifice) {
+        PlayerState owner = ownerOnField(card);
+        if (owner == null) return;
+        Removals.destroy(room, card, owner, sacrifice, EffectEngine.CAUSE_EFFECT, effect.getControllerId(), sacrifice ? effect.getSourceInstanceId() : null, effect);
+    }
+
+    @Override
+    public CardSlot subjectOrSelf() {
+        return Steps.subject(room, effect);
+    }
+
+    @Override
+    public CardSlot eventCardOnField() {
+        GameEvent trigger = EffectEngine.triggerEvent(room, effect);
+        return trigger == null ? null : find(trigger.getCardInstanceId());
+    }
+
+    @Override
     public void done(boolean done) {
         // "Si lo haces" reads what the resolution did, not the cost paid before it
         if (!Chain.paying(effect)) effect.setLastDone(done);
@@ -279,6 +440,14 @@ final class EngineContext implements EffectContext {
     @Override
     public int amount(Amount amount) {
         if (amount instanceof Amount.LastCount) return effect.getLastCount();
+        // They may be built on what only the effect knows
+        if (amount instanceof Amount.Times t) return amount(t.base()) * t.factor();
+        if (amount instanceof Amount.Scaled s) return amount(s.base()) / s.divisor() + s.plus();
+        if (amount instanceof Amount.SourceStrength) {
+            CardSlot self = Steps.subject(room, effect);
+            if (self == null && effect.getSubjectId() == null) self = EffectEngine.findAnywhere(room, effect.getControllerId(), effect.getSourceInstanceId());
+            return self == null ? 0 : EffectEngine.strength(self);
+        }
         return amount.of(room, effect.getControllerId());
     }
 

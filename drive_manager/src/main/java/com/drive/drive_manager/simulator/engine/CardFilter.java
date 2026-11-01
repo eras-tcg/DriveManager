@@ -119,6 +119,12 @@ public record CardFilter(List<String> colors, List<String> classes, String cardT
                 maxCost, name, notName, starterOnly, colorAndClass, notColors, nameContains, minCost, cardTypes, anyOf, mentions, backOnly);
     }
 
+    /** Only structures, on top of what it asks. */
+    public CardFilter asStructure() {
+        return new CardFilter(colors, classes, "structure", level, maxLevel, maxStrength, activeOnly, exhaustedOnly, minLevel, minStrength,
+                maxCost, name, notName, starterOnly, colorAndClass, notColors, nameContains, minCost, cardTypes, anyOf, mentions, backOnly);
+    }
+
     public CardFilter active() {
         return new CardFilter(colors, classes, cardType, level, maxLevel, maxStrength, true, exhaustedOnly, minLevel, minStrength,
                 maxCost, name, notName, starterOnly, colorAndClass, notColors, nameContains, minCost, cardTypes, anyOf, mentions, backOnly);

@@ -216,7 +216,7 @@ class E11FinalBatchTest {
     void principeCharlesAttacksFirstThenTheAscendedCreatureTakesItsPlaceWithoutItsAlAtacar() {
         // The ascended creature has an "Al Atacar" that must not trigger: the declaration already happened
         CardEffects.register("ascendido de prueba", new EffectScript("ascendido-prueba:al-atacar", EffectScript.Moment.ON_ATTACK, true,
-                "Al Atacar", "Gana 3 gemas.", List.of(new EffectStep.GainGems(3))));
+                "Al Atacar", "Gana 3 gemas.", List.of(Compose.gainGems(3))));
         CardSlot principe = onField(host, withClasses(card("pc", "Principe Charles Di Castirion", 4, 4, "R"), "armada", "caballero"));
         CardSlot ascended = card("as", "Ascendido De Prueba", 5, 5, "R");
         ascended.setStrength(10);

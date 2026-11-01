@@ -54,6 +54,37 @@ public interface EffectContext {
     /** What the last action moved, for "si lo haces", "por cada…" and "si tributaste…". */
     void moved(List<CardSlot> cards);
 
+    void draw(int count, boolean bothPlayers);
+
+    void gainGems(int count);
+
+    void damage(int amount);
+
+    void look(int count);
+
+    boolean onField(CardSlot card);
+
+    boolean canTap(CardSlot card);
+
+    boolean canUntap(CardSlot card);
+
+    void setTapped(CardSlot card, boolean tapped);
+
+    int strength(CardSlot card);
+
+    /** Its strength goes up or down for a while; a reduction to 0 destroys it (rule 12.0.0.2). */
+    void changeStrength(CardSlot card, int amount, com.drive.drive_manager.simulator.engine.effects.model.Action.Until until);
+
+    void grant(CardSlot card, String keyword, com.drive.drive_manager.simulator.engine.effects.model.Action.Until until);
+
+    void destroy(CardSlot card, boolean sacrifice);
+
+    /** The card the next actions act on: the one chosen before, or else this card. */
+    CardSlot subjectOrSelf();
+
+    /** The card of the triggering event, on the field. */
+    CardSlot eventCardOnField();
+
     /** Whether the action did something, for "si lo haces". */
     void done(boolean done);
 

@@ -49,8 +49,19 @@ public final class Selection {
             if (zone.startsWith("saved:")) {
                 if (!enemy) for (String id : ctx.saved(zone.substring("saved:".length()))) {
                     CardSlot card = ctx.find(id);
-                    if (card != null) into.add(card);
+                    // Rule 11.10.2: a target that left the enemy's Línea frontal is no longer valid
+                    if (card != null && !(ctx.isOpponents(card) && !ctx.inFrontLine(card))) into.add(card);
                 }
+                continue;
+            }
+            if (zone.equals("subjectOrSelf")) {
+                CardSlot card = enemy ? null : ctx.subjectOrSelf();
+                if (card != null) into.add(card);
+                continue;
+            }
+            if (zone.equals("eventOnField")) {
+                CardSlot card = enemy ? null : ctx.eventCardOnField();
+                if (card != null && !(ctx.isOpponents(card) && !ctx.inFrontLine(card))) into.add(card);
                 continue;
             }
             if (zone.equals("event")) {

@@ -1,6 +1,13 @@
 package com.drive.drive_manager.simulator.engine.effects.runtime;
 
+import com.drive.drive_manager.simulator.engine.effects.actions.DamageHandler;
+import com.drive.drive_manager.simulator.engine.effects.actions.DestroyHandler;
+import com.drive.drive_manager.simulator.engine.effects.actions.DrawHandler;
+import com.drive.drive_manager.simulator.engine.effects.actions.GemsHandler;
+import com.drive.drive_manager.simulator.engine.effects.actions.LookHandler;
+import com.drive.drive_manager.simulator.engine.effects.actions.ModifyHandler;
 import com.drive.drive_manager.simulator.engine.effects.actions.MoveHandler;
+import com.drive.drive_manager.simulator.engine.effects.actions.SetTappedHandler;
 import com.drive.drive_manager.simulator.engine.effects.actions.SelectHandler;
 import com.drive.drive_manager.simulator.engine.effects.model.Action;
 
@@ -12,7 +19,14 @@ public final class Actions {
 
     private static final Map<Class<? extends Action>, ActionHandler<?>> HANDLERS = Map.of(
             Action.Select.class, new SelectHandler(),
-            Action.Move.class, new MoveHandler());
+            Action.Move.class, new MoveHandler(),
+            Action.Draw.class, new DrawHandler(),
+            Action.Gems.class, new GemsHandler(),
+            Action.Damage.class, new DamageHandler(),
+            Action.Look.class, new LookHandler(),
+            Action.SetTapped.class, new SetTappedHandler(),
+            Action.Modify.class, new ModifyHandler(),
+            Action.Destroy.class, new DestroyHandler());
 
     private Actions() {}
 

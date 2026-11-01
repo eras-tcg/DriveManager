@@ -414,7 +414,7 @@ class E13CardsTest extends CardBatchSupport {
     void necrobrujoPlaysAUtilityFromTheTributesIfItTributedOne() {
         CardSlot util = utility("ut", "Utilidad", 1, "P");
         CardEffects.register("utilidad", new EffectScript("utilidad:en-juego", EffectScript.Moment.ON_PLAY, true, "En Juego", "Gana 1 gema.",
-                List.of(new EffectStep.GainGems(1))));
+                List.of(Compose.gainGems(1))));
         host.getHand().add(util);
         summon(withClasses(card("nb", "Necrobrujo", 5, 4, "P"), "brujo"));
         answer("ut", "hd1");

@@ -8,7 +8,7 @@ import com.drive.drive_manager.simulator.engine.CardFilter;
  *
  * @param zones  comma separated: hand, deck, tributeZone, discardPile, lifeStack, field, frontLine, backLine, materials and resources
  *               (of the effect's card), materials:subject and resources:subject (of the ally chosen before), allies (your creatures on the
- *               field), looked (the cards an effect is looking at), saved:x (what the memory has under x), event (the card of the triggering event)
+ *               field), subjectOrSelf (the card chosen before, or this card), eventOnField, looked (the cards an effect is looking at), saved:x (what the memory has under x), event (the card of the triggering event)
  * @param owner  whose zones
  * @param filter which of their cards
  * @param min    fewest to pick: in a cost it must be met in full or the effect is not activated; at resolution as many as there are

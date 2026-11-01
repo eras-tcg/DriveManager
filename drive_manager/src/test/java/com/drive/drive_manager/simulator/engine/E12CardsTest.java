@@ -476,7 +476,7 @@ class E12CardsTest extends CardBatchSupport {
         CardSlot zokolok = onField(host, card("zk", "Zokolok", 1, 1, "P"));
         CardSlot util = utility("ut", "Utilidad Violeta", 1, "P");
         CardEffects.register("utilidad violeta", new EffectScript("utilidad-violeta:en-juego", EffectScript.Moment.ON_PLAY, true, "En Juego",
-                "Gana 1 gema.", List.of(new EffectStep.GainGems(1))));
+                "Gana 1 gema.", List.of(Compose.gainGems(1))));
         host.getTributeZone().add(util);
         Removals.destroy(room, zokolok, host, false, EffectEngine.CAUSE_EFFECT, "guest", null, null);
         Chain.advance(room);

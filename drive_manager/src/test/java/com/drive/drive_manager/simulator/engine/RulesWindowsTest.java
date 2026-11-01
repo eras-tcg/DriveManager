@@ -3,7 +3,6 @@ package com.drive.drive_manager.simulator.engine;
 import com.drive.drive_manager.simulator.CardSlot;
 import com.drive.drive_manager.simulator.GameRoom;
 import com.drive.drive_manager.simulator.PlayerState;
-import com.drive.drive_manager.simulator.engine.EffectStep.Draw;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -594,7 +593,7 @@ class RulesWindowsTest {
     @Test
     void theOpponentMayRespondBeforeTheChainResolves() {
         CardEffects.register("respondedor de prueba", new EffectScript("test:respuesta", EffectScript.Moment.RESPONSE, false,
-                "En Mano", "Roba 1 carta.", List.of(new Draw(1))).fromZone("hand").limited(EffectScript.Limit.ONCE_PER_TURN));
+                "En Mano", "Roba 1 carta.", List.of(Compose.draw(1))).fromZone("hand").limited(EffectScript.Limit.ONCE_PER_TURN));
         CardSlot responder = creature("resp", "Respondedor De Prueba", 1, 1);
         guest.getHand().add(responder);
         host.getHand().add(creature("baj", "Bajmut Pútrido", 1, 3));

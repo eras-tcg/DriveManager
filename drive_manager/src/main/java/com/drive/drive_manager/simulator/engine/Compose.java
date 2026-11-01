@@ -329,4 +329,253 @@ final class Compose {
     static EffectStep discardLookedRestTop(int atLeast) {
         return fromLooked(CardFilter.any(), atLeast, Integer.MAX_VALUE, Move.DISCARD, Move.DECK_TOP, true);
     }
+
+    // ------------------------------------------------------------------ Simple actions
+
+    private static EffectStep act(Action action) {
+        return new EffectStep.Do(action);
+    }
+
+    static EffectStep draw(int count) {
+        return act(new Action.Draw(new Amount.Fixed(count), false));
+    }
+
+    static EffectStep drawLastCount() {
+        return act(new Action.Draw(new Amount.LastCount(), false));
+    }
+
+    static EffectStep eachPlayerDraws(int count) {
+        return act(new Action.Draw(new Amount.Fixed(count), true));
+    }
+
+    static EffectStep gainGems(int count) {
+        return act(new Action.Gems(new Amount.Fixed(count)));
+    }
+
+    static EffectStep damageByEffect(int amount) {
+        return act(new Action.Damage(new Amount.Fixed(amount)));
+    }
+
+    static EffectStep damageBySelfStrength() {
+        return act(new Action.Damage(new Amount.SourceStrength()));
+    }
+
+    static EffectStep lookTop(int count) {
+        return act(new Action.Look(new Amount.Fixed(count)));
+    }
+
+    static EffectStep lookTopBy(Amount count) {
+        return act(new Action.Look(count));
+    }
+
+    // ------------------------------------------------------------------ Exhausting and reactivating
+
+    private static EffectStep setTapped(Selector cards, boolean tapped, boolean required) {
+        return act(new Action.SetTapped(cards, tapped, required));
+    }
+
+    private static final Selector TARGETS = Selector.saved(Memory.TARGETS);
+    private static final Selector SUMMONED = Selector.saved(Memory.SUMMONED);
+    private static final Selector SUBJECT_OR_SELF = Selector.all("subjectOrSelf", CardFilter.any());
+
+    static EffectStep tapSelf() {
+        return setTapped(Selector.self("field"), true, false);
+    }
+
+    static EffectStep tapChosen() {
+        return setTapped(TARGETS, true, false);
+    }
+
+    static EffectStep tapChosenOnField() {
+        return setTapped(TARGETS, true, false);
+    }
+
+    static EffectStep tapSummoned() {
+        return setTapped(SUMMONED, true, false);
+    }
+
+    /** "agota dicho enemigo": the card of the triggering event. */
+    static EffectStep tapTriggerCard() {
+        return setTapped(Selector.all("eventOnField", CardFilter.any()), true, false);
+    }
+
+    static EffectStep tapOwnCard(CardFilter filter) {
+        return setTapped(Selector.yours("field", filter, 1).with(Selector.Self.EXCLUDE), true, true);
+    }
+
+    static EffectStep untapSelf() {
+        return setTapped(Selector.self("field"), false, false);
+    }
+
+    static EffectStep untapSubject() {
+        return setTapped(SUBJECT_OR_SELF, false, false);
+    }
+
+    static EffectStep untapAlly() {
+        return untapAlly(CardFilter.any());
+    }
+
+    static EffectStep untapAlly(CardFilter filter) {
+        return setTapped(Selector.yours("allies", filter, 1), false, true);
+    }
+
+    static EffectStep untapAllies(int max) {
+        return untapAllies(max, CardFilter.any());
+    }
+
+    static EffectStep untapAllies(int max, CardFilter filter) {
+        return setTapped(Selector.yours("allies", filter, max).upTo(), false, false);
+    }
+
+    static EffectStep untapOwnCard(CardFilter filter) {
+        return setTapped(Selector.yours("field", filter, 1), false, false);
+    }
+
+    static EffectStep untapStructure(CardFilter filter) {
+        return setTapped(Selector.yours("field", filter.asStructure(), 1), false, true);
+    }
+
+    static EffectStep untapStructures(int max, CardFilter filter) {
+        return setTapped(Selector.yours("field", filter.asStructure(), max).upTo(), false, false);
+    }
+
+    // ------------------------------------------------------------------ Strength, abilities and restrictions for a while
+
+    private static EffectStep strength(Selector cards, Amount amount, Action.Until until) {
+        return act(new Action.Modify(cards, amount, false, null, until));
+    }
+
+    private static EffectStep keyword(Selector cards, String keyword, Action.Until until) {
+        return act(new Action.Modify(cards, null, false, keyword, until));
+    }
+
+    private static Action.Until until(String until) {
+        return switch (until) {
+            case "nextTurn" -> Action.Until.NEXT_TURN;
+            case "attack" -> Action.Until.ATTACK;
+            default -> Action.Until.TURN;
+        };
+    }
+
+    static EffectStep gainStrength(int amount) {
+        return strength(SUBJECT_OR_SELF, new Amount.Fixed(amount), Action.Until.TURN);
+    }
+
+    static EffectStep gainStrengthUntil(int amount, String until) {
+        return strength(SUBJECT_OR_SELF, new Amount.Fixed(amount), until(until));
+    }
+
+    static EffectStep gainStrengthBy(Amount amount) {
+        return strength(SUBJECT_OR_SELF, amount, Action.Until.TURN);
+    }
+
+    static EffectStep gainStrengthPerCount(int each) {
+        return strength(SUBJECT_OR_SELF, new Amount.Times(new Amount.LastCount(), each), Action.Until.TURN);
+    }
+
+    static EffectStep gainUntilEndOfAttack(String keyword) {
+        return keyword(SUBJECT_OR_SELF, keyword, Action.Until.ATTACK);
+    }
+
+    static EffectStep gainUntilEndOfTurn(String keyword) {
+        return keyword(SUBJECT_OR_SELF, keyword, Action.Until.TURN);
+    }
+
+    static EffectStep gainUntilNextTurn(String keyword) {
+        return keyword(SUBJECT_OR_SELF, keyword, Action.Until.NEXT_TURN);
+    }
+
+    static EffectStep gainUntilNextAttack(int strength, String keyword) {
+        return act(new Action.Modify(SUBJECT_OR_SELF, strength == 0 ? null : new Amount.Fixed(strength), false, keyword, Action.Until.NEXT_ATTACK));
+    }
+
+    static EffectStep reduceChosen(int amount, boolean untilNextTurn) {
+        return strength(TARGETS, new Amount.Fixed(-amount), untilNextTurn ? Action.Until.NEXT_TURN : Action.Until.TURN);
+    }
+
+    static EffectStep reduceChosenBy(Amount amount) {
+        return strength(TARGETS, new Amount.Times(amount, -1), Action.Until.TURN);
+    }
+
+    static EffectStep reduceChosenPerCount(int each) {
+        return strength(TARGETS, new Amount.Times(new Amount.LastCount(), -each), Action.Until.TURN);
+    }
+
+    static EffectStep reduceChosenToZero() {
+        return act(new Action.Modify(TARGETS, null, true, null, Action.Until.TURN));
+    }
+
+    static EffectStep reduceChosenUntilAttack(int amount) {
+        return strength(TARGETS, new Amount.Fixed(-amount), Action.Until.ATTACK);
+    }
+
+    static EffectStep chosenCannotBeExhausted(String until) {
+        return keyword(TARGETS, EffectEngine.CANNOT_TAP, until(until));
+    }
+
+    static EffectStep chosenCannotBlock() {
+        return keyword(TARGETS, EffectEngine.NO_BLOCK, Action.Until.TURN);
+    }
+
+    static EffectStep summonedCannotAttack() {
+        return keyword(SUMMONED, EffectEngine.NO_ATTACK, Action.Until.TURN);
+    }
+
+    // ------------------------------------------------------------------ Destroying and sacrificing
+
+    private static EffectStep destroy(Selector cards, boolean required) {
+        return act(new Action.Destroy(cards, false, required));
+    }
+
+    private static EffectStep sacrifice(Selector cards, boolean required) {
+        return act(new Action.Destroy(cards, true, required));
+    }
+
+    static EffectStep destroyChosen() {
+        return destroy(TARGETS, false);
+    }
+
+    static EffectStep destroySelf() {
+        return destroy(Selector.self("field"), false);
+    }
+
+    static EffectStep destroyAlly(CardFilter filter) {
+        return destroy(Selector.yours("allies", filter, 1), true);
+    }
+
+    /** "destruye 1 enemigo": without "elige" it is not a target (designer ruling 2026-11-01). */
+    static EffectStep destroyEnemy(int count, CardFilter filter) {
+        return destroy(Selector.enemies(filter, count), true);
+    }
+
+    static EffectStep destroyEnemyNoTarget() {
+        return destroy(Selector.enemies(CardFilter.creatures(), 1), false);
+    }
+
+    static EffectStep sacrificeSelf() {
+        return sacrifice(Selector.self("field"), false);
+    }
+
+    static EffectStep sacrificeChosen() {
+        return sacrifice(TARGETS, false);
+    }
+
+    static EffectStep sacrificeAllyWhere(CardFilter filter) {
+        return sacrifice(Selector.yours("allies", filter, 1), true);
+    }
+
+    static EffectStep sacrificeAlly() {
+        return sacrificeAlly(false, false);
+    }
+
+    static EffectStep sacrificeAlly(boolean toUntapAnother) {
+        return sacrificeAlly(toUntapAnother, false);
+    }
+
+    /** {@code toUntapAnother}: "sacrifica 1 aliado para reactivar otro": it needs another that can be reactivated, the old step until relative filters. */
+    static EffectStep sacrificeAlly(boolean toUntapAnother, boolean other) {
+        if (toUntapAnother) return new EffectStep.SacrificeAlly(true, other);
+        Selector ally = Selector.yours("allies", CardFilter.any(), 1);
+        return sacrifice(other ? ally.with(Selector.Self.EXCLUDE) : ally, true);
+    }
 }

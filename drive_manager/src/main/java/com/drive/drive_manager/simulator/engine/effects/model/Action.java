@@ -11,6 +11,46 @@ public sealed interface Action {
         return false;
     }
 
+    /** "roba N cartas"; {@code bothPlayers}: "ambos jugadores roban". */
+    record Draw(com.drive.drive_manager.simulator.engine.Amount count, boolean bothPlayers) implements Action {}
+
+    /** "gana N gemas". */
+    record Gems(com.drive.drive_manager.simulator.engine.Amount count) implements Action {}
+
+    /** "infringe N de daño directo" to the opponent, by effect. */
+    record Damage(com.drive.drive_manager.simulator.engine.Amount amount) implements Action {}
+
+    /** "mira las primeras N cartas de tu mazo". */
+    record Look(com.drive.drive_manager.simulator.engine.Amount count) implements Action {}
+
+    /** "agota" ({@code tapped}) or "reactiva". */
+    record SetTapped(Selector cards, boolean tapped, boolean required) implements Action {
+        @Override
+        public boolean needsCards() {
+            return required;
+        }
+    }
+
+    /** How long a modification lasts. */
+    enum Until { TURN, NEXT_TURN, ATTACK, NEXT_ATTACK }
+
+    /**
+     * For a while, cards gain or lose strength, or gain an ability or a restriction.
+     *
+     * @param strength negative: it is reduced; null: no change
+     * @param toZero   "reduce a 0 su fuerza"
+     * @param keyword  an ability or restriction; null: none
+     */
+    record Modify(Selector cards, com.drive.drive_manager.simulator.engine.Amount strength, boolean toZero, String keyword, Until until) implements Action {}
+
+    /** "destruye", or "sacrifica" with {@code sacrifice}. */
+    record Destroy(Selector cards, boolean sacrifice, boolean required) implements Action {
+        @Override
+        public boolean needsCards() {
+            return required;
+        }
+    }
+
     /**
      * Cards go to a zone; the event comes from where they arrive: reaching the Tributos is being tributed, the Descarte being
      * discarded, whatever the verb (designer ruling 2026-11-01).

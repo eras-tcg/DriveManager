@@ -17,6 +17,13 @@ public sealed interface Amount {
         }
     }
 
+    /** "esta carta infringe daño directo": the strength of the card acting, read by EngineContext. */
+    record SourceStrength() implements Amount {
+        public int of(GameRoom room, String controller) {
+            return 0;
+        }
+    }
+
     /** A fixed number. */
     record Fixed(int value) implements Amount {
         public int of(GameRoom room, String controller) {
