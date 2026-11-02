@@ -156,6 +156,43 @@ class CombatTest {
     }
 
     @Test
+    void aBlockerThatLeavesBeforeTheClashLeavesTheAttackAsDirectDamage() {
+        field(host, creature("a", "Atacante", 1, 6), FRONT);
+        // The block was declared and the blocker left before the clash step began
+        room.setCombat(combatAt(Combat.Step.CLASH, Combat.Phase.ENTER, "gone"));
+        runCombat();
+        assertThat(guest.getLifeStack()).hasSize(2);
+    }
+
+    @Test
+    void aBlockerThatLeavesDuringTheClashGivesNoDirectDamage() {
+        field(host, creature("a", "Atacante", 1, 6), FRONT);
+        // The clash step began with the blocker; it left during it
+        room.setCombat(combatAt(Combat.Step.CLASH, Combat.Phase.ACT, "gone"));
+        runCombat();
+        assertThat(guest.getLifeStack()).hasSize(3);
+    }
+
+    private Combat combatAt(Combat.Step step, Combat.Phase phase, String blockerId) {
+        Combat c = new Combat();
+        c.setAttackerId("a");
+        c.setAttackerOwnerId("host");
+        c.setDefenderId("guest");
+        c.setBlockerId(blockerId);
+        c.setStep(step);
+        c.setPhase(phase);
+        return c;
+    }
+
+    private void runCombat() {
+        for (int i = 0; i < 20 && room.getCombat() != null; i++) {
+            if (room.getPrompt() != null) Answers.answer(room, room.getPrompt().getPlayerId(), room.getPrompt().getId(), List.of(), List.of());
+            else Chain.advance(room);
+        }
+        assertThat(room.getCombat()).isNull();
+    }
+
+    @Test
     void anAttackedCreatureThatIsNotBlockedBecomesTheBlocker() {
         field(host, creature("a", "Atacante", 1, 6), FRONT);
         CardSlot target = field(guest, creature("t", "Objetivo", 1, 3), FRONT);

@@ -140,10 +140,9 @@ public final class CombatRules {
         }
         switch (c.getPhase()) {
             case ENTER -> {
-                if (c.getStep() == Combat.Step.END) {
-                    endCombat(room);
-                    return;
-                }
+                if (c.getStep() == Combat.Step.END) { endCombat(room); return; }
+                // The blocker left before the clash (designer ruling 2026-11-02): there is no clash, the attack goes to direct damage
+                if (c.getStep() == Combat.Step.CLASH && find(defender.getField(), c.getBlockerId()) == null) c.setStep(Combat.Step.DAMAGE);
                 record(room, GameEvent.COMBAT_STEP, owner.getUserId(), attacker, null, null, null,
                         Map.of("step", c.getStep().name(), "moment", "ENTER"), "Paso de " + stepName(c.getStep()));
                 c.setPhase(Combat.Phase.ACT);
