@@ -56,7 +56,7 @@ public class WalletService {
         return opened;
     }
 
-    /** Buys a "pack" or a "box" of an edition at the server's price. */
+    /** Buys a "pack", a "box" or a "structure" deck at the server's price. */
     public Purchase buy(String userId, String editionId, String product) {
         EditionMetadata edition = editionId == null ? null : editions.findById(editionId).orElse(null);
         Integer price = WalletRules.priceOf(edition, product);

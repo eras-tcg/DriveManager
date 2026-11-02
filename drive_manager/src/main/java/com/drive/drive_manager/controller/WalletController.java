@@ -38,7 +38,7 @@ public class WalletController {
     public record PurchaseRequest(String editionId, String product) {
     }
 
-    /** Buys a "pack" or a "box" of an edition: {gems, price}, or 400 with a message (not for sale, not enough gems). */
+    /** Buys a "pack", a "box" or a "structure" deck: {gems, price}, or 400 with a message (not for sale, not enough gems). */
     @PostMapping("/me/purchase")
     public ResponseEntity<Map<String, Object>> buy(Authentication auth, @RequestBody PurchaseRequest request) {
         if (auth == null || !auth.isAuthenticated()) return ResponseEntity.status(401).build();

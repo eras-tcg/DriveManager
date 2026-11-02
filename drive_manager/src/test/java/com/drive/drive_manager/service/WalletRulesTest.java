@@ -33,6 +33,15 @@ class WalletRulesTest {
     }
 
     @Test
+    void aStructureDeckSellsItselfWhole() {
+        EditionMetadata structure = edition("ST1", false);
+        structure.setPackTypes(null);
+        assertThat(WalletRules.priceOf(structure, "structure")).isEqualTo(WalletRules.STRUCTURE_PRICE);
+        assertThat(WalletRules.priceOf(structure, "pack")).isNull();
+        assertThat(WalletRules.priceOf(edition("E1", true), "structure")).isNull();
+    }
+
+    @Test
     void whatTheEditionDoesNotSellHasNoPrice() {
         assertThat(WalletRules.priceOf(edition("E1", false), "box")).isNull();
         assertThat(WalletRules.priceOf(edition("E1", true), "deluxe")).isNull();
