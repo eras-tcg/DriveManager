@@ -1,0 +1,85 @@
+{
+  "name" : "sobrecarga",
+  "effects" : [ {
+    "id" : "sobrecarga:en-mano",
+    "moment" : "ON_EVENT",
+    "label" : "En Mano",
+    "text" : "Al entrar al paso de bloqueo: puedes jugar esta carta pagando su coste.",
+    "steps" : [ {
+      "type" : "Do",
+      "action" : {
+        "type" : "Play",
+        "cards" : {
+          "zones" : "hand",
+          "owner" : "YOU",
+          "filter" : { },
+          "min" : {
+            "type" : "Fixed",
+            "value" : 1
+          },
+          "max" : {
+            "type" : "Fixed",
+            "value" : 1
+          },
+          "self" : "ANY",
+          "mode" : "SELF"
+        },
+        "reduce" : {
+          "type" : "Fixed"
+        },
+        "required" : true
+      }
+    } ],
+    "condition" : {
+      "type" : "Happened",
+      "type" : "COMBAT_STEP",
+      "actor" : "ANY",
+      "owner" : "ANY",
+      "data" : [ "step=BLOCK", "moment=ENTER" ]
+    },
+    "sourceZone" : "hand",
+    "limit" : "NONE"
+  }, {
+    "id" : "sobrecarga:en-juego",
+    "moment" : "ON_PLAY",
+    "mandatory" : true,
+    "label" : "En Juego",
+    "text" : "(1) Tributa 1 material nivel 3 o menor de un [autómata] o [mecha]; añádele esta carta a dicho aliado como material para que active 1 efecto En Invocación del material tributado.",
+    "cost" : [ {
+      "type" : "TributeAllyMaterialWhere",
+      "ally" : {
+        "classes" : [ "autómata", "automata", "mecha" ],
+        "cardType" : "creature"
+      },
+      "material" : {
+        "maxLevel" : 3
+      }
+    } ],
+    "steps" : [ {
+      "type" : "Do",
+      "action" : {
+        "type" : "Move",
+        "cards" : {
+          "zones" : "field,tributeZone",
+          "owner" : "YOU",
+          "filter" : { },
+          "min" : {
+            "type" : "Fixed",
+            "value" : 1
+          },
+          "max" : {
+            "type" : "Fixed",
+            "value" : 1
+          },
+          "self" : "ANY",
+          "mode" : "SELF"
+        },
+        "to" : "materials:subject"
+      }
+    }, {
+      "type" : "ActivateTributedSummonEffect"
+    } ],
+    "sourceZone" : "field",
+    "limit" : "ONCE_PER_TURN_BETWEEN_COPIES"
+  } ]
+}

@@ -1,0 +1,80 @@
+{
+  "name" : "he 110",
+  "effects" : [ {
+    "id" : "he-110:todos-los-turnos",
+    "moment" : "ON_EVENT",
+    "label" : "Todos Los Turnos",
+    "text" : "Una vez por turno: si alguna de tus vidas es removida: puedes tributar 2 materiales de esta carta; coloca la carta del tope de tu mazo al tope de tus vidas.",
+    "cost" : [ {
+      "type" : "Do",
+      "action" : {
+        "type" : "Move",
+        "cards" : {
+          "zones" : "materials",
+          "owner" : "YOU",
+          "filter" : { },
+          "min" : {
+            "type" : "Fixed",
+            "value" : 2
+          },
+          "max" : {
+            "type" : "Fixed",
+            "value" : 2
+          },
+          "self" : "ANY",
+          "mode" : "CHOOSE"
+        },
+        "to" : "tributeZone"
+      }
+    } ],
+    "steps" : [ {
+      "type" : "Do",
+      "action" : {
+        "type" : "Move",
+        "cards" : {
+          "zones" : "deck",
+          "owner" : "YOU",
+          "filter" : { },
+          "min" : {
+            "type" : "Fixed",
+            "value" : 1
+          },
+          "max" : {
+            "type" : "Fixed",
+            "value" : 1
+          },
+          "self" : "ANY",
+          "mode" : "TOP"
+        },
+        "to" : "lifeTop",
+        "faceDown" : true
+      }
+    } ],
+    "condition" : {
+      "type" : "Any",
+      "any" : [ {
+        "type" : "Happened",
+        "actor" : "ANY",
+        "owner" : "YOU",
+        "from" : "lifeStack"
+      }, {
+        "type" : "Happened",
+        "actor" : "ANY",
+        "owner" : "ANY",
+        "from" : "lifeStack",
+        "data" : [ "defenderId=$you" ]
+      } ]
+    },
+    "sourceZone" : "field",
+    "limit" : "ONCE_PER_TURN"
+  } ],
+  "continuous" : [ {
+    "label" : "Todos Los Turnos",
+    "text" : "Esta carta no puede ser objetivo de efectos de cartas oponentes nivel 4 o menor.",
+    "condition" : {
+      "type" : "Always"
+    },
+    "keywords" : [ "Inmune 4" ],
+    "zone" : "field"
+  } ]
+}

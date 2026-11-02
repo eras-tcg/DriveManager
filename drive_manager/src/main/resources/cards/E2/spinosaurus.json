@@ -1,0 +1,73 @@
+{
+  "name" : "spinosaurus",
+  "effects" : [ {
+    "id" : "spinosaurus:en-invocacion",
+    "moment" : "ON_SUMMON",
+    "label" : "En Invocación",
+    "text" : "Puedes elegir 1 criatura en el campo con fuerza menor a esta carta; sacrifícala. Si era un aliado activo: gana 1 gema.",
+    "cost" : [ {
+      "type" : "ChooseWeakerThanSelf"
+    } ],
+    "steps" : [ {
+      "type" : "Do",
+      "action" : {
+        "type" : "Destroy",
+        "cards" : {
+          "zones" : "saved:targets",
+          "owner" : "YOU",
+          "filter" : { },
+          "min" : {
+            "type" : "Fixed"
+          },
+          "max" : {
+            "type" : "Fixed",
+            "value" : 2147483647
+          },
+          "self" : "ANY",
+          "mode" : "ALL"
+        },
+        "sacrifice" : true
+      }
+    }, {
+      "type" : "IfChosenWasActiveAlly",
+      "covers" : 1
+    }, {
+      "type" : "Do",
+      "action" : {
+        "type" : "Gems",
+        "count" : {
+          "type" : "Fixed",
+          "value" : 1
+        }
+      }
+    } ],
+    "sourceZone" : "field",
+    "limit" : "NONE"
+  } ],
+  "inherited" : [ {
+    "id" : "spinosaurus:hereda-en-destruccion",
+    "moment" : "ON_DESTROY",
+    "label" : "En Destrucción por efecto aliado",
+    "text" : "Heredado de Spinosaurus: puedes tributar esta carta; gana 1 gema.",
+    "cost" : [ {
+      "type" : "TributeNamedFromDiscard",
+      "name" : "Spinosaurus"
+    } ],
+    "steps" : [ {
+      "type" : "Do",
+      "action" : {
+        "type" : "Gems",
+        "count" : {
+          "type" : "Fixed",
+          "value" : 1
+        }
+      }
+    } ],
+    "condition" : {
+      "type" : "ByEffect",
+      "by" : "YOU"
+    },
+    "sourceZone" : "field",
+    "limit" : "NONE"
+  } ]
+}

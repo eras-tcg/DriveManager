@@ -1,0 +1,174 @@
+{
+  "name" : "augurio catastrófico",
+  "effects" : [ {
+    "id" : "augurio-catastrofico:tributada",
+    "moment" : "ON_EVENT",
+    "label" : "En Tributos",
+    "text" : "Una vez por turno: si esta carta es tributada por efecto de un [brujo] o [brujería], puedes enviar esta carta a tu descarte y tributar 1 [brujería] de tu mano; gana 1 gema.",
+    "cost" : [ {
+      "type" : "Do",
+      "action" : {
+        "type" : "Move",
+        "cards" : {
+          "zones" : "hand,tributeZone,discardPile,deck,lifeStack",
+          "owner" : "YOU",
+          "filter" : { },
+          "min" : {
+            "type" : "Fixed",
+            "value" : 1
+          },
+          "max" : {
+            "type" : "Fixed",
+            "value" : 1
+          },
+          "self" : "ANY",
+          "mode" : "SELF"
+        },
+        "to" : "discardPile"
+      }
+    }, {
+      "type" : "Do",
+      "action" : {
+        "type" : "Move",
+        "cards" : {
+          "zones" : "hand",
+          "owner" : "YOU",
+          "filter" : {
+            "classes" : [ "brujería" ]
+          },
+          "min" : {
+            "type" : "Fixed",
+            "value" : 1
+          },
+          "max" : {
+            "type" : "Fixed",
+            "value" : 1
+          },
+          "self" : "EXCLUDE",
+          "mode" : "CHOOSE"
+        },
+        "to" : "tributeZone",
+        "required" : true
+      }
+    } ],
+    "steps" : [ {
+      "type" : "Do",
+      "action" : {
+        "type" : "Gems",
+        "count" : {
+          "type" : "Fixed",
+          "value" : 1
+        }
+      }
+    } ],
+    "condition" : {
+      "type" : "ThisTributed",
+      "exceptZone" : "discardPile",
+      "by" : {
+        "classes" : [ "brujo", "brujería" ]
+      }
+    },
+    "sourceZone" : "tributeZone",
+    "limit" : "ONCE_PER_TURN"
+  }, {
+    "id" : "augurio-catastrofico:tributada-del-descarte",
+    "moment" : "ON_EVENT",
+    "label" : "En Tributos",
+    "text" : "Una vez por turno: si esta carta fue tributada desde tu descarte por efecto de un [brujo] o [brujería], puedes enviarla al fondo de tu mazo y tributar 1 [brujería] de tu mano; gana 1 gema.",
+    "cost" : [ {
+      "type" : "Do",
+      "action" : {
+        "type" : "Move",
+        "cards" : {
+          "zones" : "hand,tributeZone,discardPile,lifeStack,field",
+          "owner" : "YOU",
+          "filter" : { },
+          "min" : {
+            "type" : "Fixed",
+            "value" : 1
+          },
+          "max" : {
+            "type" : "Fixed",
+            "value" : 1
+          },
+          "self" : "ANY",
+          "mode" : "SELF"
+        },
+        "to" : "deckBottom"
+      }
+    }, {
+      "type" : "Do",
+      "action" : {
+        "type" : "Move",
+        "cards" : {
+          "zones" : "hand",
+          "owner" : "YOU",
+          "filter" : {
+            "classes" : [ "brujería" ]
+          },
+          "min" : {
+            "type" : "Fixed",
+            "value" : 1
+          },
+          "max" : {
+            "type" : "Fixed",
+            "value" : 1
+          },
+          "self" : "EXCLUDE",
+          "mode" : "CHOOSE"
+        },
+        "to" : "tributeZone",
+        "required" : true
+      }
+    } ],
+    "steps" : [ {
+      "type" : "Do",
+      "action" : {
+        "type" : "Gems",
+        "count" : {
+          "type" : "Fixed",
+          "value" : 1
+        }
+      }
+    } ],
+    "condition" : {
+      "type" : "ThisTributed",
+      "fromZone" : "discardPile",
+      "by" : {
+        "classes" : [ "brujo", "brujería" ]
+      }
+    },
+    "sourceZone" : "tributeZone",
+    "limit" : "ONCE_PER_TURN"
+  }, {
+    "id" : "augurio-catastrofico:en-destruccion",
+    "moment" : "ON_DESTROY",
+    "mandatory" : true,
+    "label" : "En Destrucción",
+    "text" : "Tributa esta carta.",
+    "steps" : [ {
+      "type" : "Do",
+      "action" : {
+        "type" : "Move",
+        "cards" : {
+          "zones" : "hand,tributeZone,discardPile,deck,lifeStack",
+          "owner" : "YOU",
+          "filter" : { },
+          "min" : {
+            "type" : "Fixed",
+            "value" : 1
+          },
+          "max" : {
+            "type" : "Fixed",
+            "value" : 1
+          },
+          "self" : "ANY",
+          "mode" : "SELF"
+        },
+        "to" : "tributeZone"
+      }
+    } ],
+    "sourceZone" : "field",
+    "limit" : "NONE"
+  } ]
+}

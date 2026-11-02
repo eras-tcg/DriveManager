@@ -1,0 +1,194 @@
+{
+  "name" : "reclamo del inframundo",
+  "effects" : [ {
+    "id" : "reclamo-del-inframundo:en-juego",
+    "moment" : "ON_PLAY",
+    "mandatory" : true,
+    "label" : "En Juego",
+    "text" : "(1) Tributa esta carta; 1 aliado puede invocar por Ritual 1 criatura Violeta o [espectro] de tus tributos reduciendo el coste especial en 1 por cada 10 tributos Violeta o [espectro] que tengas.",
+    "cost" : [ {
+      "type" : "Do",
+      "action" : {
+        "type" : "Move",
+        "cards" : {
+          "zones" : "field",
+          "owner" : "YOU",
+          "filter" : { },
+          "min" : {
+            "type" : "Fixed",
+            "value" : 1
+          },
+          "max" : {
+            "type" : "Fixed",
+            "value" : 1
+          },
+          "self" : "ANY",
+          "mode" : "SELF"
+        },
+        "to" : "tributeZone"
+      }
+    } ],
+    "steps" : [ {
+      "type" : "MayDo",
+      "question" : "¿Un aliado invoca por Ritual 1 criatura Violeta o [espectro] de tus tributos?",
+      "covers" : 1
+    }, {
+      "type" : "Do",
+      "action" : {
+        "type" : "Sequence",
+        "actions" : [ {
+          "type" : "Select",
+          "selector" : {
+            "zones" : "tributeZone",
+            "owner" : "YOU",
+            "filter" : { },
+            "min" : {
+              "type" : "Fixed"
+            },
+            "max" : {
+              "type" : "Fixed",
+              "value" : 1
+            },
+            "self" : "ANY",
+            "mode" : "CHOOSE",
+            "special" : {
+              "rule" : {
+                "kind" : "ritual",
+                "zone" : "tributeZone",
+                "summoner" : "any",
+                "filter" : {
+                  "colors" : [ "P" ],
+                  "classes" : [ "espectro" ]
+                },
+                "reduceBy" : {
+                  "type" : "Scaled",
+                  "base" : {
+                    "type" : "InZone",
+                    "zone" : "tributeZone",
+                    "filter" : {
+                      "colors" : [ "P" ],
+                      "classes" : [ "espectro" ]
+                    }
+                  },
+                  "divisor" : 10
+                }
+              },
+              "stage" : "CARD"
+            }
+          },
+          "saveAs" : "specialCard",
+          "label" : "Invocar"
+        }, {
+          "type" : "Select",
+          "selector" : {
+            "zones" : "tributeZone",
+            "owner" : "YOU",
+            "filter" : { },
+            "min" : {
+              "type" : "Fixed"
+            },
+            "max" : {
+              "type" : "Fixed",
+              "value" : 1
+            },
+            "self" : "ANY",
+            "mode" : "CHOOSE",
+            "special" : {
+              "rule" : {
+                "kind" : "ritual",
+                "zone" : "tributeZone",
+                "summoner" : "any",
+                "filter" : {
+                  "colors" : [ "P" ],
+                  "classes" : [ "espectro" ]
+                },
+                "reduceBy" : {
+                  "type" : "Scaled",
+                  "base" : {
+                    "type" : "InZone",
+                    "zone" : "tributeZone",
+                    "filter" : {
+                      "colors" : [ "P" ],
+                      "classes" : [ "espectro" ]
+                    }
+                  },
+                  "divisor" : 10
+                }
+              },
+              "stage" : "SUMMONER"
+            }
+          },
+          "saveAs" : "specialSummoner",
+          "label" : "Invocador"
+        }, {
+          "type" : "Select",
+          "selector" : {
+            "zones" : "tributeZone",
+            "owner" : "YOU",
+            "filter" : { },
+            "min" : {
+              "type" : "Fixed"
+            },
+            "max" : {
+              "type" : "Fixed",
+              "value" : 1
+            },
+            "self" : "ANY",
+            "mode" : "CHOOSE",
+            "special" : {
+              "rule" : {
+                "kind" : "ritual",
+                "zone" : "tributeZone",
+                "summoner" : "any",
+                "filter" : {
+                  "colors" : [ "P" ],
+                  "classes" : [ "espectro" ]
+                },
+                "reduceBy" : {
+                  "type" : "Scaled",
+                  "base" : {
+                    "type" : "InZone",
+                    "zone" : "tributeZone",
+                    "filter" : {
+                      "colors" : [ "P" ],
+                      "classes" : [ "espectro" ]
+                    }
+                  },
+                  "divisor" : 10
+                }
+              },
+              "stage" : "MATERIAL"
+            }
+          },
+          "saveAs" : "specialMaterials",
+          "label" : "Sacrificar"
+        }, {
+          "type" : "SummonSpecial",
+          "rule" : {
+            "kind" : "ritual",
+            "zone" : "tributeZone",
+            "summoner" : "any",
+            "filter" : {
+              "colors" : [ "P" ],
+              "classes" : [ "espectro" ]
+            },
+            "reduceBy" : {
+              "type" : "Scaled",
+              "base" : {
+                "type" : "InZone",
+                "zone" : "tributeZone",
+                "filter" : {
+                  "colors" : [ "P" ],
+                  "classes" : [ "espectro" ]
+                }
+              },
+              "divisor" : 10
+            }
+          }
+        } ]
+      }
+    } ],
+    "sourceZone" : "field",
+    "limit" : "ONCE_PER_TURN_BETWEEN_COPIES"
+  } ]
+}

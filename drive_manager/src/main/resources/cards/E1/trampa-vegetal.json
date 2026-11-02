@@ -1,0 +1,128 @@
+{
+  "name" : "trampa vegetal",
+  "effects" : [ {
+    "id" : "trampa-vegetal:en-juego",
+    "moment" : "ON_PLAY",
+    "mandatory" : true,
+    "label" : "En Juego",
+    "text" : "Coloca esta carta en tu retaguardia.",
+    "steps" : [ {
+      "type" : "KeepOnField"
+    } ],
+    "sourceZone" : "field",
+    "limit" : "NONE"
+  }, {
+    "id" : "trampa-vegetal:turno-oponente",
+    "moment" : "ON_EVENT",
+    "mandatory" : true,
+    "label" : "Turno Oponente",
+    "text" : "Si algún enemigo con fuerza 6 o menos entra a la línea frontal: envía esta carta al descarte; agota dicho enemigo.",
+    "cost" : [ {
+      "type" : "Do",
+      "action" : {
+        "type" : "Move",
+        "cards" : {
+          "zones" : "field",
+          "owner" : "YOU",
+          "filter" : { },
+          "min" : {
+            "type" : "Fixed",
+            "value" : 1
+          },
+          "max" : {
+            "type" : "Fixed",
+            "value" : 1
+          },
+          "self" : "ANY",
+          "mode" : "SELF"
+        },
+        "to" : "discardPile"
+      }
+    } ],
+    "steps" : [ {
+      "type" : "Do",
+      "action" : {
+        "type" : "SetTapped",
+        "cards" : {
+          "zones" : "eventOnField",
+          "owner" : "YOU",
+          "filter" : { },
+          "min" : {
+            "type" : "Fixed"
+          },
+          "max" : {
+            "type" : "Fixed",
+            "value" : 2147483647
+          },
+          "self" : "ANY",
+          "mode" : "ALL"
+        },
+        "tapped" : true
+      }
+    } ],
+    "condition" : {
+      "type" : "All",
+      "all" : [ {
+        "type" : "Not",
+        "condition" : {
+          "type" : "GameIs",
+          "state" : "YOUR_TURN"
+        }
+      }, {
+        "type" : "EntersFrontLine",
+        "enemy" : true,
+        "filter" : {
+          "cardType" : "creature",
+          "maxStrength" : 6
+        }
+      } ]
+    },
+    "sourceZone" : "field",
+    "limit" : "NONE"
+  }, {
+    "id" : "trampa-vegetal:final-del-turno",
+    "moment" : "ON_EVENT",
+    "mandatory" : true,
+    "label" : "Turno Oponente",
+    "text" : "Al final del turno: sube esta carta a tu mano.",
+    "steps" : [ {
+      "type" : "Do",
+      "action" : {
+        "type" : "Move",
+        "cards" : {
+          "zones" : "field",
+          "owner" : "YOU",
+          "filter" : { },
+          "min" : {
+            "type" : "Fixed",
+            "value" : 1
+          },
+          "max" : {
+            "type" : "Fixed",
+            "value" : 1
+          },
+          "self" : "ANY",
+          "mode" : "SELF"
+        },
+        "to" : "hand"
+      }
+    } ],
+    "condition" : {
+      "type" : "All",
+      "all" : [ {
+        "type" : "Not",
+        "condition" : {
+          "type" : "GameIs",
+          "state" : "YOUR_TURN"
+        }
+      }, {
+        "type" : "Happened",
+        "type" : "TURN_END",
+        "actor" : "ANY",
+        "owner" : "ANY"
+      } ]
+    },
+    "sourceZone" : "field",
+    "limit" : "NONE"
+  } ]
+}

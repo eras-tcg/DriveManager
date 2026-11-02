@@ -1,0 +1,83 @@
+{
+  "name" : "unidad heróica v10-l3t",
+  "effects" : [ {
+    "id" : "v10-l3t:tributada-como-material",
+    "moment" : "ON_EVENT",
+    "mandatory" : true,
+    "label" : "En Tributos",
+    "text" : "Si esta carta es tributada como material durante un combate: roba 1 carta.",
+    "steps" : [ {
+      "type" : "Do",
+      "action" : {
+        "type" : "Draw",
+        "count" : {
+          "type" : "Fixed",
+          "value" : 1
+        }
+      }
+    } ],
+    "condition" : {
+      "type" : "All",
+      "all" : [ {
+        "type" : "ThisTributed",
+        "fromZone" : "materials"
+      }, {
+        "type" : "GameIs",
+        "state" : "DURING_COMBAT"
+      } ]
+    },
+    "sourceZone" : "tributeZone",
+    "limit" : "NONE"
+  }, {
+    "id" : "v10-l3t:al-atacar",
+    "moment" : "ON_ATTACK",
+    "label" : "Al Atacar",
+    "text" : "Puedes tributar 2 materiales de esta carta; esta carta gana Enfrentar 3 hasta el final del ataque.",
+    "cost" : [ {
+      "type" : "Do",
+      "action" : {
+        "type" : "Move",
+        "cards" : {
+          "zones" : "materials",
+          "owner" : "YOU",
+          "filter" : { },
+          "min" : {
+            "type" : "Fixed",
+            "value" : 2
+          },
+          "max" : {
+            "type" : "Fixed",
+            "value" : 2
+          },
+          "self" : "ANY",
+          "mode" : "CHOOSE"
+        },
+        "to" : "tributeZone"
+      }
+    } ],
+    "steps" : [ {
+      "type" : "Do",
+      "action" : {
+        "type" : "Modify",
+        "cards" : {
+          "zones" : "subjectOrSelf",
+          "owner" : "YOU",
+          "filter" : { },
+          "min" : {
+            "type" : "Fixed"
+          },
+          "max" : {
+            "type" : "Fixed",
+            "value" : 2147483647
+          },
+          "self" : "ANY",
+          "mode" : "ALL"
+        },
+        "keyword" : "Enfrentar 3",
+        "until" : "ATTACK"
+      }
+    } ],
+    "sourceZone" : "field",
+    "limit" : "NONE"
+  } ]
+}

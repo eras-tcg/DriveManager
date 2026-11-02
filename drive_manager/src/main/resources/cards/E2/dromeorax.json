@@ -1,0 +1,29 @@
+{
+  "name" : "dromeorax",
+  "inherited" : [ {
+    "id" : "dromeorax:hereda-en-destruccion",
+    "moment" : "ON_DESTROY",
+    "label" : "En Destrucción por efecto aliado",
+    "text" : "Heredado de Dromeorax: puedes tributar esta carta; gana 1 gema.",
+    "cost" : [ {
+      "type" : "TributeNamedFromDiscard",
+      "name" : "Dromeorax"
+    } ],
+    "steps" : [ {
+      "type" : "Do",
+      "action" : {
+        "type" : "Gems",
+        "count" : {
+          "type" : "Fixed",
+          "value" : 1
+        }
+      }
+    } ],
+    "condition" : {
+      "type" : "ByEffect",
+      "by" : "YOU"
+    },
+    "sourceZone" : "field",
+    "limit" : "NONE"
+  } ]
+}

@@ -1,0 +1,48 @@
+{
+  "name" : "dante di castirion",
+  "effects" : [ {
+    "id" : "dante-castirion:en-mano",
+    "moment" : "ACTIVATED",
+    "label" : "Turno Aliado / En Mano",
+    "text" : "(1) Puedes tributar 3 o más aliados Rojos que sumen 5 o más en nivel para invocar esta carta en tu línea frontal reduciendo su coste en 3.",
+    "cost" : [ {
+      "type" : "TributeAlliesLevelSum",
+      "minCount" : 3,
+      "minSum" : 5,
+      "filter" : {
+        "colors" : [ "R" ],
+        "cardType" : "creature"
+      }
+    } ],
+    "steps" : [ {
+      "type" : "Do",
+      "action" : {
+        "type" : "Summon",
+        "cards" : {
+          "zones" : "hand",
+          "owner" : "YOU",
+          "filter" : { },
+          "min" : {
+            "type" : "Fixed",
+            "value" : 1
+          },
+          "max" : {
+            "type" : "Fixed",
+            "value" : 1
+          },
+          "self" : "ANY",
+          "mode" : "SELF"
+        },
+        "reduce" : {
+          "type" : "Fixed",
+          "value" : 3
+        },
+        "toFront" : true,
+        "required" : true
+      }
+    } ],
+    "sourceZone" : "hand",
+    "allyTurn" : true,
+    "limit" : "ONCE_PER_TURN_BETWEEN_COPIES"
+  } ]
+}

@@ -1,0 +1,113 @@
+{
+  "name" : "materialización interdimensional",
+  "effects" : [ {
+    "id" : "materializacion-interdimensional:en-juego",
+    "moment" : "ON_PLAY",
+    "mandatory" : true,
+    "label" : "En Juego",
+    "text" : "(1) Tributa esta carta; activa 1 de los siguientes efectos según cuántos tributos [espectro] o [interdimensional] tengas: menos de 20: roba 3 cartas. Luego: tributa 2 cartas de tu mano. Más de 20: gana 1 gema.",
+    "cost" : [ {
+      "type" : "Do",
+      "action" : {
+        "type" : "Move",
+        "cards" : {
+          "zones" : "field",
+          "owner" : "YOU",
+          "filter" : { },
+          "min" : {
+            "type" : "Fixed",
+            "value" : 1
+          },
+          "max" : {
+            "type" : "Fixed",
+            "value" : 1
+          },
+          "self" : "ANY",
+          "mode" : "SELF"
+        },
+        "to" : "tributeZone"
+      }
+    } ],
+    "steps" : [ {
+      "type" : "IfCondition",
+      "condition" : {
+        "type" : "Not",
+        "condition" : {
+          "type" : "Compare",
+          "left" : {
+            "type" : "InZone",
+            "zone" : "tributeZone",
+            "filter" : {
+              "classes" : [ "espectro", "interdimensional" ]
+            }
+          },
+          "op" : "AT_LEAST",
+          "right" : {
+            "type" : "Fixed",
+            "value" : 20
+          }
+        }
+      },
+      "covers" : 2
+    }, {
+      "type" : "Do",
+      "action" : {
+        "type" : "Draw",
+        "count" : {
+          "type" : "Fixed",
+          "value" : 3
+        }
+      }
+    }, {
+      "type" : "Do",
+      "action" : {
+        "type" : "Move",
+        "cards" : {
+          "zones" : "hand",
+          "owner" : "YOU",
+          "filter" : { },
+          "min" : {
+            "type" : "Fixed",
+            "value" : 2
+          },
+          "max" : {
+            "type" : "Fixed",
+            "value" : 2
+          },
+          "self" : "EXCLUDE",
+          "mode" : "CHOOSE"
+        },
+        "to" : "tributeZone"
+      }
+    }, {
+      "type" : "IfCondition",
+      "condition" : {
+        "type" : "Compare",
+        "left" : {
+          "type" : "InZone",
+          "zone" : "tributeZone",
+          "filter" : {
+            "classes" : [ "espectro", "interdimensional" ]
+          }
+        },
+        "op" : "AT_LEAST",
+        "right" : {
+          "type" : "Fixed",
+          "value" : 21
+        }
+      },
+      "covers" : 1
+    }, {
+      "type" : "Do",
+      "action" : {
+        "type" : "Gems",
+        "count" : {
+          "type" : "Fixed",
+          "value" : 1
+        }
+      }
+    } ],
+    "sourceZone" : "field",
+    "limit" : "ONCE_PER_TURN_BETWEEN_COPIES"
+  } ]
+}

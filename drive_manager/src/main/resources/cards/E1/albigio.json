@@ -1,0 +1,47 @@
+{
+  "name" : "albigio",
+  "effects" : [ {
+    "id" : "albigio:en-invocacion",
+    "moment" : "ON_SUMMON",
+    "label" : "En Invocación por efecto",
+    "text" : "Celeridad: puede subir a tu línea frontal.",
+    "steps" : [ {
+      "type" : "Do",
+      "action" : {
+        "type" : "Move",
+        "cards" : {
+          "zones" : "backLine",
+          "owner" : "YOU",
+          "filter" : { },
+          "min" : {
+            "type" : "Fixed",
+            "value" : 1
+          },
+          "max" : {
+            "type" : "Fixed",
+            "value" : 1
+          },
+          "self" : "ANY",
+          "mode" : "SELF"
+        },
+        "to" : "frontLine"
+      }
+    } ],
+    "condition" : {
+      "type" : "All",
+      "all" : [ {
+        "type" : "Summoned",
+        "side" : "ANY",
+        "how" : "effect"
+      }, {
+        "type" : "Not",
+        "condition" : {
+          "type" : "ThisIs",
+          "state" : "IN_FRONT_LINE"
+        }
+      } ]
+    },
+    "sourceZone" : "field",
+    "limit" : "NONE"
+  } ]
+}

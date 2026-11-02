@@ -1,0 +1,32 @@
+{
+  "name" : "estoque de los guerreros jurados",
+  "effects" : [ {
+    "id" : "estoque:en-invocacion",
+    "moment" : "ON_SUMMON",
+    "mandatory" : true,
+    "label" : "En Invocación",
+    "text" : "Mira las primeras 5 cartas de tu mazo: de ellas toma hasta 2 cartas Rojas, [retador] o Blancas con distinto nivel. Envía el resto al fondo de tu mazo.",
+    "steps" : [ {
+      "type" : "Do",
+      "action" : {
+        "type" : "Look",
+        "count" : {
+          "type" : "Fixed",
+          "value" : 5
+        }
+      }
+    }, {
+      "type" : "TakeFromLookedDistinctLevels",
+      "max" : 2,
+      "filter" : {
+        "colors" : [ "R", "W" ],
+        "classes" : [ "retador" ]
+      }
+    } ],
+    "sourceZone" : "field",
+    "limit" : "NONE"
+  } ],
+  "reactions" : [ {
+    "type" : "TributesInsteadOfDamage"
+  } ]
+}

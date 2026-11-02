@@ -1,0 +1,57 @@
+{
+  "name" : "ritual convocatorio",
+  "effects" : [ {
+    "id" : "ritual-convocatorio:en-juego",
+    "moment" : "ON_PLAY",
+    "mandatory" : true,
+    "label" : "En Juego",
+    "text" : "Coloca 1 [brujo] de tus tributos en tu línea frontal. Luego: sube a tu mano 1 aliado del mismo nivel. Si el aliado añadido a tu mano es nivel 3 o menor: gana 2 gemas.",
+    "steps" : [ {
+      "type" : "Do",
+      "action" : {
+        "type" : "Move",
+        "cards" : {
+          "zones" : "tributeZone",
+          "owner" : "YOU",
+          "filter" : {
+            "classes" : [ "brujo" ],
+            "cardType" : "creature"
+          },
+          "min" : {
+            "type" : "Fixed"
+          },
+          "max" : {
+            "type" : "Fixed",
+            "value" : 1
+          },
+          "self" : "EXCLUDE",
+          "mode" : "CHOOSE"
+        },
+        "to" : "frontLine"
+      }
+    }, {
+      "type" : "ReturnAllyOfSummonedLevel"
+    }, {
+      "type" : "IfTributed",
+      "filter" : {
+        "cardType" : "creature",
+        "maxLevel" : 3
+      },
+      "covers" : 1
+    }, {
+      "type" : "Do",
+      "action" : {
+        "type" : "Gems",
+        "count" : {
+          "type" : "Fixed",
+          "value" : 2
+        }
+      }
+    } ],
+    "sourceZone" : "field",
+    "limit" : "NONE"
+  } ],
+  "traits" : {
+    "lifePlayCost" : 2
+  }
+}

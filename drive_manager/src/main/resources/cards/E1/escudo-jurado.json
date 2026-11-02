@@ -1,0 +1,24 @@
+{
+  "name" : "escudo jurado",
+  "continuous" : [ {
+    "label" : "Todos Los Turnos",
+    "text" : "Mientras controles algún aliado nivel 4 o mayor: esta carta no puede ser objetivo de efectos oponentes.",
+    "condition" : {
+      "type" : "Compare",
+      "left" : {
+        "type" : "OnField",
+        "filter" : {
+          "cardType" : "creature",
+          "minLevel" : 4
+        }
+      },
+      "op" : "AT_LEAST",
+      "right" : {
+        "type" : "Fixed",
+        "value" : 1
+      }
+    },
+    "keywords" : [ "Inmune" ],
+    "zone" : "field"
+  } ]
+}

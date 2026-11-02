@@ -1,0 +1,64 @@
+{
+  "name" : "khaan",
+  "effects" : [ {
+    "id" : "khaan:todos-los-turnos",
+    "moment" : "ON_EVENT",
+    "label" : "Todos Los Turnos",
+    "text" : "Una vez por turno: si esta carta es agotada, puedes invocar 1 criatura Violeta nivel 2 o menor de tus tributos reduciendo su coste en 2.",
+    "steps" : [ {
+      "type" : "Do",
+      "action" : {
+        "type" : "Summon",
+        "cards" : {
+          "zones" : "tributeZone",
+          "owner" : "YOU",
+          "filter" : {
+            "colors" : [ "P" ],
+            "cardType" : "creature",
+            "maxLevel" : 2
+          },
+          "min" : {
+            "type" : "Fixed",
+            "value" : 1
+          },
+          "max" : {
+            "type" : "Fixed",
+            "value" : 1
+          },
+          "self" : "ANY",
+          "mode" : "CHOOSE"
+        },
+        "reduce" : {
+          "type" : "Fixed",
+          "value" : 2
+        },
+        "required" : true
+      }
+    } ],
+    "condition" : {
+      "type" : "Any",
+      "any" : [ {
+        "type" : "Happened",
+        "type" : "TAP",
+        "actor" : "ANY",
+        "owner" : "ANY",
+        "thisCard" : true
+      }, {
+        "type" : "Happened",
+        "type" : "BLOCK",
+        "actor" : "ANY",
+        "owner" : "ANY",
+        "thisCard" : true
+      }, {
+        "type" : "Happened",
+        "type" : "ATTACK_DECLARED",
+        "actor" : "ANY",
+        "owner" : "ANY",
+        "thisCard" : true,
+        "data" : [ "exhausted=true" ]
+      } ]
+    },
+    "sourceZone" : "field",
+    "limit" : "ONCE_PER_TURN"
+  } ]
+}

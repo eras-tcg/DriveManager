@@ -1,0 +1,17 @@
+{
+  "name" : "peleador del castillo",
+  "continuous" : [ {
+    "label" : "Turno Oponente",
+    "text" : "Esta carta gana fuerza 3 y no puede ser objetivo de efectos de cartas nivel 1 enemigas.",
+    "condition" : {
+      "type" : "Not",
+      "condition" : {
+        "type" : "GameIs",
+        "state" : "YOUR_TURN"
+      }
+    },
+    "strength" : 3,
+    "keywords" : [ "Inmune 1" ],
+    "zone" : "field"
+  } ]
+}

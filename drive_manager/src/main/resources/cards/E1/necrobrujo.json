@@ -1,0 +1,194 @@
+{
+  "name" : "necrobrujo",
+  "effects" : [ {
+    "id" : "necrobrujo:en-tributos",
+    "moment" : "ON_EVENT",
+    "label" : "Turno Aliado / En Tributos",
+    "text" : "Al inicio del turno: puedes invocar esta carta de forma especial reduciendo su coste especial en 1.",
+    "steps" : [ {
+      "type" : "Do",
+      "action" : {
+        "type" : "Sequence",
+        "actions" : [ {
+          "type" : "Select",
+          "selector" : {
+            "zones" : "tributeZone",
+            "owner" : "YOU",
+            "filter" : { },
+            "min" : {
+              "type" : "Fixed"
+            },
+            "max" : {
+              "type" : "Fixed",
+              "value" : 1
+            },
+            "self" : "ANY",
+            "mode" : "CHOOSE",
+            "special" : {
+              "rule" : {
+                "kind" : "ofThisCard",
+                "zone" : "tributeZone",
+                "reduce" : 1,
+                "summoner" : "any",
+                "filter" : { }
+              },
+              "stage" : "CARD"
+            }
+          },
+          "saveAs" : "specialCard",
+          "label" : "Invocar"
+        }, {
+          "type" : "Select",
+          "selector" : {
+            "zones" : "tributeZone",
+            "owner" : "YOU",
+            "filter" : { },
+            "min" : {
+              "type" : "Fixed"
+            },
+            "max" : {
+              "type" : "Fixed",
+              "value" : 1
+            },
+            "self" : "ANY",
+            "mode" : "CHOOSE",
+            "special" : {
+              "rule" : {
+                "kind" : "ofThisCard",
+                "zone" : "tributeZone",
+                "reduce" : 1,
+                "summoner" : "any",
+                "filter" : { }
+              },
+              "stage" : "SUMMONER"
+            }
+          },
+          "saveAs" : "specialSummoner",
+          "label" : "Invocador"
+        }, {
+          "type" : "Select",
+          "selector" : {
+            "zones" : "tributeZone",
+            "owner" : "YOU",
+            "filter" : { },
+            "min" : {
+              "type" : "Fixed"
+            },
+            "max" : {
+              "type" : "Fixed",
+              "value" : 1
+            },
+            "self" : "ANY",
+            "mode" : "CHOOSE",
+            "special" : {
+              "rule" : {
+                "kind" : "ofThisCard",
+                "zone" : "tributeZone",
+                "reduce" : 1,
+                "summoner" : "any",
+                "filter" : { }
+              },
+              "stage" : "MATERIAL"
+            }
+          },
+          "saveAs" : "specialMaterials",
+          "label" : "Material"
+        }, {
+          "type" : "SummonSpecial",
+          "rule" : {
+            "kind" : "ofThisCard",
+            "zone" : "tributeZone",
+            "reduce" : 1,
+            "summoner" : "any",
+            "filter" : { }
+          }
+        } ]
+      }
+    } ],
+    "condition" : {
+      "type" : "Happened",
+      "type" : "TURN_START",
+      "actor" : "YOU",
+      "owner" : "ANY"
+    },
+    "sourceZone" : "tributeZone",
+    "allyTurn" : true,
+    "limit" : "NONE"
+  }, {
+    "id" : "necrobrujo:en-invocacion",
+    "moment" : "ON_SUMMON",
+    "mandatory" : true,
+    "label" : "En Invocación",
+    "text" : "Roba 2 cartas. Luego: tributa 2 cartas de tu mano. Si tributaste alguna utilidad por este efecto: puedes jugar 1 utilidad de tus tributos reduciendo su coste en 1.",
+    "steps" : [ {
+      "type" : "Do",
+      "action" : {
+        "type" : "Draw",
+        "count" : {
+          "type" : "Fixed",
+          "value" : 2
+        }
+      }
+    }, {
+      "type" : "Do",
+      "action" : {
+        "type" : "Move",
+        "cards" : {
+          "zones" : "hand",
+          "owner" : "YOU",
+          "filter" : { },
+          "min" : {
+            "type" : "Fixed",
+            "value" : 2
+          },
+          "max" : {
+            "type" : "Fixed",
+            "value" : 2
+          },
+          "self" : "EXCLUDE",
+          "mode" : "CHOOSE"
+        },
+        "to" : "tributeZone"
+      }
+    }, {
+      "type" : "IfTributed",
+      "filter" : {
+        "cardTypes" : [ "utility" ]
+      },
+      "covers" : 2
+    }, {
+      "type" : "MayDo",
+      "question" : "¿Juegas 1 utilidad de tus tributos reduciendo su coste en 1?",
+      "covers" : 1
+    }, {
+      "type" : "Do",
+      "action" : {
+        "type" : "Play",
+        "cards" : {
+          "zones" : "tributeZone",
+          "owner" : "YOU",
+          "filter" : {
+            "cardTypes" : [ "utility" ]
+          },
+          "min" : {
+            "type" : "Fixed",
+            "value" : 1
+          },
+          "max" : {
+            "type" : "Fixed",
+            "value" : 1
+          },
+          "self" : "ANY",
+          "mode" : "CHOOSE"
+        },
+        "reduce" : {
+          "type" : "Fixed",
+          "value" : 1
+        },
+        "required" : true
+      }
+    } ],
+    "sourceZone" : "field",
+    "limit" : "NONE"
+  } ]
+}

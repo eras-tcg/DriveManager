@@ -1,0 +1,59 @@
+{
+  "name" : "portal al mundo espiritual",
+  "effects" : [ {
+    "id" : "portal-mundo-espiritual:todos-los-turnos",
+    "moment" : "ON_EVENT",
+    "label" : "Todos Los Turnos",
+    "text" : "Si algún aliado [ente] es invocado por efecto: puedes agotar esta carta; añádele 1 criatura [ente] de menor nivel de tus tributos como material para ganar 1 gema.",
+    "cost" : [ {
+      "type" : "Do",
+      "action" : {
+        "type" : "SetTapped",
+        "cards" : {
+          "zones" : "field",
+          "owner" : "YOU",
+          "filter" : { },
+          "min" : {
+            "type" : "Fixed",
+            "value" : 1
+          },
+          "max" : {
+            "type" : "Fixed",
+            "value" : 1
+          },
+          "self" : "ANY",
+          "mode" : "SELF"
+        },
+        "tapped" : true
+      }
+    } ],
+    "steps" : [ {
+      "type" : "IfPossible"
+    }, {
+      "type" : "AttachLowerFromTributes",
+      "filter" : {
+        "classes" : [ "ente" ],
+        "cardType" : "creature"
+      }
+    }, {
+      "type" : "Do",
+      "action" : {
+        "type" : "Gems",
+        "count" : {
+          "type" : "Fixed",
+          "value" : 1
+        }
+      }
+    } ],
+    "condition" : {
+      "type" : "Summoned",
+      "side" : "YOU",
+      "filter" : {
+        "classes" : [ "ente" ]
+      },
+      "how" : "effect"
+    },
+    "sourceZone" : "field",
+    "limit" : "NONE"
+  } ]
+}

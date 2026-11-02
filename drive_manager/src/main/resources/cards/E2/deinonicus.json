@@ -1,0 +1,84 @@
+{
+  "name" : "deinonicus",
+  "effects" : [ {
+    "id" : "deinonicus:en-invocacion",
+    "moment" : "ON_SUMMON",
+    "mandatory" : true,
+    "label" : "En Invocación",
+    "text" : "Tributa las primeras 3 cartas de tu mazo. Luego: puedes tomar 1 carta Verde, Blanca o [dinosaurio] de tus tributos.",
+    "steps" : [ {
+      "type" : "Do",
+      "action" : {
+        "type" : "Move",
+        "cards" : {
+          "zones" : "deck",
+          "owner" : "YOU",
+          "filter" : { },
+          "min" : {
+            "type" : "Fixed",
+            "value" : 3
+          },
+          "max" : {
+            "type" : "Fixed",
+            "value" : 3
+          },
+          "self" : "ANY",
+          "mode" : "TOP"
+        },
+        "to" : "tributeZone"
+      }
+    }, {
+      "type" : "Do",
+      "action" : {
+        "type" : "Move",
+        "cards" : {
+          "zones" : "tributeZone",
+          "owner" : "YOU",
+          "filter" : {
+            "colors" : [ "G", "W" ],
+            "classes" : [ "dinosaurio" ]
+          },
+          "min" : {
+            "type" : "Fixed"
+          },
+          "max" : {
+            "type" : "Fixed",
+            "value" : 1
+          },
+          "self" : "ANY",
+          "mode" : "CHOOSE"
+        },
+        "to" : "hand",
+        "required" : true
+      }
+    } ],
+    "sourceZone" : "field",
+    "limit" : "NONE"
+  } ],
+  "inherited" : [ {
+    "id" : "deinonicus:hereda-en-destruccion",
+    "moment" : "ON_DESTROY",
+    "label" : "En Destrucción por efecto aliado",
+    "text" : "Heredado de Deinonicus: puedes tributar esta carta; gana 1 gema.",
+    "cost" : [ {
+      "type" : "TributeNamedFromDiscard",
+      "name" : "Deinonicus"
+    } ],
+    "steps" : [ {
+      "type" : "Do",
+      "action" : {
+        "type" : "Gems",
+        "count" : {
+          "type" : "Fixed",
+          "value" : 1
+        }
+      }
+    } ],
+    "condition" : {
+      "type" : "ByEffect",
+      "by" : "YOU"
+    },
+    "sourceZone" : "field",
+    "limit" : "NONE"
+  } ]
+}

@@ -1,0 +1,158 @@
+{
+  "name" : "vs 1",
+  "effects" : [ {
+    "id" : "vs-1:en-invocacion",
+    "moment" : "ON_SUMMON",
+    "label" : "En Invocación",
+    "text" : "Puedes tributar 1 material de esta carta; juega 1 estructura Azul de tus tributos reduciendo su coste en 1.",
+    "cost" : [ {
+      "type" : "Do",
+      "action" : {
+        "type" : "Move",
+        "cards" : {
+          "zones" : "materials",
+          "owner" : "YOU",
+          "filter" : { },
+          "min" : {
+            "type" : "Fixed",
+            "value" : 1
+          },
+          "max" : {
+            "type" : "Fixed",
+            "value" : 1
+          },
+          "self" : "ANY",
+          "mode" : "CHOOSE"
+        },
+        "to" : "tributeZone"
+      }
+    } ],
+    "steps" : [ {
+      "type" : "Do",
+      "action" : {
+        "type" : "Play",
+        "cards" : {
+          "zones" : "tributeZone",
+          "owner" : "YOU",
+          "filter" : {
+            "colors" : [ "B" ],
+            "cardTypes" : [ "structure" ]
+          },
+          "min" : {
+            "type" : "Fixed",
+            "value" : 1
+          },
+          "max" : {
+            "type" : "Fixed",
+            "value" : 1
+          },
+          "self" : "ANY",
+          "mode" : "CHOOSE"
+        },
+        "reduce" : {
+          "type" : "Fixed",
+          "value" : 1
+        },
+        "required" : true
+      }
+    } ],
+    "sourceZone" : "field",
+    "limit" : "NONE"
+  }, {
+    "id" : "vs-1:en-mano",
+    "moment" : "ON_EVENT",
+    "label" : "En Mano / En Tributos",
+    "text" : "Si algún aliado nivel 3 o mayor es invocado y no tiene materiales nivel 2: puedes añadirle esta carta como material.",
+    "steps" : [ {
+      "type" : "SubjectFromTrigger"
+    }, {
+      "type" : "Do",
+      "action" : {
+        "type" : "Move",
+        "cards" : {
+          "zones" : "field,tributeZone",
+          "owner" : "YOU",
+          "filter" : { },
+          "min" : {
+            "type" : "Fixed",
+            "value" : 1
+          },
+          "max" : {
+            "type" : "Fixed",
+            "value" : 1
+          },
+          "self" : "ANY",
+          "mode" : "SELF"
+        },
+        "to" : "materials:subject"
+      }
+    } ],
+    "condition" : {
+      "type" : "All",
+      "all" : [ {
+        "type" : "Summoned",
+        "side" : "YOU",
+        "other" : true,
+        "filter" : {
+          "cardType" : "creature",
+          "minLevel" : 3
+        }
+      }, {
+        "type" : "SummonedWithoutMaterial",
+        "material" : {
+          "level" : 2
+        }
+      } ]
+    },
+    "sourceZone" : "hand",
+    "limit" : "NONE"
+  }, {
+    "id" : "vs-1:en-tributos",
+    "moment" : "ON_EVENT",
+    "label" : "En Mano / En Tributos",
+    "text" : "Si algún aliado nivel 3 o mayor es invocado y no tiene materiales nivel 2: puedes añadirle esta carta como material.",
+    "steps" : [ {
+      "type" : "SubjectFromTrigger"
+    }, {
+      "type" : "Do",
+      "action" : {
+        "type" : "Move",
+        "cards" : {
+          "zones" : "field,tributeZone",
+          "owner" : "YOU",
+          "filter" : { },
+          "min" : {
+            "type" : "Fixed",
+            "value" : 1
+          },
+          "max" : {
+            "type" : "Fixed",
+            "value" : 1
+          },
+          "self" : "ANY",
+          "mode" : "SELF"
+        },
+        "to" : "materials:subject"
+      }
+    } ],
+    "condition" : {
+      "type" : "All",
+      "all" : [ {
+        "type" : "Summoned",
+        "side" : "YOU",
+        "other" : true,
+        "filter" : {
+          "cardType" : "creature",
+          "minLevel" : 3
+        }
+      }, {
+        "type" : "SummonedWithoutMaterial",
+        "material" : {
+          "level" : 2
+        }
+      } ]
+    },
+    "sourceZone" : "tributeZone",
+    "limit" : "NONE"
+  } ]
+}

@@ -1,0 +1,43 @@
+{
+  "name" : "unidad policial b1-u3",
+  "effects" : [ {
+    "id" : "b1-u3:en-mano",
+    "moment" : "ON_EVENT",
+    "label" : "En Mano",
+    "text" : "(1) Si algún aliado destruye un enemigo por enfrentamiento: dicho aliado puede invocar esta carta por Materialización ignorando el requerimiento y sin pagar el coste especial.",
+    "steps" : [ {
+      "type" : "MaterializeSelfOnTriggerAlly"
+    } ],
+    "condition" : {
+      "type" : "Destroyed",
+      "owner" : "ENEMY",
+      "by" : "YOU",
+      "cause" : "battle"
+    },
+    "sourceZone" : "hand",
+    "limit" : "ONCE_PER_TURN_BETWEEN_COPIES"
+  }, {
+    "id" : "b1-u3:al-final-del-ataque",
+    "moment" : "ON_ATTACK_END",
+    "mandatory" : true,
+    "label" : "Al Final Del Ataque",
+    "text" : "Si algún enemigo fue destruido durante el combate: esta carta inflige daño directo.",
+    "steps" : [ {
+      "type" : "Do",
+      "action" : {
+        "type" : "Damage",
+        "amount" : {
+          "type" : "SourceStrength"
+        }
+      }
+    } ],
+    "condition" : {
+      "type" : "Happened",
+      "actor" : "ANY",
+      "owner" : "ANY",
+      "data" : [ "enemyDestroyed=true" ]
+    },
+    "sourceZone" : "field",
+    "limit" : "NONE"
+  } ]
+}

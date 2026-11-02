@@ -1,0 +1,65 @@
+{
+  "name" : "caballero versátil",
+  "effects" : [ {
+    "id" : "caballero-versatil:todos-los-turnos",
+    "moment" : "ON_EVENT",
+    "label" : "Todos Los Turnos",
+    "text" : "Si esta carta es agotada durante un combate: puedes tomar 1 carta Roja de tus tributos.",
+    "steps" : [ {
+      "type" : "Do",
+      "action" : {
+        "type" : "Move",
+        "cards" : {
+          "zones" : "tributeZone",
+          "owner" : "YOU",
+          "filter" : {
+            "colors" : [ "R" ]
+          },
+          "min" : {
+            "type" : "Fixed",
+            "value" : 1
+          },
+          "max" : {
+            "type" : "Fixed",
+            "value" : 1
+          },
+          "self" : "ANY",
+          "mode" : "CHOOSE"
+        },
+        "to" : "hand",
+        "required" : true
+      }
+    } ],
+    "condition" : {
+      "type" : "All",
+      "all" : [ {
+        "type" : "Any",
+        "any" : [ {
+          "type" : "Happened",
+          "type" : "TAP",
+          "actor" : "ANY",
+          "owner" : "ANY",
+          "thisCard" : true
+        }, {
+          "type" : "Happened",
+          "type" : "BLOCK",
+          "actor" : "ANY",
+          "owner" : "ANY",
+          "thisCard" : true
+        }, {
+          "type" : "Happened",
+          "type" : "ATTACK_DECLARED",
+          "actor" : "ANY",
+          "owner" : "ANY",
+          "thisCard" : true,
+          "data" : [ "exhausted=true" ]
+        } ]
+      }, {
+        "type" : "GameIs",
+        "state" : "DURING_COMBAT"
+      } ]
+    },
+    "sourceZone" : "field",
+    "limit" : "NONE"
+  } ]
+}

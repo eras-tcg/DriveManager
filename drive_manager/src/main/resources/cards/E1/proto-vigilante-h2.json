@@ -1,0 +1,12 @@
+{
+  "name" : "proto vigilante h2",
+  "reactions" : [ {
+    "type" : "Replacement",
+    "id" : "proto-vigilante-h2:todos-los-turnos",
+    "label" : "Todos Los Turnos",
+    "text" : "Cuando esta carta fuera a ser removida: en su lugar, puedes tributar 2 materiales de esta carta.",
+    "limit" : "NONE",
+    "cost" : "TRIBUTE_TWO_MATERIALS",
+    "resourceFilter" : { }
+  } ]
+}

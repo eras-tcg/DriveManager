@@ -1,0 +1,117 @@
+{
+  "name" : "armadura del alma impasible",
+  "effects" : [ {
+    "id" : "armadura-alma-impasible:en-mano",
+    "moment" : "ACTIVATED",
+    "label" : "Turno Aliado / En Mano",
+    "text" : "(1) Si solo controlas 1 aliado: puedes revelar un [retador] nivel 4 y uno nivel 5 de tu mano; invoca esta carta sin pagar su coste.",
+    "cost" : [ {
+      "type" : "RevealFromHand",
+      "filters" : [ {
+        "classes" : [ "retador" ],
+        "level" : 4
+      }, {
+        "classes" : [ "retador" ],
+        "level" : 5
+      } ]
+    } ],
+    "steps" : [ {
+      "type" : "Do",
+      "action" : {
+        "type" : "Summon",
+        "cards" : {
+          "zones" : "hand,deck,tributeZone,discardPile,lifeStack",
+          "owner" : "YOU",
+          "filter" : { },
+          "min" : {
+            "type" : "Fixed",
+            "value" : 1
+          },
+          "max" : {
+            "type" : "Fixed",
+            "value" : 1
+          },
+          "self" : "ANY",
+          "mode" : "SELF"
+        },
+        "reduce" : {
+          "type" : "Fixed",
+          "value" : 1000
+        },
+        "required" : true
+      }
+    } ],
+    "condition" : {
+      "type" : "All",
+      "all" : [ {
+        "type" : "Compare",
+        "left" : {
+          "type" : "OnField",
+          "filter" : {
+            "cardType" : "creature"
+          }
+        },
+        "op" : "AT_LEAST",
+        "right" : {
+          "type" : "Fixed",
+          "value" : 1
+        }
+      }, {
+        "type" : "Compare",
+        "left" : {
+          "type" : "OnField",
+          "filter" : {
+            "cardType" : "creature"
+          }
+        },
+        "op" : "AT_MOST",
+        "right" : {
+          "type" : "Fixed",
+          "value" : 1
+        }
+      } ]
+    },
+    "sourceZone" : "hand",
+    "allyTurn" : true,
+    "limit" : "ONCE_PER_TURN_BETWEEN_COPIES"
+  }, {
+    "id" : "armadura-alma-impasible:todos-los-turnos",
+    "moment" : "ON_EVENT",
+    "mandatory" : true,
+    "label" : "Todos Los Turnos",
+    "text" : "Si un aliado es invocado especialmente: coloca esta carta al tope de tus vidas bocabajo.",
+    "steps" : [ {
+      "type" : "Do",
+      "action" : {
+        "type" : "Move",
+        "cards" : {
+          "zones" : "hand,deck,tributeZone,discardPile,field",
+          "owner" : "YOU",
+          "filter" : { },
+          "min" : {
+            "type" : "Fixed",
+            "value" : 1
+          },
+          "max" : {
+            "type" : "Fixed",
+            "value" : 1
+          },
+          "self" : "ANY",
+          "mode" : "SELF"
+        },
+        "to" : "lifeTop",
+        "faceDown" : true
+      }
+    } ],
+    "condition" : {
+      "type" : "Summoned",
+      "side" : "YOU",
+      "filter" : {
+        "cardType" : "creature"
+      },
+      "how" : "special"
+    },
+    "sourceZone" : "field",
+    "limit" : "NONE"
+  } ]
+}

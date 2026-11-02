@@ -1,0 +1,38 @@
+{
+  "name" : "necrosimbionte",
+  "effects" : [ {
+    "id" : "necrosimbionte:en-descarte",
+    "moment" : "ON_EVENT",
+    "label" : "En Descarte",
+    "text" : "(1) Si algún enemigo es destruido por tus cartas: puedes colocar esta carta en tu retaguardia.",
+    "steps" : [ {
+      "type" : "Do",
+      "action" : {
+        "type" : "Move",
+        "cards" : {
+          "zones" : "discardPile",
+          "owner" : "YOU",
+          "filter" : { },
+          "min" : {
+            "type" : "Fixed",
+            "value" : 1
+          },
+          "max" : {
+            "type" : "Fixed",
+            "value" : 1
+          },
+          "self" : "ANY",
+          "mode" : "SELF"
+        },
+        "to" : "backLine"
+      }
+    } ],
+    "condition" : {
+      "type" : "Destroyed",
+      "owner" : "ENEMY",
+      "by" : "YOU"
+    },
+    "sourceZone" : "discardPile",
+    "limit" : "ONCE_PER_TURN_BETWEEN_COPIES"
+  } ]
+}

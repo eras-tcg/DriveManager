@@ -1,0 +1,67 @@
+{
+  "name" : "sp 7h",
+  "effects" : [ {
+    "id" : "sp-7h:en-invocacion",
+    "moment" : "ON_SUMMON",
+    "label" : "En Invocación",
+    "text" : "Si tienes 0 o más gemas: puedes tributar 1 material de esta carta; esta carta declara ataque y gana Alcance hasta el final del turno.",
+    "cost" : [ {
+      "type" : "Do",
+      "action" : {
+        "type" : "Move",
+        "cards" : {
+          "zones" : "materials",
+          "owner" : "YOU",
+          "filter" : { },
+          "min" : {
+            "type" : "Fixed",
+            "value" : 1
+          },
+          "max" : {
+            "type" : "Fixed",
+            "value" : 1
+          },
+          "self" : "ANY",
+          "mode" : "CHOOSE"
+        },
+        "to" : "tributeZone"
+      }
+    } ],
+    "steps" : [ {
+      "type" : "Do",
+      "action" : {
+        "type" : "Modify",
+        "cards" : {
+          "zones" : "subjectOrSelf",
+          "owner" : "YOU",
+          "filter" : { },
+          "min" : {
+            "type" : "Fixed"
+          },
+          "max" : {
+            "type" : "Fixed",
+            "value" : 2147483647
+          },
+          "self" : "ANY",
+          "mode" : "ALL"
+        },
+        "keyword" : "Alcance",
+        "until" : "TURN"
+      }
+    }, {
+      "type" : "DeclareAttack"
+    } ],
+    "condition" : {
+      "type" : "Compare",
+      "left" : {
+        "type" : "SignedGems"
+      },
+      "op" : "AT_LEAST",
+      "right" : {
+        "type" : "Fixed"
+      }
+    },
+    "sourceZone" : "field",
+    "limit" : "NONE"
+  } ]
+}

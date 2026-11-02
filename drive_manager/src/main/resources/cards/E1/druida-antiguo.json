@@ -1,0 +1,199 @@
+{
+  "name" : "druida antiguo",
+  "effects" : [ {
+    "id" : "druida-antiguo:al-atacar",
+    "moment" : "ON_ATTACK",
+    "label" : "Al Atacar",
+    "text" : "(1) Puedes reactivar hasta 2 de tus estructuras Verdes de coste 2 o menos.",
+    "steps" : [ {
+      "type" : "Do",
+      "action" : {
+        "type" : "SetTapped",
+        "cards" : {
+          "zones" : "field",
+          "owner" : "YOU",
+          "filter" : {
+            "colors" : [ "G" ],
+            "cardType" : "structure",
+            "maxCost" : 2
+          },
+          "min" : {
+            "type" : "Fixed"
+          },
+          "max" : {
+            "type" : "Fixed",
+            "value" : 2
+          },
+          "self" : "ANY",
+          "mode" : "CHOOSE"
+        }
+      }
+    } ],
+    "sourceZone" : "field",
+    "limit" : "ONCE_PER_TURN_BETWEEN_COPIES"
+  }, {
+    "id" : "druida-antiguo:todos-los-turnos",
+    "moment" : "ON_EVENT",
+    "label" : "Todos Los Turnos",
+    "text" : "Si esta carta es agotada: puedes agotar 1 de tus estructuras para invocar por Evolución una criatura en tu mano reduciendo el coste especial en 2.",
+    "steps" : [ {
+      "type" : "IfPossible"
+    }, {
+      "type" : "Do",
+      "action" : {
+        "type" : "SetTapped",
+        "cards" : {
+          "zones" : "field",
+          "owner" : "YOU",
+          "filter" : {
+            "cardTypes" : [ "structure" ]
+          },
+          "min" : {
+            "type" : "Fixed",
+            "value" : 1
+          },
+          "max" : {
+            "type" : "Fixed",
+            "value" : 1
+          },
+          "self" : "EXCLUDE",
+          "mode" : "CHOOSE"
+        },
+        "tapped" : true,
+        "required" : true
+      }
+    }, {
+      "type" : "Do",
+      "action" : {
+        "type" : "Sequence",
+        "actions" : [ {
+          "type" : "Select",
+          "selector" : {
+            "zones" : "hand",
+            "owner" : "YOU",
+            "filter" : { },
+            "min" : {
+              "type" : "Fixed"
+            },
+            "max" : {
+              "type" : "Fixed",
+              "value" : 1
+            },
+            "self" : "ANY",
+            "mode" : "CHOOSE",
+            "special" : {
+              "rule" : {
+                "kind" : "evolution",
+                "zone" : "hand",
+                "reduce" : 2,
+                "summoner" : "any",
+                "filter" : {
+                  "cardType" : "creature"
+                }
+              },
+              "stage" : "CARD"
+            }
+          },
+          "saveAs" : "specialCard",
+          "label" : "Invocar"
+        }, {
+          "type" : "Select",
+          "selector" : {
+            "zones" : "hand",
+            "owner" : "YOU",
+            "filter" : { },
+            "min" : {
+              "type" : "Fixed"
+            },
+            "max" : {
+              "type" : "Fixed",
+              "value" : 1
+            },
+            "self" : "ANY",
+            "mode" : "CHOOSE",
+            "special" : {
+              "rule" : {
+                "kind" : "evolution",
+                "zone" : "hand",
+                "reduce" : 2,
+                "summoner" : "any",
+                "filter" : {
+                  "cardType" : "creature"
+                }
+              },
+              "stage" : "SUMMONER"
+            }
+          },
+          "saveAs" : "specialSummoner",
+          "label" : "Invocador"
+        }, {
+          "type" : "Select",
+          "selector" : {
+            "zones" : "hand",
+            "owner" : "YOU",
+            "filter" : { },
+            "min" : {
+              "type" : "Fixed"
+            },
+            "max" : {
+              "type" : "Fixed",
+              "value" : 1
+            },
+            "self" : "ANY",
+            "mode" : "CHOOSE",
+            "special" : {
+              "rule" : {
+                "kind" : "evolution",
+                "zone" : "hand",
+                "reduce" : 2,
+                "summoner" : "any",
+                "filter" : {
+                  "cardType" : "creature"
+                }
+              },
+              "stage" : "MATERIAL"
+            }
+          },
+          "saveAs" : "specialMaterials",
+          "label" : "Material"
+        }, {
+          "type" : "SummonSpecial",
+          "rule" : {
+            "kind" : "evolution",
+            "zone" : "hand",
+            "reduce" : 2,
+            "summoner" : "any",
+            "filter" : {
+              "cardType" : "creature"
+            }
+          }
+        } ]
+      }
+    } ],
+    "condition" : {
+      "type" : "Any",
+      "any" : [ {
+        "type" : "Happened",
+        "type" : "TAP",
+        "actor" : "ANY",
+        "owner" : "ANY",
+        "thisCard" : true
+      }, {
+        "type" : "Happened",
+        "type" : "BLOCK",
+        "actor" : "ANY",
+        "owner" : "ANY",
+        "thisCard" : true
+      }, {
+        "type" : "Happened",
+        "type" : "ATTACK_DECLARED",
+        "actor" : "ANY",
+        "owner" : "ANY",
+        "thisCard" : true,
+        "data" : [ "exhausted=true" ]
+      } ]
+    },
+    "sourceZone" : "field",
+    "limit" : "NONE"
+  } ]
+}

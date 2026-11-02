@@ -1,0 +1,127 @@
+{
+  "name" : "duregón",
+  "effects" : [ {
+    "id" : "duregon:en-invocacion",
+    "moment" : "ON_SUMMON",
+    "mandatory" : true,
+    "label" : "En Invocación",
+    "text" : "Tributa 3 cartas del tope de tu mazo. Luego: toma 1 carta Verde o [dragón] de tus tributos.",
+    "steps" : [ {
+      "type" : "Do",
+      "action" : {
+        "type" : "Move",
+        "cards" : {
+          "zones" : "deck",
+          "owner" : "YOU",
+          "filter" : { },
+          "min" : {
+            "type" : "Fixed",
+            "value" : 3
+          },
+          "max" : {
+            "type" : "Fixed",
+            "value" : 3
+          },
+          "self" : "ANY",
+          "mode" : "TOP"
+        },
+        "to" : "tributeZone"
+      }
+    }, {
+      "type" : "Do",
+      "action" : {
+        "type" : "Move",
+        "cards" : {
+          "zones" : "tributeZone",
+          "owner" : "YOU",
+          "filter" : {
+            "colors" : [ "G" ],
+            "classes" : [ "dragón" ]
+          },
+          "min" : {
+            "type" : "Fixed",
+            "value" : 1
+          },
+          "max" : {
+            "type" : "Fixed",
+            "value" : 1
+          },
+          "self" : "ANY",
+          "mode" : "CHOOSE"
+        },
+        "to" : "hand",
+        "required" : true
+      }
+    } ],
+    "sourceZone" : "field",
+    "limit" : "NONE"
+  } ],
+  "inherited" : [ {
+    "id" : "duregon:hereda-al-atacar",
+    "moment" : "ON_ATTACK",
+    "mandatory" : true,
+    "label" : "Al Atacar",
+    "text" : "Heredado de Duregón: roba 1 carta. Luego: tributa 1 carta de tu mano.",
+    "steps" : [ {
+      "type" : "Do",
+      "action" : {
+        "type" : "Draw",
+        "count" : {
+          "type" : "Fixed",
+          "value" : 1
+        }
+      }
+    }, {
+      "type" : "Do",
+      "action" : {
+        "type" : "Move",
+        "cards" : {
+          "zones" : "hand",
+          "owner" : "YOU",
+          "filter" : { },
+          "min" : {
+            "type" : "Fixed",
+            "value" : 1
+          },
+          "max" : {
+            "type" : "Fixed",
+            "value" : 1
+          },
+          "self" : "EXCLUDE",
+          "mode" : "CHOOSE"
+        },
+        "to" : "tributeZone"
+      }
+    } ],
+    "sourceZone" : "field",
+    "limit" : "NONE"
+  } ],
+  "reactions" : [ {
+    "type" : "CostModifier",
+    "label" : "Turno Aliado",
+    "event" : "SPECIAL_SUMMON",
+    "kinds" : [ "evolution" ],
+    "holder" : "SUMMONER",
+    "allyTurn" : true,
+    "condition" : {
+      "type" : "Compare",
+      "left" : {
+        "type" : "InZone",
+        "zone" : "tributeZone",
+        "filter" : {
+          "classes" : [ "dragón" ]
+        }
+      },
+      "op" : "AT_LEAST",
+      "right" : {
+        "type" : "Fixed",
+        "value" : 5
+      }
+    },
+    "payment" : {
+      "kind" : "NONE"
+    },
+    "reduce" : 1,
+    "limit" : "NONE"
+  } ]
+}

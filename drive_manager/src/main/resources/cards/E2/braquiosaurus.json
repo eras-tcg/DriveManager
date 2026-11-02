@@ -1,0 +1,77 @@
+{
+  "name" : "braquiosaurus",
+  "effects" : [ {
+    "id" : "braquiosaurus:todos-los-turnos",
+    "moment" : "ON_EVENT",
+    "mandatory" : true,
+    "label" : "Todos Los Turnos",
+    "text" : "Si esta carta es agotada: sacrifica todas las criaturas en la línea frontal de fuerza 5 o menos.",
+    "steps" : [ {
+      "type" : "Do",
+      "action" : {
+        "type" : "Destroy",
+        "cards" : {
+          "zones" : "frontLine",
+          "owner" : "BOTH",
+          "filter" : {
+            "cardType" : "creature",
+            "maxStrength" : 5
+          },
+          "min" : {
+            "type" : "Fixed"
+          },
+          "max" : {
+            "type" : "Fixed",
+            "value" : 2147483647
+          },
+          "self" : "ANY",
+          "mode" : "ALL"
+        },
+        "sacrifice" : true
+      }
+    } ],
+    "condition" : {
+      "type" : "Any",
+      "any" : [ {
+        "type" : "Happened",
+        "type" : "TAP",
+        "actor" : "ANY",
+        "owner" : "ANY",
+        "thisCard" : true
+      }, {
+        "type" : "Happened",
+        "type" : "BLOCK",
+        "actor" : "ANY",
+        "owner" : "ANY",
+        "thisCard" : true
+      }, {
+        "type" : "Happened",
+        "type" : "ATTACK_DECLARED",
+        "actor" : "ANY",
+        "owner" : "ANY",
+        "thisCard" : true,
+        "data" : [ "exhausted=true" ]
+      } ]
+    },
+    "sourceZone" : "field",
+    "limit" : "NONE"
+  }, {
+    "id" : "braquiosaurus:en-destruccion",
+    "moment" : "ON_DESTROY",
+    "mandatory" : true,
+    "label" : "En Destrucción",
+    "text" : "Gana 2 gemas.",
+    "steps" : [ {
+      "type" : "Do",
+      "action" : {
+        "type" : "Gems",
+        "count" : {
+          "type" : "Fixed",
+          "value" : 2
+        }
+      }
+    } ],
+    "sourceZone" : "field",
+    "limit" : "NONE"
+  } ]
+}

@@ -1,0 +1,99 @@
+{
+  "name" : "apostol de la infamia",
+  "effects" : [ {
+    "id" : "apostol-de-la-infamia:todos-los-turnos",
+    "moment" : "ON_EVENT",
+    "mandatory" : true,
+    "label" : "Todos Los Turnos",
+    "text" : "Si esta carta enfrenta un enemigo nivel 3 o mayor: sacrifica ambas criaturas.",
+    "steps" : [ {
+      "type" : "Do",
+      "action" : {
+        "type" : "Destroy",
+        "cards" : {
+          "zones" : "clash,thisCard",
+          "owner" : "YOU",
+          "filter" : { },
+          "min" : {
+            "type" : "Fixed"
+          },
+          "max" : {
+            "type" : "Fixed",
+            "value" : 2
+          },
+          "self" : "ANY",
+          "mode" : "ALL"
+        },
+        "sacrifice" : true
+      }
+    } ],
+    "condition" : {
+      "type" : "ThisClashes",
+      "enemy" : {
+        "cardType" : "creature",
+        "minLevel" : 3
+      }
+    },
+    "sourceZone" : "field",
+    "limit" : "NONE"
+  }, {
+    "id" : "apostol-de-la-infamia:en-destruccion",
+    "moment" : "ON_DESTROY",
+    "label" : "En Destrucción",
+    "text" : "Puedes invocar 1 criatura Violeta nivel 4 o menor de tus tributos reduciendo en 6 su coste. Si es [espectro]: muévela a tu línea frontal.",
+    "steps" : [ {
+      "type" : "Do",
+      "action" : {
+        "type" : "Summon",
+        "cards" : {
+          "zones" : "tributeZone",
+          "owner" : "YOU",
+          "filter" : {
+            "colors" : [ "P" ],
+            "cardType" : "creature",
+            "maxLevel" : 4
+          },
+          "min" : {
+            "type" : "Fixed",
+            "value" : 1
+          },
+          "max" : {
+            "type" : "Fixed",
+            "value" : 1
+          },
+          "self" : "ANY",
+          "mode" : "CHOOSE"
+        },
+        "reduce" : {
+          "type" : "Fixed",
+          "value" : 6
+        },
+        "required" : true
+      }
+    }, {
+      "type" : "Do",
+      "action" : {
+        "type" : "Move",
+        "cards" : {
+          "zones" : "saved:summoned",
+          "owner" : "YOU",
+          "filter" : {
+            "classes" : [ "espectro" ]
+          },
+          "min" : {
+            "type" : "Fixed"
+          },
+          "max" : {
+            "type" : "Fixed",
+            "value" : 1
+          },
+          "self" : "ANY",
+          "mode" : "ALL"
+        },
+        "to" : "frontLine"
+      }
+    } ],
+    "sourceZone" : "field",
+    "limit" : "NONE"
+  } ]
+}

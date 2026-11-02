@@ -1,0 +1,54 @@
+{
+  "name" : "peón de los leones de fuego",
+  "effects" : [ {
+    "id" : "peon-leones-de-fuego:en-mano",
+    "moment" : "ACTIVATED",
+    "label" : "Turno Aliado / En Mano",
+    "text" : "Si controlas algún [caballero] nivel 4 o mayor: puedes invocar esta carta en tu línea frontal pagando su coste.",
+    "steps" : [ {
+      "type" : "Do",
+      "action" : {
+        "type" : "Summon",
+        "cards" : {
+          "zones" : "hand",
+          "owner" : "YOU",
+          "filter" : { },
+          "min" : {
+            "type" : "Fixed",
+            "value" : 1
+          },
+          "max" : {
+            "type" : "Fixed",
+            "value" : 1
+          },
+          "self" : "ANY",
+          "mode" : "SELF"
+        },
+        "reduce" : {
+          "type" : "Fixed"
+        },
+        "toFront" : true,
+        "required" : true
+      }
+    } ],
+    "condition" : {
+      "type" : "Compare",
+      "left" : {
+        "type" : "OnField",
+        "filter" : {
+          "classes" : [ "caballero" ],
+          "cardType" : "creature",
+          "minLevel" : 4
+        }
+      },
+      "op" : "AT_LEAST",
+      "right" : {
+        "type" : "Fixed",
+        "value" : 1
+      }
+    },
+    "sourceZone" : "hand",
+    "allyTurn" : true,
+    "limit" : "NONE"
+  } ]
+}

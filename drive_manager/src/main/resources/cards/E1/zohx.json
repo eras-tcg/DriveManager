@@ -1,0 +1,127 @@
+{
+  "name" : "zohx",
+  "effects" : [ {
+    "id" : "zohx:al-final-del-ataque",
+    "moment" : "ON_ATTACK_END",
+    "label" : "Al Final Del Ataque",
+    "text" : "Si tienes 10 o más criaturas [bestia] en tus tributos: esta carta puede invocar por Ritual 1 criatura de tus tributos reduciendo el coste especial en 1.",
+    "steps" : [ {
+      "type" : "Do",
+      "action" : {
+        "type" : "Sequence",
+        "actions" : [ {
+          "type" : "Select",
+          "selector" : {
+            "zones" : "tributeZone",
+            "owner" : "YOU",
+            "filter" : { },
+            "min" : {
+              "type" : "Fixed"
+            },
+            "max" : {
+              "type" : "Fixed",
+              "value" : 1
+            },
+            "self" : "ANY",
+            "mode" : "CHOOSE",
+            "special" : {
+              "rule" : {
+                "kind" : "ritual",
+                "zone" : "tributeZone",
+                "reduce" : 1,
+                "summoner" : "self",
+                "filter" : { }
+              },
+              "stage" : "CARD"
+            }
+          },
+          "saveAs" : "specialCard",
+          "label" : "Invocar"
+        }, {
+          "type" : "Select",
+          "selector" : {
+            "zones" : "tributeZone",
+            "owner" : "YOU",
+            "filter" : { },
+            "min" : {
+              "type" : "Fixed"
+            },
+            "max" : {
+              "type" : "Fixed",
+              "value" : 1
+            },
+            "self" : "ANY",
+            "mode" : "CHOOSE",
+            "special" : {
+              "rule" : {
+                "kind" : "ritual",
+                "zone" : "tributeZone",
+                "reduce" : 1,
+                "summoner" : "self",
+                "filter" : { }
+              },
+              "stage" : "SUMMONER"
+            }
+          },
+          "saveAs" : "specialSummoner",
+          "label" : "Invocador"
+        }, {
+          "type" : "Select",
+          "selector" : {
+            "zones" : "tributeZone",
+            "owner" : "YOU",
+            "filter" : { },
+            "min" : {
+              "type" : "Fixed"
+            },
+            "max" : {
+              "type" : "Fixed",
+              "value" : 1
+            },
+            "self" : "ANY",
+            "mode" : "CHOOSE",
+            "special" : {
+              "rule" : {
+                "kind" : "ritual",
+                "zone" : "tributeZone",
+                "reduce" : 1,
+                "summoner" : "self",
+                "filter" : { }
+              },
+              "stage" : "MATERIAL"
+            }
+          },
+          "saveAs" : "specialMaterials",
+          "label" : "Sacrificar"
+        }, {
+          "type" : "SummonSpecial",
+          "rule" : {
+            "kind" : "ritual",
+            "zone" : "tributeZone",
+            "reduce" : 1,
+            "summoner" : "self",
+            "filter" : { }
+          }
+        } ]
+      }
+    } ],
+    "condition" : {
+      "type" : "Compare",
+      "left" : {
+        "type" : "InZone",
+        "zone" : "tributeZone",
+        "filter" : {
+          "classes" : [ "bestia" ],
+          "cardType" : "creature"
+        }
+      },
+      "op" : "AT_LEAST",
+      "right" : {
+        "type" : "Fixed",
+        "value" : 10
+      }
+    },
+    "sourceZone" : "field",
+    "limit" : "NONE"
+  } ]
+}

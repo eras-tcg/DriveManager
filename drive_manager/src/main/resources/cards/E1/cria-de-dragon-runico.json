@@ -1,0 +1,50 @@
+{
+  "name" : "cría de dragón rúnico",
+  "inherited" : [ {
+    "id" : "cria-dragon-runico:hereda-al-atacar",
+    "moment" : "ON_ATTACK",
+    "mandatory" : true,
+    "label" : "Al Atacar",
+    "text" : "Heredado de Cría De Dragón Rúnico: tributa 1 carta del tope de tu mazo.",
+    "steps" : [ {
+      "type" : "Do",
+      "action" : {
+        "type" : "Move",
+        "cards" : {
+          "zones" : "deck",
+          "owner" : "YOU",
+          "filter" : { },
+          "min" : {
+            "type" : "Fixed",
+            "value" : 1
+          },
+          "max" : {
+            "type" : "Fixed",
+            "value" : 1
+          },
+          "self" : "ANY",
+          "mode" : "TOP"
+        },
+        "to" : "tributeZone"
+      }
+    } ],
+    "sourceZone" : "field",
+    "limit" : "NONE"
+  } ],
+  "reactions" : [ {
+    "type" : "CostModifier",
+    "label" : "Todos Los Turnos",
+    "event" : "SPECIAL_SUMMON",
+    "kinds" : [ "evolution" ],
+    "holder" : "SUMMONER",
+    "payment" : {
+      "kind" : "TRIBUTES_TO_DECK_BOTTOM",
+      "count" : 5,
+      "filter" : {
+        "classes" : [ "dragón" ]
+      }
+    },
+    "reduce" : 1,
+    "limit" : "NONE"
+  } ]
+}

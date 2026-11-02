@@ -1,0 +1,25 @@
+{
+  "name" : "principe charles di castirion",
+  "effects" : [ {
+    "id" : "principe-charles:en-invocacion",
+    "moment" : "ON_SUMMON",
+    "mandatory" : true,
+    "label" : "En Invocación",
+    "text" : "Todos tus otros aliados [caballero] o [armada] ganan Reactivar hasta el final del turno oponente.",
+    "steps" : [ {
+      "type" : "AlliesGain",
+      "filter" : {
+        "classes" : [ "caballero", "armada" ],
+        "cardType" : "creature"
+      },
+      "keyword" : "Reactivar",
+      "until" : "nextTurn",
+      "others" : true
+    } ],
+    "sourceZone" : "field",
+    "limit" : "NONE"
+  } ],
+  "reactions" : [ {
+    "type" : "AttacksBeforeAscended"
+  } ]
+}

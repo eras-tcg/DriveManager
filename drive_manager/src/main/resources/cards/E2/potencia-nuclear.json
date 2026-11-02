@@ -1,0 +1,75 @@
+{
+  "name" : "potencia nuclear",
+  "effects" : [ {
+    "id" : "potencia-nuclear:en-juego",
+    "moment" : "ON_PLAY",
+    "mandatory" : true,
+    "label" : "En Juego",
+    "text" : "Puedes tributar 2 materiales de 1 aliado [autómata], [neomáquina] o [mecha] para que declare ataque sin agotarse. Si lo hace: al final del ataque súbelo a tu mano con todos sus materiales.",
+    "steps" : [ {
+      "type" : "MayDo",
+      "question" : "¿Tributas 2 materiales de 1 aliado [autómata], [neomáquina] o [mecha] para que declare ataque?",
+      "covers" : 5
+    }, {
+      "type" : "Do",
+      "action" : {
+        "type" : "Select",
+        "selector" : {
+          "zones" : "attackers",
+          "owner" : "YOU",
+          "filter" : {
+            "classes" : [ "autómata", "neomáquina", "mecha" ],
+            "cardType" : "creature"
+          },
+          "min" : {
+            "type" : "Fixed",
+            "value" : 1
+          },
+          "max" : {
+            "type" : "Fixed",
+            "value" : 1
+          },
+          "self" : "ANY",
+          "mode" : "CHOOSE"
+        },
+        "saveAs" : "subject",
+        "label" : "Elegido",
+        "endsIfNone" : true
+      }
+    }, {
+      "type" : "Do",
+      "action" : {
+        "type" : "Move",
+        "cards" : {
+          "zones" : "materials:subject",
+          "owner" : "YOU",
+          "filter" : { },
+          "min" : {
+            "type" : "Fixed",
+            "value" : 2
+          },
+          "max" : {
+            "type" : "Fixed",
+            "value" : 2
+          },
+          "self" : "ANY",
+          "mode" : "CHOOSE"
+        },
+        "to" : "tributeZone"
+      }
+    }, {
+      "type" : "DeclareAttack"
+    }, {
+      "type" : "IfCondition",
+      "condition" : {
+        "type" : "GameIs",
+        "state" : "DURING_COMBAT"
+      },
+      "covers" : 1
+    }, {
+      "type" : "ReturnSubjectAtAttackEnd"
+    } ],
+    "sourceZone" : "field",
+    "limit" : "NONE"
+  } ]
+}

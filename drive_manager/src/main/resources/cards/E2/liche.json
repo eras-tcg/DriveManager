@@ -1,0 +1,83 @@
+{
+  "name" : "liche",
+  "effects" : [ {
+    "id" : "liche:en-invocacion",
+    "moment" : "ON_SUMMON",
+    "mandatory" : true,
+    "label" : "En Invocación",
+    "text" : "Tributa hasta 4 [brujería] de tu descarte; juega 1 [brujería] de tus tributos reduciendo su coste en 1 por cada carta tributada.",
+    "cost" : [ {
+      "type" : "Do",
+      "action" : {
+        "type" : "Move",
+        "cards" : {
+          "zones" : "discardPile",
+          "owner" : "YOU",
+          "filter" : {
+            "classes" : [ "brujería" ]
+          },
+          "min" : {
+            "type" : "Fixed"
+          },
+          "max" : {
+            "type" : "Fixed",
+            "value" : 4
+          },
+          "self" : "ANY",
+          "mode" : "CHOOSE"
+        },
+        "to" : "tributeZone"
+      }
+    } ],
+    "steps" : [ {
+      "type" : "Do",
+      "action" : {
+        "type" : "Play",
+        "cards" : {
+          "zones" : "tributeZone",
+          "owner" : "YOU",
+          "filter" : {
+            "classes" : [ "brujería" ]
+          },
+          "min" : {
+            "type" : "Fixed",
+            "value" : 1
+          },
+          "max" : {
+            "type" : "Fixed",
+            "value" : 1
+          },
+          "self" : "ANY",
+          "mode" : "CHOOSE"
+        },
+        "reduce" : {
+          "type" : "Times",
+          "base" : {
+            "type" : "LastCount"
+          },
+          "factor" : 1
+        },
+        "required" : true
+      }
+    } ],
+    "sourceZone" : "field",
+    "limit" : "NONE"
+  } ],
+  "reactions" : [ {
+    "type" : "CostModifier",
+    "label" : "Absoluto",
+    "event" : "SUMMON",
+    "holder" : "SELF",
+    "payment" : {
+      "kind" : "NONE"
+    },
+    "limit" : "ONCE_PER_TURN_BETWEEN_COPIES",
+    "amount" : {
+      "type" : "InZones",
+      "zones" : "discardPile,tributeZone",
+      "filter" : {
+        "classes" : [ "brujería" ]
+      }
+    }
+  } ]
+}

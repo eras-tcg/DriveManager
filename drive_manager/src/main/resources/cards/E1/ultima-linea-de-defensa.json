@@ -1,0 +1,27 @@
+{
+  "name" : "última línea de defensa",
+  "effects" : [ {
+    "id" : "ultima-linea:en-juego",
+    "moment" : "ON_PLAY",
+    "mandatory" : true,
+    "label" : "En Juego",
+    "text" : "Efecto Definitivo. Si tienes 2 o menos vidas bocabajo: la próxima vez que un aliado inflija daño directo por combate este turno, inflige daño 1 vez más. Si lo hace: termina tu turno.",
+    "steps" : [ {
+      "type" : "ExtraCombatHitThenEndTurn"
+    } ],
+    "condition" : {
+      "type" : "Compare",
+      "left" : {
+        "type" : "Lives",
+        "faceDownOnly" : true
+      },
+      "op" : "AT_MOST",
+      "right" : {
+        "type" : "Fixed",
+        "value" : 2
+      }
+    },
+    "sourceZone" : "field",
+    "limit" : "DEFINITIVE"
+  } ]
+}

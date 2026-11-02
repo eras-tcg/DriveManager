@@ -1,0 +1,61 @@
+{
+  "name" : "zombi berserker",
+  "effects" : [ {
+    "id" : "zombi-berserker:todos-los-turnos",
+    "moment" : "ON_EVENT",
+    "label" : "Todos Los Turnos",
+    "text" : "Una vez por turno: si algún aliado es invocado por efecto, esta carta puede declarar ataque.",
+    "steps" : [ {
+      "type" : "DeclareAttack"
+    } ],
+    "condition" : {
+      "type" : "Summoned",
+      "side" : "YOU",
+      "filter" : { },
+      "how" : "effect"
+    },
+    "sourceZone" : "field",
+    "limit" : "ONCE_PER_TURN"
+  }, {
+    "id" : "zombi-berserker:al-atacar",
+    "moment" : "ON_ATTACK",
+    "mandatory" : true,
+    "label" : "Al Atacar",
+    "text" : "Una vez por turno: elige enemigos que sumen 4 en nivel; destrúyelos.",
+    "cost" : [ {
+      "type" : "ChooseEnemiesLevelSum",
+      "sum" : 4
+    } ],
+    "steps" : [ {
+      "type" : "Do",
+      "action" : {
+        "type" : "Destroy",
+        "cards" : {
+          "zones" : "saved:targets",
+          "owner" : "YOU",
+          "filter" : { },
+          "min" : {
+            "type" : "Fixed"
+          },
+          "max" : {
+            "type" : "Fixed",
+            "value" : 2147483647
+          },
+          "self" : "ANY",
+          "mode" : "ALL"
+        }
+      }
+    } ],
+    "sourceZone" : "field",
+    "limit" : "ONCE_PER_TURN"
+  } ],
+  "continuous" : [ {
+    "label" : "Todos Los Turnos",
+    "text" : "Esta carta no puede declarar bloqueo.",
+    "condition" : {
+      "type" : "Always"
+    },
+    "keywords" : [ "No puede bloquear" ],
+    "zone" : "field"
+  } ]
+}

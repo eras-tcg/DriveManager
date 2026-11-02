@@ -1,0 +1,84 @@
+{
+  "name" : "caza nocturna",
+  "effects" : [ {
+    "id" : "caza-nocturna:en-juego",
+    "moment" : "ON_PLAY",
+    "mandatory" : true,
+    "label" : "En Juego",
+    "text" : "(1) Elige 1 aliado para que gane Provocar 3 hasta el final del turno y declare ataque.",
+    "steps" : [ {
+      "type" : "Do",
+      "action" : {
+        "type" : "Select",
+        "selector" : {
+          "zones" : "pickableAttackers",
+          "owner" : "YOU",
+          "filter" : { },
+          "min" : {
+            "type" : "Fixed",
+            "value" : 1
+          },
+          "max" : {
+            "type" : "Fixed",
+            "value" : 1
+          },
+          "self" : "ANY",
+          "mode" : "CHOOSE"
+        },
+        "target" : true,
+        "saveAs" : "subject",
+        "label" : "Elegido",
+        "endsIfNone" : true
+      }
+    }, {
+      "type" : "Do",
+      "action" : {
+        "type" : "Modify",
+        "cards" : {
+          "zones" : "subjectOrSelf",
+          "owner" : "YOU",
+          "filter" : { },
+          "min" : {
+            "type" : "Fixed"
+          },
+          "max" : {
+            "type" : "Fixed",
+            "value" : 2147483647
+          },
+          "self" : "ANY",
+          "mode" : "ALL"
+        },
+        "keyword" : "Provocar 3",
+        "until" : "TURN"
+      }
+    }, {
+      "type" : "DeclareAttack"
+    } ],
+    "sourceZone" : "field",
+    "limit" : "ONCE_PER_TURN_BETWEEN_COPIES"
+  } ],
+  "reactions" : [ {
+    "type" : "CostModifier",
+    "label" : "Reactivo",
+    "event" : "PLAY",
+    "holder" : "SELF",
+    "condition" : {
+      "type" : "Not",
+      "condition" : {
+        "type" : "Compare",
+        "left" : {
+          "type" : "SignedGems"
+        },
+        "op" : "AT_LEAST",
+        "right" : {
+          "type" : "Fixed"
+        }
+      }
+    },
+    "payment" : {
+      "kind" : "NONE"
+    },
+    "reduce" : 1,
+    "limit" : "NONE"
+  } ]
+}

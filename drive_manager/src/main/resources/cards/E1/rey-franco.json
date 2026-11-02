@@ -1,0 +1,168 @@
+{
+  "name" : "rey franco",
+  "effects" : [ {
+    "id" : "rey-franco:todos-los-turnos",
+    "moment" : "ON_EVENT",
+    "label" : "Todos Los Turnos",
+    "text" : "Una vez por turno: si esta carta entra en combate, puedes reactivar esta carta.",
+    "steps" : [ {
+      "type" : "Do",
+      "action" : {
+        "type" : "SetTapped",
+        "cards" : {
+          "zones" : "field",
+          "owner" : "YOU",
+          "filter" : { },
+          "min" : {
+            "type" : "Fixed",
+            "value" : 1
+          },
+          "max" : {
+            "type" : "Fixed",
+            "value" : 1
+          },
+          "self" : "ANY",
+          "mode" : "SELF"
+        }
+      }
+    } ],
+    "condition" : {
+      "type" : "Any",
+      "any" : [ {
+        "type" : "Happened",
+        "type" : "ATTACK_DECLARED",
+        "actor" : "ANY",
+        "owner" : "ANY",
+        "thisCard" : true
+      }, {
+        "type" : "Happened",
+        "type" : "ATTACK_DECLARED",
+        "actor" : "ANY",
+        "owner" : "ANY",
+        "data" : [ "targetId=$this" ]
+      }, {
+        "type" : "Happened",
+        "type" : "BLOCK",
+        "actor" : "ANY",
+        "owner" : "ANY",
+        "thisCard" : true
+      } ]
+    },
+    "sourceZone" : "field",
+    "limit" : "ONCE_PER_TURN"
+  }, {
+    "id" : "rey-franco:final-del-turno",
+    "moment" : "ON_EVENT",
+    "label" : "Turno Aliado",
+    "text" : "Al final del turno: 1 aliado puede invocar por Ascenso una criatura de tu mano reduciendo el coste especial en 2.",
+    "steps" : [ {
+      "type" : "Do",
+      "action" : {
+        "type" : "Sequence",
+        "actions" : [ {
+          "type" : "Select",
+          "selector" : {
+            "zones" : "hand",
+            "owner" : "YOU",
+            "filter" : { },
+            "min" : {
+              "type" : "Fixed"
+            },
+            "max" : {
+              "type" : "Fixed",
+              "value" : 1
+            },
+            "self" : "ANY",
+            "mode" : "CHOOSE",
+            "special" : {
+              "rule" : {
+                "kind" : "promotion",
+                "zone" : "hand",
+                "reduce" : 2,
+                "summoner" : "any",
+                "filter" : { }
+              },
+              "stage" : "CARD"
+            }
+          },
+          "saveAs" : "specialCard",
+          "label" : "Invocar"
+        }, {
+          "type" : "Select",
+          "selector" : {
+            "zones" : "hand",
+            "owner" : "YOU",
+            "filter" : { },
+            "min" : {
+              "type" : "Fixed"
+            },
+            "max" : {
+              "type" : "Fixed",
+              "value" : 1
+            },
+            "self" : "ANY",
+            "mode" : "CHOOSE",
+            "special" : {
+              "rule" : {
+                "kind" : "promotion",
+                "zone" : "hand",
+                "reduce" : 2,
+                "summoner" : "any",
+                "filter" : { }
+              },
+              "stage" : "SUMMONER"
+            }
+          },
+          "saveAs" : "specialSummoner",
+          "label" : "Invocador"
+        }, {
+          "type" : "Select",
+          "selector" : {
+            "zones" : "hand",
+            "owner" : "YOU",
+            "filter" : { },
+            "min" : {
+              "type" : "Fixed"
+            },
+            "max" : {
+              "type" : "Fixed",
+              "value" : 1
+            },
+            "self" : "ANY",
+            "mode" : "CHOOSE",
+            "special" : {
+              "rule" : {
+                "kind" : "promotion",
+                "zone" : "hand",
+                "reduce" : 2,
+                "summoner" : "any",
+                "filter" : { }
+              },
+              "stage" : "MATERIAL"
+            }
+          },
+          "saveAs" : "specialMaterials",
+          "label" : "Material"
+        }, {
+          "type" : "SummonSpecial",
+          "rule" : {
+            "kind" : "promotion",
+            "zone" : "hand",
+            "reduce" : 2,
+            "summoner" : "any",
+            "filter" : { }
+          }
+        } ]
+      }
+    } ],
+    "condition" : {
+      "type" : "Happened",
+      "type" : "TURN_END",
+      "actor" : "YOU",
+      "owner" : "ANY"
+    },
+    "sourceZone" : "field",
+    "allyTurn" : true,
+    "limit" : "NONE"
+  } ]
+}

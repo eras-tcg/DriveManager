@@ -1,0 +1,28 @@
+{
+  "name" : "zafrax",
+  "effects" : [ {
+    "id" : "zafrax:todos-los-turnos",
+    "moment" : "ON_EVENT",
+    "mandatory" : true,
+    "label" : "Todos Los Turnos",
+    "text" : "Una vez por turno: si esta carta destruye un enemigo por enfrentamiento, esta carta infringe daño directo.",
+    "steps" : [ {
+      "type" : "Do",
+      "action" : {
+        "type" : "Damage",
+        "amount" : {
+          "type" : "SourceStrength"
+        }
+      }
+    } ],
+    "condition" : {
+      "type" : "Destroyed",
+      "owner" : "ENEMY",
+      "by" : "ANY",
+      "byThis" : true,
+      "cause" : "battle"
+    },
+    "sourceZone" : "field",
+    "limit" : "ONCE_PER_TURN"
+  } ]
+}

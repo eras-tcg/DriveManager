@@ -1,0 +1,90 @@
+{
+  "name" : "escudos leales",
+  "effects" : [ {
+    "id" : "escudos-leales:en-juego",
+    "moment" : "ON_PLAY",
+    "mandatory" : true,
+    "label" : "En Juego",
+    "text" : "Efecto Definitivo. Reactiva hasta 2 aliados.",
+    "steps" : [ {
+      "type" : "Do",
+      "action" : {
+        "type" : "SetTapped",
+        "cards" : {
+          "zones" : "allies",
+          "owner" : "YOU",
+          "filter" : { },
+          "min" : {
+            "type" : "Fixed"
+          },
+          "max" : {
+            "type" : "Fixed",
+            "value" : 2
+          },
+          "self" : "ANY",
+          "mode" : "CHOOSE"
+        }
+      }
+    } ],
+    "sourceZone" : "field",
+    "limit" : "DEFINITIVE"
+  }, {
+    "id" : "escudos-leales:en-mano",
+    "moment" : "ON_EVENT",
+    "label" : "En Mano",
+    "text" : "Si no activaste algún Efecto Definitivo el turno anterior y algún enemigo declara ataque mientras tienes 2 o menos vidas: puedes jugar esta carta sin pagar su coste.",
+    "steps" : [ {
+      "type" : "Do",
+      "action" : {
+        "type" : "Play",
+        "cards" : {
+          "zones" : "hand",
+          "owner" : "YOU",
+          "filter" : { },
+          "min" : {
+            "type" : "Fixed",
+            "value" : 1
+          },
+          "max" : {
+            "type" : "Fixed",
+            "value" : 1
+          },
+          "self" : "ANY",
+          "mode" : "SELF"
+        },
+        "reduce" : {
+          "type" : "Fixed",
+          "value" : 1000
+        },
+        "required" : true
+      }
+    } ],
+    "condition" : {
+      "type" : "All",
+      "all" : [ {
+        "type" : "Happened",
+        "type" : "ATTACK_DECLARED",
+        "actor" : "ENEMY",
+        "owner" : "ANY"
+      }, {
+        "type" : "Compare",
+        "left" : {
+          "type" : "Lives"
+        },
+        "op" : "AT_MOST",
+        "right" : {
+          "type" : "Fixed",
+          "value" : 2
+        }
+      }, {
+        "type" : "Not",
+        "condition" : {
+          "type" : "GameIs",
+          "state" : "DEFINITIVE_LAST_TURN"
+        }
+      } ]
+    },
+    "sourceZone" : "hand",
+    "limit" : "NONE"
+  } ]
+}

@@ -1,0 +1,126 @@
+{
+  "name" : "arqueopterix",
+  "effects" : [ {
+    "id" : "arqueopterix:tributada",
+    "moment" : "ON_EVENT",
+    "label" : "En Tributos",
+    "text" : "(1) Si esta carta es tributada: puedes tributar 1 carta de tu mano; toma 1 [dinosaurio] de tus tributos.",
+    "cost" : [ {
+      "type" : "Do",
+      "action" : {
+        "type" : "Move",
+        "cards" : {
+          "zones" : "hand",
+          "owner" : "YOU",
+          "filter" : { },
+          "min" : {
+            "type" : "Fixed",
+            "value" : 1
+          },
+          "max" : {
+            "type" : "Fixed",
+            "value" : 1
+          },
+          "self" : "EXCLUDE",
+          "mode" : "CHOOSE"
+        },
+        "to" : "tributeZone"
+      }
+    } ],
+    "steps" : [ {
+      "type" : "Do",
+      "action" : {
+        "type" : "Move",
+        "cards" : {
+          "zones" : "tributeZone",
+          "owner" : "YOU",
+          "filter" : {
+            "classes" : [ "dinosaurio" ]
+          },
+          "min" : {
+            "type" : "Fixed",
+            "value" : 1
+          },
+          "max" : {
+            "type" : "Fixed",
+            "value" : 1
+          },
+          "self" : "ANY",
+          "mode" : "CHOOSE"
+        },
+        "to" : "hand",
+        "required" : true
+      }
+    } ],
+    "condition" : {
+      "type" : "ThisTributed"
+    },
+    "sourceZone" : "tributeZone",
+    "limit" : "ONCE_PER_TURN_BETWEEN_COPIES"
+  }, {
+    "id" : "arqueopterix:en-mano",
+    "moment" : "ON_EVENT",
+    "label" : "En Mano",
+    "text" : "(1) Si juegas alguna estructura Verde: puedes colocar esta carta en tu retaguardia.",
+    "steps" : [ {
+      "type" : "Do",
+      "action" : {
+        "type" : "Move",
+        "cards" : {
+          "zones" : "hand",
+          "owner" : "YOU",
+          "filter" : { },
+          "min" : {
+            "type" : "Fixed",
+            "value" : 1
+          },
+          "max" : {
+            "type" : "Fixed",
+            "value" : 1
+          },
+          "self" : "ANY",
+          "mode" : "SELF"
+        },
+        "to" : "backLine"
+      }
+    } ],
+    "condition" : {
+      "type" : "Happened",
+      "type" : "PLAY",
+      "actor" : "YOU",
+      "owner" : "ANY",
+      "filter" : {
+        "colors" : [ "G" ],
+        "cardTypes" : [ "structure" ]
+      }
+    },
+    "sourceZone" : "hand",
+    "limit" : "ONCE_PER_TURN_BETWEEN_COPIES"
+  } ],
+  "inherited" : [ {
+    "id" : "arqueopterix:hereda-en-destruccion",
+    "moment" : "ON_DESTROY",
+    "label" : "En Destrucción por efecto aliado",
+    "text" : "Heredado de Arqueopterix: puedes tributar esta carta; gana 1 gema.",
+    "cost" : [ {
+      "type" : "TributeNamedFromDiscard",
+      "name" : "Arqueopterix"
+    } ],
+    "steps" : [ {
+      "type" : "Do",
+      "action" : {
+        "type" : "Gems",
+        "count" : {
+          "type" : "Fixed",
+          "value" : 1
+        }
+      }
+    } ],
+    "condition" : {
+      "type" : "ByEffect",
+      "by" : "YOU"
+    },
+    "sourceZone" : "field",
+    "limit" : "NONE"
+  } ]
+}

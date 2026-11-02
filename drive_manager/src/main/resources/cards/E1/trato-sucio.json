@@ -1,0 +1,26 @@
+{
+  "name" : "trato sucio",
+  "effects" : [ {
+    "id" : "trato-sucio:en-juego",
+    "moment" : "ON_PLAY",
+    "mandatory" : true,
+    "label" : "En Juego",
+    "text" : "Efecto Definitivo. Ambos jugadores descartan 3 cartas de su mano bocabajo. Luego: ambos jugadores roban 3 cartas.",
+    "steps" : [ {
+      "type" : "EachPlayerDiscards",
+      "count" : 3
+    }, {
+      "type" : "Do",
+      "action" : {
+        "type" : "Draw",
+        "count" : {
+          "type" : "Fixed",
+          "value" : 3
+        },
+        "bothPlayers" : true
+      }
+    } ],
+    "sourceZone" : "field",
+    "limit" : "DEFINITIVE"
+  } ]
+}

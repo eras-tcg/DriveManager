@@ -1,0 +1,42 @@
+{
+  "name" : "a la carga!",
+  "effects" : [ {
+    "id" : "a-la-carga:en-juego",
+    "moment" : "ON_PLAY",
+    "mandatory" : true,
+    "label" : "En Juego",
+    "text" : "Si tienes al menos 7 aliados Rojos: todos los aliados ganan Furia y Perforante hasta el final del turno.",
+    "steps" : [ {
+      "type" : "AlliesGain",
+      "filter" : {
+        "cardType" : "creature"
+      },
+      "keyword" : "Furia",
+      "until" : "turn"
+    }, {
+      "type" : "AlliesGain",
+      "filter" : {
+        "cardType" : "creature"
+      },
+      "keyword" : "Perforante",
+      "until" : "turn"
+    } ],
+    "condition" : {
+      "type" : "Compare",
+      "left" : {
+        "type" : "OnField",
+        "filter" : {
+          "colors" : [ "R" ],
+          "cardType" : "creature"
+        }
+      },
+      "op" : "AT_LEAST",
+      "right" : {
+        "type" : "Fixed",
+        "value" : 7
+      }
+    },
+    "sourceZone" : "field",
+    "limit" : "NONE"
+  } ]
+}

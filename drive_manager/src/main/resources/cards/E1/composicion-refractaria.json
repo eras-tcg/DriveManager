@@ -1,0 +1,120 @@
+{
+  "name" : "composición refractaria",
+  "effects" : [ {
+    "id" : "composicion-refractaria:en-juego",
+    "moment" : "ON_PLAY",
+    "mandatory" : true,
+    "label" : "En Juego",
+    "text" : "(1) Si tienes 5 o menos vidas: coloca la carta del tope de tu mazo al tope de tus vidas bocabajo.",
+    "steps" : [ {
+      "type" : "Do",
+      "action" : {
+        "type" : "Move",
+        "cards" : {
+          "zones" : "deck",
+          "owner" : "YOU",
+          "filter" : { },
+          "min" : {
+            "type" : "Fixed",
+            "value" : 1
+          },
+          "max" : {
+            "type" : "Fixed",
+            "value" : 1
+          },
+          "self" : "ANY",
+          "mode" : "TOP"
+        },
+        "to" : "lifeTop",
+        "faceDown" : true
+      }
+    } ],
+    "condition" : {
+      "type" : "Compare",
+      "left" : {
+        "type" : "Lives"
+      },
+      "op" : "AT_MOST",
+      "right" : {
+        "type" : "Fixed",
+        "value" : 5
+      }
+    },
+    "sourceZone" : "field",
+    "limit" : "ONCE_PER_TURN_BETWEEN_COPIES"
+  }, {
+    "id" : "composicion-refractaria:en-mano",
+    "moment" : "ON_EVENT",
+    "label" : "En Mano",
+    "text" : "Si alguna carta es removida de tus vidas: puedes tributar 2 materiales de algún aliado para jugar esta carta sin pagar su coste.",
+    "steps" : [ {
+      "type" : "IfPossible"
+    }, {
+      "type" : "PickAllyWithMaterials",
+      "count" : 2
+    }, {
+      "type" : "Do",
+      "action" : {
+        "type" : "Move",
+        "cards" : {
+          "zones" : "materials:subject",
+          "owner" : "YOU",
+          "filter" : { },
+          "min" : {
+            "type" : "Fixed",
+            "value" : 2
+          },
+          "max" : {
+            "type" : "Fixed",
+            "value" : 2
+          },
+          "self" : "ANY",
+          "mode" : "CHOOSE"
+        },
+        "to" : "tributeZone"
+      }
+    }, {
+      "type" : "Do",
+      "action" : {
+        "type" : "Play",
+        "cards" : {
+          "zones" : "hand",
+          "owner" : "YOU",
+          "filter" : { },
+          "min" : {
+            "type" : "Fixed",
+            "value" : 1
+          },
+          "max" : {
+            "type" : "Fixed",
+            "value" : 1
+          },
+          "self" : "ANY",
+          "mode" : "SELF"
+        },
+        "reduce" : {
+          "type" : "Fixed",
+          "value" : 1000
+        },
+        "required" : true
+      }
+    } ],
+    "condition" : {
+      "type" : "Any",
+      "any" : [ {
+        "type" : "Happened",
+        "actor" : "ANY",
+        "owner" : "YOU",
+        "from" : "lifeStack"
+      }, {
+        "type" : "Happened",
+        "actor" : "ANY",
+        "owner" : "ANY",
+        "from" : "lifeStack",
+        "data" : [ "defenderId=$you" ]
+      } ]
+    },
+    "sourceZone" : "hand",
+    "limit" : "NONE"
+  } ]
+}

@@ -1,0 +1,65 @@
+{
+  "name" : "vigilante de la noche cósmica",
+  "effects" : [ {
+    "id" : "vigilante-noche-cosmica:en-invocacion",
+    "moment" : "ON_SUMMON",
+    "label" : "En Invocación",
+    "text" : "Puedes tributar 3 materiales de esta carta; coloca esta carta al tope de tus vidas bocabajo.",
+    "cost" : [ {
+      "type" : "Do",
+      "action" : {
+        "type" : "Move",
+        "cards" : {
+          "zones" : "materials",
+          "owner" : "YOU",
+          "filter" : { },
+          "min" : {
+            "type" : "Fixed",
+            "value" : 3
+          },
+          "max" : {
+            "type" : "Fixed",
+            "value" : 3
+          },
+          "self" : "ANY",
+          "mode" : "CHOOSE"
+        },
+        "to" : "tributeZone"
+      }
+    } ],
+    "steps" : [ {
+      "type" : "Do",
+      "action" : {
+        "type" : "Move",
+        "cards" : {
+          "zones" : "field",
+          "owner" : "YOU",
+          "filter" : { },
+          "min" : {
+            "type" : "Fixed",
+            "value" : 1
+          },
+          "max" : {
+            "type" : "Fixed",
+            "value" : 1
+          },
+          "self" : "ANY",
+          "mode" : "SELF"
+        },
+        "to" : "lifeTop",
+        "faceDown" : true
+      }
+    } ],
+    "sourceZone" : "field",
+    "limit" : "NONE"
+  } ],
+  "continuous" : [ {
+    "label" : "Todos Los Turnos",
+    "text" : "Esta carta gana fuerza 6 mientras esté en tus vidas.",
+    "condition" : {
+      "type" : "Always"
+    },
+    "strength" : 6,
+    "zone" : "lifeStack"
+  } ]
+}

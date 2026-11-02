@@ -1,0 +1,37 @@
+{
+  "name" : "escudo de primera línea",
+  "continuous" : [ {
+    "label" : "Turno Oponente",
+    "text" : "Mientras controles 3 o más aliados Rojos: esta carta en tu línea frontal gana fuerza 4 y tiene Protección [caballero].",
+    "condition" : {
+      "type" : "All",
+      "all" : [ {
+        "type" : "Not",
+        "condition" : {
+          "type" : "GameIs",
+          "state" : "YOUR_TURN"
+        }
+      }, {
+        "type" : "ThisIs",
+        "state" : "IN_FRONT_LINE"
+      }, {
+        "type" : "Compare",
+        "left" : {
+          "type" : "OnField",
+          "filter" : {
+            "colors" : [ "R" ],
+            "cardType" : "creature"
+          }
+        },
+        "op" : "AT_LEAST",
+        "right" : {
+          "type" : "Fixed",
+          "value" : 3
+        }
+      } ]
+    },
+    "strength" : 4,
+    "keywords" : [ "Protección [caballero]" ],
+    "zone" : "field"
+  } ]
+}

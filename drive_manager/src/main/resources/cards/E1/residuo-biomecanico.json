@@ -1,0 +1,54 @@
+{
+  "name" : "residuo biomecánico",
+  "effects" : [ {
+    "id" : "residuo-biomecanico:en-descarte",
+    "moment" : "ON_EVENT",
+    "label" : "En Descarte",
+    "text" : "(1) Si esta carta es enviada a tu descarte como material y tienes 3 o menos vidas: puedes colocar esta carta en tu retaguardia.",
+    "steps" : [ {
+      "type" : "Do",
+      "action" : {
+        "type" : "Move",
+        "cards" : {
+          "zones" : "discardPile",
+          "owner" : "YOU",
+          "filter" : { },
+          "min" : {
+            "type" : "Fixed",
+            "value" : 1
+          },
+          "max" : {
+            "type" : "Fixed",
+            "value" : 1
+          },
+          "self" : "ANY",
+          "mode" : "SELF"
+        },
+        "to" : "backLine"
+      }
+    } ],
+    "condition" : {
+      "type" : "All",
+      "all" : [ {
+        "type" : "Happened",
+        "actor" : "ANY",
+        "owner" : "ANY",
+        "thisCard" : true,
+        "from" : "materials",
+        "to" : "discardPile"
+      }, {
+        "type" : "Compare",
+        "left" : {
+          "type" : "Lives"
+        },
+        "op" : "AT_MOST",
+        "right" : {
+          "type" : "Fixed",
+          "value" : 3
+        }
+      } ]
+    },
+    "sourceZone" : "discardPile",
+    "limit" : "ONCE_PER_TURN_BETWEEN_COPIES"
+  } ]
+}
