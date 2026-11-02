@@ -19,9 +19,9 @@ class CollectionRulesTest {
 
     @Test
     void finishesComeByTheirOdds() {
-        assertThat(CollectionRules.rollFinish(() -> 0.05)).isEqualTo("prism");
-        assertThat(CollectionRules.rollFinish(() -> 0.3)).isEqualTo("foil");
-        assertThat(CollectionRules.rollFinish(() -> 0.9)).isEqualTo("plain");
+        assertThat(CollectionRules.rollFinish(() -> 0.001)).isEqualTo("prism");
+        assertThat(CollectionRules.rollFinish(() -> 0.03)).isEqualTo("foil");
+        assertThat(CollectionRules.rollFinish(() -> 0.06)).isEqualTo("plain");
     }
 
     @Test
@@ -34,9 +34,9 @@ class CollectionRulesTest {
     @Test
     void craftingUntilAFinishStopsWhenItComesOrTheFragmentsRunOut() {
         // plain, foil, prism: stops at the prism
-        assertThat(CollectionRules.craftUntil("prism", 300, rolls(0.9, 0.3, 0.05))).containsExactly("plain", "foil", "prism");
+        assertThat(CollectionRules.craftUntil("prism", 300, rolls(0.9, 0.03, 0.001))).containsExactly("plain", "foil", "prism");
         // A foil is enough when aiming at foil
-        assertThat(CollectionRules.craftUntil("foil", 300, rolls(0.9, 0.05))).containsExactly("plain", "prism");
+        assertThat(CollectionRules.craftUntil("foil", 300, rolls(0.9, 0.001))).containsExactly("plain", "prism");
         // Only two crafts' worth of fragments
         assertThat(CollectionRules.craftUntil("prism", 65, rolls(0.9, 0.9, 0.9))).containsExactly("plain", "plain");
         assertThat(CollectionRules.craftUntil("prism", 29, rolls(0.9))).isEmpty();

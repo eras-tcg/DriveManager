@@ -14,8 +14,8 @@ import java.util.function.DoubleSupplier;
 public final class CollectionRules {
 
     public static final List<String> FINISHES = List.of("plain", "foil", "prism");
-    public static final double FOIL_ODDS = 0.5;
-    public static final double PRISM_ODDS = 0.1;
+    public static final double FOIL_ODDS = 0.05;
+    public static final double PRISM_ODDS = 0.005;
     public static final int CRAFT_COST = 30;
     /** Copies a deck can use of a card: more than these of one printing are extra. */
     public static final int MAX_COPIES = 4;
