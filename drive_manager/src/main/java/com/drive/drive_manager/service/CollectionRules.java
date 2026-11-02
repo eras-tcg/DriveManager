@@ -66,6 +66,21 @@ public final class CollectionRules {
     }
 
     /**
+     * The finish of each of a deck's `count` copies of a printing, taken from the owned copies the finest first; a copy
+     * the player lacks is null.
+     */
+    public static List<String> copyFinishes(Map<String, Integer> owned, int count) {
+        List<String> out = new ArrayList<>();
+        for (int i = FINISHES.size() - 1; i >= 0 && out.size() < count; i--) {
+            String finish = FINISHES.get(i);
+            int n = owned == null ? 0 : Math.max(0, owned.getOrDefault(finish, 0));
+            for (int k = 0; k < n && out.size() < count; k++) out.add(finish);
+        }
+        while (out.size() < count) out.add(null);
+        return out;
+    }
+
+    /**
      * The extra copies of one printing (beyond MAX_COPIES), by finish: the finest ones are kept, so the plain copies go
      * first, then the foil ones.
      */

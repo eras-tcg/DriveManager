@@ -48,4 +48,11 @@ class CollectionRulesTest {
         assertThat(CollectionRules.extras(Map.of("foil", 6))).containsExactly(Map.entry("foil", 2));
         assertThat(CollectionRules.extras(Map.of("plain", 4))).isEmpty();
     }
+
+    @Test
+    void aDecksCopiesTakeTheFinestOwnedFinishesFirst() {
+        assertThat(CollectionRules.copyFinishes(Map.of("plain", 2, "prism", 1), 4)).containsExactly("prism", "plain", "plain", null);
+        assertThat(CollectionRules.copyFinishes(Map.of("foil", 3), 2)).containsExactly("foil", "foil");
+        assertThat(CollectionRules.copyFinishes(null, 2)).containsExactly(null, null);
+    }
 }

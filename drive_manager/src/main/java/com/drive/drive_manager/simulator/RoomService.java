@@ -391,7 +391,7 @@ public class RoomService {
             existing.setAvatar(avatar);
             if (room.getStatus() == GameRoom.RoomStatus.WAITING && deckId != null) {
                 existing.setDeckId(deckId);
-                List<CardSlot> slots = resolveDeck(deckId);
+                List<CardSlot> slots = withFinishes(userId, resolveDeck(deckId));
                 existing.setDeck(new ArrayList<>(slots));
                 existing.setOriginalDeck(deepCopySlots(slots));
             }
@@ -405,7 +405,7 @@ public class RoomService {
 
         if (deckId != null) {
             player.setDeckId(deckId);
-            List<CardSlot> slots = resolveDeck(deckId);
+            List<CardSlot> slots = withFinishes(userId, resolveDeck(deckId));
             player.setDeck(new ArrayList<>(slots));
             player.setOriginalDeck(deepCopySlots(slots));
         }
@@ -1015,6 +1015,7 @@ public class RoomService {
         if (!room.isEditor() && collections != null && collections.missing(userId, slots.stream().map(CardSlot::getCardId).toList()) > 0) {
             return GameStateUpdate.error(room.getRoomId(), "No puedes jugar este mazo: te faltan cartas de tu colección");
         }
+        withFinishes(userId, slots);
         player.setDeckId(deckId);
         player.setDeckName(deckListRepo.findById(deckId).map(DeckList::getDeckName).orElse(null));
         player.setDeck(new ArrayList<>(slots));
@@ -1022,6 +1023,24 @@ public class RoomService {
         player.setStarterCardId(slots.stream().filter(CardSlot::isStarter).map(CardSlot::getCardId).findFirst().orElse(null));
         player.setReady(false);
         return GameStateUpdate.from(room, "SET_DECK", userId);
+    }
+
+    /**
+     * Each copy shines as its owner has it: the copies of a printing take the player's finest owned finishes first
+     * (both players see them). A copy they lack, or a plain one, has none.
+     */
+    List<CardSlot> withFinishes(String userId, List<CardSlot> slots) {
+        if (collections == null || slots.isEmpty()) return slots;
+        Map<String, Map<String, Integer>> owned = collections.of(userId).cards();
+        Map<String, Integer> counts = new LinkedHashMap<>();
+        for (CardSlot s : slots) counts.merge(s.getCardId(), 1, Integer::sum);
+        Map<String, java.util.Iterator<String>> next = new HashMap<>();
+        counts.forEach((id, n) -> next.put(id, com.drive.drive_manager.service.CollectionRules.copyFinishes(owned.get(id), n).iterator()));
+        for (CardSlot s : slots) {
+            String finish = next.get(s.getCardId()).next();
+            s.setFinish("foil".equals(finish) || "prism".equals(finish) ? finish : null);
+        }
+        return slots;
     }
 
     /** The names of a deck's cards the engine does not run in full ("×2 Roto-G0, Sicario R3-D"), or null. */
@@ -2095,6 +2114,7 @@ public class RoomService {
             c.setInheritKeywords(new ArrayList<>(s.getInheritKeywords()));
             c.setUnprogrammed(s.getUnprogrammed());
             c.setMentions(new ArrayList<>(s.getMentions()));
+            c.setFinish(s.getFinish());
             c.setFaceDown(true);
             return c;
         }).collect(Collectors.toList());
