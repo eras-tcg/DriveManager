@@ -49,12 +49,13 @@ public class CollectionController {
         return run(auth, () -> collections.craft(auth.getName(), request.cardId(), request.count()));
     }
 
-    public record CraftUntilRequest(String cardId, String finish) {
+    /** `maxFragments`: the most the player will spend (all of them when absent). */
+    public record CraftUntilRequest(String cardId, String finish, Integer maxFragments) {
     }
 
     @PostMapping("/me/craft-until")
     public ResponseEntity<?> craftUntil(Authentication auth, @RequestBody CraftUntilRequest request) {
-        return run(auth, () -> collections.craftUntil(auth.getName(), request.cardId(), request.finish()));
+        return run(auth, () -> collections.craftUntil(auth.getName(), request.cardId(), request.finish(), request.maxFragments()));
     }
 
     @PostMapping("/me/break-extras")

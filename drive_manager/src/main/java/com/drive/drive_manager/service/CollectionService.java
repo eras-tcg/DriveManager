@@ -98,11 +98,15 @@ public class CollectionService {
         return spend(userId, cardId, finishes);
     }
 
-    /** Crafts a card until one comes out at least as fine as `target`, or the fragments of its rarity run out. */
-    public Crafted craftUntil(String userId, String cardId, String target) {
+    /**
+     * Crafts a card until one comes out at least as fine as `target`, or the fragments of its rarity run out (or the
+     * `maxFragments` the player is willing to spend, when given).
+     */
+    public Crafted craftUntil(String userId, String cardId, String target, Integer maxFragments) {
         if (!CollectionRules.isFinish(target)) throw new CollectionException("Ese acabado no existe");
         String rarity = rarity(cardId);
         int fragments = of(userId).fragments().getOrDefault(rarity, 0);
+        if (maxFragments != null) fragments = Math.min(fragments, Math.max(0, maxFragments));
         List<String> finishes = CollectionRules.craftUntil(target, fragments, random);
         if (finishes.isEmpty()) throw new CollectionException("No te alcanzan los fragmentos");
         return spend(userId, cardId, finishes);
