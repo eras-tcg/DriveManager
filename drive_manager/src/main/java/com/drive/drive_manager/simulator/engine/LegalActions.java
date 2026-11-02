@@ -25,10 +25,11 @@ public final class LegalActions {
         // Slow effects can be activated on either turn
         for (Chain.Activatable effect : Chain.activatable(room, userId)) add(legal, effect.instanceId(), "activate");
         if (Summons.checkMainPhase(room, userId, "") != null) return legal;
-        for (CardSlot card : player.getField()) {
+        // Copies: checking a utility's "En Juego" moves it out of the hand and onto the field, then back
+        for (CardSlot card : new ArrayList<>(player.getField())) {
             if (CombatRules.whyCannotAttack(room, userId, card) == null) add(legal, card.getInstanceId(), "attack");
         }
-        for (CardSlot card : player.getHand()) {
+        for (CardSlot card : new ArrayList<>(player.getHand())) {
             if (Summons.whyCannotSummon(room, userId, player, card) == null) add(legal, card.getInstanceId(), "summon");
             if (Summons.whyCannotPlay(room, userId, card) == null) add(legal, card.getInstanceId(), "play");
         }

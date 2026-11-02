@@ -35,6 +35,18 @@ class LegalActionsTest {
     }
 
     @Test
+    void aUtilityWithAnOnPlayEffectInTheHandDoesNotBreakTheList() {
+        // Checking its "En Juego" moves it out of the hand and back while the hand is being read
+        host.getHand().add(utility("hp", "Hechizo Premonitorio"));
+        host.getHand().add(card("c", "Criatura", 1, 1, "R"));
+
+        var legal = LegalActions.of(room, "host");
+
+        assertThat(legal.get("c")).containsExactly("summon");
+        assertThat(host.getHand()).extracting(c -> c.getInstanceId()).containsExactly("hp", "c");
+    }
+
+    @Test
     void onlyAnActiveCreatureOfTheFrontLineAttacks() {
         onField(host, card("front", "Frontal", 1, 1, "R"), FRONT);
         onField(host, card("back", "Trasera", 1, 1, "R"), BACK);
