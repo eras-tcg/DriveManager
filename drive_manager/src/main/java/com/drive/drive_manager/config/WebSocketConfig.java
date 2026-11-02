@@ -18,7 +18,8 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 
     @Override
     public void configureMessageBroker(MessageBrokerRegistry config) {
-        config.enableSimpleBroker("/topic");
+        // A room's state goes to each player's own queue (/user/queue/room/{id}), masked for them
+        config.enableSimpleBroker("/topic", "/queue");
         config.setApplicationDestinationPrefixes("/app");
         // A room's updates reach each client in the order they were made
         config.setPreservePublishOrder(true);

@@ -79,7 +79,7 @@ public class RoomService {
         pruneRooms();
         long now = System.currentTimeMillis();
         for (GameRoom room : new ArrayList<>(rooms.values())) {
-            synchronized (room) { broadcast(room.getRoomId(), checkOwner(room, now)); }
+            synchronized (room) { broadcast(room.getRoomId(), checkOwner(room, now), null); }
         }
     }
 
@@ -164,12 +164,16 @@ public class RoomService {
 
     public void applyAndBroadcast(String roomId, String userId, GameAction action) {
         GameRoom lock = rooms.get(roomId);
-        if (lock == null) { broadcast(roomId, applyAction(roomId, userId, action)); return; }
-        synchronized (lock) { broadcast(roomId, applyAction(roomId, userId, action)); }
+        if (lock == null) { broadcast(roomId, applyAction(roomId, userId, action), userId); return; }
+        synchronized (lock) { broadcast(roomId, applyAction(roomId, userId, action), userId); }
     }
 
-    private void broadcast(String roomId, GameStateUpdate update) {
-        if (update != null && messagingTemplate != null) messagingTemplate.convertAndSend("/topic/room/" + roomId, update);
+    /** Each player gets the update masked for them, on their own queue ({@link StateMask}): never on a topic anyone could read. */
+    private void broadcast(String roomId, GameStateUpdate update, String senderId) {
+        if (update == null || messagingTemplate == null) return;
+        GameRoom room = rooms.get(roomId);
+        for (String userId : StateMask.recipients(room, update, senderId, EDITOR_RIVAL))
+            messagingTemplate.convertAndSendToUser(userId, "/queue/room/" + roomId, StateMask.forViewer(room, update, userId));
     }
 
     public GameStateUpdate applyAction(String roomId, String userId, GameAction action) {
@@ -372,7 +376,7 @@ public class RoomService {
         if (info == null) return;
         GameRoom room = rooms.get(info[0]);
         if (room == null) return;
-        synchronized (room) { broadcast(room.getRoomId(), sessionDisconnected(room, info[1])); }
+        synchronized (room) { broadcast(room.getRoomId(), sessionDisconnected(room, info[1]), null); }
     }
 
     private GameStateUpdate sessionDisconnected(GameRoom room, String userId) {
@@ -427,7 +431,7 @@ public class RoomService {
             update.setLogEntry(room.getPlayer(userId).getUsername() + " juega solo los dos lados (partida de prueba)");
             recordLog(room, update);
             update.setEventLog(new ArrayList<>(room.getEventLog()));
-            if (messagingTemplate != null) messagingTemplate.convertAndSend("/topic/room/" + roomId, update);
+            broadcast(roomId, update, null);
         }
         return null;
     }
