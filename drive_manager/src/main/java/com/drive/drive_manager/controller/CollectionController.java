@@ -4,6 +4,7 @@ import com.drive.drive_manager.service.CollectionService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -14,7 +15,8 @@ import java.util.function.Supplier;
 
 /**
  * The signed-in player's cards and fragments: read them, break copies, craft cards (a number of them, or until one
- * comes out in a finish), and break every extra copy. A refused change answers 400 with a message.
+ * comes out in a finish), and break every extra copy. A refused change answers 400 with a message. Administrators
+ * (manage_users) can set an account's fragments, to test.
  */
 @RestController
 @RequestMapping("/api/drive/collection")
@@ -58,6 +60,16 @@ public class CollectionController {
     @PostMapping("/me/break-extras")
     public ResponseEntity<?> breakExtras(Authentication auth) {
         return run(auth, () -> collections.breakExtras(auth.getName()));
+    }
+
+    public record FragmentsRequest(Map<String, Integer> fragments) {
+    }
+
+    /** Sets an account's fragments of some rarities: manage_users only. */
+    @PostMapping("/{userId}/fragments")
+    public ResponseEntity<?> setFragments(Authentication auth, @PathVariable String userId, @RequestBody FragmentsRequest request) {
+        if (auth != null && auth.getAuthorities().stream().noneMatch(a -> "manage_users".equals(a.getAuthority()))) return ResponseEntity.status(403).build();
+        return run(auth, () -> collections.setFragments(userId, request.fragments() == null ? Map.of() : request.fragments()));
     }
 
     private static ResponseEntity<?> run(Authentication auth, Supplier<Object> action) {

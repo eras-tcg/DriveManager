@@ -53,6 +53,18 @@ class CollectionControllerTest {
         assertThat(response.getBody()).isEqualTo(Map.of("message", "No tienes esas copias"));
     }
 
+    @Test
+    void onlyAnAdministratorSetsFragments() {
+        var request = new CollectionController.FragmentsRequest(Map.of("C", 300));
+        assertThat(controller.setFragments(player("alice"), "alice", request).getStatusCode().value()).isEqualTo(403);
+        org.mockito.Mockito.verify(collections, org.mockito.Mockito.never()).setFragments(org.mockito.ArgumentMatchers.anyString(), org.mockito.ArgumentMatchers.anyMap());
+
+        CollectionService.View view = new CollectionService.View(Map.of(), Map.of("C", 300));
+        when(collections.setFragments("bob", Map.of("C", 300))).thenReturn(view);
+        Authentication admin = new UsernamePasswordAuthenticationToken("root", null, AuthorityUtils.createAuthorityList("manage_users"));
+        assertThat(controller.setFragments(admin, "bob", request).getBody()).isEqualTo(view);
+    }
+
     private static Authentication player(String id) {
         return new UsernamePasswordAuthenticationToken(id, null, AuthorityUtils.createAuthorityList("manage_decks"));
     }

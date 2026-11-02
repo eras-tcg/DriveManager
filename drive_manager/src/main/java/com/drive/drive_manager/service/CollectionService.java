@@ -134,6 +134,17 @@ public class CollectionService {
         return view(after);
     }
 
+    /** Sets an account's fragments of some rarities (C, UC, R, SR, SEC; never below zero). For testing. */
+    public View setFragments(String userId, Map<String, Integer> fragments) {
+        Update update = new Update();
+        fragments.forEach((rarity, amount) -> {
+            if (!BoosterRules.RARITIES.contains(rarity)) throw new CollectionException("Esa rareza no existe");
+            update.set("fragments." + rarity, Math.max(0, amount == null ? 0 : amount));
+        });
+        if (!fragments.isEmpty()) mongo.upsert(byId(userId), update, COLLECTION);
+        return of(userId);
+    }
+
     /** How many copies of each of these cards (one id per copy, as a deck lists them) the player lacks, in total. */
     public int missing(String userId, List<String> deckCards) {
         Map<String, Integer> needed = new LinkedHashMap<>();
