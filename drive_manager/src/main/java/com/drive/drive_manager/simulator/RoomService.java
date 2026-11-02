@@ -64,6 +64,9 @@ public class RoomService {
     /** An owner disconnected this long has left: another player owns the room. */
     private static final long OWNER_GRACE_MS = 15_000;
 
+    /** A player disconnected this long during an online game has left it: the one who stays wins (a reload is shorter). */
+    private static final long ABANDON_GRACE_MS = 20_000;
+
     @Autowired(required = false)
     private org.springframework.messaging.simp.SimpMessagingTemplate messagingTemplate;
 
@@ -81,8 +84,34 @@ public class RoomService {
         pruneRooms();
         long now = System.currentTimeMillis();
         for (GameRoom room : new ArrayList<>(rooms.values())) {
-            synchronized (room) { broadcast(room.getRoomId(), checkOwner(room, now)); }
+            synchronized (room) {
+                broadcast(room.getRoomId(), checkAbandoned(room, now));
+                broadcast(room.getRoomId(), checkOwner(room, now));
+            }
         }
+    }
+
+    /** An online game whose player has been disconnected a while: they left it, and the one who stays wins. */
+    GameStateUpdate checkAbandoned(GameRoom room, long now) {
+        if (room.isEditor() || !playing(room) || !rooms.containsKey(room.getRoomId())) return null;
+        PlayerState gone = room.getPlayers().values().stream()
+                .filter(p -> !p.isConnected() && now - p.getDisconnectedAt() >= ABANDON_GRACE_MS).findFirst().orElse(null);
+        if (gone == null || room.getPlayers().values().stream().noneMatch(PlayerState::isConnected)) return null;
+        GameRoom.RoomStatus statusBefore = room.getStatus();
+        long seqBefore = room.getEventSeq();
+        removePlayer(room, gone.getUserId());
+        GameStateUpdate update = GameStateUpdate.from(room, "PLAYER_LEFT", gone.getUserId());
+        update.setLogEntry(gone.getUsername() + " abandonó la partida");
+        recordLog(room, update);
+        update.setEventLog(new ArrayList<>(room.getEventLog()));
+        countForMissions(room, statusBefore, seqBefore);
+        return update;
+    }
+
+    /** A game in course (from the starters' choice to its end). */
+    private static boolean playing(GameRoom room) {
+        GameRoom.RoomStatus s = room.getStatus();
+        return s == GameRoom.RoomStatus.SELECTING_STARTER || s == GameRoom.RoomStatus.MULLIGAN || s == GameRoom.RoomStatus.IN_PROGRESS;
     }
 
     /** The owner has been disconnected a while and someone else is connected: a random connected player owns the room. */
@@ -960,7 +989,8 @@ public class RoomService {
 
     /**
      * Takes a player out of the room: the owner passes to another player, an empty room closes, and a game in
-     * course ends (the one who stays goes back to the pre-room). Returns whether the room was closed.
+     * course ends: an online one is won by the one who stays (post-game); otherwise back to the pre-room. Returns
+     * whether the room was closed.
      */
     private boolean removePlayer(GameRoom room, String userId) {
         if (userId.equals(room.getHostId())) passOwnership(room, userId);
@@ -971,6 +1001,15 @@ public class RoomService {
             room.setStatus(GameRoom.RoomStatus.FINISHED);
             rooms.remove(room.getRoomId());
             return true;
+        }
+        if (!room.isEditor() && playing(room) && room.getPlayers().size() == 1) {
+            // Leaving an online game loses it: the one who stays wins right away (and sees the post-game)
+            room.setWinnerId(room.getPlayers().keySet().iterator().next());
+            room.setEndReason("abandon");
+            room.getPostGameChoices().clear();
+            room.setStatus(GameRoom.RoomStatus.POST_GAME);
+            room.getPlayers().values().forEach(p -> p.setReady(false));
+            return false;
         }
         if (room.getStatus() != GameRoom.RoomStatus.WAITING) {
             // Back to the pre-room with the whole deck they had (its starter still chosen)
@@ -994,9 +1033,10 @@ public class RoomService {
             rooms.remove(room.getRoomId());
             return GameStateUpdate.from(room, "ROOM_CLOSED", userId);
         }
+        boolean wasPlaying = playing(room);
         boolean closed = removePlayer(room, userId);
         GameStateUpdate update = GameStateUpdate.from(room, closed ? "ROOM_CLOSED" : "PLAYER_LEFT", userId);
-        update.setLogEntry(name + " salió de la sala");
+        update.setLogEntry(name + (wasPlaying ? " abandonó la partida" : " salió de la sala"));
         return update;
     }
 
@@ -1250,7 +1290,9 @@ public class RoomService {
         if (room.isEditor()) room.getPlayers().keySet().forEach(id -> room.getPostGameChoices().put(id, choice));
         if (room.getPostGameChoices().size() >= room.getPlayers().size()) {
             boolean anyExit       = room.getPostGameChoices().values().stream().anyMatch("exit"::equals);
-            boolean anyChangeDeck = room.getPostGameChoices().values().stream().anyMatch("change_deck"::equals);
+            // Alone (the rival left): no rematch, back to the pre-room to wait for another
+            boolean anyChangeDeck = room.getPlayers().size() < 2
+                    || room.getPostGameChoices().values().stream().anyMatch("change_deck"::equals);
             if (anyExit) {
                 List<String> exiting = room.getPostGameChoices().entrySet().stream()
                         .filter(e -> "exit".equals(e.getValue())).map(Map.Entry::getKey).collect(Collectors.toList());
@@ -1285,16 +1327,17 @@ public class RoomService {
         return update;
     }
 
-    /** Turns the offer of the player's optional triggered effects off or on (in a test room, of both sides). */
+    /**
+     * Turns the offer of the player's optional triggered effects off or on (in a test room, of both sides). Not in the
+     * history: neither player is told; the effects let go look like ones the player chose not to activate.
+     */
     private GameStateUpdate handleSetSkipOptional(GameRoom room, String userId, GameAction action) {
         PlayerState player = room.getPlayer(userId);
         if (player == null) return GameStateUpdate.error(room.getRoomId(), "Jugador no encontrado");
         boolean skip = action.getBoolean("value", false);
         if (room.isEditor()) room.getPlayers().values().forEach(p -> p.setSkipOptional(skip));
         else player.setSkipOptional(skip);
-        GameStateUpdate update = GameStateUpdate.from(room, "SET_SKIP_OPTIONAL", userId);
-        update.setLogEntry(player.getUsername() + (skip ? " apagó" : " encendió") + " los efectos opcionales");
-        return update;
+        return GameStateUpdate.from(room, "SET_SKIP_OPTIONAL", userId);
     }
 
     private void resetGameState(GameRoom room, boolean keepDecks) {
