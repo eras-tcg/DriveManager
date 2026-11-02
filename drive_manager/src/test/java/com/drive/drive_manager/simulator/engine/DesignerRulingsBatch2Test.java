@@ -96,7 +96,7 @@ class DesignerRulingsBatch2Test {
         assertThat(destroyed.getPlayerId()).isNull();
         assertThat(destroyed.getEffectId()).isNull();
         // Nothing that reacts to a destruction by an effect
-        assertThat(new Condition.DestroyedByEffect().test(room, destroyed, target, "guest")).isFalse();
+        assertThat(Condition.destroyedByEffect().test(room, destroyed, target, "guest")).isFalse();
     }
 
     @Test
