@@ -94,8 +94,8 @@ class E1BugfixTest {
         CardSlot promoted = knight(promotion(card("pr", "Ascendido", 4, 3, "R"), 2, "criatura nivel 2."));
         host.getHand().add(promoted);
         // 1 gem and a special cost of 2: only with Explorador's reduction
-        assertThat(Summons.canSpecial(room, "host", promoted)).isTrue();
-        assertThat(Summons.specialByPlayer(room, "host", "pr", "ex")).isNull();
+        assertThat(SpecialRequirements.canSpecial(room, "host", promoted)).isTrue();
+        assertThat(SpecialSummons.specialByPlayer(room, "host", "pr", "ex")).isNull();
         answerAll();
         assertThat(host.getField()).contains(promoted).doesNotContain(explorer);
         assertThat(EffectEngine.gemsOf(room, "host")).isZero();
@@ -107,10 +107,10 @@ class E1BugfixTest {
         host.getHand().add(explorer);
         CardSlot summoner = onField(host, card("s1", "Nivel 1", 1, 1, "R"));
         // The summoner alone is one creature: not enough
-        assertThat(Summons.canSpecial(room, "host", explorer)).isFalse();
-        assertThat(Summons.specialByPlayer(room, "host", "ex2", summoner.getInstanceId())).contains("al menos 2 criaturas");
+        assertThat(SpecialRequirements.canSpecial(room, "host", explorer)).isFalse();
+        assertThat(SpecialSummons.specialByPlayer(room, "host", "ex2", summoner.getInstanceId())).contains("al menos 2 criaturas");
         onField(host, card("o1", "Otra", 1, 3, "R"), BACK);
-        assertThat(Summons.canSpecial(room, "host", explorer)).isTrue();
+        assertThat(SpecialRequirements.canSpecial(room, "host", explorer)).isTrue();
     }
 
     @Test
@@ -122,7 +122,7 @@ class E1BugfixTest {
         EffectEngine.floating(summoner, null, "Gana fuerza 2 hasta el final del turno", "turn", 2, null);
         CardSlot promoted = knight(promotion(card("as", "Ascendida", 4, 3, "R"), 0, "criatura nivel 2."));
         host.getHand().add(promoted);
-        assertThat(Summons.specialByPlayer(room, "host", "as", "al")).isNull();
+        assertThat(SpecialSummons.specialByPlayer(room, "host", "as", "al")).isNull();
         answerAll();
         assertThat(host.getField()).contains(promoted);
         assertThat(promoted.getTurnStrength()).isEqualTo(2);
@@ -140,7 +140,7 @@ class E1BugfixTest {
         CardSlot one = onField(host, card("l1", "Nivel 1", 1, 1, "R"));
         CardSlot other = onField(host, card("l1b", "Otro nivel 1", 1, 1, "R"), BACK);
         CardSlot three = onField(host, card("l3", "Nivel 3", 1, 3, "R"), BACK);
-        assertThat(Summons.ritualByPlayer(room, "host", "kg", "l1")).isNull();
+        assertThat(Rituals.ritualByPlayer(room, "host", "kg", "l1")).isNull();
         // The level 3 does not fit what is left (1); at most 1 level more
         assertThat(room.getPrompt().getValidIds()).containsExactly(other.getInstanceId()).doesNotContain(three.getInstanceId(), one.getInstanceId());
         assertThat(room.getPrompt().getMaxLevelSum()).isEqualTo(1);
@@ -155,9 +155,9 @@ class E1BugfixTest {
         summoner.setStrength(10);
         CardSlot stronger = onField(host, card("st", "Más fuerte", 1, 1, "R"), BACK);
         stronger.setStrength(12);
-        assertThat(Summons.canSpecial(room, "host", imperial)).isFalse();
+        assertThat(SpecialRequirements.canSpecial(room, "host", imperial)).isFalse();
         stronger.setStrength(8);
-        assertThat(Summons.canSpecial(room, "host", imperial)).isTrue();
+        assertThat(SpecialRequirements.canSpecial(room, "host", imperial)).isTrue();
     }
 
     @Test

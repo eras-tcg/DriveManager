@@ -199,14 +199,14 @@ class DesignerRulingsBatch2Test {
     void ritualRequirementsReadOMayorAndAStrengthLimit() {
         CardSlot zaranthrax = card("zx", "Zaranthrax", 1, 4, "P");
         zaranthrax.setRequirement("criatura nivel 3 o mayor.");
-        Summons.Requirement req = Summons.requirement(zaranthrax);
+        Rituals.Requirement req = Rituals.requirement(zaranthrax);
         assertThat(req.fits(card("l3", "Nivel 3", 1, 3, "P"))).isTrue();
         assertThat(req.fits(card("l5", "Nivel 5", 1, 5, "P"))).isTrue();
         assertThat(req.fits(card("l2", "Nivel 2", 1, 2, "P"))).isFalse();
 
         CardSlot krull = card("kr", "Krull", 1, 3, "P");
         krull.setRequirement("criatura nivel 1 de fuerza 3 o menos.");
-        Summons.Requirement krullReq = Summons.requirement(krull);
+        Rituals.Requirement krullReq = Rituals.requirement(krull);
         CardSlot weak = card("w", "Débil", 1, 1, "P");
         weak.setStrength(3);
         CardSlot strong = card("s", "Fuerte", 1, 1, "P");

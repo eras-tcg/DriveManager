@@ -181,5 +181,8 @@
     "sourceZone" : "tributeZone",
     "allyTurn" : true,
     "limit" : "ONE_EFFECT_OF_NAME_PER_TURN"
-  } ]
+  } ],
+  "traits" : {
+    "oneEffectPerTurn" : true
+  }
 }

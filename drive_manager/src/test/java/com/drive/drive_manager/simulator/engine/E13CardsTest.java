@@ -264,7 +264,7 @@ class E13CardsTest extends CardBatchSupport {
         evo.setRequirement("criatura nivel 2.");
         host.getHand().add(evo);
         int before = gems();
-        assertThat(Summons.specialByPlayer(room, "host", "ev", "cy")).isNull();
+        assertThat(SpecialSummons.specialByPlayer(room, "host", "ev", "cy")).isNull();
         answer("gr");
         drain();
         assertThat(host.getField()).contains(evo).doesNotContain(cylvaus);
@@ -303,7 +303,7 @@ class E13CardsTest extends CardBatchSupport {
         host.getHand().add(tharnok);
         onField(host, card("su", "Invocador", 3, 3, "G"));
         int before = gems();
-        assertThat(Summons.specialByPlayer(room, "host", "th", "su")).isNull();
+        assertThat(SpecialSummons.specialByPlayer(room, "host", "th", "su")).isNull();
         drain();
         assertThat(host.getField()).contains(tharnok);
         assertThat(gems()).isEqualTo(before - 1);
@@ -492,7 +492,7 @@ class E13CardsTest extends CardBatchSupport {
         host.getHand().add(ascended);
         CardSlot pl = inHand("pl", "Infantería De Primera Línea", 2, 2, "R", "armada");
         inHand("x", "Pago", 1, 1, "R");
-        assertThat(Summons.specialByPlayer(room, "host", "as", "pc")).isNull();
+        assertThat(SpecialSummons.specialByPlayer(room, "host", "as", "pc")).isNull();
         untilOffered(peon);
         answer("pc");
         answer("x");

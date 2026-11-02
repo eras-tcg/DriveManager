@@ -14,6 +14,9 @@ import java.util.regex.Pattern;
 
 import static com.drive.drive_manager.simulator.engine.EffectEngine.*;
 import static com.drive.drive_manager.simulator.engine.Summons.*;
+import static com.drive.drive_manager.simulator.engine.SpecialRequirements.*;
+import static com.drive.drive_manager.simulator.engine.SpecialSummons.*;
+import static com.drive.drive_manager.simulator.engine.Rituals.*;
 import static com.drive.drive_manager.simulator.engine.Removals.*;
 import static com.drive.drive_manager.simulator.engine.CombatRules.*;
 import static com.drive.drive_manager.simulator.engine.Chain.*;

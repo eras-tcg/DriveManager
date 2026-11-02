@@ -20,6 +20,9 @@ import static com.drive.drive_manager.simulator.engine.EffectEngine.*;
 import static com.drive.drive_manager.simulator.engine.Resolution.*;
 import static com.drive.drive_manager.simulator.engine.StepHelpers.*;
 import static com.drive.drive_manager.simulator.engine.Summons.*;
+import static com.drive.drive_manager.simulator.engine.SpecialRequirements.*;
+import static com.drive.drive_manager.simulator.engine.SpecialSummons.*;
+import static com.drive.drive_manager.simulator.engine.Rituals.*;
 import static com.drive.drive_manager.simulator.engine.Removals.*;
 import static com.drive.drive_manager.simulator.engine.TurnRules.*;
 import static com.drive.drive_manager.simulator.engine.CombatRules.*;
@@ -38,7 +41,7 @@ final class SummonSteps {
             case SummonFreeLevelSum sum -> !freeLevelSum(room, effect, sum).isEmpty();
             case SpecialSelfDeclaredSummoner s -> {
                 CardSlot self = find(player.getHand(), effect.getSourceInstanceId());
-                Summons.SpecialRequirement req = self == null ? null : specialRequirement(self);
+                SpecialRequirements.SpecialRequirement req = self == null ? null : specialRequirement(self);
                 yield req != null && self.getSpecialCost() != null && !declaredFrom(player, self, req, s.zones()).isEmpty()
                         && canPay(room, player.getUserId(), self.getSpecialCost() - CostModifiers.available(room, player, CostModifiers.Event.SPECIAL_SUMMON, req.kind(), self, null));
             }
@@ -57,7 +60,7 @@ final class SummonSteps {
         switch (step) {
             case SpecialSelfDeclaredSummoner s -> {
                 CardSlot self = find(player.getHand(), effect.getSourceInstanceId());
-                Summons.SpecialRequirement req = self == null ? null : specialRequirement(self);
+                SpecialRequirements.SpecialRequirement req = self == null ? null : specialRequirement(self);
                 if (req == null) return false;
                 if (effect.getRitualSummonerId() == null) {
                     List<CardSlot> valid = declaredFrom(player, self, req, s.zones());
@@ -139,7 +142,7 @@ final class SummonSteps {
                     break;
                 }
                 CardSlot self = find(player.getHand(), effect.getSourceInstanceId());
-                Summons.SpecialRequirement req = self == null ? null : specialRequirement(self);
+                SpecialRequirements.SpecialRequirement req = self == null ? null : specialRequirement(self);
                 if (req == null) return "Esa carta ya no está en tu mano";
                 if (effect.getRitualSummonerId() == null) {
                     if (find(declaredFrom(player, self, req, s.zones()), picks.get(0)) == null) return "Esa criatura no puede ser el invocador";

@@ -699,7 +699,7 @@ class E12CardsTest extends CardBatchSupport {
         ascended.setSpecialCost(1);
         ascended.setRequirement("criatura nivel 3.");
         host.getHand().add(ascended);
-        assertThat(Summons.specialByPlayer(room, "host", "as", "ed")).isNull();
+        assertThat(SpecialSummons.specialByPlayer(room, "host", "as", "ed")).isNull();
         drain();
         assertThat(EffectEngine.keywords(ascended)).contains("Furia 2");
         assertThat(espada).isNotNull();

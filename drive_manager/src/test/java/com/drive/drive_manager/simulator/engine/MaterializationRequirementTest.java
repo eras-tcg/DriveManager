@@ -32,8 +32,8 @@ class MaterializationRequirementTest {
         CardSlot fromTributes = blue(card("t1", "En tributos", 1, 1, "B"));
         host.getHand().addAll(List.of(sar, fromHand));
         host.getTributeZone().add(fromTributes);
-        assertThat(Summons.canSpecial(room, "host", sar)).isTrue();
-        assertThat(Summons.specialByPlayer(room, "host", "sar", null)).isNull();
+        assertThat(SpecialRequirements.canSpecial(room, "host", sar)).isTrue();
+        assertThat(SpecialSummons.specialByPlayer(room, "host", "sar", null)).isNull();
         Prompt materials = room.getPrompt();
         assertThat(materials.getValidIds()).containsExactlyInAnyOrder("h1", "t1");
         answer(materials, "h1", "t1");
@@ -51,7 +51,7 @@ class MaterializationRequirementTest {
         CardSlot inHand = blue(card("m", "Material", 1, 1, "B"));
         host.getTributeZone().add(blue(card("t", "No vale", 1, 1, "B")));
         host.getHand().addAll(List.of(va, inHand));
-        assertThat(Summons.specialByPlayer(room, "host", "va", "s")).isNull();
+        assertThat(SpecialSummons.specialByPlayer(room, "host", "va", "s")).isNull();
         Prompt materials = room.getPrompt();
         assertThat(materials.getValidIds()).containsExactly("m");
         answer(materials, "m");
@@ -67,9 +67,9 @@ class MaterializationRequirementTest {
         onField(host, blue(card("s", "Invocador", 3, 3, "B")));
         host.getTributeZone().add(blue(card("t", "En tributos", 3, 3, "B")));
         host.getHand().add(iron);
-        assertThat(Summons.canSpecial(room, "host", iron)).isFalse();
+        assertThat(SpecialRequirements.canSpecial(room, "host", iron)).isFalse();
         onField(host, blue(card("f", "En el campo", 3, 3, "B")), BACK);
-        assertThat(Summons.canSpecial(room, "host", iron)).isTrue();
+        assertThat(SpecialRequirements.canSpecial(room, "host", iron)).isTrue();
     }
 
     @Test
@@ -78,13 +78,13 @@ class MaterializationRequirementTest {
         CardSlot unidad = blue(materialization(card("un", "Unidad H3 R0", 3, 3, "B"), 3, "criatura nivel 3 o 4 + material nivel 3 en campo o mano."));
         CardSlot level4 = onField(host, blue(card("s4", "Nivel 4", 4, 4, "B")));
         host.getHand().addAll(List.of(unidad, blue(card("m3", "Material 3", 3, 3, "B"))));
-        assertThat(Summons.specialSummoners(host, unidad, Summons.specialRequirement(unidad))).contains(level4);
+        assertThat(SpecialRequirements.specialSummoners(host, unidad, SpecialRequirements.specialRequirement(unidad))).contains(level4);
         // Proto Vigilante H2: "(criatura nivel 3) o (criatura nivel 2 + material nivel 2 en tu mano o campo)"
         CardSlot proto = blue(materialization(card("pv", "Proto Vigilante H2", 2, 2, "B"), 1,
                 "(criatura nivel 3) o (criatura nivel 2 + material nivel 2 en tu mano o campo)."));
         CardSlot level3 = onField(host, blue(card("s3", "Nivel 3", 3, 3, "B")));
         host.getHand().add(proto);
-        assertThat(Summons.specialByPlayer(room, "host", "pv", "s3")).isNull();
+        assertThat(SpecialSummons.specialByPlayer(room, "host", "pv", "s3")).isNull();
         answerRest();
         assertThat(host.getField()).contains(proto).doesNotContain(level3);
         assertThat(proto.getMaterials()).containsExactly(level3);

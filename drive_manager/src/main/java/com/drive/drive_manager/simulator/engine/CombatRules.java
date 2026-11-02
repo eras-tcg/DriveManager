@@ -14,6 +14,9 @@ import java.util.regex.Pattern;
 
 import static com.drive.drive_manager.simulator.engine.EffectEngine.*;
 import static com.drive.drive_manager.simulator.engine.Summons.*;
+import static com.drive.drive_manager.simulator.engine.SpecialRequirements.*;
+import static com.drive.drive_manager.simulator.engine.SpecialSummons.*;
+import static com.drive.drive_manager.simulator.engine.Rituals.*;
 import static com.drive.drive_manager.simulator.engine.Removals.*;
 import static com.drive.drive_manager.simulator.engine.TurnRules.*;
 import static com.drive.drive_manager.simulator.engine.Chain.*;
@@ -38,16 +41,8 @@ public final class CombatRules {
         if (error != null) return error;
         PlayerState player = room.getPlayer(userId);
         CardSlot attacker = player == null ? null : find(player.getField(), attackerId);
-        if (attacker == null || !"creature".equals(attacker.getCardType())) return "Solo tus criaturas del campo pueden atacar";
-        if (!inFrontLine(attacker)) return "Solo las criaturas de la línea frontal pueden atacar";
-        if (attacker.isTapped()) return "Esa criatura está agotada";
-        if (keywords(attacker).contains(NO_ATTACK)) return name(attacker) + " no puede declarar ataque";
-        if (keywords(attacker).contains(CANNOT_TAP)) return name(attacker) + " no puede agotarse para declarar ataque";
-        if (!attackGemsOk(room, userId, attacker)) {
-            Integer furia = furia(attacker);
-            return furia == null ? "Para declarar un ataque necesitas 0 o más gemas"
-                    : "Con Furia " + furia + " puedes declarar ataque mientras tu rival tenga " + furia + " o menos gemas";
-        }
+        error = whyCannotAttack(room, userId, attacker);
+        if (error != null) return error;
         if (targetId != null) {
             PlayerState opponent = room.getPlayer(room.getOpponentId(userId));
             CardSlot target = opponent == null ? null : find(opponent.getField(), targetId);
@@ -58,6 +53,21 @@ public final class CombatRules {
         attacker.setTapped(true);
         startCombat(room, userId, attacker, targetId, false, null);
         advance(room);
+        return null;
+    }
+
+    /** Why this card cannot declare a regular attack now; null: it can (the main phase of the turn is asked apart). */
+    static String whyCannotAttack(GameRoom room, String userId, CardSlot attacker) {
+        if (attacker == null || !"creature".equals(attacker.getCardType())) return "Solo tus criaturas del campo pueden atacar";
+        if (!inFrontLine(attacker)) return "Solo las criaturas de la línea frontal pueden atacar";
+        if (attacker.isTapped()) return "Esa criatura está agotada";
+        if (keywords(attacker).contains(NO_ATTACK)) return name(attacker) + " no puede declarar ataque";
+        if (keywords(attacker).contains(CANNOT_TAP)) return name(attacker) + " no puede agotarse para declarar ataque";
+        if (!attackGemsOk(room, userId, attacker)) {
+            Integer furia = furia(attacker);
+            return furia == null ? "Para declarar un ataque necesitas 0 o más gemas"
+                    : "Con Furia " + furia + " puedes declarar ataque mientras tu rival tenga " + furia + " o menos gemas";
+        }
         return null;
     }
 

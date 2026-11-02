@@ -215,7 +215,7 @@ class E11FinalBatchTest {
         evolved.setSpecialCost(1);
         evolved.setRequirement("criatura nivel 2.");
         host.getHand().add(evolved);
-        assertThat(Summons.specialByPlayer(room, "host", "ev", "wr")).isNull();
+        assertThat(SpecialSummons.specialByPlayer(room, "host", "ev", "wr")).isNull();
         answer(room.getPrompt(), "tr");
         assertThat(host.getField()).contains(evolved);
         assertThat(evolved.getResources()).contains(tribute, wyverno);
@@ -234,7 +234,7 @@ class E11FinalBatchTest {
         ascended.setRequirement("criatura nivel 4.");
         host.getHand().add(ascended);
         int gems = EffectEngine.gemsOf(room, "host");
-        assertThat(Summons.specialByPlayer(room, "host", "as", "pc")).isNull();
+        assertThat(SpecialSummons.specialByPlayer(room, "host", "as", "pc")).isNull();
         Prompt attack = room.getPrompt();
         assertThat(attack.getPurpose()).isEqualTo(EffectEngine.PURPOSE_ASCEND_ATTACK);
         answer(attack, "pc");

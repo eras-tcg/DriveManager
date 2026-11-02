@@ -43,8 +43,8 @@ class CostModifierTest {
         host.getHand().add(evolved);
 
         // 1 gem and a cost of 2: only with Flambreik's reduction
-        assertThat(Summons.canSpecial(room, "host", evolved)).isTrue();
-        assertThat(Summons.specialByPlayer(room, "host", "evo", "fl")).isNull();
+        assertThat(SpecialRequirements.canSpecial(room, "host", evolved)).isTrue();
+        assertThat(SpecialSummons.specialByPlayer(room, "host", "evo", "fl")).isNull();
         Prompt pay = room.getPrompt();
         assertThat(pay.getValidIds()).hasSize(5);
         // Nothing else pays it: the payment is required, so the choice cannot be left empty
@@ -71,7 +71,7 @@ class CostModifierTest {
         evolved.setSpecialCost(2);
         evolved.setRequirement("criatura nivel 1.");
         host.getHand().add(evolved);
-        assertThat(Summons.specialByPlayer(room, "host", "evo", "fl")).isNull();
+        assertThat(SpecialSummons.specialByPlayer(room, "host", "evo", "fl")).isNull();
         Prompt pay = room.getPrompt();
         assertThat(pay.getMin()).isZero();
         assertThat(Answers.answer(room, "host", pay.getId(), List.of(), List.of())).isNull();

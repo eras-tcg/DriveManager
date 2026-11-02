@@ -73,7 +73,7 @@ class St1IntegrationTest {
         host.getHand().add(bertalum);
         CardSlot damon = onField(guest, slot("Damon"), FRONT);
 
-        assertThat(Summons.specialByPlayer(room, "host", bertalum.getInstanceId(), summoner.getInstanceId())).isNull();
+        assertThat(SpecialSummons.specialByPlayer(room, "host", bertalum.getInstanceId(), summoner.getInstanceId())).isNull();
         Answers.answer(room, "host", room.getPrompt().getId(), List.of(material.getInstanceId()), List.of());
         assertThat(bertalum.getMaterials()).containsExactly(summoner, material);
 
@@ -181,7 +181,7 @@ class St1IntegrationTest {
         CardSlot galafendrax = slot("Galafendrax El Transmutador");
         host.getHand().add(galafendrax);
 
-        assertThat(Summons.specialByPlayer(room, "host", galafendrax.getInstanceId(), mathaus.getInstanceId())).isNull();
+        assertThat(SpecialSummons.specialByPlayer(room, "host", galafendrax.getInstanceId(), mathaus.getInstanceId())).isNull();
         Answers.answer(room, "host", room.getPrompt().getId(), List.of(falanx.getInstanceId()), List.of());
         assertThat(galafendrax.getMaterials()).containsExactly(mathaus, falanx);
 
@@ -226,8 +226,8 @@ class St1IntegrationTest {
         room.setSharedCounter(-10);
 
         // "En Tributos": as if it were in the hand for special summons
-        assertThat(Summons.specialSummonable(room, "host")).contains(falanx.getInstanceId());
-        assertThat(Summons.specialByPlayer(room, "host", falanx.getInstanceId(), falis.getInstanceId())).isNull();
+        assertThat(SpecialRequirements.specialSummonable(room, "host")).contains(falanx.getInstanceId());
+        assertThat(SpecialSummons.specialByPlayer(room, "host", falanx.getInstanceId(), falis.getInstanceId())).isNull();
         Prompt materials = room.getPrompt();
         assertThat(materials.getValidIds()).containsExactlyInAnyOrder(fhalid.getInstanceId(), jhav.getInstanceId(), mihel.getInstanceId());
         // 3 + 2 + 1 + 1 = 7: not exactly 6

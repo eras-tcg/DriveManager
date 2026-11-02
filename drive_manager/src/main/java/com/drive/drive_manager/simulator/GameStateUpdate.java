@@ -2,6 +2,7 @@ package com.drive.drive_manager.simulator;
 
 import com.drive.drive_manager.simulator.engine.EffectEngine;
 import com.drive.drive_manager.simulator.engine.Summons;
+import com.drive.drive_manager.simulator.engine.SpecialRequirements;
 import com.drive.drive_manager.simulator.engine.Chain;
 import com.drive.drive_manager.simulator.engine.GameEvent;
 import com.drive.drive_manager.simulator.engine.PendingEffect;
@@ -61,6 +62,10 @@ public class GameStateUpdate {
     private Map<String, List<String>> specialSummonable;
     /** Utilities in each player's hand that cannot be played now (their "En Juego" cannot be activated), by player id. */
     private Map<String, List<String>> unplayable;
+    /** What each player can do now, by player id and then by card ({@link com.drive.drive_manager.simulator.engine.LegalActions}). */
+    private Map<String, Map<String, List<String>>> legalActions;
+    /** The enemies each attacker can attack, by player id and then by attacker. */
+    private Map<String, Map<String, List<String>>> attackTargets;
     /** Who won the game that just ended, and why ("lives", "surrender"). */
     private String winnerId;
     private String endReason;
@@ -94,7 +99,7 @@ public class GameStateUpdate {
         u.activatable       = activatable.isEmpty() ? null : activatable;
         Map<String, List<String>> specials = new LinkedHashMap<>();
         for (String id : room.getPlayers().keySet()) {
-            List<String> list = Summons.specialSummonable(room, id);
+            List<String> list = SpecialRequirements.specialSummonable(room, id);
             if (!list.isEmpty()) specials.put(id, list);
         }
         // Always sent (empty when nobody can): the board relies on it instead of its own checks
@@ -105,6 +110,12 @@ public class GameStateUpdate {
             if (!list.isEmpty()) unplayable.put(id, list);
         }
         u.unplayable        = unplayable;
+        u.legalActions = new LinkedHashMap<>();
+        u.attackTargets = new LinkedHashMap<>();
+        for (String id : room.getPlayers().keySet()) {
+            u.legalActions.put(id, com.drive.drive_manager.simulator.engine.LegalActions.of(room, id));
+            u.attackTargets.put(id, com.drive.drive_manager.simulator.engine.LegalActions.attackTargets(room, id));
+        }
         List<String> structures = room.getPlayers().keySet().stream().filter(id -> Summons.structurePlayed(room, id)).toList();
         u.structurePlayed   = structures.isEmpty() ? null : structures;
         u.winnerId          = room.getWinnerId();

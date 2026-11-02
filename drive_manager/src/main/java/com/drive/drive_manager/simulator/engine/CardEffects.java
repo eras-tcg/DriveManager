@@ -124,6 +124,7 @@ public final class CardEffects {
         TRAITS.forEach((n, t) -> {
             List<String> rules = all.computeIfAbsent(n, k -> new ArrayList<>());
             if (t.specialFromTributes()) rules.add("En Tributos: cuenta como en la mano para invocaciones especiales");
+            if (t.oneEffectPerTurn()) rules.add("solo 1 de sus efectos por turno");
             if (t.alias() != null) rules.add("puede ser tratada como \"" + t.alias() + "\"");
             if (t.lifePlayCost() != null) rules.add("desde las vidas se juega pagando " + t.lifePlayCost() + " gemas");
             if (t.alternativeLevel() != null) rules.add("puede ser considerada nivel " + t.alternativeLevel().level());
@@ -143,8 +144,6 @@ public final class CardEffects {
                 if (r instanceof DamageReplacement d) rules.add("se invoca en lugar de recibir " + d.maxDamage() + " o menos de daño");
             }
         });
-        all.computeIfAbsent("fuego perforante", k -> new ArrayList<>()).add("solo 1 de sus efectos por turno");
-        all.computeIfAbsent("mensaje de un compañero", k -> new ArrayList<>()).add("solo 1 de sus efectos por turno");
         return all;
     }
 
@@ -348,7 +347,7 @@ public final class CardEffects {
         return alt != null && alt.by().matches(looker) ? alt.level() : null;
     }
 
-    /** "si utilizas al menos N criaturas en tu campo: reduce el coste especial de esta carta en M" (Summons.fieldPiecesDiscount). */
+    /** "si utilizas al menos N criaturas en tu campo: reduce el coste especial de esta carta en M" (SpecialRequirements.fieldPiecesDiscount). */
     public record FieldPiecesDiscount(int pieces, int reduce) {}
 
     static FieldPiecesDiscount fieldPiecesDiscount(CardSlot card) {
@@ -396,7 +395,7 @@ public final class CardEffects {
     }
 
     /** "En Mano: al entrar al paso de bloqueo: puedes jugar esta carta pagando su coste." */
-    /** "cuando esta carta fuera a ser ascendida: puede declarar ataque" (Summons.handSpecial, then completeAscension). */
+    /** "cuando esta carta fuera a ser ascendida: puede declarar ataque" (SpecialSummons.handSpecial, then completeAscension). */
     static boolean attacksBeforeAscended(CardSlot card) {
         return reaction(card, Reaction.AttacksBeforeAscended.class) != null;
     }

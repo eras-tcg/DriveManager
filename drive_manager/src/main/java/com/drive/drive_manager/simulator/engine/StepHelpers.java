@@ -19,6 +19,9 @@ import java.util.regex.Pattern;
 import static com.drive.drive_manager.simulator.engine.EffectEngine.*;
 import static com.drive.drive_manager.simulator.engine.Resolution.*;
 import static com.drive.drive_manager.simulator.engine.Summons.*;
+import static com.drive.drive_manager.simulator.engine.SpecialRequirements.*;
+import static com.drive.drive_manager.simulator.engine.SpecialSummons.*;
+import static com.drive.drive_manager.simulator.engine.Rituals.*;
 import static com.drive.drive_manager.simulator.engine.Removals.*;
 import static com.drive.drive_manager.simulator.engine.TurnRules.*;
 import static com.drive.drive_manager.simulator.engine.CombatRules.*;
@@ -476,9 +479,9 @@ public final class StepHelpers {
     }
 
     /** Creatures of those zones that can be the declared summoner of {@code card}: its level, sharing a type or color, with its materials there. */
-    static List<CardSlot> declaredFrom(PlayerState player, CardSlot card, Summons.SpecialRequirement req, String zones) {
+    static List<CardSlot> declaredFrom(PlayerState player, CardSlot card, SpecialRequirements.SpecialRequirement req, String zones) {
         return zones(player, zones).stream()
-                .filter(c -> c != card && "creature".equals(c.getCardType()) && Summons.optionFor(req, c) != null && shares(c, card))
+                .filter(c -> c != card && "creature".equals(c.getCardType()) && SpecialRequirements.optionFor(req, c) != null && shares(c, card))
                 .filter(c -> {
                     List<CardSlot> materials = declaredMaterials(player, card, req, c);
                     return req.levelSum() > 0 ? sumsExactly(materials, req.levelSum()) : materials.size() >= Math.max(1, req.materialCount());
@@ -487,7 +490,7 @@ public final class StepHelpers {
     }
 
     /** The materials of {@code card} besides that summoner, in the zones of its Requerimiento ("materiales que sumen 3 en tus tributos"). */
-    static List<CardSlot> declaredMaterials(PlayerState player, CardSlot card, Summons.SpecialRequirement req, CardSlot summoner) {
+    static List<CardSlot> declaredMaterials(PlayerState player, CardSlot card, SpecialRequirements.SpecialRequirement req, CardSlot summoner) {
         List<CardSlot> all = new ArrayList<>();
         for (String z : req.materialZones()) all.addAll(zone(player, z));
         return all.stream().filter(c -> c != card && c != summoner && "creature".equals(c.getCardType()) && c.getLevel() != null && shares(c, card)

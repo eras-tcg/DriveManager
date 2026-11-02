@@ -66,7 +66,7 @@ class St2IntegrationTest {
         CardSlot duregon = onField(host, slot("Duregón"), FRONT);
         CardSlot galveta = slot("Galveta");
         host.getHand().add(galveta);
-        assertThat(Summons.specialByPlayer(room, "host", galveta.getInstanceId(), duregon.getInstanceId())).isNull();
+        assertThat(SpecialSummons.specialByPlayer(room, "host", galveta.getInstanceId(), duregon.getInstanceId())).isNull();
         // Galveta's "En Invocación": put up to 1 card from the hand on top (none), then tribute 2 from the deck top
         Answers.answer(room, "host", room.getPrompt().getId(), List.of(), List.of());
         assertThat(galveta.getResources()).containsExactly(duregon);
@@ -87,7 +87,7 @@ class St2IntegrationTest {
         CardSlot fadrake = slot("Dragón Delta");
         host.getHand().add(fadrake);
         int gems = EffectEngine.gemsOf(room, "host");
-        Summons.specialByPlayer(room, "host", fadrake.getInstanceId(), duregon.getInstanceId());
+        SpecialSummons.specialByPlayer(room, "host", fadrake.getInstanceId(), duregon.getInstanceId());
         // Special cost 1, minus 1
         assertThat(EffectEngine.gemsOf(room, "host")).isEqualTo(gems);
     }
@@ -216,7 +216,7 @@ class St2IntegrationTest {
         CardSlot damon = onField(guest, slot("Damon"), FRONT);
         damon.setStrength(3);
         int tributes = host.getTributeZone().size();
-        assertThat(Summons.specialByPlayer(room, "host", ddraig.getInstanceId(), summoner.getInstanceId())).isNull();
+        assertThat(SpecialSummons.specialByPlayer(room, "host", ddraig.getInstanceId(), summoner.getInstanceId())).isNull();
         for (int i = 0; i < 10 && room.getPrompt() != null; i++) {
             Prompt p = room.getPrompt();
             List<String> pick = p.getValidIds().contains(damon.getInstanceId()) ? List.of(damon.getInstanceId())

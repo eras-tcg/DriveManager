@@ -649,7 +649,7 @@ final class EngineContext implements EffectContext {
         // They may be built on what only the effect knows
         if (amount instanceof Amount.Times t) return amount(t.base()) * t.factor();
         if (amount instanceof Amount.Scaled s) return amount(s.base()) / s.divisor() + s.plus();
-        if (amount instanceof Amount.TriggerSourceLevel) return Summons.triggerSourceLevel(room, effect);
+        if (amount instanceof Amount.TriggerSourceLevel) return SpecialRequirements.triggerSourceLevel(room, effect);
         if (amount instanceof Amount.SubjectLevel) {
             CardSlot subject = StepHelpers.subject(room, effect);
             return subject == null || subject.getLevel() == null ? 0 : subject.getLevel();
