@@ -40,6 +40,10 @@ public class RoomService {
     @Autowired
     private DriveCardRepository driveCardRepo;
 
+    /** Online games count for the players' daily and weekly missions (see MissionEvents). */
+    @Autowired(required = false)
+    private com.drive.drive_manager.service.MissionService missions;
+
     /** Whose cards a deck needs: a player plays only decks whose every copy they own. */
     @Autowired(required = false)
     private com.drive.drive_manager.service.CollectionService collections;
@@ -193,6 +197,10 @@ public class RoomService {
             if (EDITOR_RIVAL.equals(action.getString("actAs")) && !OWNER_ONLY.contains(action.getType())) userId = EDITOR_RIVAL;
         }
 
+        // What the action changes is counted for the players' missions afterwards (see the end of this method)
+        GameRoom.RoomStatus statusBefore = room.getStatus();
+        long seqBefore = room.getEventSeq();
+
         // Closed game state (rule 7.2): while a chain or a choice is pending, only answering it (and leaving
         // or conceding) is allowed. The board's manual actions wait until the effect is done.
         if (room.isEngineBusy() && !ALLOWED_WHILE_RESOLVING.contains(action.getType())) {
@@ -277,8 +285,19 @@ public class RoomService {
         if (update != null && update.getError() == null) {
             recordLog(room, update, action);
             update.setEventLog(new ArrayList<>(room.getEventLog()));
+            countForMissions(room, statusBefore, seqBefore);
         }
         return update;
+    }
+
+    /** The summons, damage and finished game an action brought, for the players' missions (never stops the game). */
+    private void countForMissions(GameRoom room, GameRoom.RoomStatus statusBefore, long seqBefore) {
+        if (missions == null) return;
+        try {
+            for (MissionEvents.Progress p : MissionEvents.of(room, statusBefore, seqBefore)) missions.record(p.userId(), p.counts(), p.amount());
+        } catch (RuntimeException e) {
+            // Missions are a bonus: a failure there must not break the room
+        }
     }
 
     private static final Set<String> ALLOWED_WHILE_RESOLVING = Set.of(
