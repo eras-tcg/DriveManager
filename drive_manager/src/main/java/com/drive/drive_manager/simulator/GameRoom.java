@@ -23,6 +23,10 @@ public class GameRoom {
     private Set<String>         mulliganReady     = new HashSet<>();
     private Map<String, String> postGameChoices   = new LinkedHashMap<>();
 
+    // Persists for the room's lifetime (not the client's) — survives a player
+    // navigating away and reconnecting. Lost only when the room itself ends.
+    private List<GameLogEntry> eventLog = new ArrayList<>();
+
     public boolean isFull() {
         return players.size() >= 2;
     }

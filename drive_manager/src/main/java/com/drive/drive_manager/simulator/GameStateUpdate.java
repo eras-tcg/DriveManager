@@ -3,6 +3,7 @@ package com.drive.drive_manager.simulator;
 import lombok.Data;
 
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 
 @Data
@@ -22,6 +23,8 @@ public class GameStateUpdate {
     private String targetingSourceInstanceId;
     private String revealedCardImageUrl;
     private String revealedCardName;
+    private String logEntry;
+    private List<GameLogEntry> eventLog;
 
     public static GameStateUpdate from(GameRoom room, String event, String actorId) {
         GameStateUpdate u = new GameStateUpdate();

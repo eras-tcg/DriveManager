@@ -22,6 +22,7 @@ public class CardSlot {
     private String cardType;
     private Integer strength;
     private String specialSummonKind;
+    private boolean starter;
     private int strengthModifier = 0;
     private List<CardSlot> materials = new ArrayList<>();
     private List<CardSlot> resources = new ArrayList<>();
