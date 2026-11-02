@@ -1,5 +1,6 @@
 package com.drive.drive_manager.controller;
 
+import com.drive.drive_manager.service.ShopService;
 import com.drive.drive_manager.service.WalletRules;
 import com.drive.drive_manager.service.WalletService;
 import org.junit.jupiter.api.BeforeEach;
@@ -20,12 +21,14 @@ import static org.mockito.Mockito.when;
 class WalletControllerTest {
 
     private WalletService wallets;
+    private ShopService shop;
     private WalletController controller;
 
     @BeforeEach
     void setUp() {
         wallets = mock(WalletService.class);
-        controller = new WalletController(wallets);
+        shop = mock(ShopService.class);
+        controller = new WalletController(wallets, shop);
     }
 
     @Test
@@ -39,17 +42,17 @@ class WalletControllerTest {
 
     @Test
     void buysForTheSignedInAccount() {
-        when(wallets.buy("alice", "E2", "box")).thenReturn(new WalletService.Purchase(100, 2400));
+        when(shop.buy("alice", "E2", "box")).thenReturn(new ShopService.Opening(100, 2400, java.util.List.of()));
 
         var response = controller.buy(player("alice"), new WalletController.PurchaseRequest("E2", "box"));
 
         assertThat(response.getStatusCode().value()).isEqualTo(200);
-        assertThat(response.getBody()).containsEntry("gems", 100).containsEntry("price", 2400);
+        assertThat(response.getBody()).containsEntry("gems", 100).containsEntry("price", 2400).containsEntry("packs", java.util.List.of());
     }
 
     @Test
     void aRefusedPurchaseSaysWhy() {
-        when(wallets.buy("alice", "E2", "box")).thenThrow(new WalletService.PurchaseException("No te alcanzan las gemas"));
+        when(shop.buy("alice", "E2", "box")).thenThrow(new WalletService.PurchaseException("No te alcanzan las gemas"));
 
         var response = controller.buy(player("alice"), new WalletController.PurchaseRequest("E2", "box"));
 

@@ -40,6 +40,10 @@ public class RoomService {
     @Autowired
     private DriveCardRepository driveCardRepo;
 
+    /** Whose cards a deck needs: a player plays only decks whose every copy they own. */
+    @Autowired(required = false)
+    private com.drive.drive_manager.service.CollectionService collections;
+
     @Value("${r2.public-url}")
     private String r2PublicUrl;
 
@@ -1007,6 +1011,10 @@ public class RoomService {
         // Cards the engine does not run cannot be played; a test room plays them by hand (it is where they are tried)
         if (!room.isEditor() && unprogrammedIn(slots) != null) return GameStateUpdate.error(room.getRoomId(),
                 "Este mazo tiene cartas que todavía no están programadas en el simulador");
+        // Only with every copy in the player's collection (a test room plays anything: it is where cards are tried)
+        if (!room.isEditor() && collections != null && collections.missing(userId, slots.stream().map(CardSlot::getCardId).toList()) > 0) {
+            return GameStateUpdate.error(room.getRoomId(), "No puedes jugar este mazo: te faltan cartas de tu colección");
+        }
         player.setDeckId(deckId);
         player.setDeckName(deckListRepo.findById(deckId).map(DeckList::getDeckName).orElse(null));
         player.setDeck(new ArrayList<>(slots));

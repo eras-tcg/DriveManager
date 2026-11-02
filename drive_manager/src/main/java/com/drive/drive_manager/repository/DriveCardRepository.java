@@ -10,4 +10,6 @@ import java.util.List;
 public interface DriveCardRepository extends MongoRepository<DriveCard, String> {
 
     List<DriveCard> findByEditionAndNumber(String edition, Integer number);
+
+    List<DriveCard> findByEdition(String edition);
 }

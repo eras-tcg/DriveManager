@@ -1,5 +1,6 @@
 package com.drive.drive_manager.controller;
 
+import com.drive.drive_manager.service.ShopService;
 import com.drive.drive_manager.service.WalletRules;
 import com.drive.drive_manager.service.WalletService;
 import org.springframework.http.ResponseEntity;
@@ -22,9 +23,11 @@ import java.util.Map;
 public class WalletController {
 
     private final WalletService wallets;
+    private final ShopService shop;
 
-    public WalletController(WalletService wallets) {
+    public WalletController(WalletService wallets, ShopService shop) {
         this.wallets = wallets;
+        this.shop = shop;
     }
 
     /** {gems, reward}: reward is what the daily reward just added (0 when nothing). */
@@ -38,13 +41,16 @@ public class WalletController {
     public record PurchaseRequest(String editionId, String product) {
     }
 
-    /** Buys a "pack", a "box" or a "structure" deck: {gems, price}, or 400 with a message (not for sale, not enough gems). */
+    /**
+     * Buys a "pack", a "box" or a "structure" deck, drawn here and added to the player's collection: {gems, price,
+     * packs}, or 400 with a message (not for sale, not enough gems).
+     */
     @PostMapping("/me/purchase")
     public ResponseEntity<Map<String, Object>> buy(Authentication auth, @RequestBody PurchaseRequest request) {
         if (auth == null || !auth.isAuthenticated()) return ResponseEntity.status(401).build();
         try {
-            WalletService.Purchase purchase = wallets.buy(auth.getName(), request.editionId(), request.product());
-            return ResponseEntity.ok(Map.of("gems", purchase.gems(), "price", purchase.price()));
+            ShopService.Opening opening = shop.buy(auth.getName(), request.editionId(), request.product());
+            return ResponseEntity.ok(Map.of("gems", opening.gems(), "price", opening.price(), "packs", opening.packs()));
         } catch (WalletService.PurchaseException e) {
             return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
         }
