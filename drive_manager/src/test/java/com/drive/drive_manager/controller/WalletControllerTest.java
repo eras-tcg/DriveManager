@@ -34,10 +34,11 @@ class WalletControllerTest {
     @Test
     void readsTheSignedInAccountsWallet() {
         when(wallets.open("alice")).thenReturn(new WalletRules.Opened(new WalletRules.State(2700, "2026-11-02"), 300));
+        when(wallets.structures("alice")).thenReturn(java.util.List.of("ST1"));
 
         var response = controller.mine(player("alice"));
 
-        assertThat(response.getBody()).containsEntry("gems", 2700).containsEntry("reward", 300);
+        assertThat(response.getBody()).containsEntry("gems", 2700).containsEntry("reward", 300).containsEntry("structures", java.util.List.of("ST1"));
     }
 
     @Test

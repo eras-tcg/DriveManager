@@ -13,9 +13,11 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
 import java.time.ZoneId;
+import java.util.List;
 
 /**
- * Each account's simulated gems, kept in the "wallets" collection (one document per user id: gems, lastReward).
+ * Each account's simulated gems, kept in the "wallets" collection (one document per user id: gems, lastReward, and
+ * the structure decks it bought, each only once: structures).
  * Reading it gives the daily reward; buying charges the server's price in one atomic step, so a purchase can never
  * leave the balance below zero.
  */
@@ -56,20 +58,33 @@ public class WalletService {
         return opened;
     }
 
-    /** Buys a "pack", a "box" or a "structure" deck at the server's price. */
+    /**
+     * Buys a "pack", a "box" or a "structure" deck at the server's price. A structure deck is bought once per account:
+     * charging and noting it is one atomic step, so it can never be bought twice.
+     */
     public Purchase buy(String userId, String editionId, String product) {
         EditionMetadata edition = editionId == null ? null : editions.findById(editionId).orElse(null);
         Integer price = WalletRules.priceOf(edition, product);
         if (price == null) throw new PurchaseException("Ese producto no está a la venta");
         open(userId);
-        Document after = mongo.findAndModify(
-                Query.query(Criteria.where("_id").is(userId).and("gems").gte(price)),
-                new Update().inc("gems", -price),
-                FindAndModifyOptions.options().returnNew(true),
-                Document.class,
-                COLLECTION);
-        if (after == null) throw new PurchaseException("No te alcanzan las gemas");
+        boolean structure = "structure".equals(product);
+        Criteria enough = Criteria.where("_id").is(userId).and("gems").gte(price);
+        Update charge = new Update().inc("gems", -price);
+        if (structure) {
+            enough.and("structures").ne(editionId);
+            charge.addToSet("structures", editionId);
+        }
+        Document after = mongo.findAndModify(Query.query(enough), charge, FindAndModifyOptions.options().returnNew(true), Document.class, COLLECTION);
+        if (after == null) {
+            throw new PurchaseException(structure && structures(userId).contains(editionId) ? "Ya compraste este structure deck" : "No te alcanzan las gemas");
+        }
         return new Purchase(after.getInteger("gems", 0), price);
+    }
+
+    /** The structure decks an account already bought (each can be bought only once). */
+    public List<String> structures(String userId) {
+        Document saved = mongo.findById(userId, Document.class, COLLECTION);
+        return saved == null ? List.of() : saved.getList("structures", String.class, List.of());
     }
 
     /** Adds `gems` to an account (a negative amount takes them away, never below zero). For testing the shop. */

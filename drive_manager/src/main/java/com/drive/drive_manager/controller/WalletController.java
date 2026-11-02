@@ -30,12 +30,15 @@ public class WalletController {
         this.shop = shop;
     }
 
-    /** {gems, reward}: reward is what the daily reward just added (0 when nothing). */
+    /**
+     * {gems, reward, structures}: reward is what the daily reward just added (0 when nothing); structures, the structure
+     * decks already bought (each only once).
+     */
     @GetMapping("/me")
-    public ResponseEntity<Map<String, Integer>> mine(Authentication auth) {
+    public ResponseEntity<Map<String, Object>> mine(Authentication auth) {
         if (auth == null || !auth.isAuthenticated()) return ResponseEntity.status(401).build();
         WalletRules.Opened opened = wallets.open(auth.getName());
-        return ResponseEntity.ok(Map.of("gems", opened.state().gems(), "reward", opened.reward()));
+        return ResponseEntity.ok(Map.of("gems", opened.state().gems(), "reward", opened.reward(), "structures", wallets.structures(auth.getName())));
     }
 
     public record PurchaseRequest(String editionId, String product) {
