@@ -355,9 +355,6 @@ public final class StepHelpers {
         return result;
     }
 
-    /** "puede considerarse": the marker of an ally chosen while active ({@link IfChosenWasActiveAlly}), kept in {@code repeatsDone}. */
-    static final int ACTIVE_ALLY_CHOSEN = 7001;
-
     /** The mark of an effect that goes on at the end of the turn: controller, card, script and subject ({@link AtEndOfTurn}). */
     static final String DELAYED = "delayed|";
 

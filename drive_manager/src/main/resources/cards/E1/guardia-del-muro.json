@@ -1,64 +1,70 @@
 {
   "name" : "guardia del muro",
-  "effects" : [ {
-    "id" : "guardia-del-muro:final-del-turno",
-    "moment" : "ON_EVENT",
-    "label" : "Turno Aliado",
-    "text" : "Al final del turno: puedes tributar 1 aliado para reactivar esta carta.",
-    "steps" : [ {
-      "type" : "IfPossible"
-    }, {
-      "type" : "Do",
-      "action" : {
-        "type" : "Move",
-        "cards" : {
-          "zones" : "field",
-          "owner" : "YOU",
-          "filter" : {
-            "cardType" : "creature"
-          },
-          "min" : {
-            "type" : "Fixed",
-            "value" : 1
-          },
-          "max" : {
-            "type" : "Fixed",
-            "value" : 1
-          },
-          "self" : "EXCLUDE",
-          "mode" : "CHOOSE"
+  "effects" : [
+    {
+      "id" : "guardia-del-muro:final-del-turno",
+      "moment" : "ON_EVENT",
+      "label" : "Turno Aliado",
+      "text" : "Al final del turno: puedes tributar 1 aliado para reactivar esta carta.",
+      "steps" : [
+        {
+          "type" : "IfPossible"
         },
-        "to" : "tributeZone"
-      }
-    }, {
-      "type" : "Do",
-      "action" : {
-        "type" : "SetTapped",
-        "cards" : {
-          "zones" : "field",
-          "owner" : "YOU",
-          "filter" : { },
-          "min" : {
-            "type" : "Fixed",
-            "value" : 1
-          },
-          "max" : {
-            "type" : "Fixed",
-            "value" : 1
-          },
-          "self" : "ANY",
-          "mode" : "SELF"
+        {
+          "type" : "Do",
+          "action" : {
+            "type" : "Move",
+            "cards" : {
+              "zones" : "field",
+              "owner" : "YOU",
+              "filter" : {
+                "cardType" : "creature"
+              },
+              "min" : {
+                "type" : "Fixed",
+                "value" : 1
+              },
+              "max" : {
+                "type" : "Fixed",
+                "value" : 1
+              },
+              "self" : "EXCLUDE",
+              "mode" : "CHOOSE"
+            },
+            "to" : "tributeZone"
+          }
+        },
+        {
+          "type" : "Do",
+          "action" : {
+            "type" : "SetTapped",
+            "cards" : {
+              "zones" : "field",
+              "owner" : "YOU",
+              "filter" : {},
+              "min" : {
+                "type" : "Fixed",
+                "value" : 1
+              },
+              "max" : {
+                "type" : "Fixed",
+                "value" : 1
+              },
+              "self" : "ANY",
+              "mode" : "SELF"
+            }
+          }
         }
-      }
-    } ],
-    "condition" : {
-      "type" : "Happened",
-      "type" : "TURN_END",
-      "actor" : "YOU",
-      "owner" : "ANY"
-    },
-    "sourceZone" : "field",
-    "allyTurn" : true,
-    "limit" : "NONE"
-  } ]
+      ],
+      "condition" : {
+        "type" : "Happened",
+        "eventType" : "TURN_END",
+        "actor" : "YOU",
+        "owner" : "ANY"
+      },
+      "sourceZone" : "field",
+      "allyTurn" : true,
+      "limit" : "NONE"
+    }
+  ]
 }

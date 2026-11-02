@@ -32,6 +32,14 @@ public final class MoveHandler implements ActionHandler<Move> {
     @Override
     public boolean run(EffectContext ctx, Move action) {
         Selector selector = action.cards();
+        if (Move.DECK_TOP_OR_BOTTOM.equals(action.to())) {
+            if (ctx.looked().isEmpty()) return false;
+            // One choice: their order and where they go (the first one of the order ends up highest)
+            ctx.ask(ctx.looked().size() > 1 ? "Ordena las cartas (la de la izquierda queda más arriba) y elige si van al tope o al fondo de tu mazo."
+                    : "Elige si la carta va al tope o al fondo de tu mazo.", null, ctx.looked(), ctx.looked(), 0, 1);
+            ctx.asksTopOrBottom();
+            return true;
+        }
         List<CardSlot> valid = candidates(ctx, action);
         int max = Math.min(ctx.amount(selector.max()), valid.size());
         // With nothing to pick, the rest of the looked cards are still ordered
@@ -57,6 +65,10 @@ public final class MoveHandler implements ActionHandler<Move> {
 
     @Override
     public String answer(EffectContext ctx, Move action, Answer answer) {
+        if (Move.DECK_TOP_OR_BOTTOM.equals(action.to())) {
+            ctx.lookedRestTo(answer.picks().isEmpty() ? Move.DECK_BOTTOM : Move.DECK_TOP, answer.order());
+            return null;
+        }
         List<CardSlot> valid = candidates(ctx, action);
         List<CardSlot> picked = new ArrayList<>();
         for (String id : answer.picks()) {

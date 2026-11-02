@@ -147,7 +147,7 @@ public sealed interface Condition {
     /**
      * Something happened: the general form of a trigger.
      *
-     * @param type     the event's type; null: any
+     * @param eventType the event's type; null: any
      * @param actor    who did it
      * @param owner    whose card it was
      * @param thisCard it is about this card
@@ -157,9 +157,9 @@ public sealed interface Condition {
      * @param byEffect an effect did it
      * @param data     what the event says, as "key=value"; the value "$this" is this card and "$you" is its controller
      */
-    record Happened(String type, Side actor, Side owner, boolean thisCard, CardFilter filter, String from, String to, boolean byEffect, List<String> data) implements Condition {
+    record Happened(String eventType, Side actor, Side owner, boolean thisCard, CardFilter filter, String from, String to, boolean byEffect, List<String> data) implements Condition {
         public boolean test(GameRoom room, GameEvent event, CardSlot source, String controller) {
-            if (event == null || (type != null && !type.equals(event.getType()))) return false;
+            if (event == null || (eventType != null && !eventType.equals(event.getType()))) return false;
             if (!sideIs(actor, event.getPlayerId(), controller) || !sideIs(owner, ownerOf(event), controller)) return false;
             if (thisCard && !source.getInstanceId().equals(event.getCardInstanceId())) return false;
             if ((from != null && !from.equals(event.getFromZone())) || (to != null && !to.equals(event.getToZone()))) return false;

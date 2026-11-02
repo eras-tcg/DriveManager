@@ -69,6 +69,32 @@ final class EngineContext implements EffectContext {
     }
 
     @Override
+    public void asksTopOrBottom() {
+        room.getPrompt().setReorderRest(true);
+        room.getPrompt().setTopOrBottom(true);
+    }
+
+    @Override
+    public boolean attack(boolean opponentOnly) {
+        return CombatRules.attackByEffect(room, effect, opponentOnly);
+    }
+
+    @Override
+    public void attackChosen(List<String> picks) {
+        CardSlot subject = StepHelpers.subject(room, effect);
+        if (subject != null && room.getCombat() == null) {
+            CombatRules.startCombat(room, player().getUserId(), subject, picks.isEmpty() ? null : picks.get(0), true, effect);
+        }
+    }
+
+    @Override
+    public void atEndOfTurn(String script) {
+        String subject = effect.getSummonedId() != null ? effect.getSummonedId() : effect.getSubjectId() != null ? effect.getSubjectId() : "";
+        room.getUsedThisTurn().add(StepHelpers.DELAYED + player().getUserId() + "|" + effect.getSourceInstanceId() + "|" + script + "|" + subject);
+        EffectEngine.log(room, effect.getSourceName() + ": al final del turno se resolverá el resto de su efecto", null);
+    }
+
+    @Override
     public void goOn() {
         repeat[0] = true;
     }

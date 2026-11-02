@@ -1,99 +1,117 @@
 {
   "name" : "imperio desolado",
-  "effects" : [ {
-    "id" : "imperio-desolado:en-tributos",
-    "moment" : "ON_EVENT",
-    "label" : "En Tributos",
-    "text" : "(1) Si algún enemigo es destruido por tus utilidades: puedes jugar esta carta sin pagar su coste.",
-    "steps" : [ {
-      "type" : "Do",
-      "action" : {
-        "type" : "Play",
-        "cards" : {
-          "zones" : "tributeZone",
-          "owner" : "YOU",
-          "filter" : { },
-          "min" : {
-            "type" : "Fixed",
-            "value" : 1
-          },
-          "max" : {
-            "type" : "Fixed",
-            "value" : 1
-          },
-          "self" : "ANY",
-          "mode" : "SELF"
-        },
-        "reduce" : {
-          "type" : "Fixed",
-          "value" : 1000
-        },
-        "required" : true
-      }
-    } ],
-    "condition" : {
-      "type" : "Destroyed",
-      "owner" : "ENEMY",
-      "by" : "YOU",
-      "byCard" : {
-        "cardTypes" : [ "utility" ]
-      }
-    },
-    "sourceZone" : "tributeZone",
-    "limit" : "ONCE_PER_TURN_BETWEEN_COPIES"
-  }, {
-    "id" : "imperio-desolado:todos-los-turnos",
-    "moment" : "ON_EVENT",
-    "label" : "Todos Los Turnos",
-    "text" : "Si juegas una utilidad [brujería] o de coste 3 o mayor: puedes agotar esta carta para ganar 1 gema.",
-    "steps" : [ {
-      "type" : "IfPossible"
-    }, {
-      "type" : "Do",
-      "action" : {
-        "type" : "SetTapped",
-        "cards" : {
-          "zones" : "field",
-          "owner" : "YOU",
-          "filter" : { },
-          "min" : {
-            "type" : "Fixed",
-            "value" : 1
-          },
-          "max" : {
-            "type" : "Fixed",
-            "value" : 1
-          },
-          "self" : "ANY",
-          "mode" : "SELF"
-        },
-        "tapped" : true
-      }
-    }, {
-      "type" : "Do",
-      "action" : {
-        "type" : "Gems",
-        "count" : {
-          "type" : "Fixed",
-          "value" : 1
+  "effects" : [
+    {
+      "id" : "imperio-desolado:en-tributos",
+      "moment" : "ON_EVENT",
+      "label" : "En Tributos",
+      "text" : "(1) Si algún enemigo es destruido por tus utilidades: puedes jugar esta carta sin pagar su coste.",
+      "steps" : [
+        {
+          "type" : "Do",
+          "action" : {
+            "type" : "Play",
+            "cards" : {
+              "zones" : "tributeZone",
+              "owner" : "YOU",
+              "filter" : {},
+              "min" : {
+                "type" : "Fixed",
+                "value" : 1
+              },
+              "max" : {
+                "type" : "Fixed",
+                "value" : 1
+              },
+              "self" : "ANY",
+              "mode" : "SELF"
+            },
+            "reduce" : {
+              "type" : "Fixed",
+              "value" : 1000
+            },
+            "required" : true
+          }
         }
-      }
-    } ],
-    "condition" : {
-      "type" : "Happened",
-      "type" : "PLAY",
-      "actor" : "YOU",
-      "owner" : "ANY",
-      "filter" : {
-        "cardTypes" : [ "utility" ],
-        "anyOf" : [ {
-          "classes" : [ "brujería" ]
-        }, {
-          "minCost" : 3
-        } ]
-      }
+      ],
+      "condition" : {
+        "type" : "Destroyed",
+        "owner" : "ENEMY",
+        "by" : "YOU",
+        "byCard" : {
+          "cardTypes" : [
+            "utility"
+          ]
+        }
+      },
+      "sourceZone" : "tributeZone",
+      "limit" : "ONCE_PER_TURN_BETWEEN_COPIES"
     },
-    "sourceZone" : "field",
-    "limit" : "NONE"
-  } ]
+    {
+      "id" : "imperio-desolado:todos-los-turnos",
+      "moment" : "ON_EVENT",
+      "label" : "Todos Los Turnos",
+      "text" : "Si juegas una utilidad [brujería] o de coste 3 o mayor: puedes agotar esta carta para ganar 1 gema.",
+      "steps" : [
+        {
+          "type" : "IfPossible"
+        },
+        {
+          "type" : "Do",
+          "action" : {
+            "type" : "SetTapped",
+            "cards" : {
+              "zones" : "field",
+              "owner" : "YOU",
+              "filter" : {},
+              "min" : {
+                "type" : "Fixed",
+                "value" : 1
+              },
+              "max" : {
+                "type" : "Fixed",
+                "value" : 1
+              },
+              "self" : "ANY",
+              "mode" : "SELF"
+            },
+            "tapped" : true
+          }
+        },
+        {
+          "type" : "Do",
+          "action" : {
+            "type" : "Gems",
+            "count" : {
+              "type" : "Fixed",
+              "value" : 1
+            }
+          }
+        }
+      ],
+      "condition" : {
+        "type" : "Happened",
+        "eventType" : "PLAY",
+        "actor" : "YOU",
+        "owner" : "ANY",
+        "filter" : {
+          "cardTypes" : [
+            "utility"
+          ],
+          "anyOf" : [
+            {
+              "classes" : [
+                "brujería"
+              ]
+            },
+            {
+              "minCost" : 3
+            }
+          ]
+        }
+      },
+      "sourceZone" : "field",
+      "limit" : "NONE"
+    }
+  ]
 }

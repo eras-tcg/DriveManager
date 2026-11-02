@@ -51,7 +51,6 @@ final class AllySteps {
             case TributeAllyMaterial ignored -> !allyMaterials(player).isEmpty();
             case PickAllyWithHigherAlly ignored -> !withHigherAlly(player).isEmpty();
             case PickAllyWithMaterials pick -> allies(player).stream().anyMatch(c -> c.getMaterials().size() >= pick.count());
-            case TributeNamedFromDiscard t -> lastNamed(player.getDiscardPile(), t.name()) != null;
             case TributeAllyResources t -> allies(player).stream().anyMatch(a -> a.getResources().stream().anyMatch(t.filter()::matches));
             case AddResourceToHigherAlly a -> !higherAllyResources(player, a).isEmpty();
             case AttachSelfAsResourceToAlly ignored -> {
@@ -74,17 +73,6 @@ final class AllySteps {
                         valid, ids(valid), 1);
                 room.getPrompt().setMin(0);
                 return true;
-            }
-            case TributeNamedFromDiscard t -> {
-                CardSlot card = lastNamed(player.getDiscardPile(), t.name());
-                if (card == null) return false;
-                player.getDiscardPile().remove(card);
-                card.setFaceDown(false);
-                player.getTributeZone().add(card);
-                effect.setLastDone(true);
-                record(room, GameEvent.TRIBUTE, userId, card, "discardPile", "tributeZone", effect, Map.of("byCard", effect.getSourceInstanceId()),
-                        player.getUsername() + " tributa " + name(card) + " (" + effect.getSourceName() + ")");
-                return false;
             }
             case TributeAllyResources t -> {
                 CardSlot ally = effect.getSubjectId() == null ? null : find(player.getField(), effect.getSubjectId());

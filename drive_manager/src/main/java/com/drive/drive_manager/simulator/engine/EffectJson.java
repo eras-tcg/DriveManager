@@ -58,6 +58,7 @@ public final class EffectJson {
         JsonMapper.Builder builder = JsonMapper.builder()
                 .enable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
                 .disable(DeserializationFeature.FAIL_ON_NULL_FOR_PRIMITIVES)
+                .enable(tools.jackson.core.StreamReadFeature.STRICT_DUPLICATE_DETECTION)
                 .enable(DeserializationFeature.FAIL_ON_INVALID_SUBTYPE)
                 .changeDefaultPropertyInclusion(v -> v.withValueInclusion(JsonInclude.Include.NON_EMPTY))
                 // A primitive false or 0 is what it is when absent; an Integer's 0 is not (null is "not asked")

@@ -40,15 +40,8 @@ final class FlowSteps {
         String userId = player.getUserId();
 
         switch (step) {
-            case AtEndOfTurn later -> {
-                String subject = effect.getSummonedId() != null ? effect.getSummonedId() : effect.getSubjectId() != null ? effect.getSubjectId() : "";
-                room.getUsedThisTurn().add(DELAYED + userId + "|" + effect.getSourceInstanceId() + "|" + later.scriptId() + "|" + subject);
-                log(room, effect.getSourceName() + ": al final del turno se resolverá el resto de su efecto", null);
-                return false;
-            }
-            case IfChosenWasActiveAlly ifActive -> {
-                if (effect.getRepeatsDone() != ACTIVE_ALLY_CHOSEN) effect.setStepIndex(effect.getStepIndex() + ifActive.covers());
-                effect.setRepeatsDone(0);
+            case IfSaved ifSaved -> {
+                if (new EngineContext(room, effect).saved(ifSaved.name()).isEmpty()) effect.setStepIndex(effect.getStepIndex() + ifSaved.covers());
                 return false;
             }
             case IfCondition ifc -> {

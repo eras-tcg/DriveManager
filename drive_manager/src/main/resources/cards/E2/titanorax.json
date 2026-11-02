@@ -1,99 +1,118 @@
 {
   "name" : "titanorax",
-  "effects" : [ {
-    "id" : "titanorax:turno-oponente",
-    "moment" : "ON_EVENT",
-    "mandatory" : true,
-    "label" : "Turno Oponente",
-    "text" : "Si esta carta es agotada: elige hasta 3 enemigos de fuerza 5 o menos; destrúyelos.",
-    "cost" : [ {
-      "type" : "Do",
-      "action" : {
-        "type" : "Select",
-        "selector" : {
-          "zones" : "frontLine",
-          "owner" : "OPPONENT",
-          "filter" : {
-            "cardType" : "creature",
-            "maxStrength" : 5
-          },
-          "min" : {
-            "type" : "Fixed"
-          },
-          "max" : {
-            "type" : "Fixed",
-            "value" : 3
-          },
-          "self" : "ANY",
-          "mode" : "CHOOSE"
-        },
-        "target" : true
-      }
-    } ],
-    "steps" : [ {
-      "type" : "Do",
-      "action" : {
-        "type" : "Destroy",
-        "cards" : {
-          "zones" : "saved:targets",
-          "owner" : "YOU",
-          "filter" : { },
-          "min" : {
-            "type" : "Fixed"
-          },
-          "max" : {
-            "type" : "Fixed",
-            "value" : 2147483647
-          },
-          "self" : "ANY",
-          "mode" : "ALL"
+  "effects" : [
+    {
+      "id" : "titanorax:turno-oponente",
+      "moment" : "ON_EVENT",
+      "mandatory" : true,
+      "label" : "Turno Oponente",
+      "text" : "Si esta carta es agotada: elige hasta 3 enemigos de fuerza 5 o menos; destrúyelos.",
+      "cost" : [
+        {
+          "type" : "Do",
+          "action" : {
+            "type" : "Select",
+            "selector" : {
+              "zones" : "frontLine",
+              "owner" : "OPPONENT",
+              "filter" : {
+                "cardType" : "creature",
+                "maxStrength" : 5
+              },
+              "min" : {
+                "type" : "Fixed"
+              },
+              "max" : {
+                "type" : "Fixed",
+                "value" : 3
+              },
+              "self" : "ANY",
+              "mode" : "CHOOSE"
+            },
+            "target" : true
+          }
         }
-      }
-    } ],
-    "condition" : {
-      "type" : "All",
-      "all" : [ {
-        "type" : "Not",
-        "condition" : {
-          "type" : "GameIs",
-          "state" : "YOUR_TURN"
+      ],
+      "steps" : [
+        {
+          "type" : "Do",
+          "action" : {
+            "type" : "Destroy",
+            "cards" : {
+              "zones" : "saved:targets",
+              "owner" : "YOU",
+              "filter" : {},
+              "min" : {
+                "type" : "Fixed"
+              },
+              "max" : {
+                "type" : "Fixed",
+                "value" : 2147483647
+              },
+              "self" : "ANY",
+              "mode" : "ALL"
+            }
+          }
         }
-      }, {
-        "type" : "Any",
-        "any" : [ {
-          "type" : "Happened",
-          "type" : "TAP",
-          "actor" : "ANY",
-          "owner" : "ANY",
-          "thisCard" : true
-        }, {
-          "type" : "Happened",
-          "type" : "BLOCK",
-          "actor" : "ANY",
-          "owner" : "ANY",
-          "thisCard" : true
-        }, {
-          "type" : "Happened",
-          "type" : "ATTACK_DECLARED",
-          "actor" : "ANY",
-          "owner" : "ANY",
-          "thisCard" : true,
-          "data" : [ "exhausted=true" ]
-        } ]
-      } ]
-    },
-    "sourceZone" : "field",
-    "limit" : "NONE"
-  } ],
-  "inheritedReactions" : [ {
-    "type" : "Replacement",
-    "id" : "titanorax:hereda-todos-los-turnos",
-    "label" : "Todos Los Turnos",
-    "text" : "Heredado de Titanorax: cuando esta carta fuera a ser removida, en su lugar, puedes tributar todos los recursos [hydra] de esta carta.",
-    "limit" : "NONE",
-    "cost" : "TRIBUTE_RESOURCES",
-    "resourceFilter" : {
-      "classes" : [ "hydra" ]
+      ],
+      "condition" : {
+        "type" : "All",
+        "all" : [
+          {
+            "type" : "Not",
+            "condition" : {
+              "type" : "GameIs",
+              "state" : "YOUR_TURN"
+            }
+          },
+          {
+            "type" : "Any",
+            "any" : [
+              {
+                "type" : "Happened",
+                "eventType" : "TAP",
+                "actor" : "ANY",
+                "owner" : "ANY",
+                "thisCard" : true
+              },
+              {
+                "type" : "Happened",
+                "eventType" : "BLOCK",
+                "actor" : "ANY",
+                "owner" : "ANY",
+                "thisCard" : true
+              },
+              {
+                "type" : "Happened",
+                "eventType" : "ATTACK_DECLARED",
+                "actor" : "ANY",
+                "owner" : "ANY",
+                "thisCard" : true,
+                "data" : [
+                  "exhausted=true"
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "sourceZone" : "field",
+      "limit" : "NONE"
     }
-  } ]
+  ],
+  "inheritedReactions" : [
+    {
+      "type" : "Replacement",
+      "id" : "titanorax:hereda-todos-los-turnos",
+      "label" : "Todos Los Turnos",
+      "text" : "Heredado de Titanorax: cuando esta carta fuera a ser removida, en su lugar, puedes tributar todos los recursos [hydra] de esta carta.",
+      "limit" : "NONE",
+      "cost" : "TRIBUTE_RESOURCES",
+      "resourceFilter" : {
+        "classes" : [
+          "hydra"
+        ]
+      }
+    }
+  ]
 }

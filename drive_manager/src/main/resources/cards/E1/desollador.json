@@ -1,74 +1,91 @@
 {
   "name" : "desollador",
-  "effects" : [ {
-    "id" : "desollador:todos-los-turnos",
-    "moment" : "ON_EVENT",
-    "mandatory" : true,
-    "label" : "Todos Los Turnos",
-    "text" : "Una vez por turno: si esta carta es agotada y tienes 20 o más tributos Violeta o [espectro], reactiva esta carta.",
-    "steps" : [ {
-      "type" : "Do",
-      "action" : {
-        "type" : "SetTapped",
-        "cards" : {
-          "zones" : "field",
-          "owner" : "YOU",
-          "filter" : { },
-          "min" : {
-            "type" : "Fixed",
-            "value" : 1
-          },
-          "max" : {
-            "type" : "Fixed",
-            "value" : 1
-          },
-          "self" : "ANY",
-          "mode" : "SELF"
-        }
-      }
-    } ],
-    "condition" : {
-      "type" : "All",
-      "all" : [ {
-        "type" : "Any",
-        "any" : [ {
-          "type" : "Happened",
-          "type" : "TAP",
-          "actor" : "ANY",
-          "owner" : "ANY",
-          "thisCard" : true
-        }, {
-          "type" : "Happened",
-          "type" : "BLOCK",
-          "actor" : "ANY",
-          "owner" : "ANY",
-          "thisCard" : true
-        }, {
-          "type" : "Happened",
-          "type" : "ATTACK_DECLARED",
-          "actor" : "ANY",
-          "owner" : "ANY",
-          "thisCard" : true,
-          "data" : [ "exhausted=true" ]
-        } ]
-      }, {
-        "type" : "Compare",
-        "left" : {
-          "type" : "InZone",
-          "zone" : "tributeZone",
-          "filter" : {
-            "colors" : [ "P" ],
-            "classes" : [ "espectro" ]
+  "effects" : [
+    {
+      "id" : "desollador:todos-los-turnos",
+      "moment" : "ON_EVENT",
+      "mandatory" : true,
+      "label" : "Todos Los Turnos",
+      "text" : "Una vez por turno: si esta carta es agotada y tienes 20 o más tributos Violeta o [espectro], reactiva esta carta.",
+      "steps" : [
+        {
+          "type" : "Do",
+          "action" : {
+            "type" : "SetTapped",
+            "cards" : {
+              "zones" : "field",
+              "owner" : "YOU",
+              "filter" : {},
+              "min" : {
+                "type" : "Fixed",
+                "value" : 1
+              },
+              "max" : {
+                "type" : "Fixed",
+                "value" : 1
+              },
+              "self" : "ANY",
+              "mode" : "SELF"
+            }
           }
-        },
-        "op" : "AT_LEAST",
-        "right" : {
-          "type" : "Fixed",
-          "value" : 20
         }
-      } ]
-    },
-    "sourceZone" : "field",
-    "limit" : "ONCE_PER_TURN"
-  } ]
+      ],
+      "condition" : {
+        "type" : "All",
+        "all" : [
+          {
+            "type" : "Any",
+            "any" : [
+              {
+                "type" : "Happened",
+                "eventType" : "TAP",
+                "actor" : "ANY",
+                "owner" : "ANY",
+                "thisCard" : true
+              },
+              {
+                "type" : "Happened",
+                "eventType" : "BLOCK",
+                "actor" : "ANY",
+                "owner" : "ANY",
+                "thisCard" : true
+              },
+              {
+                "type" : "Happened",
+                "eventType" : "ATTACK_DECLARED",
+                "actor" : "ANY",
+                "owner" : "ANY",
+                "thisCard" : true,
+                "data" : [
+                  "exhausted=true"
+                ]
+              }
+            ]
+          },
+          {
+            "type" : "Compare",
+            "left" : {
+              "type" : "InZone",
+              "zone" : "tributeZone",
+              "filter" : {
+                "colors" : [
+                  "P"
+                ],
+                "classes" : [
+                  "espectro"
+                ]
+              }
+            },
+            "op" : "AT_LEAST",
+            "right" : {
+              "type" : "Fixed",
+              "value" : 20
+            }
+          }
+        ]
+      },
+      "sourceZone" : "field",
+      "limit" : "ONCE_PER_TURN"
+    }
+  ]
 }

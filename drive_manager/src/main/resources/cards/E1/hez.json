@@ -1,86 +1,93 @@
 {
   "name" : "hez",
-  "effects" : [ {
-    "id" : "hez:inicio-del-turno",
-    "moment" : "ON_EVENT",
-    "label" : "Todos Los Turnos",
-    "text" : "Al inicio del turno: puedes tributar 2 materiales de esta carta para elegir todos los enemigos en la línea frontal; reduce en 4 su fuerza hasta el final del turno.",
-    "cost" : [ {
-      "type" : "Do",
-      "action" : {
-        "type" : "Move",
-        "cards" : {
-          "zones" : "materials",
-          "owner" : "YOU",
-          "filter" : { },
-          "min" : {
-            "type" : "Fixed",
-            "value" : 2
-          },
-          "max" : {
-            "type" : "Fixed",
-            "value" : 2
-          },
-          "self" : "ANY",
-          "mode" : "CHOOSE"
+  "effects" : [
+    {
+      "id" : "hez:inicio-del-turno",
+      "moment" : "ON_EVENT",
+      "label" : "Todos Los Turnos",
+      "text" : "Al inicio del turno: puedes tributar 2 materiales de esta carta para elegir todos los enemigos en la línea frontal; reduce en 4 su fuerza hasta el final del turno.",
+      "cost" : [
+        {
+          "type" : "Do",
+          "action" : {
+            "type" : "Move",
+            "cards" : {
+              "zones" : "materials",
+              "owner" : "YOU",
+              "filter" : {},
+              "min" : {
+                "type" : "Fixed",
+                "value" : 2
+              },
+              "max" : {
+                "type" : "Fixed",
+                "value" : 2
+              },
+              "self" : "ANY",
+              "mode" : "CHOOSE"
+            },
+            "to" : "tributeZone"
+          }
         },
-        "to" : "tributeZone"
-      }
-    }, {
-      "type" : "Do",
-      "action" : {
-        "type" : "Select",
-        "selector" : {
-          "zones" : "frontLine",
-          "owner" : "OPPONENT",
-          "filter" : {
-            "cardType" : "creature"
-          },
-          "min" : {
-            "type" : "Fixed"
-          },
-          "max" : {
-            "type" : "Fixed",
-            "value" : 2147483647
-          },
-          "self" : "ANY",
-          "mode" : "ALL"
-        },
-        "target" : true
-      }
-    } ],
-    "steps" : [ {
-      "type" : "Do",
-      "action" : {
-        "type" : "Modify",
-        "cards" : {
-          "zones" : "saved:targets",
-          "owner" : "YOU",
-          "filter" : { },
-          "min" : {
-            "type" : "Fixed"
-          },
-          "max" : {
-            "type" : "Fixed",
-            "value" : 2147483647
-          },
-          "self" : "ANY",
-          "mode" : "ALL"
-        },
-        "strength" : {
-          "type" : "Fixed",
-          "value" : -4
-        },
-        "until" : "TURN"
-      }
-    } ],
-    "condition" : {
-      "type" : "Happened",
-      "type" : "TURN_START",
-      "actor" : "ANY",
-      "owner" : "ANY"
-    },
-    "sourceZone" : "field",
-    "limit" : "NONE"
-  } ]
+        {
+          "type" : "Do",
+          "action" : {
+            "type" : "Select",
+            "selector" : {
+              "zones" : "frontLine",
+              "owner" : "OPPONENT",
+              "filter" : {
+                "cardType" : "creature"
+              },
+              "min" : {
+                "type" : "Fixed"
+              },
+              "max" : {
+                "type" : "Fixed",
+                "value" : 2147483647
+              },
+              "self" : "ANY",
+              "mode" : "ALL"
+            },
+            "target" : true
+          }
+        }
+      ],
+      "steps" : [
+        {
+          "type" : "Do",
+          "action" : {
+            "type" : "Modify",
+            "cards" : {
+              "zones" : "saved:targets",
+              "owner" : "YOU",
+              "filter" : {},
+              "min" : {
+                "type" : "Fixed"
+              },
+              "max" : {
+                "type" : "Fixed",
+                "value" : 2147483647
+              },
+              "self" : "ANY",
+              "mode" : "ALL"
+            },
+            "strength" : {
+              "type" : "Fixed",
+              "value" : -4
+            },
+            "until" : "TURN"
+          }
+        }
+      ],
+      "condition" : {
+        "type" : "Happened",
+        "eventType" : "TURN_START",
+        "actor" : "ANY",
+        "owner" : "ANY"
+      },
+      "sourceZone" : "field",
+      "limit" : "NONE"
+    }
+  ]
 }

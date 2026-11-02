@@ -43,6 +43,7 @@ public final class Selection {
             }
             found.add(card);
         }
+        if (selector.mode() == Selector.Mode.NEWEST) java.util.Collections.reverse(found);
         return found;
     }
 

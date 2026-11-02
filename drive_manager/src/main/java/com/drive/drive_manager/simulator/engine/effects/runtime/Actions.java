@@ -1,5 +1,7 @@
 package com.drive.drive_manager.simulator.engine.effects.runtime;
 
+import com.drive.drive_manager.simulator.engine.effects.actions.AtEndOfTurnHandler;
+import com.drive.drive_manager.simulator.engine.effects.actions.AttackHandler;
 import com.drive.drive_manager.simulator.engine.effects.actions.DamageHandler;
 import com.drive.drive_manager.simulator.engine.effects.actions.DestroyHandler;
 import com.drive.drive_manager.simulator.engine.effects.actions.DrawHandler;
@@ -23,6 +25,8 @@ public final class Actions {
 
     private static final Map<Class<? extends Action>, ActionHandler<?>> HANDLERS = Map.ofEntries(
             Map.entry(Action.Select.class, new SelectHandler()),
+            Map.entry(Action.Attack.class, new AttackHandler()),
+            Map.entry(Action.AtEndOfTurn.class, new AtEndOfTurnHandler()),
             Map.entry(Action.Move.class, new MoveHandler()),
             Map.entry(Action.Draw.class, new DrawHandler()),
             Map.entry(Action.Gems.class, new GemsHandler()),

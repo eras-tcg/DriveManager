@@ -1,179 +1,196 @@
 {
   "name" : "remnis",
-  "effects" : [ {
-    "id" : "remnis:en-tributos",
-    "moment" : "ON_EVENT",
-    "label" : "En Tributos",
-    "text" : "(1) Al inicio del turno, si el oponente no controla criaturas en su línea frontal: puedes añadir esta carta como material a 1 aliado Azul. Si lo haces: dicho aliado puede invocar por Materialización 1 criatura en tu mano o tributos reduciendo el coste especial en 1.",
-    "steps" : [ {
-      "type" : "Do",
-      "action" : {
-        "type" : "Select",
-        "selector" : {
-          "zones" : "pickableAllies",
-          "owner" : "YOU",
-          "filter" : {
-            "colors" : [ "B" ],
-            "cardType" : "creature"
-          },
-          "min" : {
-            "type" : "Fixed",
-            "value" : 1
-          },
-          "max" : {
-            "type" : "Fixed",
-            "value" : 1
-          },
-          "self" : "ANY",
-          "mode" : "CHOOSE"
-        },
-        "saveAs" : "subject",
-        "label" : "Elegido",
-        "endsIfNone" : true
-      }
-    }, {
-      "type" : "Do",
-      "action" : {
-        "type" : "Move",
-        "cards" : {
-          "zones" : "field,tributeZone",
-          "owner" : "YOU",
-          "filter" : { },
-          "min" : {
-            "type" : "Fixed",
-            "value" : 1
-          },
-          "max" : {
-            "type" : "Fixed",
-            "value" : 1
-          },
-          "self" : "ANY",
-          "mode" : "SELF"
-        },
-        "to" : "materials:subject"
-      }
-    }, {
-      "type" : "IfDone",
-      "covers" : 1
-    }, {
-      "type" : "Do",
-      "action" : {
-        "type" : "Sequence",
-        "actions" : [ {
-          "type" : "Select",
-          "selector" : {
-            "zones" : "hand,tributeZone",
-            "owner" : "YOU",
-            "filter" : { },
-            "min" : {
-              "type" : "Fixed"
-            },
-            "max" : {
-              "type" : "Fixed",
-              "value" : 1
-            },
-            "self" : "ANY",
-            "mode" : "CHOOSE",
-            "special" : {
-              "rule" : {
-                "kind" : "materialization",
-                "zone" : "hand,tributeZone",
-                "reduce" : 1,
-                "summoner" : "subject",
-                "filter" : { }
+  "effects" : [
+    {
+      "id" : "remnis:en-tributos",
+      "moment" : "ON_EVENT",
+      "label" : "En Tributos",
+      "text" : "(1) Al inicio del turno, si el oponente no controla criaturas en su línea frontal: puedes añadir esta carta como material a 1 aliado Azul. Si lo haces: dicho aliado puede invocar por Materialización 1 criatura en tu mano o tributos reduciendo el coste especial en 1.",
+      "steps" : [
+        {
+          "type" : "Do",
+          "action" : {
+            "type" : "Select",
+            "selector" : {
+              "zones" : "pickableAllies",
+              "owner" : "YOU",
+              "filter" : {
+                "colors" : [
+                  "B"
+                ],
+                "cardType" : "creature"
               },
-              "stage" : "CARD"
-            }
-          },
-          "saveAs" : "specialCard",
-          "label" : "Invocar"
-        }, {
-          "type" : "Select",
-          "selector" : {
-            "zones" : "hand,tributeZone",
-            "owner" : "YOU",
-            "filter" : { },
-            "min" : {
-              "type" : "Fixed"
-            },
-            "max" : {
-              "type" : "Fixed",
-              "value" : 1
-            },
-            "self" : "ANY",
-            "mode" : "CHOOSE",
-            "special" : {
-              "rule" : {
-                "kind" : "materialization",
-                "zone" : "hand,tributeZone",
-                "reduce" : 1,
-                "summoner" : "subject",
-                "filter" : { }
+              "min" : {
+                "type" : "Fixed",
+                "value" : 1
               },
-              "stage" : "SUMMONER"
-            }
-          },
-          "saveAs" : "specialSummoner",
-          "label" : "Invocador"
-        }, {
-          "type" : "Select",
-          "selector" : {
-            "zones" : "hand,tributeZone",
-            "owner" : "YOU",
-            "filter" : { },
-            "min" : {
-              "type" : "Fixed"
-            },
-            "max" : {
-              "type" : "Fixed",
-              "value" : 1
-            },
-            "self" : "ANY",
-            "mode" : "CHOOSE",
-            "special" : {
-              "rule" : {
-                "kind" : "materialization",
-                "zone" : "hand,tributeZone",
-                "reduce" : 1,
-                "summoner" : "subject",
-                "filter" : { }
+              "max" : {
+                "type" : "Fixed",
+                "value" : 1
               },
-              "stage" : "MATERIAL"
-            }
-          },
-          "saveAs" : "specialMaterials",
-          "label" : "Material"
-        }, {
-          "type" : "SummonSpecial",
-          "rule" : {
-            "kind" : "materialization",
-            "zone" : "hand,tributeZone",
-            "reduce" : 1,
-            "summoner" : "subject",
-            "filter" : { }
+              "self" : "ANY",
+              "mode" : "CHOOSE"
+            },
+            "saveAs" : "subject",
+            "label" : "Elegido",
+            "endsIfNone" : true
           }
-        } ]
-      }
-    } ],
-    "condition" : {
-      "type" : "All",
-      "all" : [ {
-        "type" : "Happened",
-        "type" : "TURN_START",
-        "actor" : "ANY",
-        "owner" : "ANY"
-      }, {
-        "type" : "Compare",
-        "left" : {
-          "type" : "EnemiesInFrontLine"
         },
-        "op" : "EQUAL",
-        "right" : {
-          "type" : "Fixed"
+        {
+          "type" : "Do",
+          "action" : {
+            "type" : "Move",
+            "cards" : {
+              "zones" : "field,tributeZone",
+              "owner" : "YOU",
+              "filter" : {},
+              "min" : {
+                "type" : "Fixed",
+                "value" : 1
+              },
+              "max" : {
+                "type" : "Fixed",
+                "value" : 1
+              },
+              "self" : "ANY",
+              "mode" : "SELF"
+            },
+            "to" : "materials:subject"
+          }
+        },
+        {
+          "type" : "IfDone",
+          "covers" : 1
+        },
+        {
+          "type" : "Do",
+          "action" : {
+            "type" : "Sequence",
+            "actions" : [
+              {
+                "type" : "Select",
+                "selector" : {
+                  "zones" : "hand,tributeZone",
+                  "owner" : "YOU",
+                  "filter" : {},
+                  "min" : {
+                    "type" : "Fixed"
+                  },
+                  "max" : {
+                    "type" : "Fixed",
+                    "value" : 1
+                  },
+                  "self" : "ANY",
+                  "mode" : "CHOOSE",
+                  "special" : {
+                    "rule" : {
+                      "kind" : "materialization",
+                      "zone" : "hand,tributeZone",
+                      "reduce" : 1,
+                      "summoner" : "subject",
+                      "filter" : {}
+                    },
+                    "stage" : "CARD"
+                  }
+                },
+                "saveAs" : "specialCard",
+                "label" : "Invocar"
+              },
+              {
+                "type" : "Select",
+                "selector" : {
+                  "zones" : "hand,tributeZone",
+                  "owner" : "YOU",
+                  "filter" : {},
+                  "min" : {
+                    "type" : "Fixed"
+                  },
+                  "max" : {
+                    "type" : "Fixed",
+                    "value" : 1
+                  },
+                  "self" : "ANY",
+                  "mode" : "CHOOSE",
+                  "special" : {
+                    "rule" : {
+                      "kind" : "materialization",
+                      "zone" : "hand,tributeZone",
+                      "reduce" : 1,
+                      "summoner" : "subject",
+                      "filter" : {}
+                    },
+                    "stage" : "SUMMONER"
+                  }
+                },
+                "saveAs" : "specialSummoner",
+                "label" : "Invocador"
+              },
+              {
+                "type" : "Select",
+                "selector" : {
+                  "zones" : "hand,tributeZone",
+                  "owner" : "YOU",
+                  "filter" : {},
+                  "min" : {
+                    "type" : "Fixed"
+                  },
+                  "max" : {
+                    "type" : "Fixed",
+                    "value" : 1
+                  },
+                  "self" : "ANY",
+                  "mode" : "CHOOSE",
+                  "special" : {
+                    "rule" : {
+                      "kind" : "materialization",
+                      "zone" : "hand,tributeZone",
+                      "reduce" : 1,
+                      "summoner" : "subject",
+                      "filter" : {}
+                    },
+                    "stage" : "MATERIAL"
+                  }
+                },
+                "saveAs" : "specialMaterials",
+                "label" : "Material"
+              },
+              {
+                "type" : "SummonSpecial",
+                "rule" : {
+                  "kind" : "materialization",
+                  "zone" : "hand,tributeZone",
+                  "reduce" : 1,
+                  "summoner" : "subject",
+                  "filter" : {}
+                }
+              }
+            ]
+          }
         }
-      } ]
-    },
-    "sourceZone" : "tributeZone",
-    "limit" : "ONCE_PER_TURN_BETWEEN_COPIES"
-  } ]
+      ],
+      "condition" : {
+        "type" : "All",
+        "all" : [
+          {
+            "type" : "Happened",
+            "eventType" : "TURN_START",
+            "actor" : "ANY",
+            "owner" : "ANY"
+          },
+          {
+            "type" : "Compare",
+            "left" : {
+              "type" : "EnemiesInFrontLine"
+            },
+            "op" : "EQUAL",
+            "right" : {
+              "type" : "Fixed"
+            }
+          }
+        ]
+      },
+      "sourceZone" : "tributeZone",
+      "limit" : "ONCE_PER_TURN_BETWEEN_COPIES"
+    }
+  ]
 }

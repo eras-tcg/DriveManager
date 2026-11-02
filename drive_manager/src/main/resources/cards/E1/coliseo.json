@@ -1,84 +1,96 @@
 {
   "name" : "coliseo",
-  "effects" : [ {
-    "id" : "coliseo:turno-aliado",
-    "moment" : "ON_EVENT",
-    "mandatory" : true,
-    "label" : "Turno Aliado",
-    "text" : "Al inicio del turno, si controlas 1 o menos aliados: gana 1 gema.",
-    "steps" : [ {
-      "type" : "Do",
-      "action" : {
-        "type" : "Gems",
-        "count" : {
-          "type" : "Fixed",
-          "value" : 1
+  "effects" : [
+    {
+      "id" : "coliseo:turno-aliado",
+      "moment" : "ON_EVENT",
+      "mandatory" : true,
+      "label" : "Turno Aliado",
+      "text" : "Al inicio del turno, si controlas 1 o menos aliados: gana 1 gema.",
+      "steps" : [
+        {
+          "type" : "Do",
+          "action" : {
+            "type" : "Gems",
+            "count" : {
+              "type" : "Fixed",
+              "value" : 1
+            }
+          }
         }
-      }
-    } ],
-    "condition" : {
-      "type" : "All",
-      "all" : [ {
-        "type" : "Happened",
-        "type" : "TURN_START",
-        "actor" : "YOU",
-        "owner" : "ANY"
-      }, {
-        "type" : "Compare",
-        "left" : {
-          "type" : "OnField",
-          "filter" : {
-            "cardType" : "creature"
+      ],
+      "condition" : {
+        "type" : "All",
+        "all" : [
+          {
+            "type" : "Happened",
+            "eventType" : "TURN_START",
+            "actor" : "YOU",
+            "owner" : "ANY"
+          },
+          {
+            "type" : "Compare",
+            "left" : {
+              "type" : "OnField",
+              "filter" : {
+                "cardType" : "creature"
+              }
+            },
+            "op" : "AT_MOST",
+            "right" : {
+              "type" : "Fixed",
+              "value" : 1
+            }
+          }
+        ]
+      },
+      "sourceZone" : "field",
+      "allyTurn" : true,
+      "limit" : "NONE"
+    },
+    {
+      "id" : "coliseo:todos-los-turnos",
+      "moment" : "ON_EVENT",
+      "label" : "Todos Los Turnos",
+      "text" : "Si algún aliado es invocado por efecto: puedes agotar esta carta para colocar bocabajo una de tus vidas bocarriba.",
+      "steps" : [
+        {
+          "type" : "IfPossible"
+        },
+        {
+          "type" : "Do",
+          "action" : {
+            "type" : "SetTapped",
+            "cards" : {
+              "zones" : "field",
+              "owner" : "YOU",
+              "filter" : {},
+              "min" : {
+                "type" : "Fixed",
+                "value" : 1
+              },
+              "max" : {
+                "type" : "Fixed",
+                "value" : 1
+              },
+              "self" : "ANY",
+              "mode" : "SELF"
+            },
+            "tapped" : true
           }
         },
-        "op" : "AT_MOST",
-        "right" : {
-          "type" : "Fixed",
-          "value" : 1
+        {
+          "type" : "LivesFaceDown"
         }
-      } ]
-    },
-    "sourceZone" : "field",
-    "allyTurn" : true,
-    "limit" : "NONE"
-  }, {
-    "id" : "coliseo:todos-los-turnos",
-    "moment" : "ON_EVENT",
-    "label" : "Todos Los Turnos",
-    "text" : "Si algún aliado es invocado por efecto: puedes agotar esta carta para colocar bocabajo una de tus vidas bocarriba.",
-    "steps" : [ {
-      "type" : "IfPossible"
-    }, {
-      "type" : "Do",
-      "action" : {
-        "type" : "SetTapped",
-        "cards" : {
-          "zones" : "field",
-          "owner" : "YOU",
-          "filter" : { },
-          "min" : {
-            "type" : "Fixed",
-            "value" : 1
-          },
-          "max" : {
-            "type" : "Fixed",
-            "value" : 1
-          },
-          "self" : "ANY",
-          "mode" : "SELF"
-        },
-        "tapped" : true
-      }
-    }, {
-      "type" : "LivesFaceDown"
-    } ],
-    "condition" : {
-      "type" : "Summoned",
-      "side" : "YOU",
-      "filter" : { },
-      "how" : "effect"
-    },
-    "sourceZone" : "field",
-    "limit" : "NONE"
-  } ]
+      ],
+      "condition" : {
+        "type" : "Summoned",
+        "side" : "YOU",
+        "filter" : {},
+        "how" : "effect"
+      },
+      "sourceZone" : "field",
+      "limit" : "NONE"
+    }
+  ]
 }

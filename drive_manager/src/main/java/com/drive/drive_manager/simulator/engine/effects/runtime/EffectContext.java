@@ -143,6 +143,18 @@ public interface EffectContext {
     /** The rest of the effect does nothing. */
     void endEffect();
 
+    /** The looked cards' choice also says top or bottom of the deck: a card picked is the top. */
+    void asksTopOrBottom();
+
+    /** "declara ataque". Returns true when it asks what to attack. */
+    boolean attack(boolean opponentOnly);
+
+    /** What to attack; none: the opponent. */
+    void attackChosen(List<String> picks);
+
+    /** The rest of the effect runs at the end of this turn: {@code effect} of this card. */
+    void atEndOfTurn(String effect);
+
     /** How many cards the last action acted on. */
     void counted(int count);
 

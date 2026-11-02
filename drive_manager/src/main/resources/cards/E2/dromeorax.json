@@ -1,29 +1,56 @@
 {
   "name" : "dromeorax",
-  "inherited" : [ {
-    "id" : "dromeorax:hereda-en-destruccion",
-    "moment" : "ON_DESTROY",
-    "label" : "En Destrucción por efecto aliado",
-    "text" : "Heredado de Dromeorax: puedes tributar esta carta; gana 1 gema.",
-    "cost" : [ {
-      "type" : "TributeNamedFromDiscard",
-      "name" : "Dromeorax"
-    } ],
-    "steps" : [ {
-      "type" : "Do",
-      "action" : {
-        "type" : "Gems",
-        "count" : {
-          "type" : "Fixed",
-          "value" : 1
+  "inherited" : [
+    {
+      "id" : "dromeorax:hereda-en-destruccion",
+      "moment" : "ON_DESTROY",
+      "label" : "En Destrucción por efecto aliado",
+      "text" : "Heredado de Dromeorax: puedes tributar esta carta; gana 1 gema.",
+      "cost" : [
+        {
+          "type" : "Do",
+          "action" : {
+            "type" : "Move",
+            "cards" : {
+              "zones" : "discardPile",
+              "owner" : "YOU",
+              "filter" : {
+                "name" : "Dromeorax"
+              },
+              "min" : {
+                "type" : "Fixed",
+                "value" : 1
+              },
+              "max" : {
+                "type" : "Fixed",
+                "value" : 1
+              },
+              "self" : "ANY",
+              "mode" : "NEWEST"
+            },
+            "to" : "tributeZone",
+            "required" : true
+          }
         }
-      }
-    } ],
-    "condition" : {
-      "type" : "ByEffect",
-      "by" : "YOU"
-    },
-    "sourceZone" : "field",
-    "limit" : "NONE"
-  } ]
+      ],
+      "steps" : [
+        {
+          "type" : "Do",
+          "action" : {
+            "type" : "Gems",
+            "count" : {
+              "type" : "Fixed",
+              "value" : 1
+            }
+          }
+        }
+      ],
+      "condition" : {
+        "type" : "ByEffect",
+        "by" : "YOU"
+      },
+      "sourceZone" : "field",
+      "limit" : "NONE"
+    }
+  ]
 }

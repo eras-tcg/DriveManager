@@ -1,42 +1,46 @@
 {
   "name" : "heroe de primera línea",
-  "effects" : [ {
-    "id" : "heroe-primera-linea:final-del-turno",
-    "moment" : "ON_EVENT",
-    "mandatory" : true,
-    "label" : "Turno Aliado",
-    "text" : "Al final del turno: reactiva hasta 3 aliados con \"Primera Línea\" en su nombre.",
-    "steps" : [ {
-      "type" : "Do",
-      "action" : {
-        "type" : "SetTapped",
-        "cards" : {
-          "zones" : "allies",
-          "owner" : "YOU",
-          "filter" : {
-            "cardType" : "creature",
-            "nameContains" : "Primera Línea"
-          },
-          "min" : {
-            "type" : "Fixed"
-          },
-          "max" : {
-            "type" : "Fixed",
-            "value" : 3
-          },
-          "self" : "ANY",
-          "mode" : "CHOOSE"
+  "effects" : [
+    {
+      "id" : "heroe-primera-linea:final-del-turno",
+      "moment" : "ON_EVENT",
+      "mandatory" : true,
+      "label" : "Turno Aliado",
+      "text" : "Al final del turno: reactiva hasta 3 aliados con \"Primera Línea\" en su nombre.",
+      "steps" : [
+        {
+          "type" : "Do",
+          "action" : {
+            "type" : "SetTapped",
+            "cards" : {
+              "zones" : "allies",
+              "owner" : "YOU",
+              "filter" : {
+                "cardType" : "creature",
+                "nameContains" : "Primera Línea"
+              },
+              "min" : {
+                "type" : "Fixed"
+              },
+              "max" : {
+                "type" : "Fixed",
+                "value" : 3
+              },
+              "self" : "ANY",
+              "mode" : "CHOOSE"
+            }
+          }
         }
-      }
-    } ],
-    "condition" : {
-      "type" : "Happened",
-      "type" : "TURN_END",
-      "actor" : "YOU",
-      "owner" : "ANY"
-    },
-    "sourceZone" : "field",
-    "allyTurn" : true,
-    "limit" : "NONE"
-  } ]
+      ],
+      "condition" : {
+        "type" : "Happened",
+        "eventType" : "TURN_END",
+        "actor" : "YOU",
+        "owner" : "ANY"
+      },
+      "sourceZone" : "field",
+      "allyTurn" : true,
+      "limit" : "NONE"
+    }
+  ]
 }

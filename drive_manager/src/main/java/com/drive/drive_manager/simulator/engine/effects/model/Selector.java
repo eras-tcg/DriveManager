@@ -94,6 +94,8 @@ public record Selector(String zones, Owner owner, CardFilter filter, Amount min,
     public enum Mode {
         /** The player picks. */
         CHOOSE,
+        /** The one that reached the zone last: "esta carta", said by what it gave as a Recurso, just discarded. */
+        NEWEST,
         /** The first ones of the zones, in their order ("del tope de tu mazo"). */
         TOP,
         /** All that match. */

@@ -424,6 +424,7 @@ public final class Chain {
             case EffectStep.IfTributed s -> s.covers();
             case EffectStep.IfCondition s -> s.covers();
             case EffectStep.IfChosenGone s -> s.covers();
+            case EffectStep.IfSaved s -> s.covers();
             case EffectStep.MayDo s -> s.covers();
             default -> 0;
         };

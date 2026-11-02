@@ -124,14 +124,6 @@ public sealed interface EffectStep {
     /** "Si ningún … fue …:": the next {@code covers} steps only if the last step did nothing. */
     record IfNotDone(int covers) implements EffectStep {}
 
-    /**
-     * "declara ataque": this card, or the ally chosen by {@link PickAlly}, attacks without being exhausted
-     * (rule 11.9.3.1). Its controller picks an exhausted enemy creature, or none to attack the opponent.
-     */
-    record DeclareAttack(boolean opponentOnly) implements EffectStep {
-        public DeclareAttack() { this(false); }
-    }
-
     /** "tributa 1 material de 1 aliado". */
     record TributeAllyMaterial() implements NeedsTarget {}
 
@@ -154,8 +146,8 @@ public sealed interface EffectStep {
      */
     record MayDo(String question, int covers) implements EffectStep {}
 
-    /** "envíalas al tope o al fondo de tu mazo" / "devuélvelas al tope o envíalas al fondo": the looked cards, all together. */
-    record LookedToTopOrBottom() implements EffectStep {}
+    /** "Si era un aliado activo:": the next {@code covers} steps only if something is saved under that name. */
+    record IfSaved(String name, int covers) implements EffectStep {}
 
     /** "Si [condición sobre la mesa]:": the next {@code covers} steps only if it holds now. */
     record IfCondition(Condition condition, int covers) implements EffectStep {}
@@ -206,12 +198,6 @@ public sealed interface EffectStep {
     /** "revela 1 [filtro] y 1 [filtro] de tu mano": one different card for each filter (a cost); the cards stay in the hand. */
     record RevealFromHand(java.util.List<CardFilter> filters) implements NeedsTarget {}
 
-    /**
-     * "al final del turno: …": what follows is another effect of the card ({@code scriptId}, moment {@code DELAYED}) that triggers at the
-     * end of this turn, for the same subject (the creature this effect summoned, or the chosen ally).
-     */
-    record AtEndOfTurn(String scriptId) implements EffectStep {}
-
     /** "coloca bocabajo una de tus vidas bocarriba" ({@code all}: every one of them, "Luego: baraja tus vidas" with {@code shuffle}). */
     record LivesFaceDown(boolean all, boolean shuffle) implements EffectStep {}
 
@@ -238,12 +224,6 @@ public sealed interface EffectStep {
 
     /** "sube a tu mano 1 aliado del mismo nivel [que la carta colocada / invocada]": {@code lastTributed} is that ally. */
     record ReturnAllyOfSummonedLevel() implements EffectStep {}
-
-    /** "elige 1 criatura en el campo con fuerza menor a esta carta" (a cost); "Si era un aliado activo" reads it. */
-    record ChooseWeakerThanSelf(boolean upTo) implements NeedsTarget {}
-
-    /** "Si era un aliado activo:": the next {@code covers} steps only if the chosen creature was an active ally when chosen. */
-    record IfChosenWasActiveAlly(int covers) implements EffectStep {}
 
     /** "destruye el tope de las vidas oponentes". */
     record DestroyTopLife() implements EffectStep {}
@@ -283,9 +263,6 @@ public sealed interface EffectStep {
 
     /** "al final del ataque súbelo a tu mano con todos sus materiales": the subject, when the attack going on ends. */
     record ReturnSubjectAtAttackEnd() implements EffectStep {}
-
-    /** "puedes tributar esta carta" said by an inherited effect when its holder left the field: the Recurso, now in the Descarte. */
-    record TributeNamedFromDiscard(String name) implements NeedsTarget {}
 
     /** "esta carta [agotada] declara bloqueo" (it blocks the attack going on, even exhausted). */
     record DeclareBlockSelf() implements EffectStep {}

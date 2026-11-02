@@ -1,100 +1,114 @@
 {
   "name" : "fervor de guerra",
-  "effects" : [ {
-    "id" : "fervor-de-guerra:en-mano",
-    "moment" : "ON_EVENT",
-    "label" : "En Mano",
-    "text" : "Al entrar al paso de bloqueo: puedes jugar esta carta pagando su coste.",
-    "steps" : [ {
-      "type" : "Do",
-      "action" : {
-        "type" : "Play",
-        "cards" : {
-          "zones" : "hand",
-          "owner" : "YOU",
-          "filter" : { },
-          "min" : {
-            "type" : "Fixed",
-            "value" : 1
-          },
-          "max" : {
-            "type" : "Fixed",
-            "value" : 1
-          },
-          "self" : "ANY",
-          "mode" : "SELF"
-        },
-        "reduce" : {
-          "type" : "Fixed"
-        },
-        "required" : true
-      }
-    } ],
-    "condition" : {
-      "type" : "Happened",
-      "type" : "COMBAT_STEP",
-      "actor" : "ANY",
-      "owner" : "ANY",
-      "data" : [ "step=BLOCK", "moment=ENTER" ]
-    },
-    "sourceZone" : "hand",
-    "limit" : "NONE"
-  }, {
-    "id" : "fervor-de-guerra:en-juego",
-    "moment" : "ON_PLAY",
-    "mandatory" : true,
-    "label" : "En Juego",
-    "text" : "(1) Elige 1 aliado Rojo nivel 3 o menor; reactívalo.",
-    "cost" : [ {
-      "type" : "Do",
-      "action" : {
-        "type" : "Select",
-        "selector" : {
-          "zones" : "pickableAllies",
-          "owner" : "YOU",
-          "filter" : {
-            "colors" : [ "R" ],
-            "cardType" : "creature",
-            "maxLevel" : 3
-          },
-          "min" : {
-            "type" : "Fixed",
-            "value" : 1
-          },
-          "max" : {
-            "type" : "Fixed",
-            "value" : 1
-          },
-          "self" : "ANY",
-          "mode" : "CHOOSE"
-        },
-        "target" : true,
-        "saveAs" : "subject",
-        "label" : "Elegido",
-        "endsIfNone" : true
-      }
-    } ],
-    "steps" : [ {
-      "type" : "Do",
-      "action" : {
-        "type" : "SetTapped",
-        "cards" : {
-          "zones" : "subjectOrSelf",
-          "owner" : "YOU",
-          "filter" : { },
-          "min" : {
-            "type" : "Fixed"
-          },
-          "max" : {
-            "type" : "Fixed",
-            "value" : 2147483647
-          },
-          "self" : "ANY",
-          "mode" : "ALL"
+  "effects" : [
+    {
+      "id" : "fervor-de-guerra:en-mano",
+      "moment" : "ON_EVENT",
+      "label" : "En Mano",
+      "text" : "Al entrar al paso de bloqueo: puedes jugar esta carta pagando su coste.",
+      "steps" : [
+        {
+          "type" : "Do",
+          "action" : {
+            "type" : "Play",
+            "cards" : {
+              "zones" : "hand",
+              "owner" : "YOU",
+              "filter" : {},
+              "min" : {
+                "type" : "Fixed",
+                "value" : 1
+              },
+              "max" : {
+                "type" : "Fixed",
+                "value" : 1
+              },
+              "self" : "ANY",
+              "mode" : "SELF"
+            },
+            "reduce" : {
+              "type" : "Fixed"
+            },
+            "required" : true
+          }
         }
-      }
-    } ],
-    "sourceZone" : "field",
-    "limit" : "ONCE_PER_TURN_BETWEEN_COPIES"
-  } ]
+      ],
+      "condition" : {
+        "type" : "Happened",
+        "eventType" : "COMBAT_STEP",
+        "actor" : "ANY",
+        "owner" : "ANY",
+        "data" : [
+          "step=BLOCK",
+          "moment=ENTER"
+        ]
+      },
+      "sourceZone" : "hand",
+      "limit" : "NONE"
+    },
+    {
+      "id" : "fervor-de-guerra:en-juego",
+      "moment" : "ON_PLAY",
+      "mandatory" : true,
+      "label" : "En Juego",
+      "text" : "(1) Elige 1 aliado Rojo nivel 3 o menor; reactívalo.",
+      "cost" : [
+        {
+          "type" : "Do",
+          "action" : {
+            "type" : "Select",
+            "selector" : {
+              "zones" : "pickableAllies",
+              "owner" : "YOU",
+              "filter" : {
+                "colors" : [
+                  "R"
+                ],
+                "cardType" : "creature",
+                "maxLevel" : 3
+              },
+              "min" : {
+                "type" : "Fixed",
+                "value" : 1
+              },
+              "max" : {
+                "type" : "Fixed",
+                "value" : 1
+              },
+              "self" : "ANY",
+              "mode" : "CHOOSE"
+            },
+            "target" : true,
+            "saveAs" : "subject",
+            "label" : "Elegido",
+            "endsIfNone" : true
+          }
+        }
+      ],
+      "steps" : [
+        {
+          "type" : "Do",
+          "action" : {
+            "type" : "SetTapped",
+            "cards" : {
+              "zones" : "subjectOrSelf",
+              "owner" : "YOU",
+              "filter" : {},
+              "min" : {
+                "type" : "Fixed"
+              },
+              "max" : {
+                "type" : "Fixed",
+                "value" : 2147483647
+              },
+              "self" : "ANY",
+              "mode" : "ALL"
+            }
+          }
+        }
+      ],
+      "sourceZone" : "field",
+      "limit" : "ONCE_PER_TURN_BETWEEN_COPIES"
+    }
+  ]
 }

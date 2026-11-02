@@ -1,87 +1,101 @@
 {
   "name" : "segador de almas",
-  "effects" : [ {
-    "id" : "segador-de-almas:en-tributos",
-    "moment" : "ON_EVENT",
-    "label" : "En Tributos",
-    "text" : "(1) Si algún enemigo es destruido por tus efectos: puedes invocar esta carta en tu línea frontal reduciendo su coste en 1 por cada 10 tributos Violeta que tengas. Si lo haces: tribútala al final del turno.",
-    "steps" : [ {
-      "type" : "Do",
-      "action" : {
-        "type" : "Summon",
-        "cards" : {
-          "zones" : "tributeZone",
-          "owner" : "YOU",
-          "filter" : { },
-          "min" : {
-            "type" : "Fixed",
-            "value" : 1
-          },
-          "max" : {
-            "type" : "Fixed",
-            "value" : 1
-          },
-          "self" : "ANY",
-          "mode" : "SELF"
+  "effects" : [
+    {
+      "id" : "segador-de-almas:en-tributos",
+      "moment" : "ON_EVENT",
+      "label" : "En Tributos",
+      "text" : "(1) Si algún enemigo es destruido por tus efectos: puedes invocar esta carta en tu línea frontal reduciendo su coste en 1 por cada 10 tributos Violeta que tengas. Si lo haces: tribútala al final del turno.",
+      "steps" : [
+        {
+          "type" : "Do",
+          "action" : {
+            "type" : "Summon",
+            "cards" : {
+              "zones" : "tributeZone",
+              "owner" : "YOU",
+              "filter" : {},
+              "min" : {
+                "type" : "Fixed",
+                "value" : 1
+              },
+              "max" : {
+                "type" : "Fixed",
+                "value" : 1
+              },
+              "self" : "ANY",
+              "mode" : "SELF"
+            },
+            "reduce" : {
+              "type" : "Scaled",
+              "base" : {
+                "type" : "InZone",
+                "zone" : "tributeZone",
+                "filter" : {
+                  "colors" : [
+                    "P"
+                  ]
+                }
+              },
+              "divisor" : 10
+            },
+            "toFront" : true,
+            "required" : true
+          }
         },
-        "reduce" : {
-          "type" : "Scaled",
-          "base" : {
-            "type" : "InZone",
-            "zone" : "tributeZone",
-            "filter" : {
-              "colors" : [ "P" ]
-            }
-          },
-          "divisor" : 10
+        {
+          "type" : "IfDone",
+          "covers" : 1
         },
-        "toFront" : true,
-        "required" : true
-      }
-    }, {
-      "type" : "IfDone",
-      "covers" : 1
-    }, {
-      "type" : "AtEndOfTurn",
-      "scriptId" : "segador-de-almas:final-del-turno"
-    } ],
-    "condition" : {
-      "type" : "Destroyed",
-      "owner" : "ENEMY",
-      "by" : "YOU",
-      "cause" : "effect"
+        {
+          "type" : "Do",
+          "action" : {
+            "type" : "AtEndOfTurn",
+            "effect" : "segador-de-almas:final-del-turno"
+          }
+        }
+      ],
+      "condition" : {
+        "type" : "Destroyed",
+        "owner" : "ENEMY",
+        "by" : "YOU",
+        "cause" : "effect"
+      },
+      "sourceZone" : "tributeZone",
+      "limit" : "ONCE_PER_TURN_BETWEEN_COPIES"
     },
-    "sourceZone" : "tributeZone",
-    "limit" : "ONCE_PER_TURN_BETWEEN_COPIES"
-  }, {
-    "id" : "segador-de-almas:final-del-turno",
-    "moment" : "DELAYED",
-    "mandatory" : true,
-    "label" : "Al final del turno",
-    "text" : "Tributa esta carta.",
-    "steps" : [ {
-      "type" : "Do",
-      "action" : {
-        "type" : "Move",
-        "cards" : {
-          "zones" : "field",
-          "owner" : "YOU",
-          "filter" : { },
-          "min" : {
-            "type" : "Fixed",
-            "value" : 1
-          },
-          "max" : {
-            "type" : "Fixed",
-            "value" : 1
-          },
-          "self" : "ANY",
-          "mode" : "SELF"
-        },
-        "to" : "tributeZone"
-      }
-    } ],
-    "sourceZone" : "field",
-    "limit" : "NONE"
-  } ]
+    {
+      "id" : "segador-de-almas:final-del-turno",
+      "moment" : "DELAYED",
+      "mandatory" : true,
+      "label" : "Al final del turno",
+      "text" : "Tributa esta carta.",
+      "steps" : [
+        {
+          "type" : "Do",
+          "action" : {
+            "type" : "Move",
+            "cards" : {
+              "zones" : "field",
+              "owner" : "YOU",
+              "filter" : {},
+              "min" : {
+                "type" : "Fixed",
+                "value" : 1
+              },
+              "max" : {
+                "type" : "Fixed",
+                "value" : 1
+              },
+              "self" : "ANY",
+              "mode" : "SELF"
+            },
+            "to" : "tributeZone"
+          }
+        }
+      ],
+      "sourceZone" : "field",
+      "limit" : "NONE"
+    }
+  ]
 }

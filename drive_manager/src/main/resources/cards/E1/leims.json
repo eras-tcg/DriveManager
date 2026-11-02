@@ -1,137 +1,157 @@
 {
   "name" : "leims",
-  "effects" : [ {
-    "id" : "leims:turno-aliado",
-    "moment" : "ON_EVENT",
-    "label" : "Turno Aliado",
-    "text" : "Una vez por turno: si esta carta es agotada, puedes tributar 1 carta de tu mano; invoca 1 [hada] de tu mano reduciendo su coste en 1.",
-    "cost" : [ {
-      "type" : "Do",
-      "action" : {
-        "type" : "Move",
-        "cards" : {
-          "zones" : "hand",
-          "owner" : "YOU",
-          "filter" : { },
-          "min" : {
-            "type" : "Fixed",
-            "value" : 1
-          },
-          "max" : {
-            "type" : "Fixed",
-            "value" : 1
-          },
-          "self" : "EXCLUDE",
-          "mode" : "CHOOSE"
-        },
-        "to" : "tributeZone"
-      }
-    } ],
-    "steps" : [ {
-      "type" : "Do",
-      "action" : {
-        "type" : "Summon",
-        "cards" : {
-          "zones" : "hand",
-          "owner" : "YOU",
-          "filter" : {
-            "classes" : [ "hada" ],
-            "cardType" : "creature"
-          },
-          "min" : {
-            "type" : "Fixed",
-            "value" : 1
-          },
-          "max" : {
-            "type" : "Fixed",
-            "value" : 1
-          },
-          "self" : "ANY",
-          "mode" : "CHOOSE"
-        },
-        "reduce" : {
-          "type" : "Fixed",
-          "value" : 1
-        },
-        "required" : true
-      }
-    } ],
-    "condition" : {
-      "type" : "Any",
-      "any" : [ {
-        "type" : "Happened",
-        "type" : "TAP",
-        "actor" : "ANY",
-        "owner" : "ANY",
-        "thisCard" : true
-      }, {
-        "type" : "Happened",
-        "type" : "BLOCK",
-        "actor" : "ANY",
-        "owner" : "ANY",
-        "thisCard" : true
-      }, {
-        "type" : "Happened",
-        "type" : "ATTACK_DECLARED",
-        "actor" : "ANY",
-        "owner" : "ANY",
-        "thisCard" : true,
-        "data" : [ "exhausted=true" ]
-      } ]
-    },
-    "sourceZone" : "field",
-    "allyTurn" : true,
-    "limit" : "ONCE_PER_TURN"
-  } ],
-  "inherited" : [ {
-    "id" : "leims:hereda-todos-los-turnos",
-    "moment" : "ON_EVENT",
-    "label" : "Todos Los Turnos",
-    "text" : "Heredado de Leims: si algún aliado de fuerza 4 o mayor es invocado por efecto, puedes tributar el recurso de este efecto; gana 1 gema.",
-    "cost" : [ {
-      "type" : "Do",
-      "action" : {
-        "type" : "Move",
-        "cards" : {
-          "zones" : "resources",
-          "owner" : "YOU",
-          "filter" : {
-            "name" : "Leims"
-          },
-          "min" : {
-            "type" : "Fixed",
-            "value" : 1
-          },
-          "max" : {
-            "type" : "Fixed",
-            "value" : 1
-          },
-          "self" : "ANY",
-          "mode" : "TOP"
-        },
-        "to" : "tributeZone"
-      }
-    } ],
-    "steps" : [ {
-      "type" : "Do",
-      "action" : {
-        "type" : "Gems",
-        "count" : {
-          "type" : "Fixed",
-          "value" : 1
+  "effects" : [
+    {
+      "id" : "leims:turno-aliado",
+      "moment" : "ON_EVENT",
+      "label" : "Turno Aliado",
+      "text" : "Una vez por turno: si esta carta es agotada, puedes tributar 1 carta de tu mano; invoca 1 [hada] de tu mano reduciendo su coste en 1.",
+      "cost" : [
+        {
+          "type" : "Do",
+          "action" : {
+            "type" : "Move",
+            "cards" : {
+              "zones" : "hand",
+              "owner" : "YOU",
+              "filter" : {},
+              "min" : {
+                "type" : "Fixed",
+                "value" : 1
+              },
+              "max" : {
+                "type" : "Fixed",
+                "value" : 1
+              },
+              "self" : "EXCLUDE",
+              "mode" : "CHOOSE"
+            },
+            "to" : "tributeZone"
+          }
         }
-      }
-    } ],
-    "condition" : {
-      "type" : "Summoned",
-      "side" : "YOU",
-      "filter" : {
-        "cardType" : "creature",
-        "minStrength" : 4
+      ],
+      "steps" : [
+        {
+          "type" : "Do",
+          "action" : {
+            "type" : "Summon",
+            "cards" : {
+              "zones" : "hand",
+              "owner" : "YOU",
+              "filter" : {
+                "classes" : [
+                  "hada"
+                ],
+                "cardType" : "creature"
+              },
+              "min" : {
+                "type" : "Fixed",
+                "value" : 1
+              },
+              "max" : {
+                "type" : "Fixed",
+                "value" : 1
+              },
+              "self" : "ANY",
+              "mode" : "CHOOSE"
+            },
+            "reduce" : {
+              "type" : "Fixed",
+              "value" : 1
+            },
+            "required" : true
+          }
+        }
+      ],
+      "condition" : {
+        "type" : "Any",
+        "any" : [
+          {
+            "type" : "Happened",
+            "eventType" : "TAP",
+            "actor" : "ANY",
+            "owner" : "ANY",
+            "thisCard" : true
+          },
+          {
+            "type" : "Happened",
+            "eventType" : "BLOCK",
+            "actor" : "ANY",
+            "owner" : "ANY",
+            "thisCard" : true
+          },
+          {
+            "type" : "Happened",
+            "eventType" : "ATTACK_DECLARED",
+            "actor" : "ANY",
+            "owner" : "ANY",
+            "thisCard" : true,
+            "data" : [
+              "exhausted=true"
+            ]
+          }
+        ]
       },
-      "how" : "effect"
-    },
-    "sourceZone" : "field",
-    "limit" : "NONE"
-  } ]
+      "sourceZone" : "field",
+      "allyTurn" : true,
+      "limit" : "ONCE_PER_TURN"
+    }
+  ],
+  "inherited" : [
+    {
+      "id" : "leims:hereda-todos-los-turnos",
+      "moment" : "ON_EVENT",
+      "label" : "Todos Los Turnos",
+      "text" : "Heredado de Leims: si algún aliado de fuerza 4 o mayor es invocado por efecto, puedes tributar el recurso de este efecto; gana 1 gema.",
+      "cost" : [
+        {
+          "type" : "Do",
+          "action" : {
+            "type" : "Move",
+            "cards" : {
+              "zones" : "resources",
+              "owner" : "YOU",
+              "filter" : {
+                "name" : "Leims"
+              },
+              "min" : {
+                "type" : "Fixed",
+                "value" : 1
+              },
+              "max" : {
+                "type" : "Fixed",
+                "value" : 1
+              },
+              "self" : "ANY",
+              "mode" : "TOP"
+            },
+            "to" : "tributeZone"
+          }
+        }
+      ],
+      "steps" : [
+        {
+          "type" : "Do",
+          "action" : {
+            "type" : "Gems",
+            "count" : {
+              "type" : "Fixed",
+              "value" : 1
+            }
+          }
+        }
+      ],
+      "condition" : {
+        "type" : "Summoned",
+        "side" : "YOU",
+        "filter" : {
+          "cardType" : "creature",
+          "minStrength" : 4
+        },
+        "how" : "effect"
+      },
+      "sourceZone" : "field",
+      "limit" : "NONE"
+    }
+  ]
 }

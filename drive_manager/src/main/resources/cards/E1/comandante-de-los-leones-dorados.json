@@ -1,173 +1,201 @@
 {
   "name" : "comandante de los leones dorados",
-  "effects" : [ {
-    "id" : "comandante-leones-dorados:en-invocacion",
-    "moment" : "ON_SUMMON",
-    "mandatory" : true,
-    "label" : "En Invocación",
-    "text" : "Tributa todos tus otros aliados. Por cada aliado tributado por este efecto: esta carta gana fuerza 2 hasta el final del turno.",
-    "steps" : [ {
-      "type" : "Do",
-      "action" : {
-        "type" : "Move",
-        "cards" : {
-          "zones" : "allies",
-          "owner" : "YOU",
-          "filter" : { },
-          "min" : {
-            "type" : "Fixed"
-          },
-          "max" : {
-            "type" : "Fixed",
-            "value" : 2147483647
-          },
-          "self" : "EXCLUDE",
-          "mode" : "ALL"
+  "effects" : [
+    {
+      "id" : "comandante-leones-dorados:en-invocacion",
+      "moment" : "ON_SUMMON",
+      "mandatory" : true,
+      "label" : "En Invocación",
+      "text" : "Tributa todos tus otros aliados. Por cada aliado tributado por este efecto: esta carta gana fuerza 2 hasta el final del turno.",
+      "steps" : [
+        {
+          "type" : "Do",
+          "action" : {
+            "type" : "Move",
+            "cards" : {
+              "zones" : "allies",
+              "owner" : "YOU",
+              "filter" : {},
+              "min" : {
+                "type" : "Fixed"
+              },
+              "max" : {
+                "type" : "Fixed",
+                "value" : 2147483647
+              },
+              "self" : "EXCLUDE",
+              "mode" : "ALL"
+            },
+            "to" : "tributeZone"
+          }
         },
-        "to" : "tributeZone"
-      }
-    }, {
-      "type" : "Do",
-      "action" : {
-        "type" : "Modify",
-        "cards" : {
-          "zones" : "subjectOrSelf",
-          "owner" : "YOU",
-          "filter" : { },
-          "min" : {
-            "type" : "Fixed"
-          },
-          "max" : {
-            "type" : "Fixed",
-            "value" : 2147483647
-          },
-          "self" : "ANY",
-          "mode" : "ALL"
+        {
+          "type" : "Do",
+          "action" : {
+            "type" : "Modify",
+            "cards" : {
+              "zones" : "subjectOrSelf",
+              "owner" : "YOU",
+              "filter" : {},
+              "min" : {
+                "type" : "Fixed"
+              },
+              "max" : {
+                "type" : "Fixed",
+                "value" : 2147483647
+              },
+              "self" : "ANY",
+              "mode" : "ALL"
+            },
+            "strength" : {
+              "type" : "Times",
+              "base" : {
+                "type" : "LastCount"
+              },
+              "factor" : 2
+            },
+            "until" : "TURN"
+          }
+        }
+      ],
+      "sourceZone" : "field",
+      "limit" : "NONE"
+    },
+    {
+      "id" : "comandante-leones-dorados:invoca-retador",
+      "moment" : "ON_SUMMON",
+      "label" : "En Invocación",
+      "text" : "Puedes invocar 1 [retador] de tu mano reduciendo su coste en 2. Súbelo a tu mano al final de tu turno.",
+      "steps" : [
+        {
+          "type" : "Do",
+          "action" : {
+            "type" : "Summon",
+            "cards" : {
+              "zones" : "hand",
+              "owner" : "YOU",
+              "filter" : {
+                "classes" : [
+                  "retador"
+                ],
+                "cardType" : "creature"
+              },
+              "min" : {
+                "type" : "Fixed",
+                "value" : 1
+              },
+              "max" : {
+                "type" : "Fixed",
+                "value" : 1
+              },
+              "self" : "ANY",
+              "mode" : "CHOOSE"
+            },
+            "reduce" : {
+              "type" : "Fixed",
+              "value" : 2
+            },
+            "required" : true
+          }
         },
-        "strength" : {
-          "type" : "Times",
-          "base" : {
-            "type" : "LastCount"
-          },
-          "factor" : 2
+        {
+          "type" : "IfDone",
+          "covers" : 1
         },
-        "until" : "TURN"
-      }
-    } ],
-    "sourceZone" : "field",
-    "limit" : "NONE"
-  }, {
-    "id" : "comandante-leones-dorados:invoca-retador",
-    "moment" : "ON_SUMMON",
-    "label" : "En Invocación",
-    "text" : "Puedes invocar 1 [retador] de tu mano reduciendo su coste en 2. Súbelo a tu mano al final de tu turno.",
-    "steps" : [ {
-      "type" : "Do",
-      "action" : {
-        "type" : "Summon",
-        "cards" : {
-          "zones" : "hand",
-          "owner" : "YOU",
-          "filter" : {
-            "classes" : [ "retador" ],
-            "cardType" : "creature"
-          },
-          "min" : {
-            "type" : "Fixed",
-            "value" : 1
-          },
-          "max" : {
-            "type" : "Fixed",
-            "value" : 1
-          },
-          "self" : "ANY",
-          "mode" : "CHOOSE"
+        {
+          "type" : "Do",
+          "action" : {
+            "type" : "AtEndOfTurn",
+            "effect" : "comandante-leones-dorados:final-del-turno"
+          }
+        }
+      ],
+      "sourceZone" : "field",
+      "limit" : "NONE"
+    },
+    {
+      "id" : "comandante-leones-dorados:al-atacar",
+      "moment" : "ON_ATTACK",
+      "label" : "Al Atacar",
+      "text" : "Puedes invocar 1 [retador] de tu mano reduciendo su coste en 2. Súbelo a tu mano al final de tu turno.",
+      "steps" : [
+        {
+          "type" : "Do",
+          "action" : {
+            "type" : "Summon",
+            "cards" : {
+              "zones" : "hand",
+              "owner" : "YOU",
+              "filter" : {
+                "classes" : [
+                  "retador"
+                ],
+                "cardType" : "creature"
+              },
+              "min" : {
+                "type" : "Fixed",
+                "value" : 1
+              },
+              "max" : {
+                "type" : "Fixed",
+                "value" : 1
+              },
+              "self" : "ANY",
+              "mode" : "CHOOSE"
+            },
+            "reduce" : {
+              "type" : "Fixed",
+              "value" : 2
+            },
+            "required" : true
+          }
         },
-        "reduce" : {
-          "type" : "Fixed",
-          "value" : 2
+        {
+          "type" : "IfDone",
+          "covers" : 1
         },
-        "required" : true
-      }
-    }, {
-      "type" : "IfDone",
-      "covers" : 1
-    }, {
-      "type" : "AtEndOfTurn",
-      "scriptId" : "comandante-leones-dorados:final-del-turno"
-    } ],
-    "sourceZone" : "field",
-    "limit" : "NONE"
-  }, {
-    "id" : "comandante-leones-dorados:al-atacar",
-    "moment" : "ON_ATTACK",
-    "label" : "Al Atacar",
-    "text" : "Puedes invocar 1 [retador] de tu mano reduciendo su coste en 2. Súbelo a tu mano al final de tu turno.",
-    "steps" : [ {
-      "type" : "Do",
-      "action" : {
-        "type" : "Summon",
-        "cards" : {
-          "zones" : "hand",
-          "owner" : "YOU",
-          "filter" : {
-            "classes" : [ "retador" ],
-            "cardType" : "creature"
-          },
-          "min" : {
-            "type" : "Fixed",
-            "value" : 1
-          },
-          "max" : {
-            "type" : "Fixed",
-            "value" : 1
-          },
-          "self" : "ANY",
-          "mode" : "CHOOSE"
-        },
-        "reduce" : {
-          "type" : "Fixed",
-          "value" : 2
-        },
-        "required" : true
-      }
-    }, {
-      "type" : "IfDone",
-      "covers" : 1
-    }, {
-      "type" : "AtEndOfTurn",
-      "scriptId" : "comandante-leones-dorados:final-del-turno"
-    } ],
-    "sourceZone" : "field",
-    "limit" : "NONE"
-  }, {
-    "id" : "comandante-leones-dorados:final-del-turno",
-    "moment" : "DELAYED",
-    "mandatory" : true,
-    "label" : "Al final del turno",
-    "text" : "Sube a tu mano el [retador] invocado.",
-    "steps" : [ {
-      "type" : "Do",
-      "action" : {
-        "type" : "Move",
-        "cards" : {
-          "zones" : "saved:subject",
-          "owner" : "YOU",
-          "filter" : { },
-          "min" : {
-            "type" : "Fixed"
-          },
-          "max" : {
-            "type" : "Fixed",
-            "value" : 2147483647
-          },
-          "self" : "ANY",
-          "mode" : "ALL"
-        },
-        "to" : "hand"
-      }
-    } ],
-    "sourceZone" : "field",
-    "limit" : "NONE"
-  } ]
+        {
+          "type" : "Do",
+          "action" : {
+            "type" : "AtEndOfTurn",
+            "effect" : "comandante-leones-dorados:final-del-turno"
+          }
+        }
+      ],
+      "sourceZone" : "field",
+      "limit" : "NONE"
+    },
+    {
+      "id" : "comandante-leones-dorados:final-del-turno",
+      "moment" : "DELAYED",
+      "mandatory" : true,
+      "label" : "Al final del turno",
+      "text" : "Sube a tu mano el [retador] invocado.",
+      "steps" : [
+        {
+          "type" : "Do",
+          "action" : {
+            "type" : "Move",
+            "cards" : {
+              "zones" : "saved:subject",
+              "owner" : "YOU",
+              "filter" : {},
+              "min" : {
+                "type" : "Fixed"
+              },
+              "max" : {
+                "type" : "Fixed",
+                "value" : 2147483647
+              },
+              "self" : "ANY",
+              "mode" : "ALL"
+            },
+            "to" : "hand"
+          }
+        }
+      ],
+      "sourceZone" : "field",
+      "limit" : "NONE"
+    }
+  ]
 }

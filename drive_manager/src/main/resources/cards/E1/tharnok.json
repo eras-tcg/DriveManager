@@ -1,109 +1,125 @@
 {
   "name" : "tharnok",
-  "inherited" : [ {
-    "id" : "tharnok:hereda-todos-los-turnos",
-    "moment" : "ON_EVENT",
-    "label" : "Todos Los Turnos",
-    "text" : "Heredado de Tharnok: una vez por turno, si esta carta es agotada, puedes agotar una de tus estructuras para reactivar esta carta.",
-    "steps" : [ {
-      "type" : "IfPossible"
-    }, {
-      "type" : "Do",
-      "action" : {
-        "type" : "SetTapped",
-        "cards" : {
-          "zones" : "field",
-          "owner" : "YOU",
-          "filter" : {
-            "cardTypes" : [ "structure" ]
-          },
-          "min" : {
-            "type" : "Fixed",
-            "value" : 1
-          },
-          "max" : {
-            "type" : "Fixed",
-            "value" : 1
-          },
-          "self" : "EXCLUDE",
-          "mode" : "CHOOSE"
+  "inherited" : [
+    {
+      "id" : "tharnok:hereda-todos-los-turnos",
+      "moment" : "ON_EVENT",
+      "label" : "Todos Los Turnos",
+      "text" : "Heredado de Tharnok: una vez por turno, si esta carta es agotada, puedes agotar una de tus estructuras para reactivar esta carta.",
+      "steps" : [
+        {
+          "type" : "IfPossible"
         },
-        "tapped" : true,
-        "required" : true
-      }
-    }, {
-      "type" : "Do",
-      "action" : {
-        "type" : "SetTapped",
-        "cards" : {
-          "zones" : "field",
-          "owner" : "YOU",
-          "filter" : { },
-          "min" : {
-            "type" : "Fixed",
-            "value" : 1
-          },
-          "max" : {
-            "type" : "Fixed",
-            "value" : 1
-          },
-          "self" : "ANY",
-          "mode" : "SELF"
+        {
+          "type" : "Do",
+          "action" : {
+            "type" : "SetTapped",
+            "cards" : {
+              "zones" : "field",
+              "owner" : "YOU",
+              "filter" : {
+                "cardTypes" : [
+                  "structure"
+                ]
+              },
+              "min" : {
+                "type" : "Fixed",
+                "value" : 1
+              },
+              "max" : {
+                "type" : "Fixed",
+                "value" : 1
+              },
+              "self" : "EXCLUDE",
+              "mode" : "CHOOSE"
+            },
+            "tapped" : true,
+            "required" : true
+          }
+        },
+        {
+          "type" : "Do",
+          "action" : {
+            "type" : "SetTapped",
+            "cards" : {
+              "zones" : "field",
+              "owner" : "YOU",
+              "filter" : {},
+              "min" : {
+                "type" : "Fixed",
+                "value" : 1
+              },
+              "max" : {
+                "type" : "Fixed",
+                "value" : 1
+              },
+              "self" : "ANY",
+              "mode" : "SELF"
+            }
+          }
         }
-      }
-    } ],
-    "condition" : {
-      "type" : "Any",
-      "any" : [ {
-        "type" : "Happened",
-        "type" : "TAP",
-        "actor" : "ANY",
-        "owner" : "ANY",
-        "thisCard" : true
-      }, {
-        "type" : "Happened",
-        "type" : "BLOCK",
-        "actor" : "ANY",
-        "owner" : "ANY",
-        "thisCard" : true
-      }, {
-        "type" : "Happened",
-        "type" : "ATTACK_DECLARED",
-        "actor" : "ANY",
-        "owner" : "ANY",
-        "thisCard" : true,
-        "data" : [ "exhausted=true" ]
-      } ]
-    },
-    "sourceZone" : "field",
-    "limit" : "ONCE_PER_TURN"
-  } ],
-  "reactions" : [ {
-    "type" : "CostModifier",
-    "label" : "Absoluto",
-    "event" : "SPECIAL_SUMMON",
-    "holder" : "SELF",
-    "condition" : {
-      "type" : "Compare",
-      "left" : {
-        "type" : "OnField",
-        "filter" : {
-          "cardType" : "creature",
-          "minLevel" : 4
+      ],
+      "condition" : {
+        "type" : "Any",
+        "any" : [
+          {
+            "type" : "Happened",
+            "eventType" : "TAP",
+            "actor" : "ANY",
+            "owner" : "ANY",
+            "thisCard" : true
+          },
+          {
+            "type" : "Happened",
+            "eventType" : "BLOCK",
+            "actor" : "ANY",
+            "owner" : "ANY",
+            "thisCard" : true
+          },
+          {
+            "type" : "Happened",
+            "eventType" : "ATTACK_DECLARED",
+            "actor" : "ANY",
+            "owner" : "ANY",
+            "thisCard" : true,
+            "data" : [
+              "exhausted=true"
+            ]
+          }
+        ]
+      },
+      "sourceZone" : "field",
+      "limit" : "ONCE_PER_TURN"
+    }
+  ],
+  "reactions" : [
+    {
+      "type" : "CostModifier",
+      "label" : "Absoluto",
+      "event" : "SPECIAL_SUMMON",
+      "holder" : "SELF",
+      "condition" : {
+        "type" : "Compare",
+        "left" : {
+          "type" : "OnField",
+          "filter" : {
+            "cardType" : "creature",
+            "minLevel" : 4
+          }
+        },
+        "op" : "AT_MOST",
+        "right" : {
+          "type" : "Fixed"
         }
       },
-      "op" : "AT_MOST",
-      "right" : {
-        "type" : "Fixed"
+      "payment" : {
+        "kind" : "NONE"
+      },
+      "limit" : "NONE",
+      "amount" : {
+        "type" : "LivesBehind",
+        "faceDownOnly" : true
       }
-    },
-    "payment" : {
-      "kind" : "NONE"
-    },
-    "limit" : "NONE",
-    "amount" : {
-      "type" : "LivesBehind",
-      "faceDownOnly" : true
     }
-  } ]
+  ]
 }

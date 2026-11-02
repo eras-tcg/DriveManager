@@ -77,6 +77,7 @@ public final class SelectHandler implements ActionHandler<Select> {
         }
         String saveAs = action.saveAs() != null ? action.saveAs() : action.target() ? Memory.TARGETS : Memory.LAST;
         ctx.save(saveAs, picks);
+        ctx.save(Memory.ACTIVE_ALLIES, valid.stream().filter(c -> picks.contains(c.getInstanceId()) && !ctx.isOpponents(c) && !c.isTapped()).map(CardSlot::getInstanceId).toList());
         ctx.done(!picks.isEmpty());
         if (action.target() && !picks.isEmpty()) {
             List<String> names = picks.stream().map(id -> ctx.name(ctx.find(id))).toList();

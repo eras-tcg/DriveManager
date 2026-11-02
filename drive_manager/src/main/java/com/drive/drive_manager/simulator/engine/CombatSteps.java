@@ -40,7 +40,6 @@ final class CombatSteps {
             case PickAllyUpToSacrificedLevel pick -> allies(player).stream().anyMatch(EffectEngine::inFrontLine);
             case ExtraHit ignored -> room.getCombat() != null && room.getCombat().getStep() == Combat.Step.DAMAGE;
             case ChooseEnemiesLevelSum s -> levelSumPossible(enemyTargets(room, effect, CardFilter.creatures()), s.sum());
-            case ChooseWeakerThanSelf w -> w.upTo() || !weakerThanSelf(room, effect).isEmpty();
             default -> true;
         };
     }
@@ -80,16 +79,6 @@ final class CombatSteps {
                 PlayerState opponent = room.getPlayer(room.getOpponentId(userId));
                 pick(room, effect, "Elige enemigos que sumen " + s.sum() + " en nivel.", "Objetivo", frontLine(opponent.getField()), ids(valid), valid.size());
                 room.getPrompt().setMin(1);
-                return true;
-            }
-            case ChooseWeakerThanSelf w -> {
-                List<CardSlot> valid = weakerThanSelf(room, effect);
-                if (valid.isEmpty()) return false;
-                List<CardSlot> shown = new ArrayList<>(player.getField());
-                PlayerState opponent = room.getPlayer(room.getOpponentId(userId));
-                if (opponent != null) shown.addAll(frontLine(opponent.getField()));
-                pick(room, effect, "Elige 1 criatura en el campo con fuerza menor a " + effect.getSourceName() + ".", "Elegir", shown, ids(valid), 1);
-                if (w.upTo()) room.getPrompt().setMin(0);
                 return true;
             }
             case AlliesGain gain -> {
@@ -155,37 +144,6 @@ final class CombatSteps {
                 log(room, "La próxima vez que un aliado de " + player.getUsername() + " inflija daño directo por combate este turno, inflige daño 1 vez más",
                         null);
                 return false;
-            }
-            case DeclareAttack declare -> {
-                CardSlot subject = subject(room, effect);
-                if (subject == null) return false;
-                if (room.getCombat() != null) {
-                    log(room, name(subject) + " no puede atacar: ya hay un combate en curso", null);
-                    return false;
-                }
-                if (keywords(subject).contains(NO_ATTACK)) {
-                    log(room, name(subject) + " no puede declarar ataque este turno", null);
-                    return false;
-                }
-                if (!inFrontLine(subject)) {
-                    log(room, name(subject) + " no puede atacar: no está en la línea frontal", null);
-                    return false;
-                }
-                List<CardSlot> targets = declare.opponentOnly() ? List.of() : attackTargets(room, userId, subject);
-                if (targets.isEmpty()) {
-                    startCombat(room, userId, subject, null, true, effect);
-                    return false;
-                }
-                PlayerState opponent = room.getPlayer(room.getOpponentId(userId));
-                Prompt prompt = prompt(room, effect, Prompt.Kind.PICK,
-                        name(subject) + " declara ataque: elige una criatura agotada a la que atacar, o ninguna para atacar a tu rival.");
-                prompt.setCards(new ArrayList<>(opponent.getField()));
-                prompt.setValidIds(new ArrayList<>(ids(targets)));
-                prompt.setMin(0);
-                prompt.setMax(1);
-                prompt.setChosenLabel("Atacar");
-                room.setPrompt(prompt);
-                return true;
             }
             case BounceChosen ignored -> {
                 PlayerState opponent = room.getPlayer(room.getOpponentId(userId));
@@ -282,16 +240,6 @@ final class CombatSteps {
                 record(room, GameEvent.TARGET, userId, chosen.get(0), null, null, effect, Map.of("targetIds", picks),
                         player.getUsername() + " elige como objetivo a " + String.join(", ", chosen.stream().map(EffectEngine::name).toList()) + " (" + effect.getSourceName() + ")");
             }
-            case ChooseWeakerThanSelf ignored -> {
-                if (picks.isEmpty()) break;
-                CardSlot chosen = find(weakerThanSelf(room, effect), picks.get(0));
-                if (chosen == null) return "Esa criatura ya no puede elegirse";
-                effect.getTargetIds().add(chosen.getInstanceId());
-                effect.setRepeatsDone(find(player.getField(), chosen.getInstanceId()) != null && !chosen.isTapped() ? ACTIVE_ALLY_CHOSEN : 0);
-                effect.setLastDone(true);
-                record(room, GameEvent.TARGET, userId, chosen, null, null, effect, Map.of("targetIds", picks),
-                        player.getUsername() + " elige a " + name(chosen) + " (" + effect.getSourceName() + ")");
-            }
             case PickAllyUpToSacrificedLevel ignored -> {
                 if (find(player.getField(), picks.get(0)) == null) return "Ese aliado ya no está en el campo";
                 effect.setSubjectId(picks.get(0));
@@ -332,12 +280,6 @@ final class CombatSteps {
                             + " tiene " + gained + " hasta el final del ataque", room.getEventSeq());
                 }
                 repeat[0] = true;
-            }
-            case DeclareAttack ignored -> {
-                CardSlot subject = subject(room, effect);
-                if (subject != null && room.getCombat() == null) {
-                    startCombat(room, userId, subject, picks.isEmpty() ? null : picks.get(0), true, effect);
-                }
             }
             case ChooseWeakestEnemy ignored -> {
                 PlayerState opponent = room.getPlayer(room.getOpponentId(userId));

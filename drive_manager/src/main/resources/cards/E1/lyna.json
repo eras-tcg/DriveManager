@@ -1,185 +1,210 @@
 {
   "name" : "lyna",
-  "effects" : [ {
-    "id" : "lyna:en-invocacion",
-    "moment" : "ON_SUMMON",
-    "mandatory" : true,
-    "label" : "En Invocación",
-    "text" : "(1) Puedes añadir 1 aliado nivel 1 como recurso de esta carta para ganar 1 gema. Luego: puedes agotar esta carta para reactivar 1 de tus estructuras Verdes de coste 1 o menos.",
-    "steps" : [ {
-      "type" : "MayDo",
-      "question" : "¿Añades 1 aliado nivel 1 como recurso de Lyna para ganar 1 gema?",
-      "covers" : 2
-    }, {
-      "type" : "Do",
-      "action" : {
-        "type" : "Move",
-        "cards" : {
-          "zones" : "field",
-          "owner" : "YOU",
-          "filter" : {
-            "cardType" : "creature",
-            "level" : 1
-          },
-          "min" : {
-            "type" : "Fixed",
-            "value" : 1
-          },
-          "max" : {
-            "type" : "Fixed",
-            "value" : 1
-          },
-          "self" : "EXCLUDE",
-          "mode" : "CHOOSE"
+  "effects" : [
+    {
+      "id" : "lyna:en-invocacion",
+      "moment" : "ON_SUMMON",
+      "mandatory" : true,
+      "label" : "En Invocación",
+      "text" : "(1) Puedes añadir 1 aliado nivel 1 como recurso de esta carta para ganar 1 gema. Luego: puedes agotar esta carta para reactivar 1 de tus estructuras Verdes de coste 1 o menos.",
+      "steps" : [
+        {
+          "type" : "MayDo",
+          "question" : "¿Añades 1 aliado nivel 1 como recurso de Lyna para ganar 1 gema?",
+          "covers" : 2
         },
-        "to" : "resources:self",
-        "required" : true
-      }
-    }, {
-      "type" : "Do",
-      "action" : {
-        "type" : "Gems",
-        "count" : {
-          "type" : "Fixed",
-          "value" : 1
+        {
+          "type" : "Do",
+          "action" : {
+            "type" : "Move",
+            "cards" : {
+              "zones" : "field",
+              "owner" : "YOU",
+              "filter" : {
+                "cardType" : "creature",
+                "level" : 1
+              },
+              "min" : {
+                "type" : "Fixed",
+                "value" : 1
+              },
+              "max" : {
+                "type" : "Fixed",
+                "value" : 1
+              },
+              "self" : "EXCLUDE",
+              "mode" : "CHOOSE"
+            },
+            "to" : "resources:self",
+            "required" : true
+          }
+        },
+        {
+          "type" : "Do",
+          "action" : {
+            "type" : "Gems",
+            "count" : {
+              "type" : "Fixed",
+              "value" : 1
+            }
+          }
+        },
+        {
+          "type" : "MayDo",
+          "question" : "¿Agotas a Lyna para reactivar 1 de tus estructuras Verdes de coste 1 o menos?",
+          "covers" : 2
+        },
+        {
+          "type" : "Do",
+          "action" : {
+            "type" : "SetTapped",
+            "cards" : {
+              "zones" : "field",
+              "owner" : "YOU",
+              "filter" : {},
+              "min" : {
+                "type" : "Fixed",
+                "value" : 1
+              },
+              "max" : {
+                "type" : "Fixed",
+                "value" : 1
+              },
+              "self" : "ANY",
+              "mode" : "SELF"
+            },
+            "tapped" : true
+          }
+        },
+        {
+          "type" : "Do",
+          "action" : {
+            "type" : "SetTapped",
+            "cards" : {
+              "zones" : "field",
+              "owner" : "YOU",
+              "filter" : {
+                "colors" : [
+                  "G"
+                ],
+                "cardType" : "structure",
+                "maxCost" : 1
+              },
+              "min" : {
+                "type" : "Fixed",
+                "value" : 1
+              },
+              "max" : {
+                "type" : "Fixed",
+                "value" : 1
+              },
+              "self" : "ANY",
+              "mode" : "CHOOSE"
+            },
+            "required" : true
+          }
         }
-      }
-    }, {
-      "type" : "MayDo",
-      "question" : "¿Agotas a Lyna para reactivar 1 de tus estructuras Verdes de coste 1 o menos?",
-      "covers" : 2
-    }, {
-      "type" : "Do",
-      "action" : {
-        "type" : "SetTapped",
-        "cards" : {
-          "zones" : "field",
-          "owner" : "YOU",
-          "filter" : { },
-          "min" : {
-            "type" : "Fixed",
-            "value" : 1
+      ],
+      "sourceZone" : "field",
+      "limit" : "ONCE_PER_TURN_BETWEEN_COPIES"
+    }
+  ],
+  "inherited" : [
+    {
+      "id" : "lyna:hereda-todos-los-turnos",
+      "moment" : "ON_EVENT",
+      "label" : "Todos Los Turnos",
+      "text" : "Heredado de Lyna: si esta carta es agotada, puedes tributar el recurso con este efecto; invoca 1 [hada] de tu mano reduciendo su coste en 1.",
+      "cost" : [
+        {
+          "type" : "Do",
+          "action" : {
+            "type" : "Move",
+            "cards" : {
+              "zones" : "resources",
+              "owner" : "YOU",
+              "filter" : {
+                "name" : "Lyna"
+              },
+              "min" : {
+                "type" : "Fixed",
+                "value" : 1
+              },
+              "max" : {
+                "type" : "Fixed",
+                "value" : 1
+              },
+              "self" : "ANY",
+              "mode" : "TOP"
+            },
+            "to" : "tributeZone"
+          }
+        }
+      ],
+      "steps" : [
+        {
+          "type" : "Do",
+          "action" : {
+            "type" : "Summon",
+            "cards" : {
+              "zones" : "hand",
+              "owner" : "YOU",
+              "filter" : {
+                "classes" : [
+                  "hada"
+                ],
+                "cardType" : "creature"
+              },
+              "min" : {
+                "type" : "Fixed",
+                "value" : 1
+              },
+              "max" : {
+                "type" : "Fixed",
+                "value" : 1
+              },
+              "self" : "ANY",
+              "mode" : "CHOOSE"
+            },
+            "reduce" : {
+              "type" : "Fixed",
+              "value" : 1
+            },
+            "required" : true
+          }
+        }
+      ],
+      "condition" : {
+        "type" : "Any",
+        "any" : [
+          {
+            "type" : "Happened",
+            "eventType" : "TAP",
+            "actor" : "ANY",
+            "owner" : "ANY",
+            "thisCard" : true
           },
-          "max" : {
-            "type" : "Fixed",
-            "value" : 1
+          {
+            "type" : "Happened",
+            "eventType" : "BLOCK",
+            "actor" : "ANY",
+            "owner" : "ANY",
+            "thisCard" : true
           },
-          "self" : "ANY",
-          "mode" : "SELF"
-        },
-        "tapped" : true
-      }
-    }, {
-      "type" : "Do",
-      "action" : {
-        "type" : "SetTapped",
-        "cards" : {
-          "zones" : "field",
-          "owner" : "YOU",
-          "filter" : {
-            "colors" : [ "G" ],
-            "cardType" : "structure",
-            "maxCost" : 1
-          },
-          "min" : {
-            "type" : "Fixed",
-            "value" : 1
-          },
-          "max" : {
-            "type" : "Fixed",
-            "value" : 1
-          },
-          "self" : "ANY",
-          "mode" : "CHOOSE"
-        },
-        "required" : true
-      }
-    } ],
-    "sourceZone" : "field",
-    "limit" : "ONCE_PER_TURN_BETWEEN_COPIES"
-  } ],
-  "inherited" : [ {
-    "id" : "lyna:hereda-todos-los-turnos",
-    "moment" : "ON_EVENT",
-    "label" : "Todos Los Turnos",
-    "text" : "Heredado de Lyna: si esta carta es agotada, puedes tributar el recurso con este efecto; invoca 1 [hada] de tu mano reduciendo su coste en 1.",
-    "cost" : [ {
-      "type" : "Do",
-      "action" : {
-        "type" : "Move",
-        "cards" : {
-          "zones" : "resources",
-          "owner" : "YOU",
-          "filter" : {
-            "name" : "Lyna"
-          },
-          "min" : {
-            "type" : "Fixed",
-            "value" : 1
-          },
-          "max" : {
-            "type" : "Fixed",
-            "value" : 1
-          },
-          "self" : "ANY",
-          "mode" : "TOP"
-        },
-        "to" : "tributeZone"
-      }
-    } ],
-    "steps" : [ {
-      "type" : "Do",
-      "action" : {
-        "type" : "Summon",
-        "cards" : {
-          "zones" : "hand",
-          "owner" : "YOU",
-          "filter" : {
-            "classes" : [ "hada" ],
-            "cardType" : "creature"
-          },
-          "min" : {
-            "type" : "Fixed",
-            "value" : 1
-          },
-          "max" : {
-            "type" : "Fixed",
-            "value" : 1
-          },
-          "self" : "ANY",
-          "mode" : "CHOOSE"
-        },
-        "reduce" : {
-          "type" : "Fixed",
-          "value" : 1
-        },
-        "required" : true
-      }
-    } ],
-    "condition" : {
-      "type" : "Any",
-      "any" : [ {
-        "type" : "Happened",
-        "type" : "TAP",
-        "actor" : "ANY",
-        "owner" : "ANY",
-        "thisCard" : true
-      }, {
-        "type" : "Happened",
-        "type" : "BLOCK",
-        "actor" : "ANY",
-        "owner" : "ANY",
-        "thisCard" : true
-      }, {
-        "type" : "Happened",
-        "type" : "ATTACK_DECLARED",
-        "actor" : "ANY",
-        "owner" : "ANY",
-        "thisCard" : true,
-        "data" : [ "exhausted=true" ]
-      } ]
-    },
-    "sourceZone" : "field",
-    "limit" : "NONE"
-  } ]
+          {
+            "type" : "Happened",
+            "eventType" : "ATTACK_DECLARED",
+            "actor" : "ANY",
+            "owner" : "ANY",
+            "thisCard" : true,
+            "data" : [
+              "exhausted=true"
+            ]
+          }
+        ]
+      },
+      "sourceZone" : "field",
+      "limit" : "NONE"
+    }
+  ]
 }

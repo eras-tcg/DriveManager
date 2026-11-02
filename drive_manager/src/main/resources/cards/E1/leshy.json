@@ -1,135 +1,157 @@
 {
   "name" : "leshy",
-  "effects" : [ {
-    "id" : "leshy:en-invocacion",
-    "moment" : "ON_SUMMON",
-    "label" : "En Invocación",
-    "text" : "Puedes añadir 1 criatura Verde nivel 3 o menor de tu mano o tributos como recurso de esta carta. Si lo haces: roba 1 carta.",
-    "steps" : [ {
-      "type" : "Do",
-      "action" : {
-        "type" : "Move",
-        "cards" : {
-          "zones" : "hand,tributeZone",
-          "owner" : "YOU",
-          "filter" : {
-            "colors" : [ "G" ],
-            "cardType" : "creature",
-            "maxLevel" : 3
-          },
-          "min" : {
-            "type" : "Fixed",
-            "value" : 1
-          },
-          "max" : {
-            "type" : "Fixed",
-            "value" : 1
-          },
-          "self" : "EXCLUDE",
-          "mode" : "CHOOSE"
+  "effects" : [
+    {
+      "id" : "leshy:en-invocacion",
+      "moment" : "ON_SUMMON",
+      "label" : "En Invocación",
+      "text" : "Puedes añadir 1 criatura Verde nivel 3 o menor de tu mano o tributos como recurso de esta carta. Si lo haces: roba 1 carta.",
+      "steps" : [
+        {
+          "type" : "Do",
+          "action" : {
+            "type" : "Move",
+            "cards" : {
+              "zones" : "hand,tributeZone",
+              "owner" : "YOU",
+              "filter" : {
+                "colors" : [
+                  "G"
+                ],
+                "cardType" : "creature",
+                "maxLevel" : 3
+              },
+              "min" : {
+                "type" : "Fixed",
+                "value" : 1
+              },
+              "max" : {
+                "type" : "Fixed",
+                "value" : 1
+              },
+              "self" : "EXCLUDE",
+              "mode" : "CHOOSE"
+            },
+            "to" : "resources:self",
+            "required" : true
+          }
         },
-        "to" : "resources:self",
-        "required" : true
-      }
-    }, {
-      "type" : "IfDone",
-      "covers" : 1
-    }, {
-      "type" : "Do",
-      "action" : {
-        "type" : "Draw",
-        "count" : {
-          "type" : "Fixed",
-          "value" : 1
+        {
+          "type" : "IfDone",
+          "covers" : 1
+        },
+        {
+          "type" : "Do",
+          "action" : {
+            "type" : "Draw",
+            "count" : {
+              "type" : "Fixed",
+              "value" : 1
+            }
+          }
         }
-      }
-    } ],
-    "sourceZone" : "field",
-    "limit" : "NONE"
-  } ],
-  "inherited" : [ {
-    "id" : "leshy:hereda-todos-los-turnos",
-    "moment" : "ON_EVENT",
-    "label" : "Todos Los Turnos",
-    "text" : "Heredado de Leshy: si esta carta es agotada, puedes tributar el recurso con este efecto; invoca 1 criatura Verde nivel 1 de tu mano reduciendo en 1 su coste.",
-    "cost" : [ {
-      "type" : "Do",
-      "action" : {
-        "type" : "Move",
-        "cards" : {
-          "zones" : "resources",
-          "owner" : "YOU",
-          "filter" : {
-            "name" : "Leshy"
+      ],
+      "sourceZone" : "field",
+      "limit" : "NONE"
+    }
+  ],
+  "inherited" : [
+    {
+      "id" : "leshy:hereda-todos-los-turnos",
+      "moment" : "ON_EVENT",
+      "label" : "Todos Los Turnos",
+      "text" : "Heredado de Leshy: si esta carta es agotada, puedes tributar el recurso con este efecto; invoca 1 criatura Verde nivel 1 de tu mano reduciendo en 1 su coste.",
+      "cost" : [
+        {
+          "type" : "Do",
+          "action" : {
+            "type" : "Move",
+            "cards" : {
+              "zones" : "resources",
+              "owner" : "YOU",
+              "filter" : {
+                "name" : "Leshy"
+              },
+              "min" : {
+                "type" : "Fixed",
+                "value" : 1
+              },
+              "max" : {
+                "type" : "Fixed",
+                "value" : 1
+              },
+              "self" : "ANY",
+              "mode" : "TOP"
+            },
+            "to" : "tributeZone"
+          }
+        }
+      ],
+      "steps" : [
+        {
+          "type" : "Do",
+          "action" : {
+            "type" : "Summon",
+            "cards" : {
+              "zones" : "hand",
+              "owner" : "YOU",
+              "filter" : {
+                "colors" : [
+                  "G"
+                ],
+                "cardType" : "creature",
+                "level" : 1
+              },
+              "min" : {
+                "type" : "Fixed",
+                "value" : 1
+              },
+              "max" : {
+                "type" : "Fixed",
+                "value" : 1
+              },
+              "self" : "ANY",
+              "mode" : "CHOOSE"
+            },
+            "reduce" : {
+              "type" : "Fixed",
+              "value" : 1
+            },
+            "required" : true
+          }
+        }
+      ],
+      "condition" : {
+        "type" : "Any",
+        "any" : [
+          {
+            "type" : "Happened",
+            "eventType" : "TAP",
+            "actor" : "ANY",
+            "owner" : "ANY",
+            "thisCard" : true
           },
-          "min" : {
-            "type" : "Fixed",
-            "value" : 1
+          {
+            "type" : "Happened",
+            "eventType" : "BLOCK",
+            "actor" : "ANY",
+            "owner" : "ANY",
+            "thisCard" : true
           },
-          "max" : {
-            "type" : "Fixed",
-            "value" : 1
-          },
-          "self" : "ANY",
-          "mode" : "TOP"
-        },
-        "to" : "tributeZone"
-      }
-    } ],
-    "steps" : [ {
-      "type" : "Do",
-      "action" : {
-        "type" : "Summon",
-        "cards" : {
-          "zones" : "hand",
-          "owner" : "YOU",
-          "filter" : {
-            "colors" : [ "G" ],
-            "cardType" : "creature",
-            "level" : 1
-          },
-          "min" : {
-            "type" : "Fixed",
-            "value" : 1
-          },
-          "max" : {
-            "type" : "Fixed",
-            "value" : 1
-          },
-          "self" : "ANY",
-          "mode" : "CHOOSE"
-        },
-        "reduce" : {
-          "type" : "Fixed",
-          "value" : 1
-        },
-        "required" : true
-      }
-    } ],
-    "condition" : {
-      "type" : "Any",
-      "any" : [ {
-        "type" : "Happened",
-        "type" : "TAP",
-        "actor" : "ANY",
-        "owner" : "ANY",
-        "thisCard" : true
-      }, {
-        "type" : "Happened",
-        "type" : "BLOCK",
-        "actor" : "ANY",
-        "owner" : "ANY",
-        "thisCard" : true
-      }, {
-        "type" : "Happened",
-        "type" : "ATTACK_DECLARED",
-        "actor" : "ANY",
-        "owner" : "ANY",
-        "thisCard" : true,
-        "data" : [ "exhausted=true" ]
-      } ]
-    },
-    "sourceZone" : "field",
-    "limit" : "NONE"
-  } ]
+          {
+            "type" : "Happened",
+            "eventType" : "ATTACK_DECLARED",
+            "actor" : "ANY",
+            "owner" : "ANY",
+            "thisCard" : true,
+            "data" : [
+              "exhausted=true"
+            ]
+          }
+        ]
+      },
+      "sourceZone" : "field",
+      "limit" : "NONE"
+    }
+  ]
 }

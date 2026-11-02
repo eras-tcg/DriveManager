@@ -1,93 +1,108 @@
 {
   "name" : "infantería de primera línea",
-  "effects" : [ {
-    "id" : "infanteria-primera-linea:todos-los-turnos",
-    "moment" : "ON_EVENT",
-    "label" : "Todos Los Turnos",
-    "text" : "Si esta carta es agotada durante un combate: puedes tributar esta carta para invocar 1 criatura nivel 1 con \"Primera Línea\" en su nombre de tu mano sin pagar su coste.",
-    "steps" : [ {
-      "type" : "IfPossible"
-    }, {
-      "type" : "Do",
-      "action" : {
-        "type" : "Move",
-        "cards" : {
-          "zones" : "field",
-          "owner" : "YOU",
-          "filter" : { },
-          "min" : {
-            "type" : "Fixed",
-            "value" : 1
-          },
-          "max" : {
-            "type" : "Fixed",
-            "value" : 1
-          },
-          "self" : "ANY",
-          "mode" : "SELF"
+  "effects" : [
+    {
+      "id" : "infanteria-primera-linea:todos-los-turnos",
+      "moment" : "ON_EVENT",
+      "label" : "Todos Los Turnos",
+      "text" : "Si esta carta es agotada durante un combate: puedes tributar esta carta para invocar 1 criatura nivel 1 con \"Primera Línea\" en su nombre de tu mano sin pagar su coste.",
+      "steps" : [
+        {
+          "type" : "IfPossible"
         },
-        "to" : "tributeZone"
-      }
-    }, {
-      "type" : "Do",
-      "action" : {
-        "type" : "Summon",
-        "cards" : {
-          "zones" : "hand",
-          "owner" : "YOU",
-          "filter" : {
-            "cardType" : "creature",
-            "level" : 1,
-            "nameContains" : "Primera Línea"
-          },
-          "min" : {
-            "type" : "Fixed",
-            "value" : 1
-          },
-          "max" : {
-            "type" : "Fixed",
-            "value" : 1
-          },
-          "self" : "ANY",
-          "mode" : "CHOOSE"
+        {
+          "type" : "Do",
+          "action" : {
+            "type" : "Move",
+            "cards" : {
+              "zones" : "field",
+              "owner" : "YOU",
+              "filter" : {},
+              "min" : {
+                "type" : "Fixed",
+                "value" : 1
+              },
+              "max" : {
+                "type" : "Fixed",
+                "value" : 1
+              },
+              "self" : "ANY",
+              "mode" : "SELF"
+            },
+            "to" : "tributeZone"
+          }
         },
-        "reduce" : {
-          "type" : "Fixed",
-          "value" : 1000
-        },
-        "required" : true
-      }
-    } ],
-    "condition" : {
-      "type" : "All",
-      "all" : [ {
-        "type" : "Any",
-        "any" : [ {
-          "type" : "Happened",
-          "type" : "TAP",
-          "actor" : "ANY",
-          "owner" : "ANY",
-          "thisCard" : true
-        }, {
-          "type" : "Happened",
-          "type" : "BLOCK",
-          "actor" : "ANY",
-          "owner" : "ANY",
-          "thisCard" : true
-        }, {
-          "type" : "Happened",
-          "type" : "ATTACK_DECLARED",
-          "actor" : "ANY",
-          "owner" : "ANY",
-          "thisCard" : true,
-          "data" : [ "exhausted=true" ]
-        } ]
-      }, {
-        "type" : "GameIs",
-        "state" : "DURING_COMBAT"
-      } ]
-    },
-    "sourceZone" : "field",
-    "limit" : "NONE"
-  } ]
+        {
+          "type" : "Do",
+          "action" : {
+            "type" : "Summon",
+            "cards" : {
+              "zones" : "hand",
+              "owner" : "YOU",
+              "filter" : {
+                "cardType" : "creature",
+                "level" : 1,
+                "nameContains" : "Primera Línea"
+              },
+              "min" : {
+                "type" : "Fixed",
+                "value" : 1
+              },
+              "max" : {
+                "type" : "Fixed",
+                "value" : 1
+              },
+              "self" : "ANY",
+              "mode" : "CHOOSE"
+            },
+            "reduce" : {
+              "type" : "Fixed",
+              "value" : 1000
+            },
+            "required" : true
+          }
+        }
+      ],
+      "condition" : {
+        "type" : "All",
+        "all" : [
+          {
+            "type" : "Any",
+            "any" : [
+              {
+                "type" : "Happened",
+                "eventType" : "TAP",
+                "actor" : "ANY",
+                "owner" : "ANY",
+                "thisCard" : true
+              },
+              {
+                "type" : "Happened",
+                "eventType" : "BLOCK",
+                "actor" : "ANY",
+                "owner" : "ANY",
+                "thisCard" : true
+              },
+              {
+                "type" : "Happened",
+                "eventType" : "ATTACK_DECLARED",
+                "actor" : "ANY",
+                "owner" : "ANY",
+                "thisCard" : true,
+                "data" : [
+                  "exhausted=true"
+                ]
+              }
+            ]
+          },
+          {
+            "type" : "GameIs",
+            "state" : "DURING_COMBAT"
+          }
+        ]
+      },
+      "sourceZone" : "field",
+      "limit" : "NONE"
+    }
+  ]
 }

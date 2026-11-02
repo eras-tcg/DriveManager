@@ -1,58 +1,69 @@
 {
   "name" : "viaje extenso",
-  "effects" : [ {
-    "id" : "viaje-extenso:en-juego",
-    "moment" : "ON_PLAY",
-    "mandatory" : true,
-    "label" : "En Juego",
-    "text" : "Efecto Definitivo. Si aún no has jugado ni invocado otra carta este turno: roba 3 cartas. Al final de tu turno: envía cartas de tu mano al fondo de tu mazo hasta tener 4 cartas en tu mano.",
-    "steps" : [ {
-      "type" : "Do",
-      "action" : {
-        "type" : "Draw",
-        "count" : {
-          "type" : "Fixed",
-          "value" : 3
-        }
-      }
-    }, {
-      "type" : "AtEndOfTurn",
-      "scriptId" : "viaje-extenso:final-del-turno"
-    } ],
-    "condition" : {
-      "type" : "NothingElsePlayedThisTurn"
-    },
-    "sourceZone" : "field",
-    "limit" : "DEFINITIVE"
-  }, {
-    "id" : "viaje-extenso:final-del-turno",
-    "moment" : "DELAYED",
-    "mandatory" : true,
-    "label" : "Al final de tu turno",
-    "text" : "Envía cartas de tu mano al fondo de tu mazo hasta tener 4 cartas en tu mano.",
-    "steps" : [ {
-      "type" : "Do",
-      "action" : {
-        "type" : "Move",
-        "cards" : {
-          "zones" : "hand",
-          "owner" : "YOU",
-          "filter" : { },
-          "min" : {
-            "type" : "HandOver",
-            "keep" : 4
-          },
-          "max" : {
-            "type" : "HandOver",
-            "keep" : 4
-          },
-          "self" : "ANY",
-          "mode" : "CHOOSE"
+  "effects" : [
+    {
+      "id" : "viaje-extenso:en-juego",
+      "moment" : "ON_PLAY",
+      "mandatory" : true,
+      "label" : "En Juego",
+      "text" : "Efecto Definitivo. Si aún no has jugado ni invocado otra carta este turno: roba 3 cartas. Al final de tu turno: envía cartas de tu mano al fondo de tu mazo hasta tener 4 cartas en tu mano.",
+      "steps" : [
+        {
+          "type" : "Do",
+          "action" : {
+            "type" : "Draw",
+            "count" : {
+              "type" : "Fixed",
+              "value" : 3
+            }
+          }
         },
-        "to" : "deckBottom"
-      }
-    } ],
-    "sourceZone" : "field",
-    "limit" : "NONE"
-  } ]
+        {
+          "type" : "Do",
+          "action" : {
+            "type" : "AtEndOfTurn",
+            "effect" : "viaje-extenso:final-del-turno"
+          }
+        }
+      ],
+      "condition" : {
+        "type" : "NothingElsePlayedThisTurn"
+      },
+      "sourceZone" : "field",
+      "limit" : "DEFINITIVE"
+    },
+    {
+      "id" : "viaje-extenso:final-del-turno",
+      "moment" : "DELAYED",
+      "mandatory" : true,
+      "label" : "Al final de tu turno",
+      "text" : "Envía cartas de tu mano al fondo de tu mazo hasta tener 4 cartas en tu mano.",
+      "steps" : [
+        {
+          "type" : "Do",
+          "action" : {
+            "type" : "Move",
+            "cards" : {
+              "zones" : "hand",
+              "owner" : "YOU",
+              "filter" : {},
+              "min" : {
+                "type" : "HandOver",
+                "keep" : 4
+              },
+              "max" : {
+                "type" : "HandOver",
+                "keep" : 4
+              },
+              "self" : "ANY",
+              "mode" : "CHOOSE"
+            },
+            "to" : "deckBottom"
+          }
+        }
+      ],
+      "sourceZone" : "field",
+      "limit" : "NONE"
+    }
+  ]
 }

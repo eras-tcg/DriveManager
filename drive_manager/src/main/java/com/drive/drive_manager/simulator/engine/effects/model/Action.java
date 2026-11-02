@@ -42,6 +42,12 @@ public sealed interface Action {
         }
     }
 
+    /** "declara ataque": this card, or the ally chosen before, attacks without being exhausted (rule 11.9.3.1); {@code opponentOnly}: "a tu rival". */
+    record Attack(boolean opponentOnly) implements Action {}
+
+    /** "al final del turno: …": what follows is another effect of the card, {@code effect} (moment DELAYED), for the same subject. */
+    record AtEndOfTurn(String effect) implements Action {}
+
     /** "roba N cartas"; {@code bothPlayers}: "ambos jugadores roban". */
     record Draw(com.drive.drive_manager.simulator.engine.Amount count, boolean bothPlayers) implements Action {}
 
@@ -91,7 +97,7 @@ public sealed interface Action {
      * discarded, whatever the verb (designer ruling 2026-11-01).
      *
      * @param cards    which ones; when the player picks them they are not targets (only "elige", {@link Select}, makes targets)
-     * @param to        {@link #TRIBUTES}, {@link #DISCARD}, {@link #DECK_TOP}, {@link #DECK_BOTTOM}, {@link #HAND}, {@link #FRONT}, {@link #BACK},
+     * @param to        {@link #TRIBUTES}, {@link #DISCARD}, {@link #DECK_TOP}, {@link #DECK_BOTTOM}, {@link #DECK_TOP_OR_BOTTOM} (the player says), {@link #HAND}, {@link #FRONT}, {@link #BACK},
      *                  {@link #LIFE_TOP}, or "materials:x" / "resources:x" of x: self, subject or last
      * @param random   "en orden aleatorio"; otherwise the order the player gives
      * @param label    what is shown on a chosen card; null: said by the destination
@@ -112,6 +118,7 @@ public sealed interface Action {
         public static final String DISCARD = "discardPile";
         public static final String DECK_TOP = "deckTop";
         public static final String DECK_BOTTOM = "deckBottom";
+        public static final String DECK_TOP_OR_BOTTOM = "deckTopOrBottom";
         public static final String HAND = "hand";
 
         @Override

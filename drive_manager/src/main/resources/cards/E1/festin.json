@@ -1,54 +1,64 @@
 {
   "name" : "festin",
-  "effects" : [ {
-    "id" : "festin:en-juego",
-    "moment" : "ON_PLAY",
-    "mandatory" : true,
-    "label" : "En Juego",
-    "text" : "(1) Si tienes 0 o más gemas: puedes sacrificar 1 aliado para que otro a lo más 1 nivel mayor declare ataque.",
-    "steps" : [ {
-      "type" : "MayDo",
-      "question" : "¿Sacrificas 1 aliado para que otro de, a lo más, 1 nivel mayor declare ataque?",
-      "covers" : 3
-    }, {
-      "type" : "Do",
-      "action" : {
-        "type" : "Destroy",
-        "cards" : {
-          "zones" : "allies",
-          "owner" : "YOU",
-          "filter" : { },
-          "min" : {
-            "type" : "Fixed",
-            "value" : 1
-          },
-          "max" : {
-            "type" : "Fixed",
-            "value" : 1
-          },
-          "self" : "ANY",
-          "mode" : "CHOOSE"
+  "effects" : [
+    {
+      "id" : "festin:en-juego",
+      "moment" : "ON_PLAY",
+      "mandatory" : true,
+      "label" : "En Juego",
+      "text" : "(1) Si tienes 0 o más gemas: puedes sacrificar 1 aliado para que otro a lo más 1 nivel mayor declare ataque.",
+      "steps" : [
+        {
+          "type" : "MayDo",
+          "question" : "¿Sacrificas 1 aliado para que otro de, a lo más, 1 nivel mayor declare ataque?",
+          "covers" : 3
         },
-        "sacrifice" : true,
-        "required" : true
-      }
-    }, {
-      "type" : "PickAllyUpToSacrificedLevel",
-      "plus" : 1
-    }, {
-      "type" : "DeclareAttack"
-    } ],
-    "condition" : {
-      "type" : "Compare",
-      "left" : {
-        "type" : "SignedGems"
+        {
+          "type" : "Do",
+          "action" : {
+            "type" : "Destroy",
+            "cards" : {
+              "zones" : "allies",
+              "owner" : "YOU",
+              "filter" : {},
+              "min" : {
+                "type" : "Fixed",
+                "value" : 1
+              },
+              "max" : {
+                "type" : "Fixed",
+                "value" : 1
+              },
+              "self" : "ANY",
+              "mode" : "CHOOSE"
+            },
+            "sacrifice" : true,
+            "required" : true
+          }
+        },
+        {
+          "type" : "PickAllyUpToSacrificedLevel",
+          "plus" : 1
+        },
+        {
+          "type" : "Do",
+          "action" : {
+            "type" : "Attack"
+          }
+        }
+      ],
+      "condition" : {
+        "type" : "Compare",
+        "left" : {
+          "type" : "SignedGems"
+        },
+        "op" : "AT_LEAST",
+        "right" : {
+          "type" : "Fixed"
+        }
       },
-      "op" : "AT_LEAST",
-      "right" : {
-        "type" : "Fixed"
-      }
-    },
-    "sourceZone" : "field",
-    "limit" : "ONCE_PER_TURN_BETWEEN_COPIES"
-  } ]
+      "sourceZone" : "field",
+      "limit" : "ONCE_PER_TURN_BETWEEN_COPIES"
+    }
+  ]
 }

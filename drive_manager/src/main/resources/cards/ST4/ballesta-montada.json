@@ -1,37 +1,49 @@
 {
   "name" : "ballesta montada",
-  "effects" : [ {
-    "id" : "ballesta-montada:final-del-turno",
-    "moment" : "ON_EVENT",
-    "label" : "Turno Aliado",
-    "text" : "Al final del turno: esta carta activa puede atacar al oponente sin agotarse.",
-    "steps" : [ {
-      "type" : "DeclareAttack",
-      "opponentOnly" : true
-    } ],
-    "condition" : {
-      "type" : "All",
-      "all" : [ {
-        "type" : "Happened",
-        "type" : "TURN_END",
-        "actor" : "YOU",
-        "owner" : "ANY"
-      }, {
-        "type" : "ThisIs",
-        "state" : "ACTIVE"
-      }, {
-        "type" : "ThisIs",
-        "state" : "IN_FRONT_LINE"
-      }, {
-        "type" : "Not",
-        "condition" : {
-          "type" : "GameIs",
-          "state" : "DURING_COMBAT"
+  "effects" : [
+    {
+      "id" : "ballesta-montada:final-del-turno",
+      "moment" : "ON_EVENT",
+      "label" : "Turno Aliado",
+      "text" : "Al final del turno: esta carta activa puede atacar al oponente sin agotarse.",
+      "steps" : [
+        {
+          "type" : "Do",
+          "action" : {
+            "type" : "Attack",
+            "opponentOnly" : true
+          }
         }
-      } ]
-    },
-    "sourceZone" : "field",
-    "allyTurn" : true,
-    "limit" : "NONE"
-  } ]
+      ],
+      "condition" : {
+        "type" : "All",
+        "all" : [
+          {
+            "type" : "Happened",
+            "eventType" : "TURN_END",
+            "actor" : "YOU",
+            "owner" : "ANY"
+          },
+          {
+            "type" : "ThisIs",
+            "state" : "ACTIVE"
+          },
+          {
+            "type" : "ThisIs",
+            "state" : "IN_FRONT_LINE"
+          },
+          {
+            "type" : "Not",
+            "condition" : {
+              "type" : "GameIs",
+              "state" : "DURING_COMBAT"
+            }
+          }
+        ]
+      },
+      "sourceZone" : "field",
+      "allyTurn" : true,
+      "limit" : "NONE"
+    }
+  ]
 }

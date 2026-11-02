@@ -512,4 +512,38 @@ public final class CombatRules {
         return opponent.getField().stream()
                 .filter(c -> "creature".equals(c.getCardType()) && inFrontLine(c) && (c.isTapped() || challenges(attacker, c))).toList();
     }
+
+    /** "declara ataque" by an effect: the subject attacks if it can. Returns true when the player is asked what to attack. */
+    static boolean attackByEffect(GameRoom room, PendingEffect effect, boolean opponentOnly) {
+        String userId = effect.getControllerId();
+        CardSlot subject = subject(room, effect);
+        if (subject == null) return false;
+        if (room.getCombat() != null) {
+            log(room, name(subject) + " no puede atacar: ya hay un combate en curso", null);
+            return false;
+        }
+        if (keywords(subject).contains(NO_ATTACK)) {
+            log(room, name(subject) + " no puede declarar ataque este turno", null);
+            return false;
+        }
+        if (!inFrontLine(subject)) {
+            log(room, name(subject) + " no puede atacar: no está en la línea frontal", null);
+            return false;
+        }
+        List<CardSlot> targets = opponentOnly ? List.of() : attackTargets(room, userId, subject);
+        if (targets.isEmpty()) {
+            startCombat(room, userId, subject, null, true, effect);
+            return false;
+        }
+        PlayerState opponent = room.getPlayer(room.getOpponentId(userId));
+        Prompt prompt = prompt(room, effect, Prompt.Kind.PICK,
+                name(subject) + " declara ataque: elige una criatura agotada a la que atacar, o ninguna para atacar a tu rival.");
+        prompt.setCards(new ArrayList<>(opponent.getField()));
+        prompt.setValidIds(new ArrayList<>(ids(targets)));
+        prompt.setMin(0);
+        prompt.setMax(1);
+        prompt.setChosenLabel("Atacar");
+        room.setPrompt(prompt);
+        return true;
+    }
 }

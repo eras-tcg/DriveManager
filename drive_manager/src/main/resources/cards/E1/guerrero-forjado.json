@@ -1,61 +1,73 @@
 {
   "name" : "guerrero forjado",
-  "effects" : [ {
-    "id" : "guerrero-forjado:tributada",
-    "moment" : "ON_EVENT",
-    "label" : "En Tributos",
-    "text" : "Si esta carta es tributada desde el campo y tienes menos de 0 gemas: puedes elegir 1 aliado activo; este declara ataque.",
-    "cost" : [ {
-      "type" : "Do",
-      "action" : {
-        "type" : "Select",
-        "selector" : {
-          "zones" : "attackers",
-          "owner" : "YOU",
-          "filter" : {
-            "cardType" : "creature",
-            "activeOnly" : true
-          },
-          "min" : {
-            "type" : "Fixed",
-            "value" : 1
-          },
-          "max" : {
-            "type" : "Fixed",
-            "value" : 1
-          },
-          "self" : "ANY",
-          "mode" : "CHOOSE"
-        },
-        "target" : true,
-        "saveAs" : "subject",
-        "label" : "Elegido",
-        "endsIfNone" : true
-      }
-    } ],
-    "steps" : [ {
-      "type" : "DeclareAttack"
-    } ],
-    "condition" : {
-      "type" : "All",
-      "all" : [ {
-        "type" : "ThisTributed",
-        "fromZone" : "field"
-      }, {
-        "type" : "Not",
-        "condition" : {
-          "type" : "Compare",
-          "left" : {
-            "type" : "SignedGems"
-          },
-          "op" : "AT_LEAST",
-          "right" : {
-            "type" : "Fixed"
+  "effects" : [
+    {
+      "id" : "guerrero-forjado:tributada",
+      "moment" : "ON_EVENT",
+      "label" : "En Tributos",
+      "text" : "Si esta carta es tributada desde el campo y tienes menos de 0 gemas: puedes elegir 1 aliado activo; este declara ataque.",
+      "cost" : [
+        {
+          "type" : "Do",
+          "action" : {
+            "type" : "Select",
+            "selector" : {
+              "zones" : "attackers",
+              "owner" : "YOU",
+              "filter" : {
+                "cardType" : "creature",
+                "activeOnly" : true
+              },
+              "min" : {
+                "type" : "Fixed",
+                "value" : 1
+              },
+              "max" : {
+                "type" : "Fixed",
+                "value" : 1
+              },
+              "self" : "ANY",
+              "mode" : "CHOOSE"
+            },
+            "target" : true,
+            "saveAs" : "subject",
+            "label" : "Elegido",
+            "endsIfNone" : true
           }
         }
-      } ]
-    },
-    "sourceZone" : "tributeZone",
-    "limit" : "NONE"
-  } ]
+      ],
+      "steps" : [
+        {
+          "type" : "Do",
+          "action" : {
+            "type" : "Attack"
+          }
+        }
+      ],
+      "condition" : {
+        "type" : "All",
+        "all" : [
+          {
+            "type" : "ThisTributed",
+            "fromZone" : "field"
+          },
+          {
+            "type" : "Not",
+            "condition" : {
+              "type" : "Compare",
+              "left" : {
+                "type" : "SignedGems"
+              },
+              "op" : "AT_LEAST",
+              "right" : {
+                "type" : "Fixed"
+              }
+            }
+          }
+        ]
+      },
+      "sourceZone" : "tributeZone",
+      "limit" : "NONE"
+    }
+  ]
 }

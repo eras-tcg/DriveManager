@@ -1,63 +1,71 @@
 {
   "name" : "caballería de primera línea",
-  "effects" : [ {
-    "id" : "caballeria-primera-linea:todos-los-turnos",
-    "moment" : "ON_EVENT",
-    "label" : "Todos Los Turnos",
-    "text" : "Una vez por turno: si esta carta activa Agrupar, puedes tributar 1 carta de tu mano para reactivar esta carta.",
-    "steps" : [ {
-      "type" : "IfPossible"
-    }, {
-      "type" : "Do",
-      "action" : {
-        "type" : "Move",
-        "cards" : {
-          "zones" : "hand",
-          "owner" : "YOU",
-          "filter" : { },
-          "min" : {
-            "type" : "Fixed",
-            "value" : 1
-          },
-          "max" : {
-            "type" : "Fixed",
-            "value" : 1
-          },
-          "self" : "EXCLUDE",
-          "mode" : "CHOOSE"
+  "effects" : [
+    {
+      "id" : "caballeria-primera-linea:todos-los-turnos",
+      "moment" : "ON_EVENT",
+      "label" : "Todos Los Turnos",
+      "text" : "Una vez por turno: si esta carta activa Agrupar, puedes tributar 1 carta de tu mano para reactivar esta carta.",
+      "steps" : [
+        {
+          "type" : "IfPossible"
         },
-        "to" : "tributeZone"
-      }
-    }, {
-      "type" : "Do",
-      "action" : {
-        "type" : "SetTapped",
-        "cards" : {
-          "zones" : "field",
-          "owner" : "YOU",
-          "filter" : { },
-          "min" : {
-            "type" : "Fixed",
-            "value" : 1
-          },
-          "max" : {
-            "type" : "Fixed",
-            "value" : 1
-          },
-          "self" : "ANY",
-          "mode" : "SELF"
+        {
+          "type" : "Do",
+          "action" : {
+            "type" : "Move",
+            "cards" : {
+              "zones" : "hand",
+              "owner" : "YOU",
+              "filter" : {},
+              "min" : {
+                "type" : "Fixed",
+                "value" : 1
+              },
+              "max" : {
+                "type" : "Fixed",
+                "value" : 1
+              },
+              "self" : "EXCLUDE",
+              "mode" : "CHOOSE"
+            },
+            "to" : "tributeZone"
+          }
+        },
+        {
+          "type" : "Do",
+          "action" : {
+            "type" : "SetTapped",
+            "cards" : {
+              "zones" : "field",
+              "owner" : "YOU",
+              "filter" : {},
+              "min" : {
+                "type" : "Fixed",
+                "value" : 1
+              },
+              "max" : {
+                "type" : "Fixed",
+                "value" : 1
+              },
+              "self" : "ANY",
+              "mode" : "SELF"
+            }
+          }
         }
-      }
-    } ],
-    "condition" : {
-      "type" : "Happened",
-      "type" : "GAIN",
-      "actor" : "ANY",
-      "owner" : "ANY",
-      "thisCard" : true,
-      "data" : [ "keyword=Agrupar" ]
-    },
-    "sourceZone" : "field",
-    "limit" : "ONCE_PER_TURN"
-  } ]
+      ],
+      "condition" : {
+        "type" : "Happened",
+        "eventType" : "GAIN",
+        "actor" : "ANY",
+        "owner" : "ANY",
+        "thisCard" : true,
+        "data" : [
+          "keyword=Agrupar"
+        ]
+      },
+      "sourceZone" : "field",
+      "limit" : "ONCE_PER_TURN"
+    }
+  ]
 }

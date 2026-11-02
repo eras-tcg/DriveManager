@@ -11,6 +11,8 @@ public final class Memory {
     public static final String SUMMONED = "summoned";
     /** The cards the last action picked or moved ("si tributaste…", "de nivel menor que la carta devuelta"). */
     public static final String LAST = "last";
+    /** Of what was last chosen, the active allies at that moment: "si era un aliado activo". */
+    public static final String ACTIVE_ALLIES = "activeAllies";
 
     private Memory() {}
 }

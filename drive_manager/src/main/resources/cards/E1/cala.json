@@ -1,145 +1,165 @@
 {
   "name" : "cala",
-  "effects" : [ {
-    "id" : "cala:en-invocacion",
-    "moment" : "ON_SUMMON",
-    "label" : "En Invocación",
-    "text" : "Puedes añadir 1 aliado nivel 1 como recurso de esta carta para reactivar 1 aliado de fuerza 7 o menos.",
-    "steps" : [ {
-      "type" : "IfPossible"
-    }, {
-      "type" : "Do",
-      "action" : {
-        "type" : "Move",
-        "cards" : {
-          "zones" : "allies",
-          "owner" : "YOU",
-          "filter" : {
-            "cardType" : "creature",
-            "level" : 1
-          },
-          "min" : {
-            "type" : "Fixed",
-            "value" : 1
-          },
-          "max" : {
-            "type" : "Fixed",
-            "value" : 1
-          },
-          "self" : "EXCLUDE",
-          "mode" : "CHOOSE"
+  "effects" : [
+    {
+      "id" : "cala:en-invocacion",
+      "moment" : "ON_SUMMON",
+      "label" : "En Invocación",
+      "text" : "Puedes añadir 1 aliado nivel 1 como recurso de esta carta para reactivar 1 aliado de fuerza 7 o menos.",
+      "steps" : [
+        {
+          "type" : "IfPossible"
         },
-        "to" : "resources:self"
-      }
-    }, {
-      "type" : "Do",
-      "action" : {
-        "type" : "SetTapped",
-        "cards" : {
-          "zones" : "allies",
-          "owner" : "YOU",
-          "filter" : {
-            "maxStrength" : 7
-          },
-          "min" : {
-            "type" : "Fixed",
-            "value" : 1
-          },
-          "max" : {
-            "type" : "Fixed",
-            "value" : 1
-          },
-          "self" : "ANY",
-          "mode" : "CHOOSE"
+        {
+          "type" : "Do",
+          "action" : {
+            "type" : "Move",
+            "cards" : {
+              "zones" : "allies",
+              "owner" : "YOU",
+              "filter" : {
+                "cardType" : "creature",
+                "level" : 1
+              },
+              "min" : {
+                "type" : "Fixed",
+                "value" : 1
+              },
+              "max" : {
+                "type" : "Fixed",
+                "value" : 1
+              },
+              "self" : "EXCLUDE",
+              "mode" : "CHOOSE"
+            },
+            "to" : "resources:self"
+          }
         },
-        "required" : true
-      }
-    } ],
-    "sourceZone" : "field",
-    "limit" : "NONE"
-  } ],
-  "inherited" : [ {
-    "id" : "cala:hereda-todos-los-turnos",
-    "moment" : "ON_EVENT",
-    "label" : "Todos Los Turnos",
-    "text" : "Heredado de Cala: si esta carta es agotada, puedes tributar el recurso con este efecto; invoca 1 [hada] de tu mano reduciendo su coste en 1.",
-    "cost" : [ {
-      "type" : "Do",
-      "action" : {
-        "type" : "Move",
-        "cards" : {
-          "zones" : "resources",
-          "owner" : "YOU",
-          "filter" : {
-            "name" : "Cala"
+        {
+          "type" : "Do",
+          "action" : {
+            "type" : "SetTapped",
+            "cards" : {
+              "zones" : "allies",
+              "owner" : "YOU",
+              "filter" : {
+                "maxStrength" : 7
+              },
+              "min" : {
+                "type" : "Fixed",
+                "value" : 1
+              },
+              "max" : {
+                "type" : "Fixed",
+                "value" : 1
+              },
+              "self" : "ANY",
+              "mode" : "CHOOSE"
+            },
+            "required" : true
+          }
+        }
+      ],
+      "sourceZone" : "field",
+      "limit" : "NONE"
+    }
+  ],
+  "inherited" : [
+    {
+      "id" : "cala:hereda-todos-los-turnos",
+      "moment" : "ON_EVENT",
+      "label" : "Todos Los Turnos",
+      "text" : "Heredado de Cala: si esta carta es agotada, puedes tributar el recurso con este efecto; invoca 1 [hada] de tu mano reduciendo su coste en 1.",
+      "cost" : [
+        {
+          "type" : "Do",
+          "action" : {
+            "type" : "Move",
+            "cards" : {
+              "zones" : "resources",
+              "owner" : "YOU",
+              "filter" : {
+                "name" : "Cala"
+              },
+              "min" : {
+                "type" : "Fixed",
+                "value" : 1
+              },
+              "max" : {
+                "type" : "Fixed",
+                "value" : 1
+              },
+              "self" : "ANY",
+              "mode" : "TOP"
+            },
+            "to" : "tributeZone"
+          }
+        }
+      ],
+      "steps" : [
+        {
+          "type" : "Do",
+          "action" : {
+            "type" : "Summon",
+            "cards" : {
+              "zones" : "hand",
+              "owner" : "YOU",
+              "filter" : {
+                "classes" : [
+                  "hada"
+                ],
+                "cardType" : "creature"
+              },
+              "min" : {
+                "type" : "Fixed",
+                "value" : 1
+              },
+              "max" : {
+                "type" : "Fixed",
+                "value" : 1
+              },
+              "self" : "ANY",
+              "mode" : "CHOOSE"
+            },
+            "reduce" : {
+              "type" : "Fixed",
+              "value" : 1
+            },
+            "required" : true
+          }
+        }
+      ],
+      "condition" : {
+        "type" : "Any",
+        "any" : [
+          {
+            "type" : "Happened",
+            "eventType" : "TAP",
+            "actor" : "ANY",
+            "owner" : "ANY",
+            "thisCard" : true
           },
-          "min" : {
-            "type" : "Fixed",
-            "value" : 1
+          {
+            "type" : "Happened",
+            "eventType" : "BLOCK",
+            "actor" : "ANY",
+            "owner" : "ANY",
+            "thisCard" : true
           },
-          "max" : {
-            "type" : "Fixed",
-            "value" : 1
-          },
-          "self" : "ANY",
-          "mode" : "TOP"
-        },
-        "to" : "tributeZone"
-      }
-    } ],
-    "steps" : [ {
-      "type" : "Do",
-      "action" : {
-        "type" : "Summon",
-        "cards" : {
-          "zones" : "hand",
-          "owner" : "YOU",
-          "filter" : {
-            "classes" : [ "hada" ],
-            "cardType" : "creature"
-          },
-          "min" : {
-            "type" : "Fixed",
-            "value" : 1
-          },
-          "max" : {
-            "type" : "Fixed",
-            "value" : 1
-          },
-          "self" : "ANY",
-          "mode" : "CHOOSE"
-        },
-        "reduce" : {
-          "type" : "Fixed",
-          "value" : 1
-        },
-        "required" : true
-      }
-    } ],
-    "condition" : {
-      "type" : "Any",
-      "any" : [ {
-        "type" : "Happened",
-        "type" : "TAP",
-        "actor" : "ANY",
-        "owner" : "ANY",
-        "thisCard" : true
-      }, {
-        "type" : "Happened",
-        "type" : "BLOCK",
-        "actor" : "ANY",
-        "owner" : "ANY",
-        "thisCard" : true
-      }, {
-        "type" : "Happened",
-        "type" : "ATTACK_DECLARED",
-        "actor" : "ANY",
-        "owner" : "ANY",
-        "thisCard" : true,
-        "data" : [ "exhausted=true" ]
-      } ]
-    },
-    "sourceZone" : "field",
-    "limit" : "NONE"
-  } ]
+          {
+            "type" : "Happened",
+            "eventType" : "ATTACK_DECLARED",
+            "actor" : "ANY",
+            "owner" : "ANY",
+            "thisCard" : true,
+            "data" : [
+              "exhausted=true"
+            ]
+          }
+        ]
+      },
+      "sourceZone" : "field",
+      "limit" : "NONE"
+    }
+  ]
 }
