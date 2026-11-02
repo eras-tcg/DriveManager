@@ -341,25 +341,22 @@ public final class EffectEngine {
      */
     public static void refreshContinuous(GameRoom room) {
         for (PlayerState p : room.getPlayers().values()) {
-            // What the cards' auras give their allies ("todos los aliados [armada] ganan fuerza 1")
-            Map<String, Integer> aura = new HashMap<>();
+            // What cards give their allies ("todos los aliados [armada] ganan fuerza 1")
+            Map<String, Integer> fromAllies = new HashMap<>();
             for (CardSlot source : p.getField()) {
                 if (source.isFaceDown()) continue;
-                for (CardEffects.Aura a : CardEffects.aurasOf(source)) {
-                    if (a.enemies()) continue;
-                    if (a.allyTurn() && !p.getUserId().equals(room.getCurrentTurnUserId())) continue;
-                    if (a.condition() != null && !a.condition().test(room, null, source, p.getUserId())) continue;
-                    for (CardSlot ally : p.getField()) if (a.targets().matches(ally)) aura.merge(ally.getInstanceId(), a.strength(), Integer::sum);
+                for (CardEffects.Continuous c : CardEffects.continuousOf(source)) {
+                    if (c.targets() == null || c.enemies() || !c.holds(room, source, p.getUserId())) continue;
+                    for (CardSlot ally : p.getField()) if (c.targets().matches(ally)) fromAllies.merge(ally.getInstanceId(), c.strength(), Integer::sum);
                 }
             }
             for (CardSlot card : p.getField()) {
-                int strength = aura.getOrDefault(card.getInstanceId(), 0);
+                int strength = fromAllies.getOrDefault(card.getInstanceId(), 0);
                 int level = 0;
                 List<String> keywords = new ArrayList<>();
                 for (CardEffects.Continuous c : CardEffects.continuousOf(card)) {
-                    if (!"field".equals(c.zone())) continue;
-                    if (c.allyTurn() && !p.getUserId().equals(room.getCurrentTurnUserId())) continue;
-                    if (card.isFaceDown() || !c.condition().test(room, null, card, p.getUserId())) continue;
+                    if (c.targets() != null || !"field".equals(c.zone())) continue;
+                    if (card.isFaceDown() || !c.holds(room, card, p.getUserId())) continue;
                     strength += c.strength() + (c.bonus() == null ? 0 : c.bonus().of(room, p.getUserId()));
                     level += c.levelBonus() == null ? 0 : c.levelBonus().of(room, p.getUserId());
                     keywords.addAll(c.keywords());
@@ -380,18 +377,17 @@ public final class EffectEngine {
             if (opponent == null) continue;
             for (CardSlot source : p.getField()) {
                 if (source.isFaceDown()) continue;
-                for (CardEffects.Aura a : CardEffects.aurasOf(source)) {
-                    if (!a.enemies()) continue;
+                for (CardEffects.Continuous c : CardEffects.continuousOf(source)) {
+                    if (c.targets() == null || !c.enemies()) continue;
                     // A creature in the Retaguardia cannot affect enemies, and a creature in theirs is out of reach (rule 4.0.6.2; designer ruling 2026-11-01)
                     if ("creature".equals(source.getCardType()) && !inFrontLine(source)) continue;
-                    if (a.allyTurn() && !p.getUserId().equals(room.getCurrentTurnUserId())) continue;
-                    if (a.condition() != null && !a.condition().test(room, null, source, p.getUserId())) continue;
+                    if (!c.holds(room, source, p.getUserId())) continue;
                     for (CardSlot enemy : opponent.getField()) {
-                        if (!a.targets().matches(enemy) || !inFrontLine(enemy)) continue;
+                        if (!c.targets().matches(enemy) || !inFrontLine(enemy)) continue;
                         List<String> keywords = new ArrayList<>(enemy.getContinuousKeywords());
-                        keywords.addAll(a.keywords());
+                        keywords.addAll(c.keywords());
                         enemy.setContinuousKeywords(keywords);
-                        enemy.setContinuousStrength(enemy.getContinuousStrength() + a.strength());
+                        enemy.setContinuousStrength(enemy.getContinuousStrength() + c.strength());
                     }
                 }
             }

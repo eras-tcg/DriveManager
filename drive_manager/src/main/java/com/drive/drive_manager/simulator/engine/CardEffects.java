@@ -73,7 +73,6 @@ public final class CardEffects {
     /** Inherited effects ("heredables"): what a card gives the creature it is a Recurso of (rule 11.4.0.3). */
     private static final Map<String, List<EffectScript>> INHERITED = new HashMap<>();
     private static final Map<String, List<Continuous>> CONTINUOUS = new HashMap<>();
-    private static final Map<String, List<Aura>> AURAS = new HashMap<>();
 
     /**
      * Keyword abilities with an effect the engine runs ("Celeridad"). Others (Provocar, Letalidad…) are combat rules; Asalto modifies the
@@ -983,7 +982,7 @@ public final class CardEffects {
                 List.of(tributeResource("Ninfa Cantante De Dragones")), List.of(untapSelf()))
                 .when(Condition.allySummonedByEffect(CardFilter.creatures().withMinStrength(4))));
         // E1-R4 Legionario De Espadas Dobles
-        aura("legionario de espadas dobles", new Aura("Turno Aliado", "Todos los aliados [armada] ganan fuerza 1.", true, null,
+        continuous("legionario de espadas dobles", Continuous.onAllies("Turno Aliado", "Todos los aliados [armada] ganan fuerza 1.", true, null,
                 CardFilter.creatures().withClasses("armada"), 1));
         // E1-R11 Alabarda De Primera Línea (Celeridad: keyword)
         add("alabarda de primera línea", new EffectScript("alabarda-primera-linea:en-invocacion", Moment.ON_SUMMON, true, EN_INVOCACION + " por efecto",
@@ -1476,8 +1475,8 @@ public final class CardEffects {
                 "Elige hasta 1 enemigo de fuerza 9 o menos; destrúyelo.",
                 List.of(chooseEnemy(1, enemy.withMaxStrength(9), true)), List.of(destroyChosen())));
         // "Todos Los Turnos: los enemigos de fuerza 3 o menos no pueden declarar ataque" (continuous, on the opponent's creatures)
-        aura("lectranatus", new Aura(TODOS, "Los enemigos de fuerza 3 o menos no pueden declarar ataque.", false, null,
-                CardFilter.creatures().withMaxStrength(3), 0, true, List.of(EffectEngine.NO_ATTACK)));
+        continuous("lectranatus", Continuous.onEnemies(TODOS, "Los enemigos de fuerza 3 o menos no pueden declarar ataque.", false, null,
+                CardFilter.creatures().withMaxStrength(3), 0, List.of(EffectEngine.NO_ATTACK)));
         inherit("lectranatus", new EffectScript("lectranatus:hereda-al-atacar", Moment.ON_ATTACK, true, AL_ATACAR,
                 "Heredado de Lectranatus: elige 1 enemigo de fuerza 9 o menos; este no puede agotarse hasta el final del turno.",
                 List.of(chooseEnemy(1, enemy.withMaxStrength(9))), List.of(chosenCannotBeExhausted("turn"))));
@@ -2948,13 +2947,22 @@ public final class CardEffects {
     }
 
     /**
-     * A continuous effect: while its condition holds, the card has that strength and those abilities. It is
-     * checked again after every event, so it stops applying as soon as the condition does.
+     * A continuous effect: while its condition holds, the cards it affects have that strength and those abilities. It is checked again
+     * after every event, so it stops applying as soon as the condition does.
+     *
+     * @param condition  when it applies; null: always
+     * @param zone       where the card has to be for it to apply ("field", or "lifeStack": "mientras esté en tus vidas")
+     * @param levelBonus levels it gains while it applies ("gana 1 nivel por cada copia"), or null
+     * @param targets    the cards it affects; null: this card
+     * @param enemies    {@code targets} are the opponent's ("los enemigos de fuerza 3 o menos no pueden declarar ataque")
      */
-    /** {@code zone}: where the card has to be for it to apply ("field", or "lifeStack": "mientras esté en tus vidas"). */
-    /** {@code levelBonus}: levels it gains while it applies ("gana 1 nivel por cada copia"), or null. */
     public record Continuous(String label, String text, boolean allyTurn, Condition condition, int strength, List<String> keywords,
-                             Amount bonus, String zone, Amount levelBonus) {
+                             Amount bonus, String zone, Amount levelBonus, CardFilter targets, boolean enemies) {
+        public Continuous(String label, String text, boolean allyTurn, Condition condition, int strength, List<String> keywords,
+                          Amount bonus, String zone, Amount levelBonus) {
+            this(label, text, allyTurn, condition, strength, keywords, bonus, zone, levelBonus, null, false);
+        }
+
         public Continuous(String label, String text, boolean allyTurn, Condition condition, int strength, List<String> keywords,
                           Amount bonus, String zone) {
             this(label, text, allyTurn, condition, strength, keywords, bonus, zone, null);
@@ -2968,34 +2976,26 @@ public final class CardEffects {
         public Continuous(String label, String text, boolean allyTurn, Condition condition, int strength, List<String> keywords) {
             this(label, text, allyTurn, condition, strength, keywords, null, "field");
         }
+
+        /** "Todos los aliados [filtro] ganan fuerza N." */
+        static Continuous onAllies(String label, String text, boolean allyTurn, Condition condition, CardFilter targets, int strength) {
+            return new Continuous(label, text, allyTurn, condition, strength, List.of(), null, "field", null, targets, false);
+        }
+
+        /** "Los enemigos [filtro] …". */
+        static Continuous onEnemies(String label, String text, boolean allyTurn, Condition condition, CardFilter targets, int strength, List<String> keywords) {
+            return new Continuous(label, text, allyTurn, condition, strength, keywords, null, "field", null, targets, true);
+        }
+
+        /** It applies to its holder now: the zone, the turn and the condition. */
+        boolean holds(GameRoom room, CardSlot holder, String controller) {
+            if (allyTurn && !controller.equals(room.getCurrentTurnUserId())) return false;
+            return condition == null || condition.test(room, null, holder, controller);
+        }
     }
 
     private static void continuous(String name, Continuous... effects) {
         if (CONTINUOUS.putIfAbsent(name, List.of(effects)) != null) throw new IllegalStateException("Carta registrada dos veces: " + name);
-    }
-
-    /**
-     * A continuous effect on other cards: while its condition holds, the cards that match get that strength and those
-     * keywords — its allies, or with {@code enemies} the opponent's ("los enemigos de fuerza 3 o menos no pueden declarar ataque").
-     */
-    public record Aura(String label, String text, boolean allyTurn, Condition condition, CardFilter targets, int strength,
-                       boolean enemies, List<String> keywords) {
-        public Aura(String label, String text, boolean allyTurn, Condition condition, CardFilter targets, int strength) {
-            this(label, text, allyTurn, condition, targets, strength, false, List.of());
-        }
-
-        public Aura {
-            keywords = keywords == null ? List.of() : List.copyOf(keywords);
-        }
-    }
-
-    private static void aura(String name, Aura... auras) {
-        if (AURAS.putIfAbsent(name, List.of(auras)) != null) throw new IllegalStateException("Carta registrada dos veces: " + name);
-    }
-
-    public static List<Aura> aurasOf(CardSlot card) {
-        if (card.getCardName() == null) return List.of();
-        return AURAS.getOrDefault(card.getCardName().trim().toLowerCase(Locale.ROOT), List.of());
     }
 
     /** The name of the card that gives an inherited effect (its id), or null for a card's own effect. */
@@ -3013,15 +3013,16 @@ public final class CardEffects {
     /** Everything programmed, card by card (by name in lower case), as data: see {@link EffectJson}. */
     public static Map<String, CardDefinition> definitions() {
         Set<String> names = new TreeSet<>();
-        for (Map<String, ?> registry : List.of(BY_NAME, INHERITED, CONTINUOUS, AURAS, REPLACEMENTS, INHERITED_REPLACEMENTS)) {
+        for (Map<String, ?> registry : List.of(BY_NAME, INHERITED, CONTINUOUS, REPLACEMENTS, INHERITED_REPLACEMENTS)) {
             names.addAll(registry.keySet());
         }
         names.addAll(CostModifiers.names());
         names.addAll(TRAITS.keySet());
+        names.addAll(REACTIONS.keySet());
         Map<String, CardDefinition> all = new LinkedHashMap<>();
         for (String name : names) {
-            all.put(name, new CardDefinition(name, BY_NAME.get(name), INHERITED.get(name), CONTINUOUS.get(name), AURAS.get(name),
-                    CostModifiers.of(name), REPLACEMENTS.get(name), INHERITED_REPLACEMENTS.get(name), TRAITS.get(name)));
+            all.put(name, new CardDefinition(name, BY_NAME.get(name), INHERITED.get(name), CONTINUOUS.get(name),
+                    reactionsOf(name), INHERITED_REPLACEMENTS.containsKey(name) ? List.copyOf(INHERITED_REPLACEMENTS.get(name)) : null, TRAITS.get(name)));
         }
         return all;
     }
@@ -3037,18 +3038,23 @@ public final class CardEffects {
             List<String> rules = all.computeIfAbsent(n, k -> new ArrayList<>());
             if (t.specialFromTributes()) rules.add("En Tributos: cuenta como en la mano para invocaciones especiales");
             if (t.alias() != null) rules.add("puede ser tratada como \"" + t.alias() + "\"");
-            if (t.swapsBlocker()) rules.add("cambia al bloqueador declarado por otro aliado");
-            if (t.attacksBeforeAscended()) rules.add("declara ataque antes de ser ascendida");
-            if (t.gainBeforeAscended() != null) rules.add("gana " + t.gainBeforeAscended() + " antes de ser ascendida");
             if (t.lifePlayCost() != null) rules.add("desde las vidas se juega pagando " + t.lifePlayCost() + " gemas");
-            if (t.allyRemovalSummon() != null) rules.add("se invoca especialmente en lugar de que un aliado sea removido");
-            if (t.allyGuard() != null) rules.add("evita que sus aliados sean removidos por efecto oponente");
             if (t.alternativeLevel() != null) rules.add("puede ser considerada nivel " + t.alternativeLevel().level());
             if (t.creatureForEffects() != null) rules.add("cuenta como criatura de fuerza " + t.creatureForEffects() + " para efectos aliados");
             if (t.sacrificeToSummon() != null) rules.add("se invoca sacrificando un aliado");
             if (t.fieldPiecesDiscount() != null) rules.add("cuesta " + t.fieldPiecesDiscount().reduce() + " menos usando " + t.fieldPiecesDiscount().pieces() + " criaturas de tu campo");
-            if (t.tributesInsteadOfDamage()) rules.add("se tributa con 2 [retador] en lugar de recibir daño");
-            if (t.damageReplacement() != null) rules.add("se invoca en lugar de recibir " + t.damageReplacement().maxDamage() + " o menos de daño");
+        });
+        REACTIONS.forEach((n, reactions) -> {
+            List<String> rules = all.computeIfAbsent(n, k -> new ArrayList<>());
+            for (Reaction r : reactions) {
+                if (r instanceof Reaction.SwapsBlocker) rules.add("cambia al bloqueador declarado por otro aliado");
+                if (r instanceof Reaction.AttacksBeforeAscended) rules.add("declara ataque antes de ser ascendida");
+                if (r instanceof Reaction.GainBeforeAscended g) rules.add("gana " + g.keyword() + " antes de ser ascendida");
+                if (r instanceof AllyRemovalSummon) rules.add("se invoca especialmente en lugar de que un aliado sea removido");
+                if (r instanceof AllyGuard) rules.add("evita que sus aliados sean removidos por efecto oponente");
+                if (r instanceof Reaction.TributesInsteadOfDamage) rules.add("se tributa con 2 [retador] en lugar de recibir daño");
+                if (r instanceof DamageReplacement d) rules.add("se invoca en lugar de recibir " + d.maxDamage() + " o menos de daño");
+            }
         });
         all.computeIfAbsent("fuego perforante", k -> new ArrayList<>()).add("solo 1 de sus efectos por turno");
         all.computeIfAbsent("mensaje de un compañero", k -> new ArrayList<>()).add("solo 1 de sus efectos por turno");
@@ -3065,8 +3071,7 @@ public final class CardEffects {
      */
     public static String pending(String cardName, int own, int inherited, List<String> keywords) {
         String name = cardName == null ? "" : cardName.trim().toLowerCase(Locale.ROOT);
-        int ownDone = BY_NAME.getOrDefault(name, List.of()).size() + CONTINUOUS.getOrDefault(name, List.of()).size()
-                + AURAS.getOrDefault(name, List.of()).size() + CostModifiers.of(name).size()
+        int ownDone = BY_NAME.getOrDefault(name, List.of()).size() + CONTINUOUS.getOrDefault(name, List.of()).size() + CostModifiers.of(name).size()
                 + REPLACEMENTS.getOrDefault(name, List.of()).size() + ruleEffects().getOrDefault(name, List.of()).size();
         int inheritedDone = INHERITED.getOrDefault(name, List.of()).size() + INHERITED_REPLACEMENTS.getOrDefault(name, List.of()).size();
         List<String> pending = new ArrayList<>();
@@ -3183,7 +3188,7 @@ public final class CardEffects {
      * @param destroyOnly only when it would be destroyed ("removida" also covers being sent to the hand)
      */
     public record Replacement(String id, String label, String text, boolean destroyOnly, boolean byOpponentOnly, Limit limit, ReplacementCost cost,
-                              CardFilter resourceFilter) {
+                              CardFilter resourceFilter) implements Reaction {
         public Replacement(String id, String label, String text, boolean destroyOnly, boolean byOpponentOnly, Limit limit, ReplacementCost cost) {
             this(id, label, text, destroyOnly, byOpponentOnly, limit, cost, CardFilter.any());
         }
@@ -3245,49 +3250,67 @@ public final class CardEffects {
     /** What cards change in the rules themselves, by name: {@link CardTraits}. */
     private static final Map<String, CardTraits> TRAITS = Map.ofEntries(
             Map.entry("falanx", CardTraits.fromTributes()),
-            // E1.2-B08 EXO-91
-            Map.entry("exo 91", CardTraits.of(new AllyRemovalSummon("tributeZone", CardFilter.creatures(), 1, new Replacement("exo-91:en-tributos", "En Tributos",
-                    "(1) Cuando algún aliado fuera a ser removido: en su lugar, puede invocar especialmente esta carta reduciendo en 1 su coste especial.",
-                    false, false, Limit.ONCE_PER_TURN_BETWEEN_COPIES, ReplacementCost.ALLY_SPECIAL_SUMMON)))),
-            // E1.2-B11 SARS-2
-            Map.entry("sars 2", CardTraits.of(new AllyRemovalSummon("hand", CardFilter.creatures().withClasses("autómata").withLevel(3), 0, new Replacement("sars-2:en-mano", "En Mano",
-                    "(1) Cuando algún aliado [autómata] nivel 3 fuera a ser removido: en su lugar, puede invocar especialmente esta carta.",
-                    false, false, Limit.ONCE_PER_TURN_BETWEEN_COPIES, ReplacementCost.ALLY_SPECIAL_SUMMON)))),
-            // E2-B08 Albert Collier el Tecnomago (Legendaria: manual)
-            Map.entry("albert collier el tecnomago", CardTraits.of(new AllyGuard(CardFilter.creatures().withClasses("cineriano"), new Replacement("albert-collier:todos-los-turnos",
-                    TODOS, "Cuando uno o más aliados [cinerianos] fueran a ser removidos por efecto oponente: en su lugar, puedes tributar 1 material de "
-                    + "esta carta y sacrificar 1 [artefacto] bajo tu control.", false, true, Limit.NONE, ReplacementCost.GUARD_MATERIAL_AND_SACRIFICE,
-                    CardFilter.any().withClasses("artefacto"))))),
-            Map.entry("estoque de los guerreros jurados", CardTraits.damageTributes()),
             // E1.2-P01 Abraza Almas
             Map.entry("abraza almas", CardTraits.of(new AlternativeLevel(2, CardFilter.any().withClasses("espectro")))),
             Map.entry("prototipo xtrm-1n3", CardTraits.of(new FieldPiecesDiscount(2, 3))),
             Map.entry("fósil", CardTraits.creatureForEffects(1)),
             Map.entry("carnirex", CardTraits.sacrificeToSummon(CardFilter.creatures().withClasses("dinosaurio").active())),
-            Map.entry("principe charles di castirion", CardTraits.attackBeforeAscended()),
             Map.entry("conjuro de oscuridad infinita", CardTraits.lifePlayCost(2)),
             Map.entry("maleficio devastador", CardTraits.lifePlayCost(2)),
             Map.entry("quebrantamiento", CardTraits.lifePlayCost(2)),
             Map.entry("ritual convocatorio", CardTraits.lifePlayCost(2)),
-            Map.entry("espada de los leones dorados", CardTraits.gainBeforeAscended("Furia 2")),
-            Map.entry("comandante veterano", CardTraits.blockerSwap()),
-            Map.entry("mercenario valeroso", CardTraits.of(new DamageReplacement(8, 1))),
             Map.entry("caballero derrotado", CardTraits.alias("calavera errante")));
+
+    /** What cards do before an event, other than cost changes and replacements of a removal: {@link Reaction}. */
+    private static final Map<String, List<Reaction>> REACTIONS = Map.ofEntries(
+            // E1.2-B08 EXO-91
+            Map.entry("exo 91", List.of(new AllyRemovalSummon("tributeZone", CardFilter.creatures(), 1, new Replacement("exo-91:en-tributos", "En Tributos",
+                    "(1) Cuando algún aliado fuera a ser removido: en su lugar, puede invocar especialmente esta carta reduciendo en 1 su coste especial.",
+                    false, false, Limit.ONCE_PER_TURN_BETWEEN_COPIES, ReplacementCost.ALLY_SPECIAL_SUMMON)))),
+            // E1.2-B11 SARS-2
+            Map.entry("sars 2", List.of(new AllyRemovalSummon("hand", CardFilter.creatures().withClasses("autómata").withLevel(3), 0, new Replacement("sars-2:en-mano", "En Mano",
+                    "(1) Cuando algún aliado [autómata] nivel 3 fuera a ser removido: en su lugar, puede invocar especialmente esta carta.",
+                    false, false, Limit.ONCE_PER_TURN_BETWEEN_COPIES, ReplacementCost.ALLY_SPECIAL_SUMMON)))),
+            // E2-B08 Albert Collier el Tecnomago (Legendaria: manual)
+            Map.entry("albert collier el tecnomago", List.of(new AllyGuard(CardFilter.creatures().withClasses("cineriano"), new Replacement("albert-collier:todos-los-turnos",
+                    TODOS, "Cuando uno o más aliados [cinerianos] fueran a ser removidos por efecto oponente: en su lugar, puedes tributar 1 material de "
+                    + "esta carta y sacrificar 1 [artefacto] bajo tu control.", false, true, Limit.NONE, ReplacementCost.GUARD_MATERIAL_AND_SACRIFICE,
+                    CardFilter.any().withClasses("artefacto"))))),
+            Map.entry("estoque de los guerreros jurados", List.of(new Reaction.TributesInsteadOfDamage())),
+            Map.entry("principe charles di castirion", List.of(new Reaction.AttacksBeforeAscended())),
+            Map.entry("espada de los leones dorados", List.of(new Reaction.GainBeforeAscended("Furia 2"))),
+            Map.entry("comandante veterano", List.of(new Reaction.SwapsBlocker())),
+            Map.entry("mercenario valeroso", List.of(new DamageReplacement(8, 1))));
+
+    /** Everything the card reacts with. */
+    private static List<Reaction> reactionsOf(String name) {
+        List<Reaction> all = new ArrayList<>(CostModifiers.of(name));
+        all.addAll(REPLACEMENTS.getOrDefault(name, List.of()));
+        all.addAll(REACTIONS.getOrDefault(name, List.of()));
+        return all;
+    }
+
+    /** The card's reaction of that kind, or null. */
+    private static <T extends Reaction> T reaction(CardSlot card, Class<T> kind) {
+        if (card.getCardName() == null) return null;
+        return REACTIONS.getOrDefault(card.getCardName().trim().toLowerCase(Locale.ROOT), List.of()).stream()
+                .filter(kind::isInstance).map(kind::cast).findFirst().orElse(null);
+    }
 
     private static CardTraits traits(CardSlot card) {
         return card.getCardName() == null ? CardTraits.NONE : TRAITS.getOrDefault(card.getCardName().trim().toLowerCase(Locale.ROOT), CardTraits.NONE);
     }
 
-    public record AllyRemovalSummon(String zone, CardFilter ally, int reduce, Replacement replacement) {}
+    public record AllyRemovalSummon(String zone, CardFilter ally, int reduce, Replacement replacement) implements Reaction {}
 
     /**
      * "cuando uno o más aliados [filtro] fueran a ser removidos por efecto oponente: en su lugar, puedes …" held by a card on the field (itself
      * included). Designer ruling 2026-10-31: paid once, it saves every one of them that this effect was removing.
      */
-    public record AllyGuard(CardFilter allies, Replacement replacement) {}
+    public record AllyGuard(CardFilter allies, Replacement replacement) implements Reaction {}
 
     static AllyGuard allyGuard(CardSlot card) {
-        return traits(card).allyGuard();
+        return reaction(card, AllyGuard.class);
     }
 
     /**
@@ -3296,7 +3319,7 @@ public final class CardEffects {
      * prevented one). CombatRules.offerDamageTribute.
      */
     static boolean tributesInsteadOfDamage(CardSlot card) {
-        return traits(card).tributesInsteadOfDamage();
+        return reaction(card, Reaction.TributesInsteadOfDamage.class) != null;
     }
 
     /** "esta carta puede ser considerada nivel N por tus cartas [filtro]" (designer ruling 2026-10-31: for everything, special summons and effects). */
@@ -3332,7 +3355,7 @@ public final class CardEffects {
     }
 
     static AllyRemovalSummon allyRemovalSummon(CardSlot card) {
-        return traits(card).allyRemovalSummon();
+        return reaction(card, AllyRemovalSummon.class);
     }
 
     /** The card's own replacements and those its Recursos give it. */
@@ -3366,7 +3389,7 @@ public final class CardEffects {
 
     /** "cuando esta carta fuera a ser ascendida: puede declarar ataque" (Summons.handSpecial, then completeAscension). */
     static boolean attacksBeforeAscended(CardSlot card) {
-        return traits(card).attacksBeforeAscended();
+        return reaction(card, Reaction.AttacksBeforeAscended.class) != null;
     }
 
     /** "Para jugar esta carta desde tus vidas debes pagar N gemas" (an absolute effect: CombatRules.directDamage offers it only then). */
@@ -3377,19 +3400,20 @@ public final class CardEffects {
 
     /** "cuando esta carta fuera a ser ascendida: esta carta gana [habilidad] hasta el final del turno" (Turno Aliado; Summons.specialSummon). */
     static String gainBeforeAscended(CardSlot card) {
-        return traits(card).gainBeforeAscended();
+        Reaction.GainBeforeAscended gain = reaction(card, Reaction.GainBeforeAscended.class);
+        return gain == null ? null : gain.keyword();
     }
 
     /** "cuando un aliado sea declarado bloqueador: en su lugar, puedes reactivarlo y elegir otro aliado …" (CombatRules.offerBlockerSwap). */
     static boolean swapsBlocker(CardSlot card) {
-        return traits(card).swapsBlocker();
+        return reaction(card, Reaction.SwapsBlocker.class) != null;
     }
 
     /** "cuando fueras a recibir N o menos de daño directo por ataque: en su lugar, puedes invocar esta carta … reduciendo su coste en M". */
-    public record DamageReplacement(int maxDamage, int reduce) {}
+    public record DamageReplacement(int maxDamage, int reduce) implements Reaction {}
 
     static DamageReplacement damageReplacement(CardSlot card) {
-        return traits(card).damageReplacement();
+        return reaction(card, DamageReplacement.class);
     }
 
     /** "Esta carta puede ser tratada como «X»": the name it also answers to. */

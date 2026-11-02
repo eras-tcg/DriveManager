@@ -85,7 +85,7 @@ public final class CostModifiers {
      * @param amount    a reduction read from the game, added to {@code reduce} ("en 1 por cada [brujería] en tu descarte"); null: none
      */
     public record CostModifier(String label, Event event, Set<String> kinds, Holder holder, boolean allyTurn,
-                               Condition condition, Payment payment, int reduce, EffectScript.Limit limit, CardFilter card, Amount amount) {
+                               Condition condition, Payment payment, int reduce, EffectScript.Limit limit, CardFilter card, Amount amount) implements Reaction {
         public CostModifier(String label, Event event, Set<String> kinds, Holder holder, boolean allyTurn, Condition condition, Payment payment,
                             int reduce) {
             this(label, event, kinds, holder, allyTurn, condition, payment, reduce, EffectScript.Limit.NONE);

@@ -44,13 +44,13 @@ public final class EffectJson {
 
     private static JsonMapper mapper() {
         List<NamedType> types = new ArrayList<>();
-        for (Class<?> family : List.of(EffectStep.class, Action.class, Condition.class, Amount.class)) collect(family, types);
+        for (Class<?> family : List.of(EffectStep.class, Action.class, Condition.class, Amount.class, Reaction.class)) collect(family, types);
         JsonMapper.Builder builder = JsonMapper.builder()
                 .enable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
                 .enable(DeserializationFeature.FAIL_ON_INVALID_SUBTYPE)
                 .changeDefaultPropertyInclusion(v -> v.withValueInclusion(JsonInclude.Include.NON_NULL))
                 .registerSubtypes(types.toArray(NamedType[]::new));
-        for (Class<?> family : List.of(EffectStep.class, EffectStep.NeedsTarget.class, Action.class, Condition.class, Amount.class)) {
+        for (Class<?> family : List.of(EffectStep.class, EffectStep.NeedsTarget.class, Action.class, Condition.class, Amount.class, Reaction.class)) {
             builder.addMixIn(family, Typed.class);
         }
         return builder.build();
