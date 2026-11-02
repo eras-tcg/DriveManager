@@ -26,6 +26,19 @@ public final class Selection {
         return pool;
     }
 
+    /** Said to the player when the choice leaves the enemies out because the effect's card is in the Retaguardia. */
+    public static final String OUT_OF_REACH = "Esta carta está en la Retaguardia: no puede afectar enemigos.";
+
+    /** The selector could reach enemies on the field, but the effect's card is in the Retaguardia (rule 4.0.6.2). */
+    public static boolean enemiesOutOfReach(EffectContext ctx, Selector selector) {
+        if (selector.special() != null || selector.owner() == Selector.Owner.YOU || !ctx.inRetaguardia()) return false;
+        for (String raw : selector.zones().split(",")) {
+            String zone = raw.trim();
+            if (zone.equals("field") || zone.equals("frontLine") || zone.equals("backLine") || zone.equals("allies")) return true;
+        }
+        return false;
+    }
+
     /** The cards that can be picked now. */
     public static List<CardSlot> candidates(EffectContext ctx, Selector selector, boolean target) {
         if (selector.special() != null) return ctx.specialOptions(selector.special());

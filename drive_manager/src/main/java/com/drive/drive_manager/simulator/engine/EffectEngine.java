@@ -435,6 +435,9 @@ public final class EffectEngine {
             case "hand" -> "mano";
             case "deck" -> "mazo";
             case "field" -> "campo";
+            case "materials" -> "materiales";
+            case "resources" -> "recursos";
+            case "looked" -> "cartas miradas";
             default -> zone;
         };
     }

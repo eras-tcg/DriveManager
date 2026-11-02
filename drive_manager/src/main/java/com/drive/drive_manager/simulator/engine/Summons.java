@@ -352,6 +352,15 @@ public final class Summons {
     /** Summon by effect (rule 9.1.0.2): pays the cost, enters the Retaguardia, then the regulatory draw (9.1.0.4). */
     static void summonByEffect(GameRoom room, PendingEffect effect, PlayerState player, CardSlot card, String fromZone, int reduce,
                                        boolean toFront) {
+        summonByEffect(room, effect, player, card, fromZone, fromZone, reduce, toFront);
+    }
+
+    /**
+     * @param shownFrom where the log says the card came from: a material, resource or looked card passes through the hand to be
+     *                  summoned, and the log names where it really was
+     */
+    static void summonByEffect(GameRoom room, PendingEffect effect, PlayerState player, CardSlot card, String fromZone, String shownFrom,
+                                       int reduce, boolean toFront) {
         int cost = Math.max(0, card.getCost() - reduce);
         pay(room, player.getUserId(), cost);
         zone(player, fromZone).remove(card);
@@ -362,7 +371,7 @@ public final class Summons {
         card.setY(toFront ? 25.0 : 75.0);
         player.getField().add(card);
         record(room, GameEvent.EFFECT_SUMMON, player.getUserId(), card, fromZone, "field", effect, Map.of("cost", cost),
-                player.getUsername() + " invoca " + name(card) + ("hand".equals(fromZone) ? " de su mano" : " de sus " + zoneName(fromZone))
+                player.getUsername() + " invoca " + name(card) + ("hand".equals(shownFrom) ? " de su mano" : " de sus " + zoneName(shownFrom))
                         + " pagando " + gemsText(cost)
                         + " (" + effect.getSourceName() + ")");
         regulatoryDraw(room, player, effect);

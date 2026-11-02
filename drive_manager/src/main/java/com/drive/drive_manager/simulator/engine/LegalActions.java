@@ -37,6 +37,24 @@ public final class LegalActions {
         return legal;
     }
 
+    /**
+     * By the card's instance id: why a card of the hand cannot be summoned or played now, so the board can say so (a Definitive
+     * effect on the first turn, no gems…). Only on the player's main phase, and only for the cards {@code legal} leaves without actions.
+     */
+    public static Map<String, String> blocked(GameRoom room, String userId, Map<String, List<String>> legal) {
+        Map<String, String> reasons = new LinkedHashMap<>();
+        PlayerState player = room.getPlayer(userId);
+        if (player == null || room.getStatus() != GameRoom.RoomStatus.IN_PROGRESS || !"MAIN".equals(room.getCurrentPhase()) || room.isEngineBusy()) return reasons;
+        if (Summons.checkMainPhase(room, userId, "") != null) return reasons;
+        // Copies, as in of(): checking a utility's "En Juego" moves it out of the hand and back
+        for (CardSlot card : new ArrayList<>(player.getHand())) {
+            if (legal.containsKey(card.getInstanceId())) continue;
+            String why = "creature".equals(card.getCardType()) ? Summons.whyCannotSummon(room, userId, player, card) : Summons.whyCannotPlay(room, userId, card);
+            if (why != null) reasons.put(card.getInstanceId(), why);
+        }
+        return reasons;
+    }
+
     /** By attacker: the enemies it can attack. */
     public static Map<String, List<String>> attackTargets(GameRoom room, String userId) {
         Map<String, List<String>> targets = new LinkedHashMap<>();

@@ -111,7 +111,8 @@ public final class MoveHandler implements ActionHandler<Move> {
     }
 
     private static String instruction(EffectContext ctx, Move action, int min, int max) {
-        String what = (min < max ? "hasta " : "") + max + " " + (max == 1 ? "carta" : "cartas");
+        // "descarta al menos 5" of 7 asks for 5 to 7: "hasta 7" would hide that 5 are required
+        String what = (min == max ? "" : min > 0 ? "de " + min + " a " : "hasta ") + max + " " + (max == 1 ? "carta" : "cartas");
         String filter = action.cards().filter().describe();
         String cards = what + (filter.isBlank() ? "" : " " + filter) + " de " + ctx.describeZones(action.cards().zones());
         if (action.cards().self() == Selector.Self.REQUIRE) cards += ", incluida esta carta";

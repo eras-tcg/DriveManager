@@ -169,6 +169,7 @@ final class EngineContext implements EffectContext {
             String zone = raw.trim();
             if (zone.startsWith("materials")) names.add("los materiales");
             else if (zone.startsWith("resources")) names.add("los recursos");
+            else if ("looked".equals(zone)) names.add("las cartas que miras");
             else names.add("hand".equals(zone) || "deck".equals(zone) ? "tu " + EffectEngine.zoneName(zone) : "tus " + EffectEngine.zoneName(zone));
         }
         return String.join(" o ", names);
@@ -588,9 +589,11 @@ final class EngineContext implements EffectContext {
 
     @Override
     public void summon(CardSlot card, int reduce, boolean toFront) {
+        Origin origin = origin(card);
         String from = detach(card);
         if (from == null) return;
-        Summons.summonByEffect(room, effect, player(), card, from, reduce, toFront);
+        String shownFrom = origin.host() != null ? origin.zone() : origin.looked() ? "looked" : from;
+        Summons.summonByEffect(room, effect, player(), card, from, shownFrom, reduce, toFront);
         effect.setSummonedId(card.getInstanceId());
     }
 

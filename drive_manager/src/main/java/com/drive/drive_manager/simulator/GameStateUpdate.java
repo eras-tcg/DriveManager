@@ -64,6 +64,8 @@ public class GameStateUpdate {
     private Map<String, List<String>> unplayable;
     /** What each player can do now, by player id and then by card ({@link com.drive.drive_manager.simulator.engine.LegalActions}). */
     private Map<String, Map<String, List<String>>> legalActions;
+    /** Why a card of the hand cannot be summoned or played now, by player id and then by card ({@link com.drive.drive_manager.simulator.engine.LegalActions#blocked}). */
+    private Map<String, Map<String, String>> blockedActions;
     /** The enemies each attacker can attack, by player id and then by attacker. */
     private Map<String, Map<String, List<String>>> attackTargets;
     /** Who won the game that just ended, and why ("lives", "surrender"). */
@@ -112,8 +114,11 @@ public class GameStateUpdate {
         u.unplayable        = unplayable;
         u.legalActions = new LinkedHashMap<>();
         u.attackTargets = new LinkedHashMap<>();
+        u.blockedActions = new LinkedHashMap<>();
         for (String id : room.getPlayers().keySet()) {
-            u.legalActions.put(id, com.drive.drive_manager.simulator.engine.LegalActions.of(room, id));
+            Map<String, List<String>> legal = com.drive.drive_manager.simulator.engine.LegalActions.of(room, id);
+            u.legalActions.put(id, legal);
+            u.blockedActions.put(id, com.drive.drive_manager.simulator.engine.LegalActions.blocked(room, id, legal));
             u.attackTargets.put(id, com.drive.drive_manager.simulator.engine.LegalActions.attackTargets(room, id));
         }
         List<String> structures = room.getPlayers().keySet().stream().filter(id -> Summons.structurePlayed(room, id)).toList();

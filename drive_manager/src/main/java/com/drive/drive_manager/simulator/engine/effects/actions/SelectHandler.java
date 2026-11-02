@@ -33,7 +33,9 @@ public final class SelectHandler implements ActionHandler<Select> {
     public boolean run(EffectContext ctx, Select action) {
         Selector selector = action.selector();
         List<CardSlot> valid = Selection.candidates(ctx, selector, action.target());
+        boolean outOfReach = Selection.enemiesOutOfReach(ctx, selector);
         if (valid.isEmpty()) {
+            if (outOfReach) ctx.note(Selection.OUT_OF_REACH);
             if (action.endsIfNone()) {
                 ctx.note("No hay aliados que puedan elegirse");
                 ctx.endEffect();
@@ -54,7 +56,8 @@ public final class SelectHandler implements ActionHandler<Select> {
         int max = Math.min(ctx.amount(selector.max()), valid.size());
         int min = Math.min(ctx.amount(selector.min()), max);
         String instruction = (action.target() ? "Elige " : "Selecciona ") + (min < max ? "hasta " : "") + max + " " + ctx.describe(selector)
-                + (selector.self() == Selector.Self.REQUIRE ? ", incluida esta carta" : "") + ".";
+                + (selector.self() == Selector.Self.REQUIRE ? ", incluida esta carta" : "") + "."
+                + (outOfReach ? " " + Selection.OUT_OF_REACH : "");
         String label = action.label() != null ? action.label() : action.target() ? "Objetivo" : "Elegida";
         ctx.ask(instruction, label, Selection.pool(ctx, selector), valid, min, max);
         return true;
