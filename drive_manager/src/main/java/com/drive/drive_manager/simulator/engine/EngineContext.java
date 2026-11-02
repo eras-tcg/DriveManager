@@ -210,10 +210,11 @@ final class EngineContext implements EffectContext {
     }
 
     @Override
-    public List<CardSlot> move(List<CardSlot> cards, String to, boolean exhausted, boolean faceDown) {
+    public List<CardSlot> move(List<CardSlot> cards, String to, boolean exhausted, boolean faceDown, boolean restricted) {
         String zone = destination(to);
         List<CardSlot> done = new ArrayList<>();
         String from = null;
+        boolean fromHidden = false;
         for (CardSlot card : cards) {
             Origin origin = origin(card);
             if (origin == null) continue;
@@ -232,6 +233,7 @@ final class EngineContext implements EffectContext {
                 done.add(card);
                 continue;
             }
+            fromHidden |= Reveal.hidden(from, card.isFaceDown());
             if (origin.looked()) effect.getLooked().remove(card);
             else if (origin.host() != null) ("materials".equals(from) ? origin.host().getMaterials() : origin.host().getResources()).remove(card);
             else if ("field".equals(from)) Removals.removeFromField(origin.owner(), card);
@@ -265,11 +267,9 @@ final class EngineContext implements EffectContext {
             if ("lifeStack".equals(from) && origin.owner().getLifeStack().isEmpty()) EffectEngine.loseByLives(room, origin.owner());
         }
         if (done.isEmpty()) return done;
-        // A card of the hand or the deck stays hidden when it goes to the deck
-        boolean hidden = faceDown || ("deck".equals(zone) && ("hand".equals(from) || "deck".equals(from)));
         String origin = "deck".equals(from) && !effect.getLooked().isEmpty() ? "" : "deck".equals(from) ? " del tope de su mazo" : "";
         EffectEngine.log(room, player().getUsername() + " " + verb(to) + " " + done.size() + " " + (done.size() == 1 ? "carta" : "cartas") + origin
-                + " (" + effect.getSourceName() + ")" + (hidden ? "" : EffectEngine.names(done)), room.getEventSeq());
+                + " (" + effect.getSourceName() + ")" + (Reveal.named(fromHidden, zone, faceDown, restricted) ? EffectEngine.names(done) : ""), room.getEventSeq());
         return done;
     }
 

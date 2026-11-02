@@ -5,6 +5,8 @@ import com.drive.drive_manager.simulator.GameLogEntry;
 import com.drive.drive_manager.simulator.engine.effects.selection.Selection;
 import org.junit.jupiter.api.Test;
 
+import java.util.List;
+
 import static com.drive.drive_manager.simulator.engine.TestTable.*;
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -53,6 +55,43 @@ class ManualRunFixesTest extends CardBatchSupport {
         assertThat(room.getPrompt().getValidIds()).containsExactlyInAnyOrder("b1", "b2");
         assertThat(room.getPrompt().getMax()).isEqualTo(2);
         assertThat(room.getPrompt().getInstruction()).contains("las cartas que miras").doesNotContain("looked");
+    }
+
+    @Test
+    void aCardTakenFromTheDeckForARestrictionIsRevealedInTheHistory() {
+        // Dírumy: "mira las primeras 4 … toma hasta 1 carta Verde o Blanca": the taken one is named, the rest is not
+        host.getDeck().add(0, card("vd", "Verde Tomada", 1, 1, "G"));
+        host.getDeck().add(0, card("rj", "Roja Mirada", 1, 1, "R"));
+        CardSlot dirumy = card("dy", "Dírumy", 1, 1, "G");
+        summon(dirumy);
+        drainUntilChoice("vd");
+        answer("vd");
+        drain();
+        assertThat(room.getEventLog()).extracting(GameLogEntry::getText)
+                .anyMatch(t -> t.contains("añade a su mano 1 carta") && t.contains("Verde Tomada"))
+                .noneMatch(t -> t.contains("Roja Mirada"));
+    }
+
+    @Test
+    void hiddenToHiddenIsNamedOnlyWithARestriction() {
+        // From the hand to the deck: named only when the effect asked for a kind of card
+        assertThat(Reveal.named(true, "deck", true, false)).isFalse();
+        assertThat(Reveal.named(true, "deck", true, true)).isTrue();
+        assertThat(Reveal.named(true, "hand", false, false)).isFalse();
+        // Into sight, or out of sight from where everyone saw it: always named
+        assertThat(Reveal.named(true, "tributeZone", false, false)).isTrue();
+        assertThat(Reveal.named(false, "hand", false, false)).isTrue();
+        // Face down in the Descarte is a hidden zone
+        assertThat(Reveal.named(true, "discardPile", true, false)).isFalse();
+    }
+
+    /** Answers "none" (or accepts the lone effect) until the choice offers that card. */
+    private void drainUntilChoice(String id) {
+        for (int i = 0; i < 10 && room.getPrompt() != null && !room.getPrompt().getValidIds().contains(id); i++) {
+            Prompt p = room.getPrompt();
+            List<String> pick = p.getValidIds().size() == 1 && p.getMin() > 0 ? p.getValidIds() : p.getValidIds().stream().filter(v -> v.equals("dy")).toList();
+            Answers.answer(room, p.getPlayerId(), p.getId(), pick, List.of());
+        }
     }
 
     @Test

@@ -90,7 +90,9 @@ public final class MoveHandler implements ActionHandler<Move> {
     private static void move(EffectContext ctx, Move action, List<CardSlot> cards) {
         List<CardSlot> ordered = new ArrayList<>(cards);
         if (action.random()) Collections.shuffle(ordered);
-        List<CardSlot> done = ctx.move(ordered, action.to(), action.exhausted(), action.faceDown());
+        // Asking for some kind of card ("toma 1 carta Verde"): from a hidden zone to another, the card is revealed (designer ruling 2026-11-02)
+        boolean restricted = !action.cards().filter().describe().isBlank() || action.cards().relative() != null;
+        List<CardSlot> done = ctx.move(ordered, action.to(), action.exhausted(), action.faceDown(), restricted);
         // "esta carta" is not what "si tributaste…" or "el material tributado" read
         if (action.cards().mode() == Selector.Mode.SELF) ctx.done(!done.isEmpty());
         else ctx.moved(done);

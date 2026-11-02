@@ -34,7 +34,7 @@ public interface EffectContext {
     boolean alreadyIn(CardSlot card, String to);
 
     /** Moves the cards, one by one in that order, recording each one's event by where it arrives. Returns those that moved. */
-    List<CardSlot> move(List<CardSlot> cards, String to, boolean exhausted, boolean faceDown);
+    List<CardSlot> move(List<CardSlot> cards, String to, boolean exhausted, boolean faceDown, boolean restricted);
 
     /** The cards an effect is looking at. */
     List<CardSlot> looked();
