@@ -42,7 +42,7 @@ final class SpecialProcedure {
     static CardSlot summoner(GameRoom room, PendingEffect effect, SpecialRule rule) {
         PlayerState player = room.getPlayer(effect.getControllerId());
         return switch (rule.summoner()) {
-            case "subject" -> Steps.subject(room, effect);
+            case "subject" -> StepHelpers.subject(room, effect);
             case "self" -> EffectEngine.find(player.getField(), effect.getSourceInstanceId());
             default -> EffectEngine.find(player.getField(), effect.getRitualSummonerId());
         };

@@ -18,7 +18,8 @@ import static com.drive.drive_manager.simulator.engine.Removals.*;
 import static com.drive.drive_manager.simulator.engine.TurnRules.*;
 import static com.drive.drive_manager.simulator.engine.CombatRules.*;
 import static com.drive.drive_manager.simulator.engine.Chain.*;
-import static com.drive.drive_manager.simulator.engine.Steps.*;
+import static com.drive.drive_manager.simulator.engine.Resolution.*;
+import static com.drive.drive_manager.simulator.engine.StepHelpers.*;
 import static com.drive.drive_manager.simulator.engine.Answers.*;
 
 /** Summons and playing cards by the rules: normal summon, playing utilities and structures, Ritual, Evolución, Ascenso and Materialización (rule 9), from the hand or ordered by an effect. */

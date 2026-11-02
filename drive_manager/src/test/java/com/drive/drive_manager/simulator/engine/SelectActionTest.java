@@ -64,30 +64,30 @@ class SelectActionTest {
         CardSlot immune = onField(guest, card("imm", "Inmune", 1, 1, "R"));
         immune.getTurnKeywords().add(EffectEngine.IMMUNE);
         Selector oneEnemy = Selector.enemies(CardFilter.creatures(), 1);
-        assertThat(Steps.possible(room, effect(), target(oneEnemy))).isFalse();
-        assertThat(Steps.possible(room, effect(), pointAt(oneEnemy))).isTrue();
+        assertThat(Resolution.possible(room, effect(), target(oneEnemy))).isFalse();
+        assertThat(Resolution.possible(room, effect(), pointAt(oneEnemy))).isTrue();
     }
 
     @Test
     void enemiesInTheRetaguardiaCannotBeReached() {
         onField(guest, card("back", "Atrás", 1, 1, "R"), BACK);
-        assertThat(Steps.possible(room, effect(), pointAt(Selector.enemies(CardFilter.creatures(), 1)))).isFalse();
+        assertThat(Resolution.possible(room, effect(), pointAt(Selector.enemies(CardFilter.creatures(), 1)))).isFalse();
     }
 
     @Test
     void aSourceInTheRetaguardiaCannotReachEnemies() {
         source.setY(BACK);
         onField(guest, card("front", "Frente", 1, 1, "R"));
-        assertThat(Steps.possible(room, effect(), target(Selector.enemies(CardFilter.creatures(), 1)))).isFalse();
+        assertThat(Resolution.possible(room, effect(), target(Selector.enemies(CardFilter.creatures(), 1)))).isFalse();
     }
 
     @Test
     void aCostNeedsTheWholeAmountButAResolutionDoesWhatItCan() {
         host.getHand().add(card("h1", "Mano", 1, 1, "R"));
         EffectStep two = pointAt(Selector.yours("hand", CardFilter.any(), 2));
-        assertThat(Steps.possible(room, effect(), two)).isFalse();
+        assertThat(Resolution.possible(room, effect(), two)).isFalse();
 
-        assertThat(Steps.run(room, effect(), two)).isTrue();
+        assertThat(Resolution.run(room, effect(), two)).isTrue();
         assertThat(room.getPrompt().getMin()).isEqualTo(1);
         assertThat(room.getPrompt().getMax()).isEqualTo(1);
         assertThat(room.getPrompt().getValidIds()).containsExactly("h1");
@@ -96,7 +96,7 @@ class SelectActionTest {
     @Test
     void upToAllowsNone() {
         host.getHand().add(card("h1", "Mano", 1, 1, "R"));
-        assertThat(Steps.run(room, effect(), pointAt(Selector.yours("hand", CardFilter.any(), 1).upTo()))).isTrue();
+        assertThat(Resolution.run(room, effect(), pointAt(Selector.yours("hand", CardFilter.any(), 1).upTo()))).isTrue();
         assertThat(room.getPrompt().getMin()).isZero();
         assertThat(room.getPrompt().getMax()).isEqualTo(1);
     }
@@ -118,7 +118,7 @@ class SelectActionTest {
     void anotherCardExcludesThisOne() {
         source = card("self", "Esta", 1, 1, "R");
         host.getHand().add(source);
-        assertThat(Steps.possible(room, effect(), pointAt(Selector.yours("hand", CardFilter.any(), 1).with(Selector.Self.EXCLUDE)))).isFalse();
+        assertThat(Resolution.possible(room, effect(), pointAt(Selector.yours("hand", CardFilter.any(), 1).with(Selector.Self.EXCLUDE)))).isFalse();
     }
 
     @Test

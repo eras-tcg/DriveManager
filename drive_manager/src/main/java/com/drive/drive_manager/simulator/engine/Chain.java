@@ -17,7 +17,8 @@ import static com.drive.drive_manager.simulator.engine.Summons.*;
 import static com.drive.drive_manager.simulator.engine.Removals.*;
 import static com.drive.drive_manager.simulator.engine.TurnRules.*;
 import static com.drive.drive_manager.simulator.engine.CombatRules.*;
-import static com.drive.drive_manager.simulator.engine.Steps.*;
+import static com.drive.drive_manager.simulator.engine.Resolution.*;
+import static com.drive.drive_manager.simulator.engine.StepHelpers.*;
 import static com.drive.drive_manager.simulator.engine.Answers.*;
 
 /** Triggers and the chain (rule 11): what an event triggers, the order effects are chained in, the priority to respond, and the slow effects a player activates in the open state. */
@@ -135,9 +136,9 @@ public final class Chain {
         // "al final del turno: …" set by an effect this turn (AtEndOfTurn): the rest of it, now
         if (GameEvent.TURN_END.equals(event.getType())) {
             for (String mark : new ArrayList<>(room.getUsedThisTurn())) {
-                if (!mark.startsWith(Steps.DELAYED)) continue;
+                if (!mark.startsWith(StepHelpers.DELAYED)) continue;
                 room.getUsedThisTurn().remove(mark);
-                String[] p = mark.substring(Steps.DELAYED.length()).split("\\|", -1);
+                String[] p = mark.substring(StepHelpers.DELAYED.length()).split("\\|", -1);
                 EffectScript script = CardEffects.byId(p[2]).orElse(null);
                 CardSlot source = findAnywhere(room, p[0], p[1]);
                 if (script == null || source == null) continue;

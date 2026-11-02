@@ -57,9 +57,9 @@ final class EngineContext implements EffectContext {
     @Override
     public List<CardSlot> pickable(String zone) {
         return switch (zone) {
-            case "attackers" -> Steps.attackers(player(), CardFilter.any());
-            case "pickableAttackers" -> Steps.pickable(room, effect, player(), true);
-            default -> Steps.pickable(room, effect, player(), false);
+            case "attackers" -> StepHelpers.attackers(player(), CardFilter.any());
+            case "pickableAttackers" -> StepHelpers.pickable(room, effect, player(), true);
+            default -> StepHelpers.pickable(room, effect, player(), false);
         };
     }
 
@@ -131,7 +131,7 @@ final class EngineContext implements EffectContext {
 
     @Override
     public List<CardSlot> attached(String zone) {
-        CardSlot host = zone.endsWith(":subject") ? Steps.subject(room, effect) : EffectEngine.find(player().getField(), effect.getSourceInstanceId());
+        CardSlot host = zone.endsWith(":subject") ? StepHelpers.subject(room, effect) : EffectEngine.find(player().getField(), effect.getSourceInstanceId());
         if (host == null) return List.of();
         return zone.startsWith("materials") ? host.getMaterials() : host.getResources();
     }
@@ -270,7 +270,7 @@ final class EngineContext implements EffectContext {
 
     @Override
     public void lookedRestTo(String to, List<String> order) {
-        List<CardSlot> rest = Steps.inOrder(effect.getLooked(), order);
+        List<CardSlot> rest = StepHelpers.inOrder(effect.getLooked(), order);
         rest.forEach(c -> c.setFaceDown(true));
         if (Action.Move.DECK_TOP.equals(to)) player().getDeck().addAll(0, rest);
         else player().getDeck().addAll(rest);
@@ -351,7 +351,7 @@ final class EngineContext implements EffectContext {
 
     @Override
     public void damage(int amount) {
-        Steps.damageByEffect(room, effect, player(), amount);
+        StepHelpers.damageByEffect(room, effect, player(), amount);
     }
 
     @Override
@@ -425,11 +425,11 @@ final class EngineContext implements EffectContext {
         if (until == Action.Until.AS_EVENT) {
             GameEvent trigger = EffectEngine.triggerEvent(room, effect);
             boolean later = trigger != null && trigger.getData() != null && Boolean.TRUE.equals(trigger.getData().get("untilNextTurn"));
-            Steps.reduceStrength(room, effect, owner, card, amount, later);
+            StepHelpers.reduceStrength(room, effect, owner, card, amount, later);
             return;
         }
         if (until != Action.Until.ATTACK) {
-            Steps.reduceStrength(room, effect, owner, card, amount, until == Action.Until.NEXT_TURN);
+            StepHelpers.reduceStrength(room, effect, owner, card, amount, until == Action.Until.NEXT_TURN);
             return;
         }
         card.setTurnStrength(card.getTurnStrength() - amount);
@@ -488,7 +488,7 @@ final class EngineContext implements EffectContext {
 
     @Override
     public CardSlot subjectOrSelf() {
-        return Steps.subject(room, effect);
+        return StepHelpers.subject(room, effect);
     }
 
     @Override
@@ -515,7 +515,7 @@ final class EngineContext implements EffectContext {
 
     @Override
     public CardSlot clashing() {
-        return Steps.clashOpponent(room, effect);
+        return StepHelpers.clashOpponent(room, effect);
     }
 
     @Override
@@ -525,7 +525,7 @@ final class EngineContext implements EffectContext {
 
     @Override
     public CardSlot subjectOrSummoned() {
-        CardSlot ally = Steps.subject(room, effect);
+        CardSlot ally = StepHelpers.subject(room, effect);
         boolean replaced = ally == null || (effect.getSubjectId() != null && EffectEngine.find(player().getField(), effect.getSubjectId()) == null);
         return replaced && effect.getSummonedId() != null ? EffectEngine.find(player().getField(), effect.getSummonedId()) : ally;
     }
@@ -599,12 +599,12 @@ final class EngineContext implements EffectContext {
 
     @Override
     public boolean immune(CardSlot card) {
-        return EffectEngine.immuneTo(card, Steps.sourceLevel(room, effect));
+        return EffectEngine.immuneTo(card, StepHelpers.sourceLevel(room, effect));
     }
 
     @Override
     public boolean inRetaguardia() {
-        return Steps.inRetaguardia(room, effect);
+        return StepHelpers.inRetaguardia(room, effect);
     }
 
     @Override
@@ -625,7 +625,7 @@ final class EngineContext implements EffectContext {
         if (amount instanceof Amount.Scaled s) return amount(s.base()) / s.divisor() + s.plus();
         if (amount instanceof Amount.TriggerSourceLevel) return Summons.triggerSourceLevel(room, effect);
         if (amount instanceof Amount.SubjectLevel) {
-            CardSlot subject = Steps.subject(room, effect);
+            CardSlot subject = StepHelpers.subject(room, effect);
             return subject == null || subject.getLevel() == null ? 0 : subject.getLevel();
         }
         if (amount instanceof Amount.UsedToSummon) {
@@ -633,7 +633,7 @@ final class EngineContext implements EffectContext {
             return trigger != null && trigger.getData() != null && trigger.getData().get("used") instanceof Number n ? n.intValue() : 0;
         }
         if (amount instanceof Amount.SourceStrength) {
-            CardSlot self = Steps.subject(room, effect);
+            CardSlot self = StepHelpers.subject(room, effect);
             if (self == null && effect.getSubjectId() == null) self = EffectEngine.findAnywhere(room, effect.getControllerId(), effect.getSourceInstanceId());
             return self == null ? 0 : EffectEngine.strength(self);
         }
@@ -660,7 +660,7 @@ final class EngineContext implements EffectContext {
 
     @Override
     public void ask(String instruction, String chosenLabel, List<CardSlot> shown, List<CardSlot> valid, int min, int max) {
-        Steps.pick(room, effect, instruction, chosenLabel, shown, EffectEngine.ids(valid), max);
+        StepHelpers.pick(room, effect, instruction, chosenLabel, shown, EffectEngine.ids(valid), max);
         room.getPrompt().setMin(min);
     }
 

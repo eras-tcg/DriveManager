@@ -17,7 +17,8 @@ import static com.drive.drive_manager.simulator.engine.Summons.*;
 import static com.drive.drive_manager.simulator.engine.Removals.*;
 import static com.drive.drive_manager.simulator.engine.TurnRules.*;
 import static com.drive.drive_manager.simulator.engine.Chain.*;
-import static com.drive.drive_manager.simulator.engine.Steps.*;
+import static com.drive.drive_manager.simulator.engine.Resolution.*;
+import static com.drive.drive_manager.simulator.engine.StepHelpers.*;
 import static com.drive.drive_manager.simulator.engine.Answers.*;
 
 /** Combat (rule 10): declaring an attack, then its steps one by one (attack, block, clash, direct damage, end). */
@@ -421,7 +422,7 @@ public final class CombatRules {
                 String[] p = effectMark.substring(PENDING_EFFECT_DAMAGE.length()).split("\\|");
                 PendingEffect effect = room.getChain().stream().filter(e -> e.getId().equals(p[0])).findFirst().orElse(null);
                 PlayerState controller = room.getPlayer(p[2]);
-                if (effect != null && controller != null) Steps.damageByEffect(room, effect, controller, Integer.parseInt(p[1]), false);
+                if (effect != null && controller != null) StepHelpers.damageByEffect(room, effect, controller, Integer.parseInt(p[1]), false);
             }
             advance(room);
             return null;
@@ -462,9 +463,9 @@ public final class CombatRules {
     /** "hasta el final del ataque" ends with the combat (and "al final del ataque súbelo a tu mano con todos sus materiales"). */
     static void clearUntilEndOfAttack(GameRoom room, Combat c) {
         for (String mark : new ArrayList<>(room.getUsedThisTurn())) {
-            if (!mark.startsWith(Steps.RETURN_AT_ATTACK_END)) continue;
+            if (!mark.startsWith(StepHelpers.RETURN_AT_ATTACK_END)) continue;
             room.getUsedThisTurn().remove(mark);
-            String[] p = mark.substring(Steps.RETURN_AT_ATTACK_END.length()).split("\\|");
+            String[] p = mark.substring(StepHelpers.RETURN_AT_ATTACK_END.length()).split("\\|");
             PlayerState owner = room.getPlayer(p[0]);
             CardSlot card = owner == null ? null : find(owner.getField(), p[1]);
             if (card == null) continue;

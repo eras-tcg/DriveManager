@@ -266,7 +266,7 @@ class E12CardsTest extends CardBatchSupport {
                 "En Invocación", "Tributa Anna de los recursos de 1 aliado.", List.of(Compose.tributeResources(1, CardFilter.any()))));
         // The holder tributes its own resource (as its inherited cost would)
         PendingEffect e = Chain.pending(room, CardEffects.byId("anna:hereda-todos-los-turnos").orElseThrow(), "host", holder, room.getEventSeq());
-        Steps.run(room, e, Compose.tributeResource("Anna"));
+        Resolution.run(room, e, Compose.tributeResource("Anna"));
         Chain.advance(room);
         accept(anna);
         answer("x");
@@ -624,7 +624,7 @@ class E12CardsTest extends CardBatchSupport {
         CardSlot src = onField(guest, card("gs", "Fuente", 1, 1, "R"));
         PendingEffect theirs = Chain.pending(room, CardEffects.of("Dragón Goloso").get(0), "guest", src, room.getEventSeq());
         room.getChain().add(theirs);
-        Steps.damageByEffect(room, theirs, guest, 5);
+        StepHelpers.damageByEffect(room, theirs, guest, 5);
         Prompt offer = room.getPrompt();
         assertThat(offer.getPlayerId()).isEqualTo("host");
         // Declined: the damage happens

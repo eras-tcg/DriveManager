@@ -87,7 +87,7 @@ class DesignerRulingsBatch2Test {
         effect.setControllerId("host");
         effect.setSourceName("Reductor");
 
-        Steps.reduceStrength(room, effect, guest, target, 3, false);
+        StepHelpers.reduceStrength(room, effect, guest, target, 3, false);
 
         assertThat(guest.getField()).doesNotContain(target);
         assertThat(guest.getDiscardPile()).contains(target);

@@ -130,18 +130,18 @@ class E11ThirdBatchTest {
     void he110IsNotATargetForOpponentCardsOfLevel4OrLess() {
         CardSlot he = onField(host, card("he", "HE 110", 5, 4, "B"));
         EffectEngine.refreshContinuous(room);
-        assertThat(Steps.enemyTargets(room, guestEffect(4), CardFilter.creatures())).doesNotContain(he);
-        assertThat(Steps.enemyTargets(room, guestEffect(5), CardFilter.creatures())).contains(he);
+        assertThat(StepHelpers.enemyTargets(room, guestEffect(4), CardFilter.creatures())).doesNotContain(he);
+        assertThat(StepHelpers.enemyTargets(room, guestEffect(5), CardFilter.creatures())).contains(he);
     }
 
     @Test
     void escudoJuradoIsNotATargetWhileYouControlALevel4Ally() {
         CardSlot escudo = onField(host, card("ej", "Escudo Jurado", 2, 2, "R"));
         EffectEngine.refreshContinuous(room);
-        assertThat(Steps.enemyTargets(room, guestEffect(5), CardFilter.creatures())).contains(escudo);
+        assertThat(StepHelpers.enemyTargets(room, guestEffect(5), CardFilter.creatures())).contains(escudo);
         onField(host, card("big", "Grande", 5, 4, "R"), BACK);
         EffectEngine.refreshContinuous(room);
-        assertThat(Steps.enemyTargets(room, guestEffect(5), CardFilter.creatures())).doesNotContain(escudo);
+        assertThat(StepHelpers.enemyTargets(room, guestEffect(5), CardFilter.creatures())).doesNotContain(escudo);
     }
 
     @Test
