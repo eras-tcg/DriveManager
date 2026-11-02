@@ -112,6 +112,45 @@ public class CollectionService {
         return spend(userId, cardId, finishes);
     }
 
+    /**
+     * Crafts several cards at once (card id → copies), each CRAFT_COST fragments of its rarity: all of them or none,
+     * in one atomic update (as a deck's missing cards).
+     */
+    public Crafted craftMany(String userId, Map<String, Integer> cards) {
+        Map<String, Integer> wanted = new LinkedHashMap<>();
+        cards.forEach((id, n) -> {
+            if (n != null && n > 0) wanted.put(id, n);
+        });
+        if (wanted.isEmpty()) throw new CollectionException("Nada que fabricar");
+        wanted.keySet().forEach(id -> field(id, "plain"));
+        Map<String, String> rarities = pool.raritiesOf(wanted.keySet());
+        Map<String, Integer> cost = new LinkedHashMap<>();
+        Map<String, Integer> copies = new LinkedHashMap<>();
+        List<String> finishes = new ArrayList<>();
+        for (Map.Entry<String, Integer> e : wanted.entrySet()) {
+            String rarity = rarities.get(e.getKey());
+            if (rarity == null) throw new CollectionException("Esa carta no se puede fabricar ni romper");
+            cost.merge(rarity, e.getValue() * CollectionRules.CRAFT_COST, Integer::sum);
+            for (int i = 0; i < e.getValue(); i++) {
+                String finish = CollectionRules.rollFinish(random);
+                finishes.add(finish);
+                copies.merge(field(e.getKey(), finish), 1, Integer::sum);
+            }
+        }
+        Criteria guard = Criteria.where("_id").is(userId);
+        List<Criteria> enough = new ArrayList<>();
+        Update update = new Update();
+        cost.forEach((rarity, amount) -> {
+            enough.add(Criteria.where("fragments." + rarity).gte(amount));
+            update.inc("fragments." + rarity, -amount);
+        });
+        copies.forEach(update::inc);
+        Document after = mongo.findAndModify(Query.query(guard.andOperator(enough.toArray(Criteria[]::new))), update,
+                FindAndModifyOptions.options().returnNew(true), Document.class, COLLECTION);
+        if (after == null) throw new CollectionException("No te alcanzan los fragmentos");
+        return new Crafted(finishes, view(after));
+    }
+
     /** Breaks every copy beyond MAX_COPIES of each printing (the finest ones kept): the collection after it. */
     public View breakExtras(String userId) {
         View current = of(userId);

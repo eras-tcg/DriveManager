@@ -50,6 +50,15 @@ public class CollectionController {
     }
 
     /** `maxFragments`: the most the player will spend (all of them when absent). */
+    public record CraftManyRequest(Map<String, Integer> cards) {
+    }
+
+    /** Crafts several cards at once (card id → copies): all of them or none. */
+    @PostMapping("/me/craft-many")
+    public ResponseEntity<?> craftMany(Authentication auth, @RequestBody CraftManyRequest request) {
+        return run(auth, () -> collections.craftMany(auth.getName(), request.cards() == null ? Map.of() : request.cards()));
+    }
+
     public record CraftUntilRequest(String cardId, String finish, Integer maxFragments) {
     }
 

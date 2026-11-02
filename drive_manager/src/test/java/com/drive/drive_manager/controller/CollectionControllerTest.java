@@ -44,6 +44,16 @@ class CollectionControllerTest {
     }
 
     @Test
+    void craftsADecksMissingCardsTogether() {
+        when(collections.craftMany("alice", Map.of("c1", 2, "c2", 1))).thenThrow(new CollectionService.CollectionException("No te alcanzan los fragmentos"));
+
+        var response = controller.craftMany(player("alice"), new CollectionController.CraftManyRequest(Map.of("c1", 2, "c2", 1)));
+
+        assertThat(response.getStatusCode().value()).isEqualTo(400);
+        assertThat(response.getBody()).isEqualTo(Map.of("message", "No te alcanzan los fragmentos"));
+    }
+
+    @Test
     void aRefusedChangeSaysWhy() {
         when(collections.breakCopies("alice", "c1", "foil", 3)).thenThrow(new CollectionService.CollectionException("No tienes esas copias"));
 
