@@ -56,6 +56,37 @@ class ShopServiceTest {
     }
 
     @Test
+    void onlyACardWithAnAlternativeArtCanComeOutWithItInAnyFinish() {
+        EditionMetadata e2 = new EditionMetadata();
+        e2.setEditionId("E2");
+        e2.setPackTypes(List.of(new EditionMetadata.PackTypeConfig("R PACK", Map.of("C", 1))));
+        when(editions.findById("E2")).thenReturn(Optional.of(e2));
+        when(pool.pool("E2")).thenReturn(Map.of("C", List.of("titan")));
+        when(wallets.buy("alice", "E2", "pack")).thenReturn(new WalletService.Purchase(2300, 100));
+        // Every roll below the alternative art's odds (and the prismatic's)
+        ShopService lucky = new ShopService(wallets, editions, pool, collections, () -> 0.00001);
+
+        // Without an alternative art, the luckiest roll is a prismatic copy and nothing more
+        when(pool.withAltArt("E2")).thenReturn(java.util.Set.of());
+        assertThat(lucky.buy("alice", "E2", "pack").packs().get(0).cards()).containsExactly(new ShopService.OpenedCard("titan", "prism", false));
+
+        // With one, the copy comes out with it, prismatic too, and is kept under its own key
+        when(pool.withAltArt("E2")).thenReturn(java.util.Set.of("titan"));
+        assertThat(lucky.buy("alice", "E2", "pack").packs().get(0).cards()).containsExactly(new ShopService.OpenedCard("titan", "prism", true));
+        verify(collections).add("alice", List.of(new CollectionService.Pull("titan", "alt-prism")));
+
+        // An ordinary roll never gives it
+        when(pool.withAltArt("E1")).thenReturn(java.util.Set.of("c1"));
+        EditionMetadata e1 = new EditionMetadata();
+        e1.setEditionId("E1");
+        e1.setPackTypes(List.of(new EditionMetadata.PackTypeConfig("R PACK", Map.of("C", 1))));
+        when(editions.findById("E1")).thenReturn(Optional.of(e1));
+        when(pool.pool("E1")).thenReturn(Map.of("C", List.of("c1")));
+        when(wallets.buy("alice", "E1", "pack")).thenReturn(new WalletService.Purchase(2200, 100));
+        assertThat(shop.buy("alice", "E1", "pack").packs().get(0).cards()).containsExactly(new ShopService.OpenedCard("c1", "plain", false));
+    }
+
+    @Test
     void aStructureDeckComesWholeAndPlain() {
         EditionMetadata st1 = new EditionMetadata();
         st1.setEditionId("ST1");

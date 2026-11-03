@@ -51,8 +51,8 @@ public class MissionHooks {
     }
 
     /**
-     * Each copy shines as its owner has it: the copies of a printing take the player's finest owned finishes first
-     * (both players see them). A copy they lack, or a plain one, has none.
+     * Each copy shines as its owner has it: the copies of a printing take the player's finest owned copies first, the
+     * alternative art before all (both players see them). A copy they lack, or a plain one, has none.
      */
     List<CardSlot> withFinishes(String userId, List<CardSlot> slots) {
         if (collections == null || slots.isEmpty()) return slots;
@@ -62,8 +62,12 @@ public class MissionHooks {
         Map<String, Iterator<String>> next = new HashMap<>();
         counts.forEach((id, n) -> next.put(id, CollectionRules.copyFinishes(owned.get(id), n).iterator()));
         for (CardSlot s : slots) {
-            String finish = next.get(s.getCardId()).next();
+            String key = next.get(s.getCardId()).next();
+            String finish = CollectionRules.finishOf(key);
             s.setFinish("foil".equals(finish) || "prism".equals(finish) ? finish : null);
+            boolean alt = CollectionRules.isAlt(key) && s.getAltImageUrl() != null;
+            s.setAlt(alt);
+            if (alt) s.setImageUrl(s.getAltImageUrl());
         }
         return slots;
     }

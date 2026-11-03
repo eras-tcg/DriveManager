@@ -243,6 +243,8 @@ final class PreRoomActions {
             c.setUnprogrammed(s.getUnprogrammed());
             c.setMentions(new ArrayList<>(s.getMentions()));
             c.setFinish(s.getFinish());
+            c.setAlt(s.isAlt());
+            c.setAltImageUrl(s.getAltImageUrl());
             c.setFaceDown(true);
             return c;
         }).collect(Collectors.toList());
