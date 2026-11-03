@@ -36,19 +36,24 @@ class DeckFinishesTest {
     @Test
     void aCopyWithTheAlternativeArtShowsItWithItsFinish() {
         CollectionService collections = mock(CollectionService.class);
-        when(collections.of("p1")).thenReturn(new CollectionService.View(Map.of("titan", Map.of("plain", 1, "alt-foil", 1)), Map.of()));
+        when(collections.of("p1")).thenReturn(new CollectionService.View(Map.of("titan", Map.of("plain", 1, "alt-x1-foil", 1, "alt-gone-prism", 1)), Map.of()));
         MissionHooks hooks = new MissionHooks(null, null, collections);
 
         List<CardSlot> slots = new ArrayList<>();
-        for (int i = 0; i < 2; i++) {
+        for (int i = 0; i < 3; i++) {
             CardSlot s = new CardSlot();
             s.setCardId("titan");
             s.setImageUrl("https://img/titan");
-            s.setAltImageUrl("https://img/titan-alt");
+            s.setAltArtUrls(Map.of("x1", "https://img/titan-alt"));
             slots.add(s);
         }
         hooks.withFinishes("p1", slots);
 
+        // The copy of an art removed since it was pulled shows the usual art (still prismatic)
+        assertThat(slots.get(0).isAlt()).isFalse();
+        assertThat(slots.get(0).getImageUrl()).isEqualTo("https://img/titan");
+        assertThat(slots.get(0).getFinish()).isEqualTo("prism");
+        slots.remove(0);
         assertThat(slots.get(0).isAlt()).isTrue();
         assertThat(slots.get(0).getImageUrl()).isEqualTo("https://img/titan-alt");
         assertThat(slots.get(0).getFinish()).isEqualTo("foil");

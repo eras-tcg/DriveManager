@@ -86,9 +86,9 @@ public class CardSlot {
     private List<String> mentions = new ArrayList<>();
     /** The shine of this copy from its owner's collection ("foil" or "prism"), null for a plain one. */
     private String finish;
-    /** This copy has its card's alternative art (its imageUrl is that art). */
+    /** This copy has one of its card's alternative arts (its imageUrl is that art). */
     private boolean alt;
-    /** The card's alternative art, if it has one (from its metadata): what a copy with it shows. Kept on the server. */
+    /** The card's alternative arts (from its metadata), art id → URL: what a copy with one shows. Kept on the server. */
     @com.fasterxml.jackson.annotation.JsonIgnore
-    private String altImageUrl;
+    private java.util.Map<String, String> altArtUrls = new java.util.HashMap<>();
 }

@@ -65,9 +65,10 @@ public class MissionHooks {
             String key = next.get(s.getCardId()).next();
             String finish = CollectionRules.finishOf(key);
             s.setFinish("foil".equals(finish) || "prism".equals(finish) ? finish : null);
-            boolean alt = CollectionRules.isAlt(key) && s.getAltImageUrl() != null;
-            s.setAlt(alt);
-            if (alt) s.setImageUrl(s.getAltImageUrl());
+            // An art removed since the copy was pulled: the copy shows the usual one
+            String url = CollectionRules.isAlt(key) ? s.getAltArtUrls().get(CollectionRules.artOf(key)) : null;
+            s.setAlt(url != null);
+            if (url != null) s.setImageUrl(url);
         }
         return slots;
     }

@@ -1,5 +1,6 @@
 package com.drive.drive_manager.service;
 
+import com.drive.drive_manager.dto.AltArt;
 import com.drive.drive_manager.dto.Card;
 import com.drive.drive_manager.dto.DeckList;
 import com.drive.drive_manager.dto.DriveCard;
@@ -80,20 +81,36 @@ public class CardPoolService {
         return cards.isEmpty() ? new ArrayList<>(known.keySet()) : cards;
     }
 
-    /** The cards of an edition ("E1" or "E1.1") that can come out with an alternative art. */
-    public Set<String> withAltArt(String editionId) {
-        Set<String> out = new java.util.HashSet<>();
+    /** What a pack of an edition draws from: its card ids by rarity, and the ones with alternative arts (id → arts). */
+    public record PackPool(Map<String, List<String>> byRarity, Map<String, List<AltArt>> altArts) {
+    }
+
+    /** An edition's pool and alternative arts, from one read of its cards (a purchase needs both). */
+    public PackPool forPacks(String editionId) {
+        Map<String, List<String>> byRarity = new LinkedHashMap<>();
+        Map<String, List<AltArt>> altArts = new HashMap<>();
         joined(editionId).forEach((id, meta) -> {
-            if (meta.getAltImage() != null && !meta.getAltImage().isBlank()) out.add(id);
+            byRarity.computeIfAbsent(rarityOf(meta), r -> new ArrayList<>()).add(id);
+            if (!meta.getAltArts().isEmpty()) altArts.put(id, meta.getAltArts());
         });
-        return out;
+        return new PackPool(byRarity, altArts);
+    }
+
+    /** The cards of an edition ("E1" or "E1.1") that can come out with an alternative art: card id → its arts. */
+    public Map<String, List<AltArt>> withAltArt(String editionId) {
+        return forPacks(editionId).altArts();
     }
 
     /** Card id → rarity, for the cards of an edition with metadata. */
     private Map<String, String> rarities(String editionId) {
         Map<String, String> out = new LinkedHashMap<>();
-        joined(editionId).forEach((id, m) -> out.put(id, m.getRarity() == null || m.getRarity().isBlank() ? "C" : m.getRarity()));
+        joined(editionId).forEach((id, m) -> out.put(id, rarityOf(m)));
         return out;
+    }
+
+    /** A card's rarity, C when its metadata has none. */
+    private static String rarityOf(Card meta) {
+        return meta.getRarity() == null || meta.getRarity().isBlank() ? "C" : meta.getRarity();
     }
 
     /** Card id → metadata, for the images of an edition joined to theirs (as the web joins them). */
