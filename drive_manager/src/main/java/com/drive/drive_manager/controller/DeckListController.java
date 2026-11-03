@@ -2,6 +2,7 @@ package com.drive.drive_manager.controller;
 
 import com.drive.drive_manager.dto.DeckList;
 import com.drive.drive_manager.repository.DeckListRepository;
+import com.drive.drive_manager.service.ActivityLogService;
 import com.drive.drive_manager.service.ProgressionRules;
 import com.drive.drive_manager.service.ProgressionService;
 import org.springframework.http.ResponseEntity;
@@ -28,10 +29,12 @@ public class DeckListController {
 
     private final DeckListRepository repo;
     private final ProgressionService progression;
+    private final ActivityLogService activity;
 
-    public DeckListController(DeckListRepository repo, ProgressionService progression) {
+    public DeckListController(DeckListRepository repo, ProgressionService progression, ActivityLogService activity) {
         this.repo = repo;
         this.progression = progression;
+        this.activity = activity;
     }
 
     @GetMapping
@@ -77,6 +80,7 @@ public class DeckListController {
         DeckList saved = repo.save(body);
         // A new deck (not an edit) counts for the "Arma tu mazo" step
         progression.record(callerId, ProgressionRules.DECK_SAVED, 1);
+        activity.record(callerId, ActivityLogService.DECK_CREATE, deckDetail(saved));
         return ResponseEntity.ok(saved);
     }
 
@@ -98,7 +102,9 @@ public class DeckListController {
 
         body.setId(id);
         body.setUserId(existing.get().getUserId());
-        return ResponseEntity.ok(repo.save(body));
+        DeckList saved = repo.save(body);
+        activity.record(callerId, ActivityLogService.DECK_UPDATE, deckDetail(saved));
+        return ResponseEntity.ok(saved);
     }
 
     @PreAuthorize("hasAuthority('manage_decks')")
@@ -113,7 +119,16 @@ public class DeckListController {
         }
 
         repo.deleteById(id);
+        activity.record(callerId, ActivityLogService.DECK_DELETE, deckDetail(existing.get()));
         return ResponseEntity.noContent().build();
+    }
+
+    /** What the activity log keeps of a deck: its id and name. */
+    private static Map<String, Object> deckDetail(DeckList deck) {
+        Map<String, Object> detail = new java.util.LinkedHashMap<>();
+        detail.put("deckId", deck.getId());
+        if (deck.getDeckName() != null) detail.put("deckName", deck.getDeckName());
+        return detail;
     }
 
     /** User id from the JWT, or null for anonymous requests. */

@@ -1,5 +1,6 @@
 package com.drive.drive_manager.config;
 
+import com.drive.drive_manager.service.ActivityLogService;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -18,10 +19,12 @@ public class JwtAuthFilter extends OncePerRequestFilter {
 
     private final JwtUtils jwtUtils;
     private final SessionCheck sessions;
+    private final ActivityLogService activity;
 
-    public JwtAuthFilter(JwtUtils jwtUtils, SessionCheck sessions) {
+    public JwtAuthFilter(JwtUtils jwtUtils, SessionCheck sessions, ActivityLogService activity) {
         this.jwtUtils = jwtUtils;
         this.sessions = sessions;
+        this.activity = activity;
     }
 
     @Override
@@ -44,6 +47,8 @@ public class JwtAuthFilter extends OncePerRequestFilter {
                 UsernamePasswordAuthenticationToken auth =
                         new UsernamePasswordAuthenticationToken(userId, null, authorities);
                 SecurityContextHolder.getContext().setAuthentication(auth);
+                // The player's first request of the day is their visit, for the activity log
+                activity.visit(userId);
             }
         }
 
