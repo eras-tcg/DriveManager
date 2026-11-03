@@ -242,6 +242,7 @@ final class PreRoomActions {
             c.setInheritKeywords(new ArrayList<>(s.getInheritKeywords()));
             c.setUnprogrammed(s.getUnprogrammed());
             c.setMentions(new ArrayList<>(s.getMentions()));
+            c.setFinish(s.getFinish());
             c.setFaceDown(true);
             return c;
         }).collect(Collectors.toList());

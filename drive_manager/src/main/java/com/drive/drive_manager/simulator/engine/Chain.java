@@ -305,7 +305,9 @@ public final class Chain {
             for (PendingEffect e : group) {
                 if (skip && script(e).moment() != EffectScript.Moment.ON_PLAY) {
                     room.getTriggerQueue().remove(e);
-                    log(room, e.getSourceName() + ": " + e.getLabel() + " no se activa (efectos opcionales apagados)", null);
+                    // As if the player chose not to activate it: the switch is not revealed to anyone
+                    record(room, GameEvent.EFFECT_DECLINED, controller.getUserId(), null, null, null, e, null,
+                            controller.getUsername() + " no activa el efecto " + e.getLabel() + " de " + e.getSourceName());
                     dropped = true;
                 }
             }

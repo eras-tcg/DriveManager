@@ -2,6 +2,8 @@ package com.drive.drive_manager.controller;
 
 import com.drive.drive_manager.dto.DeckList;
 import com.drive.drive_manager.repository.DeckListRepository;
+import com.drive.drive_manager.service.ProgressionRules;
+import com.drive.drive_manager.service.ProgressionService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.security.authentication.AnonymousAuthenticationToken;
@@ -13,7 +15,12 @@ import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 class DeckListControllerTest {
@@ -23,11 +30,14 @@ class DeckListControllerTest {
     private final DeckList bobPublic = deck("d3", "bob", false);
 
     private DeckListRepository repo;
+    private ProgressionService progression;
     private DeckListController controller;
 
     @BeforeEach
     void setUp() {
         repo = mock(DeckListRepository.class);
+        progression = mock(ProgressionService.class);
+        when(repo.save(any(DeckList.class))).thenAnswer(call -> call.getArgument(0));
         when(repo.findAll()).thenReturn(List.of(alicePublic, alicePrivate, bobPublic));
         when(repo.findPublicDecks()).thenReturn(List.of(alicePublic, bobPublic));
         when(repo.findByUserId("alice")).thenReturn(List.of(alicePublic, alicePrivate));
@@ -69,8 +79,19 @@ class DeckListControllerTest {
         assertThat(controller().getOne("d1", anonymous()).getBody()).isEqualTo(alicePublic);
     }
 
+    @Test
+    void aNewDeckCountsForTheProgressionAndAnEditDoesNot() {
+        controller().create(deck(null, null, false), user("alice"));
+        verify(progression).record("alice", ProgressionRules.DECK_SAVED, 1);
+
+        progression = mock(ProgressionService.class);
+        controller = null;
+        controller().update("d1", deck("d1", "alice", false), user("alice"));
+        verify(progression, never()).record(anyString(), anyString(), anyInt());
+    }
+
     private DeckListController controller() {
-        if (controller == null) controller = new DeckListController(repo);
+        if (controller == null) controller = new DeckListController(repo, progression);
         return controller;
     }
 

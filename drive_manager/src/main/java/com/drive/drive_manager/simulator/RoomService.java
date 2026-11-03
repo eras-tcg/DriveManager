@@ -46,6 +46,18 @@ public class RoomService {
     @Autowired
     private DriveCardRepository driveCardRepo;
 
+    /** Online games count for the players' daily and weekly missions (see MissionEvents). */
+    @Autowired(required = false)
+    private com.drive.drive_manager.service.MissionService missions;
+
+    /** And for their lifetime progression missions (the same counts, never reset). */
+    @Autowired(required = false)
+    private com.drive.drive_manager.service.ProgressionService progression;
+
+    /** Whose cards a deck needs: a player plays only decks whose every copy they own. */
+    @Autowired(required = false)
+    private com.drive.drive_manager.service.CollectionService collections;
+
     @Value("${r2.public-url}")
     private String r2PublicUrl;
 
@@ -61,6 +73,9 @@ public class RoomService {
 
     /** An owner disconnected this long has left: another player owns the room. */
     static final long OWNER_GRACE_MS = 15_000;
+
+    /** A player disconnected this long during an online game has left it: the one who stays wins (a reload is shorter). */
+    private static final long ABANDON_GRACE_MS = 20_000;
 
     @Autowired(required = false)
     private org.springframework.messaging.simp.SimpMessagingTemplate messagingTemplate;
@@ -79,8 +94,34 @@ public class RoomService {
         pruneRooms();
         long now = System.currentTimeMillis();
         for (GameRoom room : new ArrayList<>(rooms.values())) {
-            synchronized (room) { broadcast(room.getRoomId(), checkOwner(room, now)); }
+            synchronized (room) {
+                broadcast(room.getRoomId(), checkAbandoned(room, now));
+                broadcast(room.getRoomId(), checkOwner(room, now));
+            }
         }
+    }
+
+    /** An online game whose player has been disconnected a while: they left it, and the one who stays wins. */
+    GameStateUpdate checkAbandoned(GameRoom room, long now) {
+        if (room.isEditor() || !playing(room) || !rooms.containsKey(room.getRoomId())) return null;
+        PlayerState gone = room.getPlayers().values().stream()
+                .filter(p -> !p.isConnected() && now - p.getDisconnectedAt() >= ABANDON_GRACE_MS).findFirst().orElse(null);
+        if (gone == null || room.getPlayers().values().stream().noneMatch(PlayerState::isConnected)) return null;
+        GameRoom.RoomStatus statusBefore = room.getStatus();
+        long seqBefore = room.getEventSeq();
+        removePlayer(room, gone.getUserId());
+        GameStateUpdate update = GameStateUpdate.from(room, "PLAYER_LEFT", gone.getUserId());
+        update.setLogEntry(gone.getUsername() + " abandonó la partida");
+        recordLog(room, update);
+        update.setEventLog(new ArrayList<>(room.getEventLog()));
+        countForMissions(room, statusBefore, seqBefore);
+        return update;
+    }
+
+    /** A game in course (from the starters' choice to its end). */
+    private static boolean playing(GameRoom room) {
+        GameRoom.RoomStatus s = room.getStatus();
+        return s == GameRoom.RoomStatus.SELECTING_STARTER || s == GameRoom.RoomStatus.MULLIGAN || s == GameRoom.RoomStatus.IN_PROGRESS;
     }
 
     /** The owner has been disconnected a while and someone else is connected: a random connected player owns the room. */
@@ -195,6 +236,10 @@ public class RoomService {
             if (EDITOR_RIVAL.equals(action.getString("actAs")) && !OWNER_ONLY.contains(action.getType())) userId = EDITOR_RIVAL;
         }
 
+        // What the action changes is counted for the players' missions afterwards (see the end of this method)
+        GameRoom.RoomStatus statusBefore = room.getStatus();
+        long seqBefore = room.getEventSeq();
+
         // Closed game state (rule 7.2): while a chain or a choice is pending, only answering it (and leaving
         // or conceding) is allowed. The board's manual actions wait until the effect is done.
         if (room.isEngineBusy() && !ALLOWED_WHILE_RESOLVING.contains(action.getType())) {
@@ -279,8 +324,22 @@ public class RoomService {
         if (update != null && update.getError() == null) {
             recordLog(room, update, action);
             update.setEventLog(new ArrayList<>(room.getEventLog()));
+            countForMissions(room, statusBefore, seqBefore);
         }
         return update;
+    }
+
+    /** The summons, damage and finished game an action brought, for the players' missions (never stops the game). */
+    private void countForMissions(GameRoom room, GameRoom.RoomStatus statusBefore, long seqBefore) {
+        if (missions == null && progression == null) return;
+        try {
+            for (MissionEvents.Progress p : MissionEvents.of(room, statusBefore, seqBefore)) {
+                if (missions != null) missions.record(p.userId(), p.counts(), p.amount());
+                if (progression != null) progression.record(p.userId(), p.counts(), p.amount());
+            }
+        } catch (RuntimeException e) {
+            // Missions are a bonus: a failure there must not break the room
+        }
     }
 
     static final Set<String> ALLOWED_WHILE_RESOLVING = Set.of(
@@ -324,7 +383,7 @@ public class RoomService {
             existing.setAvatar(avatar);
             if (room.getStatus() == GameRoom.RoomStatus.WAITING && deckId != null) {
                 existing.setDeckId(deckId);
-                List<CardSlot> slots = resolveDeck(deckId);
+                List<CardSlot> slots = withFinishes(userId, resolveDeck(deckId));
                 existing.setDeck(new ArrayList<>(slots));
                 existing.setOriginalDeck(deepCopySlots(slots));
             }
@@ -338,7 +397,7 @@ public class RoomService {
 
         if (deckId != null) {
             player.setDeckId(deckId);
-            List<CardSlot> slots = resolveDeck(deckId);
+            List<CardSlot> slots = withFinishes(userId, resolveDeck(deckId));
             player.setDeck(new ArrayList<>(slots));
             player.setOriginalDeck(deepCopySlots(slots));
         }
@@ -506,7 +565,8 @@ public class RoomService {
 
     /**
      * Takes a player out of the room: the owner passes to another player, an empty room closes, and a game in
-     * course ends (the one who stays goes back to the pre-room). Returns whether the room was closed.
+     * course ends: an online one is won by the one who stays (post-game); otherwise back to the pre-room. Returns
+     * whether the room was closed.
      */
     private boolean removePlayer(GameRoom room, String userId) {
         if (userId.equals(room.getHostId())) passOwnership(room, userId);
@@ -517,6 +577,15 @@ public class RoomService {
             room.setStatus(GameRoom.RoomStatus.FINISHED);
             rooms.remove(room.getRoomId());
             return true;
+        }
+        if (!room.isEditor() && playing(room) && room.getPlayers().size() == 1) {
+            // Leaving an online game loses it: the one who stays wins right away (and sees the post-game)
+            room.setWinnerId(room.getPlayers().keySet().iterator().next());
+            room.setEndReason("abandon");
+            room.getPostGameChoices().clear();
+            room.setStatus(GameRoom.RoomStatus.POST_GAME);
+            room.getPlayers().values().forEach(p -> p.setReady(false));
+            return false;
         }
         if (room.getStatus() != GameRoom.RoomStatus.WAITING) {
             // Back to the pre-room with the whole deck they had (its starter still chosen)
@@ -540,9 +609,10 @@ public class RoomService {
             rooms.remove(room.getRoomId());
             return GameStateUpdate.from(room, "ROOM_CLOSED", userId);
         }
+        boolean wasPlaying = playing(room);
         boolean closed = removePlayer(room, userId);
         GameStateUpdate update = GameStateUpdate.from(room, closed ? "ROOM_CLOSED" : "PLAYER_LEFT", userId);
-        update.setLogEntry(name + " salió de la sala");
+        update.setLogEntry(name + (wasPlaying ? " abandonó la partida" : " salió de la sala"));
         return update;
     }
 
@@ -576,6 +646,11 @@ public class RoomService {
         // Cards the engine does not run cannot be played; a test room plays them by hand (it is where they are tried)
         if (!room.isEditor() && unprogrammedIn(slots) != null) return GameStateUpdate.error(room.getRoomId(),
                 "Este mazo tiene cartas que todavía no están programadas en el simulador");
+        // Only with every copy in the player's collection (a test room plays anything: it is where cards are tried)
+        if (!room.isEditor() && collections != null && collections.missing(userId, slots.stream().map(CardSlot::getCardId).toList()) > 0) {
+            return GameStateUpdate.error(room.getRoomId(), "No puedes jugar este mazo: te faltan cartas de tu colección");
+        }
+        withFinishes(userId, slots);
         player.setDeckId(deckId);
         player.setDeckName(deckListRepo.findById(deckId).map(DeckList::getDeckName).orElse(null));
         player.setDeck(new ArrayList<>(slots));
@@ -583,6 +658,24 @@ public class RoomService {
         player.setStarterCardId(slots.stream().filter(CardSlot::isStarter).map(CardSlot::getCardId).findFirst().orElse(null));
         player.setReady(false);
         return GameStateUpdate.from(room, "SET_DECK", userId);
+    }
+
+    /**
+     * Each copy shines as its owner has it: the copies of a printing take the player's finest owned finishes first
+     * (both players see them). A copy they lack, or a plain one, has none.
+     */
+    List<CardSlot> withFinishes(String userId, List<CardSlot> slots) {
+        if (collections == null || slots.isEmpty()) return slots;
+        Map<String, Map<String, Integer>> owned = collections.of(userId).cards();
+        Map<String, Integer> counts = new LinkedHashMap<>();
+        for (CardSlot s : slots) counts.merge(s.getCardId(), 1, Integer::sum);
+        Map<String, java.util.Iterator<String>> next = new HashMap<>();
+        counts.forEach((id, n) -> next.put(id, com.drive.drive_manager.service.CollectionRules.copyFinishes(owned.get(id), n).iterator()));
+        for (CardSlot s : slots) {
+            String finish = next.get(s.getCardId()).next();
+            s.setFinish("foil".equals(finish) || "prism".equals(finish) ? finish : null);
+        }
+        return slots;
     }
 
     /** The names of a deck's cards the engine does not run in full ("×2 Roto-G0, Sicario R3-D"), or null. */
@@ -606,7 +699,9 @@ public class RoomService {
         if (room.isEditor()) room.getPlayers().keySet().forEach(id -> room.getPostGameChoices().put(id, choice));
         if (room.getPostGameChoices().size() >= room.getPlayers().size()) {
             boolean anyExit       = room.getPostGameChoices().values().stream().anyMatch("exit"::equals);
-            boolean anyChangeDeck = room.getPostGameChoices().values().stream().anyMatch("change_deck"::equals);
+            // Alone (the rival left): no rematch, back to the pre-room to wait for another
+            boolean anyChangeDeck = room.getPlayers().size() < 2
+                    || room.getPostGameChoices().values().stream().anyMatch("change_deck"::equals);
             if (anyExit) {
                 List<String> exiting = room.getPostGameChoices().entrySet().stream()
                         .filter(e -> "exit".equals(e.getValue())).map(Map.Entry::getKey).collect(Collectors.toList());

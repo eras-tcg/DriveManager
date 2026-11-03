@@ -207,8 +207,10 @@ public final class Summons {
             // Ascenso only tributes the summoner: not a sacrifice nor a destruction (rule 9.6.0.2)
             record(room, GameEvent.TRIBUTE, userId, summoner, "field", "tributeZone", null, null, null);
         }
+        // "manual": done by hand, nothing checked its cost or requirement (unlike specialByPlayer), so it does not count
+        // for the missions (MissionEvents)
         record(room, GameEvent.SPECIAL_SUMMON, userId, summoned, null, "field", null,
-                Map.of("summonType", summonType == null ? "special" : summonType), logText);
+                Map.of("summonType", summonType == null ? "special" : summonType, GameEvent.MANUAL, true), logText);
         afterSpecialSummon(room, player, summoned, null);
         advance(room);
     }

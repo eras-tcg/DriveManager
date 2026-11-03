@@ -57,6 +57,8 @@ public class GameEvent {
     public static final String STRENGTH_REDUCED = "STRENGTH_REDUCED";
     public static final String MOVE             = "MOVE";
     public static final String GAIN_GEMS        = "GAIN_GEMS";
+    /** Data key: true on an event done by hand from the board, outside the engine's checks. */
+    public static final String MANUAL           = "manual";
 
     /** Order in the room's timeline (1, 2, 3…). */
     private long seq;

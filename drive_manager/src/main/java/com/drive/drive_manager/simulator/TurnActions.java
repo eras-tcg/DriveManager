@@ -193,9 +193,8 @@ final class TurnActions {
         boolean skip = action.getBoolean("value", false);
         if (room.isEditor()) room.getPlayers().values().forEach(p -> p.setSkipOptional(skip));
         else player.setSkipOptional(skip);
-        GameStateUpdate update = GameStateUpdate.from(room, "SET_SKIP_OPTIONAL", userId);
-        update.setLogEntry(player.getUsername() + (skip ? " apagó" : " encendió") + " los efectos opcionales");
-        return update;
+        // Not in the history: neither player is told; the effects let go look like ones the player chose not to activate
+        return GameStateUpdate.from(room, "SET_SKIP_OPTIONAL", userId);
     }
 
     static GameStateUpdate handleDraw(GameRoom room, String userId) {

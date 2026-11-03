@@ -114,11 +114,13 @@ class DestructionTest {
 
         assertThat(Rituals.ritualByPlayer(room, "host", "kro", "sum")).isNull();
 
-        // It loses its moment: nothing to answer, the enemy stays and the history says why
+        // It loses its moment: nothing to answer, the enemy stays. The history says it as a choice not to activate it,
+        // never that the optional effects are off (that is not revealed)
         assertThat(room.getPrompt()).isNull();
         assertThat(room.isEngineBusy()).isFalse();
         assertThat(guest.getField()).extracting(CardSlot::getInstanceId).contains("ec");
-        assertThat(room.getEventLog()).anyMatch(l -> l.getText().contains("efectos opcionales apagados"));
+        assertThat(room.getEventLog()).anyMatch(l -> l.getText().contains("no activa el efecto"));
+        assertThat(room.getEventLog()).noneMatch(l -> l.getText().contains("opcionales"));
     }
 
     @Test

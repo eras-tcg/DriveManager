@@ -123,8 +123,43 @@ class PreRoomTest {
         assertThat(kicked.getError()).isNull();
         assertThat(kicked.getSubjectUserId()).isEqualTo("guest");
         assertThat(room.getPlayers()).containsOnlyKeys("host");
-        // The game is over: the owner waits for a new rival in the pre-room
+        // The rival left the game: the owner wins it
+        assertThat(room.getStatus()).isEqualTo(GameRoom.RoomStatus.POST_GAME);
+        assertThat(room.getWinnerId()).isEqualTo("host");
+    }
+
+    @Test
+    void leavingAnOnlineGameLosesItRightAwayAndTheOneWhoStaysWaitsAloneInThePreRoomAfter() {
+        room.setStatus(GameRoom.RoomStatus.IN_PROGRESS);
+        GameStateUpdate left = service.applyAction(room.getRoomId(), "guest", action("LEAVE_ROOM", Map.of()));
+
+        assertThat(left.getError()).isNull();
+        assertThat(room.getStatus()).isEqualTo(GameRoom.RoomStatus.POST_GAME);
+        assertThat(room.getWinnerId()).isEqualTo("host");
+        assertThat(room.getEndReason()).isEqualTo("abandon");
+        assertThat(room.getEventLog()).anyMatch(l -> l.getText().equals("guest abandonó la partida"));
+        // Alone, no rematch: the post-game goes back to the pre-room to wait for another rival (no saved deck to reload here)
+        room.getPlayer("host").setDeckId(null);
+        service.applyAction(room.getRoomId(), "host", action("POST_GAME_CHOICE", Map.of("choice", "rematch")));
         assertThat(room.getStatus()).isEqualTo(GameRoom.RoomStatus.WAITING);
+    }
+
+    @Test
+    void aPlayerDisconnectedAWhileDuringAnOnlineGameHasLeftItButAReloadDoesNot() {
+        room.setStatus(GameRoom.RoomStatus.IN_PROGRESS);
+        room.getPlayers().values().forEach(p -> p.setConnected(true));
+        PlayerState guest = room.getPlayer("guest");
+        guest.setConnected(false);
+        long now = System.currentTimeMillis();
+        guest.setDisconnectedAt(now);
+
+        assertThat(service.checkAbandoned(room, now + 5_000)).isNull();
+        assertThat(room.getStatus()).isEqualTo(GameRoom.RoomStatus.IN_PROGRESS);
+
+        GameStateUpdate gone = service.checkAbandoned(room, now + 25_000);
+        assertThat(gone.getEvent()).isEqualTo("PLAYER_LEFT");
+        assertThat(room.getStatus()).isEqualTo(GameRoom.RoomStatus.POST_GAME);
+        assertThat(room.getWinnerId()).isEqualTo("host");
     }
 
     @Test
