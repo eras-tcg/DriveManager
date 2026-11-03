@@ -1,0 +1,22 @@
+{
+  "name" : "bruja lunar",
+  "effects" : [ {
+    "id" : "bruja-lunar:en-tributos",
+    "moment" : "ACTIVATED",
+    "label" : "Turno Aliado / En Tributos",
+    "text" : "(1) Puedes elegir 1 criatura nivel 2 o menor de los tributos oponentes; coloca la criatura elegida y esta carta en la línea frontal de sus dueños.",
+    "cost" : [ {
+      "type" : "ChooseOpponentTribute",
+      "filter" : {
+        "cardType" : "creature",
+        "maxLevel" : 2
+      }
+    } ],
+    "steps" : [ {
+      "type" : "PlaceChosenTributeAndSelf"
+    } ],
+    "sourceZone" : "tributeZone",
+    "allyTurn" : true,
+    "limit" : "ONCE_PER_TURN_BETWEEN_COPIES"
+  } ]
+}

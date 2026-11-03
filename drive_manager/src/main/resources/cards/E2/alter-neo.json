@@ -1,0 +1,212 @@
+{
+  "name" : "alter neo",
+  "effects" : [ {
+    "id" : "alter-neo:en-juego",
+    "moment" : "ON_PLAY",
+    "mandatory" : true,
+    "label" : "En Juego",
+    "text" : "Elige 1 aliado [neomáquina]; súbelo a tu mano con todos sus materiales. Luego: invoca de forma especial 1 [neomáquina] de tu mano del mismo nivel, pero distinto nombre y sin pagar su coste especial.",
+    "cost" : [ {
+      "type" : "Do",
+      "action" : {
+        "type" : "Select",
+        "selector" : {
+          "zones" : "pickableAllies",
+          "owner" : "YOU",
+          "filter" : {
+            "classes" : [ "neomáquina" ],
+            "cardType" : "creature"
+          },
+          "min" : {
+            "type" : "Fixed",
+            "value" : 1
+          },
+          "max" : {
+            "type" : "Fixed",
+            "value" : 1
+          },
+          "self" : "ANY",
+          "mode" : "CHOOSE"
+        },
+        "target" : true,
+        "saveAs" : "subject",
+        "label" : "Elegido",
+        "endsIfNone" : true
+      }
+    } ],
+    "steps" : [ {
+      "type" : "Do",
+      "action" : {
+        "type" : "Move",
+        "cards" : {
+          "zones" : "materials:subject",
+          "owner" : "YOU",
+          "filter" : { },
+          "min" : {
+            "type" : "Fixed"
+          },
+          "max" : {
+            "type" : "Fixed",
+            "value" : 2147483647
+          },
+          "self" : "ANY",
+          "mode" : "ALL"
+        },
+        "to" : "hand"
+      }
+    }, {
+      "type" : "Do",
+      "action" : {
+        "type" : "Move",
+        "cards" : {
+          "zones" : "saved:subject",
+          "owner" : "YOU",
+          "filter" : { },
+          "min" : {
+            "type" : "Fixed"
+          },
+          "max" : {
+            "type" : "Fixed",
+            "value" : 2147483647
+          },
+          "self" : "ANY",
+          "mode" : "ALL"
+        },
+        "to" : "hand"
+      }
+    }, {
+      "type" : "Do",
+      "action" : {
+        "type" : "Sequence",
+        "actions" : [ {
+          "type" : "Select",
+          "selector" : {
+            "zones" : "hand",
+            "owner" : "YOU",
+            "filter" : { },
+            "min" : {
+              "type" : "Fixed"
+            },
+            "max" : {
+              "type" : "Fixed",
+              "value" : 1
+            },
+            "self" : "ANY",
+            "mode" : "CHOOSE",
+            "special" : {
+              "rule" : {
+                "kind" : "any",
+                "zone" : "hand",
+                "reduce" : 1000,
+                "summoner" : "any",
+                "filter" : {
+                  "classes" : [ "neomáquina" ],
+                  "cardType" : "creature"
+                },
+                "relative" : {
+                  "to" : "last",
+                  "compareLevel" : "EQUAL",
+                  "differentName" : true
+                }
+              },
+              "stage" : "CARD"
+            }
+          },
+          "saveAs" : "specialCard",
+          "label" : "Invocar"
+        }, {
+          "type" : "Select",
+          "selector" : {
+            "zones" : "hand",
+            "owner" : "YOU",
+            "filter" : { },
+            "min" : {
+              "type" : "Fixed"
+            },
+            "max" : {
+              "type" : "Fixed",
+              "value" : 1
+            },
+            "self" : "ANY",
+            "mode" : "CHOOSE",
+            "special" : {
+              "rule" : {
+                "kind" : "any",
+                "zone" : "hand",
+                "reduce" : 1000,
+                "summoner" : "any",
+                "filter" : {
+                  "classes" : [ "neomáquina" ],
+                  "cardType" : "creature"
+                },
+                "relative" : {
+                  "to" : "last",
+                  "compareLevel" : "EQUAL",
+                  "differentName" : true
+                }
+              },
+              "stage" : "SUMMONER"
+            }
+          },
+          "saveAs" : "specialSummoner",
+          "label" : "Invocador"
+        }, {
+          "type" : "Select",
+          "selector" : {
+            "zones" : "hand",
+            "owner" : "YOU",
+            "filter" : { },
+            "min" : {
+              "type" : "Fixed"
+            },
+            "max" : {
+              "type" : "Fixed",
+              "value" : 1
+            },
+            "self" : "ANY",
+            "mode" : "CHOOSE",
+            "special" : {
+              "rule" : {
+                "kind" : "any",
+                "zone" : "hand",
+                "reduce" : 1000,
+                "summoner" : "any",
+                "filter" : {
+                  "classes" : [ "neomáquina" ],
+                  "cardType" : "creature"
+                },
+                "relative" : {
+                  "to" : "last",
+                  "compareLevel" : "EQUAL",
+                  "differentName" : true
+                }
+              },
+              "stage" : "MATERIAL"
+            }
+          },
+          "saveAs" : "specialMaterials",
+          "label" : "Material"
+        }, {
+          "type" : "SummonSpecial",
+          "rule" : {
+            "kind" : "any",
+            "zone" : "hand",
+            "reduce" : 1000,
+            "summoner" : "any",
+            "filter" : {
+              "classes" : [ "neomáquina" ],
+              "cardType" : "creature"
+            },
+            "relative" : {
+              "to" : "last",
+              "compareLevel" : "EQUAL",
+              "differentName" : true
+            }
+          }
+        } ]
+      }
+    } ],
+    "sourceZone" : "field",
+    "limit" : "NONE"
+  } ]
+}

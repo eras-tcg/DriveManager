@@ -1,0 +1,67 @@
+{
+  "name" : "vv 3",
+  "effects" : [ {
+    "id" : "vv-3:en-invocacion",
+    "moment" : "ON_SUMMON",
+    "mandatory" : true,
+    "label" : "En Invocación",
+    "text" : "Mira las primeras 5 cartas de tu mazo: de ellas toma hasta 3 cartas Azules o [autómata]. Envía el resto al fondo de tu mazo. Luego: tributa 2 cartas de entre tu mano y los materiales de esta carta.",
+    "steps" : [ {
+      "type" : "Do",
+      "action" : {
+        "type" : "Look",
+        "count" : {
+          "type" : "Fixed",
+          "value" : 5
+        }
+      }
+    }, {
+      "type" : "Do",
+      "action" : {
+        "type" : "Move",
+        "cards" : {
+          "zones" : "looked",
+          "owner" : "YOU",
+          "filter" : {
+            "colors" : [ "B" ],
+            "classes" : [ "autómata" ]
+          },
+          "min" : {
+            "type" : "Fixed"
+          },
+          "max" : {
+            "type" : "Fixed",
+            "value" : 3
+          },
+          "self" : "ANY",
+          "mode" : "CHOOSE"
+        },
+        "to" : "hand",
+        "rest" : "deckBottom"
+      }
+    }, {
+      "type" : "Do",
+      "action" : {
+        "type" : "Move",
+        "cards" : {
+          "zones" : "hand,materials",
+          "owner" : "YOU",
+          "filter" : { },
+          "min" : {
+            "type" : "Fixed",
+            "value" : 2
+          },
+          "max" : {
+            "type" : "Fixed",
+            "value" : 2
+          },
+          "self" : "EXCLUDE",
+          "mode" : "CHOOSE"
+        },
+        "to" : "tributeZone"
+      }
+    } ],
+    "sourceZone" : "field",
+    "limit" : "NONE"
+  } ]
+}

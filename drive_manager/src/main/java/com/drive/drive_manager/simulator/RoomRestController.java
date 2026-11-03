@@ -14,27 +14,20 @@ public class RoomRestController {
     @Autowired
     private RoomService roomService;
 
-    /** Permissions of the site's edit mode: they allow test rooms. */
-    private static final java.util.Set<String> EDIT_PERMISSIONS = java.util.Set.of("manage_home", "manage_editions", "manage_cards");
-
-    /** A room owned by its creator; {@code editor}: a test room, played alone on both sides (edit mode only). */
+    /** A room owned by its creator; {@code editor}: a test room ("solo mode"), played alone on both sides. Open to every player. */
     @PostMapping("/rooms")
     public ResponseEntity<Map<String, String>> createRoom(Authentication auth, @RequestParam(defaultValue = "false") boolean editor) {
         if (auth == null || !auth.isAuthenticated()) {
             return ResponseEntity.status(401).build();
         }
-        if (editor && auth.getAuthorities().stream().noneMatch(a -> EDIT_PERMISSIONS.contains(a.getAuthority()))) {
-            return ResponseEntity.status(403).build();
-        }
         GameRoom room = roomService.createRoom(auth.getName(), editor);
         return ResponseEntity.ok(Map.of("roomId", room.getRoomId()));
     }
 
-    /** The owner, waiting alone, plays both sides: the room becomes a test room (edit mode only). */
+    /** The owner, waiting alone, plays both sides: the room becomes a test room. */
     @PostMapping("/rooms/{id}/solo")
     public ResponseEntity<Map<String, String>> playAlone(@PathVariable String id, Authentication auth) {
         if (auth == null || !auth.isAuthenticated()) return ResponseEntity.status(401).build();
-        if (auth.getAuthorities().stream().noneMatch(a -> EDIT_PERMISSIONS.contains(a.getAuthority()))) return ResponseEntity.status(403).build();
         String error = roomService.makeTestRoom(id, auth.getName());
         return error == null ? ResponseEntity.ok(Map.of("roomId", id)) : ResponseEntity.badRequest().body(Map.of("message", error));
     }

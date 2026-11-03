@@ -1,0 +1,37 @@
+{
+  "name" : "ejecución despiadada",
+  "effects" : [ {
+    "id" : "ejecucion-despiadada:en-juego",
+    "moment" : "ON_PLAY",
+    "mandatory" : true,
+    "label" : "En Juego",
+    "text" : "Efecto Definitivo. Tu oponente gana tantas gemas como su contador de gemas diga; destruye 1 enemigo en la línea frontal (este efecto no hace objetivo).",
+    "steps" : [ {
+      "type" : "OpponentGainsGemsAsCounter"
+    }, {
+      "type" : "Do",
+      "action" : {
+        "type" : "Destroy",
+        "cards" : {
+          "zones" : "frontLine",
+          "owner" : "OPPONENT",
+          "filter" : {
+            "cardType" : "creature"
+          },
+          "min" : {
+            "type" : "Fixed",
+            "value" : 1
+          },
+          "max" : {
+            "type" : "Fixed",
+            "value" : 1
+          },
+          "self" : "ANY",
+          "mode" : "CHOOSE"
+        }
+      }
+    } ],
+    "sourceZone" : "field",
+    "limit" : "DEFINITIVE"
+  } ]
+}

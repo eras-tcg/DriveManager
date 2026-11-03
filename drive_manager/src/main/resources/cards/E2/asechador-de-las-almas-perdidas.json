@@ -1,0 +1,71 @@
+{
+  "name" : "asechador de las almas perdidas",
+  "effects" : [ {
+    "id" : "asechador:tributada",
+    "moment" : "ON_EVENT",
+    "label" : "En Tributos",
+    "text" : "(1) Si esta carta es tributada: puedes enviar esta carta bocabajo a tu descarte y enviar 5 cartas [muerto viviente] de entre tus tributos y descarte al fondo de tu mazo para ganar 1 gema.",
+    "steps" : [ {
+      "type" : "IfPossible"
+    }, {
+      "type" : "Do",
+      "action" : {
+        "type" : "Move",
+        "cards" : {
+          "zones" : "tributeZone,discardPile",
+          "owner" : "YOU",
+          "filter" : {
+            "classes" : [ "muerto viviente" ],
+            "notName" : "Asechador De Las Almas Perdidas"
+          },
+          "min" : {
+            "type" : "Fixed",
+            "value" : 5
+          },
+          "max" : {
+            "type" : "Fixed",
+            "value" : 5
+          },
+          "self" : "ANY",
+          "mode" : "CHOOSE"
+        },
+        "to" : "deckBottom"
+      }
+    }, {
+      "type" : "Do",
+      "action" : {
+        "type" : "Move",
+        "cards" : {
+          "zones" : "hand,tributeZone,discardPile,deck,lifeStack",
+          "owner" : "YOU",
+          "filter" : { },
+          "min" : {
+            "type" : "Fixed",
+            "value" : 1
+          },
+          "max" : {
+            "type" : "Fixed",
+            "value" : 1
+          },
+          "self" : "ANY",
+          "mode" : "SELF"
+        },
+        "to" : "discardPile"
+      }
+    }, {
+      "type" : "Do",
+      "action" : {
+        "type" : "Gems",
+        "count" : {
+          "type" : "Fixed",
+          "value" : 1
+        }
+      }
+    } ],
+    "condition" : {
+      "type" : "ThisTributed"
+    },
+    "sourceZone" : "tributeZone",
+    "limit" : "ONCE_PER_TURN_BETWEEN_COPIES"
+  } ]
+}

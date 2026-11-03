@@ -1,0 +1,103 @@
+{
+  "name" : "caballero umbrío",
+  "effects" : [ {
+    "id" : "caballero-umbrio:en-invocacion",
+    "moment" : "ON_SUMMON",
+    "mandatory" : true,
+    "label" : "En Invocación",
+    "text" : "Mira las primeras 4 cartas de tu mazo: de ellas toma hasta 2 cartas Rojas o Blancas. Envía el resto al fondo de tu mazo. Luego: tributa 1 carta de tu mano.",
+    "steps" : [ {
+      "type" : "Do",
+      "action" : {
+        "type" : "Look",
+        "count" : {
+          "type" : "Fixed",
+          "value" : 4
+        }
+      }
+    }, {
+      "type" : "Do",
+      "action" : {
+        "type" : "Move",
+        "cards" : {
+          "zones" : "looked",
+          "owner" : "YOU",
+          "filter" : {
+            "colors" : [ "R", "W" ]
+          },
+          "min" : {
+            "type" : "Fixed"
+          },
+          "max" : {
+            "type" : "Fixed",
+            "value" : 2
+          },
+          "self" : "ANY",
+          "mode" : "CHOOSE"
+        },
+        "to" : "hand",
+        "rest" : "deckBottom"
+      }
+    }, {
+      "type" : "Do",
+      "action" : {
+        "type" : "Move",
+        "cards" : {
+          "zones" : "hand",
+          "owner" : "YOU",
+          "filter" : { },
+          "min" : {
+            "type" : "Fixed",
+            "value" : 1
+          },
+          "max" : {
+            "type" : "Fixed",
+            "value" : 1
+          },
+          "self" : "EXCLUDE",
+          "mode" : "CHOOSE"
+        },
+        "to" : "tributeZone"
+      }
+    } ],
+    "sourceZone" : "field",
+    "limit" : "NONE"
+  }, {
+    "id" : "caballero-umbrio:al-atacar",
+    "moment" : "ON_ATTACK",
+    "label" : "Al Atacar",
+    "text" : "Puedes invocar 1 criatura Roja, [caballero] o [mercenario] de tu mano en tu línea frontal pagando su coste.",
+    "steps" : [ {
+      "type" : "Do",
+      "action" : {
+        "type" : "Summon",
+        "cards" : {
+          "zones" : "hand",
+          "owner" : "YOU",
+          "filter" : {
+            "colors" : [ "R" ],
+            "classes" : [ "caballero", "mercenario" ],
+            "cardType" : "creature"
+          },
+          "min" : {
+            "type" : "Fixed",
+            "value" : 1
+          },
+          "max" : {
+            "type" : "Fixed",
+            "value" : 1
+          },
+          "self" : "ANY",
+          "mode" : "CHOOSE"
+        },
+        "reduce" : {
+          "type" : "Fixed"
+        },
+        "toFront" : true,
+        "required" : true
+      }
+    } ],
+    "sourceZone" : "field",
+    "limit" : "NONE"
+  } ]
+}

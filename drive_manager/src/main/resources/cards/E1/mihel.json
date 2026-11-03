@@ -1,0 +1,125 @@
+{
+  "name" : "mihel",
+  "effects" : [ {
+    "id" : "mihel:en-invocacion",
+    "moment" : "ON_SUMMON",
+    "mandatory" : true,
+    "label" : "En Invocación",
+    "text" : "Roba 2 cartas. Luego: tributa 2 cartas de tu mano.",
+    "steps" : [ {
+      "type" : "Do",
+      "action" : {
+        "type" : "Draw",
+        "count" : {
+          "type" : "Fixed",
+          "value" : 2
+        }
+      }
+    }, {
+      "type" : "Do",
+      "action" : {
+        "type" : "Move",
+        "cards" : {
+          "zones" : "hand",
+          "owner" : "YOU",
+          "filter" : { },
+          "min" : {
+            "type" : "Fixed",
+            "value" : 2
+          },
+          "max" : {
+            "type" : "Fixed",
+            "value" : 2
+          },
+          "self" : "EXCLUDE",
+          "mode" : "CHOOSE"
+        },
+        "to" : "tributeZone"
+      }
+    } ],
+    "sourceZone" : "field",
+    "limit" : "NONE"
+  }, {
+    "id" : "mihel:todos-los-turnos",
+    "moment" : "ON_EVENT",
+    "label" : "Todos Los Turnos",
+    "text" : "Si reduces la fuerza de algún enemigo: puedes añadir esta carta como material a un aliado para reducir su fuerza en 2 más.",
+    "steps" : [ {
+      "type" : "IfPossible"
+    }, {
+      "type" : "Do",
+      "action" : {
+        "type" : "Select",
+        "selector" : {
+          "zones" : "pickableAllies",
+          "owner" : "YOU",
+          "filter" : { },
+          "min" : {
+            "type" : "Fixed",
+            "value" : 1
+          },
+          "max" : {
+            "type" : "Fixed",
+            "value" : 1
+          },
+          "self" : "ANY",
+          "mode" : "CHOOSE"
+        },
+        "saveAs" : "subject",
+        "label" : "Elegido",
+        "endsIfNone" : true
+      }
+    }, {
+      "type" : "Do",
+      "action" : {
+        "type" : "Move",
+        "cards" : {
+          "zones" : "field,tributeZone",
+          "owner" : "YOU",
+          "filter" : { },
+          "min" : {
+            "type" : "Fixed",
+            "value" : 1
+          },
+          "max" : {
+            "type" : "Fixed",
+            "value" : 1
+          },
+          "self" : "ANY",
+          "mode" : "SELF"
+        },
+        "to" : "materials:subject"
+      }
+    }, {
+      "type" : "Do",
+      "action" : {
+        "type" : "Modify",
+        "cards" : {
+          "zones" : "eventOnField",
+          "owner" : "YOU",
+          "filter" : { },
+          "min" : {
+            "type" : "Fixed"
+          },
+          "max" : {
+            "type" : "Fixed",
+            "value" : 2147483647
+          },
+          "self" : "ANY",
+          "mode" : "ALL"
+        },
+        "strength" : {
+          "type" : "Fixed",
+          "value" : -2
+        },
+        "until" : "AS_EVENT"
+      }
+    } ],
+    "condition" : {
+      "type" : "YouReducedStrength",
+      "enemyStillThere" : true
+    },
+    "sourceZone" : "field",
+    "limit" : "NONE"
+  } ]
+}

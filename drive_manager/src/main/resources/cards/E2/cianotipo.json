@@ -1,0 +1,135 @@
+{
+  "name" : "cianotipo",
+  "effects" : [ {
+    "id" : "cianotipo:tributada-como-material",
+    "moment" : "ON_EVENT",
+    "mandatory" : true,
+    "label" : "En Tributos",
+    "text" : "Si esta carta es tributada como material: roba 1 carta.",
+    "steps" : [ {
+      "type" : "Do",
+      "action" : {
+        "type" : "Draw",
+        "count" : {
+          "type" : "Fixed",
+          "value" : 1
+        }
+      }
+    } ],
+    "condition" : {
+      "type" : "ThisTributed",
+      "fromZone" : "materials"
+    },
+    "sourceZone" : "tributeZone",
+    "limit" : "NONE"
+  }, {
+    "id" : "cianotipo:en-juego",
+    "moment" : "ON_PLAY",
+    "mandatory" : true,
+    "label" : "En Juego",
+    "text" : "(1) Tributa hasta 3 materiales de un aliado [mecha] o [neomáquina]; roba la misma cantidad de cartas. Luego: añade esta carta como material a un aliado.",
+    "cost" : [ {
+      "type" : "Do",
+      "action" : {
+        "type" : "Select",
+        "selector" : {
+          "zones" : "pickableAllies",
+          "owner" : "YOU",
+          "filter" : {
+            "classes" : [ "mecha", "neomáquina" ],
+            "cardType" : "creature"
+          },
+          "min" : {
+            "type" : "Fixed",
+            "value" : 1
+          },
+          "max" : {
+            "type" : "Fixed",
+            "value" : 1
+          },
+          "self" : "ANY",
+          "mode" : "CHOOSE"
+        },
+        "saveAs" : "subject",
+        "label" : "Elegido",
+        "endsIfNone" : true
+      }
+    }, {
+      "type" : "Do",
+      "action" : {
+        "type" : "Move",
+        "cards" : {
+          "zones" : "materials:subject",
+          "owner" : "YOU",
+          "filter" : { },
+          "min" : {
+            "type" : "Fixed",
+            "value" : 1
+          },
+          "max" : {
+            "type" : "Fixed",
+            "value" : 3
+          },
+          "self" : "ANY",
+          "mode" : "CHOOSE"
+        },
+        "to" : "tributeZone"
+      }
+    } ],
+    "steps" : [ {
+      "type" : "Do",
+      "action" : {
+        "type" : "Draw",
+        "count" : {
+          "type" : "LastCount"
+        }
+      }
+    }, {
+      "type" : "Do",
+      "action" : {
+        "type" : "Select",
+        "selector" : {
+          "zones" : "pickableAllies",
+          "owner" : "YOU",
+          "filter" : { },
+          "min" : {
+            "type" : "Fixed",
+            "value" : 1
+          },
+          "max" : {
+            "type" : "Fixed",
+            "value" : 1
+          },
+          "self" : "ANY",
+          "mode" : "CHOOSE"
+        },
+        "saveAs" : "subject",
+        "label" : "Elegido",
+        "endsIfNone" : true
+      }
+    }, {
+      "type" : "Do",
+      "action" : {
+        "type" : "Move",
+        "cards" : {
+          "zones" : "field,tributeZone",
+          "owner" : "YOU",
+          "filter" : { },
+          "min" : {
+            "type" : "Fixed",
+            "value" : 1
+          },
+          "max" : {
+            "type" : "Fixed",
+            "value" : 1
+          },
+          "self" : "ANY",
+          "mode" : "SELF"
+        },
+        "to" : "materials:subject"
+      }
+    } ],
+    "sourceZone" : "field",
+    "limit" : "ONCE_PER_TURN_BETWEEN_COPIES"
+  } ]
+}

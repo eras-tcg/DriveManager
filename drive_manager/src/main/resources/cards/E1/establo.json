@@ -1,0 +1,99 @@
+{
+  "name" : "establo",
+  "effects" : [ {
+    "id" : "establo:en-juego",
+    "moment" : "ON_PLAY",
+    "mandatory" : true,
+    "label" : "En Juego",
+    "text" : "Toma 1 carta Roja de tus tributos.",
+    "steps" : [ {
+      "type" : "Do",
+      "action" : {
+        "type" : "Move",
+        "cards" : {
+          "zones" : "tributeZone",
+          "owner" : "YOU",
+          "filter" : {
+            "colors" : [ "R" ]
+          },
+          "min" : {
+            "type" : "Fixed",
+            "value" : 1
+          },
+          "max" : {
+            "type" : "Fixed",
+            "value" : 1
+          },
+          "self" : "ANY",
+          "mode" : "CHOOSE"
+        },
+        "to" : "hand",
+        "required" : true
+      }
+    } ],
+    "sourceZone" : "field",
+    "limit" : "NONE"
+  }, {
+    "id" : "establo:turno-aliado",
+    "moment" : "ON_EVENT",
+    "label" : "Turno Aliado",
+    "text" : "Si algún aliado [caballero] es invocado por efecto o por Ascenso: puedes agotar esta carta para ganar 1 gema.",
+    "steps" : [ {
+      "type" : "IfPossible"
+    }, {
+      "type" : "Do",
+      "action" : {
+        "type" : "SetTapped",
+        "cards" : {
+          "zones" : "field",
+          "owner" : "YOU",
+          "filter" : { },
+          "min" : {
+            "type" : "Fixed",
+            "value" : 1
+          },
+          "max" : {
+            "type" : "Fixed",
+            "value" : 1
+          },
+          "self" : "ANY",
+          "mode" : "SELF"
+        },
+        "tapped" : true
+      }
+    }, {
+      "type" : "Do",
+      "action" : {
+        "type" : "Gems",
+        "count" : {
+          "type" : "Fixed",
+          "value" : 1
+        }
+      }
+    } ],
+    "condition" : {
+      "type" : "Any",
+      "any" : [ {
+        "type" : "Summoned",
+        "side" : "YOU",
+        "filter" : {
+          "classes" : [ "caballero" ],
+          "cardType" : "creature"
+        },
+        "how" : "effect"
+      }, {
+        "type" : "Summoned",
+        "side" : "YOU",
+        "filter" : {
+          "classes" : [ "caballero" ],
+          "cardType" : "creature"
+        },
+        "how" : "special",
+        "kind" : "promotion"
+      } ]
+    },
+    "sourceZone" : "field",
+    "allyTurn" : true,
+    "limit" : "NONE"
+  } ]
+}

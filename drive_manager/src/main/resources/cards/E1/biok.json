@@ -1,0 +1,49 @@
+{
+  "name" : "biok",
+  "effects" : [ {
+    "id" : "biok:en-invocacion",
+    "moment" : "ON_SUMMON",
+    "mandatory" : true,
+    "label" : "En Invocación",
+    "text" : "Esta carta gana Reactivar hasta el final del turno oponente.",
+    "steps" : [ {
+      "type" : "Do",
+      "action" : {
+        "type" : "Modify",
+        "cards" : {
+          "zones" : "subjectOrSelf",
+          "owner" : "YOU",
+          "filter" : { },
+          "min" : {
+            "type" : "Fixed"
+          },
+          "max" : {
+            "type" : "Fixed",
+            "value" : 2147483647
+          },
+          "self" : "ANY",
+          "mode" : "ALL"
+        },
+        "keyword" : "Reactivar",
+        "until" : "NEXT_TURN"
+      }
+    } ],
+    "sourceZone" : "field",
+    "limit" : "NONE"
+  } ],
+  "reactions" : [ {
+    "type" : "CostModifier",
+    "label" : "Todos Los Turnos",
+    "event" : "SPECIAL_SUMMON",
+    "holder" : "SUMMONER",
+    "payment" : {
+      "kind" : "SELF_DAMAGE",
+      "count" : 3,
+      "filter" : {
+        "maxStrength" : 10
+      }
+    },
+    "reduce" : 1,
+    "limit" : "NONE"
+  } ]
+}

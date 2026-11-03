@@ -1,0 +1,81 @@
+{
+  "name" : "iron",
+  "effects" : [ {
+    "id" : "iron:al-atacar",
+    "moment" : "ON_ATTACK",
+    "label" : "Al Atacar",
+    "text" : "Puedes tributar 2 materiales de esta carta y elegir 1 enemigo; este pierde fuerza 3 hasta el final del turno.",
+    "cost" : [ {
+      "type" : "Do",
+      "action" : {
+        "type" : "Move",
+        "cards" : {
+          "zones" : "materials",
+          "owner" : "YOU",
+          "filter" : { },
+          "min" : {
+            "type" : "Fixed",
+            "value" : 2
+          },
+          "max" : {
+            "type" : "Fixed",
+            "value" : 2
+          },
+          "self" : "ANY",
+          "mode" : "CHOOSE"
+        },
+        "to" : "tributeZone"
+      }
+    }, {
+      "type" : "Do",
+      "action" : {
+        "type" : "Select",
+        "selector" : {
+          "zones" : "frontLine",
+          "owner" : "OPPONENT",
+          "filter" : {
+            "cardType" : "creature"
+          },
+          "min" : {
+            "type" : "Fixed",
+            "value" : 1
+          },
+          "max" : {
+            "type" : "Fixed",
+            "value" : 1
+          },
+          "self" : "ANY",
+          "mode" : "CHOOSE"
+        },
+        "target" : true
+      }
+    } ],
+    "steps" : [ {
+      "type" : "Do",
+      "action" : {
+        "type" : "Modify",
+        "cards" : {
+          "zones" : "saved:targets",
+          "owner" : "YOU",
+          "filter" : { },
+          "min" : {
+            "type" : "Fixed"
+          },
+          "max" : {
+            "type" : "Fixed",
+            "value" : 2147483647
+          },
+          "self" : "ANY",
+          "mode" : "ALL"
+        },
+        "strength" : {
+          "type" : "Fixed",
+          "value" : -3
+        },
+        "until" : "TURN"
+      }
+    } ],
+    "sourceZone" : "field",
+    "limit" : "NONE"
+  } ]
+}

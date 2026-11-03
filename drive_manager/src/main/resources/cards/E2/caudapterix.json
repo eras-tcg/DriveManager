@@ -1,0 +1,135 @@
+{
+  "name" : "caudapterix",
+  "effects" : [
+    {
+      "id" : "caudapterix:en-invocacion",
+      "moment" : "ON_SUMMON",
+      "label" : "En Invocación",
+      "text" : "Puedes elegir 1 criatura en el campo con fuerza menor a esta carta; sacrifícala. Si era un aliado activo: gana 1 gema.",
+      "cost" : [
+        {
+          "type" : "Do",
+          "action" : {
+            "type" : "Select",
+            "selector" : {
+              "zones" : "field",
+              "owner" : "BOTH",
+              "filter" : {
+                "cardType" : "creature"
+              },
+              "min" : {
+                "type" : "Fixed",
+                "value" : 1
+              },
+              "max" : {
+                "type" : "Fixed",
+                "value" : 1
+              },
+              "self" : "EXCLUDE",
+              "mode" : "CHOOSE",
+              "relative" : {
+                "to" : "self",
+                "compareStrength" : "LESS"
+              }
+            },
+            "target" : true,
+            "label" : "Elegir"
+          }
+        }
+      ],
+      "steps" : [
+        {
+          "type" : "Do",
+          "action" : {
+            "type" : "Destroy",
+            "cards" : {
+              "zones" : "saved:targets",
+              "owner" : "YOU",
+              "filter" : {},
+              "min" : {
+                "type" : "Fixed"
+              },
+              "max" : {
+                "type" : "Fixed",
+                "value" : 2147483647
+              },
+              "self" : "ANY",
+              "mode" : "ALL"
+            },
+            "sacrifice" : true
+          }
+        },
+        {
+          "type" : "IfSaved",
+          "name" : "activeAllies",
+          "covers" : 1
+        },
+        {
+          "type" : "Do",
+          "action" : {
+            "type" : "Gems",
+            "count" : {
+              "type" : "Fixed",
+              "value" : 1
+            }
+          }
+        }
+      ],
+      "sourceZone" : "field",
+      "limit" : "NONE"
+    }
+  ],
+  "inherited" : [
+    {
+      "id" : "caudapterix:hereda-en-destruccion",
+      "moment" : "ON_DESTROY",
+      "label" : "En Destrucción por efecto aliado",
+      "text" : "Heredado de Caudapterix: puedes tributar esta carta; gana 1 gema.",
+      "cost" : [
+        {
+          "type" : "Do",
+          "action" : {
+            "type" : "Move",
+            "cards" : {
+              "zones" : "discardPile",
+              "owner" : "YOU",
+              "filter" : {
+                "name" : "Caudapterix"
+              },
+              "min" : {
+                "type" : "Fixed",
+                "value" : 1
+              },
+              "max" : {
+                "type" : "Fixed",
+                "value" : 1
+              },
+              "self" : "ANY",
+              "mode" : "NEWEST"
+            },
+            "to" : "tributeZone",
+            "required" : true
+          }
+        }
+      ],
+      "steps" : [
+        {
+          "type" : "Do",
+          "action" : {
+            "type" : "Gems",
+            "count" : {
+              "type" : "Fixed",
+              "value" : 1
+            }
+          }
+        }
+      ],
+      "condition" : {
+        "type" : "ByEffect",
+        "by" : "YOU"
+      },
+      "sourceZone" : "field",
+      "limit" : "NONE"
+    }
+  ]
+}

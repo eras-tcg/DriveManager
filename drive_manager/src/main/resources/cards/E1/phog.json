@@ -1,0 +1,65 @@
+{
+  "name" : "phog",
+  "effects" : [ {
+    "id" : "phog:en-mano",
+    "moment" : "ACTIVATED",
+    "label" : "Turno Aliado / En Mano",
+    "text" : "Puedes sacrificar 1 criatura nivel 2 o mayor en el campo de la que seas dueño para invocar esta carta sin pagar su coste.",
+    "steps" : [ {
+      "type" : "IfPossible"
+    }, {
+      "type" : "Do",
+      "action" : {
+        "type" : "Destroy",
+        "cards" : {
+          "zones" : "allies",
+          "owner" : "YOU",
+          "filter" : {
+            "cardType" : "creature",
+            "minLevel" : 2
+          },
+          "min" : {
+            "type" : "Fixed",
+            "value" : 1
+          },
+          "max" : {
+            "type" : "Fixed",
+            "value" : 1
+          },
+          "self" : "ANY",
+          "mode" : "CHOOSE"
+        },
+        "sacrifice" : true,
+        "required" : true
+      }
+    }, {
+      "type" : "Do",
+      "action" : {
+        "type" : "Summon",
+        "cards" : {
+          "zones" : "hand,deck,tributeZone,discardPile,lifeStack",
+          "owner" : "YOU",
+          "filter" : { },
+          "min" : {
+            "type" : "Fixed",
+            "value" : 1
+          },
+          "max" : {
+            "type" : "Fixed",
+            "value" : 1
+          },
+          "self" : "ANY",
+          "mode" : "SELF"
+        },
+        "reduce" : {
+          "type" : "Fixed",
+          "value" : 1000
+        },
+        "required" : true
+      }
+    } ],
+    "sourceZone" : "hand",
+    "allyTurn" : true,
+    "limit" : "NONE"
+  } ]
+}

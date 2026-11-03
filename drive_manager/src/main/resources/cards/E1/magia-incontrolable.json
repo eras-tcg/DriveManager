@@ -1,0 +1,38 @@
+{
+  "name" : "magia incontrolable",
+  "effects" : [ {
+    "id" : "magia-incontrolable:en-juego",
+    "moment" : "ON_PLAY",
+    "mandatory" : true,
+    "label" : "En Juego",
+    "text" : "Efecto Definitivo. Toma 1 utilidad no-blanca de tu descarte.",
+    "steps" : [ {
+      "type" : "Do",
+      "action" : {
+        "type" : "Move",
+        "cards" : {
+          "zones" : "discardPile",
+          "owner" : "YOU",
+          "filter" : {
+            "notColors" : [ "W" ],
+            "cardTypes" : [ "utility" ]
+          },
+          "min" : {
+            "type" : "Fixed",
+            "value" : 1
+          },
+          "max" : {
+            "type" : "Fixed",
+            "value" : 1
+          },
+          "self" : "ANY",
+          "mode" : "CHOOSE"
+        },
+        "to" : "hand",
+        "required" : true
+      }
+    } ],
+    "sourceZone" : "field",
+    "limit" : "DEFINITIVE"
+  } ]
+}

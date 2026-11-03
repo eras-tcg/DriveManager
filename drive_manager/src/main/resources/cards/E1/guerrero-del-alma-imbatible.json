@@ -1,0 +1,119 @@
+{
+  "name" : "guerrero del alma imbatible",
+  "effects" : [ {
+    "id" : "guerrero-alma-imbatible:en-invocacion",
+    "moment" : "ON_SUMMON",
+    "label" : "En Invocación",
+    "text" : "Puedes tributar la carta del tope de tus vidas para ganar 1 gema.",
+    "steps" : [ {
+      "type" : "IfPossible"
+    }, {
+      "type" : "Do",
+      "action" : {
+        "type" : "Move",
+        "cards" : {
+          "zones" : "lifeStack",
+          "owner" : "YOU",
+          "filter" : { },
+          "min" : {
+            "type" : "Fixed",
+            "value" : 1
+          },
+          "max" : {
+            "type" : "Fixed",
+            "value" : 1
+          },
+          "self" : "ANY",
+          "mode" : "TOP"
+        },
+        "to" : "tributeZone"
+      }
+    }, {
+      "type" : "Do",
+      "action" : {
+        "type" : "Gems",
+        "count" : {
+          "type" : "Fixed",
+          "value" : 1
+        }
+      }
+    } ],
+    "sourceZone" : "field",
+    "limit" : "NONE"
+  }, {
+    "id" : "guerrero-alma-imbatible:todos-los-turnos",
+    "moment" : "ON_EVENT",
+    "mandatory" : true,
+    "label" : "Todos Los Turnos",
+    "text" : "Si un aliado es invocado especialmente: sube esta carta a tu mano. Si lo haces: puedes revelar 1 [retador] nivel 3 o menor de tu mano y elegir 1 aliado del mismo nivel; reactívalo.",
+    "steps" : [ {
+      "type" : "Do",
+      "action" : {
+        "type" : "Move",
+        "cards" : {
+          "zones" : "field",
+          "owner" : "YOU",
+          "filter" : { },
+          "min" : {
+            "type" : "Fixed",
+            "value" : 1
+          },
+          "max" : {
+            "type" : "Fixed",
+            "value" : 1
+          },
+          "self" : "ANY",
+          "mode" : "SELF"
+        },
+        "to" : "hand"
+      }
+    }, {
+      "type" : "IfDone",
+      "covers" : 3
+    }, {
+      "type" : "MayDo",
+      "question" : "¿Revelas 1 [retador] nivel 3 o menor de tu mano para reactivar 1 aliado del mismo nivel?",
+      "covers" : 2
+    }, {
+      "type" : "RevealFromHand",
+      "filters" : [ {
+        "classes" : [ "retador" ],
+        "maxLevel" : 3
+      } ]
+    }, {
+      "type" : "Do",
+      "action" : {
+        "type" : "SetTapped",
+        "cards" : {
+          "zones" : "allies",
+          "owner" : "YOU",
+          "filter" : { },
+          "min" : {
+            "type" : "Fixed",
+            "value" : 1
+          },
+          "max" : {
+            "type" : "Fixed",
+            "value" : 1
+          },
+          "self" : "ANY",
+          "mode" : "CHOOSE",
+          "relative" : {
+            "to" : "last",
+            "compareLevel" : "EQUAL"
+          }
+        }
+      }
+    } ],
+    "condition" : {
+      "type" : "Summoned",
+      "side" : "YOU",
+      "filter" : {
+        "cardType" : "creature"
+      },
+      "how" : "special"
+    },
+    "sourceZone" : "field",
+    "limit" : "NONE"
+  } ]
+}

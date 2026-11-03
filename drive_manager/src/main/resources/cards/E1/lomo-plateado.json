@@ -1,0 +1,88 @@
+{
+  "name" : "lomo plateado",
+  "effects" : [ {
+    "id" : "lomo-plateado:turno-aliado",
+    "moment" : "ACTIVATED",
+    "label" : "Turno Aliado",
+    "text" : "Una vez por turno: puedes sacrificar 1 otro aliado para que esta carta gane fuerza 3 hasta el final del turno. Si lo haces: puedes mover esta carta a tu línea frontal.",
+    "steps" : [ {
+      "type" : "IfPossible"
+    }, {
+      "type" : "Do",
+      "action" : {
+        "type" : "Destroy",
+        "cards" : {
+          "zones" : "allies",
+          "owner" : "YOU",
+          "filter" : { },
+          "min" : {
+            "type" : "Fixed",
+            "value" : 1
+          },
+          "max" : {
+            "type" : "Fixed",
+            "value" : 1
+          },
+          "self" : "EXCLUDE",
+          "mode" : "CHOOSE"
+        },
+        "sacrifice" : true,
+        "required" : true
+      }
+    }, {
+      "type" : "SubjectIsThisCard"
+    }, {
+      "type" : "Do",
+      "action" : {
+        "type" : "Modify",
+        "cards" : {
+          "zones" : "subjectOrSelf",
+          "owner" : "YOU",
+          "filter" : { },
+          "min" : {
+            "type" : "Fixed"
+          },
+          "max" : {
+            "type" : "Fixed",
+            "value" : 2147483647
+          },
+          "self" : "ANY",
+          "mode" : "ALL"
+        },
+        "strength" : {
+          "type" : "Fixed",
+          "value" : 3
+        },
+        "until" : "TURN"
+      }
+    }, {
+      "type" : "MayDo",
+      "question" : "¿Mueves esta carta a tu línea frontal?",
+      "covers" : 1
+    }, {
+      "type" : "Do",
+      "action" : {
+        "type" : "Move",
+        "cards" : {
+          "zones" : "backLine",
+          "owner" : "YOU",
+          "filter" : { },
+          "min" : {
+            "type" : "Fixed",
+            "value" : 1
+          },
+          "max" : {
+            "type" : "Fixed",
+            "value" : 1
+          },
+          "self" : "ANY",
+          "mode" : "SELF"
+        },
+        "to" : "frontLine"
+      }
+    } ],
+    "sourceZone" : "field",
+    "allyTurn" : true,
+    "limit" : "ONCE_PER_TURN"
+  } ]
+}

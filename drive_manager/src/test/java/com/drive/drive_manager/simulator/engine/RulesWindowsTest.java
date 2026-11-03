@@ -3,7 +3,6 @@ package com.drive.drive_manager.simulator.engine;
 import com.drive.drive_manager.simulator.CardSlot;
 import com.drive.drive_manager.simulator.GameRoom;
 import com.drive.drive_manager.simulator.PlayerState;
-import com.drive.drive_manager.simulator.engine.EffectStep.Draw;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -53,7 +52,7 @@ class RulesWindowsTest {
         CardSlot summoner = field(host, creature("s", "Invocador", 2, 3), FRONT);
         summoner.setTapped(true);
 
-        assertThat(Summons.ritualByPlayer(room, "host", "zha", "s")).isNull();
+        assertThat(Rituals.ritualByPlayer(room, "host", "zha", "s")).isNull();
 
         assertThat(host.getField()).containsExactly(zhaglizer);
         assertThat(zhaglizer.getY()).isEqualTo(FRONT);
@@ -72,11 +71,11 @@ class RulesWindowsTest {
         field(host, creature("l1", "Nivel 1", 1, 3), FRONT);
         CardSlot red = field(host, creature("red", "Roja", 2, 3), FRONT);
         red.setColors(new ArrayList<>(List.of("R")));
-        assertThat(Summons.ritualByPlayer(room, "host", "zha", "l1")).contains("Requerimiento");
-        assertThat(Summons.ritualByPlayer(room, "host", "zha", "red")).contains("no comparte");
-        assertThat(Summons.ritualByPlayer(room, "host", "zha", null)).contains("Requerimiento");
+        assertThat(Rituals.ritualByPlayer(room, "host", "zha", "l1")).contains("Requerimiento");
+        assertThat(Rituals.ritualByPlayer(room, "host", "zha", "red")).contains("no comparte");
+        assertThat(Rituals.ritualByPlayer(room, "host", "zha", null)).contains("Requerimiento");
         room.setSharedCounter(5); // host: -5 gems, opponent Marcador 2
-        assertThat(Summons.ritualByPlayer(room, "host", "zha", null)).contains("gemas");
+        assertThat(Rituals.ritualByPlayer(room, "host", "zha", null)).contains("gemas");
     }
 
     @Test
@@ -86,10 +85,10 @@ class RulesWindowsTest {
         field(host, creature("a", "A", 2, 3), FRONT);
         field(host, creature("b", "B", 3, 3), BACK);
         field(host, creature("c", "C", 1, 3), BACK);
-        assertThat(Summons.canRitual(room, "host", mawser)).isTrue();
+        assertThat(Rituals.canRitual(room, "host", mawser)).isTrue();
 
         // First the summoner: each of them can be completed exactly by the others
-        assertThat(Summons.ritualByPlayer(room, "host", "maw", null)).isNull();
+        assertThat(Rituals.ritualByPlayer(room, "host", "maw", null)).isNull();
         Prompt summoner = room.getPrompt();
         assertThat(summoner.getPurpose()).isEqualTo("RITUAL");
         assertThat(summoner.getChosenLabel()).isEqualTo("Invocador");
@@ -100,7 +99,7 @@ class RulesWindowsTest {
         assertThat(host.getHand()).contains(mawser);
         assertThat(EffectEngine.gemsOf(room, "host")).isEqualTo(5);
 
-        Summons.ritualByPlayer(room, "host", "maw", null);
+        Rituals.ritualByPlayer(room, "host", "maw", null);
         Answers.answer(room, "host", room.getPrompt().getId(), List.of("b"), List.of());
         Prompt rest = room.getPrompt();
         assertThat(rest.getSummonerId()).isEqualTo("b");
@@ -120,7 +119,7 @@ class RulesWindowsTest {
         host.getHand().add(zhauz);
         CardSlot summoner = field(host, creature("s", "Invocador", 3, 3), FRONT);
         summoner.setTapped(true);
-        Summons.ritualByPlayer(room, "host", "zha", "s");
+        Rituals.ritualByPlayer(room, "host", "zha", "s");
         assertThat(zhauz.isTapped()).isTrue();
         assertThat(room.getTimeline()).extracting(GameEvent::getType).doesNotContain(GameEvent.EFFECT_ACTIVATED);
         // An ally destroyed afterwards does trigger it
@@ -137,7 +136,7 @@ class RulesWindowsTest {
         summoner.setTapped(true);
         summoner.setStrengthModifier(2);
         summoner.getTurnKeywords().add("Furia 1");
-        Summons.ritualByPlayer(room, "host", "zha", "s");
+        Rituals.ritualByPlayer(room, "host", "zha", "s");
         assertThat(zhaglizer.getY()).isEqualTo(FRONT);
         assertThat(zhaglizer.isTapped()).isTrue();
         assertThat(zhaglizer.getStrengthModifier()).isEqualTo(2);
@@ -149,7 +148,7 @@ class RulesWindowsTest {
         host.getHand().add(ritual("maw", "Mawser", 4, 3, "criaturas que en nivel sumen 6."));
         field(host, creature("a", "A", 4, 3), FRONT);
         field(host, creature("b", "B", 2, 3), BACK);
-        Summons.ritualByPlayer(room, "host", "maw", "a");
+        Rituals.ritualByPlayer(room, "host", "maw", "a");
         Prompt rest = room.getPrompt();
         assertThat(rest.getSummonerId()).isEqualTo("a");
         assertThat(rest.getValidIds()).containsExactly("b");
@@ -162,7 +161,7 @@ class RulesWindowsTest {
         CardSlot berkelus = ritual("ber", "Berkelus El Cazarrecompensas Del Bajomundo", 3, 4, "criatura nivel 4");
         host.getHand().add(berkelus);
         field(host, creature("s", "Invocador", 4, 3), BACK);
-        Summons.ritualByPlayer(room, "host", "ber", "s");
+        Rituals.ritualByPlayer(room, "host", "ber", "s");
 
         Prompt front = room.getPrompt();
         assertThat(front.getPurpose()).isEqualTo("SPECIAL_FRONT");
@@ -195,7 +194,7 @@ class RulesWindowsTest {
         guest.setResourceCount(2);
         host.getHand().add(ritual("kro", "Krokler", 0, 2, "criatura nivel 1."));
         field(host, creature("s", "Invocador", 1, 3), FRONT);
-        assertThat(Summons.ritualByPlayer(room, "host", "kro", "s")).isNull();
+        assertThat(Rituals.ritualByPlayer(room, "host", "kro", "s")).isNull();
         assertThat(host.getField()).extracting(CardSlot::getInstanceId).containsExactly("kro");
     }
 
@@ -218,11 +217,11 @@ class RulesWindowsTest {
         field(host, creature("a", "A", 4, 3), FRONT);
         field(host, creature("b", "B", 3, 3), BACK);
         // 4 + 3 = 7: more than 6 is not allowed, and no other combination adds up to 6
-        assertThat(Summons.canRitual(room, "host", mawser)).isFalse();
-        assertThat(Summons.ritualByPlayer(room, "host", "maw", null)).contains("Requerimiento");
-        assertThat(Summons.ritualByPlayer(room, "host", "maw", "a")).contains("Requerimiento");
+        assertThat(Rituals.canRitual(room, "host", mawser)).isFalse();
+        assertThat(Rituals.ritualByPlayer(room, "host", "maw", null)).contains("Requerimiento");
+        assertThat(Rituals.ritualByPlayer(room, "host", "maw", "a")).contains("Requerimiento");
         field(host, creature("c", "C", 2, 3), BACK);
-        assertThat(Summons.ritualByPlayer(room, "host", "maw", "a")).isNull();
+        assertThat(Rituals.ritualByPlayer(room, "host", "maw", "a")).isNull();
         // Dropped onto A (4): only C (2) completes it exactly, so only C is offered (B, 3, would pass 6)
         assertThat(room.getPrompt().getValidIds()).containsExactly("c");
         assertThat(room.getPrompt().getMaxLevelSum()).isEqualTo(2);
@@ -320,8 +319,8 @@ class RulesWindowsTest {
         host.getHand().add(galveta);
         CardSlot summoner = field(host, creature("s", "Dírumy", 1, 2), FRONT);
         summoner.setTapped(true);
-        assertThat(Summons.canSpecial(room, "host", galveta)).isTrue();
-        assertThat(Summons.specialByPlayer(room, "host", "gal", "s")).isNull();
+        assertThat(SpecialRequirements.canSpecial(room, "host", galveta)).isTrue();
+        assertThat(SpecialSummons.specialByPlayer(room, "host", "gal", "s")).isNull();
         assertThat(host.getField()).containsExactly(galveta);
         assertThat(galveta.getResources()).containsExactly(summoner);
         assertThat(galveta.isTapped()).isTrue();
@@ -334,10 +333,10 @@ class RulesWindowsTest {
         CardSlot ferreo = special("fer", "Caballero Férreo", "promotion", 1, 2, "criatura nivel 1, mientras tus aliados suman 2 o más en nivel.");
         host.getHand().add(ferreo);
         CardSlot summoner = field(host, creature("s", "Peón", 1, 4), FRONT);
-        assertThat(Summons.canSpecial(room, "host", ferreo)).isFalse();
-        assertThat(Summons.specialByPlayer(room, "host", "fer", "s")).contains("sumar 2");
+        assertThat(SpecialRequirements.canSpecial(room, "host", ferreo)).isFalse();
+        assertThat(SpecialSummons.specialByPlayer(room, "host", "fer", "s")).contains("sumar 2");
         field(host, creature("o", "Otro", 1, 3), BACK);
-        assertThat(Summons.specialByPlayer(room, "host", "fer", "s")).isNull();
+        assertThat(SpecialSummons.specialByPlayer(room, "host", "fer", "s")).isNull();
         assertThat(host.getTributeZone()).containsExactly(summoner);
         assertThat(room.getTimeline()).extracting(GameEvent::getType).contains(GameEvent.TRIBUTE).doesNotContain(GameEvent.SACRIFICE);
     }
@@ -350,7 +349,7 @@ class RulesWindowsTest {
         CardSlot material = creature("m", "Jhav", 1, 2);
         host.getTributeZone().add(material);
         // Without a summoner: first the summoner, then the material
-        assertThat(Summons.specialByPlayer(room, "host", "fla", null)).isNull();
+        assertThat(SpecialSummons.specialByPlayer(room, "host", "fla", null)).isNull();
         Prompt who = room.getPrompt();
         assertThat(who.getPurpose()).isEqualTo("SPECIAL");
         Answers.answer(room, "host", who.getId(), List.of("s"), List.of());
@@ -443,7 +442,7 @@ class RulesWindowsTest {
         field(host, creature("s", "Invocador", 3, 3), FRONT);
         host.getTributeZone().add(creature("v1", "Violeta 1", 1, 2));
 
-        Summons.ritualByPlayer(room, "host", "ara", "s");
+        Rituals.ritualByPlayer(room, "host", "ara", "s");
         Prompt confirm = room.getPrompt();
         assertThat(confirm.getPurpose()).isEqualTo("OPTIONAL");
         assertThat(confirm.getValidIds()).containsExactly("ara");
@@ -501,7 +500,7 @@ class RulesWindowsTest {
         host.getHand().add(krokler);
         field(host, creature("carn", "Carnhaus", 1, 3), FRONT);
         field(guest, creature("gcarn", "Carnhaus", 1, 3), FRONT);
-        Summons.ritualByPlayer(room, "host", "kro", "carn");
+        Rituals.ritualByPlayer(room, "host", "kro", "carn");
         Answers.answer(room, "host", room.getPrompt().getId(), List.of("kro"), List.of());
         assertThat(room.getChain()).extracting(PendingEffect::getSourceName).containsExactly("Carnhaus", "Krokler");
 
@@ -530,7 +529,7 @@ class RulesWindowsTest {
         host.getHand().add(cazador);
         field(host, creature("sli", "Slicker", 2, 3), BACK);
         host.getTributeZone().add(creature("v1", "Violeta", 1, 2));
-        Summons.ritualByPlayer(room, "host", "caz", "sli");
+        Rituals.ritualByPlayer(room, "host", "caz", "sli");
         Answers.answer(room, "host", room.getPrompt().getId(), List.of(), List.of()); // stays in the Retaguardia
 
         Prompt first = room.getPrompt();
@@ -594,7 +593,7 @@ class RulesWindowsTest {
     @Test
     void theOpponentMayRespondBeforeTheChainResolves() {
         CardEffects.register("respondedor de prueba", new EffectScript("test:respuesta", EffectScript.Moment.RESPONSE, false,
-                "En Mano", "Roba 1 carta.", List.of(new Draw(1))).fromZone("hand").limited(EffectScript.Limit.ONCE_PER_TURN));
+                "En Mano", "Roba 1 carta.", List.of(Compose.draw(1))).fromZone("hand").limited(EffectScript.Limit.ONCE_PER_TURN));
         CardSlot responder = creature("resp", "Respondedor De Prueba", 1, 1);
         guest.getHand().add(responder);
         host.getHand().add(creature("baj", "Bajmut Pútrido", 1, 3));

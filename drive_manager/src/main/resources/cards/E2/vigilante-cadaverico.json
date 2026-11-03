@@ -1,0 +1,94 @@
+{
+  "name" : "vigilante cadavérico",
+  "effects" : [
+    {
+      "id" : "vigilante-cadaverico:en-destruccion",
+      "moment" : "ON_DESTROY",
+      "label" : "En Destrucción",
+      "text" : "Puedes tributar 1 carta de tu mano; al final del turno: puedes invocar 1 [muerto viviente] nivel 3 de tu descarte o tributos reduciendo su coste en 3.",
+      "cost" : [
+        {
+          "type" : "Do",
+          "action" : {
+            "type" : "Move",
+            "cards" : {
+              "zones" : "hand",
+              "owner" : "YOU",
+              "filter" : {},
+              "min" : {
+                "type" : "Fixed",
+                "value" : 1
+              },
+              "max" : {
+                "type" : "Fixed",
+                "value" : 1
+              },
+              "self" : "EXCLUDE",
+              "mode" : "CHOOSE"
+            },
+            "to" : "tributeZone"
+          }
+        }
+      ],
+      "steps" : [
+        {
+          "type" : "Do",
+          "action" : {
+            "type" : "AtEndOfTurn",
+            "effect" : "vigilante-cadaverico:final-del-turno"
+          }
+        }
+      ],
+      "sourceZone" : "field",
+      "limit" : "NONE"
+    },
+    {
+      "id" : "vigilante-cadaverico:final-del-turno",
+      "moment" : "DELAYED",
+      "mandatory" : true,
+      "label" : "Al final del turno",
+      "text" : "Puedes invocar 1 [muerto viviente] nivel 3 de tu descarte o tributos reduciendo su coste en 3.",
+      "steps" : [
+        {
+          "type" : "MayDo",
+          "question" : "¿Invocas 1 [muerto viviente] nivel 3 de tu descarte o tributos reduciendo su coste en 3?",
+          "covers" : 1
+        },
+        {
+          "type" : "Do",
+          "action" : {
+            "type" : "Summon",
+            "cards" : {
+              "zones" : "discardPile,tributeZone",
+              "owner" : "YOU",
+              "filter" : {
+                "classes" : [
+                  "muerto viviente"
+                ],
+                "cardType" : "creature",
+                "level" : 3
+              },
+              "min" : {
+                "type" : "Fixed",
+                "value" : 1
+              },
+              "max" : {
+                "type" : "Fixed",
+                "value" : 1
+              },
+              "self" : "ANY",
+              "mode" : "CHOOSE"
+            },
+            "reduce" : {
+              "type" : "Fixed",
+              "value" : 3
+            },
+            "required" : true
+          }
+        }
+      ],
+      "sourceZone" : "field",
+      "limit" : "NONE"
+    }
+  ]
+}

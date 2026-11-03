@@ -1,0 +1,139 @@
+{
+  "name" : "veleaf",
+  "effects" : [ {
+    "id" : "veleaf:turno-aliado",
+    "moment" : "ON_EVENT",
+    "label" : "Turno Aliado",
+    "text" : "Si esta carta sube a la línea frontal: esta carta puede invocar por Evolución una criatura en tu mano reduciendo el coste especial en 1. Si lo haces: roba 1 carta.",
+    "steps" : [ {
+      "type" : "Do",
+      "action" : {
+        "type" : "Sequence",
+        "actions" : [ {
+          "type" : "Select",
+          "selector" : {
+            "zones" : "hand",
+            "owner" : "YOU",
+            "filter" : { },
+            "min" : {
+              "type" : "Fixed"
+            },
+            "max" : {
+              "type" : "Fixed",
+              "value" : 1
+            },
+            "self" : "ANY",
+            "mode" : "CHOOSE",
+            "special" : {
+              "rule" : {
+                "kind" : "evolution",
+                "zone" : "hand",
+                "reduce" : 1,
+                "summoner" : "self",
+                "filter" : {
+                  "cardType" : "creature"
+                }
+              },
+              "stage" : "CARD"
+            }
+          },
+          "saveAs" : "specialCard",
+          "label" : "Invocar"
+        }, {
+          "type" : "Select",
+          "selector" : {
+            "zones" : "hand",
+            "owner" : "YOU",
+            "filter" : { },
+            "min" : {
+              "type" : "Fixed"
+            },
+            "max" : {
+              "type" : "Fixed",
+              "value" : 1
+            },
+            "self" : "ANY",
+            "mode" : "CHOOSE",
+            "special" : {
+              "rule" : {
+                "kind" : "evolution",
+                "zone" : "hand",
+                "reduce" : 1,
+                "summoner" : "self",
+                "filter" : {
+                  "cardType" : "creature"
+                }
+              },
+              "stage" : "SUMMONER"
+            }
+          },
+          "saveAs" : "specialSummoner",
+          "label" : "Invocador"
+        }, {
+          "type" : "Select",
+          "selector" : {
+            "zones" : "hand",
+            "owner" : "YOU",
+            "filter" : { },
+            "min" : {
+              "type" : "Fixed"
+            },
+            "max" : {
+              "type" : "Fixed",
+              "value" : 1
+            },
+            "self" : "ANY",
+            "mode" : "CHOOSE",
+            "special" : {
+              "rule" : {
+                "kind" : "evolution",
+                "zone" : "hand",
+                "reduce" : 1,
+                "summoner" : "self",
+                "filter" : {
+                  "cardType" : "creature"
+                }
+              },
+              "stage" : "MATERIAL"
+            }
+          },
+          "saveAs" : "specialMaterials",
+          "label" : "Material"
+        }, {
+          "type" : "SummonSpecial",
+          "rule" : {
+            "kind" : "evolution",
+            "zone" : "hand",
+            "reduce" : 1,
+            "summoner" : "self",
+            "filter" : {
+              "cardType" : "creature"
+            }
+          }
+        } ]
+      }
+    }, {
+      "type" : "IfDone",
+      "covers" : 1
+    }, {
+      "type" : "Do",
+      "action" : {
+        "type" : "Draw",
+        "count" : {
+          "type" : "Fixed",
+          "value" : 1
+        }
+      }
+    } ],
+    "condition" : {
+      "type" : "Happened",
+      "actor" : "ANY",
+      "owner" : "ANY",
+      "thisCard" : true,
+      "to" : "frontLine"
+    },
+    "sourceZone" : "field",
+    "allyTurn" : true,
+    "limit" : "NONE"
+  } ]
+}

@@ -1,0 +1,107 @@
+{
+  "name" : "fausto",
+  "effects" : [ {
+    "id" : "fausto:en-invocacion",
+    "moment" : "ON_SUMMON",
+    "mandatory" : true,
+    "label" : "En Invocación",
+    "text" : "Mira las primeras 6 cartas de tu mazo: de ellas toma hasta 2 cartas Azules, Blancas, [artefacto] y/o [cineriano].",
+    "steps" : [ {
+      "type" : "Do",
+      "action" : {
+        "type" : "Look",
+        "count" : {
+          "type" : "Fixed",
+          "value" : 6
+        }
+      }
+    }, {
+      "type" : "Do",
+      "action" : {
+        "type" : "Move",
+        "cards" : {
+          "zones" : "looked",
+          "owner" : "YOU",
+          "filter" : {
+            "colors" : [ "B", "W" ],
+            "classes" : [ "artefacto", "cineriano" ]
+          },
+          "min" : {
+            "type" : "Fixed"
+          },
+          "max" : {
+            "type" : "Fixed",
+            "value" : 2
+          },
+          "self" : "ANY",
+          "mode" : "CHOOSE"
+        },
+        "to" : "hand",
+        "rest" : "deckBottom"
+      }
+    } ],
+    "sourceZone" : "field",
+    "limit" : "NONE"
+  }, {
+    "id" : "fausto:turno-aliado",
+    "moment" : "ACTIVATED",
+    "label" : "Turno Aliado",
+    "text" : "Puedes tributar 2 materiales de esta carta para jugar 1 utilidad Azul o [artefacto] de tu mano o tributos reduciendo en 1 su coste.",
+    "steps" : [ {
+      "type" : "IfPossible"
+    }, {
+      "type" : "Do",
+      "action" : {
+        "type" : "Move",
+        "cards" : {
+          "zones" : "materials",
+          "owner" : "YOU",
+          "filter" : { },
+          "min" : {
+            "type" : "Fixed",
+            "value" : 2
+          },
+          "max" : {
+            "type" : "Fixed",
+            "value" : 2
+          },
+          "self" : "ANY",
+          "mode" : "CHOOSE"
+        },
+        "to" : "tributeZone"
+      }
+    }, {
+      "type" : "Do",
+      "action" : {
+        "type" : "Play",
+        "cards" : {
+          "zones" : "hand,tributeZone",
+          "owner" : "YOU",
+          "filter" : {
+            "colors" : [ "B" ],
+            "classes" : [ "artefacto" ],
+            "cardTypes" : [ "utility" ]
+          },
+          "min" : {
+            "type" : "Fixed",
+            "value" : 1
+          },
+          "max" : {
+            "type" : "Fixed",
+            "value" : 1
+          },
+          "self" : "ANY",
+          "mode" : "CHOOSE"
+        },
+        "reduce" : {
+          "type" : "Fixed",
+          "value" : 1
+        },
+        "required" : true
+      }
+    } ],
+    "sourceZone" : "field",
+    "allyTurn" : true,
+    "limit" : "NONE"
+  } ]
+}

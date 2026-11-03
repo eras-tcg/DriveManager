@@ -1,0 +1,127 @@
+{
+  "name" : "petrodalix",
+  "effects" : [
+    {
+      "id" : "petrodalix:en-invocacion",
+      "moment" : "ON_SUMMON",
+      "mandatory" : true,
+      "label" : "En Invocación",
+      "text" : "(1) Tributa 3 cartas del tope de tu mazo. Luego: puedes jugar 1 estructura con [dinosaurio] en su texto de tu mano o tributos reduciendo su coste en 1.",
+      "steps" : [
+        {
+          "type" : "Do",
+          "action" : {
+            "type" : "Move",
+            "cards" : {
+              "zones" : "deck",
+              "owner" : "YOU",
+              "filter" : {},
+              "min" : {
+                "type" : "Fixed",
+                "value" : 3
+              },
+              "max" : {
+                "type" : "Fixed",
+                "value" : 3
+              },
+              "self" : "ANY",
+              "mode" : "TOP"
+            },
+            "to" : "tributeZone"
+          }
+        },
+        {
+          "type" : "MayDo",
+          "question" : "¿Juegas 1 estructura [dinosaurio] de tu mano o tributos reduciendo su coste en 1?",
+          "covers" : 1
+        },
+        {
+          "type" : "Do",
+          "action" : {
+            "type" : "Play",
+            "cards" : {
+              "zones" : "hand,tributeZone",
+              "owner" : "YOU",
+              "filter" : {
+                "cardTypes" : [
+                  "structure"
+                ],
+                "mentions" : "dinosaurio"
+              },
+              "min" : {
+                "type" : "Fixed",
+                "value" : 1
+              },
+              "max" : {
+                "type" : "Fixed",
+                "value" : 1
+              },
+              "self" : "ANY",
+              "mode" : "CHOOSE"
+            },
+            "reduce" : {
+              "type" : "Fixed",
+              "value" : 1
+            },
+            "required" : true
+          }
+        }
+      ],
+      "sourceZone" : "field",
+      "limit" : "ONCE_PER_TURN_BETWEEN_COPIES"
+    }
+  ],
+  "inherited" : [
+    {
+      "id" : "petrodalix:hereda-en-destruccion",
+      "moment" : "ON_DESTROY",
+      "label" : "En Destrucción por efecto aliado",
+      "text" : "Heredado de Petrodalix: puedes tributar esta carta; gana 1 gema.",
+      "cost" : [
+        {
+          "type" : "Do",
+          "action" : {
+            "type" : "Move",
+            "cards" : {
+              "zones" : "discardPile",
+              "owner" : "YOU",
+              "filter" : {
+                "name" : "Petrodalix"
+              },
+              "min" : {
+                "type" : "Fixed",
+                "value" : 1
+              },
+              "max" : {
+                "type" : "Fixed",
+                "value" : 1
+              },
+              "self" : "ANY",
+              "mode" : "NEWEST"
+            },
+            "to" : "tributeZone",
+            "required" : true
+          }
+        }
+      ],
+      "steps" : [
+        {
+          "type" : "Do",
+          "action" : {
+            "type" : "Gems",
+            "count" : {
+              "type" : "Fixed",
+              "value" : 1
+            }
+          }
+        }
+      ],
+      "condition" : {
+        "type" : "ByEffect",
+        "by" : "YOU"
+      },
+      "sourceZone" : "field",
+      "limit" : "NONE"
+    }
+  ]
+}

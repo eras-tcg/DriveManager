@@ -1,0 +1,107 @@
+{
+  "name" : "mono de pantano",
+  "inherited" : [ {
+    "id" : "mono-de-pantano:hereda-al-atacar",
+    "moment" : "ON_ATTACK",
+    "label" : "Al Atacar",
+    "text" : "Heredado de Mono De Pantano: esta carta puede invocar por Evolución una carta de tu mano.",
+    "steps" : [ {
+      "type" : "Do",
+      "action" : {
+        "type" : "Sequence",
+        "actions" : [ {
+          "type" : "Select",
+          "selector" : {
+            "zones" : "hand",
+            "owner" : "YOU",
+            "filter" : { },
+            "min" : {
+              "type" : "Fixed"
+            },
+            "max" : {
+              "type" : "Fixed",
+              "value" : 1
+            },
+            "self" : "ANY",
+            "mode" : "CHOOSE",
+            "special" : {
+              "rule" : {
+                "kind" : "evolution",
+                "zone" : "hand",
+                "summoner" : "self",
+                "filter" : { }
+              },
+              "stage" : "CARD"
+            }
+          },
+          "saveAs" : "specialCard",
+          "label" : "Invocar"
+        }, {
+          "type" : "Select",
+          "selector" : {
+            "zones" : "hand",
+            "owner" : "YOU",
+            "filter" : { },
+            "min" : {
+              "type" : "Fixed"
+            },
+            "max" : {
+              "type" : "Fixed",
+              "value" : 1
+            },
+            "self" : "ANY",
+            "mode" : "CHOOSE",
+            "special" : {
+              "rule" : {
+                "kind" : "evolution",
+                "zone" : "hand",
+                "summoner" : "self",
+                "filter" : { }
+              },
+              "stage" : "SUMMONER"
+            }
+          },
+          "saveAs" : "specialSummoner",
+          "label" : "Invocador"
+        }, {
+          "type" : "Select",
+          "selector" : {
+            "zones" : "hand",
+            "owner" : "YOU",
+            "filter" : { },
+            "min" : {
+              "type" : "Fixed"
+            },
+            "max" : {
+              "type" : "Fixed",
+              "value" : 1
+            },
+            "self" : "ANY",
+            "mode" : "CHOOSE",
+            "special" : {
+              "rule" : {
+                "kind" : "evolution",
+                "zone" : "hand",
+                "summoner" : "self",
+                "filter" : { }
+              },
+              "stage" : "MATERIAL"
+            }
+          },
+          "saveAs" : "specialMaterials",
+          "label" : "Material"
+        }, {
+          "type" : "SummonSpecial",
+          "rule" : {
+            "kind" : "evolution",
+            "zone" : "hand",
+            "summoner" : "self",
+            "filter" : { }
+          }
+        } ]
+      }
+    } ],
+    "sourceZone" : "field",
+    "limit" : "NONE"
+  } ]
+}

@@ -1,0 +1,85 @@
+{
+  "name" : "sacerdotisa del portal del eclipse",
+  "effects" : [ {
+    "id" : "sacerdotisa-eclipse:turno-aliado",
+    "moment" : "ACTIVATED",
+    "label" : "Turno Aliado",
+    "text" : "Puedes tributar 3 materiales de esta carta; invoca en tu línea frontal 1 criatura [chamán], [ente] o [ángel] de tus tributos reduciendo su coste en 3, pero no puede declarar ataque este turno.",
+    "cost" : [ {
+      "type" : "Do",
+      "action" : {
+        "type" : "Move",
+        "cards" : {
+          "zones" : "materials",
+          "owner" : "YOU",
+          "filter" : { },
+          "min" : {
+            "type" : "Fixed",
+            "value" : 3
+          },
+          "max" : {
+            "type" : "Fixed",
+            "value" : 3
+          },
+          "self" : "ANY",
+          "mode" : "CHOOSE"
+        },
+        "to" : "tributeZone"
+      }
+    } ],
+    "steps" : [ {
+      "type" : "Do",
+      "action" : {
+        "type" : "Summon",
+        "cards" : {
+          "zones" : "tributeZone",
+          "owner" : "YOU",
+          "filter" : {
+            "classes" : [ "chamán", "ente", "ángel" ],
+            "cardType" : "creature"
+          },
+          "min" : {
+            "type" : "Fixed",
+            "value" : 1
+          },
+          "max" : {
+            "type" : "Fixed",
+            "value" : 1
+          },
+          "self" : "ANY",
+          "mode" : "CHOOSE"
+        },
+        "reduce" : {
+          "type" : "Fixed",
+          "value" : 3
+        },
+        "toFront" : true,
+        "required" : true
+      }
+    }, {
+      "type" : "Do",
+      "action" : {
+        "type" : "Modify",
+        "cards" : {
+          "zones" : "saved:summoned",
+          "owner" : "YOU",
+          "filter" : { },
+          "min" : {
+            "type" : "Fixed"
+          },
+          "max" : {
+            "type" : "Fixed",
+            "value" : 2147483647
+          },
+          "self" : "ANY",
+          "mode" : "ALL"
+        },
+        "keyword" : "No puede atacar",
+        "until" : "TURN"
+      }
+    } ],
+    "sourceZone" : "field",
+    "allyTurn" : true,
+    "limit" : "NONE"
+  } ]
+}

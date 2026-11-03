@@ -1,0 +1,60 @@
+{
+  "name" : "caballero leal",
+  "effects" : [ {
+    "id" : "caballero-leal:en-mano",
+    "moment" : "ON_EVENT",
+    "label" : "Turno Aliado / En Mano",
+    "text" : "Si algún aliado es invocado por efecto y no controlas copias de esta carta: puedes invocar esta carta reduciendo su coste en 1.",
+    "steps" : [ {
+      "type" : "Do",
+      "action" : {
+        "type" : "Summon",
+        "cards" : {
+          "zones" : "hand",
+          "owner" : "YOU",
+          "filter" : { },
+          "min" : {
+            "type" : "Fixed",
+            "value" : 1
+          },
+          "max" : {
+            "type" : "Fixed",
+            "value" : 1
+          },
+          "self" : "ANY",
+          "mode" : "SELF"
+        },
+        "reduce" : {
+          "type" : "Fixed",
+          "value" : 1
+        },
+        "required" : true
+      }
+    } ],
+    "condition" : {
+      "type" : "All",
+      "all" : [ {
+        "type" : "Summoned",
+        "side" : "YOU",
+        "filter" : { },
+        "how" : "effect"
+      }, {
+        "type" : "ThisIs",
+        "state" : "NO_COPIES"
+      } ]
+    },
+    "sourceZone" : "hand",
+    "allyTurn" : true,
+    "limit" : "NONE"
+  } ],
+  "reactions" : [ {
+    "type" : "Replacement",
+    "id" : "caballero-leal:todos-los-turnos",
+    "label" : "Todos Los Turnos",
+    "text" : "(1) Cuando esta carta fuera a ser destruida: en su lugar puedes tributar 1 carta de tu mano.",
+    "destroyOnly" : true,
+    "limit" : "ONCE_PER_TURN_BETWEEN_COPIES",
+    "cost" : "TRIBUTE_ONE_FROM_HAND",
+    "resourceFilter" : { }
+  } ]
+}

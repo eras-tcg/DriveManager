@@ -1,0 +1,52 @@
+{
+  "name" : "sargento legionario",
+  "effects" : [ {
+    "id" : "sargento-legionario:en-invocacion",
+    "moment" : "ON_SUMMON",
+    "mandatory" : true,
+    "label" : "En Invocación",
+    "text" : "Toma 1 carta Roja de tus tributos.",
+    "steps" : [ {
+      "type" : "Do",
+      "action" : {
+        "type" : "Move",
+        "cards" : {
+          "zones" : "tributeZone",
+          "owner" : "YOU",
+          "filter" : {
+            "colors" : [ "R" ]
+          },
+          "min" : {
+            "type" : "Fixed",
+            "value" : 1
+          },
+          "max" : {
+            "type" : "Fixed",
+            "value" : 1
+          },
+          "self" : "ANY",
+          "mode" : "CHOOSE"
+        },
+        "to" : "hand",
+        "required" : true
+      }
+    } ],
+    "sourceZone" : "field",
+    "limit" : "NONE"
+  } ],
+  "continuous" : [ {
+    "label" : "Todos Los Turnos",
+    "text" : "Esta carta gana fuerza 1 por cada aliado [legionario].",
+    "condition" : {
+      "type" : "Always"
+    },
+    "bonus" : {
+      "type" : "OnField",
+      "filter" : {
+        "classes" : [ "legionario" ],
+        "cardType" : "creature"
+      }
+    },
+    "zone" : "field"
+  } ]
+}

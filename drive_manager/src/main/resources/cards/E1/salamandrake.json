@@ -1,0 +1,97 @@
+{
+  "name" : "salamandrake",
+  "effects" : [ {
+    "id" : "salamandrake:tributada",
+    "moment" : "ON_EVENT",
+    "label" : "En Tributos",
+    "text" : "(1) Si esta carta es tributada desde el tope de tu mazo y no controlas copias de esta carta: puedes colocar esta carta en tu retaguardia.",
+    "steps" : [ {
+      "type" : "Do",
+      "action" : {
+        "type" : "Move",
+        "cards" : {
+          "zones" : "tributeZone",
+          "owner" : "YOU",
+          "filter" : { },
+          "min" : {
+            "type" : "Fixed",
+            "value" : 1
+          },
+          "max" : {
+            "type" : "Fixed",
+            "value" : 1
+          },
+          "self" : "ANY",
+          "mode" : "SELF"
+        },
+        "to" : "backLine"
+      }
+    } ],
+    "condition" : {
+      "type" : "All",
+      "all" : [ {
+        "type" : "ThisTributed",
+        "fromZone" : "deck"
+      }, {
+        "type" : "ThisIs",
+        "state" : "NO_COPIES"
+      } ]
+    },
+    "sourceZone" : "tributeZone",
+    "limit" : "ONCE_PER_TURN_BETWEEN_COPIES"
+  } ],
+  "inherited" : [ {
+    "id" : "salamandrake:hereda-al-atacar",
+    "moment" : "ON_ATTACK",
+    "mandatory" : true,
+    "label" : "Al Atacar",
+    "text" : "Heredado de Salamandrake: elige 1 enemigo de fuerza 3 o menos; destrúyelo.",
+    "cost" : [ {
+      "type" : "Do",
+      "action" : {
+        "type" : "Select",
+        "selector" : {
+          "zones" : "frontLine",
+          "owner" : "OPPONENT",
+          "filter" : {
+            "cardType" : "creature",
+            "maxStrength" : 3
+          },
+          "min" : {
+            "type" : "Fixed",
+            "value" : 1
+          },
+          "max" : {
+            "type" : "Fixed",
+            "value" : 1
+          },
+          "self" : "ANY",
+          "mode" : "CHOOSE"
+        },
+        "target" : true
+      }
+    } ],
+    "steps" : [ {
+      "type" : "Do",
+      "action" : {
+        "type" : "Destroy",
+        "cards" : {
+          "zones" : "saved:targets",
+          "owner" : "YOU",
+          "filter" : { },
+          "min" : {
+            "type" : "Fixed"
+          },
+          "max" : {
+            "type" : "Fixed",
+            "value" : 2147483647
+          },
+          "self" : "ANY",
+          "mode" : "ALL"
+        }
+      }
+    } ],
+    "sourceZone" : "field",
+    "limit" : "NONE"
+  } ]
+}

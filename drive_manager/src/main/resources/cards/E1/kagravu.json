@@ -1,0 +1,105 @@
+{
+  "name" : "kagravú",
+  "effects" : [ {
+    "id" : "kagravu:en-invocacion",
+    "moment" : "ON_SUMMON",
+    "label" : "En Invocación",
+    "text" : "Puedes elegir 1 criatura nivel 1 o menor en el campo. Si lo haces: sacrifícala.",
+    "steps" : [ {
+      "type" : "Do",
+      "action" : {
+        "type" : "Select",
+        "selector" : {
+          "zones" : "field",
+          "owner" : "BOTH",
+          "filter" : {
+            "cardType" : "creature",
+            "maxLevel" : 1
+          },
+          "min" : {
+            "type" : "Fixed"
+          },
+          "max" : {
+            "type" : "Fixed",
+            "value" : 1
+          },
+          "self" : "EXCLUDE",
+          "mode" : "CHOOSE"
+        },
+        "target" : true,
+        "label" : "Elegir"
+      }
+    }, {
+      "type" : "IfDone",
+      "covers" : 1
+    }, {
+      "type" : "Do",
+      "action" : {
+        "type" : "Destroy",
+        "cards" : {
+          "zones" : "saved:targets",
+          "owner" : "YOU",
+          "filter" : { },
+          "min" : {
+            "type" : "Fixed"
+          },
+          "max" : {
+            "type" : "Fixed",
+            "value" : 2147483647
+          },
+          "self" : "ANY",
+          "mode" : "ALL"
+        },
+        "sacrifice" : true
+      }
+    } ],
+    "sourceZone" : "field",
+    "limit" : "NONE"
+  }, {
+    "id" : "kagravu:todos-los-turnos",
+    "moment" : "ON_EVENT",
+    "label" : "Todos Los Turnos",
+    "text" : "Una vez por turno: si destruyes alguna criatura por efecto: puedes invocar 1 criatura Violeta nivel 1 de tus tributos o descarte reduciendo su coste en 1.",
+    "steps" : [ {
+      "type" : "Do",
+      "action" : {
+        "type" : "Summon",
+        "cards" : {
+          "zones" : "tributeZone,discardPile",
+          "owner" : "YOU",
+          "filter" : {
+            "colors" : [ "P" ],
+            "cardType" : "creature",
+            "level" : 1
+          },
+          "min" : {
+            "type" : "Fixed",
+            "value" : 1
+          },
+          "max" : {
+            "type" : "Fixed",
+            "value" : 1
+          },
+          "self" : "ANY",
+          "mode" : "CHOOSE"
+        },
+        "reduce" : {
+          "type" : "Fixed",
+          "value" : 1
+        },
+        "required" : true
+      }
+    } ],
+    "condition" : {
+      "type" : "Destroyed",
+      "owner" : "ANY",
+      "by" : "YOU",
+      "filter" : {
+        "cardType" : "creature"
+      },
+      "cause" : "effect"
+    },
+    "sourceZone" : "field",
+    "limit" : "ONCE_PER_TURN"
+  } ]
+}

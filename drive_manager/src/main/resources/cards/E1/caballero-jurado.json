@@ -1,0 +1,52 @@
+{
+  "name" : "caballero jurado",
+  "effects" : [ {
+    "id" : "caballero-jurado:al-final-del-ataque",
+    "moment" : "ON_ATTACK_END",
+    "mandatory" : true,
+    "label" : "Al Final Del Ataque",
+    "text" : "Esta carta gana Reactivar hasta el final del turno oponente.",
+    "steps" : [ {
+      "type" : "Do",
+      "action" : {
+        "type" : "Modify",
+        "cards" : {
+          "zones" : "subjectOrSelf",
+          "owner" : "YOU",
+          "filter" : { },
+          "min" : {
+            "type" : "Fixed"
+          },
+          "max" : {
+            "type" : "Fixed",
+            "value" : 2147483647
+          },
+          "self" : "ANY",
+          "mode" : "ALL"
+        },
+        "keyword" : "Reactivar",
+        "until" : "NEXT_TURN"
+      }
+    } ],
+    "sourceZone" : "field",
+    "limit" : "NONE"
+  } ],
+  "continuous" : [ {
+    "label" : "Todos Los Turnos",
+    "text" : "Mientras tengas menos vidas que tu oponente: esta carta gana Enfrentar 3 y fuerza 2.",
+    "condition" : {
+      "type" : "Compare",
+      "left" : {
+        "type" : "Lives"
+      },
+      "op" : "LESS",
+      "right" : {
+        "type" : "Lives",
+        "opponent" : true
+      }
+    },
+    "strength" : 2,
+    "keywords" : [ "Enfrentar 3" ],
+    "zone" : "field"
+  } ]
+}

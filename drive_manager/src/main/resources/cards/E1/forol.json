@@ -1,0 +1,66 @@
+{
+  "name" : "forol",
+  "effects" : [ {
+    "id" : "forol:tributada-como-material",
+    "moment" : "ON_EVENT",
+    "label" : "En Tributos",
+    "text" : "Si esta carta es tributada como material de un aliado nivel 3 o mayor: puedes tributar 1 carta de tu mano para tomar 1 carta Azul de tus tributos.",
+    "steps" : [ {
+      "type" : "IfPossible"
+    }, {
+      "type" : "Do",
+      "action" : {
+        "type" : "Move",
+        "cards" : {
+          "zones" : "hand",
+          "owner" : "YOU",
+          "filter" : { },
+          "min" : {
+            "type" : "Fixed",
+            "value" : 1
+          },
+          "max" : {
+            "type" : "Fixed",
+            "value" : 1
+          },
+          "self" : "EXCLUDE",
+          "mode" : "CHOOSE"
+        },
+        "to" : "tributeZone"
+      }
+    }, {
+      "type" : "Do",
+      "action" : {
+        "type" : "Move",
+        "cards" : {
+          "zones" : "tributeZone",
+          "owner" : "YOU",
+          "filter" : {
+            "colors" : [ "B" ]
+          },
+          "min" : {
+            "type" : "Fixed",
+            "value" : 1
+          },
+          "max" : {
+            "type" : "Fixed",
+            "value" : 1
+          },
+          "self" : "ANY",
+          "mode" : "CHOOSE"
+        },
+        "to" : "hand",
+        "required" : true
+      }
+    } ],
+    "condition" : {
+      "type" : "ThisTributed",
+      "fromZone" : "materials",
+      "by" : {
+        "minLevel" : 3
+      }
+    },
+    "sourceZone" : "tributeZone",
+    "limit" : "NONE"
+  } ]
+}

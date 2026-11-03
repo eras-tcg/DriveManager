@@ -1,0 +1,78 @@
+{
+  "name" : "barrera refractora",
+  "effects" : [ {
+    "id" : "barrera-refractora:en-juego",
+    "moment" : "ON_PLAY",
+    "mandatory" : true,
+    "label" : "En Juego",
+    "text" : "Efecto Definitivo. Elige 1 aliado: tributa tantas cartas de tu mano como nivel tenga; dicho aliado no puede ser removido por efectos oponentes hasta el final del turno oponente.",
+    "cost" : [ {
+      "type" : "Do",
+      "action" : {
+        "type" : "Select",
+        "selector" : {
+          "zones" : "pickableAllies",
+          "owner" : "YOU",
+          "filter" : { },
+          "min" : {
+            "type" : "Fixed",
+            "value" : 1
+          },
+          "max" : {
+            "type" : "Fixed",
+            "value" : 1
+          },
+          "self" : "ANY",
+          "mode" : "CHOOSE"
+        },
+        "target" : true,
+        "saveAs" : "subject",
+        "label" : "Elegido",
+        "endsIfNone" : true
+      }
+    }, {
+      "type" : "Do",
+      "action" : {
+        "type" : "Move",
+        "cards" : {
+          "zones" : "hand",
+          "owner" : "YOU",
+          "filter" : { },
+          "min" : {
+            "type" : "SubjectLevel"
+          },
+          "max" : {
+            "type" : "SubjectLevel"
+          },
+          "self" : "EXCLUDE",
+          "mode" : "CHOOSE"
+        },
+        "to" : "tributeZone"
+      }
+    } ],
+    "steps" : [ {
+      "type" : "Do",
+      "action" : {
+        "type" : "Modify",
+        "cards" : {
+          "zones" : "subjectOrSelf",
+          "owner" : "YOU",
+          "filter" : { },
+          "min" : {
+            "type" : "Fixed"
+          },
+          "max" : {
+            "type" : "Fixed",
+            "value" : 2147483647
+          },
+          "self" : "ANY",
+          "mode" : "ALL"
+        },
+        "keyword" : "Irremovible por efectos oponentes",
+        "until" : "NEXT_TURN"
+      }
+    } ],
+    "sourceZone" : "field",
+    "limit" : "DEFINITIVE"
+  } ]
+}

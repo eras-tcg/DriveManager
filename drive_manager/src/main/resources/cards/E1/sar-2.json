@@ -1,0 +1,39 @@
+{
+  "name" : "sar 2",
+  "effects" : [ {
+    "id" : "sar-2:al-atacar",
+    "moment" : "ON_ATTACK",
+    "label" : "Al Atacar",
+    "text" : "Puedes tributar 1 material de esta carta. Si lo haces, hasta 2 veces: puedes elegir 1 enemigo; reduce en 1 su fuerza hasta el final del ataque.",
+    "cost" : [ {
+      "type" : "Do",
+      "action" : {
+        "type" : "Move",
+        "cards" : {
+          "zones" : "materials",
+          "owner" : "YOU",
+          "filter" : { },
+          "min" : {
+            "type" : "Fixed",
+            "value" : 1
+          },
+          "max" : {
+            "type" : "Fixed",
+            "value" : 1
+          },
+          "self" : "ANY",
+          "mode" : "CHOOSE"
+        },
+        "to" : "tributeZone"
+      }
+    } ],
+    "steps" : [ {
+      "type" : "ReduceRepeatedly",
+      "times" : 2,
+      "amount" : 1,
+      "until" : "attack"
+    } ],
+    "sourceZone" : "field",
+    "limit" : "NONE"
+  } ]
+}

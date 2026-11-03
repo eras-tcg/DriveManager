@@ -49,6 +49,36 @@ class E11FinalBatchTest {
     }
 
     @Test
+    void festinReadsTheLevelTheSacrificedAllyHadOnTheField() {
+        // Xiromorfo nivel 2 with 2 copies in the Tributos is nivel 4: a nivel 5 may attack after it is sacrificed
+        CardSlot xiromorfo = onField(host, card("x", "Xiromorfo", 2, 2, "P"), BACK);
+        host.getTributeZone().addAll(List.of(card("x1", "Xiromorfo", 2, 2, "P"), card("x2", "Xiromorfo", 2, 2, "P")));
+        onField(host, card("l5", "Nivel 5", 5, 5, "P"));
+        EffectEngine.refreshContinuous(room);
+        assertThat(xiromorfo.getLevel()).isEqualTo(4);
+        host.getHand().add(utility("fe", "Festin"));
+        assertThat(Summons.playByPlayer(room, "host", "fe", 50.0, 75.0)).isNull();
+        answer(room.getPrompt(), "fe");
+        answer(room.getPrompt(), "x");
+        assertThat(room.getPrompt().getValidIds()).containsExactly("l5");
+    }
+
+    @Test
+    void creaturesUsedForARitualByEffectAreNotDestroyedByEffect() {
+        // Kagravú: "si destruyes alguna criatura por efecto" does not count the creatures a Ritual sacrifices
+        GameEvent ritual = new GameEvent();
+        ritual.setType(GameEvent.SACRIFICE);
+        ritual.setPlayerId("host");
+        ritual.setCardInstanceId("c");
+        ritual.setEffectId("eff-1");
+        ritual.setData(new java.util.HashMap<>(java.util.Map.of("cause", EffectEngine.CAUSE_RITUAL, "ownerId", "host")));
+        onField(host, card("c", "Criatura", 1, 1, "P"));
+        assertThat(Condition.youDestroyedCreature(true).test(room, ritual, null, "host")).isFalse();
+        ritual.getData().put("cause", EffectEngine.CAUSE_EFFECT);
+        assertThat(Condition.youDestroyedCreature(true).test(room, ritual, null, "host")).isTrue();
+    }
+
+    @Test
     void zamaranzasFromTheTributosAddsAnAllyAsMaterialOfAHigherOneAndEntersForFree() {
         CardSlot low = onField(host, card("lo", "Bajo", 1, 1, "B"));
         CardSlot high = onField(host, card("hi", "Alto", 2, 2, "B"));
@@ -117,11 +147,35 @@ class E11FinalBatchTest {
         assertThat(CombatRules.attackByPlayer(room, "host", "dr", null)).isNull();
         Prompt offer = untilSourceOffered("fp");
         answer(offer, "fp");
-        Prompt nine = room.getPrompt();
-        answer(nine, nine.getValidIds().toArray(String[]::new));
+        // One choice of the 10, this card included
+        Prompt ten = room.getPrompt();
+        assertThat(ten.getMax()).isEqualTo(10);
+        assertThat(ten.getRequiredIds()).containsExactly("fp");
+        answer(ten, ten.getValidIds().toArray(String[]::new));
         finishCombat();
         assertThat(guest.getLifeStack()).hasSize(1);
         assertThat(host.getDeck()).contains(fuego);
+    }
+
+    @Test
+    void fuegoPerforanteIsNotOfferedWithoutTenDragonsAndCountsItselfWhateverItsTypes() {
+        CardSlot fuego = utility("fp", "Fuego Perforante");
+        host.getTributeZone().add(fuego);
+        for (int i = 0; i < 8; i++) host.getTributeZone().add(withClasses(card("d" + i, "Dragón " + i, 1, 1, "G"), "dragón"));
+        onField(host, withClasses(card("dr", "Dragón Atacante", 1, 1, "G"), "dragón"));
+        assertThat(CombatRules.attackByPlayer(room, "host", "dr", null)).isNull();
+        finishCombat();
+        // 9 in total: nothing is paid, nothing moves
+        assertThat(host.getTributeZone()).contains(fuego).hasSize(9);
+    }
+
+    @Test
+    void choosingAnAllyWithTheWordEligeMakesItATarget() {
+        CardSlot ally = onField(host, card("al", "Aliado", 1, 1, "R"));
+        host.getHand().add(utility("vh", "Valor Del Heroe"));
+        assertThat(Summons.playByPlayer(room, "host", "vh", 50.0, 75.0)).isNull();
+        answer(room.getPrompt(), ally.getInstanceId());
+        assertThat(room.getTimeline()).filteredOn(e -> GameEvent.TARGET.equals(e.getType())).extracting(GameEvent::getCardInstanceId).contains("al");
     }
 
     @Test
@@ -161,7 +215,7 @@ class E11FinalBatchTest {
         evolved.setSpecialCost(1);
         evolved.setRequirement("criatura nivel 2.");
         host.getHand().add(evolved);
-        assertThat(Summons.specialByPlayer(room, "host", "ev", "wr")).isNull();
+        assertThat(SpecialSummons.specialByPlayer(room, "host", "ev", "wr")).isNull();
         answer(room.getPrompt(), "tr");
         assertThat(host.getField()).contains(evolved);
         assertThat(evolved.getResources()).contains(tribute, wyverno);
@@ -171,7 +225,7 @@ class E11FinalBatchTest {
     void principeCharlesAttacksFirstThenTheAscendedCreatureTakesItsPlaceWithoutItsAlAtacar() {
         // The ascended creature has an "Al Atacar" that must not trigger: the declaration already happened
         CardEffects.register("ascendido de prueba", new EffectScript("ascendido-prueba:al-atacar", EffectScript.Moment.ON_ATTACK, true,
-                "Al Atacar", "Gana 3 gemas.", List.of(new EffectStep.GainGems(3))));
+                "Al Atacar", "Gana 3 gemas.", List.of(Compose.gainGems(3))));
         CardSlot principe = onField(host, withClasses(card("pc", "Principe Charles Di Castirion", 4, 4, "R"), "armada", "caballero"));
         CardSlot ascended = card("as", "Ascendido De Prueba", 5, 5, "R");
         ascended.setStrength(10);
@@ -180,7 +234,7 @@ class E11FinalBatchTest {
         ascended.setRequirement("criatura nivel 4.");
         host.getHand().add(ascended);
         int gems = EffectEngine.gemsOf(room, "host");
-        assertThat(Summons.specialByPlayer(room, "host", "as", "pc")).isNull();
+        assertThat(SpecialSummons.specialByPlayer(room, "host", "as", "pc")).isNull();
         Prompt attack = room.getPrompt();
         assertThat(attack.getPurpose()).isEqualTo(EffectEngine.PURPOSE_ASCEND_ATTACK);
         answer(attack, "pc");

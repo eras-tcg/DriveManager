@@ -1,0 +1,29 @@
+{
+  "name" : "xiromorfo",
+  "continuous" : [ {
+    "label" : "Todos Los Turnos",
+    "text" : "Esta carta gana 1 nivel y fuerza 3 por cada copia de esta carta en tus tributos.",
+    "condition" : {
+      "type" : "Always"
+    },
+    "bonus" : {
+      "type" : "Times",
+      "base" : {
+        "type" : "InZone",
+        "zone" : "tributeZone",
+        "filter" : {
+          "name" : "Xiromorfo"
+        }
+      },
+      "factor" : 3
+    },
+    "zone" : "field",
+    "levelBonus" : {
+      "type" : "InZone",
+      "zone" : "tributeZone",
+      "filter" : {
+        "name" : "Xiromorfo"
+      }
+    }
+  } ]
+}

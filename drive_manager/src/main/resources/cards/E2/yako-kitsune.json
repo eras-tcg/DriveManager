@@ -1,0 +1,160 @@
+{
+  "name" : "yako kitsune",
+  "effects" : [
+    {
+      "id" : "yako-kitsune:en-invocacion",
+      "moment" : "ON_SUMMON",
+      "mandatory" : true,
+      "label" : "En Invocación",
+      "text" : "Elige hasta 2 enemigos; puedes invocar 1 recurso de esta carta reduciendo su coste en 2. Si lo haces: reduce la fuerza de los enemigos elegidos en 2 hasta el final del turno.",
+      "cost" : [
+        {
+          "type" : "Do",
+          "action" : {
+            "type" : "Select",
+            "selector" : {
+              "zones" : "frontLine",
+              "owner" : "OPPONENT",
+              "filter" : {
+                "cardType" : "creature"
+              },
+              "min" : {
+                "type" : "Fixed"
+              },
+              "max" : {
+                "type" : "Fixed",
+                "value" : 2
+              },
+              "self" : "ANY",
+              "mode" : "CHOOSE"
+            },
+            "target" : true
+          }
+        }
+      ],
+      "steps" : [
+        {
+          "type" : "Do",
+          "action" : {
+            "type" : "Summon",
+            "cards" : {
+              "zones" : "resources",
+              "owner" : "YOU",
+              "filter" : {
+                "cardType" : "creature"
+              },
+              "min" : {
+                "type" : "Fixed"
+              },
+              "max" : {
+                "type" : "Fixed",
+                "value" : 1
+              },
+              "self" : "ANY",
+              "mode" : "CHOOSE"
+            },
+            "reduce" : {
+              "type" : "Fixed",
+              "value" : 2
+            },
+            "required" : true
+          }
+        },
+        {
+          "type" : "IfDone",
+          "covers" : 1
+        },
+        {
+          "type" : "Do",
+          "action" : {
+            "type" : "Modify",
+            "cards" : {
+              "zones" : "saved:targets",
+              "owner" : "YOU",
+              "filter" : {},
+              "min" : {
+                "type" : "Fixed"
+              },
+              "max" : {
+                "type" : "Fixed",
+                "value" : 2147483647
+              },
+              "self" : "ANY",
+              "mode" : "ALL"
+            },
+            "strength" : {
+              "type" : "Fixed",
+              "value" : -2
+            },
+            "until" : "TURN"
+          }
+        }
+      ],
+      "sourceZone" : "field",
+      "limit" : "NONE"
+    }
+  ],
+  "inherited" : [
+    {
+      "id" : "yako-kitsune:hereda-turno-oponente",
+      "moment" : "ON_EVENT",
+      "label" : "Turno Oponente",
+      "text" : "Heredado de Yako Kitsune: al entrar al paso de bloqueo, puedes tributar el recurso de este efecto; esta carta agotada declara bloqueo.",
+      "cost" : [
+        {
+          "type" : "Do",
+          "action" : {
+            "type" : "Move",
+            "cards" : {
+              "zones" : "resources",
+              "owner" : "YOU",
+              "filter" : {
+                "name" : "Yako Kitsune"
+              },
+              "min" : {
+                "type" : "Fixed",
+                "value" : 1
+              },
+              "max" : {
+                "type" : "Fixed",
+                "value" : 1
+              },
+              "self" : "ANY",
+              "mode" : "TOP"
+            },
+            "to" : "tributeZone"
+          }
+        }
+      ],
+      "steps" : [
+        {
+          "type" : "DeclareBlockSelf"
+        }
+      ],
+      "condition" : {
+        "type" : "All",
+        "all" : [
+          {
+            "type" : "Not",
+            "condition" : {
+              "type" : "GameIs",
+              "state" : "YOUR_TURN"
+            }
+          },
+          {
+            "type" : "Happened",
+            "eventType" : "COMBAT_STEP",
+            "actor" : "ANY",
+            "owner" : "ANY",
+            "data" : [
+              "step=BLOCK",
+              "moment=ENTER"
+            ]
+          }
+        ]
+      },
+      "sourceZone" : "field",
+      "limit" : "NONE"
+    }
+  ]
+}

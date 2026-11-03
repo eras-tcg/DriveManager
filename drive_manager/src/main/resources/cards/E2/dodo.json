@@ -1,0 +1,77 @@
+{
+  "name" : "dodo",
+  "effects" : [
+    {
+      "id" : "dodo:en-destruccion",
+      "moment" : "ON_DESTROY",
+      "label" : "En Destrucción",
+      "text" : "Puedes añadir esta carta en tu descarte como recurso de un aliado.",
+      "steps" : [
+        {
+          "type" : "AttachSelfAsResourceToAlly"
+        }
+      ],
+      "condition" : {
+        "type" : "Happened",
+        "actor" : "ANY",
+        "owner" : "ANY",
+        "to" : "discardPile"
+      },
+      "sourceZone" : "field",
+      "limit" : "NONE"
+    }
+  ],
+  "inherited" : [
+    {
+      "id" : "dodo:hereda-en-destruccion",
+      "moment" : "ON_DESTROY",
+      "label" : "En Destrucción por efecto aliado",
+      "text" : "Heredado de Dodo: puedes tributar esta carta; gana 1 gema.",
+      "cost" : [
+        {
+          "type" : "Do",
+          "action" : {
+            "type" : "Move",
+            "cards" : {
+              "zones" : "discardPile",
+              "owner" : "YOU",
+              "filter" : {
+                "name" : "Dodo"
+              },
+              "min" : {
+                "type" : "Fixed",
+                "value" : 1
+              },
+              "max" : {
+                "type" : "Fixed",
+                "value" : 1
+              },
+              "self" : "ANY",
+              "mode" : "NEWEST"
+            },
+            "to" : "tributeZone",
+            "required" : true
+          }
+        }
+      ],
+      "steps" : [
+        {
+          "type" : "Do",
+          "action" : {
+            "type" : "Gems",
+            "count" : {
+              "type" : "Fixed",
+              "value" : 1
+            }
+          }
+        }
+      ],
+      "condition" : {
+        "type" : "ByEffect",
+        "by" : "YOU"
+      },
+      "sourceZone" : "field",
+      "limit" : "NONE"
+    }
+  ]
+}

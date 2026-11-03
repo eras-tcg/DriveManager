@@ -1,0 +1,82 @@
+{
+  "name" : "convocación de muertos",
+  "effects" : [ {
+    "id" : "convocacion-muertos:en-mano",
+    "moment" : "ON_EVENT",
+    "label" : "En Mano",
+    "text" : "(1) Si invocas algún [brujo] nivel 3 o mayor: puedes jugar esta carta reduciendo su coste en 1.",
+    "steps" : [ {
+      "type" : "Do",
+      "action" : {
+        "type" : "Play",
+        "cards" : {
+          "zones" : "hand",
+          "owner" : "YOU",
+          "filter" : { },
+          "min" : {
+            "type" : "Fixed",
+            "value" : 1
+          },
+          "max" : {
+            "type" : "Fixed",
+            "value" : 1
+          },
+          "self" : "ANY",
+          "mode" : "SELF"
+        },
+        "reduce" : {
+          "type" : "Fixed",
+          "value" : 1
+        },
+        "required" : true
+      }
+    } ],
+    "condition" : {
+      "type" : "Summoned",
+      "side" : "YOU",
+      "other" : true,
+      "filter" : {
+        "classes" : [ "brujo" ],
+        "cardType" : "creature",
+        "minLevel" : 3
+      }
+    },
+    "sourceZone" : "hand",
+    "limit" : "ONCE_PER_TURN_BETWEEN_COPIES"
+  }, {
+    "id" : "convocacion-muertos:en-juego",
+    "moment" : "ON_PLAY",
+    "mandatory" : true,
+    "label" : "En Juego",
+    "text" : "Invoca hasta 2 criaturas Violeta de tus tributos reduciendo sus costes en 1.",
+    "steps" : [ {
+      "type" : "Do",
+      "action" : {
+        "type" : "Summon",
+        "cards" : {
+          "zones" : "tributeZone",
+          "owner" : "YOU",
+          "filter" : {
+            "colors" : [ "P" ],
+            "cardType" : "creature"
+          },
+          "min" : {
+            "type" : "Fixed"
+          },
+          "max" : {
+            "type" : "Fixed",
+            "value" : 2
+          },
+          "self" : "ANY",
+          "mode" : "CHOOSE"
+        },
+        "reduce" : {
+          "type" : "Fixed",
+          "value" : 1
+        }
+      }
+    } ],
+    "sourceZone" : "field",
+    "limit" : "NONE"
+  } ]
+}

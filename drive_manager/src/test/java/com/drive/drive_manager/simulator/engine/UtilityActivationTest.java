@@ -105,7 +105,7 @@ class UtilityActivationTest {
     void theFirstTurnStopsDefinitiveEffectsOfAnyMoment() {
         CardSlot creature = onField(host, card("cr", "Criatura", 1, 1, "R"), FRONT);
         EffectScript activated = new EffectScript("prueba:turno-aliado", Moment.ACTIVATED, false, "Turno Aliado",
-                "Efecto Definitivo. Roba 1 carta.", List.of(new EffectStep.Draw(1))).limited(Limit.DEFINITIVE);
+                "Efecto Definitivo. Roba 1 carta.", List.of(Compose.draw(1))).limited(Limit.DEFINITIVE);
         PendingEffect effect = Chain.candidate(activated, "host", creature, 0);
 
         room.setFirstTurn(true);

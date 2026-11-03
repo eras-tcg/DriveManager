@@ -1,0 +1,34 @@
+{
+  "name" : "zaranthrax",
+  "effects" : [ {
+    "id" : "zaranthrax:en-invocacion",
+    "moment" : "ON_SUMMON",
+    "mandatory" : true,
+    "label" : "En Invocación",
+    "text" : "(1) Esta carta gana Letalidad 1 hasta el final de su próximo ataque este turno.",
+    "steps" : [ {
+      "type" : "Do",
+      "action" : {
+        "type" : "Modify",
+        "cards" : {
+          "zones" : "subjectOrSelf",
+          "owner" : "YOU",
+          "filter" : { },
+          "min" : {
+            "type" : "Fixed"
+          },
+          "max" : {
+            "type" : "Fixed",
+            "value" : 2147483647
+          },
+          "self" : "ANY",
+          "mode" : "ALL"
+        },
+        "keyword" : "Letalidad 1",
+        "until" : "NEXT_ATTACK"
+      }
+    } ],
+    "sourceZone" : "field",
+    "limit" : "ONCE_PER_TURN_BETWEEN_COPIES"
+  } ]
+}

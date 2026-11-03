@@ -1,0 +1,95 @@
+{
+  "name" : "vigilante antiorgánico",
+  "effects" : [ {
+    "id" : "vigilante-antiorganico:en-invocacion",
+    "moment" : "ON_SUMMON",
+    "mandatory" : true,
+    "label" : "En Invocación",
+    "text" : "Mira las primeras 3 cartas de tu mazo: de ellas envía hasta 2 a tu descarte. Envía el resto al fondo de tu mazo. Luego: toma hasta 1 carta [necrómata] de tu descarte.",
+    "steps" : [ {
+      "type" : "Do",
+      "action" : {
+        "type" : "Look",
+        "count" : {
+          "type" : "Fixed",
+          "value" : 3
+        }
+      }
+    }, {
+      "type" : "Do",
+      "action" : {
+        "type" : "Move",
+        "cards" : {
+          "zones" : "looked",
+          "owner" : "YOU",
+          "filter" : { },
+          "min" : {
+            "type" : "Fixed"
+          },
+          "max" : {
+            "type" : "Fixed",
+            "value" : 2
+          },
+          "self" : "ANY",
+          "mode" : "CHOOSE"
+        },
+        "to" : "discardPile",
+        "rest" : "deckBottom"
+      }
+    }, {
+      "type" : "Do",
+      "action" : {
+        "type" : "Move",
+        "cards" : {
+          "zones" : "discardPile",
+          "owner" : "YOU",
+          "filter" : {
+            "classes" : [ "necrómata" ]
+          },
+          "min" : {
+            "type" : "Fixed"
+          },
+          "max" : {
+            "type" : "Fixed",
+            "value" : 1
+          },
+          "self" : "ANY",
+          "mode" : "CHOOSE"
+        },
+        "to" : "hand",
+        "required" : true
+      }
+    } ],
+    "sourceZone" : "field",
+    "limit" : "NONE"
+  }, {
+    "id" : "vigilante-antiorganico:en-destruccion",
+    "moment" : "ON_DESTROY",
+    "label" : "En Destrucción",
+    "text" : "Puedes colocar esta carta al tope de tus vidas bocarriba.",
+    "steps" : [ {
+      "type" : "Do",
+      "action" : {
+        "type" : "Move",
+        "cards" : {
+          "zones" : "hand,deck,tributeZone,discardPile,field",
+          "owner" : "YOU",
+          "filter" : { },
+          "min" : {
+            "type" : "Fixed",
+            "value" : 1
+          },
+          "max" : {
+            "type" : "Fixed",
+            "value" : 1
+          },
+          "self" : "ANY",
+          "mode" : "SELF"
+        },
+        "to" : "lifeTop"
+      }
+    } ],
+    "sourceZone" : "field",
+    "limit" : "NONE"
+  } ]
+}

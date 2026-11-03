@@ -1,0 +1,8 @@
+{
+  "name" : "mercenario valeroso",
+  "reactions" : [ {
+    "type" : "DamageReplacement",
+    "maxDamage" : 8,
+    "reduce" : 1
+  } ]
+}

@@ -1,0 +1,16 @@
+{
+  "name" : "sueño premonitorio",
+  "effects" : [ {
+    "id" : "sueno-premonitorio:en-juego",
+    "moment" : "ON_PLAY",
+    "mandatory" : true,
+    "label" : "En Juego",
+    "text" : "Efecto Definitivo. Elige al azar hasta 3 cartas de la mano del oponente para que las revele; envía 1 de ellas al fondo del mazo.",
+    "steps" : [ {
+      "type" : "RevealOpponentHandSendOneToBottom",
+      "count" : 3
+    } ],
+    "sourceZone" : "field",
+    "limit" : "DEFINITIVE"
+  } ]
+}

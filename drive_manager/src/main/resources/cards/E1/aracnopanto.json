@@ -1,0 +1,93 @@
+{
+  "name" : "aracnopanto",
+  "effects" : [ {
+    "id" : "aracnopanto:en-invocacion",
+    "moment" : "ON_SUMMON",
+    "label" : "En Invocación",
+    "text" : "Puedes sacrificar 1 aliado para reactivar esta carta.",
+    "steps" : [ {
+      "type" : "IfPossible"
+    }, {
+      "type" : "Do",
+      "action" : {
+        "type" : "Destroy",
+        "cards" : {
+          "zones" : "allies",
+          "owner" : "YOU",
+          "filter" : { },
+          "min" : {
+            "type" : "Fixed",
+            "value" : 1
+          },
+          "max" : {
+            "type" : "Fixed",
+            "value" : 1
+          },
+          "self" : "ANY",
+          "mode" : "CHOOSE"
+        },
+        "sacrifice" : true,
+        "required" : true
+      }
+    }, {
+      "type" : "Do",
+      "action" : {
+        "type" : "SetTapped",
+        "cards" : {
+          "zones" : "field",
+          "owner" : "YOU",
+          "filter" : { },
+          "min" : {
+            "type" : "Fixed",
+            "value" : 1
+          },
+          "max" : {
+            "type" : "Fixed",
+            "value" : 1
+          },
+          "self" : "ANY",
+          "mode" : "SELF"
+        }
+      }
+    } ],
+    "sourceZone" : "field",
+    "limit" : "NONE"
+  }, {
+    "id" : "aracnopanto:en-destruccion",
+    "moment" : "ON_DESTROY",
+    "label" : "En Destrucción",
+    "text" : "Puedes invocar 1 [bestia] nivel 1 de tu descarte sin pagar su coste.",
+    "steps" : [ {
+      "type" : "Do",
+      "action" : {
+        "type" : "Summon",
+        "cards" : {
+          "zones" : "discardPile",
+          "owner" : "YOU",
+          "filter" : {
+            "classes" : [ "bestia" ],
+            "cardType" : "creature",
+            "level" : 1
+          },
+          "min" : {
+            "type" : "Fixed",
+            "value" : 1
+          },
+          "max" : {
+            "type" : "Fixed",
+            "value" : 1
+          },
+          "self" : "ANY",
+          "mode" : "CHOOSE"
+        },
+        "reduce" : {
+          "type" : "Fixed",
+          "value" : 1000
+        },
+        "required" : true
+      }
+    } ],
+    "sourceZone" : "field",
+    "limit" : "NONE"
+  } ]
+}

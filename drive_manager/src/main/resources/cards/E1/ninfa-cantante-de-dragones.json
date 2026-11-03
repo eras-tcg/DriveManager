@@ -1,0 +1,129 @@
+{
+  "name" : "ninfa cantante de dragones",
+  "effects" : [ {
+    "id" : "ninfa-cantante:en-invocacion",
+    "moment" : "ON_SUMMON",
+    "mandatory" : true,
+    "label" : "En Invocación",
+    "text" : "Tributa las primeras 3 cartas de tu mazo. Luego: puedes invocar una criatura Verde de fuerza 7 o menos de tus tributos reduciendo en 2 su coste.",
+    "steps" : [ {
+      "type" : "Do",
+      "action" : {
+        "type" : "Move",
+        "cards" : {
+          "zones" : "deck",
+          "owner" : "YOU",
+          "filter" : { },
+          "min" : {
+            "type" : "Fixed",
+            "value" : 3
+          },
+          "max" : {
+            "type" : "Fixed",
+            "value" : 3
+          },
+          "self" : "ANY",
+          "mode" : "TOP"
+        },
+        "to" : "tributeZone"
+      }
+    }, {
+      "type" : "MayDo",
+      "question" : "¿Invocas 1 criatura Verde de fuerza 7 o menos de tus tributos reduciendo su coste en 2?",
+      "covers" : 1
+    }, {
+      "type" : "Do",
+      "action" : {
+        "type" : "Summon",
+        "cards" : {
+          "zones" : "tributeZone",
+          "owner" : "YOU",
+          "filter" : {
+            "colors" : [ "G" ],
+            "cardType" : "creature",
+            "maxStrength" : 7
+          },
+          "min" : {
+            "type" : "Fixed",
+            "value" : 1
+          },
+          "max" : {
+            "type" : "Fixed",
+            "value" : 1
+          },
+          "self" : "ANY",
+          "mode" : "CHOOSE"
+        },
+        "reduce" : {
+          "type" : "Fixed",
+          "value" : 2
+        },
+        "required" : true
+      }
+    } ],
+    "sourceZone" : "field",
+    "limit" : "NONE"
+  } ],
+  "inherited" : [ {
+    "id" : "ninfa-cantante:hereda-todos-los-turnos",
+    "moment" : "ON_EVENT",
+    "label" : "Todos Los Turnos",
+    "text" : "Heredado de Ninfa Cantante De Dragones: si algún aliado de fuerza 4 o mayor es invocado por efecto, puedes tributar el recurso de este efecto; reactiva esta carta.",
+    "cost" : [ {
+      "type" : "Do",
+      "action" : {
+        "type" : "Move",
+        "cards" : {
+          "zones" : "resources",
+          "owner" : "YOU",
+          "filter" : {
+            "name" : "Ninfa Cantante De Dragones"
+          },
+          "min" : {
+            "type" : "Fixed",
+            "value" : 1
+          },
+          "max" : {
+            "type" : "Fixed",
+            "value" : 1
+          },
+          "self" : "ANY",
+          "mode" : "TOP"
+        },
+        "to" : "tributeZone"
+      }
+    } ],
+    "steps" : [ {
+      "type" : "Do",
+      "action" : {
+        "type" : "SetTapped",
+        "cards" : {
+          "zones" : "field",
+          "owner" : "YOU",
+          "filter" : { },
+          "min" : {
+            "type" : "Fixed",
+            "value" : 1
+          },
+          "max" : {
+            "type" : "Fixed",
+            "value" : 1
+          },
+          "self" : "ANY",
+          "mode" : "SELF"
+        }
+      }
+    } ],
+    "condition" : {
+      "type" : "Summoned",
+      "side" : "YOU",
+      "filter" : {
+        "cardType" : "creature",
+        "minStrength" : 4
+      },
+      "how" : "effect"
+    },
+    "sourceZone" : "field",
+    "limit" : "NONE"
+  } ]
+}

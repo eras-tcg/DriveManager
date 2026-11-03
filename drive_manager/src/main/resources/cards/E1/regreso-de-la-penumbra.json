@@ -1,0 +1,38 @@
+{
+  "name" : "regreso de la penumbra",
+  "effects" : [ {
+    "id" : "regreso-penumbra:en-juego",
+    "moment" : "ON_PLAY",
+    "mandatory" : true,
+    "label" : "En Juego",
+    "text" : "Efecto Definitivo. Toma 1 criatura no-blanca de tu descarte.",
+    "steps" : [ {
+      "type" : "Do",
+      "action" : {
+        "type" : "Move",
+        "cards" : {
+          "zones" : "discardPile",
+          "owner" : "YOU",
+          "filter" : {
+            "cardType" : "creature",
+            "notColors" : [ "W" ]
+          },
+          "min" : {
+            "type" : "Fixed",
+            "value" : 1
+          },
+          "max" : {
+            "type" : "Fixed",
+            "value" : 1
+          },
+          "self" : "ANY",
+          "mode" : "CHOOSE"
+        },
+        "to" : "hand",
+        "required" : true
+      }
+    } ],
+    "sourceZone" : "field",
+    "limit" : "DEFINITIVE"
+  } ]
+}

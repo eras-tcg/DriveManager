@@ -36,7 +36,7 @@ class DesignerRulingsRound3Test extends CardBatchSupport {
     void abrazaAlmasIsLevelTwoForTheSpecialSummonOfAnEspectro() {
         onField(host, withClasses(card("aa", "Abraza Almas", 2, 1, "P"), "espectro"));
         CardSlot evo = special(inHand("ev", "Espectro Mayor", 3, 3, "P", "espectro"), "evolution", 1, "criatura nivel 2.");
-        assertThat(Summons.specialByPlayer(room, "host", "ev", "aa")).isNull();
+        assertThat(SpecialSummons.specialByPlayer(room, "host", "ev", "aa")).isNull();
         drain();
         assertThat(host.getField()).contains(evo);
     }
@@ -45,7 +45,7 @@ class DesignerRulingsRound3Test extends CardBatchSupport {
     void abrazaAlmasIsLevelOneForOtherCards() {
         onField(host, withClasses(card("aa", "Abraza Almas", 2, 1, "P"), "espectro"));
         special(inHand("ev", "Otro Mayor", 3, 3, "P", "fauna"), "evolution", 1, "criatura nivel 2.");
-        assertThat(Summons.specialByPlayer(room, "host", "ev", "aa")).isNotNull();
+        assertThat(SpecialSummons.specialByPlayer(room, "host", "ev", "aa")).isNotNull();
     }
 
     @Test
@@ -64,7 +64,7 @@ class DesignerRulingsRound3Test extends CardBatchSupport {
         onField(host, withClasses(card("bk", "Biok", 5, 4, "B"), "necrómata"));
         CardSlot evo = special(inHand("ev", "Evolución", 6, 5, "B"), "evolution", 3, "criatura nivel 4.");
         int before = gems();
-        assertThat(Summons.specialByPlayer(room, "host", "ev", "bk")).isNull();
+        assertThat(SpecialSummons.specialByPlayer(room, "host", "ev", "bk")).isNull();
         assertThat(room.getPrompt().getPurpose()).isEqualTo(EffectEngine.PURPOSE_SUMMONER_DISCOUNT);
         answer("hl0", "hl1");
         drain();
@@ -78,7 +78,7 @@ class DesignerRulingsRound3Test extends CardBatchSupport {
         onField(host, withClasses(card("bk", "Biok", 5, 4, "B"), "necrómata"));
         CardSlot evo = special(inHand("ev", "Evolución", 6, 5, "B"), "evolution", 3, "criatura nivel 4.");
         int before = gems();
-        assertThat(Summons.specialByPlayer(room, "host", "ev", "bk")).isNull();
+        assertThat(SpecialSummons.specialByPlayer(room, "host", "ev", "bk")).isNull();
         answer();
         drain();
         assertThat(host.getField()).contains(evo);
@@ -96,7 +96,7 @@ class DesignerRulingsRound3Test extends CardBatchSupport {
         onField(host, withClasses(card("m1", "Material", 3, 3, "B"), "neomáquina"));
         CardSlot xtrm = special(inHand("xt", "Prototipo XTRM-1N3", 4, 4, "B", "neomáquina"), "materialization", 4, XTRM);
         int before = gems();
-        assertThat(Summons.specialByPlayer(room, "host", "xt", "su")).isNull();
+        assertThat(SpecialSummons.specialByPlayer(room, "host", "xt", "su")).isNull();
         answer("m1");
         drain();
         assertThat(host.getField()).contains(xtrm);
@@ -111,7 +111,7 @@ class DesignerRulingsRound3Test extends CardBatchSupport {
         inHand("m2", "Material 2", 3, 3, "B", "neomáquina");
         CardSlot xtrm = special(inHand("xt", "Prototipo XTRM-1N3", 4, 4, "B", "neomáquina"), "materialization", 4, XTRM);
         int before = gems();
-        assertThat(Summons.specialByPlayer(room, "host", "xt", "su")).isNull();
+        assertThat(SpecialSummons.specialByPlayer(room, "host", "xt", "su")).isNull();
         answer("m1", "m2");
         drain();
         assertThat(host.getField()).contains(xtrm);
@@ -351,7 +351,7 @@ class DesignerRulingsRound3Test extends CardBatchSupport {
     void velkeropTakesItsMaterialsFromTheDiscard() {
         CardSlot velkerop = special(card("vk", "Velkerop 1", 5, 4, "B"), "materialization", 2,
                 "criatura nivel 3 + materiales que sumen 6 en nivel de tu descarte.");
-        assertThat(Summons.specialRequirement(velkerop).materialZones()).containsExactly("discardPile");
+        assertThat(SpecialRequirements.specialRequirement(velkerop).materialZones()).containsExactly("discardPile");
     }
 
     @Test
@@ -360,7 +360,7 @@ class DesignerRulingsRound3Test extends CardBatchSupport {
         inHand("c1", "Uno", 1, 1, "B", "neomáquina");
         inHand("c2", "Dos", 2, 2, "B", "neomáquina");
         int before = gems();
-        assertThat(Summons.specialByPlayer(room, "host", "a5", "c1")).isNull();
+        assertThat(SpecialSummons.specialByPlayer(room, "host", "a5", "c1")).isNull();
         answer("c2");
         drain();
         assertThat(host.getField()).contains(a5h);

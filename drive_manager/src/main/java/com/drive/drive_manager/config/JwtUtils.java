@@ -39,6 +39,17 @@ public class JwtUtils {
                 .getSubject();
     }
 
+    /** The account's token_version when the token was made (null for a token without it). */
+    public Integer extractTokenVersion(String token) {
+        Object version = Jwts.parser()
+                .verifyWith(key())
+                .build()
+                .parseSignedClaims(token)
+                .getPayload()
+                .get("token_version");
+        return version instanceof Number n ? n.intValue() : null;
+    }
+
     @SuppressWarnings("unchecked")
     public List<String> extractPermissions(String token) {
         Object perms = Jwts.parser()

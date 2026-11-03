@@ -1,0 +1,74 @@
+{
+  "name" : "fósil",
+  "effects" : [ {
+    "id" : "fosil:en-juego",
+    "moment" : "ON_PLAY",
+    "mandatory" : true,
+    "label" : "En Juego",
+    "text" : "Añade esta carta como recurso a un aliado.",
+    "steps" : [ {
+      "type" : "Do",
+      "action" : {
+        "type" : "Select",
+        "selector" : {
+          "zones" : "pickableAllies",
+          "owner" : "YOU",
+          "filter" : { },
+          "min" : {
+            "type" : "Fixed",
+            "value" : 1
+          },
+          "max" : {
+            "type" : "Fixed",
+            "value" : 1
+          },
+          "self" : "ANY",
+          "mode" : "CHOOSE"
+        },
+        "saveAs" : "subject",
+        "label" : "Elegido",
+        "endsIfNone" : true
+      }
+    }, {
+      "type" : "Do",
+      "action" : {
+        "type" : "Move",
+        "cards" : {
+          "zones" : "hand,deck,tributeZone,discardPile,lifeStack,field",
+          "owner" : "YOU",
+          "filter" : { },
+          "min" : {
+            "type" : "Fixed",
+            "value" : 1
+          },
+          "max" : {
+            "type" : "Fixed",
+            "value" : 1
+          },
+          "self" : "ANY",
+          "mode" : "SELF"
+        },
+        "to" : "resources:subject"
+      }
+    }, {
+      "type" : "KeepOnField"
+    } ],
+    "sourceZone" : "field",
+    "limit" : "NONE"
+  } ],
+  "inheritedReactions" : [ {
+    "type" : "Replacement",
+    "id" : "fosil:hereda-todos-los-turnos",
+    "label" : "Todos Los Turnos",
+    "text" : "Heredado de Fósil: cuando esta carta fuera a ser removida por el oponente, coloca el recurso de este efecto en tu retaguardia con todos los recursos [dinosaurio] de esta carta como sus recursos.",
+    "byOpponentOnly" : true,
+    "limit" : "NONE",
+    "cost" : "RESOURCE_TO_BACK_WITH_OTHERS",
+    "resourceFilter" : {
+      "classes" : [ "dinosaurio" ]
+    }
+  } ],
+  "traits" : {
+    "creatureForEffects" : 1
+  }
+}

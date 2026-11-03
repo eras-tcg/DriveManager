@@ -32,14 +32,39 @@ class E11SecondBatchTest {
         List<String> top = host.getDeck().subList(0, 3).stream().map(CardSlot::getInstanceId).toList();
         host.getHand().add(withClasses(card("wn", "Wyverno De Las Nubes", 3, 3, "G"), "dragón"));
         assertThat(Summons.normalSummon(room, "host", "wn", 50.0, 75.0)).isNull();
+        // One choice: their order and where they go (to the top, as they were)
         Prompt choice = room.getPrompt();
-        assertThat(choice.getKind()).isEqualTo(Prompt.Kind.CONFIRM);
+        assertThat(choice.isTopOrBottom()).isTrue();
+        assertThat(choice.isReorderRest()).isTrue();
         answer(choice, choice.getValidIds().get(0));
-        // Their order, as they were
-        assertThat(room.getPrompt().isRestToTop()).isTrue();
-        answer(room.getPrompt());
         // Back on top, then those three are the ones tributed
         assertThat(host.getTributeZone()).extracting(CardSlot::getInstanceId).containsExactlyElementsOf(top);
+    }
+
+    @Test
+    void wyvernoDeLasNubesSendsTheLookedCardsToTheBottomInTheChosenOrder() {
+        List<String> top = host.getDeck().subList(0, 3).stream().map(CardSlot::getInstanceId).toList();
+        host.getHand().add(withClasses(card("wn", "Wyverno De Las Nubes", 3, 3, "G"), "dragón"));
+        assertThat(Summons.normalSummon(room, "host", "wn", 50.0, 75.0)).isNull();
+        Prompt choice = room.getPrompt();
+        List<String> order = List.of(top.get(2), top.get(0), top.get(1));
+        assertThat(Answers.answer(room, "host", choice.getId(), List.of(), order)).isNull();
+        // At the bottom in that order (the first one highest); the next three were tributed
+        assertThat(host.getDeck()).extracting(CardSlot::getInstanceId).endsWith(order.toArray(String[]::new));
+        assertThat(host.getTributeZone()).extracting(CardSlot::getInstanceId).doesNotContainAnyElementsOf(top);
+    }
+
+    @Test
+    void twoInheritedEffectsOfTheSameNameBothTrigger() {
+        // Hebi with 2 Lectranatus as Recursos: 2 effects, each one chains
+        CardSlot hebi = onField(host, withClasses(card("hb", "Hebi", 3, 3, "G"), "hydra"));
+        hebi.getResources().addAll(List.of(card("l1", "Lectranatus", 3, 3, "G"), card("l2", "Lectranatus", 3, 3, "G")));
+        onField(guest, card("e1", "Enemigo", 1, 1, "R"));
+        assertThat(CombatRules.attackByPlayer(room, "host", "hb", null)).isNull();
+        List<PendingEffect> all = new ArrayList<>(room.getTriggerQueue());
+        all.addAll(room.getChain());
+        assertThat(all).filteredOn(e -> e.getScriptId().equals("lectranatus:hereda-al-atacar")).hasSize(2)
+                .allSatisfy(e -> assertThat(e.getInheritedFromName()).isEqualTo("Lectranatus"));
     }
 
     @Test
@@ -49,11 +74,9 @@ class E11SecondBatchTest {
         CardSlot hechizo = utility("hp", "Hechizo Premonitorio");
         host.getHand().add(hechizo);
         assertThat(Summons.playByPlayer(room, "host", "hp", 50.0, 75.0)).isNull();
-        answer(room.getPrompt());
-        // Then their order: kept as they were
+        // To the bottom, in their order as they were
         Prompt order = room.getPrompt();
-        assertThat(order.isReorderRest()).isTrue();
-        assertThat(order.isRestToTop()).isFalse();
+        assertThat(order.isTopOrBottom()).isTrue();
         answer(order);
         assertThat(host.getHand()).extracting(CardSlot::getInstanceId).contains(third);
         assertThat(host.getDeck()).extracting(CardSlot::getInstanceId).endsWith(firstTwo.toArray(String[]::new));
@@ -65,10 +88,7 @@ class E11SecondBatchTest {
         host.getHand().add(utility("hp", "Hechizo Premonitorio"));
         assertThat(Summons.playByPlayer(room, "host", "hp", 50.0, 75.0)).isNull();
         Prompt topOrBottom = room.getPrompt();
-        answer(topOrBottom, topOrBottom.getValidIds().get(0));
-        Prompt order = room.getPrompt();
-        assertThat(order.isRestToTop()).isTrue();
-        assertThat(Answers.answer(room, "host", order.getId(), List.of(), List.of(firstTwo.get(1), firstTwo.get(0)))).isNull();
+        assertThat(Answers.answer(room, "host", topOrBottom.getId(), List.of(firstTwo.get(0)), List.of(firstTwo.get(1), firstTwo.get(0)))).isNull();
         // The second one went on top and was drawn; the first one is now the top card
         assertThat(host.getHand()).extracting(CardSlot::getInstanceId).contains(firstTwo.get(1));
         assertThat(host.getDeck().get(0).getInstanceId()).isEqualTo(firstTwo.get(0));
@@ -95,7 +115,7 @@ class E11SecondBatchTest {
         // From the Retaguardia it could not choose an enemy: a test card summons it to the Línea frontal by effect
         CardEffects.register("invocador frontal de prueba", new EffectScript("invocador-frontal:en-invocacion", EffectScript.Moment.ON_SUMMON, true,
                 "En Invocación", "Invoca Cragzum de tu mano en tu línea frontal sin pagar su coste.",
-                List.of(new EffectStep.SummonFromZone("hand", CardFilter.creatures().named("Cragzum"), EffectStep.SummonFromZone.FREE, true))));
+                List.of(Compose.summonFromZone("hand", CardFilter.creatures().named("Cragzum"), Compose.FREE, true))));
         CardSlot cragzum = card("cz", "Cragzum", 3, 3, "B");
         cragzum.getMaterials().addAll(List.of(card("m1", "M1", 1, 1, "B"), card("m2", "M2", 1, 1, "B"), card("m3", "M3", 1, 1, "B")));
         host.getHand().addAll(List.of(cragzum, card("iv", "Invocador Frontal De Prueba", 0, 1, "B")));

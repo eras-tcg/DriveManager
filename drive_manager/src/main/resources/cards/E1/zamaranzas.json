@@ -1,0 +1,103 @@
+{
+  "name" : "zamaranzas",
+  "effects" : [ {
+    "id" : "zamaranzas:en-invocacion",
+    "moment" : "ON_SUMMON",
+    "label" : "En Invocación",
+    "text" : "Puedes añadir esta carta como material a 1 aliado [ente] nivel 3 o menor; activa 1 de sus efectos En Invocación.",
+    "cost" : [ {
+      "type" : "Do",
+      "action" : {
+        "type" : "Select",
+        "selector" : {
+          "zones" : "pickableAllies",
+          "owner" : "YOU",
+          "filter" : {
+            "classes" : [ "ente" ],
+            "cardType" : "creature",
+            "maxLevel" : 3
+          },
+          "min" : {
+            "type" : "Fixed",
+            "value" : 1
+          },
+          "max" : {
+            "type" : "Fixed",
+            "value" : 1
+          },
+          "self" : "ANY",
+          "mode" : "CHOOSE"
+        },
+        "saveAs" : "subject",
+        "label" : "Elegido",
+        "endsIfNone" : true
+      }
+    }, {
+      "type" : "Do",
+      "action" : {
+        "type" : "Move",
+        "cards" : {
+          "zones" : "field,tributeZone",
+          "owner" : "YOU",
+          "filter" : { },
+          "min" : {
+            "type" : "Fixed",
+            "value" : 1
+          },
+          "max" : {
+            "type" : "Fixed",
+            "value" : 1
+          },
+          "self" : "ANY",
+          "mode" : "SELF"
+        },
+        "to" : "materials:subject"
+      }
+    } ],
+    "steps" : [ {
+      "type" : "ActivateSubjectSummonEffect"
+    } ],
+    "sourceZone" : "field",
+    "limit" : "NONE"
+  }, {
+    "id" : "zamaranzas:en-tributos",
+    "moment" : "ACTIVATED",
+    "label" : "Turno Aliado / En Tributos",
+    "text" : "(1) Puedes añadir 1 aliado como material a otro de nivel mayor para invocar esta carta sin pagar su coste.",
+    "steps" : [ {
+      "type" : "IfPossible"
+    }, {
+      "type" : "PickAllyWithHigherAlly"
+    }, {
+      "type" : "AttachSubjectToHigherAlly"
+    }, {
+      "type" : "Do",
+      "action" : {
+        "type" : "Summon",
+        "cards" : {
+          "zones" : "hand,deck,tributeZone,discardPile,lifeStack",
+          "owner" : "YOU",
+          "filter" : { },
+          "min" : {
+            "type" : "Fixed",
+            "value" : 1
+          },
+          "max" : {
+            "type" : "Fixed",
+            "value" : 1
+          },
+          "self" : "ANY",
+          "mode" : "SELF"
+        },
+        "reduce" : {
+          "type" : "Fixed",
+          "value" : 1000
+        },
+        "required" : true
+      }
+    } ],
+    "sourceZone" : "tributeZone",
+    "allyTurn" : true,
+    "limit" : "ONCE_PER_TURN_BETWEEN_COPIES"
+  } ]
+}

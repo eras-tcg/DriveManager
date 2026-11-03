@@ -1,0 +1,132 @@
+{
+  "name" : "esqueleto de las mazmorras",
+  "effects" : [
+    {
+      "id" : "esqueleto-mazmorras:en-destruccion",
+      "moment" : "ON_DESTROY",
+      "label" : "En Destrucción por efecto o combate",
+      "text" : "(1) Puedes tributar 1 carta de tu mano; al final del turno: puedes invocar 1 [muerto viviente] de tributos o descarte agotado en tu línea frontal reduciendo su coste en 2.",
+      "cost" : [
+        {
+          "type" : "Do",
+          "action" : {
+            "type" : "Move",
+            "cards" : {
+              "zones" : "hand",
+              "owner" : "YOU",
+              "filter" : {},
+              "min" : {
+                "type" : "Fixed",
+                "value" : 1
+              },
+              "max" : {
+                "type" : "Fixed",
+                "value" : 1
+              },
+              "self" : "EXCLUDE",
+              "mode" : "CHOOSE"
+            },
+            "to" : "tributeZone"
+          }
+        }
+      ],
+      "steps" : [
+        {
+          "type" : "Do",
+          "action" : {
+            "type" : "AtEndOfTurn",
+            "effect" : "esqueleto-mazmorras:final-del-turno"
+          }
+        }
+      ],
+      "condition" : {
+        "type" : "Any",
+        "any" : [
+          {
+            "type" : "ByEffect",
+            "by" : "ANY"
+          },
+          {
+            "type" : "Happened",
+            "actor" : "ANY",
+            "owner" : "ANY",
+            "data" : [
+              "cause=BATTLE"
+            ]
+          }
+        ]
+      },
+      "sourceZone" : "field",
+      "limit" : "ONCE_PER_TURN_BETWEEN_COPIES"
+    },
+    {
+      "id" : "esqueleto-mazmorras:final-del-turno",
+      "moment" : "DELAYED",
+      "mandatory" : true,
+      "label" : "Al final del turno",
+      "text" : "Puedes invocar 1 [muerto viviente] de tributos o descarte agotado en tu línea frontal reduciendo su coste en 2.",
+      "steps" : [
+        {
+          "type" : "MayDo",
+          "question" : "¿Invocas 1 [muerto viviente] de tus tributos o descarte en tu línea frontal reduciendo su coste en 2?",
+          "covers" : 2
+        },
+        {
+          "type" : "Do",
+          "action" : {
+            "type" : "Summon",
+            "cards" : {
+              "zones" : "tributeZone,discardPile",
+              "owner" : "YOU",
+              "filter" : {
+                "classes" : [
+                  "muerto viviente"
+                ],
+                "cardType" : "creature"
+              },
+              "min" : {
+                "type" : "Fixed",
+                "value" : 1
+              },
+              "max" : {
+                "type" : "Fixed",
+                "value" : 1
+              },
+              "self" : "ANY",
+              "mode" : "CHOOSE"
+            },
+            "reduce" : {
+              "type" : "Fixed",
+              "value" : 2
+            },
+            "toFront" : true,
+            "required" : true
+          }
+        },
+        {
+          "type" : "Do",
+          "action" : {
+            "type" : "SetTapped",
+            "cards" : {
+              "zones" : "saved:summoned",
+              "owner" : "YOU",
+              "filter" : {},
+              "min" : {
+                "type" : "Fixed"
+              },
+              "max" : {
+                "type" : "Fixed",
+                "value" : 2147483647
+              },
+              "self" : "ANY",
+              "mode" : "ALL"
+            },
+            "tapped" : true
+          }
+        }
+      ],
+      "sourceZone" : "field",
+      "limit" : "NONE"
+    }
+  ]
+}

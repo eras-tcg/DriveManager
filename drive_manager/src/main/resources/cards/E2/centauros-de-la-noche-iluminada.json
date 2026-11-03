@@ -1,0 +1,114 @@
+{
+  "name" : "centauros de la noche iluminada",
+  "effects" : [
+    {
+      "id" : "centauros:en-mano",
+      "moment" : "ON_EVENT",
+      "label" : "En Mano",
+      "text" : "(1) Si algún aliado nivel 2 o mayor es destruido por el oponente: puedes invocar esta carta en tu línea frontal reduciendo su coste en 2.",
+      "steps" : [
+        {
+          "type" : "Do",
+          "action" : {
+            "type" : "Summon",
+            "cards" : {
+              "zones" : "hand",
+              "owner" : "YOU",
+              "filter" : {},
+              "min" : {
+                "type" : "Fixed",
+                "value" : 1
+              },
+              "max" : {
+                "type" : "Fixed",
+                "value" : 1
+              },
+              "self" : "ANY",
+              "mode" : "SELF"
+            },
+            "reduce" : {
+              "type" : "Fixed",
+              "value" : 2
+            },
+            "toFront" : true,
+            "required" : true
+          }
+        }
+      ],
+      "condition" : {
+        "type" : "Destroyed",
+        "owner" : "YOU",
+        "by" : "ENEMY",
+        "filter" : {
+          "cardType" : "creature",
+          "minLevel" : 2
+        }
+      },
+      "sourceZone" : "hand",
+      "limit" : "ONCE_PER_TURN_BETWEEN_COPIES"
+    },
+    {
+      "id" : "centauros:final-del-turno",
+      "moment" : "ON_EVENT",
+      "mandatory" : true,
+      "label" : "Todos Los Turnos",
+      "text" : "Al final del turno: destruye esta carta. Luego: destruye 1 enemigo nivel 3 o menor.",
+      "steps" : [
+        {
+          "type" : "Do",
+          "action" : {
+            "type" : "Destroy",
+            "cards" : {
+              "zones" : "field",
+              "owner" : "YOU",
+              "filter" : {},
+              "min" : {
+                "type" : "Fixed",
+                "value" : 1
+              },
+              "max" : {
+                "type" : "Fixed",
+                "value" : 1
+              },
+              "self" : "ANY",
+              "mode" : "SELF"
+            }
+          }
+        },
+        {
+          "type" : "Do",
+          "action" : {
+            "type" : "Destroy",
+            "cards" : {
+              "zones" : "frontLine",
+              "owner" : "OPPONENT",
+              "filter" : {
+                "cardType" : "creature",
+                "maxLevel" : 3
+              },
+              "min" : {
+                "type" : "Fixed",
+                "value" : 1
+              },
+              "max" : {
+                "type" : "Fixed",
+                "value" : 1
+              },
+              "self" : "ANY",
+              "mode" : "CHOOSE"
+            },
+            "required" : true
+          }
+        }
+      ],
+      "condition" : {
+        "type" : "Happened",
+        "eventType" : "TURN_END",
+        "actor" : "ANY",
+        "owner" : "ANY"
+      },
+      "sourceZone" : "field",
+      "limit" : "NONE"
+    }
+  ]
+}

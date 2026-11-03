@@ -263,10 +263,10 @@ class E12CardsTest extends CardBatchSupport {
         CardSlot hada = inHand("hd", "Hada", 2, 2, "G", "hada");
         inHand("x", "Otra", 1, 1, "R");
         CardEffects.register("tributador de recursos", new EffectScript("tributador:en-invocacion", EffectScript.Moment.ON_SUMMON, true,
-                "En Invocación", "Tributa Anna de los recursos de 1 aliado.", List.of(new EffectStep.TributeResources(1, CardFilter.any()))));
+                "En Invocación", "Tributa Anna de los recursos de 1 aliado.", List.of(Compose.tributeResources(1, CardFilter.any()))));
         // The holder tributes its own resource (as its inherited cost would)
         PendingEffect e = Chain.pending(room, CardEffects.byId("anna:hereda-todos-los-turnos").orElseThrow(), "host", holder, room.getEventSeq());
-        Steps.run(room, e, new EffectStep.TributeResource("Anna"));
+        Resolution.run(room, e, Compose.tributeResource("Anna"));
         Chain.advance(room);
         accept(anna);
         answer("x");
@@ -318,7 +318,7 @@ class E12CardsTest extends CardBatchSupport {
         inHand("x", "Descarte", 1, 1, "R");
         CardSlot celius = withClasses(card("ce", "Celius", 2, 2, "G"), "hada");
         CardEffects.register("invocador de prueba", new EffectScript("invocador-prueba:en-invocacion", EffectScript.Moment.ON_SUMMON, true,
-                "En Invocación", "Invoca Celius.", List.of(new EffectStep.SummonFromZone("hand", CardFilter.creatures().named("Celius"), 2, false))));
+                "En Invocación", "Invoca Celius.", List.of(Compose.summonFromZone("hand", CardFilter.creatures().named("Celius"), 2, false))));
         host.getHand().addAll(List.of(celius, card("iv", "Invocador De Prueba", 0, 1, "R")));
         assertThat(Summons.normalSummon(room, "host", "iv", 50.0, 70.0)).isNull();
         answer("ce");
@@ -476,7 +476,7 @@ class E12CardsTest extends CardBatchSupport {
         CardSlot zokolok = onField(host, card("zk", "Zokolok", 1, 1, "P"));
         CardSlot util = utility("ut", "Utilidad Violeta", 1, "P");
         CardEffects.register("utilidad violeta", new EffectScript("utilidad-violeta:en-juego", EffectScript.Moment.ON_PLAY, true, "En Juego",
-                "Gana 1 gema.", List.of(new EffectStep.GainGems(1))));
+                "Gana 1 gema.", List.of(Compose.gainGems(1))));
         host.getTributeZone().add(util);
         Removals.destroy(room, zokolok, host, false, EffectEngine.CAUSE_EFFECT, "guest", null, null);
         Chain.advance(room);
@@ -624,7 +624,7 @@ class E12CardsTest extends CardBatchSupport {
         CardSlot src = onField(guest, card("gs", "Fuente", 1, 1, "R"));
         PendingEffect theirs = Chain.pending(room, CardEffects.of("Dragón Goloso").get(0), "guest", src, room.getEventSeq());
         room.getChain().add(theirs);
-        Steps.damageByEffect(room, theirs, guest, 5);
+        StepHelpers.damageByEffect(room, theirs, guest, 5);
         Prompt offer = room.getPrompt();
         assertThat(offer.getPlayerId()).isEqualTo("host");
         // Declined: the damage happens
@@ -699,7 +699,7 @@ class E12CardsTest extends CardBatchSupport {
         ascended.setSpecialCost(1);
         ascended.setRequirement("criatura nivel 3.");
         host.getHand().add(ascended);
-        assertThat(Summons.specialByPlayer(room, "host", "as", "ed")).isNull();
+        assertThat(SpecialSummons.specialByPlayer(room, "host", "as", "ed")).isNull();
         drain();
         assertThat(EffectEngine.keywords(ascended)).contains("Furia 2");
         assertThat(espada).isNotNull();

@@ -1,0 +1,81 @@
+{
+  "name" : "conjurado olvidado",
+  "effects" : [ {
+    "id" : "conjurado-olvidado:al-final-del-ataque",
+    "moment" : "ON_ATTACK_END",
+    "mandatory" : true,
+    "label" : "Al Final Del Ataque",
+    "text" : "Sacrifica esta carta. Si lo haces: puedes jugar 1 [brujería] de tus tributos reduciendo su coste en 2.",
+    "steps" : [ {
+      "type" : "Do",
+      "action" : {
+        "type" : "Destroy",
+        "cards" : {
+          "zones" : "field",
+          "owner" : "YOU",
+          "filter" : { },
+          "min" : {
+            "type" : "Fixed",
+            "value" : 1
+          },
+          "max" : {
+            "type" : "Fixed",
+            "value" : 1
+          },
+          "self" : "ANY",
+          "mode" : "SELF"
+        },
+        "sacrifice" : true
+      }
+    }, {
+      "type" : "MayDo",
+      "question" : "¿Juegas 1 [brujería] de tus tributos reduciendo su coste en 2?",
+      "covers" : 1
+    }, {
+      "type" : "Do",
+      "action" : {
+        "type" : "Play",
+        "cards" : {
+          "zones" : "tributeZone",
+          "owner" : "YOU",
+          "filter" : {
+            "classes" : [ "brujería" ]
+          },
+          "min" : {
+            "type" : "Fixed",
+            "value" : 1
+          },
+          "max" : {
+            "type" : "Fixed",
+            "value" : 1
+          },
+          "self" : "ANY",
+          "mode" : "CHOOSE"
+        },
+        "reduce" : {
+          "type" : "Fixed",
+          "value" : 2
+        },
+        "required" : true
+      }
+    } ],
+    "sourceZone" : "field",
+    "limit" : "NONE"
+  } ],
+  "continuous" : [ {
+    "label" : "Turno Aliado",
+    "text" : "Esta carta gana fuerza 1 por cada [brujería] en tus tributos.",
+    "allyTurn" : true,
+    "condition" : {
+      "type" : "Always"
+    },
+    "bonus" : {
+      "type" : "InZone",
+      "zone" : "tributeZone",
+      "filter" : {
+        "classes" : [ "brujería" ]
+      }
+    },
+    "zone" : "field"
+  } ]
+}

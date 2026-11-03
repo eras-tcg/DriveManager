@@ -1,0 +1,163 @@
+{
+  "name" : "amalgama cadavérica",
+  "effects" : [ {
+    "id" : "amalgama:al-final-del-ataque",
+    "moment" : "ON_ATTACK_END",
+    "label" : "Al Final Del Ataque",
+    "text" : "Puedes sacrificar esta carta para elegir 1 enemigo nivel 1 o menor; destrúyelo. Por cada 10 tributos Violeta o [espectro]: aumenta en 1 el nivel máximo elegible por este efecto.",
+    "steps" : [ {
+      "type" : "IfPossible"
+    }, {
+      "type" : "Do",
+      "action" : {
+        "type" : "Destroy",
+        "cards" : {
+          "zones" : "field",
+          "owner" : "YOU",
+          "filter" : { },
+          "min" : {
+            "type" : "Fixed",
+            "value" : 1
+          },
+          "max" : {
+            "type" : "Fixed",
+            "value" : 1
+          },
+          "self" : "ANY",
+          "mode" : "SELF"
+        },
+        "sacrifice" : true
+      }
+    }, {
+      "type" : "Do",
+      "action" : {
+        "type" : "Select",
+        "selector" : {
+          "zones" : "frontLine",
+          "owner" : "OPPONENT",
+          "filter" : {
+            "cardType" : "creature"
+          },
+          "min" : {
+            "type" : "Fixed",
+            "value" : 1
+          },
+          "max" : {
+            "type" : "Fixed",
+            "value" : 1
+          },
+          "self" : "ANY",
+          "mode" : "CHOOSE",
+          "relative" : {
+            "maxLevel" : {
+              "type" : "Scaled",
+              "base" : {
+                "type" : "InZone",
+                "zone" : "tributeZone",
+                "filter" : {
+                  "colors" : [ "P" ],
+                  "classes" : [ "espectro" ]
+                }
+              },
+              "divisor" : 10,
+              "plus" : 1
+            }
+          }
+        },
+        "target" : true
+      }
+    }, {
+      "type" : "Do",
+      "action" : {
+        "type" : "Destroy",
+        "cards" : {
+          "zones" : "saved:targets",
+          "owner" : "YOU",
+          "filter" : { },
+          "min" : {
+            "type" : "Fixed"
+          },
+          "max" : {
+            "type" : "Fixed",
+            "value" : 2147483647
+          },
+          "self" : "ANY",
+          "mode" : "ALL"
+        }
+      }
+    } ],
+    "sourceZone" : "field",
+    "limit" : "NONE"
+  }, {
+    "id" : "amalgama:en-destruccion",
+    "moment" : "ON_DESTROY",
+    "label" : "En Destrucción por efecto o enfrentamiento",
+    "text" : "Puedes tributar 1 carta de tu mano; invoca 1 criatura Violeta nivel 3 de tus tributos reduciendo su coste en 3.",
+    "cost" : [ {
+      "type" : "Do",
+      "action" : {
+        "type" : "Move",
+        "cards" : {
+          "zones" : "hand",
+          "owner" : "YOU",
+          "filter" : { },
+          "min" : {
+            "type" : "Fixed",
+            "value" : 1
+          },
+          "max" : {
+            "type" : "Fixed",
+            "value" : 1
+          },
+          "self" : "EXCLUDE",
+          "mode" : "CHOOSE"
+        },
+        "to" : "tributeZone"
+      }
+    } ],
+    "steps" : [ {
+      "type" : "Do",
+      "action" : {
+        "type" : "Summon",
+        "cards" : {
+          "zones" : "tributeZone",
+          "owner" : "YOU",
+          "filter" : {
+            "colors" : [ "P" ],
+            "cardType" : "creature",
+            "level" : 3
+          },
+          "min" : {
+            "type" : "Fixed",
+            "value" : 1
+          },
+          "max" : {
+            "type" : "Fixed",
+            "value" : 1
+          },
+          "self" : "ANY",
+          "mode" : "CHOOSE"
+        },
+        "reduce" : {
+          "type" : "Fixed",
+          "value" : 3
+        },
+        "required" : true
+      }
+    } ],
+    "condition" : {
+      "type" : "Any",
+      "any" : [ {
+        "type" : "ByEffect",
+        "by" : "ANY"
+      }, {
+        "type" : "Happened",
+        "actor" : "ANY",
+        "owner" : "ANY",
+        "data" : [ "cause=BATTLE" ]
+      } ]
+    },
+    "sourceZone" : "field",
+    "limit" : "NONE"
+  } ]
+}

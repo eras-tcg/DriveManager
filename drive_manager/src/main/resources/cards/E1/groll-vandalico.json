@@ -1,0 +1,70 @@
+{
+  "name" : "groll vandálico",
+  "effects" : [ {
+    "id" : "groll-vandalico:en-mano",
+    "moment" : "ON_EVENT",
+    "label" : "En Mano",
+    "text" : "(1) Si alguna carta es removida de tus vidas: puedes invocar esta carta en tu línea frontal. Si tienes 3 o menos vidas: reduce en 1 su coste.",
+    "steps" : [ {
+      "type" : "Do",
+      "action" : {
+        "type" : "Summon",
+        "cards" : {
+          "zones" : "hand",
+          "owner" : "YOU",
+          "filter" : { },
+          "min" : {
+            "type" : "Fixed",
+            "value" : 1
+          },
+          "max" : {
+            "type" : "Fixed",
+            "value" : 1
+          },
+          "self" : "ANY",
+          "mode" : "SELF"
+        },
+        "reduce" : {
+          "type" : "IfThen",
+          "condition" : {
+            "type" : "Compare",
+            "left" : {
+              "type" : "Lives"
+            },
+            "op" : "AT_MOST",
+            "right" : {
+              "type" : "Fixed",
+              "value" : 3
+            }
+          },
+          "then" : {
+            "type" : "Fixed",
+            "value" : 1
+          },
+          "otherwise" : {
+            "type" : "Fixed"
+          }
+        },
+        "toFront" : true,
+        "required" : true
+      }
+    } ],
+    "condition" : {
+      "type" : "Any",
+      "any" : [ {
+        "type" : "Happened",
+        "actor" : "ANY",
+        "owner" : "YOU",
+        "from" : "lifeStack"
+      }, {
+        "type" : "Happened",
+        "actor" : "ANY",
+        "owner" : "ANY",
+        "from" : "lifeStack",
+        "data" : [ "defenderId=$you" ]
+      } ]
+    },
+    "sourceZone" : "hand",
+    "limit" : "ONCE_PER_TURN_BETWEEN_COPIES"
+  } ]
+}

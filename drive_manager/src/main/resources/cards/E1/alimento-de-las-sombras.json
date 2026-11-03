@@ -1,0 +1,153 @@
+{
+  "name" : "alimento de las sombras",
+  "effects" : [ {
+    "id" : "alimento-de-las-sombras:en-juego",
+    "moment" : "ON_PLAY",
+    "mandatory" : true,
+    "label" : "En Juego",
+    "text" : "Un aliado invoca por Ritual 1 criatura de tus tributos reduciendo su coste especial en 1.",
+    "steps" : [ {
+      "type" : "Do",
+      "action" : {
+        "type" : "Sequence",
+        "actions" : [ {
+          "type" : "Select",
+          "selector" : {
+            "zones" : "tributeZone",
+            "owner" : "YOU",
+            "filter" : { },
+            "min" : {
+              "type" : "Fixed"
+            },
+            "max" : {
+              "type" : "Fixed",
+              "value" : 1
+            },
+            "self" : "ANY",
+            "mode" : "CHOOSE",
+            "special" : {
+              "rule" : {
+                "kind" : "ritual",
+                "zone" : "tributeZone",
+                "reduce" : 1,
+                "summoner" : "any",
+                "filter" : { }
+              },
+              "stage" : "CARD"
+            }
+          },
+          "saveAs" : "specialCard",
+          "label" : "Invocar"
+        }, {
+          "type" : "Select",
+          "selector" : {
+            "zones" : "tributeZone",
+            "owner" : "YOU",
+            "filter" : { },
+            "min" : {
+              "type" : "Fixed"
+            },
+            "max" : {
+              "type" : "Fixed",
+              "value" : 1
+            },
+            "self" : "ANY",
+            "mode" : "CHOOSE",
+            "special" : {
+              "rule" : {
+                "kind" : "ritual",
+                "zone" : "tributeZone",
+                "reduce" : 1,
+                "summoner" : "any",
+                "filter" : { }
+              },
+              "stage" : "SUMMONER"
+            }
+          },
+          "saveAs" : "specialSummoner",
+          "label" : "Invocador"
+        }, {
+          "type" : "Select",
+          "selector" : {
+            "zones" : "tributeZone",
+            "owner" : "YOU",
+            "filter" : { },
+            "min" : {
+              "type" : "Fixed"
+            },
+            "max" : {
+              "type" : "Fixed",
+              "value" : 1
+            },
+            "self" : "ANY",
+            "mode" : "CHOOSE",
+            "special" : {
+              "rule" : {
+                "kind" : "ritual",
+                "zone" : "tributeZone",
+                "reduce" : 1,
+                "summoner" : "any",
+                "filter" : { }
+              },
+              "stage" : "MATERIAL"
+            }
+          },
+          "saveAs" : "specialMaterials",
+          "label" : "Sacrificar"
+        }, {
+          "type" : "SummonSpecial",
+          "rule" : {
+            "kind" : "ritual",
+            "zone" : "tributeZone",
+            "reduce" : 1,
+            "summoner" : "any",
+            "filter" : { }
+          }
+        } ]
+      }
+    } ],
+    "sourceZone" : "field",
+    "limit" : "NONE"
+  }, {
+    "id" : "alimento-de-las-sombras:en-mano",
+    "moment" : "ON_EVENT",
+    "label" : "En Mano",
+    "text" : "(1) Si algún aliado es destruido por el oponente: puedes jugar esta carta sin pagar su coste.",
+    "steps" : [ {
+      "type" : "Do",
+      "action" : {
+        "type" : "Play",
+        "cards" : {
+          "zones" : "hand",
+          "owner" : "YOU",
+          "filter" : { },
+          "min" : {
+            "type" : "Fixed",
+            "value" : 1
+          },
+          "max" : {
+            "type" : "Fixed",
+            "value" : 1
+          },
+          "self" : "ANY",
+          "mode" : "SELF"
+        },
+        "reduce" : {
+          "type" : "Fixed",
+          "value" : 1000
+        },
+        "required" : true
+      }
+    } ],
+    "condition" : {
+      "type" : "Destroyed",
+      "owner" : "YOU",
+      "by" : "ENEMY",
+      "filter" : {
+        "cardType" : "creature"
+      }
+    },
+    "sourceZone" : "hand",
+    "limit" : "ONCE_PER_TURN_BETWEEN_COPIES"
+  } ]
+}

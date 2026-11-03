@@ -1,0 +1,124 @@
+{
+  "name" : "valor del heroe",
+  "effects" : [ {
+    "id" : "valor-del-heroe:en-juego",
+    "moment" : "ON_PLAY",
+    "mandatory" : true,
+    "label" : "En Juego",
+    "text" : "Elige 1 aliado para que gane fuerza 3 y Furia 1 por el turno.",
+    "steps" : [ {
+      "type" : "Do",
+      "action" : {
+        "type" : "Select",
+        "selector" : {
+          "zones" : "pickableAllies",
+          "owner" : "YOU",
+          "filter" : { },
+          "min" : {
+            "type" : "Fixed",
+            "value" : 1
+          },
+          "max" : {
+            "type" : "Fixed",
+            "value" : 1
+          },
+          "self" : "ANY",
+          "mode" : "CHOOSE"
+        },
+        "target" : true,
+        "saveAs" : "subject",
+        "label" : "Elegido",
+        "endsIfNone" : true
+      }
+    }, {
+      "type" : "Do",
+      "action" : {
+        "type" : "Modify",
+        "cards" : {
+          "zones" : "subjectOrSelf",
+          "owner" : "YOU",
+          "filter" : { },
+          "min" : {
+            "type" : "Fixed"
+          },
+          "max" : {
+            "type" : "Fixed",
+            "value" : 2147483647
+          },
+          "self" : "ANY",
+          "mode" : "ALL"
+        },
+        "strength" : {
+          "type" : "Fixed",
+          "value" : 3
+        },
+        "until" : "TURN"
+      }
+    }, {
+      "type" : "Do",
+      "action" : {
+        "type" : "Modify",
+        "cards" : {
+          "zones" : "subjectOrSelf",
+          "owner" : "YOU",
+          "filter" : { },
+          "min" : {
+            "type" : "Fixed"
+          },
+          "max" : {
+            "type" : "Fixed",
+            "value" : 2147483647
+          },
+          "self" : "ANY",
+          "mode" : "ALL"
+        },
+        "keyword" : "Furia 1",
+        "until" : "TURN"
+      }
+    } ],
+    "sourceZone" : "field",
+    "limit" : "NONE"
+  }, {
+    "id" : "valor-del-heroe:en-mano",
+    "moment" : "ON_EVENT",
+    "label" : "En Mano",
+    "text" : "(1) Si invocas algún [caballero] por efecto: puedes jugar esta carta sin pagar su coste.",
+    "steps" : [ {
+      "type" : "Do",
+      "action" : {
+        "type" : "Play",
+        "cards" : {
+          "zones" : "hand",
+          "owner" : "YOU",
+          "filter" : { },
+          "min" : {
+            "type" : "Fixed",
+            "value" : 1
+          },
+          "max" : {
+            "type" : "Fixed",
+            "value" : 1
+          },
+          "self" : "ANY",
+          "mode" : "SELF"
+        },
+        "reduce" : {
+          "type" : "Fixed",
+          "value" : 1000
+        },
+        "required" : true
+      }
+    } ],
+    "condition" : {
+      "type" : "Summoned",
+      "side" : "YOU",
+      "filter" : {
+        "classes" : [ "caballero" ],
+        "cardType" : "creature"
+      },
+      "how" : "effect"
+    },
+    "sourceZone" : "hand",
+    "limit" : "ONCE_PER_TURN_BETWEEN_COPIES"
+  } ]
+}

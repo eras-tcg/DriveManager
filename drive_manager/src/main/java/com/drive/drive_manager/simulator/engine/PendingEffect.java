@@ -23,6 +23,9 @@ public class PendingEffect {
     private long triggerSeq;
     /** Its link in the chain: 1 for the first one activated (resolves last). */
     private int link;
+    /** An inherited effect: the Recurso that gives it (its art too, when it is still attached), shown on its card. */
+    private String inheritedFromName;
+    private String inheritedFromImage;
 
     /** Cost steps already paid: the cost is paid right after it is activated, choices included (rule 11.2.0.2). */
     private int costIndex;
@@ -35,6 +38,10 @@ public class PendingEffect {
     // --- Resolution progress (set while it resolves) ---
     private String resolutionId;
     private int stepIndex;
+    /** Which action of a sequence is running. */
+    private int sequenceIndex;
+    /** What its actions saved by name, other than the fields below (see EngineContext). */
+    private java.util.Map<String, List<String>> saved = new java.util.HashMap<>();
     /** The ally chosen by "elige 1 aliado", which the next steps act on. */
     private String subjectId;
     /** Ritual by effect: the creature chosen to be summoned, before choosing who meets its Requerimiento. */

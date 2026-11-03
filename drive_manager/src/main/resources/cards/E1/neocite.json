@@ -1,0 +1,15 @@
+{
+  "name" : "neocité",
+  "reactions" : [ {
+    "type" : "CostModifier",
+    "label" : "Todos Los Turnos",
+    "event" : "SPECIAL_SUMMON",
+    "kinds" : [ "materialization" ],
+    "holder" : "FIELD",
+    "payment" : {
+      "kind" : "TAP_SELF"
+    },
+    "reduce" : 1,
+    "limit" : "NONE"
+  } ]
+}

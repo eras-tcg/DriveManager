@@ -1,0 +1,25 @@
+{
+  "name" : "mandato imperial",
+  "effects" : [ {
+    "id" : "mandato-imperial:en-juego",
+    "moment" : "ON_PLAY",
+    "mandatory" : true,
+    "label" : "En Juego",
+    "text" : "Efecto Definitivo. Si no hay enemigos en la línea frontal: el oponente elige 1 criatura en su retaguardia para moverla a su línea frontal.",
+    "steps" : [ {
+      "type" : "OpponentMovesOneToFront"
+    } ],
+    "condition" : {
+      "type" : "Compare",
+      "left" : {
+        "type" : "EnemiesInFrontLine"
+      },
+      "op" : "EQUAL",
+      "right" : {
+        "type" : "Fixed"
+      }
+    },
+    "sourceZone" : "field",
+    "limit" : "DEFINITIVE"
+  } ]
+}

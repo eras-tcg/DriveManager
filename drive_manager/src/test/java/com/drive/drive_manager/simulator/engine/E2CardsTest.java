@@ -623,7 +623,7 @@ class E2CardsTest extends CardBatchSupport {
     void lureruriPlaysAVioletUtilityFromTheTributesIfItTributedOne() {
         CardSlot util = utility("ut", "Utilidad Violeta", 1, "P");
         CardEffects.register("utilidad violeta", new EffectScript("utilidad-violeta:en-juego", EffectScript.Moment.ON_PLAY, true, "En Juego",
-                "Gana 1 gema.", List.of(new EffectStep.GainGems(1))));
+                "Gana 1 gema.", List.of(Compose.gainGems(1))));
         host.getHand().add(util);
         summon(withClasses(card("lu", "Lureruri", 2, 2, "P"), "brujo"));
         answer("ut");
