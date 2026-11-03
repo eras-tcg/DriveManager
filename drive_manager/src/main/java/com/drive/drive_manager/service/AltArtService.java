@@ -32,6 +32,8 @@ public class AltArtService {
     public static final int MAX_BYTES = 8 * 1024 * 1024;
     /** Alternative arts one card can have. */
     public static final int MAX_ARTS = 10;
+    /** Longest name of an art. */
+    public static final int MAX_NAME = 30;
     private static final String ID_CHARS = "abcdefghijklmnopqrstuvwxyz0123456789";
 
     private final R2Service r2;
@@ -52,14 +54,20 @@ public class AltArtService {
 
     /** Adds an alternative art from an image, with its own odds (null: the shop's): the card after it, empty if none. */
     public Optional<Card> add(String cardId, byte[] image, Double odds) throws IOException {
+        return add(cardId, image, odds, null);
+    }
+
+    /** Adds an alternative art from an image, with its name and odds (null: "Alternativo N", the shop's). */
+    public Optional<Card> add(String cardId, byte[] image, Double odds, String name) throws IOException {
         Optional<Card> found = cards.findById(cardId);
         if (found.isEmpty()) return found;
         Card card = found.get();
         List<AltArt> arts = editable(card);
         if (arts.size() >= MAX_ARTS) throw new IllegalArgumentException("Una carta puede tener hasta " + MAX_ARTS + " artes alternativos");
         checkOdds(odds);
+        String clean = cleanName(name);
         String artId = newId(arts);
-        arts.add(new AltArt(artId, store(cardId, artId, image), odds));
+        arts.add(new AltArt(artId, store(cardId, artId, image), odds, clean));
         return Optional.of(cards.save(card));
     }
 
@@ -76,14 +84,32 @@ public class AltArtService {
 
     /** Sets one art's own odds per pulled copy (null: it takes the shop's). */
     public Optional<Card> setOdds(String cardId, String artId, Double odds) {
+        Optional<Card> found = cards.findById(cardId);
+        if (found.isEmpty()) return found;
+        AltArt art = artOf(found.get().getAltArts(), artId);
+        return art == null ? Optional.empty() : update(cardId, artId, art.getName(), odds);
+    }
+
+    /** Sets one art's name (null or blank: "Alternativo N") and its own odds (null: the shop's) at once. */
+    public Optional<Card> update(String cardId, String artId, String name, Double odds) {
         checkOdds(odds);
+        String clean = cleanName(name);
         Optional<Card> found = cards.findById(cardId);
         if (found.isEmpty()) return found;
         Card card = found.get();
         AltArt art = artOf(editable(card), artId);
         if (art == null) return Optional.empty();
+        art.setName(clean);
         art.setOdds(odds);
         return Optional.of(cards.save(card));
+    }
+
+    /** A name as kept: trimmed, null when blank; refused past MAX_NAME characters. */
+    static String cleanName(String name) {
+        if (name == null || name.isBlank()) return null;
+        String clean = name.strip();
+        if (clean.length() > MAX_NAME) throw new IllegalArgumentException("El nombre del arte puede tener hasta " + MAX_NAME + " caracteres");
+        return clean;
     }
 
     /**

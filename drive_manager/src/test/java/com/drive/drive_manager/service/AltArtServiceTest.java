@@ -101,6 +101,21 @@ class AltArtServiceTest {
     }
 
     @Test
+    void anArtHasANameLikeACustomRarity() throws Exception {
+        Card saved = service.add("m1", png(10, 10), null, "  Secreta  ").orElseThrow();
+        String id = saved.getAltArts().get(0).getId();
+        assertThat(saved.getAltArts().get(0).getName()).isEqualTo("Secreta");
+
+        Card renamed = service.update("m1", id, "Halloween", 0.01).orElseThrow();
+        assertThat(renamed.getAltArts().get(0).getName()).isEqualTo("Halloween");
+        assertThat(renamed.getAltArts().get(0).getOdds()).isEqualTo(0.01);
+        // Changing only the odds keeps the name; a blank name goes back to the default one
+        assertThat(service.setOdds("m1", id, null).orElseThrow().getAltArts().get(0).getName()).isEqualTo("Halloween");
+        assertThat(service.update("m1", id, " ", null).orElseThrow().getAltArts().get(0).getName()).isNull();
+        assertThatThrownBy(() -> service.update("m1", id, "x".repeat(31), null)).isInstanceOf(IllegalArgumentException.class);
+    }
+
+    @Test
     void itKeepsTheImagesSizeAsAJpeg() throws Exception {
         BufferedImage out = ImageIO.read(new ByteArrayInputStream(AltArtService.jpeg(png(744, 1039))));
         assertThat(out.getWidth()).isEqualTo(744);

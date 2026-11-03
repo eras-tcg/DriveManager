@@ -21,9 +21,10 @@ import java.util.Optional;
 
 /**
  * A card's alternative arts, set from the card's detail by whoever manages cards (AltArtService); each answers the card:
- * POST   /api/cards/{id}/alt-arts[?odds=0.001]   — a new art, the image as the body (JPG, PNG, GIF or BMP)
+ * POST   /api/cards/{id}/alt-arts[?odds=0.001&name=…] — a new art, the image as the body (JPG, PNG, GIF or BMP)
  * PUT    /api/cards/{id}/alt-arts/{artId}        — a new image for that art
- * PATCH  /api/cards/{id}/alt-arts/{artId}        — {"odds": 0.001} its own odds, or {"odds": null} for the shop's
+ * PATCH  /api/cards/{id}/alt-arts/{artId}        — {"name": "Secreta", "odds": 0.001}: its name and its own odds
+ *                                                  (null name: "Alternativo N"; null odds: the shop's)
  * DELETE /api/cards/{id}/alt-arts/{artId}        — the card loses that art
  */
 @RestController
@@ -44,9 +45,10 @@ public class AltArtController {
 
     @PreAuthorize("hasAuthority('manage_cards')")
     @PostMapping(value = "/{id}/alt-arts", consumes = {"image/jpeg", "image/png", "image/gif", "image/bmp", "application/octet-stream"})
-    public ResponseEntity<Object> add(@PathVariable String id, @RequestParam(required = false) Double odds, @RequestBody byte[] image) {
+    public ResponseEntity<Object> add(@PathVariable String id, @RequestParam(required = false) Double odds,
+                                      @RequestParam(required = false) String name, @RequestBody byte[] image) {
         ResponseEntity<Object> refused = checkImage(image);
-        return refused != null ? refused : apply(id, () -> altArt.add(id, image, odds));
+        return refused != null ? refused : apply(id, () -> altArt.add(id, image, odds, name));
     }
 
     @PreAuthorize("hasAuthority('manage_cards')")
@@ -56,13 +58,13 @@ public class AltArtController {
         return refused != null ? refused : apply(id, () -> altArt.replace(id, artId, image));
     }
 
-    public record OddsRequest(Double odds) {
+    public record ArtRequest(String name, Double odds) {
     }
 
     @PreAuthorize("hasAuthority('manage_cards')")
     @PatchMapping("/{id}/alt-arts/{artId}")
-    public ResponseEntity<Object> setOdds(@PathVariable String id, @PathVariable String artId, @RequestBody OddsRequest request) {
-        return apply(id, () -> altArt.setOdds(id, artId, request == null ? null : request.odds()));
+    public ResponseEntity<Object> update(@PathVariable String id, @PathVariable String artId, @RequestBody ArtRequest request) {
+        return apply(id, () -> altArt.update(id, artId, request == null ? null : request.name(), request == null ? null : request.odds()));
     }
 
     @PreAuthorize("hasAuthority('manage_cards')")

@@ -62,7 +62,7 @@ public class Card {
     /** The alternative arts, the one of before (altImage) included while it is kept that way. */
     public List<AltArt> getAltArts() {
         if (altArts != null && !altArts.isEmpty()) return altArts;
-        if (altImage != null && !altImage.isBlank()) return List.of(new AltArt(LEGACY_ART_ID, altImage, null));
+        if (altImage != null && !altImage.isBlank()) return List.of(new AltArt(LEGACY_ART_ID, altImage, null, null));
         return List.of();
     }
 }
