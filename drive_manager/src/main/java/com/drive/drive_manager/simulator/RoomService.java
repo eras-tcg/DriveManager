@@ -46,13 +46,9 @@ public class RoomService {
     @Autowired
     private DriveCardRepository driveCardRepo;
 
-    /** Missions, progression and the player's collection (none in tests: anything is played, nothing counted). */
+    /** Missions, progression, activity log and the player's collection (none in tests: anything is played, nothing counted). */
     @Autowired(required = false)
     private MissionHooks hooks;
-
-    /** The administrators' activity log: games started and ended (none in tests). */
-    @Autowired(required = false)
-    private com.drive.drive_manager.service.ActivityLogService activityLog;
 
     @Value("${r2.public-url}")
     private String r2PublicUrl;
@@ -103,16 +99,13 @@ public class RoomService {
         PlayerState gone = room.getPlayers().values().stream()
                 .filter(p -> !p.isConnected() && now - p.getDisconnectedAt() >= ABANDON_GRACE_MS).findFirst().orElse(null);
         if (gone == null || room.getPlayers().values().stream().noneMatch(PlayerState::isConnected)) return null;
-        GameRoom.RoomStatus statusBefore = room.getStatus();
-        long seqBefore = room.getEventSeq();
-        List<String> playersBefore = new ArrayList<>(room.getPlayers().keySet());
+        MissionHooks.Before before = MissionHooks.Before.of(room);
         removePlayer(room, gone.getUserId());
         GameStateUpdate update = GameStateUpdate.from(room, "PLAYER_LEFT", gone.getUserId());
         update.setLogEntry(gone.getUsername() + " abandonó la partida");
         recordLog(room, update);
         update.setEventLog(new ArrayList<>(room.getEventLog()));
-        if (hooks != null) hooks.count(room, statusBefore, seqBefore);
-        logActivity(room, statusBefore, playersBefore);
+        if (hooks != null) hooks.count(room, before);
         return update;
     }
 
@@ -243,9 +236,7 @@ public class RoomService {
         if (refusal != null) return GameStateUpdate.error(roomId, refusal);
 
         // What the action changes is counted for the players' missions afterwards (see the end of this method)
-        GameRoom.RoomStatus statusBefore = room.getStatus();
-        long seqBefore = room.getEventSeq();
-        List<String> playersBefore = new ArrayList<>(room.getPlayers().keySet());
+        MissionHooks.Before before = MissionHooks.Before.of(room);
 
         // Closed game state (rule 7.2): while a chain or a choice is pending, only answering it (and leaving
         // or conceding) is allowed. The board's manual actions wait until the effect is done.
@@ -331,20 +322,9 @@ public class RoomService {
         if (update != null && update.getError() == null) {
             recordLog(room, update, action);
             update.setEventLog(new ArrayList<>(room.getEventLog()));
-            if (hooks != null) hooks.count(room, statusBefore, seqBefore);
-            logActivity(room, statusBefore, playersBefore);
+            if (hooks != null) hooks.count(room, before);
         }
         return update;
-    }
-
-    /** The games an action started or ended, for the administrators' activity log (never stops the game). */
-    private void logActivity(GameRoom room, GameRoom.RoomStatus statusBefore, List<String> playersBefore) {
-        if (activityLog == null) return;
-        try {
-            for (GameActivity.Event e : GameActivity.of(room, statusBefore, playersBefore)) activityLog.record(e.userId(), e.action(), e.detail());
-        } catch (RuntimeException e) {
-            // The log is for the administrators: a failure there must not break the room
-        }
     }
 
     static final Set<String> ALLOWED_WHILE_RESOLVING = Set.of(
