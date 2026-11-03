@@ -53,4 +53,14 @@ public final class GameActivity {
         }
         return out;
     }
+
+    /** Writes the events of an action to the log, if there is one (never stops the game). */
+    static void log(ActivityLogService activityLog, GameRoom room, GameRoom.RoomStatus statusBefore, Collection<String> playersBefore) {
+        if (activityLog == null) return;
+        try {
+            for (Event e : of(room, statusBefore, playersBefore)) activityLog.record(e.userId(), e.action(), e.detail());
+        } catch (RuntimeException e) {
+            // The log is for the administrators: a failure there must not break the room
+        }
+    }
 }

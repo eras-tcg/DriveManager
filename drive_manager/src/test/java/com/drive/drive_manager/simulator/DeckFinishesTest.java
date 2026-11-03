@@ -19,7 +19,7 @@ class DeckFinishesTest {
         CollectionService collections = mock(CollectionService.class);
         when(collections.of("p1")).thenReturn(new CollectionService.View(
                 Map.of("a", Map.of("plain", 1, "prism", 1), "b", Map.of("foil", 1)), Map.of()));
-        MissionHooks hooks = new MissionHooks(null, null, collections);
+        MissionHooks hooks = new MissionHooks(null, null, collections, null);
 
         List<CardSlot> slots = new ArrayList<>();
         for (String id : List.of("a", "b", "a", "a", "c")) {
@@ -37,7 +37,7 @@ class DeckFinishesTest {
     void aCopyWithTheAlternativeArtShowsItWithItsFinish() {
         CollectionService collections = mock(CollectionService.class);
         when(collections.of("p1")).thenReturn(new CollectionService.View(Map.of("titan", Map.of("plain", 1, "alt-x1-foil", 1, "alt-gone-prism", 1)), Map.of()));
-        MissionHooks hooks = new MissionHooks(null, null, collections);
+        MissionHooks hooks = new MissionHooks(null, null, collections, null);
 
         List<CardSlot> slots = new ArrayList<>();
         for (int i = 0; i < 3; i++) {
