@@ -43,6 +43,19 @@ class CollectionRulesTest {
     }
 
     @Test
+    void craftingUntilAFinishStopsAtTheMostCraftsOfOneRequest() {
+        // Plenty of fragments and never the finish: it stops at MAX_CRAFTS, not when the fragments run out
+        assertThat(CollectionRules.craftUntil("prism", Integer.MAX_VALUE, () -> 0.9)).hasSize(CollectionRules.MAX_CRAFTS);
+    }
+
+    @Test
+    void theCraftCostNeverOverflows() {
+        assertThat(CollectionRules.craftCost(3)).isEqualTo(90);
+        // 71582789 * 30 wraps to a negative int: refused instead
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> CollectionRules.craftCost(71_582_789)).isInstanceOf(ArithmeticException.class);
+    }
+
+    @Test
     void theFinestCopiesAreKeptAndTheRestAreExtra() {
         assertThat(CollectionRules.extras(Map.of("plain", 5, "foil", 1, "prism", 1))).containsExactly(Map.entry("plain", 3));
         assertThat(CollectionRules.extras(Map.of("foil", 6))).containsExactly(Map.entry("foil", 2));

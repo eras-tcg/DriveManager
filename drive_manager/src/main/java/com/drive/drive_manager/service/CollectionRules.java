@@ -19,6 +19,11 @@ public final class CollectionRules {
     public static final int CRAFT_COST = 30;
     /** Copies a deck can use of a card: more than these of one printing are extra. */
     public static final int MAX_COPIES = 4;
+    /**
+     * Copies one request can craft (one card, a deck's missing cards, or crafting until a finish comes out): keeps the
+     * fragment totals far from overflowing an int and the lists small. Enough to chase a prismatic (1 in 200).
+     */
+    public static final int MAX_CRAFTS = 1000;
 
     private CollectionRules() {
     }
@@ -29,6 +34,11 @@ public final class CollectionRules {
         if (roll < PRISM_ODDS) return "prism";
         if (roll < PRISM_ODDS + FOIL_ODDS) return "foil";
         return "plain";
+    }
+
+    /** Fragments `copies` copies cost to craft; never overflows (ArithmeticException instead). */
+    public static int craftCost(int copies) {
+        return Math.multiplyExact(copies, CRAFT_COST);
     }
 
     /** Fragments a broken copy gives. */
@@ -51,12 +61,12 @@ public final class CollectionRules {
 
     /**
      * Crafting a card again and again until one comes out at least as fine as `target`, or the fragments (of its
-     * rarity) run out: the finishes crafted, in order.
+     * rarity) run out, or MAX_CRAFTS copies were crafted: the finishes crafted, in order.
      */
     public static List<String> craftUntil(String target, int fragments, DoubleSupplier random) {
         List<String> crafted = new ArrayList<>();
         int left = fragments;
-        while (left >= CRAFT_COST) {
+        while (left >= CRAFT_COST && crafted.size() < MAX_CRAFTS) {
             left -= CRAFT_COST;
             String finish = rollFinish(random);
             crafted.add(finish);

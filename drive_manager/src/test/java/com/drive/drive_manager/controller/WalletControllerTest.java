@@ -1,5 +1,7 @@
 package com.drive.drive_manager.controller;
 
+import com.drive.drive_manager.service.ProgressionRules;
+import com.drive.drive_manager.service.ProgressionService;
 import com.drive.drive_manager.service.ShopService;
 import com.drive.drive_manager.service.WalletRules;
 import com.drive.drive_manager.service.WalletService;
@@ -22,13 +24,28 @@ class WalletControllerTest {
 
     private WalletService wallets;
     private ShopService shop;
+    private ProgressionService progression;
     private WalletController controller;
 
     @BeforeEach
     void setUp() {
         wallets = mock(WalletService.class);
         shop = mock(ShopService.class);
-        controller = new WalletController(wallets, shop);
+        progression = mock(ProgressionService.class);
+        controller = new WalletController(wallets, shop, progression);
+    }
+
+    @Test
+    void thePacksOpenedCountForProgressionButAStructureDeckDoesNot() {
+        var pack = new ShopService.OpenedPack("Base", null, java.util.List.of());
+        when(shop.buy("alice", "E2", "box")).thenReturn(new ShopService.Opening(100, 2400, java.util.List.of(pack, pack, pack)));
+        when(shop.buy("alice", "ST1", "structure")).thenReturn(new ShopService.Opening(100, 500, java.util.List.of(pack)));
+
+        controller.buy(player("alice"), new WalletController.PurchaseRequest("E2", "box"));
+        controller.buy(player("alice"), new WalletController.PurchaseRequest("ST1", "structure"));
+
+        verify(progression).record("alice", ProgressionRules.PACK_OPENED, 3);
+        verify(progression, never()).record("alice", ProgressionRules.PACK_OPENED, 1);
     }
 
     @Test

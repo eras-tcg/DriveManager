@@ -9,10 +9,23 @@ import java.util.Map;
 
 /**
  * What an action in an online game counts for the players' missions: the summons and the damage to lives recorded
- * on the game's timeline since the action began, and, when the game just ended, one game played for each player and
- * one won for the winner. A test room (solo mode) counts nothing. Pure.
+ * on the game's timeline since the action began (not what was done by hand from the board), and, when a game that was
+ * really played just ended, one game played for each player and one won for the winner. A test room (solo mode)
+ * counts nothing. Pure.
  */
 public final class MissionEvents {
+
+    /**
+     * Turns that must have been passed for an ended game to count (each pass records a TURN_START): both players had
+     * a turn and the first one started another. Ending a game right away (conceding in the pre-room or on the first
+     * turn) is not a game played, so it cannot be farmed for gems.
+     */
+    static final int MIN_TURNS_PASSED = 2;
+    /**
+     * Events the engine keeps on the timeline (EffectEngine.TIMELINE_LIMIT): a timeline this long has lost its oldest
+     * events, TURN_START included, and was plainly a real game.
+     */
+    static final int FULL_TIMELINE = 2000;
 
     private MissionEvents() {
     }
@@ -26,7 +39,7 @@ public final class MissionEvents {
         List<Progress> out = new ArrayList<>();
         if (room.isEditor()) return out;
         for (GameEvent e : room.getTimeline()) {
-            if (e.getSeq() <= seqBefore || e.getPlayerId() == null) continue;
+            if (e.getSeq() <= seqBefore || e.getPlayerId() == null || manual(e)) continue;
             switch (e.getType()) {
                 case GameEvent.NORMAL_SUMMON -> out.add(new Progress(e.getPlayerId(), MissionRules.SUMMON, 1));
                 case GameEvent.EFFECT_SUMMON -> {
@@ -42,12 +55,25 @@ public final class MissionEvents {
                 }
             }
         }
-        boolean ended = statusBefore != GameRoom.RoomStatus.POST_GAME && room.getStatus() == GameRoom.RoomStatus.POST_GAME;
-        if (ended) {
+        // Only a game that was in progress when the action began, and lasted, counts as played
+        boolean ended = statusBefore == GameRoom.RoomStatus.IN_PROGRESS && room.getStatus() == GameRoom.RoomStatus.POST_GAME;
+        if (ended && played(room)) {
             room.getPlayers().keySet().forEach(id -> out.add(new Progress(id, MissionRules.GAME_PLAYED, 1)));
             if (room.getWinnerId() != null) out.add(new Progress(room.getWinnerId(), MissionRules.GAME_WON, 1));
         }
         return out;
+    }
+
+    /** The game lasted long enough to count: the turn was passed MIN_TURNS_PASSED times. */
+    static boolean played(GameRoom room) {
+        if (room.getTimeline().size() >= FULL_TIMELINE) return true;
+        long passes = room.getTimeline().stream().filter(e -> GameEvent.TURN_START.equals(e.getType())).count();
+        return passes >= MIN_TURNS_PASSED;
+    }
+
+    /** An event done by hand from the board (outside the engine's checks): it counts for nothing. */
+    private static boolean manual(GameEvent e) {
+        return e.getData() != null && Boolean.TRUE.equals(e.getData().get(GameEvent.MANUAL));
     }
 
     /** Damage to a player's lives counts for the rival (damage a player deals themself counts for nobody). */

@@ -69,6 +69,16 @@ public class ShopService {
         return new Opening(purchase.gems(), purchase.price(), packs);
     }
 
+    /** A structure deck given as a reward: nothing charged, added to the collection like a purchase. */
+    public Opening giftStructure(String userId, String editionId) {
+        List<String> structureCards = editionId == null ? List.of() : pool.structureCards(editionId);
+        if (structureCards.isEmpty()) throw new WalletService.PurchaseException("Ese structure deck todavía no tiene cartas");
+        WalletService.Purchase gift = wallets.gift(userId, editionId);
+        List<OpenedCard> cards = structureCards.stream().map(id -> new OpenedCard(id, "plain")).toList();
+        collections.add(userId, cards.stream().map(c -> new CollectionService.Pull(c.id(), c.finish())).toList());
+        return new Opening(gift.gems(), 0, List.of(new OpenedPack("Structure", null, cards)));
+    }
+
     private List<OpenedPack> draw(EditionMetadata edition, String product, Map<String, List<String>> cards) {
         List<BoosterRules.OpenedPack> drawn;
         if ("box".equals(product)) {

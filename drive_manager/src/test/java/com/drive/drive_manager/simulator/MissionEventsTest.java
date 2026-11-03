@@ -69,15 +69,49 @@ class MissionEventsTest {
 
     @Test
     void anEndedGameCountsForBothAndItsWinner() {
+        event(1, GameEvent.TURN_START, "bob", null);
+        event(2, GameEvent.TURN_START, "alice", null);
         room.setStatus(GameRoom.RoomStatus.POST_GAME);
         room.setWinnerId("bob");
 
-        assertThat(MissionEvents.of(room, GameRoom.RoomStatus.IN_PROGRESS, 0)).containsExactly(
+        assertThat(MissionEvents.of(room, GameRoom.RoomStatus.IN_PROGRESS, 2)).containsExactly(
                 new MissionEvents.Progress("alice", MissionRules.GAME_PLAYED, 1),
                 new MissionEvents.Progress("bob", MissionRules.GAME_PLAYED, 1),
                 new MissionEvents.Progress("bob", MissionRules.GAME_WON, 1));
         // Already in the post-game: nothing new
         assertThat(MissionEvents.of(room, GameRoom.RoomStatus.POST_GAME, 0)).isEmpty();
+    }
+
+    @Test
+    void aGameEndedBeforeTheTurnPassedTwiceCountsForNobody() {
+        // Conceded on the second turn
+        event(1, GameEvent.TURN_START, "bob", null);
+        room.setStatus(GameRoom.RoomStatus.POST_GAME);
+        room.setWinnerId("bob");
+
+        assertThat(MissionEvents.of(room, GameRoom.RoomStatus.IN_PROGRESS, 1)).isEmpty();
+    }
+
+    @Test
+    void aGameThatNeverStartedCountsForNobody() {
+        // From the pre-room (or the starter choice, the mulligan) straight to the post-game
+        event(1, GameEvent.TURN_START, "bob", null);
+        event(2, GameEvent.TURN_START, "alice", null);
+        room.setStatus(GameRoom.RoomStatus.POST_GAME);
+        room.setWinnerId("bob");
+
+        assertThat(MissionEvents.of(room, GameRoom.RoomStatus.WAITING, 2)).isEmpty();
+        assertThat(MissionEvents.of(room, GameRoom.RoomStatus.MULLIGAN, 2)).isEmpty();
+    }
+
+    @Test
+    void aSpecialSummonDoneByHandCountsForNothing() {
+        event(1, GameEvent.SPECIAL_SUMMON, "alice", Map.of("summonType", "ritual", GameEvent.MANUAL, true));
+        event(2, GameEvent.SPECIAL_SUMMON, "alice", Map.of("summonType", "ritual", "cost", 2));
+
+        assertThat(MissionEvents.of(room, GameRoom.RoomStatus.IN_PROGRESS, 0)).containsExactly(
+                new MissionEvents.Progress("alice", MissionRules.SUMMON, 1),
+                new MissionEvents.Progress("alice", MissionRules.SPECIAL_SUMMON, 1));
     }
 
     @Test

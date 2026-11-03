@@ -84,15 +84,19 @@ public class CollectionService {
         String copies = field(cardId, finish);
         Document after = mongo.findAndModify(
                 Query.query(Criteria.where("_id").is(userId).and(copies).gte(count)),
-                new Update().inc(copies, -count).inc("fragments." + rarity, count * CollectionRules.fragmentsOf(finish)),
+                new Update().inc(copies, -count).inc("fragments." + rarity, fragmentsOf(count, finish)),
                 FindAndModifyOptions.options().returnNew(true), Document.class, COLLECTION);
         if (after == null) throw new CollectionException("No tienes esas copias");
         return view(after);
     }
 
-    /** Crafts `count` copies of a card, CRAFT_COST fragments of its rarity each; each one's finish comes at random. */
+    /**
+     * Crafts `count` copies of a card (up to MAX_CRAFTS), CRAFT_COST fragments of its rarity each; each one's finish
+     * comes at random.
+     */
     public Crafted craft(String userId, String cardId, int count) {
         if (count < 1) throw new CollectionException("Nada que fabricar");
+        if (count > CollectionRules.MAX_CRAFTS) throw tooMany();
         List<String> finishes = new ArrayList<>();
         for (int i = 0; i < count; i++) finishes.add(CollectionRules.rollFinish(random));
         return spend(userId, cardId, finishes);
@@ -113,8 +117,8 @@ public class CollectionService {
     }
 
     /**
-     * Crafts several cards at once (card id → copies), each CRAFT_COST fragments of its rarity: all of them or none,
-     * in one atomic update (as a deck's missing cards).
+     * Crafts several cards at once (card id → copies, up to MAX_CRAFTS in all), each CRAFT_COST fragments of its
+     * rarity: all of them or none, in one atomic update (as a deck's missing cards).
      */
     public Crafted craftMany(String userId, Map<String, Integer> cards) {
         Map<String, Integer> wanted = new LinkedHashMap<>();
@@ -122,6 +126,9 @@ public class CollectionService {
             if (n != null && n > 0) wanted.put(id, n);
         });
         if (wanted.isEmpty()) throw new CollectionException("Nada que fabricar");
+        // Summed as longs: the copies asked for can add up past an int
+        long total = wanted.values().stream().mapToLong(Integer::longValue).sum();
+        if (total > CollectionRules.MAX_CRAFTS) throw tooMany();
         wanted.keySet().forEach(id -> field(id, "plain"));
         Map<String, String> rarities = pool.raritiesOf(wanted.keySet());
         Map<String, Integer> cost = new LinkedHashMap<>();
@@ -130,7 +137,7 @@ public class CollectionService {
         for (Map.Entry<String, Integer> e : wanted.entrySet()) {
             String rarity = rarities.get(e.getKey());
             if (rarity == null) throw new CollectionException("Esa carta no se puede fabricar ni romper");
-            cost.merge(rarity, e.getValue() * CollectionRules.CRAFT_COST, Integer::sum);
+            cost.merge(rarity, CollectionRules.craftCost(e.getValue()), Math::addExact);
             for (int i = 0; i < e.getValue(); i++) {
                 String finish = CollectionRules.rollFinish(random);
                 finishes.add(finish);
@@ -166,7 +173,7 @@ public class CollectionService {
                 String copies = field(cardId, finish);
                 enough.add(Criteria.where(copies).gte(extra));
                 update.inc(copies, -extra);
-                gained.merge("fragments." + rarity, extra * CollectionRules.fragmentsOf(finish), Integer::sum);
+                gained.merge("fragments." + rarity, fragmentsOf(extra, finish), CollectionService::addFragments);
             });
         });
         if (enough.isEmpty()) throw new CollectionException("No tienes copias sobrantes");
@@ -203,7 +210,9 @@ public class CollectionService {
 
     private Crafted spend(String userId, String cardId, List<String> finishes) {
         String rarity = rarity(cardId);
-        int cost = finishes.size() * CollectionRules.CRAFT_COST;
+        // Never more than MAX_CRAFTS copies here, and craftCost cannot overflow: a negative cost would pass the guard
+        // and add fragments instead of taking them
+        int cost = CollectionRules.craftCost(finishes.size());
         Update update = new Update().inc("fragments." + rarity, -cost);
         Map<String, Integer> counts = new LinkedHashMap<>();
         for (String finish : finishes) counts.merge(field(cardId, finish), 1, Integer::sum);
@@ -213,6 +222,27 @@ public class CollectionService {
                 FindAndModifyOptions.options().returnNew(true), Document.class, COLLECTION);
         if (after == null) throw new CollectionException("No te alcanzan los fragmentos");
         return new Crafted(finishes, view(after));
+    }
+
+    private static CollectionException tooMany() {
+        return new CollectionException("Puedes fabricar hasta " + CollectionRules.MAX_CRAFTS + " copias de una vez");
+    }
+
+    /** Fragments `copies` broken copies of a finish give, refused rather than overflowing. */
+    private static int fragmentsOf(int copies, String finish) {
+        try {
+            return Math.multiplyExact(copies, CollectionRules.fragmentsOf(finish));
+        } catch (ArithmeticException e) {
+            throw new CollectionException("Demasiadas copias de una vez");
+        }
+    }
+
+    private static int addFragments(int a, int b) {
+        try {
+            return Math.addExact(a, b);
+        } catch (ArithmeticException e) {
+            throw new CollectionException("Demasiadas copias de una vez");
+        }
     }
 
     private String rarity(String cardId) {

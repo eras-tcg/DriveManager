@@ -1,5 +1,7 @@
 package com.drive.drive_manager.controller;
 
+import com.drive.drive_manager.service.ProgressionRules;
+import com.drive.drive_manager.service.ProgressionService;
 import com.drive.drive_manager.service.ShopService;
 import com.drive.drive_manager.service.WalletRules;
 import com.drive.drive_manager.service.WalletService;
@@ -24,10 +26,12 @@ public class WalletController {
 
     private final WalletService wallets;
     private final ShopService shop;
+    private final ProgressionService progression;
 
-    public WalletController(WalletService wallets, ShopService shop) {
+    public WalletController(WalletService wallets, ShopService shop, ProgressionService progression) {
         this.wallets = wallets;
         this.shop = shop;
+        this.progression = progression;
     }
 
     /**
@@ -53,6 +57,8 @@ public class WalletController {
         if (auth == null || !auth.isAuthenticated()) return ResponseEntity.status(401).build();
         try {
             ShopService.Opening opening = shop.buy(auth.getName(), request.editionId(), request.product());
+            // The packs opened (a box's every pack; a structure deck is no pack) count for the progression missions
+            if (!"structure".equals(request.product())) progression.record(auth.getName(), ProgressionRules.PACK_OPENED, opening.packs().size());
             return ResponseEntity.ok(Map.of("gems", opening.gems(), "price", opening.price(), "packs", opening.packs()));
         } catch (WalletService.PurchaseException e) {
             return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));

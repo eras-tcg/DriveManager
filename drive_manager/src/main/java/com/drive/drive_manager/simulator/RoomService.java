@@ -44,6 +44,10 @@ public class RoomService {
     @Autowired(required = false)
     private com.drive.drive_manager.service.MissionService missions;
 
+    /** And for their lifetime progression missions (the same counts, never reset). */
+    @Autowired(required = false)
+    private com.drive.drive_manager.service.ProgressionService progression;
+
     /** Whose cards a deck needs: a player plays only decks whose every copy they own. */
     @Autowired(required = false)
     private com.drive.drive_manager.service.CollectionService collections;
@@ -321,9 +325,12 @@ public class RoomService {
 
     /** The summons, damage and finished game an action brought, for the players' missions (never stops the game). */
     private void countForMissions(GameRoom room, GameRoom.RoomStatus statusBefore, long seqBefore) {
-        if (missions == null) return;
+        if (missions == null && progression == null) return;
         try {
-            for (MissionEvents.Progress p : MissionEvents.of(room, statusBefore, seqBefore)) missions.record(p.userId(), p.counts(), p.amount());
+            for (MissionEvents.Progress p : MissionEvents.of(room, statusBefore, seqBefore)) {
+                if (missions != null) missions.record(p.userId(), p.counts(), p.amount());
+                if (progression != null) progression.record(p.userId(), p.counts(), p.amount());
+            }
         } catch (RuntimeException e) {
             // Missions are a bonus: a failure there must not break the room
         }
