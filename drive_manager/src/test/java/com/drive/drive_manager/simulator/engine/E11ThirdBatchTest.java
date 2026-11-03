@@ -130,18 +130,18 @@ class E11ThirdBatchTest {
     void he110IsNotATargetForOpponentCardsOfLevel4OrLess() {
         CardSlot he = onField(host, card("he", "HE 110", 5, 4, "B"));
         EffectEngine.refreshContinuous(room);
-        assertThat(Steps.enemyTargets(room, guestEffect(4), CardFilter.creatures())).doesNotContain(he);
-        assertThat(Steps.enemyTargets(room, guestEffect(5), CardFilter.creatures())).contains(he);
+        assertThat(StepHelpers.enemyTargets(room, guestEffect(4), CardFilter.creatures())).doesNotContain(he);
+        assertThat(StepHelpers.enemyTargets(room, guestEffect(5), CardFilter.creatures())).contains(he);
     }
 
     @Test
     void escudoJuradoIsNotATargetWhileYouControlALevel4Ally() {
         CardSlot escudo = onField(host, card("ej", "Escudo Jurado", 2, 2, "R"));
         EffectEngine.refreshContinuous(room);
-        assertThat(Steps.enemyTargets(room, guestEffect(5), CardFilter.creatures())).contains(escudo);
+        assertThat(StepHelpers.enemyTargets(room, guestEffect(5), CardFilter.creatures())).contains(escudo);
         onField(host, card("big", "Grande", 5, 4, "R"), BACK);
         EffectEngine.refreshContinuous(room);
-        assertThat(Steps.enemyTargets(room, guestEffect(5), CardFilter.creatures())).doesNotContain(escudo);
+        assertThat(StepHelpers.enemyTargets(room, guestEffect(5), CardFilter.creatures())).doesNotContain(escudo);
     }
 
     @Test
@@ -180,6 +180,19 @@ class E11ThirdBatchTest {
         host.getField().remove(lect);
         EffectEngine.refreshContinuous(room);
         assertThat(EffectEngine.keywords(weak)).doesNotContain(EffectEngine.NO_ATTACK);
+    }
+
+    @Test
+    void lectranatusInTheRetaguardiaDoesNotStopEnemiesFromAttacking() {
+        CardSlot weak = onField(guest, card("w", "Débil", 1, 1, "R"));
+        weak.setStrength(2);
+        CardSlot lect = onField(host, withClasses(card("lc", "Lectranatus", 6, 4, "G"), "dragón"), BACK);
+        EffectEngine.refreshContinuous(room);
+        assertThat(EffectEngine.keywords(weak)).doesNotContain(EffectEngine.NO_ATTACK);
+        // In the Línea frontal it does
+        lect.setY(FRONT);
+        EffectEngine.refreshContinuous(room);
+        assertThat(EffectEngine.keywords(weak)).contains(EffectEngine.NO_ATTACK);
     }
 
     @Test
@@ -230,7 +243,7 @@ class E11ThirdBatchTest {
     private void summonToFront(CardSlot card) {
         CardEffects.register("invocador frontal", new EffectScript("invocador-frontal:en-invocacion", EffectScript.Moment.ON_SUMMON, true,
                 "En Invocación", "Invoca 1 criatura de tu mano en tu línea frontal sin pagar su coste.",
-                List.of(new EffectStep.SummonFromZone("hand", CardFilter.creatures().named(card.getCardName()), EffectStep.SummonFromZone.FREE, true))));
+                List.of(Compose.summonFromZone("hand", CardFilter.creatures().named(card.getCardName()), Compose.FREE, true))));
         host.getHand().addAll(List.of(card, card("iv", "Invocador Frontal", 0, 1, "R")));
         assertThat(Summons.normalSummon(room, "host", "iv", 50.0, 75.0)).isNull();
         answer(room.getPrompt(), card.getInstanceId());

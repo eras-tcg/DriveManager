@@ -1,0 +1,134 @@
+{
+  "name" : "falco el buscador de tesoros",
+  "effects" : [ {
+    "id" : "falco:en-invocacion",
+    "moment" : "ON_SUMMON",
+    "mandatory" : true,
+    "label" : "En Invocación",
+    "text" : "(1) Puedes tributar 1 material de esta carta para jugar 1 estructura Azul de tu mano. Luego, si no controlas otros aliados: puedes tributar 1 [artefacto] de los materiales de esta carta para colocar 1 [cineriano] nivel 1 de los materiales de esta carta en tu línea frontal.",
+    "steps" : [ {
+      "type" : "MayDo",
+      "question" : "¿Tributas 1 material de Falco para jugar 1 estructura Azul de tu mano?",
+      "covers" : 2
+    }, {
+      "type" : "Do",
+      "action" : {
+        "type" : "Move",
+        "cards" : {
+          "zones" : "materials",
+          "owner" : "YOU",
+          "filter" : { },
+          "min" : {
+            "type" : "Fixed",
+            "value" : 1
+          },
+          "max" : {
+            "type" : "Fixed",
+            "value" : 1
+          },
+          "self" : "ANY",
+          "mode" : "CHOOSE"
+        },
+        "to" : "tributeZone"
+      }
+    }, {
+      "type" : "Do",
+      "action" : {
+        "type" : "Play",
+        "cards" : {
+          "zones" : "hand",
+          "owner" : "YOU",
+          "filter" : {
+            "colors" : [ "B" ],
+            "cardTypes" : [ "structure" ]
+          },
+          "min" : {
+            "type" : "Fixed",
+            "value" : 1
+          },
+          "max" : {
+            "type" : "Fixed",
+            "value" : 1
+          },
+          "self" : "ANY",
+          "mode" : "CHOOSE"
+        },
+        "reduce" : {
+          "type" : "Fixed"
+        },
+        "required" : true
+      }
+    }, {
+      "type" : "IfCondition",
+      "condition" : {
+        "type" : "Compare",
+        "left" : {
+          "type" : "OnField",
+          "filter" : {
+            "cardType" : "creature"
+          }
+        },
+        "op" : "AT_MOST",
+        "right" : {
+          "type" : "Fixed",
+          "value" : 1
+        }
+      },
+      "covers" : 3
+    }, {
+      "type" : "MayDo",
+      "question" : "¿Tributas 1 [artefacto] de sus materiales para colocar 1 [cineriano] nivel 1 de sus materiales en tu línea frontal?",
+      "covers" : 2
+    }, {
+      "type" : "Do",
+      "action" : {
+        "type" : "Move",
+        "cards" : {
+          "zones" : "materials",
+          "owner" : "YOU",
+          "filter" : {
+            "classes" : [ "artefacto" ]
+          },
+          "min" : {
+            "type" : "Fixed",
+            "value" : 1
+          },
+          "max" : {
+            "type" : "Fixed",
+            "value" : 1
+          },
+          "self" : "ANY",
+          "mode" : "CHOOSE"
+        },
+        "to" : "tributeZone"
+      }
+    }, {
+      "type" : "Do",
+      "action" : {
+        "type" : "Move",
+        "cards" : {
+          "zones" : "materials",
+          "owner" : "YOU",
+          "filter" : {
+            "classes" : [ "cineriano" ],
+            "cardType" : "creature",
+            "level" : 1
+          },
+          "min" : {
+            "type" : "Fixed",
+            "value" : 1
+          },
+          "max" : {
+            "type" : "Fixed",
+            "value" : 1
+          },
+          "self" : "ANY",
+          "mode" : "CHOOSE"
+        },
+        "to" : "frontLine"
+      }
+    } ],
+    "sourceZone" : "field",
+    "limit" : "ONCE_PER_TURN_BETWEEN_COPIES"
+  } ]
+}

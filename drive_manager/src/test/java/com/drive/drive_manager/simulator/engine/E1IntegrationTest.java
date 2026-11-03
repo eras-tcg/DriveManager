@@ -150,8 +150,8 @@ class E1IntegrationTest {
         host.getHand().add(evolved);
 
         // 1 gem and a cost of 2: the structure pays the other one
-        assertThat(Summons.canSpecial(room, "host", evolved)).isTrue();
-        assertThat(Summons.specialByPlayer(room, "host", "evo", "base")).isNull();
+        assertThat(SpecialRequirements.canSpecial(room, "host", evolved)).isTrue();
+        assertThat(SpecialSummons.specialByPlayer(room, "host", "evo", "base")).isNull();
         // "puedes agotar esta carta": it is asked
         Prompt ask = room.getPrompt();
         assertThat(ask.getPurpose()).isEqualTo("COST_TAP");
@@ -174,7 +174,7 @@ class E1IntegrationTest {
         evolved.setSpecialCost(2);
         evolved.setRequirement("criatura nivel 1.");
         host.getHand().add(evolved);
-        assertThat(Summons.specialByPlayer(room, "host", "evo", "base")).isNull();
+        assertThat(SpecialSummons.specialByPlayer(room, "host", "evo", "base")).isNull();
         assertThat(Answers.answer(room, "host", room.getPrompt().getId(), List.of(), List.of())).isNull();
         assertThat(host.getField()).contains(evolved);
         assertThat(bosque.isTapped()).isFalse();

@@ -1,0 +1,20 @@
+{
+  "name" : "imperial de la llama eterna",
+  "effects" : [ {
+    "id" : "imperial-llama-eterna:al-atacar",
+    "moment" : "ON_ATTACK",
+    "label" : "Al Atacar",
+    "text" : "Tantas veces como quieras: envía 10 tributos Rojos o [retador] al fondo de tu mazo; esta carta gana Letalidad 1 hasta el final del ataque.",
+    "steps" : [ {
+      "type" : "TributesToDeckBottomForKeyword",
+      "count" : 10,
+      "filter" : {
+        "colors" : [ "R" ],
+        "classes" : [ "retador" ]
+      },
+      "keyword" : "Letalidad"
+    } ],
+    "sourceZone" : "field",
+    "limit" : "NONE"
+  } ]
+}

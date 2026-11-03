@@ -1,0 +1,103 @@
+{
+  "name" : "recolector de biomateria",
+  "effects" : [ {
+    "id" : "recolector-biomateria:en-invocacion",
+    "moment" : "ON_SUMMON",
+    "label" : "En Invocación",
+    "text" : "Puedes tomar hasta 1 criatura Azul o [necrómata] de tu descarte.",
+    "steps" : [ {
+      "type" : "Do",
+      "action" : {
+        "type" : "Move",
+        "cards" : {
+          "zones" : "discardPile",
+          "owner" : "YOU",
+          "filter" : {
+            "colors" : [ "B" ],
+            "classes" : [ "necrómata" ],
+            "cardType" : "creature"
+          },
+          "min" : {
+            "type" : "Fixed"
+          },
+          "max" : {
+            "type" : "Fixed",
+            "value" : 1
+          },
+          "self" : "ANY",
+          "mode" : "CHOOSE"
+        },
+        "to" : "hand",
+        "required" : true
+      }
+    } ],
+    "sourceZone" : "field",
+    "limit" : "NONE"
+  }, {
+    "id" : "recolector-biomateria:en-destruccion",
+    "moment" : "ON_DESTROY",
+    "label" : "En Destrucción",
+    "text" : "Si esta carta tenía al menos 1 material: puedes descartar 1 carta de tu mano; invoca 1 [necrómata] nivel 2 de tu descarte que no sea una copia de esta carta, sin pagar su coste.",
+    "cost" : [ {
+      "type" : "Do",
+      "action" : {
+        "type" : "Move",
+        "cards" : {
+          "zones" : "hand",
+          "owner" : "YOU",
+          "filter" : { },
+          "min" : {
+            "type" : "Fixed",
+            "value" : 1
+          },
+          "max" : {
+            "type" : "Fixed",
+            "value" : 1
+          },
+          "self" : "EXCLUDE",
+          "mode" : "CHOOSE"
+        },
+        "to" : "discardPile"
+      }
+    } ],
+    "steps" : [ {
+      "type" : "Do",
+      "action" : {
+        "type" : "Summon",
+        "cards" : {
+          "zones" : "discardPile",
+          "owner" : "YOU",
+          "filter" : {
+            "classes" : [ "necrómata" ],
+            "cardType" : "creature",
+            "level" : 2,
+            "notName" : "Recolector De Biomateria"
+          },
+          "min" : {
+            "type" : "Fixed",
+            "value" : 1
+          },
+          "max" : {
+            "type" : "Fixed",
+            "value" : 1
+          },
+          "self" : "ANY",
+          "mode" : "CHOOSE"
+        },
+        "reduce" : {
+          "type" : "Fixed",
+          "value" : 1000
+        },
+        "required" : true
+      }
+    } ],
+    "condition" : {
+      "type" : "Happened",
+      "actor" : "ANY",
+      "owner" : "ANY",
+      "data" : [ "hadMaterials=true" ]
+    },
+    "sourceZone" : "field",
+    "limit" : "NONE"
+  } ]
+}

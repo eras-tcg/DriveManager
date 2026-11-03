@@ -1,0 +1,153 @@
+{
+  "name" : "apostol de la ruina",
+  "effects" : [
+    {
+      "id" : "apostol-de-la-ruina:en-invocacion",
+      "moment" : "ON_SUMMON",
+      "mandatory" : true,
+      "label" : "En Invocación especial",
+      "text" : "Elige 1 enemigo de nivel igual o menor a la cantidad de aliados utilizados para invocar esta carta; destrúyelo.",
+      "cost" : [
+        {
+          "type" : "Do",
+          "action" : {
+            "type" : "Select",
+            "selector" : {
+              "zones" : "frontLine",
+              "owner" : "OPPONENT",
+              "filter" : {
+                "cardType" : "creature"
+              },
+              "min" : {
+                "type" : "Fixed",
+                "value" : 1
+              },
+              "max" : {
+                "type" : "Fixed",
+                "value" : 1
+              },
+              "self" : "ANY",
+              "mode" : "CHOOSE",
+              "relative" : {
+                "maxLevel" : {
+                  "type" : "UsedToSummon"
+                }
+              }
+            },
+            "target" : true
+          }
+        }
+      ],
+      "steps" : [
+        {
+          "type" : "Do",
+          "action" : {
+            "type" : "Destroy",
+            "cards" : {
+              "zones" : "saved:targets",
+              "owner" : "YOU",
+              "filter" : {},
+              "min" : {
+                "type" : "Fixed"
+              },
+              "max" : {
+                "type" : "Fixed",
+                "value" : 2147483647
+              },
+              "self" : "ANY",
+              "mode" : "ALL"
+            }
+          }
+        }
+      ],
+      "condition" : {
+        "type" : "Summoned",
+        "side" : "ANY",
+        "how" : "special"
+      },
+      "sourceZone" : "field",
+      "limit" : "NONE"
+    },
+    {
+      "id" : "apostol-de-la-ruina:final-del-turno",
+      "moment" : "ON_EVENT",
+      "label" : "Todos Los Turnos",
+      "text" : "Al final del turno, si tienes 20 o más tributos Violeta o [espectro]: puedes enviar 10 al fondo de tu mazo; esta carta inflige daño directo.",
+      "cost" : [
+        {
+          "type" : "Do",
+          "action" : {
+            "type" : "Move",
+            "cards" : {
+              "zones" : "tributeZone",
+              "owner" : "YOU",
+              "filter" : {
+                "colors" : [
+                  "P"
+                ],
+                "classes" : [
+                  "espectro"
+                ]
+              },
+              "min" : {
+                "type" : "Fixed",
+                "value" : 10
+              },
+              "max" : {
+                "type" : "Fixed",
+                "value" : 10
+              },
+              "self" : "ANY",
+              "mode" : "CHOOSE"
+            },
+            "to" : "deckBottom"
+          }
+        }
+      ],
+      "steps" : [
+        {
+          "type" : "Do",
+          "action" : {
+            "type" : "Damage",
+            "amount" : {
+              "type" : "SourceStrength"
+            }
+          }
+        }
+      ],
+      "condition" : {
+        "type" : "All",
+        "all" : [
+          {
+            "type" : "Happened",
+            "eventType" : "TURN_END",
+            "actor" : "ANY",
+            "owner" : "ANY"
+          },
+          {
+            "type" : "Compare",
+            "left" : {
+              "type" : "InZone",
+              "zone" : "tributeZone",
+              "filter" : {
+                "colors" : [
+                  "P"
+                ],
+                "classes" : [
+                  "espectro"
+                ]
+              }
+            },
+            "op" : "AT_LEAST",
+            "right" : {
+              "type" : "Fixed",
+              "value" : 20
+            }
+          }
+        ]
+      },
+      "sourceZone" : "field",
+      "limit" : "NONE"
+    }
+  ]
+}

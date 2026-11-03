@@ -1,0 +1,67 @@
+{
+  "name" : "sarkhydrax",
+  "effects" : [ {
+    "id" : "sarkhydrax:en-invocacion",
+    "moment" : "ON_SUMMON",
+    "mandatory" : true,
+    "label" : "En Invocación",
+    "text" : "Tributa 3 cartas del tope de tu mazo. Luego: añade hasta 1 [hydra] o [dragón] de fuerza 6 o menos de tu mano o tributos como recurso de esta carta.",
+    "steps" : [ {
+      "type" : "Do",
+      "action" : {
+        "type" : "Move",
+        "cards" : {
+          "zones" : "deck",
+          "owner" : "YOU",
+          "filter" : { },
+          "min" : {
+            "type" : "Fixed",
+            "value" : 3
+          },
+          "max" : {
+            "type" : "Fixed",
+            "value" : 3
+          },
+          "self" : "ANY",
+          "mode" : "TOP"
+        },
+        "to" : "tributeZone"
+      }
+    }, {
+      "type" : "Do",
+      "action" : {
+        "type" : "Move",
+        "cards" : {
+          "zones" : "hand,tributeZone",
+          "owner" : "YOU",
+          "filter" : {
+            "classes" : [ "hydra", "dragón" ],
+            "cardType" : "creature",
+            "maxStrength" : 6
+          },
+          "min" : {
+            "type" : "Fixed"
+          },
+          "max" : {
+            "type" : "Fixed",
+            "value" : 1
+          },
+          "self" : "EXCLUDE",
+          "mode" : "CHOOSE"
+        },
+        "to" : "resources:self"
+      }
+    } ],
+    "sourceZone" : "field",
+    "limit" : "NONE"
+  } ],
+  "inheritedReactions" : [ {
+    "type" : "Replacement",
+    "id" : "sarkhydrax:hereda-todos-los-turnos",
+    "label" : "Todos Los Turnos",
+    "text" : "Heredado de Sarkhydrax: cuando esta carta fuera a ser removida, puedes tributar 1 de sus recursos para añadir otro de ellos a tu mano.",
+    "limit" : "NONE",
+    "cost" : "RESOURCE_TRIBUTED_ANOTHER_TO_HAND",
+    "resourceFilter" : { }
+  } ]
+}

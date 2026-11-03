@@ -17,9 +17,11 @@ import java.util.List;
 public class JwtAuthFilter extends OncePerRequestFilter {
 
     private final JwtUtils jwtUtils;
+    private final SessionCheck sessions;
 
-    public JwtAuthFilter(JwtUtils jwtUtils) {
+    public JwtAuthFilter(JwtUtils jwtUtils, SessionCheck sessions) {
         this.jwtUtils = jwtUtils;
+        this.sessions = sessions;
     }
 
     @Override
@@ -31,7 +33,8 @@ public class JwtAuthFilter extends OncePerRequestFilter {
 
         if (header != null && header.startsWith("Bearer ")) {
             String token = header.substring(7);
-            if (jwtUtils.isValid(token)) {
+            // Signed is not enough: an account deleted or whose password or role changed has a newer token_version
+            if (jwtUtils.isValid(token) && sessions.isCurrent(jwtUtils.extractId(token), jwtUtils.extractTokenVersion(token))) {
                 String userId = jwtUtils.extractId(token);
                 List<SimpleGrantedAuthority> authorities = jwtUtils.extractPermissions(token)
                         .stream()

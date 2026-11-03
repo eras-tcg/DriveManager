@@ -14,10 +14,14 @@ import java.util.regex.Pattern;
 
 import static com.drive.drive_manager.simulator.engine.EffectEngine.*;
 import static com.drive.drive_manager.simulator.engine.Summons.*;
+import static com.drive.drive_manager.simulator.engine.SpecialRequirements.*;
+import static com.drive.drive_manager.simulator.engine.SpecialSummons.*;
+import static com.drive.drive_manager.simulator.engine.Rituals.*;
 import static com.drive.drive_manager.simulator.engine.Removals.*;
 import static com.drive.drive_manager.simulator.engine.TurnRules.*;
 import static com.drive.drive_manager.simulator.engine.CombatRules.*;
-import static com.drive.drive_manager.simulator.engine.Steps.*;
+import static com.drive.drive_manager.simulator.engine.Resolution.*;
+import static com.drive.drive_manager.simulator.engine.StepHelpers.*;
 import static com.drive.drive_manager.simulator.engine.Answers.*;
 
 /** Triggers and the chain (rule 11): what an event triggers, the order effects are chained in, the priority to respond, and the slow effects a player activates in the open state. */
@@ -68,11 +72,18 @@ public final class Chain {
         List<GameEvent> events = new ArrayList<>(room.getPendingEvents());
         room.getPendingEvents().clear();
         List<PendingEffect> triggered = new ArrayList<>();
-        Set<String> seen = new HashSet<>();
+        Map<String, Integer> seen = new HashMap<>();
         for (GameEvent event : events) {
+            Map<String, Integer> now = new HashMap<>();
             for (PendingEffect e : triggersOf(room, event)) {
-                // "si …" triggers once per window however many events match (rule 11.7.0.1)
-                if (seen.add(e.getSourceInstanceId() + "|" + e.getScriptId())) triggered.add(e);
+                // "si …" triggers once per window however many events match (rule 11.7.0.1); the same effect given twice
+                // to one card (2 Recursos of the same name) is 2 effects, and both trigger
+                String key = e.getSourceInstanceId() + "|" + e.getScriptId();
+                int n = now.merge(key, 1, Integer::sum);
+                if (n > seen.getOrDefault(key, 0)) {
+                    seen.put(key, n);
+                    triggered.add(e);
+                }
             }
         }
         // Rule 11.7.0.5: mandatory of the active player, mandatory of the opponent, optional of the active
@@ -128,9 +139,9 @@ public final class Chain {
         // "al final del turno: …" set by an effect this turn (AtEndOfTurn): the rest of it, now
         if (GameEvent.TURN_END.equals(event.getType())) {
             for (String mark : new ArrayList<>(room.getUsedThisTurn())) {
-                if (!mark.startsWith(Steps.DELAYED)) continue;
+                if (!mark.startsWith(StepHelpers.DELAYED)) continue;
                 room.getUsedThisTurn().remove(mark);
-                String[] p = mark.substring(Steps.DELAYED.length()).split("\\|", -1);
+                String[] p = mark.substring(StepHelpers.DELAYED.length()).split("\\|", -1);
                 EffectScript script = CardEffects.byId(p[2]).orElse(null);
                 CardSlot source = findAnywhere(room, p[0], p[1]);
                 if (script == null || source == null) continue;
@@ -294,7 +305,9 @@ public final class Chain {
             for (PendingEffect e : group) {
                 if (skip && script(e).moment() != EffectScript.Moment.ON_PLAY) {
                     room.getTriggerQueue().remove(e);
-                    log(room, e.getSourceName() + ": " + e.getLabel() + " no se activa (efectos opcionales apagados)", null);
+                    // As if the player chose not to activate it: the switch is not revealed to anyone
+                    record(room, GameEvent.EFFECT_DECLINED, controller.getUserId(), null, null, null, e, null,
+                            controller.getUsername() + " no activa el efecto " + e.getLabel() + " de " + e.getSourceName());
                     dropped = true;
                 }
             }
@@ -372,15 +385,9 @@ public final class Chain {
      */
     static void offerEffects(GameRoom room, Prompt prompt, List<PendingEffect> group) {
         prompt.setCardLabels(labels(group));
-        prompt.setEffects(group.stream().map(e -> {
-            // An inherited effect: the Recurso that gives it is shown on the card
-            String from = CardEffects.inheritedFrom(e.getScriptId());
-            CardSlot source = from == null ? null : findAnywhere(room, e.getControllerId(), e.getSourceInstanceId());
-            CardSlot resource = source == null ? null
-                    : source.getResources().stream().filter(r -> from.equalsIgnoreCase(r.getCardName())).findFirst().orElse(null);
-            return new Prompt.OfferedEffect(e.getId(), e.getSourceInstanceId(), e.getSourceName(), e.getLabel(), e.getText(),
-                    from == null ? null : resource != null ? resource.getCardName() : from, resource == null ? null : resource.getImageUrl());
-        }).toList());
+        // An inherited effect: the Recurso that gives it is shown on the card
+        prompt.setEffects(group.stream().map(e -> new Prompt.OfferedEffect(e.getId(), e.getSourceInstanceId(), e.getSourceName(), e.getLabel(),
+                e.getText(), e.getInheritedFromName(), e.getInheritedFromImage())).toList());
     }
 
     /** The effect a chaining choice picked: by its own id, or the first one of the card picked. */
@@ -422,6 +429,7 @@ public final class Chain {
             case EffectStep.IfTributed s -> s.covers();
             case EffectStep.IfCondition s -> s.covers();
             case EffectStep.IfChosenGone s -> s.covers();
+            case EffectStep.IfSaved s -> s.covers();
             case EffectStep.MayDo s -> s.covers();
             default -> 0;
         };
@@ -444,7 +452,8 @@ public final class Chain {
                 i += covers;
                 continue;
             }
-            if (steps.get(i) instanceof NeedsTarget && !possible(room, effect, steps.get(i))) return false;
+            boolean needsCards = steps.get(i) instanceof NeedsTarget || (steps.get(i) instanceof EffectStep.Do d && d.action().needsCards());
+            if (needsCards && !possible(room, effect, steps.get(i))) return false;
         }
         return true;
     }
@@ -466,6 +475,12 @@ public final class Chain {
         e.setLabel(script.label());
         e.setText(script.text());
         e.setTriggerSeq(triggerSeq);
+        String from = CardEffects.inheritedFrom(script.id());
+        if (from != null) {
+            CardSlot resource = source.getResources().stream().filter(r -> from.equalsIgnoreCase(r.getCardName())).findFirst().orElse(null);
+            e.setInheritedFromName(resource != null ? resource.getCardName() : from);
+            e.setInheritedFromImage(resource == null ? null : resource.getImageUrl());
+        }
         return e;
     }
 

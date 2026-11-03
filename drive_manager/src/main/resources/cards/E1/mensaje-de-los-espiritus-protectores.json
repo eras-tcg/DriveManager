@@ -1,0 +1,195 @@
+{
+  "name" : "mensaje de los espiritus protectores",
+  "effects" : [ {
+    "id" : "mensaje-espiritus:en-juego",
+    "moment" : "ON_PLAY",
+    "mandatory" : true,
+    "label" : "En Juego",
+    "text" : "(1) Tributa esta carta y hasta 3 recursos [fauna] de un aliado; ese u otro aliado invoca especialmente una criatura de tu mano reduciendo el coste especial en 1 por cada recurso tributado.",
+    "cost" : [ {
+      "type" : "Do",
+      "action" : {
+        "type" : "Move",
+        "cards" : {
+          "zones" : "field",
+          "owner" : "YOU",
+          "filter" : { },
+          "min" : {
+            "type" : "Fixed",
+            "value" : 1
+          },
+          "max" : {
+            "type" : "Fixed",
+            "value" : 1
+          },
+          "self" : "ANY",
+          "mode" : "SELF"
+        },
+        "to" : "tributeZone"
+      }
+    }, {
+      "type" : "TributeAllyResources",
+      "max" : 3,
+      "filter" : {
+        "classes" : [ "fauna" ]
+      }
+    } ],
+    "steps" : [ {
+      "type" : "SubjectIsThisCard"
+    }, {
+      "type" : "Do",
+      "action" : {
+        "type" : "Sequence",
+        "actions" : [ {
+          "type" : "Select",
+          "selector" : {
+            "zones" : "hand",
+            "owner" : "YOU",
+            "filter" : { },
+            "min" : {
+              "type" : "Fixed"
+            },
+            "max" : {
+              "type" : "Fixed",
+              "value" : 1
+            },
+            "self" : "ANY",
+            "mode" : "CHOOSE",
+            "special" : {
+              "rule" : {
+                "kind" : "any",
+                "zone" : "hand",
+                "summoner" : "any",
+                "filter" : {
+                  "cardType" : "creature"
+                },
+                "reduceBy" : {
+                  "type" : "LastCount"
+                }
+              },
+              "stage" : "CARD"
+            }
+          },
+          "saveAs" : "specialCard",
+          "label" : "Invocar"
+        }, {
+          "type" : "Select",
+          "selector" : {
+            "zones" : "hand",
+            "owner" : "YOU",
+            "filter" : { },
+            "min" : {
+              "type" : "Fixed"
+            },
+            "max" : {
+              "type" : "Fixed",
+              "value" : 1
+            },
+            "self" : "ANY",
+            "mode" : "CHOOSE",
+            "special" : {
+              "rule" : {
+                "kind" : "any",
+                "zone" : "hand",
+                "summoner" : "any",
+                "filter" : {
+                  "cardType" : "creature"
+                },
+                "reduceBy" : {
+                  "type" : "LastCount"
+                }
+              },
+              "stage" : "SUMMONER"
+            }
+          },
+          "saveAs" : "specialSummoner",
+          "label" : "Invocador"
+        }, {
+          "type" : "Select",
+          "selector" : {
+            "zones" : "hand",
+            "owner" : "YOU",
+            "filter" : { },
+            "min" : {
+              "type" : "Fixed"
+            },
+            "max" : {
+              "type" : "Fixed",
+              "value" : 1
+            },
+            "self" : "ANY",
+            "mode" : "CHOOSE",
+            "special" : {
+              "rule" : {
+                "kind" : "any",
+                "zone" : "hand",
+                "summoner" : "any",
+                "filter" : {
+                  "cardType" : "creature"
+                },
+                "reduceBy" : {
+                  "type" : "LastCount"
+                }
+              },
+              "stage" : "MATERIAL"
+            }
+          },
+          "saveAs" : "specialMaterials",
+          "label" : "Material"
+        }, {
+          "type" : "SummonSpecial",
+          "rule" : {
+            "kind" : "any",
+            "zone" : "hand",
+            "summoner" : "any",
+            "filter" : {
+              "cardType" : "creature"
+            },
+            "reduceBy" : {
+              "type" : "LastCount"
+            }
+          }
+        } ]
+      }
+    } ],
+    "sourceZone" : "field",
+    "limit" : "ONCE_PER_TURN_BETWEEN_COPIES"
+  }, {
+    "id" : "mensaje-espiritus:en-tributos",
+    "moment" : "ACTIVATED",
+    "label" : "En Tributos",
+    "text" : "Puedes enviar esta carta al fondo de tu mazo; añade 1 criatura Verde de tus tributos como recurso de un aliado de nivel mayor.",
+    "cost" : [ {
+      "type" : "Do",
+      "action" : {
+        "type" : "Move",
+        "cards" : {
+          "zones" : "hand,tributeZone,discardPile,lifeStack,field",
+          "owner" : "YOU",
+          "filter" : { },
+          "min" : {
+            "type" : "Fixed",
+            "value" : 1
+          },
+          "max" : {
+            "type" : "Fixed",
+            "value" : 1
+          },
+          "self" : "ANY",
+          "mode" : "SELF"
+        },
+        "to" : "deckBottom"
+      }
+    } ],
+    "steps" : [ {
+      "type" : "AddResourceToHigherAlly",
+      "zone" : "tributeZone",
+      "filter" : {
+        "colors" : [ "G" ],
+        "cardType" : "creature"
+      }
+    } ],
+    "sourceZone" : "tributeZone",
+    "limit" : "NONE"
+  } ]
+}

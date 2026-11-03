@@ -1,6 +1,8 @@
 package com.drive.drive_manager.controller;
 
 import com.drive.drive_manager.service.AvatarService;
+import com.drive.drive_manager.service.ProgressionRules;
+import com.drive.drive_manager.service.ProgressionService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
@@ -25,9 +27,11 @@ public class AvatarController {
 
     private static final Logger log = LoggerFactory.getLogger(AvatarController.class);
     private final AvatarService avatars;
+    private final ProgressionService progression;
 
-    public AvatarController(AvatarService avatars) {
+    public AvatarController(AvatarService avatars, ProgressionService progression) {
         this.avatars = avatars;
+        this.progression = progression;
     }
 
     @GetMapping("/me")
@@ -42,7 +46,10 @@ public class AvatarController {
             return ResponseEntity.badRequest().body(Map.of("message", "La imagen pesa más de 5 MB"));
         }
         try {
-            return ResponseEntity.ok(body(avatars.put(auth.getName(), image)));
+            String url = avatars.put(auth.getName(), image);
+            // Uploading an icon counts for the "Personaliza tu perfil" step
+            progression.record(auth.getName(), ProgressionRules.AVATAR_SET, 1);
+            return ResponseEntity.ok(body(url));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
         } catch (Exception e) {

@@ -112,13 +112,15 @@ class DestructionTest {
         onField(host, card("sum", "Invocador", 1, 1, "P"), 20.0);
         onField(guest, card("ec", "Carnhaus", 1, 1, "P"), 20.0);
 
-        assertThat(Summons.ritualByPlayer(room, "host", "kro", "sum")).isNull();
+        assertThat(Rituals.ritualByPlayer(room, "host", "kro", "sum")).isNull();
 
-        // It loses its moment: nothing to answer, the enemy stays and the history says why
+        // It loses its moment: nothing to answer, the enemy stays. The history says it as a choice not to activate it,
+        // never that the optional effects are off (that is not revealed)
         assertThat(room.getPrompt()).isNull();
         assertThat(room.isEngineBusy()).isFalse();
         assertThat(guest.getField()).extracting(CardSlot::getInstanceId).contains("ec");
-        assertThat(room.getEventLog()).anyMatch(l -> l.getText().contains("efectos opcionales apagados"));
+        assertThat(room.getEventLog()).anyMatch(l -> l.getText().contains("no activa el efecto"));
+        assertThat(room.getEventLog()).noneMatch(l -> l.getText().contains("opcionales"));
     }
 
     @Test
@@ -134,7 +136,7 @@ class DestructionTest {
         onField(guest, card("lvl2", "Grande", 2, 2, "R"), 20.0);
         onField(guest, card("back", "Atrás", 1, 1, "R"), 80.0);
 
-        assertThat(Summons.ritualByPlayer(room, "host", "kro", "sum")).isNull();
+        assertThat(Rituals.ritualByPlayer(room, "host", "kro", "sum")).isNull();
 
         // Optional: asks first
         Prompt confirm = room.getPrompt();

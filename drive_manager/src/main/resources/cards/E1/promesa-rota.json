@@ -1,0 +1,48 @@
+{
+  "name" : "promesa rota",
+  "effects" : [ {
+    "id" : "promesa-rota:en-juego",
+    "moment" : "ON_PLAY",
+    "mandatory" : true,
+    "label" : "En Juego",
+    "text" : "Efecto Definitivo. Si algún aliado fue destruido por el oponente el turno anterior: puedes invocar 1 criatura de tu mano reduciendo su coste en 1.",
+    "steps" : [ {
+      "type" : "MayDo",
+      "question" : "¿Invocas 1 criatura de tu mano reduciendo su coste en 1?",
+      "covers" : 1
+    }, {
+      "type" : "Do",
+      "action" : {
+        "type" : "Summon",
+        "cards" : {
+          "zones" : "hand",
+          "owner" : "YOU",
+          "filter" : {
+            "cardType" : "creature"
+          },
+          "min" : {
+            "type" : "Fixed",
+            "value" : 1
+          },
+          "max" : {
+            "type" : "Fixed",
+            "value" : 1
+          },
+          "self" : "ANY",
+          "mode" : "CHOOSE"
+        },
+        "reduce" : {
+          "type" : "Fixed",
+          "value" : 1
+        },
+        "required" : true
+      }
+    } ],
+    "condition" : {
+      "type" : "GameIs",
+      "state" : "ALLY_DESTROYED_LAST_TURN"
+    },
+    "sourceZone" : "field",
+    "limit" : "DEFINITIVE"
+  } ]
+}

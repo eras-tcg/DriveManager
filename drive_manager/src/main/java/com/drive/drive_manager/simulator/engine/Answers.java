@@ -14,11 +14,15 @@ import java.util.regex.Pattern;
 
 import static com.drive.drive_manager.simulator.engine.EffectEngine.*;
 import static com.drive.drive_manager.simulator.engine.Summons.*;
+import static com.drive.drive_manager.simulator.engine.SpecialRequirements.*;
+import static com.drive.drive_manager.simulator.engine.SpecialSummons.*;
+import static com.drive.drive_manager.simulator.engine.Rituals.*;
 import static com.drive.drive_manager.simulator.engine.Removals.*;
 import static com.drive.drive_manager.simulator.engine.TurnRules.*;
 import static com.drive.drive_manager.simulator.engine.CombatRules.*;
 import static com.drive.drive_manager.simulator.engine.Chain.*;
-import static com.drive.drive_manager.simulator.engine.Steps.*;
+import static com.drive.drive_manager.simulator.engine.Resolution.*;
+import static com.drive.drive_manager.simulator.engine.StepHelpers.*;
 
 /**
  * The players' answers to the engine's choices: the rules' own (Ritual, move up, Reforzar, chaining, responding) here; an
@@ -349,6 +353,10 @@ public final class Answers {
             boolean selfDamage = use != null && use.modifier().payment().kind() == CostModifiers.PaymentKind.SELF_DAMAGE;
             if (!picks.isEmpty() && (selfDamage ? picks.size() > count : picks.size() != count)) return "Elige " + count + " cartas, o ninguna";
             int reduce = picks.isEmpty() || use == null ? 0 : use.modifier().reduceNow(room, userId) * (selfDamage ? picks.size() : 1);
+            // Without it, the others still apply on their own
+            if (!canPay(room, userId, card.getSpecialCost() - reduce - CostModifiers.available(room, player, CostModifiers.Event.SPECIAL_SUMMON, req.kind(), card, summoner)
+                    + (use == null ? 0 : use.modifier().reduceNow(room, userId))))
+                return "Sin la reducción no tienes gemas suficientes: elige " + count + " cartas";
             // The materials chosen before this payment (Biok)
             String kept = room.getUsedThisTurn().stream().filter(k -> k.startsWith(DISCOUNT_MATERIALS + card.getInstanceId() + "|")).findFirst().orElse(null);
             List<CardSlot> keptMaterials = new ArrayList<>();
@@ -361,10 +369,6 @@ public final class Answers {
                 }
             }
             if (!picks.isEmpty() && use != null) CostModifiers.markUsed(room, player, use);
-            // Without it, the others still apply on their own
-            if (!canPay(room, userId, card.getSpecialCost() - reduce - CostModifiers.available(room, player, CostModifiers.Event.SPECIAL_SUMMON, req.kind(), card, summoner)
-                    + (use == null ? 0 : use.modifier().reduceNow(room, userId))))
-                return "Sin la reducción no tienes gemas suficientes: elige " + count + " cartas";
             room.setPrompt(null);
             List<CardSlot> paid = new ArrayList<>();
             boolean asResource = use != null && use.modifier().payment().kind() == CostModifiers.PaymentKind.TRIBUTE_AS_RESOURCE;

@@ -1,0 +1,30 @@
+{
+  "name" : "explorador temerario",
+  "reactions" : [ {
+    "type" : "CostModifier",
+    "label" : "Turno Aliado",
+    "event" : "SPECIAL_SUMMON",
+    "kinds" : [ "promotion" ],
+    "holder" : "SUMMONER",
+    "allyTurn" : true,
+    "condition" : {
+      "type" : "Compare",
+      "left" : {
+        "type" : "OnField",
+        "filter" : {
+          "cardType" : "creature"
+        }
+      },
+      "op" : "AT_LEAST",
+      "right" : {
+        "type" : "Fixed",
+        "value" : 3
+      }
+    },
+    "payment" : {
+      "kind" : "NONE"
+    },
+    "reduce" : 1,
+    "limit" : "ONCE_PER_TURN_BETWEEN_COPIES"
+  } ]
+}

@@ -1,0 +1,16 @@
+{
+  "name" : "gémini",
+  "reactions" : [ {
+    "type" : "Replacement",
+    "id" : "gemini:todos-los-turnos",
+    "label" : "Todos Los Turnos",
+    "text" : "Cuando esta carta fuera a ser destruida: puedes colocar hasta 2 criaturas nivel 1 de los materiales de esta carta en tu retaguardia.",
+    "destroyOnly" : true,
+    "limit" : "NONE",
+    "cost" : "MATERIALS_TO_BACK",
+    "resourceFilter" : {
+      "cardType" : "creature",
+      "level" : 1
+    }
+  } ]
+}

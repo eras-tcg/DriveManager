@@ -1,0 +1,73 @@
+{
+  "name" : "deriduragon",
+  "effects" : [ {
+    "id" : "deriduragon:en-invocacion",
+    "moment" : "ON_SUMMON",
+    "mandatory" : true,
+    "label" : "En Invocación",
+    "text" : "Tributa 3 cartas del tope de tu mazo. Luego: puedes añadir 1 criatura de fuerza 5 o menor de tu mano o tributos como recurso de esta carta.",
+    "steps" : [ {
+      "type" : "Do",
+      "action" : {
+        "type" : "Move",
+        "cards" : {
+          "zones" : "deck",
+          "owner" : "YOU",
+          "filter" : { },
+          "min" : {
+            "type" : "Fixed",
+            "value" : 3
+          },
+          "max" : {
+            "type" : "Fixed",
+            "value" : 3
+          },
+          "self" : "ANY",
+          "mode" : "TOP"
+        },
+        "to" : "tributeZone"
+      }
+    }, {
+      "type" : "MayDo",
+      "question" : "¿Añades 1 criatura de fuerza 5 o menor de tu mano o tributos como recurso de Deriduragon?",
+      "covers" : 1
+    }, {
+      "type" : "Do",
+      "action" : {
+        "type" : "Move",
+        "cards" : {
+          "zones" : "hand,tributeZone",
+          "owner" : "YOU",
+          "filter" : {
+            "cardType" : "creature",
+            "maxStrength" : 5
+          },
+          "min" : {
+            "type" : "Fixed",
+            "value" : 1
+          },
+          "max" : {
+            "type" : "Fixed",
+            "value" : 1
+          },
+          "self" : "EXCLUDE",
+          "mode" : "CHOOSE"
+        },
+        "to" : "resources:self",
+        "required" : true
+      }
+    } ],
+    "sourceZone" : "field",
+    "limit" : "NONE"
+  } ],
+  "inheritedReactions" : [ {
+    "type" : "Replacement",
+    "id" : "deriduragon:hereda-todos-los-turnos",
+    "label" : "Todos Los Turnos",
+    "text" : "Heredado de Deriduragon: cuando esta carta fuera a ser removida por el oponente, puede tributar los recursos de esta carta.",
+    "byOpponentOnly" : true,
+    "limit" : "NONE",
+    "cost" : "RESOURCES_TO_TRIBUTES_BEFORE",
+    "resourceFilter" : { }
+  } ]
+}

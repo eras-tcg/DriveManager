@@ -1,0 +1,129 @@
+{
+  "name" : "ingeniería neurobiónica",
+  "effects" : [
+    {
+      "id" : "ingenieria-neurobionica:en-juego",
+      "moment" : "ON_PLAY",
+      "mandatory" : true,
+      "label" : "En Juego",
+      "text" : "(1) Destruye 1 aliado Azul o [necrómata]; invoca en tu línea frontal 1 criatura [necrómata] de nivel menor de tu mano o descarte sin pagar su coste.",
+      "cost" : [
+        {
+          "type" : "Do",
+          "action" : {
+            "type" : "Destroy",
+            "cards" : {
+              "zones" : "allies",
+              "owner" : "YOU",
+              "filter" : {
+                "colors" : [
+                  "B"
+                ],
+                "classes" : [
+                  "necrómata"
+                ],
+                "cardType" : "creature"
+              },
+              "min" : {
+                "type" : "Fixed",
+                "value" : 1
+              },
+              "max" : {
+                "type" : "Fixed",
+                "value" : 1
+              },
+              "self" : "ANY",
+              "mode" : "CHOOSE"
+            },
+            "required" : true
+          }
+        }
+      ],
+      "steps" : [
+        {
+          "type" : "Do",
+          "action" : {
+            "type" : "Summon",
+            "cards" : {
+              "zones" : "hand,discardPile",
+              "owner" : "YOU",
+              "filter" : {
+                "classes" : [
+                  "necrómata"
+                ],
+                "cardType" : "creature"
+              },
+              "min" : {
+                "type" : "Fixed",
+                "value" : 1
+              },
+              "max" : {
+                "type" : "Fixed",
+                "value" : 1
+              },
+              "self" : "ANY",
+              "mode" : "CHOOSE",
+              "relative" : {
+                "to" : "last",
+                "compareLevel" : "LESS"
+              }
+            },
+            "reduce" : {
+              "type" : "Fixed",
+              "value" : 1000
+            },
+            "toFront" : true,
+            "required" : true
+          }
+        }
+      ],
+      "sourceZone" : "field",
+      "limit" : "ONCE_PER_TURN_BETWEEN_COPIES"
+    },
+    {
+      "id" : "ingenieria-neurobionica:en-mano",
+      "moment" : "ON_EVENT",
+      "label" : "En Mano",
+      "text" : "Si recibes daño directo: puedes jugar esta carta sin pagar su coste.",
+      "steps" : [
+        {
+          "type" : "Do",
+          "action" : {
+            "type" : "Play",
+            "cards" : {
+              "zones" : "hand",
+              "owner" : "YOU",
+              "filter" : {},
+              "min" : {
+                "type" : "Fixed",
+                "value" : 1
+              },
+              "max" : {
+                "type" : "Fixed",
+                "value" : 1
+              },
+              "self" : "ANY",
+              "mode" : "SELF"
+            },
+            "reduce" : {
+              "type" : "Fixed",
+              "value" : 1000
+            },
+            "required" : true
+          }
+        }
+      ],
+      "condition" : {
+        "type" : "Happened",
+        "eventType" : "LIFE_DAMAGE",
+        "actor" : "ANY",
+        "owner" : "ANY",
+        "data" : [
+          "defenderId=$you"
+        ]
+      },
+      "sourceZone" : "hand",
+      "limit" : "NONE"
+    }
+  ]
+}

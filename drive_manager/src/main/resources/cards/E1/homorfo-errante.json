@@ -1,0 +1,100 @@
+{
+  "name" : "homorfo errante",
+  "effects" : [ {
+    "id" : "homorfo-errante:en-destruccion",
+    "moment" : "ON_DESTROY",
+    "label" : "En Destrucción",
+    "text" : "Si tienes 4 o más vidas: puedes invocar 1 criatura Azul nivel 1 de tu mano reduciendo en 1 su coste. Si tienes 3 o menos vidas: en su lugar, puedes jugar 1 estructura Azul de tus tributos reduciendo en 1 su coste.",
+    "steps" : [ {
+      "type" : "IfCondition",
+      "condition" : {
+        "type" : "Not",
+        "condition" : {
+          "type" : "Compare",
+          "left" : {
+            "type" : "Lives"
+          },
+          "op" : "AT_MOST",
+          "right" : {
+            "type" : "Fixed",
+            "value" : 3
+          }
+        }
+      },
+      "covers" : 1
+    }, {
+      "type" : "Do",
+      "action" : {
+        "type" : "Summon",
+        "cards" : {
+          "zones" : "hand",
+          "owner" : "YOU",
+          "filter" : {
+            "colors" : [ "B" ],
+            "cardType" : "creature",
+            "level" : 1
+          },
+          "min" : {
+            "type" : "Fixed",
+            "value" : 1
+          },
+          "max" : {
+            "type" : "Fixed",
+            "value" : 1
+          },
+          "self" : "ANY",
+          "mode" : "CHOOSE"
+        },
+        "reduce" : {
+          "type" : "Fixed",
+          "value" : 1
+        },
+        "required" : true
+      }
+    }, {
+      "type" : "IfCondition",
+      "condition" : {
+        "type" : "Compare",
+        "left" : {
+          "type" : "Lives"
+        },
+        "op" : "AT_MOST",
+        "right" : {
+          "type" : "Fixed",
+          "value" : 3
+        }
+      },
+      "covers" : 1
+    }, {
+      "type" : "Do",
+      "action" : {
+        "type" : "Play",
+        "cards" : {
+          "zones" : "tributeZone",
+          "owner" : "YOU",
+          "filter" : {
+            "colors" : [ "B" ],
+            "cardTypes" : [ "structure" ]
+          },
+          "min" : {
+            "type" : "Fixed",
+            "value" : 1
+          },
+          "max" : {
+            "type" : "Fixed",
+            "value" : 1
+          },
+          "self" : "ANY",
+          "mode" : "CHOOSE"
+        },
+        "reduce" : {
+          "type" : "Fixed",
+          "value" : 1
+        },
+        "required" : true
+      }
+    } ],
+    "sourceZone" : "field",
+    "limit" : "NONE"
+  } ]
+}

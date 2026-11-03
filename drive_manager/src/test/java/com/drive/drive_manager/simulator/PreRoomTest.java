@@ -123,8 +123,43 @@ class PreRoomTest {
         assertThat(kicked.getError()).isNull();
         assertThat(kicked.getSubjectUserId()).isEqualTo("guest");
         assertThat(room.getPlayers()).containsOnlyKeys("host");
-        // The game is over: the owner waits for a new rival in the pre-room
+        // The rival left the game: the owner wins it
+        assertThat(room.getStatus()).isEqualTo(GameRoom.RoomStatus.POST_GAME);
+        assertThat(room.getWinnerId()).isEqualTo("host");
+    }
+
+    @Test
+    void leavingAnOnlineGameLosesItRightAwayAndTheOneWhoStaysWaitsAloneInThePreRoomAfter() {
+        room.setStatus(GameRoom.RoomStatus.IN_PROGRESS);
+        GameStateUpdate left = service.applyAction(room.getRoomId(), "guest", action("LEAVE_ROOM", Map.of()));
+
+        assertThat(left.getError()).isNull();
+        assertThat(room.getStatus()).isEqualTo(GameRoom.RoomStatus.POST_GAME);
+        assertThat(room.getWinnerId()).isEqualTo("host");
+        assertThat(room.getEndReason()).isEqualTo("abandon");
+        assertThat(room.getEventLog()).anyMatch(l -> l.getText().equals("guest abandonó la partida"));
+        // Alone, no rematch: the post-game goes back to the pre-room to wait for another rival (no saved deck to reload here)
+        room.getPlayer("host").setDeckId(null);
+        service.applyAction(room.getRoomId(), "host", action("POST_GAME_CHOICE", Map.of("choice", "rematch")));
         assertThat(room.getStatus()).isEqualTo(GameRoom.RoomStatus.WAITING);
+    }
+
+    @Test
+    void aPlayerDisconnectedAWhileDuringAnOnlineGameHasLeftItButAReloadDoesNot() {
+        room.setStatus(GameRoom.RoomStatus.IN_PROGRESS);
+        room.getPlayers().values().forEach(p -> p.setConnected(true));
+        PlayerState guest = room.getPlayer("guest");
+        guest.setConnected(false);
+        long now = System.currentTimeMillis();
+        guest.setDisconnectedAt(now);
+
+        assertThat(service.checkAbandoned(room, now + 5_000)).isNull();
+        assertThat(room.getStatus()).isEqualTo(GameRoom.RoomStatus.IN_PROGRESS);
+
+        GameStateUpdate gone = service.checkAbandoned(room, now + 25_000);
+        assertThat(gone.getEvent()).isEqualTo("PLAYER_LEFT");
+        assertThat(room.getStatus()).isEqualTo(GameRoom.RoomStatus.POST_GAME);
+        assertThat(room.getWinnerId()).isEqualTo("host");
     }
 
     @Test
@@ -274,5 +309,54 @@ class PreRoomTest {
         assertThat(update.getError()).isNull();
         assertThat(arc.getMaterials()).isEmpty();
         assertThat(room.getPlayer("host").getTributeZone()).containsExactly(material);
+    }
+
+    @Test
+    void someoneOutsideTheRoomCannotActOnIt() {
+        room.setStatus(GameRoom.RoomStatus.IN_PROGRESS);
+        for (String type : List.of("SURRENDER", "FORFEIT", "CLOSE_ROOM", "END_TURN", "MOVE_CARD")) {
+            assertThat(service.applyAction(room.getRoomId(), "stranger", action(type, Map.of())).getError())
+                    .as(type).isEqualTo("No estás en la sala");
+        }
+        assertThat(room.getStatus()).isEqualTo(GameRoom.RoomStatus.IN_PROGRESS);
+        assertThat(service.getRoom(room.getRoomId())).isNotNull();
+    }
+
+    @Test
+    void concedingOnlyEndsAGameInProgressAndTheRivalWins() {
+        assertThat(service.applyAction(room.getRoomId(), "host", action("SURRENDER", Map.of())).getError())
+                .isEqualTo("No hay una partida en curso");
+        assertThat(room.getStatus()).isEqualTo(GameRoom.RoomStatus.WAITING);
+
+        room.setStatus(GameRoom.RoomStatus.IN_PROGRESS);
+        assertThat(service.applyAction(room.getRoomId(), "guest", action("FORFEIT", Map.of())).getError()).isNull();
+        assertThat(room.getStatus()).isEqualTo(GameRoom.RoomStatus.POST_GAME);
+        assertThat(room.getWinnerId()).isEqualTo("host");
+    }
+
+    @Test
+    void onlyTheOwnerClosesTheRoomAndNeverDuringAGame() {
+        assertThat(service.applyAction(room.getRoomId(), "guest", action("CLOSE_ROOM", Map.of())).getError()).contains("dueño");
+        room.setStatus(GameRoom.RoomStatus.IN_PROGRESS);
+        assertThat(service.applyAction(room.getRoomId(), "host", action("CLOSE_ROOM", Map.of())).getError()).contains("en curso");
+        room.setStatus(GameRoom.RoomStatus.WAITING);
+        assertThat(service.applyAction(room.getRoomId(), "host", action("CLOSE_ROOM", Map.of())).getError()).isNull();
+        assertThat(service.getRoom(room.getRoomId())).isNull();
+    }
+
+    @Test
+    void inAnOnlineGameOnlyTheSiteEditorsUseTheManualActions() {
+        room.setStatus(GameRoom.RoomStatus.IN_PROGRESS);
+        CardSlot top = room.getPlayer("guest").getDeck().get(0);
+        GameAction steal = action("MOVE_CARD", Map.of("instanceId", top.getInstanceId(), "fromZone", "deck", "toZone", "discardPile",
+                "targetPlayerId", "guest"));
+
+        assertThat(service.applyAction(room.getRoomId(), "host", steal, false).getError()).contains("partidas de prueba");
+        assertThat(service.applyAction(room.getRoomId(), "host", action("DRAW_CARD", Map.of()), false).getError()).contains("partidas de prueba");
+        assertThat(room.getPlayer("guest").getDeck()).contains(top);
+        // The rules' own flow is still open to every player
+        assertThat(service.applyAction(room.getRoomId(), "host", action("SET_SKIP_OPTIONAL", Map.of("value", true)), false).getError()).isNull();
+        // An editor fixes the board by hand
+        assertThat(service.applyAction(room.getRoomId(), "host", action("DRAW_CARD", Map.of()), true).getError()).isNull();
     }
 }

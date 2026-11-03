@@ -84,4 +84,6 @@ public class CardSlot {
     private String unprogrammed;
     /** The [tipos] its effects and inherited effects mention ("con [fauna] en su texto"), in lower case. */
     private List<String> mentions = new ArrayList<>();
+    /** The shine of this copy from its owner's collection ("foil" or "prism"), null for a plain one. */
+    private String finish;
 }

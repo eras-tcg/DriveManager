@@ -1,0 +1,20 @@
+{
+  "name" : "cylvarus",
+  "reactions" : [ {
+    "type" : "CostModifier",
+    "label" : "Turno Aliado",
+    "event" : "SPECIAL_SUMMON",
+    "kinds" : [ "evolution" ],
+    "holder" : "SUMMONER",
+    "allyTurn" : true,
+    "payment" : {
+      "kind" : "TAP_CARD",
+      "count" : 1,
+      "filter" : {
+        "colors" : [ "G" ]
+      }
+    },
+    "reduce" : 1,
+    "limit" : "NONE"
+  } ]
+}

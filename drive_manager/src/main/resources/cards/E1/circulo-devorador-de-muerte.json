@@ -1,0 +1,70 @@
+{
+  "name" : "circulo devorador de muerte",
+  "effects" : [ {
+    "id" : "circulo-devorador:en-juego",
+    "moment" : "ON_PLAY",
+    "mandatory" : true,
+    "label" : "En Juego",
+    "text" : "Efecto Definitivo. Coloca esta carta agotada en tu retaguardia; esta carta solo puede ser afectada por copias de \"Circulo Devorador De Muerte\".",
+    "steps" : [ {
+      "type" : "KeepOnField",
+      "exhausted" : true
+    } ],
+    "sourceZone" : "field",
+    "limit" : "DEFINITIVE"
+  }, {
+    "id" : "circulo-devorador:turno-aliado",
+    "moment" : "ACTIVATED",
+    "label" : "Turno Aliado",
+    "text" : "Puedes enviar 4 copias de esta carta en tu retaguardia a tu descarte para ganar 4 gemas.",
+    "steps" : [ {
+      "type" : "IfPossible"
+    }, {
+      "type" : "Do",
+      "action" : {
+        "type" : "Move",
+        "cards" : {
+          "zones" : "backLine",
+          "owner" : "YOU",
+          "filter" : { },
+          "min" : {
+            "type" : "Fixed",
+            "value" : 4
+          },
+          "max" : {
+            "type" : "Fixed",
+            "value" : 4
+          },
+          "self" : "ANY",
+          "mode" : "CHOOSE",
+          "relative" : {
+            "to" : "self",
+            "sameName" : true
+          }
+        },
+        "to" : "discardPile"
+      }
+    }, {
+      "type" : "Do",
+      "action" : {
+        "type" : "Gems",
+        "count" : {
+          "type" : "Fixed",
+          "value" : 4
+        }
+      }
+    } ],
+    "sourceZone" : "field",
+    "allyTurn" : true,
+    "limit" : "NONE"
+  } ],
+  "continuous" : [ {
+    "label" : "Todos Los Turnos",
+    "text" : "Esta carta solo puede ser afectada por copias de sí misma.",
+    "condition" : {
+      "type" : "Always"
+    },
+    "keywords" : [ "Solo la afectan sus copias" ],
+    "zone" : "field"
+  } ]
+}

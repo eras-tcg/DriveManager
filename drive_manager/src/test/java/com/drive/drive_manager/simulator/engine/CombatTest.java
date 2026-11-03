@@ -196,6 +196,21 @@ class CombatTest {
     }
 
     @Test
+    void provocarCannotTargetAnEnemyThatCannotBeTargetedByItsEffects() {
+        // HE-110: "no puede ser objetivo de efectos de cartas oponentes nivel 4 o menor"; Provocar targets
+        CardSlot albigio = field(host, creature("alb", "Albigio", 3, 6), FRONT);
+        albigio.getKeywords().add("Provocar");
+        field(guest, creature("he", "HE 110", 4, 12), FRONT);
+        field(guest, creature("small", "Pequeña", 1, 2), FRONT);
+        EffectEngine.refreshContinuous(room);
+
+        CombatRules.attackByPlayer(room, "host", "alb", null);
+        Prompt provoke = room.getPrompt();
+        assertThat(provoke.getPurpose()).isEqualTo("PROVOKE");
+        assertThat(provoke.getValidIds()).containsExactly("small");
+    }
+
+    @Test
     void lastLifeLosesTheGame() {
         guest.setLifeStack(cards("life", 1));
         guest.getLifeStack().get(0).setStrength(1);

@@ -67,9 +67,9 @@ class St4IntegrationTest {
         CardSlot ferreo = slot("Caballero Férreo");
         host.getHand().add(ferreo);
         CardSlot peon = onField(host, slot("Peón De Línea Frontal"), FRONT);
-        assertThat(Summons.canSpecial(room, "host", ferreo)).isFalse();
+        assertThat(SpecialRequirements.canSpecial(room, "host", ferreo)).isFalse();
         onField(host, slot("Espada De Los Leones De Fuego"), BACK);
-        assertThat(Summons.canSpecial(room, "host", ferreo)).isTrue();
+        assertThat(SpecialRequirements.canSpecial(room, "host", ferreo)).isTrue();
         assertThat(act("host", "RITUAL_SUMMON", Map.of("instanceId", ferreo.getInstanceId(), "summonerId", peon.getInstanceId())).getError()).isNull();
         assertThat(host.getField()).contains(ferreo).doesNotContain(peon);
         assertThat(host.getTributeZone()).contains(peon);
@@ -221,8 +221,8 @@ class St4IntegrationTest {
         CardSlot franchute = slot("Franchute");
         host.getHand().add(franchute);
         room.setSharedCounter(-10);
-        assertThat(Summons.specialSummonable(room, "host")).contains(franchute.getInstanceId());
-        assertThat(Summons.specialByPlayer(room, "host", franchute.getInstanceId(), luke.getInstanceId())).isNull();
+        assertThat(SpecialRequirements.specialSummonable(room, "host")).contains(franchute.getInstanceId());
+        assertThat(SpecialSummons.specialByPlayer(room, "host", franchute.getInstanceId(), luke.getInstanceId())).isNull();
         assertThat(host.getField()).contains(franchute).doesNotContain(luke);
     }
 

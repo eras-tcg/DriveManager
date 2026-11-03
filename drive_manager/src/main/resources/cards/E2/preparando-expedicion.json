@@ -1,0 +1,76 @@
+{
+  "name" : "preparando expedición",
+  "effects" : [ {
+    "id" : "preparando-expedicion:en-juego",
+    "moment" : "ON_PLAY",
+    "mandatory" : true,
+    "label" : "En Juego",
+    "text" : "(1) Puedes jugar 1 [artefacto] de tu mano. Si lo haces: puedes colocar 1 [artefacto] de los materiales de un aliado agotado en tu retaguardia.",
+    "steps" : [ {
+      "type" : "MayDo",
+      "question" : "¿Juegas 1 [artefacto] de tu mano?",
+      "covers" : 1
+    }, {
+      "type" : "Do",
+      "action" : {
+        "type" : "Play",
+        "cards" : {
+          "zones" : "hand",
+          "owner" : "YOU",
+          "filter" : {
+            "classes" : [ "artefacto" ]
+          },
+          "min" : {
+            "type" : "Fixed",
+            "value" : 1
+          },
+          "max" : {
+            "type" : "Fixed",
+            "value" : 1
+          },
+          "self" : "ANY",
+          "mode" : "CHOOSE"
+        },
+        "reduce" : {
+          "type" : "Fixed"
+        },
+        "required" : true
+      }
+    }, {
+      "type" : "IfDone",
+      "covers" : 1
+    }, {
+      "type" : "MaterialOfExhaustedAllyToBack",
+      "filter" : {
+        "classes" : [ "artefacto" ]
+      }
+    } ],
+    "sourceZone" : "field",
+    "limit" : "ONCE_PER_TURN_BETWEEN_COPIES"
+  } ],
+  "reactions" : [ {
+    "type" : "CostModifier",
+    "label" : "Absoluto",
+    "event" : "PLAY",
+    "holder" : "SELF",
+    "condition" : {
+      "type" : "Compare",
+      "left" : {
+        "type" : "OnField",
+        "filter" : {
+          "classes" : [ "artefacto" ],
+          "backOnly" : true
+        }
+      },
+      "op" : "AT_MOST",
+      "right" : {
+        "type" : "Fixed"
+      }
+    },
+    "payment" : {
+      "kind" : "NONE"
+    },
+    "reduce" : 1,
+    "limit" : "NONE"
+  } ]
+}

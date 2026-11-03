@@ -2,6 +2,8 @@ package com.drive.drive_manager.controller;
 
 import com.drive.drive_manager.dto.DeckList;
 import com.drive.drive_manager.repository.DeckListRepository;
+import com.drive.drive_manager.service.ProgressionRules;
+import com.drive.drive_manager.service.ProgressionService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.authentication.AnonymousAuthenticationToken;
@@ -25,9 +27,11 @@ import java.util.Optional;
 public class DeckListController {
 
     private final DeckListRepository repo;
+    private final ProgressionService progression;
 
-    public DeckListController(DeckListRepository repo) {
+    public DeckListController(DeckListRepository repo, ProgressionService progression) {
         this.repo = repo;
+        this.progression = progression;
     }
 
     @GetMapping
@@ -70,7 +74,10 @@ public class DeckListController {
 
         body.setId(null);
         if (body.getCreatedAt() == null) body.setCreatedAt(Instant.now());
-        return ResponseEntity.ok(repo.save(body));
+        DeckList saved = repo.save(body);
+        // A new deck (not an edit) counts for the "Arma tu mazo" step
+        progression.record(callerId, ProgressionRules.DECK_SAVED, 1);
+        return ResponseEntity.ok(saved);
     }
 
     @PreAuthorize("hasAuthority('manage_decks')")
