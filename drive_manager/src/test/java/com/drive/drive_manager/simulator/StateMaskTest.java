@@ -69,6 +69,31 @@ class StateMaskTest {
     }
 
     @Test
+    void inTheMulliganAPlayerSeesTheTopFiveOfTheirOwnDeckUntilTheyConfirm() {
+        PlayerState p1 = room.getPlayer("p1");
+        p1.getDeck().clear();
+        for (int i = 0; i < 8; i++) p1.getDeck().add(card("p1-deck-" + i, true));
+        room.setStatus(GameRoom.RoomStatus.MULLIGAN);
+
+        PlayerState me = StateMask.forViewer(GameStateUpdate.from(room, "X", "p1"), "p1", false).getPlayers().get("p1");
+        assertThat(me.getDeck()).hasSize(8);
+        assertThat(me.getDeck().subList(0, 5)).extracting(CardSlot::getCardId)
+                .containsExactly("p1-deck-0", "p1-deck-1", "p1-deck-2", "p1-deck-3", "p1-deck-4");
+        assertThat(me.getDeck().subList(0, 5)).extracting(CardSlot::getInstanceId)
+                .containsExactlyElementsOf(p1.getDeck().subList(0, 5).stream().map(CardSlot::getInstanceId).toList());
+        assertThat(me.getDeck().subList(5, 8)).allSatisfy(StateMaskTest::isBack);
+
+        // The rival still sees only backs
+        PlayerState seenByRival = StateMask.forViewer(GameStateUpdate.from(room, "X", "p2"), "p2", false).getPlayers().get("p1");
+        assertThat(seenByRival.getDeck()).allSatisfy(StateMaskTest::isBack);
+
+        // Once confirmed, the deck is hidden again
+        room.getMulliganReady().add("p1");
+        PlayerState after = StateMask.forViewer(GameStateUpdate.from(room, "X", "p1"), "p1", false).getPlayers().get("p1");
+        assertThat(after.getDeck()).allSatisfy(StateMaskTest::isBack);
+    }
+
+    @Test
     void anEditorFixingTheBoardByHandSeesTheirOwnDeckAndLives() {
         PlayerState me = StateMask.forViewer(GameStateUpdate.from(room, "X", "p1"), "p1", true).getPlayers().get("p1");
         assertThat(me.getDeck()).extracting(CardSlot::getCardId).containsExactly("p1-deck");
