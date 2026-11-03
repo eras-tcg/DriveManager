@@ -75,8 +75,10 @@ public class ShopService {
         if (edition == null || WalletRules.priceOf(edition, product) == null) throw new WalletService.PurchaseException("Ese producto no está a la venta");
         // Nothing is charged for something that would come out empty
         boolean structure = "structure".equals(product);
-        Map<String, List<String>> cards = structure ? Map.of() : pool.pool(editionId);
-        Map<String, List<AltArt>> withAlt = structure ? Map.of() : pool.withAltArt(editionId);
+        // The edition's cards are read once: the pool and its alternative arts together
+        CardPoolService.PackPool packPool = structure ? new CardPoolService.PackPool(Map.of(), Map.of()) : pool.forPacks(editionId);
+        Map<String, List<String>> cards = packPool.byRarity();
+        Map<String, List<AltArt>> withAlt = packPool.altArts();
         List<String> structureCards = structure ? pool.structureCards(editionId) : List.of();
         if (structure ? structureCards.isEmpty() : cards.isEmpty()) throw new WalletService.PurchaseException("Esta edición todavía no tiene cartas");
 
