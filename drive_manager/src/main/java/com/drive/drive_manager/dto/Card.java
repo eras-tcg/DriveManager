@@ -1,5 +1,6 @@
 package com.drive.drive_manager.dto;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -43,9 +44,25 @@ public class Card {
     private String rarity;
     private List<String> colors;
     /**
-     * The URL of this card's alternative art, null for most cards: a copy pulled from a pack may come out with it
-     * (CollectionRules.ALT_ODDS). It is only a picture of the same card, never a card of its own: it has no image
-     * record (drive_cards), so no list, search or pack sees it as another card.
+     * The card's alternative arts, empty for most cards: a copy pulled from a pack may come out with one of them (each
+     * by its own odds or the shop's, ShopOdds.alt). Only pictures of the same card, never cards of their own: they
+     * have no image record (drive_cards), so no list, search or pack sees them as other cards.
      */
+    private List<AltArt> altArts;
+    /**
+     * Before a card could have several: its only alternative art. Read as the art LEGACY_ART_ID (the copies pulled
+     * with it are kept as "alt-" + finish) and dropped the next time the arts change.
+     */
+    @JsonIgnore
     private String altImage;
+
+    /** The id the single alternative art of before (altImage) goes by. */
+    public static final String LEGACY_ART_ID = "0";
+
+    /** The alternative arts, the one of before (altImage) included while it is kept that way. */
+    public List<AltArt> getAltArts() {
+        if (altArts != null && !altArts.isEmpty()) return altArts;
+        if (altImage != null && !altImage.isBlank()) return List.of(new AltArt(LEGACY_ART_ID, altImage, null, null));
+        return List.of();
+    }
 }

@@ -1,5 +1,6 @@
 package com.drive.drive_manager.service;
 
+import com.drive.drive_manager.dto.ShopOdds;
 import org.bson.Document;
 import org.springframework.data.mongodb.core.FindAndModifyOptions;
 import org.springframework.data.mongodb.core.MongoTemplate;
@@ -15,6 +16,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.DoubleSupplier;
+import java.util.function.Supplier;
 import java.util.regex.Pattern;
 
 /**
@@ -31,16 +33,23 @@ public class CollectionService {
 
     private final MongoTemplate mongo;
     private final CardPoolService pool;
+    /** The shop's odds a crafted copy's finish comes out by. */
+    private final Supplier<ShopOdds> odds;
     private final DoubleSupplier random;
 
     @Autowired
-    public CollectionService(MongoTemplate mongo, CardPoolService pool) {
-        this(mongo, pool, new SecureRandom()::nextDouble);
+    public CollectionService(MongoTemplate mongo, CardPoolService pool, ShopOddsService odds) {
+        this(mongo, pool, odds::current, new SecureRandom()::nextDouble);
     }
 
     CollectionService(MongoTemplate mongo, CardPoolService pool, DoubleSupplier random) {
+        this(mongo, pool, ShopOdds::defaults, random);
+    }
+
+    CollectionService(MongoTemplate mongo, CardPoolService pool, Supplier<ShopOdds> odds, DoubleSupplier random) {
         this.mongo = mongo;
         this.pool = pool;
+        this.odds = odds;
         this.random = random;
     }
 
@@ -98,7 +107,8 @@ public class CollectionService {
         if (count < 1) throw new CollectionException("Nada que fabricar");
         if (count > CollectionRules.MAX_CRAFTS) throw tooMany();
         List<String> finishes = new ArrayList<>();
-        for (int i = 0; i < count; i++) finishes.add(CollectionRules.rollFinish(random));
+        ShopOdds shop = odds.get();
+        for (int i = 0; i < count; i++) finishes.add(CollectionRules.rollFinish(random, shop));
         return spend(userId, cardId, finishes);
     }
 
@@ -111,7 +121,7 @@ public class CollectionService {
         String rarity = rarity(cardId);
         int fragments = of(userId).fragments().getOrDefault(rarity, 0);
         if (maxFragments != null) fragments = Math.min(fragments, Math.max(0, maxFragments));
-        List<String> finishes = CollectionRules.craftUntil(target, fragments, random);
+        List<String> finishes = CollectionRules.craftUntil(target, fragments, random, odds.get());
         if (finishes.isEmpty()) throw new CollectionException("No te alcanzan los fragmentos");
         return spend(userId, cardId, finishes);
     }
@@ -134,12 +144,13 @@ public class CollectionService {
         Map<String, Integer> cost = new LinkedHashMap<>();
         Map<String, Integer> copies = new LinkedHashMap<>();
         List<String> finishes = new ArrayList<>();
+        ShopOdds shop = odds.get();
         for (Map.Entry<String, Integer> e : wanted.entrySet()) {
             String rarity = rarities.get(e.getKey());
             if (rarity == null) throw new CollectionException("Esa carta no se puede fabricar ni romper");
             cost.merge(rarity, CollectionRules.craftCost(e.getValue()), Math::addExact);
             for (int i = 0; i < e.getValue(); i++) {
-                String finish = CollectionRules.rollFinish(random);
+                String finish = CollectionRules.rollFinish(random, shop);
                 finishes.add(finish);
                 copies.merge(field(e.getKey(), finish), 1, Integer::sum);
             }

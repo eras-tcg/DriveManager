@@ -713,7 +713,9 @@ public class RoomService {
     private void applyMeta(CardSlot slot, String cardId, Card meta) {
         if (!cardId.equals(slot.getCardId())) return;
         slot.setCardName(meta.getCardName());
-        slot.setAltImageUrl(meta.getAltImage() == null || meta.getAltImage().isBlank() ? null : meta.getAltImage());
+        java.util.Map<String, String> arts = new java.util.HashMap<>();
+        meta.getAltArts().forEach(a -> arts.put(a.getId(), a.getUrl()));
+        slot.setAltArtUrls(arts);
         slot.setCardType(meta.getCardType());
         slot.setStrength(meta.getStrength());
         slot.setSpecialSummonKind(meta.getSpecialSummonKind());
