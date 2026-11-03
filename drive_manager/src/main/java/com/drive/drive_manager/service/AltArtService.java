@@ -111,7 +111,7 @@ public class AltArtService {
     }
 
     private static AltArt artOf(List<AltArt> arts, String artId) {
-        return arts.stream().filter(a -> a.getId().equals(artId)).findFirst().orElse(null);
+        return arts.stream().filter(a -> artId != null && artId.equals(a.getId())).findFirst().orElse(null);
     }
 
     static void checkOdds(Double odds) {
