@@ -42,4 +42,10 @@ public class Card {
     private String requirement;
     private String rarity;
     private List<String> colors;
+    /**
+     * The URL of this card's alternative art, null for most cards: a copy pulled from a pack may come out with it
+     * (CollectionRules.ALT_ODDS). It is only a picture of the same card, never a card of its own: it has no image
+     * record (drive_cards), so no list, search or pack sees it as another card.
+     */
+    private String altImage;
 }
