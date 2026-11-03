@@ -1,6 +1,8 @@
 package com.drive.drive_manager.service;
 
+import com.drive.drive_manager.dto.AltArt;
 import com.drive.drive_manager.dto.EditionMetadata;
+import com.drive.drive_manager.dto.ShopOdds;
 import com.drive.drive_manager.repository.EditionMetadataRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -67,23 +69,39 @@ class ShopServiceTest {
         ShopService lucky = new ShopService(wallets, editions, pool, collections, () -> 0.00001);
 
         // Without an alternative art, the luckiest roll is a prismatic copy and nothing more
-        when(pool.withAltArt("E2")).thenReturn(java.util.Set.of());
-        assertThat(lucky.buy("alice", "E2", "pack").packs().get(0).cards()).containsExactly(new ShopService.OpenedCard("titan", "prism", false));
+        when(pool.withAltArt("E2")).thenReturn(Map.of());
+        assertThat(lucky.buy("alice", "E2", "pack").packs().get(0).cards()).containsExactly(new ShopService.OpenedCard("titan", "prism", null));
 
         // With one, the copy comes out with it, prismatic too, and is kept under its own key
-        when(pool.withAltArt("E2")).thenReturn(java.util.Set.of("titan"));
-        assertThat(lucky.buy("alice", "E2", "pack").packs().get(0).cards()).containsExactly(new ShopService.OpenedCard("titan", "prism", true));
-        verify(collections).add("alice", List.of(new CollectionService.Pull("titan", "alt-prism")));
+        when(pool.withAltArt("E2")).thenReturn(Map.of("titan", List.of(new AltArt("x1", "https://img/alt", null))));
+        assertThat(lucky.buy("alice", "E2", "pack").packs().get(0).cards()).containsExactly(new ShopService.OpenedCard("titan", "prism", "x1"));
+        verify(collections).add("alice", List.of(new CollectionService.Pull("titan", "alt-x1-prism")));
 
         // An ordinary roll never gives it
-        when(pool.withAltArt("E1")).thenReturn(java.util.Set.of("c1"));
+        when(pool.withAltArt("E1")).thenReturn(Map.of("c1", List.of(new AltArt("x1", "https://img/alt", null))));
         EditionMetadata e1 = new EditionMetadata();
         e1.setEditionId("E1");
         e1.setPackTypes(List.of(new EditionMetadata.PackTypeConfig("R PACK", Map.of("C", 1))));
         when(editions.findById("E1")).thenReturn(Optional.of(e1));
         when(pool.pool("E1")).thenReturn(Map.of("C", List.of("c1")));
         when(wallets.buy("alice", "E1", "pack")).thenReturn(new WalletService.Purchase(2200, 100));
-        assertThat(shop.buy("alice", "E1", "pack").packs().get(0).cards()).containsExactly(new ShopService.OpenedCard("c1", "plain", false));
+        assertThat(shop.buy("alice", "E1", "pack").packs().get(0).cards()).containsExactly(new ShopService.OpenedCard("c1", "plain", null));
+    }
+
+    @Test
+    void theOddsComeFromTheShopsSettings() {
+        EditionMetadata e2 = new EditionMetadata();
+        e2.setEditionId("E2");
+        e2.setPackTypes(List.of(new EditionMetadata.PackTypeConfig("R PACK", Map.of("C", 1))));
+        when(editions.findById("E2")).thenReturn(Optional.of(e2));
+        when(pool.pool("E2")).thenReturn(Map.of("C", List.of("titan")));
+        when(pool.withAltArt("E2")).thenReturn(Map.of("titan", List.of(new AltArt("x1", "https://img/alt", null))));
+        when(wallets.buy("alice", "E2", "pack")).thenReturn(new WalletService.Purchase(2300, 100));
+        // Every roll 0.4: foil and the art at 50 %, as an administrator set them
+        ShopOdds generous = new ShopOdds(ShopOdds.ID, 0.5, 0, 0.5, 1, 0.5);
+        ShopService shopWith = new ShopService(wallets, editions, pool, collections, () -> generous, () -> 0.4);
+
+        assertThat(shopWith.buy("alice", "E2", "pack").packs().get(0).cards()).containsExactly(new ShopService.OpenedCard("titan", "foil", "x1"));
     }
 
     @Test

@@ -244,7 +244,7 @@ final class PreRoomActions {
             c.setMentions(new ArrayList<>(s.getMentions()));
             c.setFinish(s.getFinish());
             c.setAlt(s.isAlt());
-            c.setAltImageUrl(s.getAltImageUrl());
+            c.setAltArtUrls(new java.util.HashMap<>(s.getAltArtUrls()));
             c.setFaceDown(true);
             return c;
         }).collect(Collectors.toList());

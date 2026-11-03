@@ -1,5 +1,6 @@
 package com.drive.drive_manager.service;
 
+import com.drive.drive_manager.dto.AltArt;
 import com.drive.drive_manager.dto.Card;
 import com.drive.drive_manager.dto.DeckList;
 import com.drive.drive_manager.dto.DriveCard;
@@ -80,11 +81,11 @@ public class CardPoolService {
         return cards.isEmpty() ? new ArrayList<>(known.keySet()) : cards;
     }
 
-    /** The cards of an edition ("E1" or "E1.1") that can come out with an alternative art. */
-    public Set<String> withAltArt(String editionId) {
-        Set<String> out = new java.util.HashSet<>();
+    /** The cards of an edition ("E1" or "E1.1") that can come out with an alternative art: card id → its arts. */
+    public Map<String, List<AltArt>> withAltArt(String editionId) {
+        Map<String, List<AltArt>> out = new java.util.HashMap<>();
         joined(editionId).forEach((id, meta) -> {
-            if (meta.getAltImage() != null && !meta.getAltImage().isBlank()) out.add(id);
+            if (!meta.getAltArts().isEmpty()) out.put(id, meta.getAltArts());
         });
         return out;
     }
