@@ -275,4 +275,53 @@ class PreRoomTest {
         assertThat(arc.getMaterials()).isEmpty();
         assertThat(room.getPlayer("host").getTributeZone()).containsExactly(material);
     }
+
+    @Test
+    void someoneOutsideTheRoomCannotActOnIt() {
+        room.setStatus(GameRoom.RoomStatus.IN_PROGRESS);
+        for (String type : List.of("SURRENDER", "FORFEIT", "CLOSE_ROOM", "END_TURN", "MOVE_CARD")) {
+            assertThat(service.applyAction(room.getRoomId(), "stranger", action(type, Map.of())).getError())
+                    .as(type).isEqualTo("No estás en la sala");
+        }
+        assertThat(room.getStatus()).isEqualTo(GameRoom.RoomStatus.IN_PROGRESS);
+        assertThat(service.getRoom(room.getRoomId())).isNotNull();
+    }
+
+    @Test
+    void concedingOnlyEndsAGameInProgressAndTheRivalWins() {
+        assertThat(service.applyAction(room.getRoomId(), "host", action("SURRENDER", Map.of())).getError())
+                .isEqualTo("No hay una partida en curso");
+        assertThat(room.getStatus()).isEqualTo(GameRoom.RoomStatus.WAITING);
+
+        room.setStatus(GameRoom.RoomStatus.IN_PROGRESS);
+        assertThat(service.applyAction(room.getRoomId(), "guest", action("FORFEIT", Map.of())).getError()).isNull();
+        assertThat(room.getStatus()).isEqualTo(GameRoom.RoomStatus.POST_GAME);
+        assertThat(room.getWinnerId()).isEqualTo("host");
+    }
+
+    @Test
+    void onlyTheOwnerClosesTheRoomAndNeverDuringAGame() {
+        assertThat(service.applyAction(room.getRoomId(), "guest", action("CLOSE_ROOM", Map.of())).getError()).contains("dueño");
+        room.setStatus(GameRoom.RoomStatus.IN_PROGRESS);
+        assertThat(service.applyAction(room.getRoomId(), "host", action("CLOSE_ROOM", Map.of())).getError()).contains("en curso");
+        room.setStatus(GameRoom.RoomStatus.WAITING);
+        assertThat(service.applyAction(room.getRoomId(), "host", action("CLOSE_ROOM", Map.of())).getError()).isNull();
+        assertThat(service.getRoom(room.getRoomId())).isNull();
+    }
+
+    @Test
+    void inAnOnlineGameOnlyTheSiteEditorsUseTheManualActions() {
+        room.setStatus(GameRoom.RoomStatus.IN_PROGRESS);
+        CardSlot top = room.getPlayer("guest").getDeck().get(0);
+        GameAction steal = action("MOVE_CARD", Map.of("instanceId", top.getInstanceId(), "fromZone", "deck", "toZone", "discardPile",
+                "targetPlayerId", "guest"));
+
+        assertThat(service.applyAction(room.getRoomId(), "host", steal, false).getError()).contains("partidas de prueba");
+        assertThat(service.applyAction(room.getRoomId(), "host", action("DRAW_CARD", Map.of()), false).getError()).contains("partidas de prueba");
+        assertThat(room.getPlayer("guest").getDeck()).contains(top);
+        // The rules' own flow is still open to every player
+        assertThat(service.applyAction(room.getRoomId(), "host", action("SET_SKIP_OPTIONAL", Map.of("value", true)), false).getError()).isNull();
+        // An editor fixes the board by hand
+        assertThat(service.applyAction(room.getRoomId(), "host", action("DRAW_CARD", Map.of()), true).getError()).isNull();
+    }
 }

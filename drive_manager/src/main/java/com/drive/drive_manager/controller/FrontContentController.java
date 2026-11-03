@@ -16,6 +16,7 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 
@@ -40,6 +41,10 @@ public class FrontContentController {
             .orElse(ResponseEntity.notFound().build());
     }
 
+    /** The featured decks never go past this slot: a huge position would fill the list with millions of gaps. */
+    private static final int MAX_DECK_POSITION = 50;
+
+    @PreAuthorize("hasAuthority('manage_home')")
     @PostMapping("/home")
     public ResponseEntity<?> updateHome(@RequestBody HomeUpdateRequest req) {
 
@@ -53,7 +58,7 @@ public class FrontContentController {
             home.setEdition(req.getEdition());
         }
 
-        List<DeckWithPosition> currentDecks = req.getDecks();
+        List<DeckWithPosition> currentDecks = req.getDecks() == null ? List.of() : req.getDecks();
 
         for (DeckWithPosition deckWithPos : currentDecks) {
             int pos;
@@ -62,6 +67,7 @@ public class FrontContentController {
             } catch (NumberFormatException e) {
                 continue; // Skip invalid positions
             }
+            if (pos < 0 || pos > MAX_DECK_POSITION) continue;
             List<DeckList> decks = home.getDecks();
             while (decks.size() <= pos) {
                 decks.add(null); // Fill gaps with nulls

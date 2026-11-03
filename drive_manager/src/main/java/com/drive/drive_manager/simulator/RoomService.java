@@ -156,29 +156,59 @@ public class RoomService {
         return rooms.values().stream().filter(r -> r.getPlayers().values().stream().anyMatch(PlayerState::isConnected)).count();
     }
 
-    public void applyAndBroadcast(String roomId, String userId, GameAction action) {
+    /** {@code manual}: the player may use the board's manual actions in an online game (a site editor). */
+    public void applyAndBroadcast(String roomId, String userId, GameAction action, boolean manual) {
         GameRoom lock = rooms.get(roomId);
-        if (lock == null) { broadcast(roomId, applyAction(roomId, userId, action)); return; }
-        synchronized (lock) { broadcast(roomId, applyAction(roomId, userId, action)); }
+        if (lock == null) { broadcast(roomId, applyAction(roomId, userId, action, manual)); return; }
+        synchronized (lock) {
+            if (manual) lock.getManualPlayers().add(userId);
+            else lock.getManualPlayers().remove(userId);
+            broadcast(roomId, applyAction(roomId, userId, action, manual));
+        }
     }
 
+    /**
+     * Sends each player their own view of the room on their queue (/user/queue/room/{id}): nothing hidden from them
+     * leaves the server (StateMask). An error goes only to who caused it; a player who just left or was taken out
+     * still gets the update that says so.
+     */
     private void broadcast(String roomId, GameStateUpdate update) {
-        if (update != null && messagingTemplate != null) messagingTemplate.convertAndSend("/topic/room/" + roomId, update);
+        if (update == null || messagingTemplate == null) return;
+        String destination = "/queue/room/" + roomId;
+        if (update.getError() != null) {
+            if (update.getActorId() != null) messagingTemplate.convertAndSendToUser(update.getActorId(), destination, update);
+            return;
+        }
+        // A closed room is gone from the list already: its last update still names who was in it
+        GameRoom room = rooms.get(roomId);
+        Set<String> viewers = new LinkedHashSet<>(update.getPlayers() == null ? Set.of() : update.getPlayers().keySet());
+        if (update.getActorId() != null) viewers.add(update.getActorId());
+        if (update.getSubjectUserId() != null) viewers.add(update.getSubjectUserId());
+        viewers.remove(EDITOR_RIVAL);
+        for (String viewer : viewers) {
+            boolean manual = room != null && room.getManualPlayers().contains(viewer);
+            messagingTemplate.convertAndSendToUser(viewer, destination, StateMask.forViewer(update, viewer, manual));
+        }
     }
 
+    /** An action of the server itself or of a test: the manual actions are allowed. */
     public GameStateUpdate applyAction(String roomId, String userId, GameAction action) {
+        return applyAction(roomId, userId, action, true);
+    }
+
+    public GameStateUpdate applyAction(String roomId, String userId, GameAction action, boolean manual) {
         if (activityTracker != null) activityTracker.touch();
         // One action at a time per room (the sweep below changes rooms too)
         GameRoom lock = rooms.get(roomId);
         GameStateUpdate update;
-        if (lock == null) update = apply(roomId, userId, action);
-        else synchronized (lock) { update = apply(roomId, userId, action); }
+        if (lock == null) update = apply(roomId, userId, action, manual);
+        else synchronized (lock) { update = apply(roomId, userId, action, manual); }
         // Errors go to the whole room topic: tag who caused them so only that player is shown the message
         if (update != null && update.getError() != null && update.getActorId() == null) update.setActorId(userId);
         return update;
     }
 
-    private GameStateUpdate apply(String roomId, String userId, GameAction action) {
+    private GameStateUpdate apply(String roomId, String userId, GameAction action, boolean manual) {
         pruneRooms();
         GameRoom room = rooms.get(roomId);
         if (room == null) return GameStateUpdate.error(roomId, "La sala ya no existe");
@@ -187,6 +217,17 @@ public class RoomService {
             if (!userId.equals(room.getHostId())) return GameStateUpdate.error(roomId, "Es una sala de prueba: solo su dueño puede jugar en ella");
             // The owner plays the rival's side too
             if (EDITOR_RIVAL.equals(action.getString("actAs")) && !OWNER_ONLY.contains(action.getType())) userId = EDITOR_RIVAL;
+        }
+
+        // Only the room's players act on it: anyone else can only ask to enter
+        if (!"JOIN_ROOM".equals(action.getType()) && !room.getPlayers().containsKey(userId)) {
+            return GameStateUpdate.error(roomId, "No estás en la sala");
+        }
+
+        // An online game is played by the rules: moving, drawing or changing cards by hand is for test rooms
+        // (and the site's editors, who fix by hand what the engine gets wrong)
+        if (!room.isEditor() && !manual && !RULES_ACTIONS.contains(action.getType())) {
+            return GameStateUpdate.error(roomId, "Esa acción manual solo está disponible en partidas de prueba");
         }
 
         // Closed game state (rule 7.2): while a chain or a choice is pending, only answering it (and leaving
@@ -212,8 +253,8 @@ public class RoomService {
             case "ENTER_END_PHASE"      -> handleEnterEndPhase(room, userId);
             // One way to end a turn (rule 8.3: through the end phase); "PASS_TURN" is what older boards send
             case "END_TURN", "PASS_TURN" -> handleEndTurn(room, userId);
-            case "FORFEIT"              -> handleForfeit(room, userId);
-            case "SURRENDER"            -> handleSurrender(room, userId);
+            // "FORFEIT" is what older boards sent to concede
+            case "SURRENDER", "FORFEIT" -> handleSurrender(room, userId);
             case "POST_GAME_CHOICE"     -> handlePostGameChoice(room, userId, action);
             case "START_GAME"           -> handleStartGame(room, userId, action);
             case "SET_DECK"             -> handleSetDeck(room, userId, action);
@@ -276,6 +317,15 @@ public class RoomService {
         }
         return update;
     }
+
+    private static final int MAX_STRENGTH_CHANGE = 50;
+
+    /** What any player can do in an online game: the rules engine's actions and the room's own flow. */
+    private static final Set<String> RULES_ACTIONS = Set.of(
+            "NORMAL_SUMMON", "RESOLVE_PROMPT", "SACRIFICE_CARD", "ATTACK", "PLAY_CARD", "RITUAL_SUMMON", "ACTIVATE_EFFECT",
+            "TARGET_CARD", "ENTER_END_PHASE", "END_TURN", "PASS_TURN", "SURRENDER", "FORFEIT", "POST_GAME_CHOICE",
+            "JOIN_ROOM", "LEAVE_ROOM", "KICK_PLAYER", "CLOSE_ROOM", "START_GAME", "SET_DECK", "SET_STARTER",
+            "SET_FIRST_PLAYER", "SET_READY", "SELECT_STARTER", "CONFIRM_MULLIGAN", "SET_SKIP_OPTIONAL");
 
     private static final Set<String> ALLOWED_WHILE_RESOLVING = Set.of(
             "RESOLVE_PROMPT", "JOIN_ROOM", "SURRENDER", "FORFEIT", "CLOSE_ROOM", "POST_GAME_CHOICE", "REFRESH_CARD_METADATA",
@@ -385,9 +435,9 @@ public class RoomService {
             PlayerState existing = room.getPlayer(userId);
             existing.setConnected(true);
             existing.setAvatar(avatar);
-            if (room.getStatus() == GameRoom.RoomStatus.WAITING && deckId != null) {
+            List<CardSlot> slots = room.getStatus() == GameRoom.RoomStatus.WAITING && deckId != null ? playableDeck(room, userId, deckId) : null;
+            if (slots != null) {
                 existing.setDeckId(deckId);
-                List<CardSlot> slots = resolveDeck(deckId);
                 existing.setDeck(new ArrayList<>(slots));
                 existing.setOriginalDeck(deepCopySlots(slots));
             }
@@ -399,9 +449,10 @@ public class RoomService {
         player.setConnected(true);
         player.setAvatar(avatar);
 
-        if (deckId != null) {
+        // A deck that cannot be played here is left out: the player chooses one in the pre-room (SET_DECK says why)
+        List<CardSlot> slots = deckId == null ? null : playableDeck(room, userId, deckId);
+        if (slots != null) {
             player.setDeckId(deckId);
-            List<CardSlot> slots = resolveDeck(deckId);
             player.setDeck(new ArrayList<>(slots));
             player.setOriginalDeck(deepCopySlots(slots));
         }
@@ -622,10 +673,6 @@ public class RoomService {
         return update;
     }
 
-    private GameStateUpdate handleForfeit(GameRoom room, String userId) {
-        room.setStatus(GameRoom.RoomStatus.FINISHED);
-        return GameStateUpdate.from(room, "FORFEIT", userId);
-    }
 
     public void registerSession(String sessionId, String roomId, String userId) {
         if (sessionId == null) return;
@@ -672,7 +719,10 @@ public class RoomService {
         return update;
     }
 
+    /** The owner closes the room; never in the middle of a game between two players (that is conceding). */
     private GameStateUpdate handleCloseRoom(GameRoom room, String userId) {
+        if (!userId.equals(room.getHostId())) return GameStateUpdate.error(room.getRoomId(), "Solo el dueño de la sala puede cerrarla");
+        if (!room.isEditor() && inGame(room)) return GameStateUpdate.error(room.getRoomId(), "La partida está en curso: ríndete para salir");
         room.setStatus(GameRoom.RoomStatus.FINISHED);
         GameStateUpdate update = GameStateUpdate.from(room, "ROOM_CLOSED", userId);
         rooms.remove(room.getRoomId());
@@ -858,7 +908,7 @@ public class RoomService {
             update.setLogEntry(room.getPlayer(userId).getUsername() + " juega solo los dos lados (partida de prueba)");
             recordLog(room, update);
             update.setEventLog(new ArrayList<>(room.getEventLog()));
-            if (messagingTemplate != null) messagingTemplate.convertAndSend("/topic/room/" + roomId, update);
+            broadcast(roomId, update);
         }
         return null;
     }
@@ -1002,6 +1052,7 @@ public class RoomService {
         if (room.getStatus() != GameRoom.RoomStatus.WAITING) return GameStateUpdate.error(room.getRoomId(), "La partida ya empezó");
         String deckId = action.getString("deckId");
         if (deckId == null) return GameStateUpdate.error(room.getRoomId(), "Falta el mazo");
+        if (!usableDeck(room, userId, deckId)) return GameStateUpdate.error(room.getRoomId(), "No se encontró el mazo");
         List<CardSlot> slots = resolveDeck(deckId);
         if (slots.isEmpty()) return GameStateUpdate.error(room.getRoomId(), "No se encontró el mazo");
         // Cards the engine does not run cannot be played; a test room plays them by hand (it is where they are tried)
@@ -1184,7 +1235,16 @@ public class RoomService {
         return GameStateUpdate.from(room, "CONFIRM_MULLIGAN", userId);
     }
 
+    /** A game between two players is going on: from choosing the starters to its end. */
+    private static boolean inGame(GameRoom room) {
+        GameRoom.RoomStatus status = room.getStatus();
+        return room.getPlayers().size() == 2 && (status == GameRoom.RoomStatus.SELECTING_STARTER
+                || status == GameRoom.RoomStatus.MULLIGAN || status == GameRoom.RoomStatus.IN_PROGRESS);
+    }
+
+    /** Conceding: only during a game, and the other player wins. */
     private GameStateUpdate handleSurrender(GameRoom room, String userId) {
+        if (!inGame(room)) return GameStateUpdate.error(room.getRoomId(), "No hay una partida en curso");
         room.setWinnerId(room.getOpponentId(userId));
         room.setEndReason("surrender");
         room.getPostGameChoices().clear();
@@ -1408,6 +1468,9 @@ public class RoomService {
     }
 
     private GameStateUpdate handleEnterEndPhase(GameRoom room, String userId) {
+        // Turns pass only in a game that started (not in the pre-room, the starters or the mulligan)
+        if (room.getStatus() != GameRoom.RoomStatus.IN_PROGRESS)
+            return GameStateUpdate.error(room.getRoomId(), "La partida no está en curso");
         if (!userId.equals(room.getCurrentTurnUserId()))
             return GameStateUpdate.error(room.getRoomId(), "Not your turn");
         if (!"MAIN".equals(room.getCurrentPhase()) || room.isEngineBusy())
@@ -1427,6 +1490,9 @@ public class RoomService {
     }
 
     private GameStateUpdate handleEndTurn(GameRoom room, String userId) {
+        // Turns pass only in a game that started (not in the pre-room, the starters or the mulligan)
+        if (room.getStatus() != GameRoom.RoomStatus.IN_PROGRESS)
+            return GameStateUpdate.error(room.getRoomId(), "La partida no está en curso");
         if (!userId.equals(room.getCurrentTurnUserId()))
             return GameStateUpdate.error(room.getRoomId(), "Not your turn");
         // Ending from the main phase goes through the end phase first (rule 8.3)
@@ -1607,7 +1673,8 @@ public class RoomService {
         PlayerState player = room.getPlayer(tp != null ? tp : userId);
         if (player == null) return GameStateUpdate.error(room.getRoomId(), "Player not in room");
         String instanceId = action.getString("instanceId");
-        int delta = action.getInt("delta", 0);
+        // By hand it changes a few points at a time (the board sends ±1 or undoes what it changed)
+        int delta = Math.max(-MAX_STRENGTH_CHANGE, Math.min(MAX_STRENGTH_CHANGE, action.getInt("delta", 0)));
         CardSlot card = player.getField().stream().filter(c -> instanceId.equals(c.getInstanceId())).findFirst().orElse(null);
         if (card == null) return GameStateUpdate.error(room.getRoomId(), "Card not found");
         card.setStrengthModifier(card.getStrengthModifier() + delta);
@@ -2186,6 +2253,20 @@ public class RoomService {
             case "field"       -> player.getField();
             default            -> null;
         };
+    }
+
+    /** A deck the player may use: their own or a public one (in a test room, the rival's side uses its owner's). */
+    private boolean usableDeck(GameRoom room, String userId, String deckId) {
+        String owner = EDITOR_RIVAL.equals(userId) ? room.getHostId() : userId;
+        return deckListRepo.findById(deckId).map(d -> !d.isPrivateDeck() || owner != null && owner.equals(d.getUserId())).orElse(false);
+    }
+
+    /** The deck's cards when it can be played in this room (the same checks as SET_DECK), else null. */
+    private List<CardSlot> playableDeck(GameRoom room, String userId, String deckId) {
+        if (!usableDeck(room, userId, deckId)) return null;
+        List<CardSlot> slots = resolveDeck(deckId);
+        if (slots.isEmpty() || !room.isEditor() && unprogrammedIn(slots) != null) return null;
+        return slots;
     }
 
     private List<CardSlot> resolveDeck(String deckId) {
