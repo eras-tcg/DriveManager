@@ -34,6 +34,9 @@ final class TurnActions {
     private TurnActions() {}
 
     static GameStateUpdate handleEnterEndPhase(GameRoom room, String userId) {
+        // Turns pass only in a game that started (not in the pre-room, the starters or the mulligan)
+        if (room.getStatus() != GameRoom.RoomStatus.IN_PROGRESS)
+            return GameStateUpdate.error(room.getRoomId(), "La partida no está en curso");
         if (!userId.equals(room.getCurrentTurnUserId()))
             return GameStateUpdate.error(room.getRoomId(), "Not your turn");
         if (!"MAIN".equals(room.getCurrentPhase()) || room.isEngineBusy())
@@ -53,6 +56,8 @@ final class TurnActions {
     }
 
     static GameStateUpdate handleEndTurn(GameRoom room, String userId) {
+        if (room.getStatus() != GameRoom.RoomStatus.IN_PROGRESS)
+            return GameStateUpdate.error(room.getRoomId(), "La partida no está en curso");
         if (!userId.equals(room.getCurrentTurnUserId()))
             return GameStateUpdate.error(room.getRoomId(), "Not your turn");
         // Ending from the main phase goes through the end phase first (rule 8.3)
@@ -218,12 +223,9 @@ final class TurnActions {
         player.getHand().add(drawn);
     }
 
-    static GameStateUpdate handleForfeit(GameRoom room, String userId) {
-        room.setStatus(GameRoom.RoomStatus.FINISHED);
-        return GameStateUpdate.from(room, "FORFEIT", userId);
-    }
-
+    /** Conceding: only during a game, and the other player wins. */
     static GameStateUpdate handleSurrender(GameRoom room, String userId) {
+        if (!RoomGuard.inGame(room)) return GameStateUpdate.error(room.getRoomId(), "No hay una partida en curso");
         room.setWinnerId(room.getOpponentId(userId));
         room.setEndReason("surrender");
         room.getPostGameChoices().clear();

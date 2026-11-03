@@ -46,17 +46,9 @@ public class RoomService {
     @Autowired
     private DriveCardRepository driveCardRepo;
 
-    /** Online games count for the players' daily and weekly missions (see MissionEvents). */
+    /** Missions, progression and the player's collection (none in tests: anything is played, nothing counted). */
     @Autowired(required = false)
-    private com.drive.drive_manager.service.MissionService missions;
-
-    /** And for their lifetime progression missions (the same counts, never reset). */
-    @Autowired(required = false)
-    private com.drive.drive_manager.service.ProgressionService progression;
-
-    /** Whose cards a deck needs: a player plays only decks whose every copy they own. */
-    @Autowired(required = false)
-    private com.drive.drive_manager.service.CollectionService collections;
+    private MissionHooks hooks;
 
     @Value("${r2.public-url}")
     private String r2PublicUrl;
@@ -103,7 +95,7 @@ public class RoomService {
 
     /** An online game whose player has been disconnected a while: they left it, and the one who stays wins. */
     GameStateUpdate checkAbandoned(GameRoom room, long now) {
-        if (room.isEditor() || !playing(room) || !rooms.containsKey(room.getRoomId())) return null;
+        if (room.isEditor() || !RoomGuard.playing(room) || !rooms.containsKey(room.getRoomId())) return null;
         PlayerState gone = room.getPlayers().values().stream()
                 .filter(p -> !p.isConnected() && now - p.getDisconnectedAt() >= ABANDON_GRACE_MS).findFirst().orElse(null);
         if (gone == null || room.getPlayers().values().stream().noneMatch(PlayerState::isConnected)) return null;
@@ -114,14 +106,8 @@ public class RoomService {
         update.setLogEntry(gone.getUsername() + " abandonó la partida");
         recordLog(room, update);
         update.setEventLog(new ArrayList<>(room.getEventLog()));
-        countForMissions(room, statusBefore, seqBefore);
+        if (hooks != null) hooks.count(room, statusBefore, seqBefore);
         return update;
-    }
-
-    /** A game in course (from the starters' choice to its end). */
-    private static boolean playing(GameRoom room) {
-        GameRoom.RoomStatus s = room.getStatus();
-        return s == GameRoom.RoomStatus.SELECTING_STARTER || s == GameRoom.RoomStatus.MULLIGAN || s == GameRoom.RoomStatus.IN_PROGRESS;
     }
 
     /** The owner has been disconnected a while and someone else is connected: a random connected player owns the room. */
@@ -203,29 +189,40 @@ public class RoomService {
         return rooms.values().stream().filter(r -> r.getPlayers().values().stream().anyMatch(PlayerState::isConnected)).count();
     }
 
-    public void applyAndBroadcast(String roomId, String userId, GameAction action) {
+    /** {@code manual}: the player may use the board's manual actions in an online game (a site editor). */
+    public void applyAndBroadcast(String roomId, String userId, GameAction action, boolean manual) {
         GameRoom lock = rooms.get(roomId);
-        if (lock == null) { broadcast(roomId, applyAction(roomId, userId, action)); return; }
-        synchronized (lock) { broadcast(roomId, applyAction(roomId, userId, action)); }
+        if (lock == null) { broadcast(roomId, applyAction(roomId, userId, action, manual)); return; }
+        synchronized (lock) {
+            if (manual) lock.getManualPlayers().add(userId);
+            else lock.getManualPlayers().remove(userId);
+            broadcast(roomId, applyAction(roomId, userId, action, manual));
+        }
     }
 
+    /** Each player gets their own view of the room (StateMask): nothing hidden from them leaves the server. */
     private void broadcast(String roomId, GameStateUpdate update) {
-        if (update != null && messagingTemplate != null) messagingTemplate.convertAndSend("/topic/room/" + roomId, update);
+        StateMask.send(messagingTemplate, roomId, rooms.get(roomId), update);
     }
 
+    /** An action of the server itself or of a test: the manual actions are allowed. */
     public GameStateUpdate applyAction(String roomId, String userId, GameAction action) {
+        return applyAction(roomId, userId, action, true);
+    }
+
+    public GameStateUpdate applyAction(String roomId, String userId, GameAction action, boolean manual) {
         if (activityTracker != null) activityTracker.touch();
         // One action at a time per room (the sweep below changes rooms too)
         GameRoom lock = rooms.get(roomId);
         GameStateUpdate update;
-        if (lock == null) update = apply(roomId, userId, action);
-        else synchronized (lock) { update = apply(roomId, userId, action); }
+        if (lock == null) update = apply(roomId, userId, action, manual);
+        else synchronized (lock) { update = apply(roomId, userId, action, manual); }
         // Errors go to the whole room topic: tag who caused them so only that player is shown the message
         if (update != null && update.getError() != null && update.getActorId() == null) update.setActorId(userId);
         return update;
     }
 
-    private GameStateUpdate apply(String roomId, String userId, GameAction action) {
+    private GameStateUpdate apply(String roomId, String userId, GameAction action, boolean manual) {
         pruneRooms();
         GameRoom room = rooms.get(roomId);
         if (room == null) return GameStateUpdate.error(roomId, "La sala ya no existe");
@@ -235,6 +232,9 @@ public class RoomService {
             // The owner plays the rival's side too
             if (EDITOR_RIVAL.equals(action.getString("actAs")) && !OWNER_ONLY.contains(action.getType())) userId = EDITOR_RIVAL;
         }
+
+        String refusal = RoomGuard.refusal(room, userId, action, manual);
+        if (refusal != null) return GameStateUpdate.error(roomId, refusal);
 
         // What the action changes is counted for the players' missions afterwards (see the end of this method)
         GameRoom.RoomStatus statusBefore = room.getStatus();
@@ -263,8 +263,8 @@ public class RoomService {
             case "ENTER_END_PHASE"      -> handleEnterEndPhase(room, userId);
             // One way to end a turn (rule 8.3: through the end phase); "PASS_TURN" is what older boards send
             case "END_TURN", "PASS_TURN" -> handleEndTurn(room, userId);
-            case "FORFEIT"              -> handleForfeit(room, userId);
-            case "SURRENDER"            -> handleSurrender(room, userId);
+            // "FORFEIT" is what older boards sent to concede
+            case "SURRENDER", "FORFEIT" -> handleSurrender(room, userId);
             case "POST_GAME_CHOICE"     -> handlePostGameChoice(room, userId, action);
             case "START_GAME"           -> handleStartGame(room, userId, action);
             case "SET_DECK"             -> handleSetDeck(room, userId, action);
@@ -324,22 +324,9 @@ public class RoomService {
         if (update != null && update.getError() == null) {
             recordLog(room, update, action);
             update.setEventLog(new ArrayList<>(room.getEventLog()));
-            countForMissions(room, statusBefore, seqBefore);
+            if (hooks != null) hooks.count(room, statusBefore, seqBefore);
         }
         return update;
-    }
-
-    /** The summons, damage and finished game an action brought, for the players' missions (never stops the game). */
-    private void countForMissions(GameRoom room, GameRoom.RoomStatus statusBefore, long seqBefore) {
-        if (missions == null && progression == null) return;
-        try {
-            for (MissionEvents.Progress p : MissionEvents.of(room, statusBefore, seqBefore)) {
-                if (missions != null) missions.record(p.userId(), p.counts(), p.amount());
-                if (progression != null) progression.record(p.userId(), p.counts(), p.amount());
-            }
-        } catch (RuntimeException e) {
-            // Missions are a bonus: a failure there must not break the room
-        }
     }
 
     static final Set<String> ALLOWED_WHILE_RESOLVING = Set.of(
@@ -372,8 +359,8 @@ public class RoomService {
         if (room.isFull() && !room.getPlayers().containsKey(userId)) {
             return GameStateUpdate.error(room.getRoomId(), "Room is full");
         }
+        // The deck is chosen in the pre-room (SET_DECK checks it): a deckId sent here is ignored
         String username = action.getString("username");
-        String deckId   = action.getString("deckId");
         String avatar   = avatarService == null ? null : avatarService.urlOf(userId);
         room.setEmptySince(null);
 
@@ -381,12 +368,6 @@ public class RoomService {
             PlayerState existing = room.getPlayer(userId);
             existing.setConnected(true);
             existing.setAvatar(avatar);
-            if (room.getStatus() == GameRoom.RoomStatus.WAITING && deckId != null) {
-                existing.setDeckId(deckId);
-                List<CardSlot> slots = withFinishes(userId, resolveDeck(deckId));
-                existing.setDeck(new ArrayList<>(slots));
-                existing.setOriginalDeck(deepCopySlots(slots));
-            }
             return GameStateUpdate.from(room, "RECONNECT", userId);
         }
         if (username == null) username = userId;
@@ -394,14 +375,6 @@ public class RoomService {
         PlayerState player = new PlayerState(userId, username);
         player.setConnected(true);
         player.setAvatar(avatar);
-
-        if (deckId != null) {
-            player.setDeckId(deckId);
-            List<CardSlot> slots = withFinishes(userId, resolveDeck(deckId));
-            player.setDeck(new ArrayList<>(slots));
-            player.setOriginalDeck(deepCopySlots(slots));
-        }
-
         room.getPlayers().put(userId, player);
 
         // The owner is whoever created the room, even if someone else enters first; a room without one is owned by
@@ -456,7 +429,10 @@ public class RoomService {
         return update;
     }
 
+    /** The owner closes the room; never in the middle of a game between two players (that is conceding). */
     private GameStateUpdate handleCloseRoom(GameRoom room, String userId) {
+        if (!userId.equals(room.getHostId())) return GameStateUpdate.error(room.getRoomId(), "Solo el dueño de la sala puede cerrarla");
+        if (!room.isEditor() && RoomGuard.inGame(room)) return GameStateUpdate.error(room.getRoomId(), "La partida está en curso: ríndete para salir");
         room.setStatus(GameRoom.RoomStatus.FINISHED);
         GameStateUpdate update = GameStateUpdate.from(room, "ROOM_CLOSED", userId);
         rooms.remove(room.getRoomId());
@@ -486,7 +462,7 @@ public class RoomService {
             update.setLogEntry(room.getPlayer(userId).getUsername() + " juega solo los dos lados (partida de prueba)");
             recordLog(room, update);
             update.setEventLog(new ArrayList<>(room.getEventLog()));
-            if (messagingTemplate != null) messagingTemplate.convertAndSend("/topic/room/" + roomId, update);
+            broadcast(roomId, update);
         }
         return null;
     }
@@ -498,59 +474,6 @@ public class RoomService {
             return owner == null || !owner.isConnected();
         }
         return room.getPlayers().values().stream().noneMatch(PlayerState::isConnected);
-    }
-
-    /**
-     * Test room: a card made up with the properties given (or copied from a real card: its name gives it that
-     * card's effects), placed in a zone of the side being played. It is placed, not summoned or played.
-     */
-    private GameStateUpdate handleCreateDummy(GameRoom room, String userId, GameAction action) {
-        if (!room.isEditor()) return GameStateUpdate.error(room.getRoomId(), "Las cartas de prueba solo existen en una sala de prueba");
-        PlayerState player = room.getPlayer(userId);
-        if (player == null) return GameStateUpdate.error(room.getRoomId(), "Jugador no encontrado");
-        String zoneName = action.getString("zone");
-        List<CardSlot> zone = getZone(player, zoneName);
-        if (zone == null) return GameStateUpdate.error(room.getRoomId(), "Zona no válida");
-        String name = action.getString("cardName");
-        if (name == null || name.isBlank()) return GameStateUpdate.error(room.getRoomId(), "La carta necesita un nombre");
-
-        CardSlot card = new CardSlot();
-        card.setInstanceId("dummy-" + UUID.randomUUID().toString().replace("-", "").substring(0, 10));
-        card.setCardId(action.getString("cardId") != null ? action.getString("cardId") : "dummy");
-        card.setImageUrl(action.getString("imageUrl"));
-        card.setCardName(name.trim());
-        card.setCardType(action.getString("cardType") != null ? action.getString("cardType") : "creature");
-        card.setStrength(integer(action, "strength"));
-        card.setCost(integer(action, "cost"));
-        card.setLevel(integer(action, "level"));
-        card.setSpecialCost(integer(action, "specialCost"));
-        card.setSpecialSummonKind(action.getString("specialSummonKind"));
-        card.setRequirement(action.getString("requirement"));
-        card.setStarter(action.getBoolean("starter", false));
-        card.setColors(new ArrayList<>(action.getStringList("colors")));
-        card.setClasses(new ArrayList<>(action.getStringList("classes")));
-        card.setKeywords(new ArrayList<>(action.getStringList("keywords")));
-        boolean hidden = "deck".equals(zoneName) || "lifeStack".equals(zoneName);
-        card.setFaceDown(action.getBoolean("faceDown", hidden));
-        if ("field".equals(zoneName)) {
-            Double x = action.getDouble("x");
-            Double y = action.getDouble("y");
-            card.setX(x != null ? x : 50.0);
-            // The Retaguardia unless placed in the Línea frontal
-            card.setY(y != null ? y : 75.0);
-            card.setFieldSeq(room.getEventSeq() + 1);
-        }
-        if ("top".equals(action.getString("position"))) zone.add(0, card);
-        else zone.add(card);
-
-        GameStateUpdate update = GameStateUpdate.from(room, "CREATE_DUMMY", userId);
-        update.setLogEntry(player.getUsername() + " crea la carta de prueba " + card.getCardName() + " en " + zoneLabel(zoneName));
-        return update;
-    }
-
-    static Integer integer(GameAction action, String key) {
-        Double value = action.getDouble(key);
-        return value == null ? null : value.intValue();
     }
 
     // ------------------------------------------------------------------ Owner, leaving and kicking
@@ -578,7 +501,7 @@ public class RoomService {
             rooms.remove(room.getRoomId());
             return true;
         }
-        if (!room.isEditor() && playing(room) && room.getPlayers().size() == 1) {
+        if (!room.isEditor() && RoomGuard.playing(room) && room.getPlayers().size() == 1) {
             // Leaving an online game loses it: the one who stays wins right away (and sees the post-game)
             room.setWinnerId(room.getPlayers().keySet().iterator().next());
             room.setEndReason("abandon");
@@ -609,7 +532,7 @@ public class RoomService {
             rooms.remove(room.getRoomId());
             return GameStateUpdate.from(room, "ROOM_CLOSED", userId);
         }
-        boolean wasPlaying = playing(room);
+        boolean wasPlaying = RoomGuard.playing(room);
         boolean closed = removePlayer(room, userId);
         GameStateUpdate update = GameStateUpdate.from(room, closed ? "ROOM_CLOSED" : "PLAYER_LEFT", userId);
         update.setLogEntry(name + (wasPlaying ? " abandonó la partida" : " salió de la sala"));
@@ -641,16 +564,17 @@ public class RoomService {
         if (room.getStatus() != GameRoom.RoomStatus.WAITING) return GameStateUpdate.error(room.getRoomId(), "La partida ya empezó");
         String deckId = action.getString("deckId");
         if (deckId == null) return GameStateUpdate.error(room.getRoomId(), "Falta el mazo");
+        if (!RoomGuard.usableDeck(deckListRepo, room, userId, deckId)) return GameStateUpdate.error(room.getRoomId(), "No se encontró el mazo");
         List<CardSlot> slots = resolveDeck(deckId);
         if (slots.isEmpty()) return GameStateUpdate.error(room.getRoomId(), "No se encontró el mazo");
         // Cards the engine does not run cannot be played; a test room plays them by hand (it is where they are tried)
         if (!room.isEditor() && unprogrammedIn(slots) != null) return GameStateUpdate.error(room.getRoomId(),
                 "Este mazo tiene cartas que todavía no están programadas en el simulador");
         // Only with every copy in the player's collection (a test room plays anything: it is where cards are tried)
-        if (!room.isEditor() && collections != null && collections.missing(userId, slots.stream().map(CardSlot::getCardId).toList()) > 0) {
+        if (!room.isEditor() && hooks != null && hooks.missing(userId, slots) > 0) {
             return GameStateUpdate.error(room.getRoomId(), "No puedes jugar este mazo: te faltan cartas de tu colección");
         }
-        withFinishes(userId, slots);
+        if (hooks != null) hooks.withFinishes(userId, slots);
         player.setDeckId(deckId);
         player.setDeckName(deckListRepo.findById(deckId).map(DeckList::getDeckName).orElse(null));
         player.setDeck(new ArrayList<>(slots));
@@ -658,24 +582,6 @@ public class RoomService {
         player.setStarterCardId(slots.stream().filter(CardSlot::isStarter).map(CardSlot::getCardId).findFirst().orElse(null));
         player.setReady(false);
         return GameStateUpdate.from(room, "SET_DECK", userId);
-    }
-
-    /**
-     * Each copy shines as its owner has it: the copies of a printing take the player's finest owned finishes first
-     * (both players see them). A copy they lack, or a plain one, has none.
-     */
-    List<CardSlot> withFinishes(String userId, List<CardSlot> slots) {
-        if (collections == null || slots.isEmpty()) return slots;
-        Map<String, Map<String, Integer>> owned = collections.of(userId).cards();
-        Map<String, Integer> counts = new LinkedHashMap<>();
-        for (CardSlot s : slots) counts.merge(s.getCardId(), 1, Integer::sum);
-        Map<String, java.util.Iterator<String>> next = new HashMap<>();
-        counts.forEach((id, n) -> next.put(id, com.drive.drive_manager.service.CollectionRules.copyFinishes(owned.get(id), n).iterator()));
-        for (CardSlot s : slots) {
-            String finish = next.get(s.getCardId()).next();
-            s.setFinish("foil".equals(finish) || "prism".equals(finish) ? finish : null);
-        }
-        return slots;
     }
 
     /** The names of a deck's cards the engine does not run in full ("×2 Roto-G0, Sicario R3-D"), or null. */

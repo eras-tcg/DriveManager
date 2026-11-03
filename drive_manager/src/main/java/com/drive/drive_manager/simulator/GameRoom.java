@@ -38,6 +38,9 @@ public class GameRoom {
 
     private Map<String, String> starterSelections = new LinkedHashMap<>();
     private Set<String>         mulliganReady     = new HashSet<>();
+    /** Players who may use the manual actions in this online game (site editors): they see their own deck and lives. */
+    @com.fasterxml.jackson.annotation.JsonIgnore
+    private Set<String>         manualPlayers     = new HashSet<>();
     private Map<String, String> postGameChoices   = new LinkedHashMap<>();
 
     // Persists for the room's lifetime (not the client's) — survives a player
