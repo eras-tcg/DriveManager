@@ -39,8 +39,11 @@ public class ShopService {
         this.random = random;
     }
 
-    /** A card as it came out: its id and finish. */
-    public record OpenedCard(String id, String finish) {
+    /** A card as it came out: its id, its finish and whether it has the card's alternative art. */
+    public record OpenedCard(String id, String finish, boolean alt) {
+        public OpenedCard(String id, String finish) {
+            this(id, finish, false);
+        }
     }
 
     /** A pack as it came out: its type, the type it was if it went up a rarity, and its cards in pull order. */
@@ -57,14 +60,17 @@ public class ShopService {
         // Nothing is charged for something that would come out empty
         boolean structure = "structure".equals(product);
         Map<String, List<String>> cards = structure ? Map.of() : pool.pool(editionId);
+        java.util.Set<String> withAlt = structure ? java.util.Set.of() : pool.withAltArt(editionId);
         List<String> structureCards = structure ? pool.structureCards(editionId) : List.of();
         if (structure ? structureCards.isEmpty() : cards.isEmpty()) throw new WalletService.PurchaseException("Esta edición todavía no tiene cartas");
 
         WalletService.Purchase purchase = wallets.buy(userId, editionId, product);
         List<OpenedPack> packs = structure ? List.of(new OpenedPack("Structure", null, structureCards.stream().map(id -> new OpenedCard(id, "plain")).toList()))
-                : draw(edition, product, cards);
+                : draw(edition, product, cards, withAlt);
         List<CollectionService.Pull> pulls = new ArrayList<>();
-        for (OpenedPack p : packs) for (OpenedCard c : p.cards()) pulls.add(new CollectionService.Pull(c.id(), c.finish()));
+        for (OpenedPack p : packs) {
+            for (OpenedCard c : p.cards()) pulls.add(new CollectionService.Pull(c.id(), CollectionRules.copyKey(c.finish(), c.alt())));
+        }
         collections.add(userId, pulls);
         return new Opening(purchase.gems(), purchase.price(), packs);
     }
@@ -79,7 +85,8 @@ public class ShopService {
         return new Opening(gift.gems(), 0, List.of(new OpenedPack("Structure", null, cards)));
     }
 
-    private List<OpenedPack> draw(EditionMetadata edition, String product, Map<String, List<String>> cards) {
+    /** The packs of a purchase; a copy of a card in `withAlt` may come out with its alternative art. */
+    private List<OpenedPack> draw(EditionMetadata edition, String product, Map<String, List<String>> cards, java.util.Set<String> withAlt) {
         List<BoosterRules.OpenedPack> drawn;
         if ("box".equals(product)) {
             double chance = WalletRules.isSubEdition(edition.getEditionId()) ? 0.5 : 1;
@@ -90,6 +97,12 @@ public class ShopService {
             drawn = List.of(new BoosterRules.OpenedPack(type.getName(), BoosterRules.openPack(type, cards, random)));
         }
         return drawn.stream().map(p -> new OpenedPack(p.packType(), p.upgradedFrom(),
-                p.cards().stream().map(id -> new OpenedCard(id, CollectionRules.rollFinish(random))).toList())).toList();
+                p.cards().stream().map(id -> pulled(id, withAlt)).toList())).toList();
+    }
+
+    /** One pulled copy: the alternative art (only for a card that has it) and the finish, each rolled on its own. */
+    private OpenedCard pulled(String id, java.util.Set<String> withAlt) {
+        boolean alt = withAlt.contains(id) && random.getAsDouble() < CollectionRules.ALT_ODDS;
+        return new OpenedCard(id, CollectionRules.rollFinish(random), alt);
     }
 }

@@ -14,6 +14,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -79,8 +80,24 @@ public class CardPoolService {
         return cards.isEmpty() ? new ArrayList<>(known.keySet()) : cards;
     }
 
+    /** The cards of an edition ("E1" or "E1.1") that can come out with an alternative art. */
+    public Set<String> withAltArt(String editionId) {
+        Set<String> out = new java.util.HashSet<>();
+        joined(editionId).forEach((id, meta) -> {
+            if (meta.getAltImage() != null && !meta.getAltImage().isBlank()) out.add(id);
+        });
+        return out;
+    }
+
     /** Card id → rarity, for the cards of an edition with metadata. */
     private Map<String, String> rarities(String editionId) {
+        Map<String, String> out = new LinkedHashMap<>();
+        joined(editionId).forEach((id, m) -> out.put(id, m.getRarity() == null || m.getRarity().isBlank() ? "C" : m.getRarity()));
+        return out;
+    }
+
+    /** Card id → metadata, for the images of an edition joined to theirs (as the web joins them). */
+    private Map<String, Card> joined(String editionId) {
         String[] parts = editionId.split("\\.", 2);
         String base = parts[0];
         String sub = parts.length > 1 ? parts[1] : "";
@@ -88,12 +105,11 @@ public class CardPoolService {
         for (Card m : metadata.findByEdition(base)) {
             if (m.getCardNumber() != null) byKey.put(key(m.getEdition(), m.getCardNumber(), m.getSubEdition(), m.getColorIdentity()), m);
         }
-        Map<String, String> out = new LinkedHashMap<>();
+        Map<String, Card> out = new LinkedHashMap<>();
         for (DriveCard d : driveCards.findByEdition(base)) {
             if (!sub.equals(d.getSubEdition() == null ? "" : d.getSubEdition()) || !matchesFileName(d)) continue;
             Card m = byKey.get(key(d.getEdition(), d.getNumber(), d.getSubEdition(), d.getColorIdentity()));
-            if (m == null) continue;
-            out.put(d.getId(), m.getRarity() == null || m.getRarity().isBlank() ? "C" : m.getRarity());
+            if (m != null) out.put(d.getId(), m);
         }
         return out;
     }

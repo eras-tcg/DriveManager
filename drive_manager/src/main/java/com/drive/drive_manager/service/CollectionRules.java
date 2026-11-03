@@ -9,13 +9,21 @@ import java.util.function.DoubleSupplier;
 /**
  * A player's cards and fragments. Every copy has a finish: plain, foil or prism (prismatic, rarer); a card comes out
  * foil by the same odds whether it is pulled from a pack or crafted. Breaking a copy gives fragments of its card's
- * rarity (10, a foil 30, a prismatic 90); 30 fragments of a rarity craft any card of that rarity. Pure.
+ * rarity (10, a foil 30, a prismatic 90); 30 fragments of a rarity craft any card of that rarity.
+ * A card with an alternative art (Card.altImage) can also come out of a pack with it, very rarely, and in any finish:
+ * those copies are kept under keys of their own ("alt-" + finish) next to the others of the same card, so they count
+ * as that card (decks, distinct cards) but are never broken, crafted or counted as extras. Pure.
  */
 public final class CollectionRules {
 
     public static final List<String> FINISHES = List.of("plain", "foil", "prism");
     public static final double FOIL_ODDS = 0.05;
     public static final double PRISM_ODDS = 0.005;
+    /** A pulled copy of a card with an alternative art comes out with it (1 in 10 000), whatever its finish. */
+    public static final double ALT_ODDS = 0.0001;
+    public static final String ALT_PREFIX = "alt-";
+    /** The keys a deck takes its copies from, the finest first: the alternative art, then the finishes. */
+    public static final List<String> COPY_ORDER = List.of("alt-prism", "alt-foil", "alt-plain", "prism", "foil", "plain");
     public static final int CRAFT_COST = 30;
     /** Copies a deck can use of a card: more than these of one printing are extra. */
     public static final int MAX_COPIES = 4;
@@ -34,6 +42,20 @@ public final class CollectionRules {
         if (roll < PRISM_ODDS) return "prism";
         if (roll < PRISM_ODDS + FOIL_ODDS) return "foil";
         return "plain";
+    }
+
+    /** The key a copy is kept under: its finish, or "alt-" + finish with the alternative art. */
+    public static String copyKey(String finish, boolean alt) {
+        return alt ? ALT_PREFIX + finish : finish;
+    }
+
+    public static boolean isAlt(String key) {
+        return key != null && key.startsWith(ALT_PREFIX);
+    }
+
+    /** The finish of a kept copy ("alt-foil" → "foil"). */
+    public static String finishOf(String key) {
+        return isAlt(key) ? key.substring(ALT_PREFIX.length()) : key;
     }
 
     /** Fragments `copies` copies cost to craft; never overflows (ArithmeticException instead). */
@@ -76,13 +98,13 @@ public final class CollectionRules {
     }
 
     /**
-     * The finish of each of a deck's `count` copies of a printing, taken from the owned copies the finest first; a copy
-     * the player lacks is null.
+     * The key of each of a deck's `count` copies of a printing, taken from the owned copies the finest first (the
+     * alternative art before all, COPY_ORDER); a copy the player lacks is null.
      */
     public static List<String> copyFinishes(Map<String, Integer> owned, int count) {
         List<String> out = new ArrayList<>();
-        for (int i = FINISHES.size() - 1; i >= 0 && out.size() < count; i--) {
-            String finish = FINISHES.get(i);
+        for (int i = 0; i < COPY_ORDER.size() && out.size() < count; i++) {
+            String finish = COPY_ORDER.get(i);
             int n = owned == null ? 0 : Math.max(0, owned.getOrDefault(finish, 0));
             for (int k = 0; k < n && out.size() < count; k++) out.add(finish);
         }

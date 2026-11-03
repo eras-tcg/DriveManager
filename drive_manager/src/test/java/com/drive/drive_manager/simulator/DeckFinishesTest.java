@@ -32,4 +32,29 @@ class DeckFinishesTest {
         // a: prism, then plain, then one not owned; b: foil; c: not owned
         assertThat(slots).extracting(CardSlot::getFinish).containsExactly("prism", "foil", null, null, null);
     }
+
+    @Test
+    void aCopyWithTheAlternativeArtShowsItWithItsFinish() {
+        CollectionService collections = mock(CollectionService.class);
+        when(collections.of("p1")).thenReturn(new CollectionService.View(Map.of("titan", Map.of("plain", 1, "alt-foil", 1)), Map.of()));
+        MissionHooks hooks = new MissionHooks(null, null, collections);
+
+        List<CardSlot> slots = new ArrayList<>();
+        for (int i = 0; i < 2; i++) {
+            CardSlot s = new CardSlot();
+            s.setCardId("titan");
+            s.setImageUrl("https://img/titan");
+            s.setAltImageUrl("https://img/titan-alt");
+            slots.add(s);
+        }
+        hooks.withFinishes("p1", slots);
+
+        assertThat(slots.get(0).isAlt()).isTrue();
+        assertThat(slots.get(0).getImageUrl()).isEqualTo("https://img/titan-alt");
+        assertThat(slots.get(0).getFinish()).isEqualTo("foil");
+        assertThat(slots.get(1).isAlt()).isFalse();
+        assertThat(slots.get(1).getImageUrl()).isEqualTo("https://img/titan");
+        // Still the same card: its rules and identity do not change
+        assertThat(slots).extracting(CardSlot::getCardId).containsOnly("titan");
+    }
 }
