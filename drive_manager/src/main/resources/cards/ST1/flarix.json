@@ -1,0 +1,99 @@
+{
+  "name" : "flarix",
+  "effects" : [ {
+    "id" : "flarix:en-invocacion",
+    "moment" : "ON_SUMMON",
+    "label" : "En Invocación",
+    "text" : "Puedes tributar hasta 2 materiales de esta carta; toma 1 carta Azul de tus tributos por cada material tributado.",
+    "cost" : [ {
+      "type" : "Do",
+      "action" : {
+        "type" : "Move",
+        "cards" : {
+          "zones" : "materials",
+          "owner" : "YOU",
+          "filter" : { },
+          "min" : {
+            "type" : "Fixed",
+            "value" : 1
+          },
+          "max" : {
+            "type" : "Fixed",
+            "value" : 2
+          },
+          "self" : "ANY",
+          "mode" : "CHOOSE"
+        },
+        "to" : "tributeZone"
+      }
+    } ],
+    "steps" : [ {
+      "type" : "Do",
+      "action" : {
+        "type" : "Move",
+        "cards" : {
+          "zones" : "tributeZone",
+          "owner" : "YOU",
+          "filter" : {
+            "colors" : [ "B" ]
+          },
+          "min" : {
+            "type" : "LastCount"
+          },
+          "max" : {
+            "type" : "LastCount"
+          },
+          "self" : "ANY",
+          "mode" : "CHOOSE"
+        },
+        "to" : "hand"
+      }
+    } ],
+    "sourceZone" : "field",
+    "limit" : "NONE"
+  }, {
+    "id" : "flarix:en-tributos",
+    "moment" : "ON_EVENT",
+    "label" : "En Tributos",
+    "text" : "(1) Si reduces a 0 la fuerza de algún enemigo: puedes enviar esta carta al fondo de tu mazo para infringir 9 de daño directo.",
+    "steps" : [ {
+      "type" : "IfPossible"
+    }, {
+      "type" : "Do",
+      "action" : {
+        "type" : "Move",
+        "cards" : {
+          "zones" : "hand,tributeZone,discardPile,deck,lifeStack",
+          "owner" : "YOU",
+          "filter" : { },
+          "min" : {
+            "type" : "Fixed",
+            "value" : 1
+          },
+          "max" : {
+            "type" : "Fixed",
+            "value" : 1
+          },
+          "self" : "ANY",
+          "mode" : "SELF"
+        },
+        "to" : "deck"
+      }
+    }, {
+      "type" : "Do",
+      "action" : {
+        "type" : "Damage",
+        "amount" : {
+          "type" : "Fixed",
+          "value" : 9
+        }
+      }
+    } ],
+    "condition" : {
+      "type" : "YouReducedStrength",
+      "toAtMost" : 0
+    },
+    "sourceZone" : "tributeZone",
+    "limit" : "ONCE_PER_TURN_BETWEEN_COPIES"
+  } ]
+}

@@ -191,7 +191,7 @@ class E13CardsTest extends CardBatchSupport {
         host.getDeck().add(0, estr);
         summon(withClasses(card("cv", "Cervalyra", 1, 1, "G"), "fauna", "treant"));
         answer("es");
-        answer();
+        // The rest to the bottom, in one choice
         answer();
         assertThat(host.getHand()).contains(estr).hasSize(2);
     }
@@ -264,7 +264,7 @@ class E13CardsTest extends CardBatchSupport {
         evo.setRequirement("criatura nivel 2.");
         host.getHand().add(evo);
         int before = gems();
-        assertThat(Summons.specialByPlayer(room, "host", "ev", "cy")).isNull();
+        assertThat(SpecialSummons.specialByPlayer(room, "host", "ev", "cy")).isNull();
         answer("gr");
         drain();
         assertThat(host.getField()).contains(evo).doesNotContain(cylvaus);
@@ -303,7 +303,7 @@ class E13CardsTest extends CardBatchSupport {
         host.getHand().add(tharnok);
         onField(host, card("su", "Invocador", 3, 3, "G"));
         int before = gems();
-        assertThat(Summons.specialByPlayer(room, "host", "th", "su")).isNull();
+        assertThat(SpecialSummons.specialByPlayer(room, "host", "th", "su")).isNull();
         drain();
         assertThat(host.getField()).contains(tharnok);
         assertThat(gems()).isEqualTo(before - 1);
@@ -376,7 +376,7 @@ class E13CardsTest extends CardBatchSupport {
         host.getDeck().add(0, withClasses(card("bj", "Brujo", 1, 1, "P"), "brujo"));
         summon(withClasses(card("bm", "Bruja Mensajera", 1, 1, "P"), "brujo"));
         answer("bj");
-        answer();
+        // The rest to the bottom, in one choice
         answer();
         answer("bj");
         assertThat(host.getHand()).extracting(CardSlot::getInstanceId).containsExactly("bj");
@@ -414,7 +414,7 @@ class E13CardsTest extends CardBatchSupport {
     void necrobrujoPlaysAUtilityFromTheTributesIfItTributedOne() {
         CardSlot util = utility("ut", "Utilidad", 1, "P");
         CardEffects.register("utilidad", new EffectScript("utilidad:en-juego", EffectScript.Moment.ON_PLAY, true, "En Juego", "Gana 1 gema.",
-                List.of(new EffectStep.GainGems(1))));
+                List.of(Compose.gainGems(1))));
         host.getHand().add(util);
         summon(withClasses(card("nb", "Necrobrujo", 5, 4, "P"), "brujo"));
         answer("ut", "hd1");
@@ -492,7 +492,7 @@ class E13CardsTest extends CardBatchSupport {
         host.getHand().add(ascended);
         CardSlot pl = inHand("pl", "Infantería De Primera Línea", 2, 2, "R", "armada");
         inHand("x", "Pago", 1, 1, "R");
-        assertThat(Summons.specialByPlayer(room, "host", "as", "pc")).isNull();
+        assertThat(SpecialSummons.specialByPlayer(room, "host", "as", "pc")).isNull();
         untilOffered(peon);
         answer("pc");
         answer("x");

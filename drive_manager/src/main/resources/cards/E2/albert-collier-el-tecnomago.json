@@ -1,0 +1,22 @@
+{
+  "name" : "albert collier el tecnomago",
+  "reactions" : [ {
+    "type" : "AllyGuard",
+    "allies" : {
+      "classes" : [ "cineriano" ],
+      "cardType" : "creature"
+    },
+    "replacement" : {
+      "type" : "Replacement",
+      "id" : "albert-collier:todos-los-turnos",
+      "label" : "Todos Los Turnos",
+      "text" : "Cuando uno o más aliados [cinerianos] fueran a ser removidos por efecto oponente: en su lugar, puedes tributar 1 material de esta carta y sacrificar 1 [artefacto] bajo tu control.",
+      "byOpponentOnly" : true,
+      "limit" : "NONE",
+      "cost" : "GUARD_MATERIAL_AND_SACRIFICE",
+      "resourceFilter" : {
+        "classes" : [ "artefacto" ]
+      }
+    }
+  } ]
+}

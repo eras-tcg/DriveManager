@@ -1,0 +1,87 @@
+{
+  "name" : "fervor de la primera línea",
+  "effects" : [ {
+    "id" : "fervor-primera-linea:en-juego",
+    "moment" : "ON_PLAY",
+    "mandatory" : true,
+    "label" : "En Juego",
+    "text" : "(1) Puedes invocar 1 criatura con \"Primera Línea\" en su nombre de tu mano, en tu línea frontal reduciendo su coste en 1.",
+    "steps" : [ {
+      "type" : "MayDo",
+      "question" : "¿Invocas 1 criatura con \"Primera Línea\" en su nombre de tu mano en tu línea frontal?",
+      "covers" : 1
+    }, {
+      "type" : "Do",
+      "action" : {
+        "type" : "Summon",
+        "cards" : {
+          "zones" : "hand",
+          "owner" : "YOU",
+          "filter" : {
+            "cardType" : "creature",
+            "nameContains" : "Primera Línea"
+          },
+          "min" : {
+            "type" : "Fixed",
+            "value" : 1
+          },
+          "max" : {
+            "type" : "Fixed",
+            "value" : 1
+          },
+          "self" : "ANY",
+          "mode" : "CHOOSE"
+        },
+        "reduce" : {
+          "type" : "Fixed",
+          "value" : 1
+        },
+        "toFront" : true,
+        "required" : true
+      }
+    } ],
+    "sourceZone" : "field",
+    "limit" : "ONCE_PER_TURN_BETWEEN_COPIES"
+  }, {
+    "id" : "fervor-primera-linea:en-mano",
+    "moment" : "ON_EVENT",
+    "label" : "En Mano",
+    "text" : "Si algún aliado es destruido por el oponente: puedes jugar esta carta sin pagar su coste.",
+    "steps" : [ {
+      "type" : "Do",
+      "action" : {
+        "type" : "Play",
+        "cards" : {
+          "zones" : "hand",
+          "owner" : "YOU",
+          "filter" : { },
+          "min" : {
+            "type" : "Fixed",
+            "value" : 1
+          },
+          "max" : {
+            "type" : "Fixed",
+            "value" : 1
+          },
+          "self" : "ANY",
+          "mode" : "SELF"
+        },
+        "reduce" : {
+          "type" : "Fixed",
+          "value" : 1000
+        },
+        "required" : true
+      }
+    } ],
+    "condition" : {
+      "type" : "Destroyed",
+      "owner" : "YOU",
+      "by" : "ENEMY",
+      "filter" : {
+        "cardType" : "creature"
+      }
+    },
+    "sourceZone" : "hand",
+    "limit" : "NONE"
+  } ]
+}

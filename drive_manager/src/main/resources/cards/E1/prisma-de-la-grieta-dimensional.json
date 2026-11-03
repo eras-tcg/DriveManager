@@ -1,0 +1,15 @@
+{
+  "name" : "prisma de la grieta dimensional",
+  "effects" : [ {
+    "id" : "prisma-grieta:en-juego",
+    "moment" : "ON_PLAY",
+    "mandatory" : true,
+    "label" : "En Juego",
+    "text" : "Efecto Definitivo. Ambos jugadores envían las cartas de su mano al fondo de su mazo en orden aleatorio. Luego: ambos roban cartas igual a la cantidad de vidas que tiene su oponente.",
+    "steps" : [ {
+      "type" : "HandsToBottomDrawOpponentLives"
+    } ],
+    "sourceZone" : "field",
+    "limit" : "DEFINITIVE"
+  } ]
+}

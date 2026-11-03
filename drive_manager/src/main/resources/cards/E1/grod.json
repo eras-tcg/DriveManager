@@ -1,0 +1,12 @@
+{
+  "name" : "grod",
+  "continuous" : [ {
+    "label" : "Todos Los Turnos",
+    "text" : "Esta carta no puede declarar ataque.",
+    "condition" : {
+      "type" : "Always"
+    },
+    "keywords" : [ "No puede atacar" ],
+    "zone" : "field"
+  } ]
+}

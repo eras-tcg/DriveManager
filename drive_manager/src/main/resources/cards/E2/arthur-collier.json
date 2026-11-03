@@ -1,0 +1,73 @@
+{
+  "name" : "arthur collier",
+  "effects" : [ {
+    "id" : "arthur-collier:todos-los-turnos",
+    "moment" : "ON_EVENT",
+    "label" : "Todos Los Turnos",
+    "text" : "Si esta carta enfrenta un enemigo como atacante: puedes tributar 2 materiales de esta carta para reducir su fuerza en 2 por el valor de tu marcador de gemas.",
+    "steps" : [ {
+      "type" : "IfPossible"
+    }, {
+      "type" : "Do",
+      "action" : {
+        "type" : "Move",
+        "cards" : {
+          "zones" : "materials",
+          "owner" : "YOU",
+          "filter" : { },
+          "min" : {
+            "type" : "Fixed",
+            "value" : 2
+          },
+          "max" : {
+            "type" : "Fixed",
+            "value" : 2
+          },
+          "self" : "ANY",
+          "mode" : "CHOOSE"
+        },
+        "to" : "tributeZone"
+      }
+    }, {
+      "type" : "Do",
+      "action" : {
+        "type" : "Modify",
+        "cards" : {
+          "zones" : "clash",
+          "owner" : "YOU",
+          "filter" : { },
+          "min" : {
+            "type" : "Fixed"
+          },
+          "max" : {
+            "type" : "Fixed",
+            "value" : 2147483647
+          },
+          "self" : "ANY",
+          "mode" : "ALL"
+        },
+        "strength" : {
+          "type" : "Times",
+          "base" : {
+            "type" : "Times",
+            "base" : {
+              "type" : "Gems"
+            },
+            "factor" : 2
+          },
+          "factor" : -1
+        },
+        "until" : "TURN"
+      }
+    } ],
+    "condition" : {
+      "type" : "ThisClashes",
+      "enemy" : {
+        "cardType" : "creature"
+      },
+      "asAttacker" : true
+    },
+    "sourceZone" : "field",
+    "limit" : "NONE"
+  } ]
+}

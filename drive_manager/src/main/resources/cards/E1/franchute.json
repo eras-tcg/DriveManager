@@ -1,0 +1,20 @@
+{
+  "name" : "franchute",
+  "effects" : [ {
+    "id" : "franchute:en-invocacion",
+    "moment" : "ON_SUMMON",
+    "label" : "En Invocación",
+    "text" : "Puedes invocar criaturas Rojas que en nivel sumen hasta 2 de tu mano sin pagar sus costes.",
+    "steps" : [ {
+      "type" : "SummonFreeLevelSum",
+      "zone" : "hand",
+      "filter" : {
+        "colors" : [ "R" ],
+        "cardType" : "creature"
+      },
+      "maxLevelSum" : 2
+    } ],
+    "sourceZone" : "field",
+    "limit" : "NONE"
+  } ]
+}

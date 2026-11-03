@@ -1,0 +1,105 @@
+{
+  "name" : "hul",
+  "effects" : [ {
+    "id" : "hul:todos-los-turnos",
+    "moment" : "ON_EVENT",
+    "mandatory" : true,
+    "label" : "Todos Los Turnos",
+    "text" : "Si alguna criatura es destruida o invocada especialmente: sacrifica esta carta en tu línea frontal.",
+    "steps" : [ {
+      "type" : "Do",
+      "action" : {
+        "type" : "Destroy",
+        "cards" : {
+          "zones" : "field",
+          "owner" : "YOU",
+          "filter" : { },
+          "min" : {
+            "type" : "Fixed",
+            "value" : 1
+          },
+          "max" : {
+            "type" : "Fixed",
+            "value" : 1
+          },
+          "self" : "ANY",
+          "mode" : "SELF"
+        },
+        "sacrifice" : true
+      }
+    } ],
+    "condition" : {
+      "type" : "All",
+      "all" : [ {
+        "type" : "Any",
+        "any" : [ {
+          "type" : "Summoned",
+          "side" : "ANY",
+          "how" : "special"
+        }, {
+          "type" : "All",
+          "all" : [ {
+            "type" : "Destroyed",
+            "owner" : "ANY",
+            "by" : "ANY",
+            "filter" : {
+              "cardType" : "creature"
+            }
+          }, {
+            "type" : "Not",
+            "condition" : {
+              "type" : "Happened",
+              "actor" : "ANY",
+              "owner" : "ANY",
+              "from" : "lifeStack"
+            }
+          } ]
+        } ]
+      }, {
+        "type" : "ThisIs",
+        "state" : "IN_FRONT_LINE"
+      } ]
+    },
+    "sourceZone" : "field",
+    "limit" : "NONE"
+  }, {
+    "id" : "hul:en-destruccion",
+    "moment" : "ON_DESTROY",
+    "label" : "En Destrucción por efecto",
+    "text" : "El dueño de esta carta puede jugar 1 utilidad de sus tributos reduciendo su coste en 1.",
+    "steps" : [ {
+      "type" : "Do",
+      "action" : {
+        "type" : "Play",
+        "cards" : {
+          "zones" : "tributeZone",
+          "owner" : "YOU",
+          "filter" : {
+            "cardTypes" : [ "utility" ]
+          },
+          "min" : {
+            "type" : "Fixed",
+            "value" : 1
+          },
+          "max" : {
+            "type" : "Fixed",
+            "value" : 1
+          },
+          "self" : "ANY",
+          "mode" : "CHOOSE"
+        },
+        "reduce" : {
+          "type" : "Fixed",
+          "value" : 1
+        },
+        "required" : true
+      }
+    } ],
+    "condition" : {
+      "type" : "ByEffect",
+      "by" : "ANY"
+    },
+    "sourceZone" : "field",
+    "limit" : "NONE"
+  } ]
+}

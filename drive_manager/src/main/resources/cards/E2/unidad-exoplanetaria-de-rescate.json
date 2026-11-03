@@ -1,0 +1,117 @@
+{
+  "name" : "unidad exoplanetaria de rescate",
+  "effects" : [ {
+    "id" : "exoplanetaria:en-mano",
+    "moment" : "ACTIVATED",
+    "label" : "Turno Aliado / En Mano",
+    "text" : "Si las criaturas oponentes suman al menos 5 más en nivel que tus aliados: una criatura en tu mano o tributos puede invocar especialmente esta carta.",
+    "steps" : [ {
+      "type" : "SpecialSelfDeclaredSummoner",
+      "zones" : "hand,tributeZone"
+    } ],
+    "condition" : {
+      "type" : "Compare",
+      "left" : {
+        "type" : "OpponentLevels"
+      },
+      "op" : "AT_LEAST",
+      "right" : {
+        "type" : "Scaled",
+        "base" : {
+          "type" : "LevelsOnField",
+          "filter" : {
+            "cardType" : "creature"
+          }
+        },
+        "divisor" : 1,
+        "plus" : 5
+      }
+    },
+    "sourceZone" : "hand",
+    "allyTurn" : true,
+    "limit" : "NONE"
+  }, {
+    "id" : "exoplanetaria:en-invocacion",
+    "moment" : "ON_SUMMON",
+    "label" : "En Invocación",
+    "text" : "Puedes tributar materiales de esta carta: por cada 2 materiales tributados elige 1 enemigo; reduce en 2 su fuerza.",
+    "cost" : [ {
+      "type" : "Do",
+      "action" : {
+        "type" : "Move",
+        "cards" : {
+          "zones" : "materials",
+          "owner" : "YOU",
+          "filter" : { },
+          "min" : {
+            "type" : "Fixed",
+            "value" : 1
+          },
+          "max" : {
+            "type" : "Fixed",
+            "value" : 99
+          },
+          "self" : "ANY",
+          "mode" : "CHOOSE"
+        },
+        "to" : "tributeZone"
+      }
+    }, {
+      "type" : "Do",
+      "action" : {
+        "type" : "Select",
+        "selector" : {
+          "zones" : "frontLine",
+          "owner" : "OPPONENT",
+          "filter" : {
+            "cardType" : "creature"
+          },
+          "min" : {
+            "type" : "Scaled",
+            "base" : {
+              "type" : "LastCount"
+            },
+            "divisor" : 2
+          },
+          "max" : {
+            "type" : "Scaled",
+            "base" : {
+              "type" : "LastCount"
+            },
+            "divisor" : 2
+          },
+          "self" : "ANY",
+          "mode" : "CHOOSE"
+        },
+        "target" : true
+      }
+    } ],
+    "steps" : [ {
+      "type" : "Do",
+      "action" : {
+        "type" : "Modify",
+        "cards" : {
+          "zones" : "saved:targets",
+          "owner" : "YOU",
+          "filter" : { },
+          "min" : {
+            "type" : "Fixed"
+          },
+          "max" : {
+            "type" : "Fixed",
+            "value" : 2147483647
+          },
+          "self" : "ANY",
+          "mode" : "ALL"
+        },
+        "strength" : {
+          "type" : "Fixed",
+          "value" : -2
+        },
+        "until" : "TURN"
+      }
+    } ],
+    "sourceZone" : "field",
+    "limit" : "NONE"
+  } ]
+}

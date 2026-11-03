@@ -14,10 +14,14 @@ import java.util.regex.Pattern;
 
 import static com.drive.drive_manager.simulator.engine.EffectEngine.*;
 import static com.drive.drive_manager.simulator.engine.Summons.*;
+import static com.drive.drive_manager.simulator.engine.SpecialRequirements.*;
+import static com.drive.drive_manager.simulator.engine.SpecialSummons.*;
+import static com.drive.drive_manager.simulator.engine.Rituals.*;
 import static com.drive.drive_manager.simulator.engine.Removals.*;
 import static com.drive.drive_manager.simulator.engine.TurnRules.*;
 import static com.drive.drive_manager.simulator.engine.Chain.*;
-import static com.drive.drive_manager.simulator.engine.Steps.*;
+import static com.drive.drive_manager.simulator.engine.Resolution.*;
+import static com.drive.drive_manager.simulator.engine.StepHelpers.*;
 import static com.drive.drive_manager.simulator.engine.Answers.*;
 
 /** Combat (rule 10): declaring an attack, then its steps one by one (attack, block, clash, direct damage, end). */
@@ -37,16 +41,8 @@ public final class CombatRules {
         if (error != null) return error;
         PlayerState player = room.getPlayer(userId);
         CardSlot attacker = player == null ? null : find(player.getField(), attackerId);
-        if (attacker == null || !"creature".equals(attacker.getCardType())) return "Solo tus criaturas del campo pueden atacar";
-        if (!inFrontLine(attacker)) return "Solo las criaturas de la línea frontal pueden atacar";
-        if (attacker.isTapped()) return "Esa criatura está agotada";
-        if (keywords(attacker).contains(NO_ATTACK)) return name(attacker) + " no puede declarar ataque";
-        if (keywords(attacker).contains(CANNOT_TAP)) return name(attacker) + " no puede agotarse para declarar ataque";
-        if (!attackGemsOk(room, userId, attacker)) {
-            Integer furia = furia(attacker);
-            return furia == null ? "Para declarar un ataque necesitas 0 o más gemas"
-                    : "Con Furia " + furia + " puedes declarar ataque mientras tu rival tenga " + furia + " o menos gemas";
-        }
+        error = whyCannotAttack(room, userId, attacker);
+        if (error != null) return error;
         if (targetId != null) {
             PlayerState opponent = room.getPlayer(room.getOpponentId(userId));
             CardSlot target = opponent == null ? null : find(opponent.getField(), targetId);
@@ -57,6 +53,21 @@ public final class CombatRules {
         attacker.setTapped(true);
         startCombat(room, userId, attacker, targetId, false, null);
         advance(room);
+        return null;
+    }
+
+    /** Why this card cannot declare a regular attack now; null: it can (the main phase of the turn is asked apart). */
+    static String whyCannotAttack(GameRoom room, String userId, CardSlot attacker) {
+        if (attacker == null || !"creature".equals(attacker.getCardType())) return "Solo tus criaturas del campo pueden atacar";
+        if (!inFrontLine(attacker)) return "Solo las criaturas de la línea frontal pueden atacar";
+        if (attacker.isTapped()) return "Esa criatura está agotada";
+        if (keywords(attacker).contains(NO_ATTACK)) return name(attacker) + " no puede declarar ataque";
+        if (keywords(attacker).contains(CANNOT_TAP)) return name(attacker) + " no puede agotarse para declarar ataque";
+        if (!attackGemsOk(room, userId, attacker)) {
+            Integer furia = furia(attacker);
+            return furia == null ? "Para declarar un ataque necesitas 0 o más gemas"
+                    : "Con Furia " + furia + " puedes declarar ataque mientras tu rival tenga " + furia + " o menos gemas";
+        }
         return null;
     }
 
@@ -183,7 +194,9 @@ public final class CombatRules {
                     if (provoke != null && c.getBlockerId() == null) {
                         List<CardSlot> options = blockers(defender).stream()
                                 .filter(b -> !b.getInstanceId().equals(c.getTargetId()))
-                                .filter(b -> provoke == 0 || (b.getLevel() != null && b.getLevel() <= provoke)).toList();
+                                .filter(b -> provoke == 0 || (b.getLevel() != null && b.getLevel() <= provoke))
+                                // Provocar is an effect of the attacker that targets: "no puede ser objetivo de efectos…" (HE-110) is left out
+                                .filter(b -> !immuneTo(b, attacker.getLevel() == null ? 0 : attacker.getLevel())).toList();
                         if (!options.isEmpty()) {
                             rulesPrompt(room, owner.getUserId(), PURPOSE_PROVOKE, name(attacker) + " · Provocar",
                                     "Puedes elegir 1 enemigo" + (provoke > 0 ? " nivel " + provoke + " o menor" : "") + ": deberá bloquear este ataque.",
@@ -419,7 +432,7 @@ public final class CombatRules {
                 String[] p = effectMark.substring(PENDING_EFFECT_DAMAGE.length()).split("\\|");
                 PendingEffect effect = room.getChain().stream().filter(e -> e.getId().equals(p[0])).findFirst().orElse(null);
                 PlayerState controller = room.getPlayer(p[2]);
-                if (effect != null && controller != null) Steps.damageByEffect(room, effect, controller, Integer.parseInt(p[1]), false);
+                if (effect != null && controller != null) StepHelpers.damageByEffect(room, effect, controller, Integer.parseInt(p[1]), false);
             }
             advance(room);
             return null;
@@ -460,9 +473,9 @@ public final class CombatRules {
     /** "hasta el final del ataque" ends with the combat (and "al final del ataque súbelo a tu mano con todos sus materiales"). */
     static void clearUntilEndOfAttack(GameRoom room, Combat c) {
         for (String mark : new ArrayList<>(room.getUsedThisTurn())) {
-            if (!mark.startsWith(Steps.RETURN_AT_ATTACK_END)) continue;
+            if (!mark.startsWith(StepHelpers.RETURN_AT_ATTACK_END)) continue;
             room.getUsedThisTurn().remove(mark);
-            String[] p = mark.substring(Steps.RETURN_AT_ATTACK_END.length()).split("\\|");
+            String[] p = mark.substring(StepHelpers.RETURN_AT_ATTACK_END.length()).split("\\|");
             PlayerState owner = room.getPlayer(p[0]);
             CardSlot card = owner == null ? null : find(owner.getField(), p[1]);
             if (card == null) continue;
@@ -508,5 +521,39 @@ public final class CombatRules {
         // Rule 4.0.6.2: the Retaguardia cannot be attacked
         return opponent.getField().stream()
                 .filter(c -> "creature".equals(c.getCardType()) && inFrontLine(c) && (c.isTapped() || challenges(attacker, c))).toList();
+    }
+
+    /** "declara ataque" by an effect: the subject attacks if it can. Returns true when the player is asked what to attack. */
+    static boolean attackByEffect(GameRoom room, PendingEffect effect, boolean opponentOnly) {
+        String userId = effect.getControllerId();
+        CardSlot subject = subject(room, effect);
+        if (subject == null) return false;
+        if (room.getCombat() != null) {
+            log(room, name(subject) + " no puede atacar: ya hay un combate en curso", null);
+            return false;
+        }
+        if (keywords(subject).contains(NO_ATTACK)) {
+            log(room, name(subject) + " no puede declarar ataque este turno", null);
+            return false;
+        }
+        if (!inFrontLine(subject)) {
+            log(room, name(subject) + " no puede atacar: no está en la línea frontal", null);
+            return false;
+        }
+        List<CardSlot> targets = opponentOnly ? List.of() : attackTargets(room, userId, subject);
+        if (targets.isEmpty()) {
+            startCombat(room, userId, subject, null, true, effect);
+            return false;
+        }
+        PlayerState opponent = room.getPlayer(room.getOpponentId(userId));
+        Prompt prompt = prompt(room, effect, Prompt.Kind.PICK,
+                name(subject) + " declara ataque: elige una criatura agotada a la que atacar, o ninguna para atacar a tu rival.");
+        prompt.setCards(new ArrayList<>(opponent.getField()));
+        prompt.setValidIds(new ArrayList<>(ids(targets)));
+        prompt.setMin(0);
+        prompt.setMax(1);
+        prompt.setChosenLabel("Atacar");
+        room.setPrompt(prompt);
+        return true;
     }
 }

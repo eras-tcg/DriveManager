@@ -1,0 +1,65 @@
+{
+  "name" : "titanobrachios",
+  "effects" : [ {
+    "id" : "titanobrachios:en-mano",
+    "moment" : "ACTIVATED",
+    "label" : "Turno Aliado / En Mano",
+    "text" : "Puedes enviar hasta 20 cartas Verdes o [dinosaurio] de tus tributos al fondo de tu mazo en orden aleatorio; invoca esta carta reduciendo su coste en 1 por cada 2 cartas enviadas.",
+    "cost" : [ {
+      "type" : "Do",
+      "action" : {
+        "type" : "Move",
+        "cards" : {
+          "zones" : "tributeZone",
+          "owner" : "YOU",
+          "filter" : {
+            "colors" : [ "G" ],
+            "classes" : [ "dinosaurio" ]
+          },
+          "min" : {
+            "type" : "Fixed"
+          },
+          "max" : {
+            "type" : "Fixed",
+            "value" : 20
+          },
+          "self" : "ANY",
+          "mode" : "CHOOSE"
+        },
+        "to" : "deckBottom",
+        "random" : true
+      }
+    } ],
+    "steps" : [ {
+      "type" : "Do",
+      "action" : {
+        "type" : "Summon",
+        "cards" : {
+          "zones" : "hand",
+          "owner" : "YOU",
+          "filter" : { },
+          "min" : {
+            "type" : "Fixed",
+            "value" : 1
+          },
+          "max" : {
+            "type" : "Fixed",
+            "value" : 1
+          },
+          "self" : "ANY",
+          "mode" : "SELF"
+        },
+        "reduce" : {
+          "type" : "Scaled",
+          "base" : {
+            "type" : "LastCount"
+          },
+          "divisor" : 2
+        }
+      }
+    } ],
+    "sourceZone" : "hand",
+    "allyTurn" : true,
+    "limit" : "NONE"
+  } ]
+}

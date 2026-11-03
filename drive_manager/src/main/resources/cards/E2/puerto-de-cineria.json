@@ -1,0 +1,141 @@
+{
+  "name" : "puerto de cineria",
+  "effects" : [
+    {
+      "id" : "puerto-cineria:turno-aliado",
+      "moment" : "ACTIVATED",
+      "label" : "Turno Aliado",
+      "text" : "Puedes agotar esta carta para reactivar 1 [artefacto] en tu retaguardia.",
+      "steps" : [
+        {
+          "type" : "IfPossible"
+        },
+        {
+          "type" : "Do",
+          "action" : {
+            "type" : "SetTapped",
+            "cards" : {
+              "zones" : "field",
+              "owner" : "YOU",
+              "filter" : {},
+              "min" : {
+                "type" : "Fixed",
+                "value" : 1
+              },
+              "max" : {
+                "type" : "Fixed",
+                "value" : 1
+              },
+              "self" : "ANY",
+              "mode" : "SELF"
+            },
+            "tapped" : true
+          }
+        },
+        {
+          "type" : "Do",
+          "action" : {
+            "type" : "SetTapped",
+            "cards" : {
+              "zones" : "field",
+              "owner" : "YOU",
+              "filter" : {
+                "classes" : [
+                  "artefacto"
+                ],
+                "backOnly" : true
+              },
+              "min" : {
+                "type" : "Fixed",
+                "value" : 1
+              },
+              "max" : {
+                "type" : "Fixed",
+                "value" : 1
+              },
+              "self" : "ANY",
+              "mode" : "CHOOSE"
+            }
+          }
+        }
+      ],
+      "sourceZone" : "field",
+      "allyTurn" : true,
+      "limit" : "NONE"
+    },
+    {
+      "id" : "puerto-cineria:final-del-turno",
+      "moment" : "ON_EVENT",
+      "label" : "Turno Aliado",
+      "text" : "Al final del turno, si tienes menos de 0 gemas: puedes tributar 1 [artefacto] bajo tu control para ganar 1 gema.",
+      "steps" : [
+        {
+          "type" : "IfPossible"
+        },
+        {
+          "type" : "Do",
+          "action" : {
+            "type" : "Move",
+            "cards" : {
+              "zones" : "field",
+              "owner" : "YOU",
+              "filter" : {
+                "classes" : [
+                  "artefacto"
+                ]
+              },
+              "min" : {
+                "type" : "Fixed",
+                "value" : 1
+              },
+              "max" : {
+                "type" : "Fixed",
+                "value" : 1
+              },
+              "self" : "EXCLUDE",
+              "mode" : "CHOOSE"
+            },
+            "to" : "tributeZone"
+          }
+        },
+        {
+          "type" : "Do",
+          "action" : {
+            "type" : "Gems",
+            "count" : {
+              "type" : "Fixed",
+              "value" : 1
+            }
+          }
+        }
+      ],
+      "condition" : {
+        "type" : "All",
+        "all" : [
+          {
+            "type" : "Happened",
+            "eventType" : "TURN_END",
+            "actor" : "YOU",
+            "owner" : "ANY"
+          },
+          {
+            "type" : "Not",
+            "condition" : {
+              "type" : "Compare",
+              "left" : {
+                "type" : "SignedGems"
+              },
+              "op" : "AT_LEAST",
+              "right" : {
+                "type" : "Fixed"
+              }
+            }
+          }
+        ]
+      },
+      "sourceZone" : "field",
+      "allyTurn" : true,
+      "limit" : "NONE"
+    }
+  ]
+}

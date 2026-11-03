@@ -1,0 +1,106 @@
+{
+  "name" : "caballero de apoyo",
+  "effects" : [
+    {
+      "id" : "caballero-de-apoyo:todos-los-turnos",
+      "moment" : "ON_EVENT",
+      "mandatory" : true,
+      "label" : "Todos Los Turnos",
+      "text" : "Si esta carta es agotada durante un combate: elige un aliado; este gana fuerza 2 hasta el final del combate.",
+      "cost" : [
+        {
+          "type" : "Do",
+          "action" : {
+            "type" : "Select",
+            "selector" : {
+              "zones" : "pickableAllies",
+              "owner" : "YOU",
+              "filter" : {},
+              "min" : {
+                "type" : "Fixed",
+                "value" : 1
+              },
+              "max" : {
+                "type" : "Fixed",
+                "value" : 1
+              },
+              "self" : "ANY",
+              "mode" : "CHOOSE"
+            },
+            "target" : true,
+            "saveAs" : "subject",
+            "label" : "Elegido",
+            "endsIfNone" : true
+          }
+        }
+      ],
+      "steps" : [
+        {
+          "type" : "Do",
+          "action" : {
+            "type" : "Modify",
+            "cards" : {
+              "zones" : "subjectOrSelf",
+              "owner" : "YOU",
+              "filter" : {},
+              "min" : {
+                "type" : "Fixed"
+              },
+              "max" : {
+                "type" : "Fixed",
+                "value" : 2147483647
+              },
+              "self" : "ANY",
+              "mode" : "ALL"
+            },
+            "strength" : {
+              "type" : "Fixed",
+              "value" : 2
+            },
+            "until" : "ATTACK"
+          }
+        }
+      ],
+      "condition" : {
+        "type" : "All",
+        "all" : [
+          {
+            "type" : "Any",
+            "any" : [
+              {
+                "type" : "Happened",
+                "eventType" : "TAP",
+                "actor" : "ANY",
+                "owner" : "ANY",
+                "thisCard" : true
+              },
+              {
+                "type" : "Happened",
+                "eventType" : "BLOCK",
+                "actor" : "ANY",
+                "owner" : "ANY",
+                "thisCard" : true
+              },
+              {
+                "type" : "Happened",
+                "eventType" : "ATTACK_DECLARED",
+                "actor" : "ANY",
+                "owner" : "ANY",
+                "thisCard" : true,
+                "data" : [
+                  "exhausted=true"
+                ]
+              }
+            ]
+          },
+          {
+            "type" : "GameIs",
+            "state" : "DURING_COMBAT"
+          }
+        ]
+      },
+      "sourceZone" : "field",
+      "limit" : "NONE"
+    }
+  ]
+}

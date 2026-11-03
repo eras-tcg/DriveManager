@@ -24,9 +24,9 @@ class ProgrammedCardsExportTest {
         StringBuilder json = new StringBuilder("{\n");
         String sep = "";
         for (CardDefinition d : CardEffects.definitions().values()) {
-            json.append(sep).append(entry(d.name(), d.effects().size() + d.continuous().size() + d.auras().size()
-                    + d.costModifiers().size() + d.replacements().size() + rules.getOrDefault(d.name(), List.of()).size(),
-                    d.inherited().size() + d.inheritedReplacements().size(),
+            json.append(sep).append(entry(d.name(), d.effects().size() + d.continuous().size()
+                    + (int) d.reactions().stream().filter(r -> r instanceof CostModifiers.CostModifier || r instanceof CardEffects.Replacement).count() + rules.getOrDefault(d.name(), List.of()).size(),
+                    d.inherited().size() + d.inheritedReactions().size(),
                     d.effects().stream().map(EffectScript::id).toList()));
             sep = ",\n";
         }

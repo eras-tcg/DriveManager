@@ -1,0 +1,78 @@
+{
+  "name" : "exo 91",
+  "effects" : [ {
+    "id" : "exo-91:en-invocacion",
+    "moment" : "ON_SUMMON",
+    "label" : "En Invocación",
+    "text" : "Puedes tributar 2 materiales de esta carta; juega 1 estructura de tus tributos reduciendo su coste en 2.",
+    "cost" : [ {
+      "type" : "Do",
+      "action" : {
+        "type" : "Move",
+        "cards" : {
+          "zones" : "materials",
+          "owner" : "YOU",
+          "filter" : { },
+          "min" : {
+            "type" : "Fixed",
+            "value" : 2
+          },
+          "max" : {
+            "type" : "Fixed",
+            "value" : 2
+          },
+          "self" : "ANY",
+          "mode" : "CHOOSE"
+        },
+        "to" : "tributeZone"
+      }
+    } ],
+    "steps" : [ {
+      "type" : "Do",
+      "action" : {
+        "type" : "Play",
+        "cards" : {
+          "zones" : "tributeZone",
+          "owner" : "YOU",
+          "filter" : {
+            "cardTypes" : [ "structure" ]
+          },
+          "min" : {
+            "type" : "Fixed",
+            "value" : 1
+          },
+          "max" : {
+            "type" : "Fixed",
+            "value" : 1
+          },
+          "self" : "ANY",
+          "mode" : "CHOOSE"
+        },
+        "reduce" : {
+          "type" : "Fixed",
+          "value" : 2
+        },
+        "required" : true
+      }
+    } ],
+    "sourceZone" : "field",
+    "limit" : "NONE"
+  } ],
+  "reactions" : [ {
+    "type" : "AllyRemovalSummon",
+    "zone" : "tributeZone",
+    "ally" : {
+      "cardType" : "creature"
+    },
+    "reduce" : 1,
+    "replacement" : {
+      "type" : "Replacement",
+      "id" : "exo-91:en-tributos",
+      "label" : "En Tributos",
+      "text" : "(1) Cuando algún aliado fuera a ser removido: en su lugar, puede invocar especialmente esta carta reduciendo en 1 su coste especial.",
+      "limit" : "ONCE_PER_TURN_BETWEEN_COPIES",
+      "cost" : "ALLY_SPECIAL_SUMMON",
+      "resourceFilter" : { }
+    }
+  } ]
+}

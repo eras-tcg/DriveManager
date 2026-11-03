@@ -1,0 +1,54 @@
+{
+  "name" : "hominox",
+  "effects" : [ {
+    "id" : "hominox:todos-los-turnos",
+    "moment" : "ON_EVENT",
+    "label" : "Todos Los Turnos",
+    "text" : "Si esta carta destruye un enemigo: puedes invocar 1 criatura [mutante] de tus tributos de nivel igual o menor a la cantidad de copias de esta carta en tus tributos.",
+    "steps" : [ {
+      "type" : "Do",
+      "action" : {
+        "type" : "Summon",
+        "cards" : {
+          "zones" : "tributeZone",
+          "owner" : "YOU",
+          "filter" : {
+            "classes" : [ "mutante" ],
+            "cardType" : "creature"
+          },
+          "min" : {
+            "type" : "Fixed",
+            "value" : 1
+          },
+          "max" : {
+            "type" : "Fixed",
+            "value" : 1
+          },
+          "self" : "ANY",
+          "mode" : "CHOOSE",
+          "relative" : {
+            "maxLevel" : {
+              "type" : "InZone",
+              "zone" : "tributeZone",
+              "filter" : {
+                "name" : "Hominox"
+              }
+            }
+          }
+        },
+        "reduce" : {
+          "type" : "Fixed"
+        },
+        "required" : true
+      }
+    } ],
+    "condition" : {
+      "type" : "Destroyed",
+      "owner" : "ENEMY",
+      "by" : "ANY",
+      "byThis" : true
+    },
+    "sourceZone" : "field",
+    "limit" : "NONE"
+  } ]
+}

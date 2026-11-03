@@ -1,0 +1,15 @@
+{
+  "name" : "tierra feudal",
+  "reactions" : [ {
+    "type" : "CostModifier",
+    "label" : "Todos Los Turnos",
+    "event" : "SPECIAL_SUMMON",
+    "kinds" : [ "promotion" ],
+    "holder" : "FIELD",
+    "payment" : {
+      "kind" : "TAP_SELF"
+    },
+    "reduce" : 1,
+    "limit" : "NONE"
+  } ]
+}

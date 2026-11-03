@@ -10,6 +10,88 @@ public sealed interface Amount {
 
     int of(GameRoom room, String controller);
 
+    /** How many cards the last action moved ("por cada material tributado"): the effect's own, read by EngineContext. */
+    record LastCount() implements Amount {
+        public int of(GameRoom room, String controller) {
+            return 0;
+        }
+    }
+
+    /** "esta carta infringe daño directo": the strength of the card acting, read by EngineContext. */
+    record SourceStrength() implements Amount {
+        public int of(GameRoom room, String controller) {
+            return 0;
+        }
+    }
+
+    /** The level of the ally chosen before, read by EngineContext. */
+    record SubjectLevel() implements Amount {
+        public int of(GameRoom room, String controller) {
+            return 0;
+        }
+    }
+
+    /** "la cantidad de aliados utilizados para invocar esta carta", read by EngineContext. */
+    record UsedToSummon() implements Amount {
+        public int of(GameRoom room, String controller) {
+            return 0;
+        }
+    }
+
+    /** How many cards of your hand are over that number. */
+    record HandOver(int keep) implements Amount {
+        public int of(GameRoom room, String controller) {
+            return Math.max(0, room.getPlayer(controller).getHand().size() - keep);
+        }
+    }
+
+    /** "en el nivel de dicho aliado": the card of the triggering event, read by EngineContext. */
+    record TriggerSourceLevel() implements Amount {
+        public int of(GameRoom room, String controller) {
+            return 0;
+        }
+    }
+
+    /** How many cards on both fields match. */
+    record OnBothFields(CardFilter filter) implements Amount {
+        public int of(GameRoom room, String controller) {
+            return (int) room.getPlayers().values().stream().flatMap(p -> p.getField().stream()).filter(filter::matches).count();
+        }
+    }
+
+    /** How many lives a player has; {@code faceDownOnly}: "bocabajo". Without an opponent yet, more than any card asks. */
+    record Lives(boolean opponent, boolean faceDownOnly) implements Amount {
+        public int of(GameRoom room, String controller) {
+            String id = opponent ? room.getOpponentId(controller) : controller;
+            com.drive.drive_manager.simulator.PlayerState p = id == null ? null : room.getPlayer(id);
+            if (p == null) return Integer.MAX_VALUE;
+            return faceDownOnly ? (int) p.getLifeStack().stream().filter(com.drive.drive_manager.simulator.CardSlot::isFaceDown).count() : p.getLifeStack().size();
+        }
+    }
+
+    /** The sum of the levels of the opponent's creatures. */
+    record OpponentLevels() implements Amount {
+        public int of(GameRoom room, String controller) {
+            return (int) EffectEngine.levelsOnField(room, room.getOpponentId(controller), CardFilter.creatures());
+        }
+    }
+
+    /** The opponent's creatures in the Línea frontal. Without an opponent yet, one (so "no hay enemigos" does not hold). */
+    record EnemiesInFrontLine() implements Amount {
+        public int of(GameRoom room, String controller) {
+            com.drive.drive_manager.simulator.PlayerState p = room.getPlayer(room.getOpponentId(controller));
+            if (p == null) return 1;
+            return (int) p.getField().stream().filter(c -> "creature".equals(c.getCardType()) && EffectEngine.inFrontLine(c)).count();
+        }
+    }
+
+    /** Your gems as they are: below 0 when you owe them ("si tienes menos de 0 gemas"). */
+    record SignedGems() implements Amount {
+        public int of(GameRoom room, String controller) {
+            return EffectEngine.gemsOf(room, controller);
+        }
+    }
+
     /** A fixed number. */
     record Fixed(int value) implements Amount {
         public int of(GameRoom room, String controller) {

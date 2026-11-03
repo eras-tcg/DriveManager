@@ -1,0 +1,56 @@
+{
+  "name" : "pysche",
+  "effects" : [ {
+    "id" : "pysche:turno-aliado",
+    "moment" : "ON_EVENT",
+    "label" : "Turno Aliado",
+    "text" : "Si algún aliado es invocado por efecto mientras esta carta está en tu línea frontal: puedes mirar las primeras 3 cartas de tu mazo: de ellas tributa 1 y envía el resto al fondo de tu mazo en cualquier orden.",
+    "steps" : [ {
+      "type" : "Do",
+      "action" : {
+        "type" : "Look",
+        "count" : {
+          "type" : "Fixed",
+          "value" : 3
+        }
+      }
+    }, {
+      "type" : "Do",
+      "action" : {
+        "type" : "Move",
+        "cards" : {
+          "zones" : "looked",
+          "owner" : "YOU",
+          "filter" : { },
+          "min" : {
+            "type" : "Fixed",
+            "value" : 1
+          },
+          "max" : {
+            "type" : "Fixed",
+            "value" : 1
+          },
+          "self" : "ANY",
+          "mode" : "CHOOSE"
+        },
+        "to" : "tributeZone",
+        "rest" : "deckBottom"
+      }
+    } ],
+    "condition" : {
+      "type" : "All",
+      "all" : [ {
+        "type" : "Summoned",
+        "side" : "YOU",
+        "filter" : { },
+        "how" : "effect"
+      }, {
+        "type" : "ThisIs",
+        "state" : "IN_FRONT_LINE"
+      } ]
+    },
+    "sourceZone" : "field",
+    "allyTurn" : true,
+    "limit" : "ONCE_PER_TURN"
+  } ]
+}

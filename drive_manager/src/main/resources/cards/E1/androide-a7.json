@@ -1,0 +1,52 @@
+{
+  "name" : "androide a7",
+  "effects" : [ {
+    "id" : "androide-a7:tributada-como-material",
+    "moment" : "ON_EVENT",
+    "label" : "En Tributos",
+    "text" : "(1) Si esta carta es tributada como material y no controlas copias de esta carta: puedes tributar 1 material de 1 aliado para invocar esta carta en tu línea frontal, reduciendo su coste en 1.",
+    "steps" : [ {
+      "type" : "IfPossible"
+    }, {
+      "type" : "TributeAllyMaterial"
+    }, {
+      "type" : "Do",
+      "action" : {
+        "type" : "Summon",
+        "cards" : {
+          "zones" : "tributeZone",
+          "owner" : "YOU",
+          "filter" : { },
+          "min" : {
+            "type" : "Fixed",
+            "value" : 1
+          },
+          "max" : {
+            "type" : "Fixed",
+            "value" : 1
+          },
+          "self" : "ANY",
+          "mode" : "SELF"
+        },
+        "reduce" : {
+          "type" : "Fixed",
+          "value" : 1
+        },
+        "toFront" : true,
+        "required" : true
+      }
+    } ],
+    "condition" : {
+      "type" : "All",
+      "all" : [ {
+        "type" : "ThisTributed",
+        "fromZone" : "materials"
+      }, {
+        "type" : "ThisIs",
+        "state" : "NO_COPIES"
+      } ]
+    },
+    "sourceZone" : "tributeZone",
+    "limit" : "ONCE_PER_TURN_BETWEEN_COPIES"
+  } ]
+}

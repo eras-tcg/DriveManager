@@ -1,0 +1,106 @@
+{
+  "name" : "piromago",
+  "effects" : [ {
+    "id" : "piromago:en-invocacion",
+    "moment" : "ON_SUMMON",
+    "mandatory" : true,
+    "label" : "En Invocación",
+    "text" : "Roba 1 carta. Luego: tributa 1 carta de tu mano. Si tributaste 1 utilidad Violeta o [brujería]: roba 1 carta.",
+    "steps" : [ {
+      "type" : "Do",
+      "action" : {
+        "type" : "Draw",
+        "count" : {
+          "type" : "Fixed",
+          "value" : 1
+        }
+      }
+    }, {
+      "type" : "Do",
+      "action" : {
+        "type" : "Move",
+        "cards" : {
+          "zones" : "hand",
+          "owner" : "YOU",
+          "filter" : { },
+          "min" : {
+            "type" : "Fixed",
+            "value" : 1
+          },
+          "max" : {
+            "type" : "Fixed",
+            "value" : 1
+          },
+          "self" : "EXCLUDE",
+          "mode" : "CHOOSE"
+        },
+        "to" : "tributeZone"
+      }
+    }, {
+      "type" : "IfTributed",
+      "filter" : {
+        "colors" : [ "P" ],
+        "classes" : [ "brujería" ],
+        "cardTypes" : [ "utility" ]
+      },
+      "covers" : 1
+    }, {
+      "type" : "Do",
+      "action" : {
+        "type" : "Draw",
+        "count" : {
+          "type" : "Fixed",
+          "value" : 1
+        }
+      }
+    } ],
+    "sourceZone" : "field",
+    "limit" : "NONE"
+  }, {
+    "id" : "piromago:en-destruccion",
+    "moment" : "ON_DESTROY",
+    "mandatory" : true,
+    "label" : "En Destrucción",
+    "text" : "Si esta carta fue enviada a tu descarte: esta carta inflinge daño directo. Luego: puedes tomar 1 [brujo] o [pyro] de tus tributos o descarte.",
+    "steps" : [ {
+      "type" : "Do",
+      "action" : {
+        "type" : "Damage",
+        "amount" : {
+          "type" : "SourceStrength"
+        }
+      }
+    }, {
+      "type" : "Do",
+      "action" : {
+        "type" : "Move",
+        "cards" : {
+          "zones" : "tributeZone,discardPile",
+          "owner" : "YOU",
+          "filter" : {
+            "classes" : [ "brujo", "pyro" ]
+          },
+          "min" : {
+            "type" : "Fixed"
+          },
+          "max" : {
+            "type" : "Fixed",
+            "value" : 1
+          },
+          "self" : "ANY",
+          "mode" : "CHOOSE"
+        },
+        "to" : "hand",
+        "required" : true
+      }
+    } ],
+    "condition" : {
+      "type" : "Happened",
+      "actor" : "ANY",
+      "owner" : "ANY",
+      "to" : "discardPile"
+    },
+    "sourceZone" : "field",
+    "limit" : "NONE"
+  } ]
+}

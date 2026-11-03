@@ -1,0 +1,97 @@
+{
+  "name" : "h 0110 w",
+  "effects" : [
+    {
+      "id" : "h-0110-w:en-invocacion",
+      "moment" : "ON_SUMMON",
+      "label" : "En Invocación",
+      "text" : "Si tienes 3 o menos vidas: esta carta puede declarar ataque sin agotarse. Si lo hace: gana fuerza 3 hasta el final del ataque.",
+      "steps" : [
+        {
+          "type" : "Do",
+          "action" : {
+            "type" : "Attack"
+          }
+        },
+        {
+          "type" : "IfCondition",
+          "condition" : {
+            "type" : "GameIs",
+            "state" : "DURING_COMBAT"
+          },
+          "covers" : 1
+        },
+        {
+          "type" : "Do",
+          "action" : {
+            "type" : "Modify",
+            "cards" : {
+              "zones" : "subjectOrSelf",
+              "owner" : "YOU",
+              "filter" : {},
+              "min" : {
+                "type" : "Fixed"
+              },
+              "max" : {
+                "type" : "Fixed",
+                "value" : 2147483647
+              },
+              "self" : "ANY",
+              "mode" : "ALL"
+            },
+            "strength" : {
+              "type" : "Fixed",
+              "value" : 3
+            },
+            "until" : "ATTACK"
+          }
+        }
+      ],
+      "condition" : {
+        "type" : "Compare",
+        "left" : {
+          "type" : "Lives"
+        },
+        "op" : "AT_MOST",
+        "right" : {
+          "type" : "Fixed",
+          "value" : 3
+        }
+      },
+      "sourceZone" : "field",
+      "limit" : "NONE"
+    },
+    {
+      "id" : "h-0110-w:en-destruccion",
+      "moment" : "ON_DESTROY",
+      "label" : "En Destrucción",
+      "text" : "Puedes colocar esta carta al tope de tus vidas bocarriba.",
+      "steps" : [
+        {
+          "type" : "Do",
+          "action" : {
+            "type" : "Move",
+            "cards" : {
+              "zones" : "hand,deck,tributeZone,discardPile,field",
+              "owner" : "YOU",
+              "filter" : {},
+              "min" : {
+                "type" : "Fixed",
+                "value" : 1
+              },
+              "max" : {
+                "type" : "Fixed",
+                "value" : 1
+              },
+              "self" : "ANY",
+              "mode" : "SELF"
+            },
+            "to" : "lifeTop"
+          }
+        }
+      ],
+      "sourceZone" : "field",
+      "limit" : "NONE"
+    }
+  ]
+}

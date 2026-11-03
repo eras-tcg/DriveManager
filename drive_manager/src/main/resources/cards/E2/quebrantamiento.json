@@ -1,0 +1,21 @@
+{
+  "name" : "quebrantamiento",
+  "effects" : [ {
+    "id" : "quebrantamiento:en-juego",
+    "moment" : "ON_PLAY",
+    "mandatory" : true,
+    "label" : "En Juego",
+    "text" : "Ambos jugadores eligen 1 de sus aliados de su línea frontal. Si lo hacen: sacrifican todas las otras criaturas en su línea frontal. Luego: ambos jugadores reducen en 1 su contador de gemas.",
+    "steps" : [ {
+      "type" : "EachPlayerKeepsOneInFrontLine"
+    }, {
+      "type" : "EachPlayerLowersMarker",
+      "count" : 1
+    } ],
+    "sourceZone" : "field",
+    "limit" : "NONE"
+  } ],
+  "traits" : {
+    "lifePlayCost" : 2
+  }
+}

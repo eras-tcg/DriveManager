@@ -1,0 +1,14 @@
+{
+  "name" : "legionario de espadas dobles",
+  "continuous" : [ {
+    "label" : "Turno Aliado",
+    "text" : "Todos los aliados [armada] ganan fuerza 1.",
+    "allyTurn" : true,
+    "strength" : 1,
+    "zone" : "field",
+    "targets" : {
+      "classes" : [ "armada" ],
+      "cardType" : "creature"
+    }
+  } ]
+}

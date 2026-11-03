@@ -1,0 +1,41 @@
+{
+  "name" : "zokolok",
+  "effects" : [ {
+    "id" : "zokolok:en-destruccion",
+    "moment" : "ON_DESTROY",
+    "label" : "En Destrucción",
+    "text" : "(1) Puedes jugar 1 utilidad Violeta de coste 1 o menos de tus tributos sin pagar su coste.",
+    "steps" : [ {
+      "type" : "Do",
+      "action" : {
+        "type" : "Play",
+        "cards" : {
+          "zones" : "tributeZone",
+          "owner" : "YOU",
+          "filter" : {
+            "colors" : [ "P" ],
+            "maxCost" : 1,
+            "cardTypes" : [ "utility" ]
+          },
+          "min" : {
+            "type" : "Fixed",
+            "value" : 1
+          },
+          "max" : {
+            "type" : "Fixed",
+            "value" : 1
+          },
+          "self" : "ANY",
+          "mode" : "CHOOSE"
+        },
+        "reduce" : {
+          "type" : "Fixed",
+          "value" : 1000
+        },
+        "required" : true
+      }
+    } ],
+    "sourceZone" : "field",
+    "limit" : "ONCE_PER_TURN_BETWEEN_COPIES"
+  } ]
+}

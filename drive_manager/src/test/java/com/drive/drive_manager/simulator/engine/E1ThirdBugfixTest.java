@@ -41,9 +41,9 @@ class E1ThirdBugfixTest {
         CardSlot fromTributes = card("t", "En tributos", 3, 3, "B");
         host.getHand().addAll(List.of(roto, summoner, fromHand));
         host.getTributeZone().add(fromTributes);
-        assertThat(Summons.canSpecial(room, "host", roto)).isTrue();
+        assertThat(SpecialRequirements.canSpecial(room, "host", roto)).isTrue();
 
-        assertThat(Summons.specialByPlayer(room, "host", "roto", null)).isNull();
+        assertThat(SpecialSummons.specialByPlayer(room, "host", "roto", null)).isNull();
         Prompt declare = room.getPrompt();
         assertThat(declare.getChosenLabel()).isEqualTo("Invocador");
         // "invocador … en mano": the one in the Tributos cannot be it
@@ -64,9 +64,9 @@ class E1ThirdBugfixTest {
                 "criatura nivel 3 en mano + 2 criaturas nivel 3 en tu mano o tributos.");
         host.getHand().add(roto);
         for (int i = 0; i < 3; i++) host.getTributeZone().add(card("t" + i, "En tributos", 3, 3, "B"));
-        assertThat(Summons.canSpecial(room, "host", roto)).isFalse();
+        assertThat(SpecialRequirements.canSpecial(room, "host", roto)).isFalse();
         host.getHand().add(card("s", "Invocador", 3, 3, "B"));
-        assertThat(Summons.canSpecial(room, "host", roto)).isTrue();
+        assertThat(SpecialRequirements.canSpecial(room, "host", roto)).isTrue();
     }
 
     @Test
@@ -75,10 +75,10 @@ class E1ThirdBugfixTest {
                 "criatura nivel 2 o 3 + material nivel 2 en mano o campo.");
         host.getHand().add(proto);
         onField(host, card("s3", "Nivel 3", 3, 3, "B"));
-        assertThat(Summons.canSpecial(room, "host", proto)).isFalse();
+        assertThat(SpecialRequirements.canSpecial(room, "host", proto)).isFalse();
         host.getHand().add(card("m2", "Material 2", 2, 2, "B"));
-        assertThat(Summons.canSpecial(room, "host", proto)).isTrue();
-        assertThat(Summons.specialByPlayer(room, "host", "pv", "s3")).isNull();
+        assertThat(SpecialRequirements.canSpecial(room, "host", proto)).isTrue();
+        assertThat(SpecialSummons.specialByPlayer(room, "host", "pv", "s3")).isNull();
         answer(room.getPrompt(), "m2");
         answerAll();
         assertThat(host.getField()).contains(proto);

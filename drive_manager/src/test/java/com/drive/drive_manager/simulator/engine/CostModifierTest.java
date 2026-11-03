@@ -43,16 +43,40 @@ class CostModifierTest {
         host.getHand().add(evolved);
 
         // 1 gem and a cost of 2: only with Flambreik's reduction
-        assertThat(Summons.canSpecial(room, "host", evolved)).isTrue();
-        assertThat(Summons.specialByPlayer(room, "host", "evo", "fl")).isNull();
+        assertThat(SpecialRequirements.canSpecial(room, "host", evolved)).isTrue();
+        assertThat(SpecialSummons.specialByPlayer(room, "host", "evo", "fl")).isNull();
         Prompt pay = room.getPrompt();
         assertThat(pay.getValidIds()).hasSize(5);
-        assertThat(Answers.answer(room, "host", pay.getId(), List.of(), List.of())).contains("elige 5");
+        // Nothing else pays it: the payment is required, so the choice cannot be left empty
+        assertThat(pay.getMin()).isEqualTo(5);
+        assertThat(Answers.answer(room, "host", pay.getId(), List.of(), List.of())).contains("elegir 5");
         assertThat(Answers.answer(room, "host", pay.getId(), pay.getValidIds(), List.of())).isNull();
 
         assertThat(host.getField()).contains(evolved);
         assertThat(host.getTributeZone()).isEmpty();
         assertThat(EffectEngine.gemsOf(room, "host")).isZero();
+    }
+
+    @Test
+    void flambreikPaymentStaysOptionalWithGemsToPayTheFullCost() {
+        room.setSharedCounter(-3);
+        onField(host, card("fl", "Flambreik", 2, 1, "G")).setClasses(new ArrayList<>(List.of("dragón")));
+        for (int i = 0; i < 5; i++) {
+            CardSlot dragon = card("t" + i, "Dragón " + i, 1, 1, "G");
+            dragon.setClasses(new ArrayList<>(List.of("dragón")));
+            host.getTributeZone().add(dragon);
+        }
+        CardSlot evolved = card("evo", "Evolución", 3, 2, "G");
+        evolved.setSpecialSummonKind("evolution");
+        evolved.setSpecialCost(2);
+        evolved.setRequirement("criatura nivel 1.");
+        host.getHand().add(evolved);
+        assertThat(SpecialSummons.specialByPlayer(room, "host", "evo", "fl")).isNull();
+        Prompt pay = room.getPrompt();
+        assertThat(pay.getMin()).isZero();
+        assertThat(Answers.answer(room, "host", pay.getId(), List.of(), List.of())).isNull();
+        assertThat(host.getField()).contains(evolved);
+        assertThat(host.getTributeZone()).hasSize(5);
     }
 
     @Test
@@ -74,6 +98,26 @@ class CostModifierTest {
 
         assertThat(CostModifiers.available(room, host, CostModifiers.Event.SPECIAL_SUMMON, "evolution", evolved,
                 host.getField().get(0))).isEqualTo(1);
+    }
+
+    @Test
+    void criaDeDragonRunicoSendsOtherFiveNotTheCardBeingSummoned() {
+        onField(host, card("cr", "Cría De Dragón Rúnico", 1, 1, "G")).setClasses(new ArrayList<>(List.of("dragón")));
+        for (int i = 0; i < 4; i++) {
+            CardSlot dragon = card("t" + i, "Dragón " + i, 1, 1, "G");
+            dragon.setClasses(new ArrayList<>(List.of("dragón")));
+            host.getTributeZone().add(dragon);
+        }
+        // The evolution is a [dragón] in the Tributos too: it does not count among the 5
+        CardSlot evolved = card("evo", "Evolución", 3, 2, "G");
+        evolved.setClasses(new ArrayList<>(List.of("dragón")));
+        evolved.setSpecialSummonKind("evolution");
+        evolved.setSpecialCost(2);
+        evolved.setRequirement("criatura nivel 1.");
+        host.getTributeZone().add(evolved);
+
+        assertThat(CostModifiers.available(room, host, CostModifiers.Event.SPECIAL_SUMMON, "evolution", evolved,
+                host.getField().get(0))).isZero();
     }
 
     @Test

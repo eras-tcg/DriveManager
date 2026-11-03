@@ -1,0 +1,17 @@
+{
+  "name" : "condensador de materia",
+  "effects" : [ {
+    "id" : "condensador-de-materia:en-juego",
+    "moment" : "ON_PLAY",
+    "mandatory" : true,
+    "label" : "En Juego",
+    "text" : "Efecto Definitivo. Coloca bocabajo todas tus vidas bocarriba. Luego: baraja tus vidas.",
+    "steps" : [ {
+      "type" : "LivesFaceDown",
+      "all" : true,
+      "shuffle" : true
+    } ],
+    "sourceZone" : "field",
+    "limit" : "DEFINITIVE"
+  } ]
+}

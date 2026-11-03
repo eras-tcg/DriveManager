@@ -1,0 +1,47 @@
+{
+  "name" : "espada ferrea",
+  "effects" : [ {
+    "id" : "espada-ferrea:en-mano",
+    "moment" : "ON_EVENT",
+    "label" : "Turno Aliado / En Mano",
+    "text" : "Inmediatamente después de que un aliado sea invocado por efecto: puedes invocar esta carta en tu línea frontal pagando su coste.",
+    "steps" : [ {
+      "type" : "Do",
+      "action" : {
+        "type" : "Summon",
+        "cards" : {
+          "zones" : "hand",
+          "owner" : "YOU",
+          "filter" : { },
+          "min" : {
+            "type" : "Fixed",
+            "value" : 1
+          },
+          "max" : {
+            "type" : "Fixed",
+            "value" : 1
+          },
+          "self" : "ANY",
+          "mode" : "SELF"
+        },
+        "reduce" : {
+          "type" : "Fixed"
+        },
+        "toFront" : true,
+        "required" : true
+      }
+    } ],
+    "condition" : {
+      "type" : "Immediately",
+      "condition" : {
+        "type" : "Summoned",
+        "side" : "YOU",
+        "filter" : { },
+        "how" : "effect"
+      }
+    },
+    "sourceZone" : "hand",
+    "allyTurn" : true,
+    "limit" : "NONE"
+  } ]
+}

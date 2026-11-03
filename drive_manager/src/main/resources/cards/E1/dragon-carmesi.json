@@ -1,0 +1,144 @@
+{
+  "name" : "dragón carmesí",
+  "effects" : [ {
+    "id" : "dragon-carmesi:al-atacar",
+    "moment" : "ON_ATTACK",
+    "label" : "Al Atacar",
+    "text" : "Una vez por turno: puedes enviar 5 de tus tributos [dragón] al fondo de tu mazo; esta carta gana Letalidad 1 hasta el final del ataque.",
+    "cost" : [ {
+      "type" : "Do",
+      "action" : {
+        "type" : "Move",
+        "cards" : {
+          "zones" : "tributeZone",
+          "owner" : "YOU",
+          "filter" : {
+            "classes" : [ "dragón" ]
+          },
+          "min" : {
+            "type" : "Fixed",
+            "value" : 5
+          },
+          "max" : {
+            "type" : "Fixed",
+            "value" : 5
+          },
+          "self" : "ANY",
+          "mode" : "CHOOSE"
+        },
+        "to" : "deckBottom"
+      }
+    } ],
+    "steps" : [ {
+      "type" : "Do",
+      "action" : {
+        "type" : "Modify",
+        "cards" : {
+          "zones" : "subjectOrSelf",
+          "owner" : "YOU",
+          "filter" : { },
+          "min" : {
+            "type" : "Fixed"
+          },
+          "max" : {
+            "type" : "Fixed",
+            "value" : 2147483647
+          },
+          "self" : "ANY",
+          "mode" : "ALL"
+        },
+        "keyword" : "Letalidad 1",
+        "until" : "ATTACK"
+      }
+    } ],
+    "sourceZone" : "field",
+    "limit" : "ONCE_PER_TURN"
+  }, {
+    "id" : "dragon-carmesi:todos-los-turnos",
+    "moment" : "ON_EVENT",
+    "label" : "Todos Los Turnos",
+    "text" : "Una vez por turno: si destruyes algún enemigo, puedes reactivar esta carta.",
+    "steps" : [ {
+      "type" : "Do",
+      "action" : {
+        "type" : "SetTapped",
+        "cards" : {
+          "zones" : "field",
+          "owner" : "YOU",
+          "filter" : { },
+          "min" : {
+            "type" : "Fixed",
+            "value" : 1
+          },
+          "max" : {
+            "type" : "Fixed",
+            "value" : 1
+          },
+          "self" : "ANY",
+          "mode" : "SELF"
+        }
+      }
+    } ],
+    "condition" : {
+      "type" : "Destroyed",
+      "owner" : "ENEMY",
+      "by" : "YOU"
+    },
+    "sourceZone" : "field",
+    "limit" : "ONCE_PER_TURN"
+  } ],
+  "inherited" : [ {
+    "id" : "dragon-carmesi:hereda-al-atacar",
+    "moment" : "ON_ATTACK",
+    "label" : "Al Atacar",
+    "text" : "Heredado de Dragón Carmesí: puedes enviar 5 de tus tributos [dragón] al fondo de tu mazo; esta carta gana Letalidad 1 hasta el final del ataque.",
+    "cost" : [ {
+      "type" : "Do",
+      "action" : {
+        "type" : "Move",
+        "cards" : {
+          "zones" : "tributeZone",
+          "owner" : "YOU",
+          "filter" : {
+            "classes" : [ "dragón" ]
+          },
+          "min" : {
+            "type" : "Fixed",
+            "value" : 5
+          },
+          "max" : {
+            "type" : "Fixed",
+            "value" : 5
+          },
+          "self" : "ANY",
+          "mode" : "CHOOSE"
+        },
+        "to" : "deckBottom"
+      }
+    } ],
+    "steps" : [ {
+      "type" : "Do",
+      "action" : {
+        "type" : "Modify",
+        "cards" : {
+          "zones" : "subjectOrSelf",
+          "owner" : "YOU",
+          "filter" : { },
+          "min" : {
+            "type" : "Fixed"
+          },
+          "max" : {
+            "type" : "Fixed",
+            "value" : 2147483647
+          },
+          "self" : "ANY",
+          "mode" : "ALL"
+        },
+        "keyword" : "Letalidad 1",
+        "until" : "ATTACK"
+      }
+    } ],
+    "sourceZone" : "field",
+    "limit" : "NONE"
+  } ]
+}

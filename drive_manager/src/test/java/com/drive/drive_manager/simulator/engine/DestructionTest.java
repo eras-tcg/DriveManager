@@ -112,7 +112,7 @@ class DestructionTest {
         onField(host, card("sum", "Invocador", 1, 1, "P"), 20.0);
         onField(guest, card("ec", "Carnhaus", 1, 1, "P"), 20.0);
 
-        assertThat(Summons.ritualByPlayer(room, "host", "kro", "sum")).isNull();
+        assertThat(Rituals.ritualByPlayer(room, "host", "kro", "sum")).isNull();
 
         // It loses its moment: nothing to answer, the enemy stays and the history says why
         assertThat(room.getPrompt()).isNull();
@@ -134,7 +134,7 @@ class DestructionTest {
         onField(guest, card("lvl2", "Grande", 2, 2, "R"), 20.0);
         onField(guest, card("back", "Atrás", 1, 1, "R"), 80.0);
 
-        assertThat(Summons.ritualByPlayer(room, "host", "kro", "sum")).isNull();
+        assertThat(Rituals.ritualByPlayer(room, "host", "kro", "sum")).isNull();
 
         // Optional: asks first
         Prompt confirm = room.getPrompt();

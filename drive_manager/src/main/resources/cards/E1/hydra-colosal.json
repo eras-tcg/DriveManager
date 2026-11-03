@@ -1,0 +1,204 @@
+{
+  "name" : "hydra colosal",
+  "effects" : [ {
+    "id" : "hydra-colosal:en-invocacion",
+    "moment" : "ON_SUMMON",
+    "mandatory" : true,
+    "label" : "En Invocación",
+    "text" : "Tributa las primeras 3 cartas de tu mazo. Luego: elige 1 enemigo de fuerza 7 o menos; destrúyelo.",
+    "steps" : [ {
+      "type" : "Do",
+      "action" : {
+        "type" : "Move",
+        "cards" : {
+          "zones" : "deck",
+          "owner" : "YOU",
+          "filter" : { },
+          "min" : {
+            "type" : "Fixed",
+            "value" : 3
+          },
+          "max" : {
+            "type" : "Fixed",
+            "value" : 3
+          },
+          "self" : "ANY",
+          "mode" : "TOP"
+        },
+        "to" : "tributeZone"
+      }
+    }, {
+      "type" : "Do",
+      "action" : {
+        "type" : "Select",
+        "selector" : {
+          "zones" : "frontLine",
+          "owner" : "OPPONENT",
+          "filter" : {
+            "cardType" : "creature",
+            "maxStrength" : 7
+          },
+          "min" : {
+            "type" : "Fixed",
+            "value" : 1
+          },
+          "max" : {
+            "type" : "Fixed",
+            "value" : 1
+          },
+          "self" : "ANY",
+          "mode" : "CHOOSE"
+        },
+        "target" : true
+      }
+    }, {
+      "type" : "Do",
+      "action" : {
+        "type" : "Destroy",
+        "cards" : {
+          "zones" : "saved:targets",
+          "owner" : "YOU",
+          "filter" : { },
+          "min" : {
+            "type" : "Fixed"
+          },
+          "max" : {
+            "type" : "Fixed",
+            "value" : 2147483647
+          },
+          "self" : "ANY",
+          "mode" : "ALL"
+        }
+      }
+    } ],
+    "sourceZone" : "field",
+    "limit" : "NONE"
+  }, {
+    "id" : "hydra-colosal:al-atacar",
+    "moment" : "ON_ATTACK",
+    "label" : "Al Atacar",
+    "text" : "Esta carta puede invocar por Evolución una criatura en tus tributos reduciendo su coste especial en 1.",
+    "steps" : [ {
+      "type" : "Do",
+      "action" : {
+        "type" : "Sequence",
+        "actions" : [ {
+          "type" : "Select",
+          "selector" : {
+            "zones" : "tributeZone",
+            "owner" : "YOU",
+            "filter" : { },
+            "min" : {
+              "type" : "Fixed"
+            },
+            "max" : {
+              "type" : "Fixed",
+              "value" : 1
+            },
+            "self" : "ANY",
+            "mode" : "CHOOSE",
+            "special" : {
+              "rule" : {
+                "kind" : "evolution",
+                "zone" : "tributeZone",
+                "reduce" : 1,
+                "summoner" : "self",
+                "filter" : {
+                  "cardType" : "creature"
+                }
+              },
+              "stage" : "CARD"
+            }
+          },
+          "saveAs" : "specialCard",
+          "label" : "Invocar"
+        }, {
+          "type" : "Select",
+          "selector" : {
+            "zones" : "tributeZone",
+            "owner" : "YOU",
+            "filter" : { },
+            "min" : {
+              "type" : "Fixed"
+            },
+            "max" : {
+              "type" : "Fixed",
+              "value" : 1
+            },
+            "self" : "ANY",
+            "mode" : "CHOOSE",
+            "special" : {
+              "rule" : {
+                "kind" : "evolution",
+                "zone" : "tributeZone",
+                "reduce" : 1,
+                "summoner" : "self",
+                "filter" : {
+                  "cardType" : "creature"
+                }
+              },
+              "stage" : "SUMMONER"
+            }
+          },
+          "saveAs" : "specialSummoner",
+          "label" : "Invocador"
+        }, {
+          "type" : "Select",
+          "selector" : {
+            "zones" : "tributeZone",
+            "owner" : "YOU",
+            "filter" : { },
+            "min" : {
+              "type" : "Fixed"
+            },
+            "max" : {
+              "type" : "Fixed",
+              "value" : 1
+            },
+            "self" : "ANY",
+            "mode" : "CHOOSE",
+            "special" : {
+              "rule" : {
+                "kind" : "evolution",
+                "zone" : "tributeZone",
+                "reduce" : 1,
+                "summoner" : "self",
+                "filter" : {
+                  "cardType" : "creature"
+                }
+              },
+              "stage" : "MATERIAL"
+            }
+          },
+          "saveAs" : "specialMaterials",
+          "label" : "Material"
+        }, {
+          "type" : "SummonSpecial",
+          "rule" : {
+            "kind" : "evolution",
+            "zone" : "tributeZone",
+            "reduce" : 1,
+            "summoner" : "self",
+            "filter" : {
+              "cardType" : "creature"
+            }
+          }
+        } ]
+      }
+    } ],
+    "sourceZone" : "field",
+    "limit" : "NONE"
+  } ],
+  "inheritedReactions" : [ {
+    "type" : "Replacement",
+    "id" : "hydra-colosal:hereda-todos-los-turnos",
+    "label" : "Todos Los Turnos",
+    "text" : "Heredado de Hydra Colosal: si esta carta fuera a ser destruida, en su lugar, puedes tributar todos los recursos [Hydra] de esta carta.",
+    "destroyOnly" : true,
+    "limit" : "NONE",
+    "cost" : "TRIBUTE_RESOURCES",
+    "resourceFilter" : {
+      "classes" : [ "hydra" ]
+    }
+  } ]
+}

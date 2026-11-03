@@ -1,0 +1,179 @@
+{
+  "name" : "poder antiguo",
+  "effects" : [ {
+    "id" : "poder-antiguo:en-juego",
+    "moment" : "ON_PLAY",
+    "mandatory" : true,
+    "label" : "En Juego",
+    "text" : "(1) Elige 1 aliado activo; puede invocar por Evolución 1 carta Verde en tu mano reduciendo el coste especial en X donde X es el nivel del aliado elegido. Si lo hace: agótalo.",
+    "cost" : [ {
+      "type" : "Do",
+      "action" : {
+        "type" : "Select",
+        "selector" : {
+          "zones" : "pickableAllies",
+          "owner" : "YOU",
+          "filter" : {
+            "cardType" : "creature",
+            "activeOnly" : true
+          },
+          "min" : {
+            "type" : "Fixed",
+            "value" : 1
+          },
+          "max" : {
+            "type" : "Fixed",
+            "value" : 1
+          },
+          "self" : "ANY",
+          "mode" : "CHOOSE"
+        },
+        "target" : true,
+        "saveAs" : "subject",
+        "label" : "Elegido",
+        "endsIfNone" : true
+      }
+    } ],
+    "steps" : [ {
+      "type" : "Do",
+      "action" : {
+        "type" : "Sequence",
+        "actions" : [ {
+          "type" : "Select",
+          "selector" : {
+            "zones" : "hand",
+            "owner" : "YOU",
+            "filter" : { },
+            "min" : {
+              "type" : "Fixed"
+            },
+            "max" : {
+              "type" : "Fixed",
+              "value" : 1
+            },
+            "self" : "ANY",
+            "mode" : "CHOOSE",
+            "special" : {
+              "rule" : {
+                "kind" : "evolution",
+                "zone" : "hand",
+                "summoner" : "subject",
+                "filter" : {
+                  "colors" : [ "G" ]
+                },
+                "reduceBy" : {
+                  "type" : "SubjectLevel"
+                }
+              },
+              "stage" : "CARD"
+            }
+          },
+          "saveAs" : "specialCard",
+          "label" : "Invocar"
+        }, {
+          "type" : "Select",
+          "selector" : {
+            "zones" : "hand",
+            "owner" : "YOU",
+            "filter" : { },
+            "min" : {
+              "type" : "Fixed"
+            },
+            "max" : {
+              "type" : "Fixed",
+              "value" : 1
+            },
+            "self" : "ANY",
+            "mode" : "CHOOSE",
+            "special" : {
+              "rule" : {
+                "kind" : "evolution",
+                "zone" : "hand",
+                "summoner" : "subject",
+                "filter" : {
+                  "colors" : [ "G" ]
+                },
+                "reduceBy" : {
+                  "type" : "SubjectLevel"
+                }
+              },
+              "stage" : "SUMMONER"
+            }
+          },
+          "saveAs" : "specialSummoner",
+          "label" : "Invocador"
+        }, {
+          "type" : "Select",
+          "selector" : {
+            "zones" : "hand",
+            "owner" : "YOU",
+            "filter" : { },
+            "min" : {
+              "type" : "Fixed"
+            },
+            "max" : {
+              "type" : "Fixed",
+              "value" : 1
+            },
+            "self" : "ANY",
+            "mode" : "CHOOSE",
+            "special" : {
+              "rule" : {
+                "kind" : "evolution",
+                "zone" : "hand",
+                "summoner" : "subject",
+                "filter" : {
+                  "colors" : [ "G" ]
+                },
+                "reduceBy" : {
+                  "type" : "SubjectLevel"
+                }
+              },
+              "stage" : "MATERIAL"
+            }
+          },
+          "saveAs" : "specialMaterials",
+          "label" : "Material"
+        }, {
+          "type" : "SummonSpecial",
+          "rule" : {
+            "kind" : "evolution",
+            "zone" : "hand",
+            "summoner" : "subject",
+            "filter" : {
+              "colors" : [ "G" ]
+            },
+            "reduceBy" : {
+              "type" : "SubjectLevel"
+            }
+          }
+        } ]
+      }
+    }, {
+      "type" : "IfDone",
+      "covers" : 1
+    }, {
+      "type" : "Do",
+      "action" : {
+        "type" : "SetTapped",
+        "cards" : {
+          "zones" : "subjectOrSummoned",
+          "owner" : "YOU",
+          "filter" : { },
+          "min" : {
+            "type" : "Fixed"
+          },
+          "max" : {
+            "type" : "Fixed",
+            "value" : 2147483647
+          },
+          "self" : "ANY",
+          "mode" : "ALL"
+        },
+        "tapped" : true
+      }
+    } ],
+    "sourceZone" : "field",
+    "limit" : "ONCE_PER_TURN_BETWEEN_COPIES"
+  } ]
+}

@@ -1,0 +1,179 @@
+{
+  "name" : "caballero león dorado",
+  "effects" : [ {
+    "id" : "caballero-leon-dorado:tributada",
+    "moment" : "ON_EVENT",
+    "label" : "En Tributos",
+    "text" : "Si esta carta es tributada desde el campo y tienes menos vidas que tu oponente: un aliado puede invocar especialmente 1 criatura en tu mano reduciendo el coste especial en 1.",
+    "steps" : [ {
+      "type" : "Do",
+      "action" : {
+        "type" : "Sequence",
+        "actions" : [ {
+          "type" : "Select",
+          "selector" : {
+            "zones" : "hand",
+            "owner" : "YOU",
+            "filter" : { },
+            "min" : {
+              "type" : "Fixed"
+            },
+            "max" : {
+              "type" : "Fixed",
+              "value" : 1
+            },
+            "self" : "ANY",
+            "mode" : "CHOOSE",
+            "special" : {
+              "rule" : {
+                "kind" : "any",
+                "zone" : "hand",
+                "reduce" : 1,
+                "summoner" : "any",
+                "filter" : {
+                  "cardType" : "creature"
+                }
+              },
+              "stage" : "CARD"
+            }
+          },
+          "saveAs" : "specialCard",
+          "label" : "Invocar"
+        }, {
+          "type" : "Select",
+          "selector" : {
+            "zones" : "hand",
+            "owner" : "YOU",
+            "filter" : { },
+            "min" : {
+              "type" : "Fixed"
+            },
+            "max" : {
+              "type" : "Fixed",
+              "value" : 1
+            },
+            "self" : "ANY",
+            "mode" : "CHOOSE",
+            "special" : {
+              "rule" : {
+                "kind" : "any",
+                "zone" : "hand",
+                "reduce" : 1,
+                "summoner" : "any",
+                "filter" : {
+                  "cardType" : "creature"
+                }
+              },
+              "stage" : "SUMMONER"
+            }
+          },
+          "saveAs" : "specialSummoner",
+          "label" : "Invocador"
+        }, {
+          "type" : "Select",
+          "selector" : {
+            "zones" : "hand",
+            "owner" : "YOU",
+            "filter" : { },
+            "min" : {
+              "type" : "Fixed"
+            },
+            "max" : {
+              "type" : "Fixed",
+              "value" : 1
+            },
+            "self" : "ANY",
+            "mode" : "CHOOSE",
+            "special" : {
+              "rule" : {
+                "kind" : "any",
+                "zone" : "hand",
+                "reduce" : 1,
+                "summoner" : "any",
+                "filter" : {
+                  "cardType" : "creature"
+                }
+              },
+              "stage" : "MATERIAL"
+            }
+          },
+          "saveAs" : "specialMaterials",
+          "label" : "Material"
+        }, {
+          "type" : "SummonSpecial",
+          "rule" : {
+            "kind" : "any",
+            "zone" : "hand",
+            "reduce" : 1,
+            "summoner" : "any",
+            "filter" : {
+              "cardType" : "creature"
+            }
+          }
+        } ]
+      }
+    } ],
+    "condition" : {
+      "type" : "All",
+      "all" : [ {
+        "type" : "ThisTributed",
+        "fromZone" : "field"
+      }, {
+        "type" : "Compare",
+        "left" : {
+          "type" : "Lives"
+        },
+        "op" : "LESS",
+        "right" : {
+          "type" : "Lives",
+          "opponent" : true
+        }
+      } ]
+    },
+    "sourceZone" : "tributeZone",
+    "limit" : "NONE"
+  }, {
+    "id" : "caballero-leon-dorado:en-invocacion",
+    "moment" : "ON_SUMMON",
+    "label" : "En Invocación",
+    "text" : "Puedes tributar 1 aliado coste 2 o mayor distinto de este para ganar 1 gema.",
+    "steps" : [ {
+      "type" : "IfPossible"
+    }, {
+      "type" : "Do",
+      "action" : {
+        "type" : "Move",
+        "cards" : {
+          "zones" : "field",
+          "owner" : "YOU",
+          "filter" : {
+            "cardType" : "creature",
+            "minCost" : 2
+          },
+          "min" : {
+            "type" : "Fixed",
+            "value" : 1
+          },
+          "max" : {
+            "type" : "Fixed",
+            "value" : 1
+          },
+          "self" : "EXCLUDE",
+          "mode" : "CHOOSE"
+        },
+        "to" : "tributeZone"
+      }
+    }, {
+      "type" : "Do",
+      "action" : {
+        "type" : "Gems",
+        "count" : {
+          "type" : "Fixed",
+          "value" : 1
+        }
+      }
+    } ],
+    "sourceZone" : "field",
+    "limit" : "NONE"
+  } ]
+}

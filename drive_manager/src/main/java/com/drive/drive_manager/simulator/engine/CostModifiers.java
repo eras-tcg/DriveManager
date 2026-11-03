@@ -85,7 +85,7 @@ public final class CostModifiers {
      * @param amount    a reduction read from the game, added to {@code reduce} ("en 1 por cada [brujería] en tu descarte"); null: none
      */
     public record CostModifier(String label, Event event, Set<String> kinds, Holder holder, boolean allyTurn,
-                               Condition condition, Payment payment, int reduce, EffectScript.Limit limit, CardFilter card, Amount amount) {
+                               Condition condition, Payment payment, int reduce, EffectScript.Limit limit, CardFilter card, Amount amount) implements Reaction {
         public CostModifier(String label, Event event, Set<String> kinds, Holder holder, boolean allyTurn, Condition condition, Payment payment,
                             int reduce) {
             this(label, event, kinds, holder, allyTurn, condition, payment, reduce, EffectScript.Limit.NONE);
@@ -171,7 +171,7 @@ public final class CostModifiers {
                 if (!placed) continue;
                 if (m.allyTurn() && !player.getUserId().equals(room.getCurrentTurnUserId())) continue;
                 if (m.condition() != null && !m.condition().test(room, null, holder, player.getUserId())) continue;
-                if (!payable(player, m.payment(), holder)) continue;
+                if (!payable(player, m.payment(), holder, card)) continue;
                 // "puedes agotar…" the player said no to, for this summon
                 if (m.payment().kind() == PaymentKind.TAP_SELF && card != null && room.getUsedThisTurn().contains(tapKey(holder, card, false))) continue;
                 Use use = new Use(m, holder);
@@ -183,11 +183,12 @@ public final class CostModifiers {
         return uses;
     }
 
-    private static boolean payable(PlayerState player, Payment payment, CardSlot holder) {
+    /** {@code card}: the card whose cost it lowers, never part of the payment ("envía otras 5…": it may be in the Tributos). */
+    private static boolean payable(PlayerState player, Payment payment, CardSlot holder, CardSlot card) {
         return switch (payment.kind()) {
             case NONE -> true;
             case TAP_SELF -> !holder.isTapped();
-            case TRIBUTES_TO_DECK_BOTTOM, TRIBUTE_AS_RESOURCE -> player.getTributeZone().stream().filter(payment.filter()::matches).count() >= payment.count();
+            case TRIBUTES_TO_DECK_BOTTOM, TRIBUTE_AS_RESOURCE -> tributesFor(player, payment, card).size() >= payment.count();
             case TAP_CARD -> player.getField().stream().filter(c -> !c.isTapped() && payment.filter().matches(c)).count() >= payment.count();
             case SELF_DAMAGE -> !player.getLifeStack().isEmpty();
         };
@@ -255,13 +256,17 @@ public final class CostModifiers {
                 .filter(u -> u.modifier().payment().needsChoice()).findFirst().orElse(null);
     }
 
-    /** The cards that can pay it. */
-    static List<CardSlot> paymentOptions(PlayerState player, Use use) {
+    private static List<CardSlot> tributesFor(PlayerState player, Payment payment, CardSlot card) {
+        return player.getTributeZone().stream().filter(c -> c != card && payment.filter().matches(c)).toList();
+    }
+
+    /** The cards that can pay it ({@code card}: the one whose cost it lowers, left out). */
+    static List<CardSlot> paymentOptions(PlayerState player, Use use, CardSlot card) {
         Payment payment = use.modifier().payment();
         if (payment.kind() == PaymentKind.TAP_CARD) return player.getField().stream().filter(c -> !c.isTapped() && payment.filter().matches(c)).toList();
         // Each life of the top it may take, one per time
         if (payment.kind() == PaymentKind.SELF_DAMAGE) return player.getLifeStack().subList(0, Math.min(payment.count(), player.getLifeStack().size()));
-        return payment.needsChoice() ? player.getTributeZone().stream().filter(payment.filter()::matches).toList() : List.of();
+        return payment.needsChoice() ? tributesFor(player, payment, card) : List.of();
     }
 
     /** What is asked, for the choice. */

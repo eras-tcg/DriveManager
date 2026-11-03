@@ -1,0 +1,105 @@
+{
+  "name" : "violet",
+  "effects" : [ {
+    "id" : "violet:en-invocacion",
+    "moment" : "ON_SUMMON",
+    "label" : "En Invocación",
+    "text" : "Puedes mover un aliado en tu retaguardia a tu línea frontal.",
+    "steps" : [ {
+      "type" : "Do",
+      "action" : {
+        "type" : "Move",
+        "cards" : {
+          "zones" : "backLine",
+          "owner" : "YOU",
+          "filter" : {
+            "cardType" : "creature"
+          },
+          "min" : {
+            "type" : "Fixed"
+          },
+          "max" : {
+            "type" : "Fixed",
+            "value" : 1
+          },
+          "self" : "ANY",
+          "mode" : "CHOOSE"
+        },
+        "to" : "frontLine"
+      }
+    } ],
+    "sourceZone" : "field",
+    "limit" : "NONE"
+  } ],
+  "inherited" : [ {
+    "id" : "violet:hereda-todos-los-turnos",
+    "moment" : "ON_EVENT",
+    "label" : "Todos Los Turnos",
+    "text" : "Heredado de Violet: si algún aliado de fuerza 4 o mayor es invocado por efecto, puedes tributar el recurso de este efecto; invoca 1 [hada] nivel 1 de tu mano reduciendo su coste en 1.",
+    "cost" : [ {
+      "type" : "Do",
+      "action" : {
+        "type" : "Move",
+        "cards" : {
+          "zones" : "resources",
+          "owner" : "YOU",
+          "filter" : {
+            "name" : "Violet"
+          },
+          "min" : {
+            "type" : "Fixed",
+            "value" : 1
+          },
+          "max" : {
+            "type" : "Fixed",
+            "value" : 1
+          },
+          "self" : "ANY",
+          "mode" : "TOP"
+        },
+        "to" : "tributeZone"
+      }
+    } ],
+    "steps" : [ {
+      "type" : "Do",
+      "action" : {
+        "type" : "Summon",
+        "cards" : {
+          "zones" : "hand",
+          "owner" : "YOU",
+          "filter" : {
+            "classes" : [ "hada" ],
+            "cardType" : "creature",
+            "level" : 1
+          },
+          "min" : {
+            "type" : "Fixed",
+            "value" : 1
+          },
+          "max" : {
+            "type" : "Fixed",
+            "value" : 1
+          },
+          "self" : "ANY",
+          "mode" : "CHOOSE"
+        },
+        "reduce" : {
+          "type" : "Fixed",
+          "value" : 1
+        },
+        "required" : true
+      }
+    } ],
+    "condition" : {
+      "type" : "Summoned",
+      "side" : "YOU",
+      "filter" : {
+        "cardType" : "creature",
+        "minStrength" : 4
+      },
+      "how" : "effect"
+    },
+    "sourceZone" : "field",
+    "limit" : "NONE"
+  } ]
+}

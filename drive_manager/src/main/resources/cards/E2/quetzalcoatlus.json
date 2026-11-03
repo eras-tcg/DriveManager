@@ -1,0 +1,68 @@
+{
+  "name" : "quetzalcoatlus",
+  "effects" : [ {
+    "id" : "quetzalcoatlus:al-atacar",
+    "moment" : "ON_ATTACK",
+    "label" : "Al Atacar",
+    "text" : "Puedes sacrificar 1 aliado con fuerza menor a esta carta; añade 1 [dinosaurio] de tus tributos como recurso de esta carta. Si lo haces: salta el paso de bloqueo.",
+    "cost" : [ {
+      "type" : "Do",
+      "action" : {
+        "type" : "Destroy",
+        "cards" : {
+          "zones" : "allies",
+          "owner" : "YOU",
+          "filter" : { },
+          "min" : {
+            "type" : "Fixed",
+            "value" : 1
+          },
+          "max" : {
+            "type" : "Fixed",
+            "value" : 1
+          },
+          "self" : "EXCLUDE",
+          "mode" : "CHOOSE",
+          "relative" : {
+            "to" : "self",
+            "compareStrength" : "LESS"
+          }
+        },
+        "sacrifice" : true,
+        "required" : true
+      }
+    } ],
+    "steps" : [ {
+      "type" : "Do",
+      "action" : {
+        "type" : "Move",
+        "cards" : {
+          "zones" : "tributeZone",
+          "owner" : "YOU",
+          "filter" : {
+            "classes" : [ "dinosaurio" ]
+          },
+          "min" : {
+            "type" : "Fixed",
+            "value" : 1
+          },
+          "max" : {
+            "type" : "Fixed",
+            "value" : 1
+          },
+          "self" : "EXCLUDE",
+          "mode" : "CHOOSE"
+        },
+        "to" : "resources:self",
+        "required" : true
+      }
+    }, {
+      "type" : "IfDone",
+      "covers" : 1
+    }, {
+      "type" : "SkipBlockStep"
+    } ],
+    "sourceZone" : "field",
+    "limit" : "NONE"
+  } ]
+}

@@ -1,0 +1,50 @@
+{
+  "name" : "devorador de bestias",
+  "effects" : [ {
+    "id" : "devorador-de-bestias:en-invocacion",
+    "moment" : "ON_SUMMON",
+    "label" : "En Invocación",
+    "text" : "Puedes sacrificar 1 aliado Violeta nivel 3 que no sea una copia de esta carta para ganar 2 gemas.",
+    "steps" : [ {
+      "type" : "IfPossible"
+    }, {
+      "type" : "Do",
+      "action" : {
+        "type" : "Destroy",
+        "cards" : {
+          "zones" : "allies",
+          "owner" : "YOU",
+          "filter" : {
+            "colors" : [ "P" ],
+            "cardType" : "creature",
+            "level" : 3,
+            "notName" : "Devorador De Bestias"
+          },
+          "min" : {
+            "type" : "Fixed",
+            "value" : 1
+          },
+          "max" : {
+            "type" : "Fixed",
+            "value" : 1
+          },
+          "self" : "ANY",
+          "mode" : "CHOOSE"
+        },
+        "sacrifice" : true,
+        "required" : true
+      }
+    }, {
+      "type" : "Do",
+      "action" : {
+        "type" : "Gems",
+        "count" : {
+          "type" : "Fixed",
+          "value" : 2
+        }
+      }
+    } ],
+    "sourceZone" : "field",
+    "limit" : "NONE"
+  } ]
+}

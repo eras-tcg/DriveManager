@@ -1,0 +1,37 @@
+{
+  "name" : "espada de los leones dorados",
+  "effects" : [ {
+    "id" : "espada-leones-dorados:en-invocacion",
+    "moment" : "ON_SUMMON",
+    "mandatory" : true,
+    "label" : "En Invocación",
+    "text" : "Si tienes menos vidas que tu oponente: gana 1 gema.",
+    "steps" : [ {
+      "type" : "Do",
+      "action" : {
+        "type" : "Gems",
+        "count" : {
+          "type" : "Fixed",
+          "value" : 1
+        }
+      }
+    } ],
+    "condition" : {
+      "type" : "Compare",
+      "left" : {
+        "type" : "Lives"
+      },
+      "op" : "LESS",
+      "right" : {
+        "type" : "Lives",
+        "opponent" : true
+      }
+    },
+    "sourceZone" : "field",
+    "limit" : "NONE"
+  } ],
+  "reactions" : [ {
+    "type" : "GainBeforeAscended",
+    "keyword" : "Furia 2"
+  } ]
+}

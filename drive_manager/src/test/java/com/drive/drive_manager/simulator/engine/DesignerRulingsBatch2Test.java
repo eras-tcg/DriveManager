@@ -45,7 +45,7 @@ class DesignerRulingsBatch2Test {
     @Test
     void inmediatamenteMissesItsMomentWhenSomethingElseHappenedAfter() {
         onField(host, card("s", "Invocada", 1, 1, "R"));
-        Condition espada = new Condition.Immediately(new Condition.AllySummonedByEffect(CardFilter.any()));
+        Condition espada = new Condition.Immediately(Condition.allySummonedByEffect(CardFilter.any()));
 
         GameEvent summon = event(1, GameEvent.EFFECT_SUMMON, "s", "r1");
         event(2, GameEvent.EFFECT_RESOLVED, null, "r1");
@@ -55,7 +55,7 @@ class DesignerRulingsBatch2Test {
         event(3, GameEvent.MOVE, "x", "r1");
         assertThat(espada.test(room, summon, null, "host")).isFalse();
         // A plain "si…" is still met
-        assertThat(new Condition.AllySummonedByEffect(CardFilter.any()).test(room, summon, null, "host")).isTrue();
+        assertThat(Condition.allySummonedByEffect(CardFilter.any()).test(room, summon, null, "host")).isTrue();
     }
 
     @Test
@@ -87,7 +87,7 @@ class DesignerRulingsBatch2Test {
         effect.setControllerId("host");
         effect.setSourceName("Reductor");
 
-        Steps.reduceStrength(room, effect, guest, target, 3, false);
+        StepHelpers.reduceStrength(room, effect, guest, target, 3, false);
 
         assertThat(guest.getField()).doesNotContain(target);
         assertThat(guest.getDiscardPile()).contains(target);
@@ -96,7 +96,7 @@ class DesignerRulingsBatch2Test {
         assertThat(destroyed.getPlayerId()).isNull();
         assertThat(destroyed.getEffectId()).isNull();
         // Nothing that reacts to a destruction by an effect
-        assertThat(new Condition.DestroyedByEffect().test(room, destroyed, target, "guest")).isFalse();
+        assertThat(Condition.destroyedByEffect().test(room, destroyed, target, "guest")).isFalse();
     }
 
     @Test
@@ -199,14 +199,14 @@ class DesignerRulingsBatch2Test {
     void ritualRequirementsReadOMayorAndAStrengthLimit() {
         CardSlot zaranthrax = card("zx", "Zaranthrax", 1, 4, "P");
         zaranthrax.setRequirement("criatura nivel 3 o mayor.");
-        Summons.Requirement req = Summons.requirement(zaranthrax);
+        Rituals.Requirement req = Rituals.requirement(zaranthrax);
         assertThat(req.fits(card("l3", "Nivel 3", 1, 3, "P"))).isTrue();
         assertThat(req.fits(card("l5", "Nivel 5", 1, 5, "P"))).isTrue();
         assertThat(req.fits(card("l2", "Nivel 2", 1, 2, "P"))).isFalse();
 
         CardSlot krull = card("kr", "Krull", 1, 3, "P");
         krull.setRequirement("criatura nivel 1 de fuerza 3 o menos.");
-        Summons.Requirement krullReq = Summons.requirement(krull);
+        Rituals.Requirement krullReq = Rituals.requirement(krull);
         CardSlot weak = card("w", "Débil", 1, 1, "P");
         weak.setStrength(3);
         CardSlot strong = card("s", "Fuerte", 1, 1, "P");
@@ -227,6 +227,6 @@ class DesignerRulingsBatch2Test {
         List<EffectScript> cofre = CardEffects.of(card("cm", "Cofre Mímico", 1, 1, "P"));
         assertThat(cofre).extracting(EffectScript::moment).containsExactly(EffectScript.Moment.ON_EVENT, EffectScript.Moment.ON_SUMMON);
         assertThat(cofre.get(0).sourceZone()).isEqualTo("tributeZone");
-        assertThat(cofre.get(0).steps()).containsExactly(new EffectStep.SummonSelf("tributeZone", Amount.fixed(0), true));
+        assertThat(cofre.get(0).steps()).containsExactly(Compose.summonSelf("tributeZone", Amount.fixed(0), true));
     }
 }

@@ -14,10 +14,14 @@ import java.util.regex.Pattern;
 
 import static com.drive.drive_manager.simulator.engine.EffectEngine.*;
 import static com.drive.drive_manager.simulator.engine.Summons.*;
+import static com.drive.drive_manager.simulator.engine.SpecialRequirements.*;
+import static com.drive.drive_manager.simulator.engine.SpecialSummons.*;
+import static com.drive.drive_manager.simulator.engine.Rituals.*;
 import static com.drive.drive_manager.simulator.engine.TurnRules.*;
 import static com.drive.drive_manager.simulator.engine.CombatRules.*;
 import static com.drive.drive_manager.simulator.engine.Chain.*;
-import static com.drive.drive_manager.simulator.engine.Steps.*;
+import static com.drive.drive_manager.simulator.engine.Resolution.*;
+import static com.drive.drive_manager.simulator.engine.StepHelpers.*;
 import static com.drive.drive_manager.simulator.engine.Answers.*;
 
 /** Cards leaving the field: destruction and sacrifice (rule 12, "Sacrificio y destrucción") and the replacements that can stop them ("en su lugar", Protección). */
@@ -95,6 +99,8 @@ public final class Removals {
         }
         // A replacement ("en su lugar", Protección): its owner chooses first; the destruction waits
         if (!sacrifice && deferRemoval(room, card, owner, true, cause, byId, byCard, effect)) return null;
+        // Its level as it was on the field ("1 nivel mayor que el aliado sacrificado"): leaving it, it loses its continuous levels
+        Integer levelThere = card.getLevel();
         owner.getField().remove(card);
         Combat combat = room.getCombat();
         if (combat != null && owner.getUserId().equals(combat.getDefenderId())) combat.setEnemyDestroyed(true);
@@ -122,6 +128,7 @@ public final class Removals {
         Map<String, Object> data = new HashMap<>();
         data.put("cause", cause);
         data.put("ownerId", owner.getUserId());
+        if (levelThere != null) data.put("level", levelThere);
         if (byCard == null && effect != null) byCard = effect.getSourceInstanceId();
         if (byCard != null) data.put("byCard", byCard);
         if (!inherited.isEmpty()) data.put("inherited", inherited);
@@ -235,7 +242,7 @@ public final class Removals {
                     if (s == null || !s.zone().equals(z) || !s.ally().matches(card)) continue;
                     CardEffects.Replacement r = s.replacement();
                     if (r.limit() != Limit.NONE && room.getUsedThisTurn().contains(replacementKey(owner, c, r))) continue;
-                    if (!Summons.canSummonInsteadOfRemoval(room, owner, c, card, s.reduce())) continue;
+                    if (!SpecialSummons.canSummonInsteadOfRemoval(room, owner, c, card, s.reduce())) continue;
                     options.add(new ReplacementOption(r.id() + "@" + c.getInstanceId(), c, r, r.label(),
                             r.text() + " " + name(card) + " es su invocador."));
                 }
@@ -436,7 +443,7 @@ public final class Removals {
                 // A regular special summon of that card, the ally as its summoner: the ally is not removed
                 room.getPendingRemovals().remove(0);
                 log(room, name(card) + " no es removida: en su lugar, invoca especialmente a " + name(chosen.source()), null);
-                Summons.summonInsteadOfRemoval(room, player, chosen.source(), card);
+                SpecialSummons.summonInsteadOfRemoval(room, player, chosen.source(), card);
                 return null;
             }
             case TRIBUTE_TWO_MATERIALS -> {

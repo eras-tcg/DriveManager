@@ -1,0 +1,73 @@
+{
+  "name" : "dragón volcánico",
+  "effects" : [ {
+    "id" : "dragon-volcanico:al-atacar",
+    "moment" : "ON_ATTACK",
+    "label" : "Al Atacar",
+    "text" : "Una vez por turno: puedes destruir 1 carta bocarriba en las vidas oponentes.",
+    "steps" : [ {
+      "type" : "DestroyFaceUpLife"
+    } ],
+    "sourceZone" : "field",
+    "limit" : "ONCE_PER_TURN"
+  }, {
+    "id" : "dragon-volcanico:al-final-del-ataque",
+    "moment" : "ON_ATTACK_END",
+    "label" : "Al Final Del Ataque",
+    "text" : "Una vez por turno: si algún enemigo fue destruido durante el ataque, puedes enviar 5 de tus tributos [dragón] al fondo de tu mazo para reactivar esta carta.",
+    "steps" : [ {
+      "type" : "IfPossible"
+    }, {
+      "type" : "Do",
+      "action" : {
+        "type" : "Move",
+        "cards" : {
+          "zones" : "tributeZone",
+          "owner" : "YOU",
+          "filter" : {
+            "classes" : [ "dragón" ]
+          },
+          "min" : {
+            "type" : "Fixed",
+            "value" : 5
+          },
+          "max" : {
+            "type" : "Fixed",
+            "value" : 5
+          },
+          "self" : "ANY",
+          "mode" : "CHOOSE"
+        },
+        "to" : "deckBottom"
+      }
+    }, {
+      "type" : "Do",
+      "action" : {
+        "type" : "SetTapped",
+        "cards" : {
+          "zones" : "field",
+          "owner" : "YOU",
+          "filter" : { },
+          "min" : {
+            "type" : "Fixed",
+            "value" : 1
+          },
+          "max" : {
+            "type" : "Fixed",
+            "value" : 1
+          },
+          "self" : "ANY",
+          "mode" : "SELF"
+        }
+      }
+    } ],
+    "condition" : {
+      "type" : "Happened",
+      "actor" : "ANY",
+      "owner" : "ANY",
+      "data" : [ "enemyDestroyed=true" ]
+    },
+    "sourceZone" : "field",
+    "limit" : "ONCE_PER_TURN"
+  } ]
+}

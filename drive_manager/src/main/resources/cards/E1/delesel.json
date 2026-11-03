@@ -1,0 +1,41 @@
+{
+  "name" : "delesel",
+  "effects" : [ {
+    "id" : "delesel:en-destruccion",
+    "moment" : "ON_DESTROY",
+    "label" : "En Destrucción",
+    "text" : "Puedes invocar 1 [ente] nivel 2 de tus tributos reduciendo su coste en 2.",
+    "steps" : [ {
+      "type" : "Do",
+      "action" : {
+        "type" : "Summon",
+        "cards" : {
+          "zones" : "tributeZone",
+          "owner" : "YOU",
+          "filter" : {
+            "classes" : [ "ente" ],
+            "cardType" : "creature",
+            "level" : 2
+          },
+          "min" : {
+            "type" : "Fixed",
+            "value" : 1
+          },
+          "max" : {
+            "type" : "Fixed",
+            "value" : 1
+          },
+          "self" : "ANY",
+          "mode" : "CHOOSE"
+        },
+        "reduce" : {
+          "type" : "Fixed",
+          "value" : 2
+        },
+        "required" : true
+      }
+    } ],
+    "sourceZone" : "field",
+    "limit" : "NONE"
+  } ]
+}
