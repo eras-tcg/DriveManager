@@ -17,7 +17,8 @@ import java.util.Set;
  * What one player may see of a room. The room's state is sent to each player on their own queue, so the other
  * side's hidden cards never leave the server:
  * <ul>
- *   <li>the rival's hand, both decks (contents and order) and the face-down lives are card backs;</li>
+ *   <li>the rival's hand, both decks (contents and order) and the face-down lives are card backs; in the mulligan,
+ *   until they confirm it, a player sees the five cards on top of their own deck (the ones they choose from);</li>
  *   <li>the rival's face-down cards on the field, the Tributos or the Descarte are card backs (their owner knows them);</li>
  *   <li>the rival's deck list, the choice the rival is making and what the rival can activate stay out;</li>
  *   <li>the timeline and the history do not name the cards drawn, looked at or sent to a hidden place.</li>
@@ -59,8 +60,15 @@ final class StateMask {
         BeanUtils.copyProperties(update, view);
 
         Set<String> hidden = new HashSet<>();
+        // The mulligan is chosen from the top of the player's own deck: those cards are theirs to see until they confirm
+        boolean choosing = GameRoom.RoomStatus.MULLIGAN.name().equals(update.getStatus())
+                && (update.getMulliganReady() == null || !update.getMulliganReady().contains(viewerId));
+        int ownShown = choosing ? MULLIGAN_CARDS : 0;
         Map<String, PlayerState> players = new LinkedHashMap<>();
-        update.getPlayers().forEach((id, player) -> players.put(id, mask(player, id.equals(viewerId), manual, hidden)));
+        update.getPlayers().forEach((id, player) -> {
+            boolean mine = id.equals(viewerId);
+            players.put(id, mask(player, mine, manual, mine ? ownShown : 0, hidden));
+        });
         view.setPlayers(players);
 
         Prompt prompt = update.getPrompt();
@@ -73,12 +81,16 @@ final class StateMask {
         return view;
     }
 
-    private static PlayerState mask(PlayerState player, boolean mine, boolean manual, Set<String> hidden) {
+    /** The cards a player chooses from in the mulligan (PreRoomActions.handleConfirmMulligan). */
+    static final int MULLIGAN_CARDS = 5;
+
+    /** {@code shown}: how many cards on top of the deck keep their face (the owner's, in the mulligan). */
+    private static PlayerState mask(PlayerState player, boolean mine, boolean manual, int shown, Set<String> hidden) {
         PlayerState masked = new PlayerState(player.getUserId(), player.getUsername());
         BeanUtils.copyProperties(player, masked);
         boolean ownHidden = mine && manual;
         masked.setHand(mine ? player.getHand() : backs(player.getHand(), hidden));
-        masked.setDeck(ownHidden ? player.getDeck() : deckBacks(player, hidden));
+        masked.setDeck(ownHidden ? player.getDeck() : deckBacks(player, shown, hidden));
         masked.setOriginalDeck(mine ? player.getOriginalDeck() : starterOnly(player));
         masked.setLifeStack(ownHidden ? player.getLifeStack() : faceDownBacks(player.getLifeStack(), hidden));
         masked.setTributeZone(mine ? player.getTributeZone() : faceDownBacks(player.getTributeZone(), hidden));
@@ -93,10 +105,17 @@ final class StateMask {
         return player.getOriginalDeck().stream().filter(c -> player.getStarterCardId().equals(c.getCardId())).limit(1).toList();
     }
 
-    /** The deck as backs with ids of their own: a card known before (one returned to the deck) cannot be followed. */
-    private static List<CardSlot> deckBacks(PlayerState player, Set<String> hidden) {
+    /**
+     * The deck as backs with ids of their own: a card known before (one returned to the deck) cannot be followed. The
+     * first {@code shown} cards keep their face and their id (the mulligan sends them back by id).
+     */
+    private static List<CardSlot> deckBacks(PlayerState player, int shown, Set<String> hidden) {
         List<CardSlot> backs = new ArrayList<>();
         for (int i = 0; i < player.getDeck().size(); i++) {
+            if (i < shown) {
+                backs.add(player.getDeck().get(i));
+                continue;
+            }
             hidden.add(player.getDeck().get(i).getInstanceId());
             CardSlot back = new CardSlot();
             back.setInstanceId("deck-" + player.getUserId() + "-" + i);
