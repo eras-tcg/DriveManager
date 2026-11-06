@@ -1,11 +1,8 @@
 package com.drive.drive_manager.simulator.engine;
 
-import com.drive.drive_manager.simulator.CardSlot;
-import com.drive.drive_manager.simulator.FloatingEffect;
-import com.drive.drive_manager.simulator.GameLogEntry;
-import com.drive.drive_manager.simulator.GameRoom;
-import com.drive.drive_manager.simulator.PlayerState;
-import com.drive.drive_manager.simulator.engine.EffectScript.Limit;
+import com.drive.drive_manager.simulator.room.CardSlot;
+import com.drive.drive_manager.simulator.room.GameRoom;
+import com.drive.drive_manager.simulator.room.PlayerState;
 import com.drive.drive_manager.simulator.engine.EffectStep.*;
 
 import java.util.*;
@@ -198,7 +195,7 @@ public final class CombatRules {
                                 // Provocar is an effect of the attacker that targets: "no puede ser objetivo de efectos…" (HE-110) is left out
                                 .filter(b -> !immuneTo(b, attacker.getLevel() == null ? 0 : attacker.getLevel())).toList();
                         if (!options.isEmpty()) {
-                            rulesPrompt(room, owner.getUserId(), PURPOSE_PROVOKE, name(attacker) + " · Provocar",
+                            rulesPrompt(room, owner.getUserId(), PromptPurpose.PROVOKE.id(), name(attacker) + " · Provocar",
                                     "Puedes elegir 1 enemigo" + (provoke > 0 ? " nivel " + provoke + " o menor" : "") + ": deberá bloquear este ataque.",
                                     "Provocar", options, defender.getField());
                             return false;
@@ -211,7 +208,7 @@ public final class CombatRules {
                     List<CardSlot> options = keywordLevel(attacker, "Imbloqueable") != null ? List.of()
                             : blockers(defender).stream().filter(b -> !b.getInstanceId().equals(c.getTargetId())).toList();
                     if (!options.isEmpty()) {
-                        rulesPrompt(room, defender.getUserId(), PURPOSE_BLOCK, name(attacker) + " ataca",
+                        rulesPrompt(room, defender.getUserId(), PromptPurpose.BLOCK.id(), name(attacker) + " ataca",
                                 "Puedes elegir 1 criatura activa de tu línea frontal para bloquear (se agota), o ninguna.",
                                 "Bloquear", options, defender.getField());
                         return false;
@@ -295,14 +292,14 @@ public final class CombatRules {
                     name(attacker) + " inflige " + damage + " de daño directo: " + defender.getUsername() + " pierde la vida "
                             + name(life) + (tribute ? ", que va a sus tributos" : ", que va a su mano"));
             if (creature && !tribute && revealedNow) {
-                lifePrompt(room, defender, life, PURPOSE_REINFORCE, "Reforzar", name(life)
+                lifePrompt(room, defender, life, PromptPurpose.REINFORCE.id(), "Reforzar", name(life)
                         + " tiene más fuerza que el daño y va a tu mano. ¿Refuerzas con ella? Se coloca bocarriba al fondo de tu pila de vidas.", "Reforzar");
                 return false;
             }
             int lifeCost = CardEffects.lifePlayCost(life);
             if (("utility".equals(life.getCardType()) || "structure".equals(life.getCardType()))
                     && Chain.cannotActivateOnPlay(room, defender.getUserId(), life) == null && canPay(room, defender.getUserId(), lifeCost)) {
-                lifePrompt(room, defender, life, PURPOSE_LIFE_PLAY, "Vida revelada",
+                lifePrompt(room, defender, life, PromptPurpose.LIFE_PLAY.id(), "Vida revelada",
                         "¿Juegas " + name(life) + (lifeCost > 0 ? " pagando " + gemsText(lifeCost) : " sin pagar su coste") + "? Si no, queda en tu mano.", "Jugar");
                 return false;
             }
@@ -329,7 +326,7 @@ public final class CombatRules {
                 .filter(b -> "creature".equals(b.getCardType()) && inFrontLine(b) && b != blocker
                         && (combat == null || !b.getInstanceId().equals(combat.getTargetId()))).toList();
         if (others.isEmpty()) return false;
-        rulesPrompt(room, defender.getUserId(), PURPOSE_BLOCK_SWAP, name(holder) + " · Turno Oponente",
+        rulesPrompt(room, defender.getUserId(), PromptPurpose.BLOCK_SWAP.id(), name(holder) + " · Turno Oponente",
                 "En lugar de " + name(blocker) + ", puedes reactivarlo y elegir otro aliado para que bloquee. O ninguno.", "Bloquea", others,
                 defender.getField());
         room.getPrompt().setSubjectId(blocker.getInstanceId());
@@ -367,7 +364,7 @@ public final class CombatRules {
                     && canPay(room, defender.getUserId(), Math.max(0, card.getCost() - r.reduce()));
         }).toList();
         if (options.isEmpty()) return false;
-        rulesPrompt(room, defender.getUserId(), PURPOSE_DAMAGE_REPLACE, "Daño directo: " + damage,
+        rulesPrompt(room, defender.getUserId(), PromptPurpose.DAMAGE_REPLACE.id(), "Daño directo: " + damage,
                 "En lugar de recibir el daño, puedes invocar 1 de estas cartas agotada en tu línea frontal reduciendo su coste. O ninguna.",
                 "Invocar", options, options);
         room.getPrompt().setMin(0);
@@ -406,7 +403,7 @@ public final class CombatRules {
     /** "cuando fueras a recibir daño: en su lugar, puedes tributar esta carta más 2 [retador] de tu mano, todas de distinto nivel". */
     static void offerDamageTribute(GameRoom room, PlayerState defender, int damage, String context) {
         List<CardSlot> valid = defender.getHand().stream().filter(c -> CardEffects.tributesInsteadOfDamage(c) || retador(c)).toList();
-        rulesPrompt(room, defender.getUserId(), PURPOSE_DAMAGE_TRIBUTE, "Vas a recibir " + damage + " de daño",
+        rulesPrompt(room, defender.getUserId(), PromptPurpose.DAMAGE_TRIBUTE.id(), "Vas a recibir " + damage + " de daño",
                 "En su lugar, puedes tributar Estoque De Los Guerreros Jurados y 2 [retador] más de tu mano, los 3 de distinto nivel. O ninguna.",
                 "Tributar", valid, defender.getHand());
         room.getPrompt().setMin(0);

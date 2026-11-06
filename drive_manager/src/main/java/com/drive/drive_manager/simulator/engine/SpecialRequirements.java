@@ -1,11 +1,9 @@
 package com.drive.drive_manager.simulator.engine;
 
-import com.drive.drive_manager.simulator.CardSlot;
-import com.drive.drive_manager.simulator.FloatingEffect;
-import com.drive.drive_manager.simulator.GameLogEntry;
-import com.drive.drive_manager.simulator.GameRoom;
-import com.drive.drive_manager.simulator.PlayerState;
-import com.drive.drive_manager.simulator.engine.EffectScript.Limit;
+import com.drive.drive_manager.simulator.room.CardSlot;
+import com.drive.drive_manager.simulator.room.Zone;
+import com.drive.drive_manager.simulator.room.GameRoom;
+import com.drive.drive_manager.simulator.room.PlayerState;
 import com.drive.drive_manager.simulator.engine.EffectStep.*;
 import com.drive.drive_manager.simulator.engine.effects.model.SpecialRule;
 
@@ -310,11 +308,9 @@ public final class SpecialRequirements {
 
     /** "tu mano o tus tributos". */
     static String zonesText(List<String> zones) {
-        return String.join(" o ", zones.stream().map(z -> switch (z) {
-            case "field" -> "tu campo";
-            case "hand" -> "tu mano";
-            default -> "tus tributos";
-        }).toList());
+        // Any other zone is read as the Tributos
+        return String.join(" o ", zones.stream().map(z -> Zone.parse(z).filter(x -> x == Zone.FIELD || x == Zone.HAND)
+                .orElse(Zone.TRIBUTE_ZONE).ownLabel()).toList());
     }
 
     /** The card can be special summoned from where it is: the hand, or the Tributos when it says so (Falanx). */
@@ -369,7 +365,19 @@ public final class SpecialRequirements {
         if (!enoughCreatures(player, card)) return false;
         if (req.declaredSummoner()) return !declaredSummoners(player, card, req).isEmpty();
         if (req.noSummoner()) return specialMaterials(player, card, req, null).size() >= req.materialCount();
-        return specialSummoners(player, card, req).stream().anyMatch(s -> materialsPossible(player, card, req, s));
+        return specialSummoners(player, card, req).stream().anyMatch(s -> materialsPossible(player, card, req, s) && affordableWith(room, player, card, req, s));
+    }
+
+    /**
+     * The special cost can be paid with this summoner: a discount "of the summoner" (Duregón's) counts only when that
+     * creature is the summoner, so the cost is checked with each one. A Materialización with materials is paid once
+     * they are chosen, so it is not checked here.
+     */
+    static boolean affordableWith(GameRoom room, PlayerState player, CardSlot card, SpecialRequirement req, CardSlot summoner) {
+        SpecialRequirement option = optionFor(req, summoner);
+        if ("materialization".equals(req.kind()) && (option.materialCount() > 0 || option.levelSum() > 0)) return true;
+        return canPay(room, player.getUserId(), card.getSpecialCost()
+                - CostModifiers.available(room, player, CostModifiers.Event.SPECIAL_SUMMON, req.kind(), card, summoner));
     }
 
     /**

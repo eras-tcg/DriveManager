@@ -1,8 +1,9 @@
 package com.drive.drive_manager.simulator.engine;
 
-import com.drive.drive_manager.simulator.CardSlot;
-import com.drive.drive_manager.simulator.GameRoom;
-import com.drive.drive_manager.simulator.PlayerState;
+import com.drive.drive_manager.simulator.room.CardSlot;
+import com.drive.drive_manager.simulator.room.Zone;
+import com.drive.drive_manager.simulator.room.GameRoom;
+import com.drive.drive_manager.simulator.room.PlayerState;
 
 import java.util.List;
 
@@ -533,7 +534,7 @@ public sealed interface Condition {
     /** "si algún aliado [filtro] inflige daño directo" (by combat). */
     record AllyDealtDirectDamage(CardFilter filter) implements Condition {
         public boolean test(GameRoom room, GameEvent event, CardSlot source, String controller) {
-            if (!GameEvent.LIFE_DAMAGE.equals(event.getType()) || !controller.equals(event.getPlayerId()) || event.getData() == null) return false;
+            if (event == null || !GameEvent.LIFE_DAMAGE.equals(event.getType()) || !controller.equals(event.getPlayerId()) || event.getData() == null) return false;
             CardSlot attacker = EffectEngine.findInRoom(room, (String) event.getData().get("attackerId"));
             return attacker != null && filter.matches(attacker);
         }
@@ -548,9 +549,10 @@ public sealed interface Condition {
         public boolean test(GameRoom room, GameEvent event, CardSlot source, String controller) {
             // Being sacrificed is being tributed too (designer ruling 2026-10-30, Niobats), and a life lost to direct damage that
             // goes to the Tributos is tributed from the lives (rule 10.1.4, Cofre Mímico)
+            if (event == null) return false;
             String type = event.getType();
             boolean tributed = GameEvent.TRIBUTE.equals(type) || GameEvent.SACRIFICE.equals(type)
-                    || (GameEvent.LIFE_DAMAGE.equals(type) && "tributeZone".equals(event.getToZone()));
+                    || (GameEvent.LIFE_DAMAGE.equals(type) && Zone.TRIBUTE_ZONE.is(event.getToZone()));
             if (!tributed || !source.getInstanceId().equals(event.getCardInstanceId())) return false;
             if (fromZone != null && !fromZone.equals(event.getFromZone())) return false;
             if (exceptZone != null && exceptZone.equals(event.getFromZone())) return false;
@@ -565,7 +567,7 @@ public sealed interface Condition {
     /** "si reduces [a N o menos] la fuerza de algún enemigo"; {@code enemyStillThere}: it is still on the field with some strength. */
     record YouReducedStrength(Integer toAtMost, boolean enemyStillThere) implements Condition {
         public boolean test(GameRoom room, GameEvent event, CardSlot source, String controller) {
-            if (!GameEvent.STRENGTH_REDUCED.equals(event.getType()) || !controller.equals(event.getPlayerId())) return false;
+            if (event == null || !GameEvent.STRENGTH_REDUCED.equals(event.getType()) || !controller.equals(event.getPlayerId())) return false;
             Object to = event.getData() == null ? null : event.getData().get("to");
             if (toAtMost != null && !(to instanceof Number n && n.intValue() <= toAtMost)) return false;
             if (!enemyStillThere) return true;
@@ -597,7 +599,7 @@ public sealed interface Condition {
             if (event == null || event.getCardInstanceId() == null) return false;
             String type = event.getType();
             boolean entered = GameEvent.MOVE.equals(type) && "frontLine".equals(event.getToZone());
-            if (!entered && "field".equals(event.getToZone()) && (GameEvent.NORMAL_SUMMON.equals(type) || GameEvent.EFFECT_SUMMON.equals(type)
+            if (!entered && Zone.FIELD.is(event.getToZone()) && (GameEvent.NORMAL_SUMMON.equals(type) || GameEvent.EFFECT_SUMMON.equals(type)
                     || GameEvent.SPECIAL_SUMMON.equals(type) || GameEvent.SEND.equals(type))) {
                 CardSlot card = EffectEngine.findInRoom(room, event.getCardInstanceId());
                 entered = card != null && EffectEngine.inFrontLine(card);

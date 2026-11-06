@@ -1,8 +1,8 @@
 package com.drive.drive_manager.simulator.engine;
 
-import com.drive.drive_manager.simulator.CardSlot;
-import com.drive.drive_manager.simulator.GameLogEntry;
-import com.drive.drive_manager.simulator.GameRoom;
+import com.drive.drive_manager.simulator.room.CardSlot;
+import com.drive.drive_manager.simulator.room.GameLogEntry;
+import com.drive.drive_manager.simulator.room.GameRoom;
 
 import java.util.ArrayList;
 import java.util.List;

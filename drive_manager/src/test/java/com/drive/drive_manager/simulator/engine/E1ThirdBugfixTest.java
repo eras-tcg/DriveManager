@@ -1,8 +1,8 @@
 package com.drive.drive_manager.simulator.engine;
 
-import com.drive.drive_manager.simulator.CardSlot;
-import com.drive.drive_manager.simulator.GameRoom;
-import com.drive.drive_manager.simulator.PlayerState;
+import com.drive.drive_manager.simulator.room.CardSlot;
+import com.drive.drive_manager.simulator.room.GameRoom;
+import com.drive.drive_manager.simulator.room.PlayerState;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -135,7 +135,7 @@ class E1ThirdBugfixTest {
         Removals.destroyIfNoStrength(room, "guest", host, proto);
         // "en su lugar, puedes tributar 2 materiales": used; it is still at 0, so it is destroyed anyway
         Prompt replace = room.getPrompt();
-        assertThat(replace.getPurpose()).isEqualTo(EffectEngine.PURPOSE_REPLACE);
+        assertThat(replace.getPurpose()).isEqualTo(PromptPurpose.REPLACE.id());
         answer(replace, replace.getEffects().get(0).effectId());
         answerAll();
         assertThat(host.getField()).doesNotContain(proto);

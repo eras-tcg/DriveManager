@@ -1,7 +1,7 @@
 package com.drive.drive_manager.simulator.engine.effects.runtime;
 
-import com.drive.drive_manager.simulator.CardSlot;
-import com.drive.drive_manager.simulator.PlayerState;
+import com.drive.drive_manager.simulator.room.CardSlot;
+import com.drive.drive_manager.simulator.room.PlayerState;
 import com.drive.drive_manager.simulator.engine.Amount;
 import com.drive.drive_manager.simulator.engine.effects.model.Selector;
 
@@ -15,6 +15,9 @@ import java.util.Map;
 public interface EffectContext {
 
     PlayerState player();
+
+    /** The room's chance (see GameRoom#getRandom). */
+    java.util.Random random();
 
     PlayerState opponent();
 

@@ -1,7 +1,8 @@
 package com.drive.drive_manager.simulator.engine;
 
-import com.drive.drive_manager.simulator.CardSlot;
-import com.drive.drive_manager.simulator.GameRoom;
+import com.drive.drive_manager.simulator.room.CardSlot;
+import com.drive.drive_manager.simulator.room.Zone;
+import com.drive.drive_manager.simulator.room.GameRoom;
 import com.drive.drive_manager.simulator.engine.CostModifiers.CostModifier;
 import com.drive.drive_manager.simulator.engine.EffectScript.Limit;
 import com.drive.drive_manager.simulator.engine.EffectScript.Moment;
@@ -178,7 +179,7 @@ public final class CardEffects {
     static int lifeStrength(GameRoom room, String owner, CardSlot life) {
         int strength = life.getStrength() == null ? 0 : life.getStrength();
         for (Continuous c : continuousOf(life)) {
-            if ("lifeStack".equals(c.zone()) && c.condition().test(room, null, life, owner)) strength += c.strength();
+            if (Zone.LIFE_STACK.is(c.zone()) && c.condition().test(room, null, life, owner)) strength += c.strength();
         }
         // Helena: "reduce … las de las vidas oponentes en N, hasta el final del turno"
         String reduced = EffectEngine.LIFE_REDUCED + life.getInstanceId() + "|";

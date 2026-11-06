@@ -1,11 +1,11 @@
 package com.drive.drive_manager.simulator.engine;
 
-import com.drive.drive_manager.simulator.CardSlot;
-import com.drive.drive_manager.simulator.GameAction;
-import com.drive.drive_manager.simulator.GameRoom;
-import com.drive.drive_manager.simulator.GameStateUpdate;
-import com.drive.drive_manager.simulator.PlayerState;
-import com.drive.drive_manager.simulator.RoomService;
+import com.drive.drive_manager.simulator.room.CardSlot;
+import com.drive.drive_manager.simulator.room.GameAction;
+import com.drive.drive_manager.simulator.room.GameRoom;
+import com.drive.drive_manager.simulator.room.GameStateUpdate;
+import com.drive.drive_manager.simulator.room.PlayerState;
+import com.drive.drive_manager.simulator.room.RoomService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 

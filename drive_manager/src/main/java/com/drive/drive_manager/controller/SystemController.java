@@ -3,7 +3,7 @@ package com.drive.drive_manager.controller;
 import com.drive.drive_manager.dto.SyncReport;
 import com.drive.drive_manager.service.ActivityTracker;
 import com.drive.drive_manager.service.DriveCatchUpService;
-import com.drive.drive_manager.simulator.RoomService;
+import com.drive.drive_manager.simulator.room.RoomService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;

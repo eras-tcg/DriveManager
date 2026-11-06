@@ -1,6 +1,6 @@
 package com.drive.drive_manager.simulator.engine;
 
-import com.drive.drive_manager.simulator.GameRoom;
+import com.drive.drive_manager.simulator.room.GameRoom;
 
 /**
  * A number an effect reads from the game ("reduciendo su coste en X, donde X es …", "gana fuerza 1 por cada aliado
@@ -63,9 +63,9 @@ public sealed interface Amount {
     record Lives(boolean opponent, boolean faceDownOnly) implements Amount {
         public int of(GameRoom room, String controller) {
             String id = opponent ? room.getOpponentId(controller) : controller;
-            com.drive.drive_manager.simulator.PlayerState p = id == null ? null : room.getPlayer(id);
+            com.drive.drive_manager.simulator.room.PlayerState p = id == null ? null : room.getPlayer(id);
             if (p == null) return Integer.MAX_VALUE;
-            return faceDownOnly ? (int) p.getLifeStack().stream().filter(com.drive.drive_manager.simulator.CardSlot::isFaceDown).count() : p.getLifeStack().size();
+            return faceDownOnly ? (int) p.getLifeStack().stream().filter(com.drive.drive_manager.simulator.room.CardSlot::isFaceDown).count() : p.getLifeStack().size();
         }
     }
 
@@ -79,7 +79,7 @@ public sealed interface Amount {
     /** The opponent's creatures in the Línea frontal. Without an opponent yet, one (so "no hay enemigos" does not hold). */
     record EnemiesInFrontLine() implements Amount {
         public int of(GameRoom room, String controller) {
-            com.drive.drive_manager.simulator.PlayerState p = room.getPlayer(room.getOpponentId(controller));
+            com.drive.drive_manager.simulator.room.PlayerState p = room.getPlayer(room.getOpponentId(controller));
             if (p == null) return 1;
             return (int) p.getField().stream().filter(c -> "creature".equals(c.getCardType()) && EffectEngine.inFrontLine(c)).count();
         }

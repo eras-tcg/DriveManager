@@ -1,6 +1,6 @@
 package com.drive.drive_manager.simulator.engine;
 
-import com.drive.drive_manager.simulator.CardSlot;
+import com.drive.drive_manager.simulator.room.CardSlot;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
@@ -8,7 +8,7 @@ import java.util.List;
 import static com.drive.drive_manager.simulator.engine.TestTable.*;
 import com.drive.drive_manager.dto.Card;
 import com.drive.drive_manager.dto.Effect;
-import com.drive.drive_manager.simulator.RoomService;
+import com.drive.drive_manager.simulator.room.RoomService;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
@@ -65,7 +65,7 @@ class DesignerRulingsRound3Test extends CardBatchSupport {
         CardSlot evo = special(inHand("ev", "Evolución", 6, 5, "B"), "evolution", 3, "criatura nivel 4.");
         int before = gems();
         assertThat(SpecialSummons.specialByPlayer(room, "host", "ev", "bk")).isNull();
-        assertThat(room.getPrompt().getPurpose()).isEqualTo(EffectEngine.PURPOSE_SUMMONER_DISCOUNT);
+        assertThat(room.getPrompt().getPurpose()).isEqualTo(PromptPurpose.SUMMONER_DISCOUNT.id());
         answer("hl0", "hl1");
         drain();
         assertThat(host.getField()).contains(evo);
@@ -211,7 +211,7 @@ class DesignerRulingsRound3Test extends CardBatchSupport {
         CardSlot carnirex = inHand("cx", "Carnirex", 10, 5, "G", "dinosaurio");
         int before = gems();
         assertThat(Summons.normalSummon(room, "host", "cx", 50.0, 75.0)).isNull();
-        assertThat(room.getPrompt().getPurpose()).isEqualTo(EffectEngine.PURPOSE_SUMMON_SACRIFICE);
+        assertThat(room.getPrompt().getPurpose()).isEqualTo(PromptPurpose.SUMMON_SACRIFICE.id());
         answer("dn");
         drain();
         assertThat(host.getField()).contains(carnirex).doesNotContain(dino);
@@ -256,7 +256,7 @@ class DesignerRulingsRound3Test extends CardBatchSupport {
         inherited.setEffectBlocks(List.of(new Effect.effectBlock("si un aliado [dinosaurio] ataca", "", "roba 1 carta.")));
         meta.setEffects(List.of(own));
         meta.setInheritEffects(List.of(inherited));
-        assertThat(RoomService.mentionedTypes(meta)).containsExactly("fauna", "dinosaurio");
+        assertThat(com.drive.drive_manager.simulator.room.CardMeta.mentionedTypes(meta)).containsExactly("fauna", "dinosaurio");
     }
 
     @Test

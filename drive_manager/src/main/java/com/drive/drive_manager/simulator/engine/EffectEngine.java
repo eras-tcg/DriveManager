@@ -1,11 +1,12 @@
 package com.drive.drive_manager.simulator.engine;
 
-import com.drive.drive_manager.simulator.CardSlot;
-import com.drive.drive_manager.simulator.FloatingEffect;
-import com.drive.drive_manager.simulator.GameLogEntry;
-import com.drive.drive_manager.simulator.GameRoom;
-import com.drive.drive_manager.simulator.PlayerState;
-import com.drive.drive_manager.simulator.engine.EffectScript.Limit;
+import com.drive.drive_manager.simulator.room.CardLocator;
+import com.drive.drive_manager.simulator.room.CardSlot;
+import com.drive.drive_manager.simulator.room.Zone;
+import com.drive.drive_manager.simulator.room.FloatingEffect;
+import com.drive.drive_manager.simulator.room.GameLogEntry;
+import com.drive.drive_manager.simulator.room.GameRoom;
+import com.drive.drive_manager.simulator.room.PlayerState;
 import com.drive.drive_manager.simulator.engine.EffectStep.*;
 
 import java.util.*;
@@ -52,31 +53,12 @@ public final class EffectEngine {
     /** Destroyed by the game's rules, not by an effect nor a player: strength 0 after the effect's destruction was prevented. */
     public static final String CAUSE_RULES = "RULES";
 
-    static final String PURPOSE_BLOCK = "BLOCK";
-    static final String PURPOSE_PROVOKE = "PROVOKE";
-    static final String PURPOSE_ADVANCE = "ADVANCE";
-    static final String PURPOSE_RITUAL = "RITUAL";
-    /** Evolución, Ascenso and Materialización from the hand: the summoner, then (Materialización) the material. */
-    static final String PURPOSE_SPECIAL = "SPECIAL";
-    /** "puedes agotar esta carta para reducir el coste especial" (Bosque Frondoso): asked before a special summon from the hand. */
-    static final String PURPOSE_COST_TAP = "COST_TAP";
     /** Key in the room's per-turn usage: the player already played a structure normally this turn. */
     static final String STRUCTURE_PLAYED = "structure-played|";
-    static final String PURPOSE_SPECIAL_FRONT = "SPECIAL_FRONT";
-    /** Flambreik: "cuando esta carta fuera a invocar por Evolución: puedes enviar 5 de tus tributos [dragón]…". */
-    static final String PURPOSE_SUMMONER_DISCOUNT = "SUMMONER_DISCOUNT";
-    static final String PURPOSE_REINFORCE = "REINFORCE";
-    static final String PURPOSE_LIFE_PLAY = "LIFE_PLAY";
     /** Turn-scoped marks in usedThisTurn: a Definitive effect used, Última Línea's extra hit, the turn to end. */
     public static final String DEFINITIVE_USED = "definitive";
     static final String EXTRA_HIT = "extra-hit|";
     public static final String END_TURN_REQUESTED = "end-turn|";
-    static final String PURPOSE_ORDER = "ORDER";
-    /** A card about to leave the field: its owner may replace it ("en su lugar"), or a card that pays it (Caballero Leal's hand card). */
-    static final String PURPOSE_REPLACE = "REPLACE";
-    static final String PURPOSE_REPLACE_HAND = "REPLACE_HAND";
-    static final String PURPOSE_OPTIONAL = "OPTIONAL";
-    static final String PURPOSE_PRIORITY = "PRIORITY";
     /** Gained by a creature that cannot declare an attack this turn. */
     static final String NO_ATTACK = "No puede atacar";
     /** "no puede declarar bloqueo" / "no puede bloquear". */
@@ -143,29 +125,14 @@ public final class EffectEngine {
         return effect != null && card != null && keywords(card).contains(ONLY_COPIES) && card.getCardName() != null
                 && !card.getCardName().equalsIgnoreCase(effect.getSourceName());
     }
-    static final String PURPOSE_REPLACE_MATERIALS = "REPLACE_MATERIALS";
     /** Marks in usedThisTurn: a Definitive effect used the turn before ("definitive-last|player"). */
     public static final String DEFINITIVE_LAST_TURN = "definitive-last|";
     /** An ally of that player was destroyed by the opponent this turn, and in the turn before ("…|last"). */
     public static final String ALLY_DESTROYED_BY_OPPONENT = "ally-destroyed-by-opponent|";
     public static final String ALLY_DESTROYED_LAST_TURN = "ally-destroyed-last|";
-    static final String PURPOSE_BLOCK_SWAP = "BLOCK_SWAP";
-    static final String PURPOSE_ASCEND_ATTACK = "ASCEND_ATTACK";
-    static final String PURPOSE_ASSAULT = "ASSAULT";
-    static final String PURPOSE_DAMAGE_REPLACE = "DAMAGE_REPLACE";
-    /** The materials of a special summon made instead of an ally's removal (EXO-91, SARS-2). */
-    static final String PURPOSE_REPLACE_SUMMON = "REPLACE_SUMMON";
-    /** What pays a guard of allies (Albert Collier): 1 material of it and 1 card to sacrifice. */
-    static final String PURPOSE_REPLACE_GUARD = "REPLACE_GUARD";
     /** A face-up life with less strength until the end of the turn: "life-reduced|instance|amount". */
     public static final String LIFE_REDUCED = "life-reduced|";
-    /** Sarkhydrax: the Recurso tributed and the one taken before the removal. */
-    static final String PURPOSE_REPLACE_RESOURCES = "REPLACE_RESOURCES";
-    /** Carnirex: the ally sacrificed to summon it ("summon-sacrifice|card|ally or -"). */
-    static final String PURPOSE_SUMMON_SACRIFICE = "SUMMON_SACRIFICE";
     static final String SUMMON_SACRIFICE = "summon-sacrifice|";
-    /** The cards tributed instead of receiving damage (Estoque De Los Guerreros Jurados). */
-    static final String PURPOSE_DAMAGE_TRIBUTE = "DAMAGE_TRIBUTE";
     /** The mark of an effect's direct damage that waits for that answer: effect id | damage | controller. */
     static final String PENDING_EFFECT_DAMAGE = "pending-effect-damage|";
     /** An "until the end of the attack" entry that is strength, not an ability ("id|fuerza:3"). */
@@ -191,7 +158,7 @@ public final class EffectEngine {
             e.setCardInstanceId(card.getInstanceId());
             e.setCardName(card.getCardName());
             // Entering the field (summoned, played…): it reacts to events from this one on
-            if ("field".equals(to)) card.setFieldSeq(e.getSeq());
+            if (Zone.FIELD.is(to)) card.setFieldSeq(e.getSeq());
         }
         e.setFromZone(from);
         e.setToZone(to);
@@ -277,15 +244,12 @@ public final class EffectEngine {
 
     /** A card anywhere in the room, attached ones included. */
     public static CardSlot findInRoom(GameRoom room, String instanceId) {
-        return cardsInRoom(room).filter(c -> instanceId.equals(c.getInstanceId())).findFirst().orElse(null);
+        return CardLocator.findInRoom(room, instanceId, CardLocator.ENGINE_ORDER, true);
     }
 
     /** Every card of the room, in every zone, with the cards attached to them. */
     static java.util.stream.Stream<CardSlot> cardsInRoom(GameRoom room) {
-        return room.getPlayers().values().stream()
-                .flatMap(p -> ZONES.stream().flatMap(z -> zone(p, z).stream()))
-                .flatMap(c -> java.util.stream.Stream.concat(java.util.stream.Stream.of(c),
-                        java.util.stream.Stream.concat(c.getMaterials().stream(), c.getResources().stream())));
+        return CardLocator.cards(room, CardLocator.ENGINE_ORDER, true);
     }
 
     // ------------------------------------------------------------------ Helpers
@@ -359,7 +323,7 @@ public final class EffectEngine {
                 int level = 0;
                 List<String> keywords = new ArrayList<>();
                 for (CardEffects.Continuous c : CardEffects.continuousOf(card)) {
-                    if (c.targets() != null || !"field".equals(c.zone())) continue;
+                    if (c.targets() != null || !Zone.FIELD.is(c.zone())) continue;
                     if (card.isFaceDown() || !c.holds(room, card, p.getUserId())) continue;
                     strength += c.strength() + (c.bonus() == null ? 0 : c.bonus().of(room, p.getUserId()));
                     level += c.levelBonus() == null ? 0 : c.levelBonus().of(room, p.getUserId());
@@ -400,14 +364,9 @@ public final class EffectEngine {
 
     record Located(CardSlot card, String zone) {}
 
-    static final List<String> ZONES = List.of("field", "hand", "tributeZone", "discardPile", "deck", "lifeStack");
-
     static Located locate(PlayerState player, String instanceId) {
-        for (String z : ZONES) {
-            CardSlot card = find(zone(player, z), instanceId);
-            if (card != null) return new Located(card, z);
-        }
-        return null;
+        CardLocator.Found found = CardLocator.locate(player, instanceId, CardLocator.ENGINE_ORDER, false);
+        return found == null ? null : new Located(found.card(), found.zone().id());
     }
 
     static CardSlot findAnywhere(GameRoom room, String playerId, String instanceId) {
@@ -416,27 +375,13 @@ public final class EffectEngine {
         return at == null ? null : at.card();
     }
 
+    /** The player's cards in that zone; none for an unknown one. */
     static List<CardSlot> zone(PlayerState player, String zone) {
-        return switch (zone) {
-            case "field" -> player.getField();
-            case "hand" -> player.getHand();
-            case "tributeZone" -> player.getTributeZone();
-            case "discardPile" -> player.getDiscardPile();
-            case "deck" -> player.getDeck();
-            case "lifeStack" -> player.getLifeStack();
-            default -> List.of();
-        };
+        return Zone.parse(zone).map(z -> z.of(player)).orElse(List.of());
     }
 
     static String zoneName(String zone) {
-        return switch (zone) {
-            case "tributeZone" -> "tributos";
-            case "discardPile" -> "descarte";
-            case "hand" -> "mano";
-            case "deck" -> "mazo";
-            case "field" -> "campo";
-            default -> zone;
-        };
+        return Zone.shortLabel(zone);
     }
 
     static List<String> ids(List<CardSlot> cards) {
@@ -479,7 +424,7 @@ public final class EffectEngine {
 
     /** Zones whose cards everybody sees (what leaves them can be named). */
     static boolean publicZone(String zone) {
-        return "tributeZone".equals(zone) || "discardPile".equals(zone) || "field".equals(zone);
+        return Zone.TRIBUTE_ZONE.is(zone) || Zone.DISCARD_PILE.is(zone) || Zone.FIELD.is(zone);
     }
 
     static String plural(int n, String one, String many) {
@@ -508,15 +453,11 @@ public final class EffectEngine {
         return player == null ? 0 : player.getField().stream().filter(filter::matches).count();
     }
 
-    /** The player's cards in "tributeZone" or "hand" that match. */
+    /** The player's cards in one of their zones that match (none for an unknown zone). */
     static long countInZone(GameRoom room, String playerId, String zone, CardFilter filter) {
         PlayerState player = room.getPlayer(playerId);
         if (player == null) return 0;
-        List<CardSlot> cards = switch (zone) {
-            case "tributeZone", "hand", "discardPile", "deck", "lifeStack", "field" -> zone(player, zone);
-            default -> List.of();
-        };
-        return cards.stream().filter(filter::matches).count();
+        return zone(player, zone).stream().filter(filter::matches).count();
     }
 
     /** The sum of the levels of the player's creatures on the field that match. */

@@ -1,6 +1,6 @@
 package com.drive.drive_manager.simulator.engine.effects.actions;
 
-import com.drive.drive_manager.simulator.CardSlot;
+import com.drive.drive_manager.simulator.room.CardSlot;
 import com.drive.drive_manager.simulator.engine.effects.model.Action.Move;
 import com.drive.drive_manager.simulator.engine.effects.model.Memory;
 import com.drive.drive_manager.simulator.engine.effects.model.Selector;
@@ -89,7 +89,7 @@ public final class MoveHandler implements ActionHandler<Move> {
 
     private static void move(EffectContext ctx, Move action, List<CardSlot> cards) {
         List<CardSlot> ordered = new ArrayList<>(cards);
-        if (action.random()) Collections.shuffle(ordered);
+        if (action.random()) Collections.shuffle(ordered, ctx.random());
         List<CardSlot> done = ctx.move(ordered, action.to(), action.exhausted(), action.faceDown());
         // "esta carta" is not what "si tributaste…" or "el material tributado" read
         if (action.cards().mode() == Selector.Mode.SELF) ctx.done(!done.isEmpty());

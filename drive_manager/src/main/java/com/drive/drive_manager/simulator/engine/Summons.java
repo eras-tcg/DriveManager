@@ -1,17 +1,13 @@
 package com.drive.drive_manager.simulator.engine;
 
-import com.drive.drive_manager.simulator.CardSlot;
-import com.drive.drive_manager.simulator.FloatingEffect;
-import com.drive.drive_manager.simulator.GameLogEntry;
-import com.drive.drive_manager.simulator.GameRoom;
-import com.drive.drive_manager.simulator.PlayerState;
-import com.drive.drive_manager.simulator.engine.EffectScript.Limit;
+import com.drive.drive_manager.simulator.room.CardSlot;
+import com.drive.drive_manager.simulator.room.Zone;
+import com.drive.drive_manager.simulator.room.GameRoom;
+import com.drive.drive_manager.simulator.room.PlayerState;
 import com.drive.drive_manager.simulator.engine.EffectStep.*;
 import com.drive.drive_manager.simulator.engine.effects.model.SpecialRule;
 
 import java.util.*;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import static com.drive.drive_manager.simulator.engine.SpecialRequirements.*;
 import static com.drive.drive_manager.simulator.engine.SpecialSummons.*;
@@ -76,7 +72,7 @@ public final class Summons {
             List<CardSlot> options = allies(player).stream().filter(c -> sacrifice.matches(c) && !name(c).equalsIgnoreCase(name(card))).toList();
             String answer = room.getUsedThisTurn().stream().filter(k -> k.startsWith(SUMMON_SACRIFICE + card.getInstanceId() + "|")).findFirst().orElse(null);
             if (answer == null && !options.isEmpty()) {
-                rulesPrompt(room, userId, PURPOSE_SUMMON_SACRIFICE, name(card) + " · al invocarla",
+                rulesPrompt(room, userId, PromptPurpose.SUMMON_SACRIFICE.id(), name(card) + " · al invocarla",
                         "Puedes sacrificar 1 aliado [dinosaurio] activo para invocar " + name(card) + " en tu línea frontal reduciendo su coste en el coste "
                                 + "del aliado. O ninguno.", "Sacrificar", options, player.getField());
                 room.getPrompt().setMin(0);
@@ -98,7 +94,7 @@ public final class Summons {
         }
         CostModifiers.Use tap = CostModifiers.unansweredTap(room, player, CostModifiers.Event.SUMMON, null, card);
         if (tap != null) {
-            rulesPrompt(room, userId, PURPOSE_COST_TAP, name(tap.holder()) + " · " + tap.modifier().label(),
+            rulesPrompt(room, userId, PromptPurpose.COST_TAP.id(), name(tap.holder()) + " · " + tap.modifier().label(),
                     "¿Agotas " + name(tap.holder()) + " para reducir en " + tap.modifier().reduceNow(room, userId) + " el coste de " + name(card) + "?",
                     "Agotar", List.of(tap.holder()), List.of(tap.holder()));
             room.getPrompt().setKind(Prompt.Kind.CONFIRM);
@@ -229,7 +225,7 @@ public final class Summons {
      */
     static void afterSpecialSummon(GameRoom room, PlayerState player, CardSlot card, PendingEffect effect) {
         if ("creature".equals(card.getCardType()) && !inFrontLine(card) && find(player.getField(), card.getInstanceId()) != null) {
-            rulesPrompt(room, player.getUserId(), PURPOSE_SPECIAL_FRONT, name(card) + " · Línea frontal",
+            rulesPrompt(room, player.getUserId(), PromptPurpose.SPECIAL_FRONT.id(), name(card) + " · Línea frontal",
                     "¿Mueves a " + name(card) + " a tu línea frontal? Después robas 1 carta por la invocación.",
                     "A la línea frontal", List.of(card), List.of(card));
             room.getPrompt().setKind(Prompt.Kind.CONFIRM);
@@ -247,7 +243,7 @@ public final class Summons {
     static boolean askTap(GameRoom room, PlayerState player, CardSlot card, String kind, String summonerId) {
         CostModifiers.Use use = CostModifiers.unansweredTap(room, player, CostModifiers.Event.SPECIAL_SUMMON, kind, card);
         if (use == null) return false;
-        rulesPrompt(room, player.getUserId(), PURPOSE_COST_TAP, name(use.holder()) + " · " + use.modifier().label(),
+        rulesPrompt(room, player.getUserId(), PromptPurpose.COST_TAP.id(), name(use.holder()) + " · " + use.modifier().label(),
                 "¿Agotas " + name(use.holder()) + " para reducir en " + use.modifier().reduceNow(room, player.getUserId()) + " el coste especial de " + name(card) + "?",
                 "Agotar", List.of(use.holder()), List.of(use.holder()));
         room.getPrompt().setKind(Prompt.Kind.CONFIRM);
@@ -317,7 +313,7 @@ public final class Summons {
      */
     static void offerAssault(GameRoom room, PlayerState player, CardSlot card) {
         if (room.getPrompt() != null || keywordLevel(card, "Asalto") == null || inFrontLine(card)) return;
-        rulesPrompt(room, player.getUserId(), PURPOSE_ASSAULT, name(card) + " · Asalto",
+        rulesPrompt(room, player.getUserId(), PromptPurpose.ASSAULT.id(), name(card) + " · Asalto",
                 "En lugar de quedar en tu retaguardia, puedes colocarla agotada en tu línea frontal.", "Línea frontal", List.of(card), List.of(card));
         room.getPrompt().setKind(Prompt.Kind.CONFIRM);
         room.getPrompt().setSubjectId(card.getInstanceId());
@@ -364,7 +360,7 @@ public final class Summons {
         card.setY(toFront ? 25.0 : 75.0);
         player.getField().add(card);
         record(room, GameEvent.EFFECT_SUMMON, player.getUserId(), card, fromZone, "field", effect, Map.of("cost", cost),
-                player.getUsername() + " invoca " + name(card) + ("hand".equals(fromZone) ? " de su mano" : " de sus " + zoneName(fromZone))
+                player.getUsername() + " invoca " + name(card) + (Zone.HAND.is(fromZone) ? " de su mano" : " de sus " + zoneName(fromZone))
                         + " pagando " + gemsText(cost)
                         + " (" + effect.getSourceName() + ")");
         regulatoryDraw(room, player, effect);

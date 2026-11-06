@@ -1,20 +1,11 @@
 package com.drive.drive_manager.simulator.engine;
 
-import com.drive.drive_manager.simulator.CardSlot;
-import com.drive.drive_manager.simulator.FloatingEffect;
-import com.drive.drive_manager.simulator.GameLogEntry;
-import com.drive.drive_manager.simulator.GameRoom;
-import com.drive.drive_manager.simulator.PlayerState;
-import com.drive.drive_manager.simulator.engine.EffectScript.Limit;
+import com.drive.drive_manager.simulator.room.CardSlot;
+import com.drive.drive_manager.simulator.room.GameRoom;
+import com.drive.drive_manager.simulator.room.PlayerState;
 import com.drive.drive_manager.simulator.engine.EffectStep.*;
-import com.drive.drive_manager.simulator.engine.effects.model.Action;
-import com.drive.drive_manager.simulator.engine.effects.model.SpecialRule;
-import com.drive.drive_manager.simulator.engine.effects.runtime.ActionHandler;
-import com.drive.drive_manager.simulator.engine.effects.runtime.Actions;
 
 import java.util.*;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import static com.drive.drive_manager.simulator.engine.EffectEngine.*;
 import static com.drive.drive_manager.simulator.engine.Resolution.*;
@@ -51,6 +42,7 @@ final class LookSteps {
         switch (step) {
             case TakeFromLookedEachRestToBottom take -> {
                 if (effect.getLooked().isEmpty()) return false;
+                SearchHope.apply(room, effect, player, c -> take.filters().stream().anyMatch(f -> f.matches(c)), take.filters().size());
                 List<String> valid = effect.getLooked().stream().filter(c -> take.filters().stream().anyMatch(f -> f.matches(c))).map(CardSlot::getInstanceId).toList();
                 Prompt prompt = prompt(room, effect, Prompt.Kind.TAKE_REVEALED_REST_BOTTOM, "Toma " + String.join(" y ",
                         take.filters().stream().map(f -> "hasta 1 " + f.describe()).toList()) + " para tu mano. Ordena el resto: irá al fondo de tu mazo.");
@@ -65,6 +57,7 @@ final class LookSteps {
             }
             case TakeFromLookedDistinctLevels take -> {
                 if (effect.getLooked().isEmpty()) return false;
+                SearchHope.apply(room, effect, player, take.filter()::matches, take.max());
                 List<String> valid = effect.getLooked().stream().filter(take.filter()::matches).map(CardSlot::getInstanceId).toList();
                 Prompt prompt = prompt(room, effect, Prompt.Kind.TAKE_REVEALED_REST_BOTTOM,
                         "Toma hasta " + take.max() + " cartas " + take.filter().describe() + " con distinto nivel para tu mano. Ordena el resto: irá al fondo de tu mazo.");
@@ -89,7 +82,7 @@ final class LookSteps {
                 PlayerState opponent = room.getPlayer(room.getOpponentId(userId));
                 if (opponent == null || opponent.getHand().isEmpty()) return false;
                 List<CardSlot> hand = new ArrayList<>(opponent.getHand());
-                Collections.shuffle(hand);
+                Collections.shuffle(hand, room.getRandom());
                 List<CardSlot> revealed = hand.subList(0, Math.min(reveal.count(), hand.size()));
                 log(room, opponent.getUsername() + " revela " + String.join(", ", revealed.stream().map(EffectEngine::name).toList()) + " (" + effect.getSourceName() + ")", null);
                 pick(room, effect, "Envía 1 de las cartas reveladas al fondo del mazo de tu rival.", "Al fondo", revealed, ids(revealed), 1);
@@ -99,6 +92,7 @@ final class LookSteps {
                 if (effect.getLooked().isEmpty()) return false;
                 CardSlot subject = subject(room, effect);
                 List<String> classes = subject == null || subject.getClasses() == null ? List.of() : subject.getClasses();
+                SearchHope.apply(room, effect, player, c -> c.getClasses() != null && c.getClasses().stream().anyMatch(t -> classes.stream().anyMatch(t::equalsIgnoreCase)), take.max());
                 List<String> valid = effect.getLooked().stream()
                         .filter(c -> c.getClasses() != null && c.getClasses().stream().anyMatch(t -> classes.stream().anyMatch(t::equalsIgnoreCase)))
                         .map(CardSlot::getInstanceId).toList();
@@ -163,7 +157,7 @@ final class LookSteps {
                             player.getUsername() + " añade " + name(card) + " a su mano (" + effect.getSourceName() + ")");
                 }
                 List<CardSlot> rest = new ArrayList<>(effect.getLooked());
-                Collections.shuffle(rest);
+                Collections.shuffle(rest, room.getRandom());
                 rest.forEach(c -> c.setFaceDown(true));
                 player.getDeck().addAll(rest);
                 if (!rest.isEmpty()) log(room, player.getUsername() + " envía " + rest.size() + " " + plural(rest.size(), "carta", "cartas")

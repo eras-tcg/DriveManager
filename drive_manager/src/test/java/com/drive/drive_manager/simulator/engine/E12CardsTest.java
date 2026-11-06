@@ -1,6 +1,6 @@
 package com.drive.drive_manager.simulator.engine;
 
-import com.drive.drive_manager.simulator.CardSlot;
+import com.drive.drive_manager.simulator.room.CardSlot;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
