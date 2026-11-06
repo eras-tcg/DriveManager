@@ -1,8 +1,8 @@
 package com.drive.drive_manager.simulator.engine;
 
-import com.drive.drive_manager.simulator.CardSlot;
-import com.drive.drive_manager.simulator.GameRoom;
-import com.drive.drive_manager.simulator.PlayerState;
+import com.drive.drive_manager.simulator.room.CardSlot;
+import com.drive.drive_manager.simulator.room.GameRoom;
+import com.drive.drive_manager.simulator.room.PlayerState;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -137,5 +137,35 @@ class CostModifierTest {
         assertThat(CostModifiers.available(room, host, CostModifiers.Event.SPECIAL_SUMMON, "evolution", evolved, duregon)).isEqualTo(1);
         room.setCurrentTurnUserId("guest");
         assertThat(CostModifiers.available(room, host, CostModifiers.Event.SPECIAL_SUMMON, "evolution", evolved, duregon)).isZero();
+    }
+
+    @Test
+    void anEvolutionIsOfferedOnlyWithASummonerItCanBePaidWith() {
+        // 1 gem and a cost of 2: only Duregón's discount pays it, and that discount is only for Duregón as the summoner
+        room.setSharedCounter(-1);
+        for (int i = 0; i < 5; i++) {
+            CardSlot dragon = card("t" + i, "Dragón " + i, 1, 1, "G");
+            dragon.setClasses(new ArrayList<>(List.of("dragón")));
+            host.getTributeZone().add(dragon);
+        }
+        onField(host, card("dur", "Duregón", 1, 1, "G"));
+        onField(host, card("gal", "Galveta", 2, 2, "G"));
+        CardSlot evolved = card("evo", "Evolución", 3, 3, "G");
+        evolved.setSpecialSummonKind("evolution");
+        evolved.setSpecialCost(2);
+        host.getHand().add(evolved);
+
+        // Level 2: only Galveta can be the summoner, and without Duregón's discount it cannot be paid. It used to be
+        // offered anyway, and choosing Galveta was refused ("no tienes gemas suficientes"), again and again
+        evolved.setRequirement("criatura nivel 2.");
+        assertThat(SpecialRequirements.canSpecial(room, "host", evolved)).isFalse();
+        assertThat(SpecialSummons.specialByPlayer(room, "host", "evo", null)).contains("gemas suficientes");
+        assertThat(room.getPrompt()).isNull();
+
+        // Level 1: Duregón can be the summoner, and with its discount it is paid; it is the only one offered
+        evolved.setRequirement("criatura nivel 1.");
+        assertThat(SpecialRequirements.canSpecial(room, "host", evolved)).isTrue();
+        assertThat(SpecialSummons.specialByPlayer(room, "host", "evo", null)).isNull();
+        assertThat(room.getPrompt().getValidIds()).containsExactly("dur");
     }
 }

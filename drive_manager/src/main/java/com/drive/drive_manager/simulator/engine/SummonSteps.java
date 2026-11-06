@@ -1,20 +1,12 @@
 package com.drive.drive_manager.simulator.engine;
 
-import com.drive.drive_manager.simulator.CardSlot;
-import com.drive.drive_manager.simulator.FloatingEffect;
-import com.drive.drive_manager.simulator.GameLogEntry;
-import com.drive.drive_manager.simulator.GameRoom;
-import com.drive.drive_manager.simulator.PlayerState;
-import com.drive.drive_manager.simulator.engine.EffectScript.Limit;
+import com.drive.drive_manager.simulator.room.CardSlot;
+import com.drive.drive_manager.simulator.room.Zone;
+import com.drive.drive_manager.simulator.room.GameRoom;
+import com.drive.drive_manager.simulator.room.PlayerState;
 import com.drive.drive_manager.simulator.engine.EffectStep.*;
-import com.drive.drive_manager.simulator.engine.effects.model.Action;
-import com.drive.drive_manager.simulator.engine.effects.model.SpecialRule;
-import com.drive.drive_manager.simulator.engine.effects.runtime.ActionHandler;
-import com.drive.drive_manager.simulator.engine.effects.runtime.Actions;
 
 import java.util.*;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import static com.drive.drive_manager.simulator.engine.EffectEngine.*;
 import static com.drive.drive_manager.simulator.engine.Resolution.*;
@@ -103,7 +95,7 @@ final class SummonSteps {
                 effect.setRitualTargetId(null);
                 if (chosen != null) placeOnField(room, effect, opponent, chosen, "tributeZone", true, false);
                 Located self = locate(player, effect.getSourceInstanceId());
-                if (self != null && !"field".equals(self.zone())) placeOnField(room, effect, player, self.card(), self.zone(), true, false);
+                if (self != null && !Zone.FIELD.is(self.zone())) placeOnField(room, effect, player, self.card(), self.zone(), true, false);
                 return false;
             }
             case SummonLikeSubject like -> {

@@ -1,8 +1,8 @@
 package com.drive.drive_manager.simulator.engine;
 
-import com.drive.drive_manager.simulator.CardSlot;
-import com.drive.drive_manager.simulator.GameRoom;
-import com.drive.drive_manager.simulator.PlayerState;
+import com.drive.drive_manager.simulator.room.CardSlot;
+import com.drive.drive_manager.simulator.room.GameRoom;
+import com.drive.drive_manager.simulator.room.PlayerState;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -109,7 +109,7 @@ class E11FinalBatchTest {
         CardSlot merc = card("mv", "Mercenario Valeroso", 2, 2, "R");
         host.getHand().add(merc);
         assertThat(CombatRules.attackByPlayer(room, "guest", "at", null)).isNull();
-        Prompt replace = untilPurpose(EffectEngine.PURPOSE_DAMAGE_REPLACE);
+        Prompt replace = untilPurpose(PromptPurpose.DAMAGE_REPLACE.id());
         assertThat(replace.getValidIds()).containsExactly("mv");
         answer(replace, "mv");
         finishCombat();
@@ -128,9 +128,9 @@ class E11FinalBatchTest {
         CardSlot first = onField(host, card("b1", "Bloqueador 1", 1, 1, "R"));
         CardSlot second = onField(host, card("b2", "Bloqueador 2", 1, 1, "R"));
         assertThat(CombatRules.attackByPlayer(room, "guest", "at", null)).isNull();
-        Prompt block = untilPurpose(EffectEngine.PURPOSE_BLOCK);
+        Prompt block = untilPurpose(PromptPurpose.BLOCK.id());
         answer(block, "b1");
-        Prompt swap = untilPurpose(EffectEngine.PURPOSE_BLOCK_SWAP);
+        Prompt swap = untilPurpose(PromptPurpose.BLOCK_SWAP.id());
         answer(swap, "b2");
         assertThat(first.isTapped()).isFalse();
         assertThat(room.getCombat() == null || "b2".equals(room.getCombat().getBlockerId())).isTrue();
@@ -236,7 +236,7 @@ class E11FinalBatchTest {
         int gems = EffectEngine.gemsOf(room, "host");
         assertThat(SpecialSummons.specialByPlayer(room, "host", "as", "pc")).isNull();
         Prompt attack = room.getPrompt();
-        assertThat(attack.getPurpose()).isEqualTo(EffectEngine.PURPOSE_ASCEND_ATTACK);
+        assertThat(attack.getPurpose()).isEqualTo(PromptPurpose.ASCEND_ATTACK.id());
         answer(attack, "pc");
         assertThat(room.getTimeline()).anyMatch(e -> GameEvent.ATTACK_DECLARED.equals(e.getType()) && "pc".equals(e.getCardInstanceId()));
         assertThat(host.getField()).contains(ascended).doesNotContain(principe);

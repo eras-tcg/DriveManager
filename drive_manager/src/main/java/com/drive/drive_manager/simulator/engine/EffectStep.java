@@ -22,7 +22,7 @@ public sealed interface EffectStep {
      * tributos"): {@code base} with its level, its maximum level, or both, read when it is used.
      */
     record FilterBy(CardFilter base, Amount level, Amount maxLevel) {
-        CardFilter of(com.drive.drive_manager.simulator.GameRoom room, String controller) {
+        CardFilter of(com.drive.drive_manager.simulator.room.GameRoom room, String controller) {
             CardFilter filter = base;
             if (level != null) filter = filter.withLevel(level.of(room, controller));
             if (maxLevel != null) filter = filter.withMaxLevel(maxLevel.of(room, controller));

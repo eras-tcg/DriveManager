@@ -1,7 +1,7 @@
 package com.drive.drive_manager.simulator.engine;
 
 import com.drive.drive_manager.dto.Card;
-import com.drive.drive_manager.simulator.*;
+import com.drive.drive_manager.simulator.room.*;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -461,7 +461,7 @@ class St1IntegrationTest {
         s.setInstanceId("c" + (++ids));
         s.setCardId(meta.getId());
         s.setFaceDown(true);
-        ReflectionTestUtils.invokeMethod(service, "applyMeta", s, meta.getId(), meta);
+        com.drive.drive_manager.simulator.room.CardMeta.apply(s, meta.getId(), meta);
         return s;
     }
 

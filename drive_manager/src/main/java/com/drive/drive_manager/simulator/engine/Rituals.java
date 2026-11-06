@@ -1,11 +1,8 @@
 package com.drive.drive_manager.simulator.engine;
 
-import com.drive.drive_manager.simulator.CardSlot;
-import com.drive.drive_manager.simulator.FloatingEffect;
-import com.drive.drive_manager.simulator.GameLogEntry;
-import com.drive.drive_manager.simulator.GameRoom;
-import com.drive.drive_manager.simulator.PlayerState;
-import com.drive.drive_manager.simulator.engine.EffectScript.Limit;
+import com.drive.drive_manager.simulator.room.CardSlot;
+import com.drive.drive_manager.simulator.room.GameRoom;
+import com.drive.drive_manager.simulator.room.PlayerState;
 import com.drive.drive_manager.simulator.engine.EffectStep.*;
 import com.drive.drive_manager.simulator.engine.effects.model.SpecialRule;
 
@@ -115,7 +112,7 @@ public final class Rituals {
 
     static void ritualPrompt(GameRoom room, PlayerState player, CardSlot card, CardSlot summoner, List<CardSlot> valid,
                                      String instruction, int max) {
-        rulesPrompt(room, player.getUserId(), PURPOSE_RITUAL, name(card) + " · Ritual",
+        rulesPrompt(room, player.getUserId(), PromptPurpose.RITUAL.id(), name(card) + " · Ritual",
                 instruction + " Si no eliges ninguna, no se invoca.", "Sacrificar", valid, player.getField());
         room.getPrompt().setMax(max);
         room.getPrompt().setSubjectId(card.getInstanceId());

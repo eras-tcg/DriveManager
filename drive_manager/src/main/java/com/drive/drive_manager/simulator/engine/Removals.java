@@ -1,16 +1,12 @@
 package com.drive.drive_manager.simulator.engine;
 
-import com.drive.drive_manager.simulator.CardSlot;
-import com.drive.drive_manager.simulator.FloatingEffect;
-import com.drive.drive_manager.simulator.GameLogEntry;
-import com.drive.drive_manager.simulator.GameRoom;
-import com.drive.drive_manager.simulator.PlayerState;
+import com.drive.drive_manager.simulator.room.CardSlot;
+import com.drive.drive_manager.simulator.room.GameRoom;
+import com.drive.drive_manager.simulator.room.PlayerState;
 import com.drive.drive_manager.simulator.engine.EffectScript.Limit;
 import com.drive.drive_manager.simulator.engine.EffectStep.*;
 
 import java.util.*;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import static com.drive.drive_manager.simulator.engine.EffectEngine.*;
 import static com.drive.drive_manager.simulator.engine.Summons.*;
@@ -291,7 +287,7 @@ public final class Removals {
             return;
         }
         List<CardSlot> sources = options.stream().map(ReplacementOption::source).distinct().toList();
-        rulesPrompt(room, owner.getUserId(), PURPOSE_REPLACE, name(card) + (pending.destroy() ? " va a ser destruida" : " va a ser removida"),
+        rulesPrompt(room, owner.getUserId(), PromptPurpose.REPLACE.id(), name(card) + (pending.destroy() ? " va a ser destruida" : " va a ser removida"),
                 "Puedes usar 1 de estos efectos, o dejar que " + (pending.destroy() ? "sea destruida." : "sea removida."),
                 "Usar", sources, sources);
         room.getPrompt().setSubjectId(card.getInstanceId());
@@ -311,7 +307,7 @@ public final class Removals {
         }
         PendingRemoval pending = room.getPendingRemovals().get(0);
         CardSlot card = find(player.getField(), pending.cardId());
-        if (PURPOSE_REPLACE_MATERIALS.equals(prompt.getPurpose())) {
+        if (PromptPurpose.REPLACE_MATERIALS.is(prompt.getPurpose())) {
             // Gémini: the chosen materials go to the Retaguardia, then the destruction goes on (a reaction, not "en su lugar")
             room.setPrompt(null);
             room.getPendingRemovals().remove(0);
@@ -331,7 +327,7 @@ public final class Removals {
             executeRemoval(room, pending, player, card);
             return null;
         }
-        if (PURPOSE_REPLACE_RESOURCES.equals(prompt.getPurpose())) {
+        if (PromptPurpose.REPLACE_RESOURCES.is(prompt.getPurpose())) {
             // Sarkhydrax: the first one picked is tributed, the second goes to the hand; then the removal goes on
             if (card == null || picks.size() != 2) return "Elige el recurso que tributas y el que añades a tu mano";
             CardSlot tributed = find(card.getResources(), picks.get(0));
@@ -350,7 +346,7 @@ public final class Removals {
             executeRemoval(room, pending, player, card);
             return null;
         }
-        if (PURPOSE_REPLACE_GUARD.equals(prompt.getPurpose())) {
+        if (PromptPurpose.REPLACE_GUARD.is(prompt.getPurpose())) {
             // Albert Collier: 1 material of it and 1 [artefacto]; paid once, every ally it guards that this effect was removing stays
             CardSlot guard = find(player.getField(), prompt.getSubjectId());
             CardEffects.AllyGuard g = guard == null ? null : CardEffects.allyGuard(guard);
@@ -380,7 +376,7 @@ public final class Removals {
             destroy(room, sacrificed, player, true, CAUSE_EFFECT, player.getUserId(), guard.getInstanceId(), null);
             return null;
         }
-        if (PURPOSE_REPLACE_HAND.equals(prompt.getPurpose())) {
+        if (PromptPurpose.REPLACE_HAND.is(prompt.getPurpose())) {
             // Caballero Leal: the hand card tributed instead
             CardSlot paid = picks.isEmpty() ? null : find(player.getHand(), picks.get(0));
             if (paid == null) return "Elige 1 carta de tu mano";
@@ -419,7 +415,7 @@ public final class Removals {
         if (r.limit() != Limit.NONE) room.getUsedThisTurn().add(replacementKey(player, card, r));
         switch (r.cost()) {
             case RESOURCE_TRIBUTED_ANOTHER_TO_HAND -> {
-                rulesPrompt(room, player.getUserId(), PURPOSE_REPLACE_RESOURCES, name(card) + " · " + r.label(),
+                rulesPrompt(room, player.getUserId(), PromptPurpose.REPLACE_RESOURCES.id(), name(card) + " · " + r.label(),
                         "Elige primero el recurso que tributas y después el que añades a tu mano; luego " + name(card) + " es removida.",
                         "Elegir", card.getResources(), card.getResources());
                 room.getPrompt().setMin(2);
@@ -430,7 +426,7 @@ public final class Removals {
                 CardSlot guard = chosen.source();
                 List<CardSlot> valid = new ArrayList<>(guard.getMaterials());
                 valid.addAll(player.getField().stream().filter(c -> c != card && r.resourceFilter().matches(c)).toList());
-                rulesPrompt(room, player.getUserId(), PURPOSE_REPLACE_GUARD, name(guard) + " · " + r.label(),
+                rulesPrompt(room, player.getUserId(), PromptPurpose.REPLACE_GUARD.id(), name(guard) + " · " + r.label(),
                         "Tributa 1 material de " + name(guard) + " y sacrifica 1 " + r.resourceFilter().describe() + " bajo tu control: "
                                 + "no se remueve ningún aliado [" + String.join(", ", CardEffects.allyGuard(guard).allies().classes()) + "] de este efecto.",
                         "Pagar", valid, valid);
@@ -482,7 +478,7 @@ public final class Removals {
             }
             case MATERIALS_TO_BACK -> {
                 List<CardSlot> valid = card.getMaterials().stream().filter(m -> "creature".equals(m.getCardType()) && r.resourceFilter().matches(m)).toList();
-                rulesPrompt(room, player.getUserId(), PURPOSE_REPLACE_MATERIALS, name(card) + " · " + r.label(),
+                rulesPrompt(room, player.getUserId(), PromptPurpose.REPLACE_MATERIALS.id(), name(card) + " · " + r.label(),
                         "Coloca hasta 2 de estas criaturas en tu retaguardia; luego " + name(card) + " es destruida.", "A la retaguardia", valid, card.getMaterials());
                 room.getPrompt().setMin(1);
                 room.getPrompt().setMax(Math.min(2, valid.size()));
@@ -490,7 +486,7 @@ public final class Removals {
             }
             case TRIBUTE_ONE_FROM_HAND -> {
                 // The hand card is chosen next; the removal stays pending until then
-                rulesPrompt(room, player.getUserId(), PURPOSE_REPLACE_HAND, name(card) + " · " + r.label(),
+                rulesPrompt(room, player.getUserId(), PromptPurpose.REPLACE_HAND.id(), name(card) + " · " + r.label(),
                         "Tributa 1 carta de tu mano: " + name(card) + " no es destruida.", "Tributar", player.getHand(), player.getHand());
                 room.getPrompt().setMin(1);
                 return null;

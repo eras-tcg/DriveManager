@@ -1,8 +1,8 @@
 package com.drive.drive_manager.simulator.engine;
 
-import com.drive.drive_manager.simulator.CardSlot;
-import com.drive.drive_manager.simulator.GameRoom;
-import com.drive.drive_manager.simulator.PlayerState;
+import com.drive.drive_manager.simulator.room.CardSlot;
+import com.drive.drive_manager.simulator.room.GameRoom;
+import com.drive.drive_manager.simulator.room.PlayerState;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -66,7 +66,7 @@ class DesignerRulingsBatch2Test {
         c.getLaterKeywords().add("Reactivar");
         c.getUntilNextAttack().add("Provocar");
         c.setNoUntap(1);
-        c.getFloating().add(new com.drive.drive_manager.simulator.FloatingEffect("Gana fuerza 3", "Valor Del Heroe", "turn", 3, null));
+        c.getFloating().add(new com.drive.drive_manager.simulator.room.FloatingEffect("Gana fuerza 3", "Valor Del Heroe", "turn", 3, null));
 
         Removals.leaveField(c);
 

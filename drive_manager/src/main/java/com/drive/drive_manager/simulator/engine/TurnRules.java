@@ -1,16 +1,11 @@
 package com.drive.drive_manager.simulator.engine;
 
-import com.drive.drive_manager.simulator.CardSlot;
-import com.drive.drive_manager.simulator.FloatingEffect;
-import com.drive.drive_manager.simulator.GameLogEntry;
-import com.drive.drive_manager.simulator.GameRoom;
-import com.drive.drive_manager.simulator.PlayerState;
-import com.drive.drive_manager.simulator.engine.EffectScript.Limit;
+import com.drive.drive_manager.simulator.room.CardSlot;
+import com.drive.drive_manager.simulator.room.GameRoom;
+import com.drive.drive_manager.simulator.room.PlayerState;
 import com.drive.drive_manager.simulator.engine.EffectStep.*;
 
 import java.util.*;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import static com.drive.drive_manager.simulator.engine.EffectEngine.*;
 import static com.drive.drive_manager.simulator.engine.Summons.*;
@@ -41,7 +36,7 @@ public final class TurnRules {
         List<CardSlot> back = player.getField().stream().filter(c -> "creature".equals(c.getCardType()) && !inFrontLine(c)).toList();
         if (back.isEmpty()) return;
         String title = startOfTurn ? "Inicio de turno" : "Final de turno";
-        rulesPrompt(room, userId, PURPOSE_ADVANCE, title + " · Línea frontal",
+        rulesPrompt(room, userId, PromptPurpose.ADVANCE.id(), title + " · Línea frontal",
                 "Elige las criaturas de tu retaguardia que suben a la línea frontal (todas a la vez), o ninguna.",
                 "A la línea frontal", back, back);
         room.getPrompt().setMax(back.size());

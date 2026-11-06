@@ -1,20 +1,14 @@
 package com.drive.drive_manager.simulator.engine;
 
-import com.drive.drive_manager.simulator.CardSlot;
-import com.drive.drive_manager.simulator.FloatingEffect;
-import com.drive.drive_manager.simulator.GameLogEntry;
-import com.drive.drive_manager.simulator.GameRoom;
-import com.drive.drive_manager.simulator.PlayerState;
-import com.drive.drive_manager.simulator.engine.EffectScript.Limit;
+import com.drive.drive_manager.simulator.room.CardSlot;
+import com.drive.drive_manager.simulator.room.Zone;
+import com.drive.drive_manager.simulator.room.GameRoom;
+import com.drive.drive_manager.simulator.room.PlayerState;
 import com.drive.drive_manager.simulator.engine.EffectStep.*;
 import com.drive.drive_manager.simulator.engine.effects.model.Action;
 import com.drive.drive_manager.simulator.engine.effects.model.SpecialRule;
-import com.drive.drive_manager.simulator.engine.effects.runtime.ActionHandler;
-import com.drive.drive_manager.simulator.engine.effects.runtime.Actions;
 
 import java.util.*;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import static com.drive.drive_manager.simulator.engine.EffectEngine.*;
 import static com.drive.drive_manager.simulator.engine.Resolution.*;
@@ -243,7 +237,7 @@ public final class StepHelpers {
         CardSlot self = at == null ? null : at.card();
         CardSlot ally = subject(room, effect);
         if (self == null || ally == null || self == ally) return;
-        if ("field".equals(at.zone())) {
+        if (Zone.FIELD.is(at.zone())) {
             player.getField().remove(self);
             leaveField(self);
         } else {

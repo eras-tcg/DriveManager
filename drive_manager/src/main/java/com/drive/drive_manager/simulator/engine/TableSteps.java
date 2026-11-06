@@ -1,20 +1,11 @@
 package com.drive.drive_manager.simulator.engine;
 
-import com.drive.drive_manager.simulator.CardSlot;
-import com.drive.drive_manager.simulator.FloatingEffect;
-import com.drive.drive_manager.simulator.GameLogEntry;
-import com.drive.drive_manager.simulator.GameRoom;
-import com.drive.drive_manager.simulator.PlayerState;
-import com.drive.drive_manager.simulator.engine.EffectScript.Limit;
+import com.drive.drive_manager.simulator.room.CardSlot;
+import com.drive.drive_manager.simulator.room.GameRoom;
+import com.drive.drive_manager.simulator.room.PlayerState;
 import com.drive.drive_manager.simulator.engine.EffectStep.*;
-import com.drive.drive_manager.simulator.engine.effects.model.Action;
-import com.drive.drive_manager.simulator.engine.effects.model.SpecialRule;
-import com.drive.drive_manager.simulator.engine.effects.runtime.ActionHandler;
-import com.drive.drive_manager.simulator.engine.effects.runtime.Actions;
 
 import java.util.*;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import static com.drive.drive_manager.simulator.engine.EffectEngine.*;
 import static com.drive.drive_manager.simulator.engine.Resolution.*;
@@ -96,7 +87,7 @@ final class TableSteps {
                 List<CardSlot> faceUp = player.getLifeStack().stream().filter(l -> !l.isFaceDown()).toList();
                 if (lives.all()) {
                     faceUp.forEach(l -> l.setFaceDown(true));
-                    if (lives.shuffle()) Collections.shuffle(player.getLifeStack());
+                    if (lives.shuffle()) Collections.shuffle(player.getLifeStack(), room.getRandom());
                     log(room, player.getUsername() + " coloca bocabajo sus " + faceUp.size() + " vidas bocarriba" + (lives.shuffle() ? " y baraja sus vidas" : "")
                             + " (" + effect.getSourceName() + ")", null);
                     return false;
@@ -167,7 +158,7 @@ final class TableSteps {
                 List<PlayerState> both = new ArrayList<>(room.getPlayers().values());
                 for (PlayerState p : both) {
                     List<CardSlot> hand = new ArrayList<>(p.getHand());
-                    Collections.shuffle(hand);
+                    Collections.shuffle(hand, room.getRandom());
                     p.getHand().clear();
                     hand.forEach(c -> c.setFaceDown(true));
                     p.getDeck().addAll(hand);

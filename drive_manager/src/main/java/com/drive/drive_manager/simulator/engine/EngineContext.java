@@ -1,8 +1,9 @@
 package com.drive.drive_manager.simulator.engine;
 
-import com.drive.drive_manager.simulator.CardSlot;
-import com.drive.drive_manager.simulator.GameRoom;
-import com.drive.drive_manager.simulator.PlayerState;
+import com.drive.drive_manager.simulator.room.CardSlot;
+import com.drive.drive_manager.simulator.room.Zone;
+import com.drive.drive_manager.simulator.room.GameRoom;
+import com.drive.drive_manager.simulator.room.PlayerState;
 import com.drive.drive_manager.simulator.engine.effects.model.Action;
 import com.drive.drive_manager.simulator.engine.effects.model.Memory;
 import com.drive.drive_manager.simulator.engine.effects.model.Selector;
@@ -17,6 +18,7 @@ import java.util.Map;
  * well-known names are the fields the old steps read, so one effect can mix both.
  */
 final class EngineContext implements EffectContext {
+    @Override public java.util.Random random() { return room.getRandom(); }
 
     private final GameRoom room;
     private final PendingEffect effect;
@@ -169,7 +171,7 @@ final class EngineContext implements EffectContext {
             String zone = raw.trim();
             if (zone.startsWith("materials")) names.add("los materiales");
             else if (zone.startsWith("resources")) names.add("los recursos");
-            else names.add("hand".equals(zone) || "deck".equals(zone) ? "tu " + EffectEngine.zoneName(zone) : "tus " + EffectEngine.zoneName(zone));
+            else names.add(Zone.HAND.is(zone) || Zone.DECK.is(zone) ? "tu " + EffectEngine.zoneName(zone) : "tus " + EffectEngine.zoneName(zone));
         }
         return String.join(" o ", names);
     }
@@ -178,7 +180,7 @@ final class EngineContext implements EffectContext {
     public boolean alreadyIn(CardSlot card, String to) {
         Origin origin = origin(card);
         if (origin == null) return false;
-        if ("field".equals(origin.zone())) {
+        if (Zone.FIELD.is(origin.zone())) {
             if (Action.Move.FRONT.equals(to)) return EffectEngine.inFrontLine(card);
             if (Action.Move.BACK.equals(to)) return !EffectEngine.inFrontLine(card);
         }
@@ -220,12 +222,12 @@ final class EngineContext implements EffectContext {
             if (isAttachment(to) && (host == null || host == card)) continue;
             from = origin.zone();
             boolean enemy = !origin.owner().getUserId().equals(effect.getControllerId());
-            if (enemy && "field".equals(from) && EffectEngine.keywords(card).contains(EffectEngine.UNREMOVABLE)) {
+            if (enemy && Zone.FIELD.is(from) && EffectEngine.keywords(card).contains(EffectEngine.UNREMOVABLE)) {
                 EffectEngine.log(room, EffectEngine.name(card) + " no puede ser removida por efectos oponentes", null);
                 continue;
             }
             // Moving within the field is not leaving it
-            if ("field".equals(from) && (Action.Move.FRONT.equals(to) || Action.Move.BACK.equals(to))) {
+            if (Zone.FIELD.is(from) && (Action.Move.FRONT.equals(to) || Action.Move.BACK.equals(to))) {
                 card.setY(Action.Move.FRONT.equals(to) ? 25.0 : 75.0);
                 EffectEngine.record(room, GameEvent.MOVE, player().getUserId(), card, null, to, effect, Map.of("reason", "effect"), null);
                 done.add(card);
@@ -233,13 +235,13 @@ final class EngineContext implements EffectContext {
             }
             if (origin.looked()) effect.getLooked().remove(card);
             else if (origin.host() != null) ("materials".equals(from) ? origin.host().getMaterials() : origin.host().getResources()).remove(card);
-            else if ("field".equals(from)) Removals.removeFromField(origin.owner(), card);
+            else if (Zone.FIELD.is(from)) Removals.removeFromField(origin.owner(), card);
             else EffectEngine.zone(origin.owner(), from).remove(card);
-            card.setFaceDown("deck".equals(zone) || faceDown);
+            card.setFaceDown(Zone.DECK.is(zone) || faceDown);
             Map<String, Object> data = new java.util.HashMap<>();
             data.put("byCard", origin.host() != null ? origin.host().getInstanceId() : effect.getSourceInstanceId());
             data.put("ownerId", origin.owner().getUserId());
-            if ("deck".equals(zone)) data.put("position", Action.Move.DECK_TOP.equals(to) ? "top" : "bottom");
+            if (Zone.DECK.is(zone)) data.put("position", Action.Move.DECK_TOP.equals(to) ? "top" : "bottom");
             String arrives = zone;
             if (isAttachment(to)) {
                 (to.startsWith("materials:") ? host.getMaterials() : host.getResources()).add(card);
@@ -258,15 +260,15 @@ final class EngineContext implements EffectContext {
                 if (Action.Move.DECK_TOP.equals(to) || Action.Move.LIFE_TOP.equals(to)) into.add(0, card);
                 else into.add(card);
             }
-            if ("lifeStack".equals(from)) data.put("defenderId", origin.owner().getUserId());
+            if (Zone.LIFE_STACK.is(from)) data.put("defenderId", origin.owner().getUserId());
             EffectEngine.record(room, eventOf(arrives, from), player().getUserId(), card, from, arrives, effect, data, null);
             done.add(card);
-            if ("lifeStack".equals(from) && origin.owner().getLifeStack().isEmpty()) EffectEngine.loseByLives(room, origin.owner());
+            if (Zone.LIFE_STACK.is(from) && origin.owner().getLifeStack().isEmpty()) EffectEngine.loseByLives(room, origin.owner());
         }
         if (done.isEmpty()) return done;
         // A card of the hand or the deck stays hidden when it goes to the deck
-        boolean hidden = faceDown || ("deck".equals(zone) && ("hand".equals(from) || "deck".equals(from)));
-        String origin = "deck".equals(from) && !effect.getLooked().isEmpty() ? "" : "deck".equals(from) ? " del tope de su mazo" : "";
+        boolean hidden = faceDown || (Zone.DECK.is(zone) && (Zone.HAND.is(from) || Zone.DECK.is(from)));
+        String origin = Zone.DECK.is(from) && !effect.getLooked().isEmpty() ? "" : Zone.DECK.is(from) ? " del tope de su mazo" : "";
         EffectEngine.log(room, player().getUsername() + " " + verb(to) + " " + done.size() + " " + (done.size() == 1 ? "carta" : "cartas") + origin
                 + " (" + effect.getSourceName() + ")" + (hidden ? "" : EffectEngine.names(done)), room.getEventSeq());
         return done;
@@ -310,7 +312,7 @@ final class EngineContext implements EffectContext {
     public CardSlot eventCard() {
         GameEvent trigger = EffectEngine.triggerEvent(room, effect);
         EffectEngine.Located at = trigger == null ? null : EffectEngine.locate(player(), trigger.getCardInstanceId());
-        return at == null || "field".equals(at.zone()) ? null : at.card();
+        return at == null || Zone.FIELD.is(at.zone()) ? null : at.card();
     }
 
     @Override
@@ -330,7 +332,7 @@ final class EngineContext implements EffectContext {
     private static String eventOf(String zone, String from) {
         return switch (zone) {
             case "tributeZone" -> GameEvent.TRIBUTE;
-            case "hand" -> "field".equals(from) ? GameEvent.SEND : GameEvent.ADD_TO_HAND;
+            case "hand" -> Zone.FIELD.is(from) ? GameEvent.SEND : GameEvent.ADD_TO_HAND;
             default -> GameEvent.SEND;
         };
     }
@@ -600,7 +602,7 @@ final class EngineContext implements EffectContext {
         if (from == null) return;
         int cost = Math.max(0, (card.getCost() == null ? 0 : card.getCost()) - reduce);
         EffectEngine.pay(room, effect.getControllerId(), cost);
-        if (!"hand".equals(from)) {
+        if (!Zone.HAND.is(from)) {
             EffectEngine.zone(player(), from).remove(card);
             player().getHand().add(card);
         }
