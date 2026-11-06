@@ -206,9 +206,9 @@ public class RoomService {
         String refusal = RoomGuard.refusal(room, userId, action, manual);
         if (refusal != null) return GameStateUpdate.error(roomId, refusal);
 
-        // What the action changes is counted for the players' missions afterwards (see the end of this method)
-        GameRoom.RoomStatus statusBefore = room.getStatus();
-        long seqBefore = room.getEventSeq();
+        // What the action changes is counted for the players' missions and the activity log afterwards (see the end of this method)
+        MissionHooks.Before before = MissionHooks.Before.of(room);
+        GameRoom.RoomStatus statusBefore = before.status();
 
         // Closed game state (rule 7.2): while a chain or a choice is pending, only answering it (and leaving
         // or conceding) is allowed. The board's manual actions wait until the effect is done.
@@ -229,7 +229,7 @@ public class RoomService {
             room.setVersion(room.getVersion() + 1);
             recordLog(room, update, action);
             if (!room.isHeadless()) update.setEventLog(new ArrayList<>(room.getEventLog()));
-            if (hooks != null) hooks.count(room, statusBefore, seqBefore);
+            if (hooks != null) hooks.count(room, before);
             recorder.after(room, statusBefore, userId, action, manual, history);
             timeline.after(room, statusBefore, action);
         }

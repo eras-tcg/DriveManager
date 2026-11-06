@@ -1,5 +1,6 @@
 package com.drive.drive_manager.simulator.room;
 
+import com.drive.drive_manager.simulator.mission.MissionHooks;
 import com.drive.drive_manager.simulator.actions.PostGameActions;
 import com.drive.drive_manager.simulator.bot.BotRooms;
 import java.time.Instant;
@@ -129,15 +130,14 @@ public final class RoomMembership {
         PlayerState gone = room.getPlayers().values().stream()
                 .filter(p -> !p.isConnected() && now - p.getDisconnectedAt() >= SimulatorLimits.ABANDON_GRACE_MS).findFirst().orElse(null);
         if (gone == null || room.getPlayers().values().stream().noneMatch(PlayerState::isConnected)) return null;
-        GameRoom.RoomStatus statusBefore = room.getStatus();
-        long seqBefore = room.getEventSeq();
+        MissionHooks.Before before = MissionHooks.Before.of(room);
         remove(room, gone.getUserId());
         service.recorder.abandon(room, gone.getUserId(), service.history);
         GameStateUpdate update = GameStateUpdate.from(room, "PLAYER_LEFT", gone.getUserId());
         update.setLogEntry(gone.getUsername() + " abandonó la partida");
         service.recordLog(room, update);
         update.setEventLog(new ArrayList<>(room.getEventLog()));
-        if (service.hooks != null) service.hooks.count(room, statusBefore, seqBefore);
+        if (service.hooks != null) service.hooks.count(room, before);
         return update;
     }
 

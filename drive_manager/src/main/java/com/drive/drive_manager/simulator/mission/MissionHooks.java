@@ -1,5 +1,6 @@
 package com.drive.drive_manager.simulator.mission;
 
+import com.drive.drive_manager.service.ActivityLogService;
 import com.drive.drive_manager.service.CollectionRules;
 import com.drive.drive_manager.service.CollectionService;
 import com.drive.drive_manager.service.MissionService;
@@ -9,6 +10,7 @@ import com.drive.drive_manager.simulator.room.GameRoom;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
@@ -16,9 +18,9 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * What a room asks of the player's account: its games count for the missions and the progression, and a deck is
- * played with the copies the player owns (and shines as they own them). Each service is optional, so a room
- * without them (tests) plays anything and counts nothing.
+ * What a room asks of the player's account: its games count for the missions and the progression and go to the
+ * administrators' activity log, and a deck is played with the copies the player owns (and shines as they own them).
+ * Each service is optional, so a room without them (tests) plays anything and counts nothing.
  */
 @Component
 public class MissionHooks {
@@ -26,19 +28,33 @@ public class MissionHooks {
     private final MissionService missions;
     private final ProgressionService progression;
     private final CollectionService collections;
+    private final ActivityLogService activityLog;
 
     @Autowired
-    public MissionHooks(MissionService missions, ProgressionService progression, CollectionService collections) {
+    public MissionHooks(MissionService missions, ProgressionService progression, CollectionService collections,
+                        ActivityLogService activityLog) {
         this.missions = missions;
         this.progression = progression;
         this.collections = collections;
+        this.activityLog = activityLog;
     }
 
-    /** The summons, damage and finished game an action brought, for the players' missions (never stops the game). */
-    public void count(GameRoom room, GameRoom.RoomStatus statusBefore, long seqBefore) {
+    /** The room as an action found it: its stage, its timeline's last event and its players. */
+    public record Before(GameRoom.RoomStatus status, long seq, List<String> players) {
+        public static Before of(GameRoom room) {
+            return new Before(room.getStatus(), room.getEventSeq(), new ArrayList<>(room.getPlayers().keySet()));
+        }
+    }
+
+    /**
+     * The summons, damage and finished game an action brought, for the players' missions, and the games it started or
+     * ended, for the activity log (never stops the game).
+     */
+    public void count(GameRoom room, Before before) {
+        GameActivity.log(activityLog, room, before.status(), before.players());
         if (missions == null && progression == null) return;
         try {
-            for (MissionEvents.Progress p : MissionEvents.of(room, statusBefore, seqBefore)) {
+            for (MissionEvents.Progress p : MissionEvents.of(room, before.status(), before.seq())) {
                 if (missions != null) missions.record(p.userId(), p.counts(), p.amount());
                 if (progression != null) progression.record(p.userId(), p.counts(), p.amount());
             }

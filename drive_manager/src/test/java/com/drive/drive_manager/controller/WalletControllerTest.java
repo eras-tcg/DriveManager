@@ -1,5 +1,6 @@
 package com.drive.drive_manager.controller;
 
+import com.drive.drive_manager.service.ActivityLogService;
 import com.drive.drive_manager.service.ProgressionRules;
 import com.drive.drive_manager.service.ProgressionService;
 import com.drive.drive_manager.service.ShopService;
@@ -32,7 +33,7 @@ class WalletControllerTest {
         wallets = mock(WalletService.class);
         shop = mock(ShopService.class);
         progression = mock(ProgressionService.class);
-        controller = new WalletController(wallets, shop, progression);
+        controller = new WalletController(wallets, shop, progression, mock(ActivityLogService.class));
     }
 
     @Test

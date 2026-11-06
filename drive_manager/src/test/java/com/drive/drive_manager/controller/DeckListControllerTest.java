@@ -2,6 +2,7 @@ package com.drive.drive_manager.controller;
 
 import com.drive.drive_manager.dto.DeckList;
 import com.drive.drive_manager.repository.DeckListRepository;
+import com.drive.drive_manager.service.ActivityLogService;
 import com.drive.drive_manager.service.ProgressionRules;
 import com.drive.drive_manager.service.ProgressionService;
 import org.junit.jupiter.api.BeforeEach;
@@ -91,7 +92,7 @@ class DeckListControllerTest {
     }
 
     private DeckListController controller() {
-        if (controller == null) controller = new DeckListController(repo, progression);
+        if (controller == null) controller = new DeckListController(repo, progression, mock(ActivityLogService.class));
         return controller;
     }
 
