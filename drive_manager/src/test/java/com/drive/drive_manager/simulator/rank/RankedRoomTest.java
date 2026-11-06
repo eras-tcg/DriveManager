@@ -1,15 +1,20 @@
 package com.drive.drive_manager.simulator.rank;
 
 import com.drive.drive_manager.simulator.bot.BotCatalog;
+import com.drive.drive_manager.simulator.bot.BotMatch;
 import com.drive.drive_manager.simulator.bot.BotPlayer;
 import com.drive.drive_manager.simulator.bot.BotRooms;
+import com.drive.drive_manager.simulator.room.CardSlot;
 import com.drive.drive_manager.simulator.room.GameRoom;
 import com.drive.drive_manager.simulator.room.GameStateUpdate;
 import com.drive.drive_manager.simulator.room.RoomOptions;
 import com.drive.drive_manager.simulator.room.RoomService;
 import org.junit.jupiter.api.Test;
 
+import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -109,5 +114,24 @@ class RankedRoomTest {
         assertThat(room.getPlayer(BotRooms.BOT).getUsername()).isEqualTo("Bot Normal");
         act(room.getRoomId(), "owner", "SET_BOT_LEVEL", Map.of("level", BotCatalog.HARD));
         assertThat(room.getPlayer(BotRooms.BOT).getUsername()).isEqualTo("Bot Difícil");
+    }
+    @Test
+    void madeRankedAfterChoosingTheDeckTheBotPlaysItsOwnCopiesOfIt() {
+        GameRoom room = service.createRoom("owner", RoomOptions.BOT);
+        String id = room.getRoomId();
+        act(id, "owner", "JOIN_ROOM", Map.of("username", "Ana"));
+        BotMatch.seat(room.getPlayer("owner"), "st1", new int[] {0});
+        room.getPlayer("owner").getOriginalDeck().forEach(c -> c.setFinish("foil"));
+
+        assertThat(act(id, "owner", "SET_RANKED", Map.of("ranked", true)).getError()).isNull();
+
+        List<CardSlot> mine = room.getPlayer("owner").getOriginalDeck();
+        List<CardSlot> bots = room.getPlayer(BotRooms.BOT).getDeck();
+        Set<String> myIds = mine.stream().map(CardSlot::getInstanceId).collect(Collectors.toSet());
+        assertThat(bots).hasSameSizeAs(mine);
+        // Sharing ids, the board and the engine took the bot's cards for the owner's (its lives flew from the owner's deck)
+        assertThat(bots).noneMatch(c -> myIds.contains(c.getInstanceId()));
+        assertThat(room.getPlayer(BotRooms.BOT).getOriginalDeck()).noneMatch(c -> myIds.contains(c.getInstanceId()));
+        assertThat(bots).allMatch(c -> c.getFinish() == null);
     }
 }
