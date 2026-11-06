@@ -1,8 +1,8 @@
 package com.drive.drive_manager.simulator.engine;
 
-import com.drive.drive_manager.simulator.CardSlot;
-import com.drive.drive_manager.simulator.GameRoom;
-import com.drive.drive_manager.simulator.PlayerState;
+import com.drive.drive_manager.simulator.room.CardSlot;
+import com.drive.drive_manager.simulator.room.GameRoom;
+import com.drive.drive_manager.simulator.room.PlayerState;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -66,7 +66,7 @@ class InheritanceTest {
             Answers.answer(room, p.getPlayerId(), p.getId(), pick, List.of());
         }
 
-        List<com.drive.drive_manager.simulator.GameLogEntry> log = room.getEventLog();
+        List<com.drive.drive_manager.simulator.room.GameLogEntry> log = room.getEventLog();
         assertThat(log).anySatisfy(l -> {
             assertThat(l.getKind()).isEqualTo(GameEvent.EFFECT_ACTIVATED);
             assertThat(l.getSourceId()).isEqualTo("gal");

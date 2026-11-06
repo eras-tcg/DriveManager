@@ -1,7 +1,7 @@
 package com.drive.drive_manager.simulator.engine;
 
-import com.drive.drive_manager.simulator.GameRoom;
-import com.drive.drive_manager.simulator.PlayerState;
+import com.drive.drive_manager.simulator.room.GameRoom;
+import com.drive.drive_manager.simulator.room.PlayerState;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -86,7 +86,7 @@ class LegalActionsTest {
     void theBoardReceivesThem() {
         host.getHand().add(card("c", "Criatura", 1, 1, "R"));
 
-        var update = com.drive.drive_manager.simulator.GameStateUpdate.from(room, "TEST", "host");
+        var update = com.drive.drive_manager.simulator.room.GameStateUpdate.from(room, "TEST", "host");
 
         assertThat(update.getLegalActions().get("host").get("c")).containsExactly("summon");
         assertThat(update.getAttackTargets()).containsKeys("host", "guest");

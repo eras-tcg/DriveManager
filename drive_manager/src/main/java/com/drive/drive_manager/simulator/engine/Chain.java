@@ -1,16 +1,13 @@
 package com.drive.drive_manager.simulator.engine;
 
-import com.drive.drive_manager.simulator.CardSlot;
-import com.drive.drive_manager.simulator.FloatingEffect;
-import com.drive.drive_manager.simulator.GameLogEntry;
-import com.drive.drive_manager.simulator.GameRoom;
-import com.drive.drive_manager.simulator.PlayerState;
+import com.drive.drive_manager.simulator.room.CardSlot;
+import com.drive.drive_manager.simulator.room.Zone;
+import com.drive.drive_manager.simulator.room.GameRoom;
+import com.drive.drive_manager.simulator.room.PlayerState;
 import com.drive.drive_manager.simulator.engine.EffectScript.Limit;
 import com.drive.drive_manager.simulator.engine.EffectStep.*;
 
 import java.util.*;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import static com.drive.drive_manager.simulator.engine.EffectEngine.*;
 import static com.drive.drive_manager.simulator.engine.Summons.*;
@@ -161,7 +158,7 @@ public final class Chain {
                         if (script.moment() != EffectScript.Moment.ON_EVENT || !script.sourceZone().equals(zone)) continue;
                         if (script.allyTurn() && !p.getUserId().equals(room.getCurrentTurnUserId())) continue;
                         // A card on the field cannot react to an event that happened before it got there
-                        if ("field".equals(zone) && event.getSeq() < card.getFieldSeq()) continue;
+                        if (Zone.FIELD.is(zone) && event.getSeq() < card.getFieldSeq()) continue;
                         addIfTriggers(room, result, script, event, card, p.getUserId());
                     }
                 }
@@ -288,7 +285,7 @@ public final class Chain {
                                 + (room.getChain().size() + 1) + "; después eliges el siguiente. La cadena se resuelve al revés: "
                                 + "el último eslabón se resuelve primero."
                         : "Este efecto es obligatorio: confírmalo para encadenarlo como Cadena " + (room.getChain().size() + 1) + ".";
-                rulesPrompt(room, effect.getControllerId(), PURPOSE_ORDER,
+                rulesPrompt(room, effect.getControllerId(), PromptPurpose.ORDER.id(),
                         group.size() > 1 ? "Encadenar efectos obligatorios" : "Efecto obligatorio", instruction, "Encadenar", sources, sources);
                 offerEffects(room, room.getPrompt(), group);
                 room.getPrompt().setMin(1);
@@ -327,7 +324,7 @@ public final class Chain {
             // and pays its cost, then the rest are offered again until the player passes; then the opponent
             List<CardSlot> sources = sources(room, group);
             if (!sources.isEmpty()) {
-                rulesPrompt(room, effect.getControllerId(), PURPOSE_OPTIONAL, "Encadenar efectos",
+                rulesPrompt(room, effect.getControllerId(), PromptPurpose.OPTIONAL.id(), "Encadenar efectos",
                         "Elige 1 efecto para encadenarlo como Cadena " + (room.getChain().size() + 1)
                                 + (group.size() > 1 ? " (después podrás elegir otro)" : "") + ", o no encadenes más. "
                                 + "La cadena se resuelve al revés: el último eslabón se resuelve primero.",
@@ -505,7 +502,7 @@ public final class Chain {
             }
             List<CardSlot> sources = options.stream().map(e -> findAnywhere(room, playerId, e.getSourceInstanceId()))
                     .filter(Objects::nonNull).distinct().toList();
-            rulesPrompt(room, playerId, PURPOSE_PRIORITY, "Responder a " + top.getSourceName(),
+            rulesPrompt(room, playerId, PromptPurpose.PRIORITY.id(), "Responder a " + top.getSourceName(),
                     "Puedes activar un efecto en respuesta a " + top.getLabel() + " de " + top.getSourceName() + ", o pasar.",
                     "Activar", sources, sources);
             return true;

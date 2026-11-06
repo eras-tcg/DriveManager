@@ -24,7 +24,8 @@ class EngineShapeTest {
     /** Still over the limit, at most this long: each one can only shrink. */
     private static final Map<String, Integer> TOO_LONG = Map.ofEntries(
             Map.entry("Compose.java", 890),
-            Map.entry("RoomService.java", 840),
+            // Under MAX_LINES since its split (RoomRegistry, RoomMembership, ActionDispatcher): kept a thin facade
+            Map.entry("RoomService.java", 345),
             Map.entry("EngineContext.java", 730),
             Map.entry("Condition.java", 665),
             Map.entry("EffectEngine.java", 625),

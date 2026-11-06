@@ -1,8 +1,8 @@
 package com.drive.drive_manager.simulator.engine;
 
-import com.drive.drive_manager.simulator.CardSlot;
-import com.drive.drive_manager.simulator.GameRoom;
-import com.drive.drive_manager.simulator.PlayerState;
+import com.drive.drive_manager.simulator.room.CardSlot;
+import com.drive.drive_manager.simulator.room.GameRoom;
+import com.drive.drive_manager.simulator.room.PlayerState;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -56,7 +56,7 @@ class E1BugfixTest {
         CardSlot guardian = onField(host, card("gi", "Guardian Imperial", 5, 4, "R"));
         guardian.setStrength(10);
         assertThat(CombatRules.attackByPlayer(room, "guest", "at", null)).isNull();
-        answer(untilPurpose(EffectEngine.PURPOSE_BLOCK), "gi");
+        answer(untilPurpose(PromptPurpose.BLOCK.id()), "gi");
         for (int i = 0; i < 8 && room.getPrompt() != null && !room.getPrompt().getValidIds().contains("gi"); i++) answerNone();
         assertThat(guardian.isTapped()).isFalse();
     }
@@ -181,7 +181,7 @@ class E1BugfixTest {
         host.getHand().add(assault);
         assertThat(Summons.normalSummon(room, "host", "as", 50.0, 75.0)).isNull();
         Prompt choice = room.getPrompt();
-        assertThat(choice.getPurpose()).isEqualTo(EffectEngine.PURPOSE_ASSAULT);
+        assertThat(choice.getPurpose()).isEqualTo(PromptPurpose.ASSAULT.id());
         assertThat(room.getChain()).isEmpty();
         answer(choice, "as");
         assertThat(EffectEngine.inFrontLine(assault)).isTrue();
@@ -195,7 +195,7 @@ class E1BugfixTest {
         onField(guest, card("t", "Objetivo", 1, 1, "R"));
         onField(guest, card("b", "Otro", 1, 1, "R"));
         assertThat(CombatRules.attackByPlayer(room, "host", "en", "t")).isNull();
-        Prompt block = untilPurpose(EffectEngine.PURPOSE_BLOCK);
+        Prompt block = untilPurpose(PromptPurpose.BLOCK.id());
         assertThat(block.getValidIds()).containsExactly("b");
     }
 

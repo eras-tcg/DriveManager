@@ -1,6 +1,6 @@
 package com.drive.drive_manager.simulator.engine.effects.actions;
 
-import com.drive.drive_manager.simulator.CardSlot;
+import com.drive.drive_manager.simulator.room.CardSlot;
 import com.drive.drive_manager.simulator.engine.effects.model.Action.Play;
 import com.drive.drive_manager.simulator.engine.effects.model.Selector;
 import com.drive.drive_manager.simulator.engine.effects.runtime.ActionHandler;

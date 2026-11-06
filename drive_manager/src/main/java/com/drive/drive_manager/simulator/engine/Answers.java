@@ -1,16 +1,11 @@
 package com.drive.drive_manager.simulator.engine;
 
-import com.drive.drive_manager.simulator.CardSlot;
-import com.drive.drive_manager.simulator.FloatingEffect;
-import com.drive.drive_manager.simulator.GameLogEntry;
-import com.drive.drive_manager.simulator.GameRoom;
-import com.drive.drive_manager.simulator.PlayerState;
-import com.drive.drive_manager.simulator.engine.EffectScript.Limit;
+import com.drive.drive_manager.simulator.room.CardSlot;
+import com.drive.drive_manager.simulator.room.GameRoom;
+import com.drive.drive_manager.simulator.room.PlayerState;
 import com.drive.drive_manager.simulator.engine.EffectStep.*;
 
 import java.util.*;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import static com.drive.drive_manager.simulator.engine.EffectEngine.*;
 import static com.drive.drive_manager.simulator.engine.Summons.*;
@@ -59,7 +54,7 @@ public final class Answers {
         if (player == null) return "No estás en la partida";
 
         // Creatures that move up to the Línea frontal, all at once
-        if (PURPOSE_ADVANCE.equals(prompt.getPurpose())) {
+        if (PromptPurpose.ADVANCE.is(prompt.getPurpose())) {
             room.setPrompt(null);
             List<String> moved = new ArrayList<>();
             for (String id : picks) {
@@ -78,9 +73,9 @@ public final class Answers {
         if (other != null) return other.isEmpty() ? null : other;
 
         // Combat choices: the blocker, or the enemy forced to block by Provocar
-        if (PURPOSE_BLOCK_SWAP.equals(prompt.getPurpose()) || PURPOSE_DAMAGE_REPLACE.equals(prompt.getPurpose())) {
+        if (PromptPurpose.BLOCK_SWAP.is(prompt.getPurpose()) || PromptPurpose.DAMAGE_REPLACE.is(prompt.getPurpose())) {
             room.setPrompt(null);
-            if (PURPOSE_BLOCK_SWAP.equals(prompt.getPurpose())) CombatRules.swapBlocker(room, player, prompt, picks);
+            if (PromptPurpose.BLOCK_SWAP.is(prompt.getPurpose())) CombatRules.swapBlocker(room, player, prompt, picks);
             else CombatRules.replaceDamage(room, player, picks);
             advance(room);
             return null;
@@ -94,7 +89,7 @@ public final class Answers {
                 if (blocker != null) {
                     blocker.setTapped(true);
                     c.setBlockerId(blocker.getInstanceId());
-                    boolean forced = PURPOSE_PROVOKE.equals(prompt.getPurpose());
+                    boolean forced = PromptPurpose.PROVOKE.is(prompt.getPurpose());
                     record(room, GameEvent.BLOCK, defender.getUserId(), blocker, null, null, null, Map.of("forced", forced),
                             name(blocker) + (forced ? " debe bloquear (Provocar)" : " bloquea el ataque"));
                     // "cuando un aliado sea declarado bloqueador: en su lugar, puedes …" (Comandante Veterano)
@@ -167,15 +162,15 @@ public final class Answers {
     static String answerRulesAs(GameRoom room, Prompt prompt, PlayerState player, List<String> picks) {
         String userId = player.getUserId();
         String purpose = prompt.getPurpose();
-        if (PURPOSE_REPLACE_SUMMON.equals(purpose)) {
+        if (PromptPurpose.REPLACE_SUMMON.is(purpose)) {
             String error = answerSummonInsteadOfRemoval(room, prompt, player, picks);
             return error == null ? "" : error;
         }
-        if (PURPOSE_DAMAGE_TRIBUTE.equals(purpose)) {
+        if (PromptPurpose.DAMAGE_TRIBUTE.is(purpose)) {
             String error = CombatRules.answerDamageTribute(room, prompt, player, picks);
             return error == null ? "" : error;
         }
-        if (PURPOSE_SUMMON_SACRIFICE.equals(purpose)) {
+        if (PromptPurpose.SUMMON_SACRIFICE.is(purpose)) {
             CardSlot card = find(player.getHand(), prompt.getSubjectId());
             room.setPrompt(null);
             if (card == null) {
@@ -192,14 +187,14 @@ public final class Answers {
             }
             return "";
         }
-        if (PURPOSE_REPLACE.equals(purpose) || PURPOSE_REPLACE_HAND.equals(purpose) || PURPOSE_REPLACE_MATERIALS.equals(purpose)
-                || PURPOSE_REPLACE_GUARD.equals(purpose) || PURPOSE_REPLACE_RESOURCES.equals(purpose)) {
+        if (PromptPurpose.REPLACE.is(purpose) || PromptPurpose.REPLACE_HAND.is(purpose) || PromptPurpose.REPLACE_MATERIALS.is(purpose)
+                || PromptPurpose.REPLACE_GUARD.is(purpose) || PromptPurpose.REPLACE_RESOURCES.is(purpose)) {
             String error = answerRemoval(room, prompt, player, picks);
             if (error != null) return error;
             advance(room);
             return "";
         }
-        if (PURPOSE_RITUAL.equals(purpose)) {
+        if (PromptPurpose.RITUAL.is(purpose)) {
             if (picks.isEmpty()) {
                 room.setPrompt(null);
                 advance(room);
@@ -238,7 +233,7 @@ public final class Answers {
             handRitual(room, player, card, summoner, others);
             return "";
         }
-        if (PURPOSE_COST_TAP.equals(purpose)) {
+        if (PromptPurpose.COST_TAP.is(purpose)) {
             CardSlot card = specialSource(player, prompt.getSubjectId());
             CardSlot holder = prompt.getValidIds().isEmpty() ? null : find(player.getField(), prompt.getValidIds().get(0));
             room.setPrompt(null);
@@ -259,7 +254,7 @@ public final class Answers {
             }
             return "";
         }
-        if (PURPOSE_SPECIAL.equals(purpose)) {
+        if (PromptPurpose.SPECIAL.is(purpose)) {
             CardSlot card = specialSource(player, prompt.getSubjectId());
             if (picks.isEmpty() || card == null) {
                 room.setPrompt(null);
@@ -305,7 +300,7 @@ public final class Answers {
             handSpecial(room, player, card, req, summoner, materials, find(player.getHand(), card.getInstanceId()) != null ? "hand" : "tributeZone");
             return "";
         }
-        if (PURPOSE_ASSAULT.equals(purpose)) {
+        if (PromptPurpose.ASSAULT.is(purpose)) {
             room.setPrompt(null);
             CardSlot card = find(player.getField(), prompt.getSubjectId());
             if (card != null && !picks.isEmpty() && !inFrontLine(card)) {
@@ -317,7 +312,7 @@ public final class Answers {
             advance(room);
             return "";
         }
-        if (PURPOSE_ASCEND_ATTACK.equals(purpose)) {
+        if (PromptPurpose.ASCEND_ATTACK.is(purpose)) {
             room.setPrompt(null);
             CardSlot card = specialSource(player, prompt.getSubjectId());
             CardSlot summoner = find(player.getField(), prompt.getSummonerId());
@@ -339,7 +334,7 @@ public final class Answers {
             advance(room);
             return "";
         }
-        if (PURPOSE_SUMMONER_DISCOUNT.equals(purpose)) {
+        if (PromptPurpose.SUMMONER_DISCOUNT.is(purpose)) {
             CardSlot card = specialSource(player, prompt.getSubjectId());
             CardSlot summoner = find(player.getField(), prompt.getSummonerId());
             if (card == null || summoner == null) {
@@ -407,7 +402,7 @@ public final class Answers {
             advance(room);
             return "";
         }
-        if (PURPOSE_SPECIAL_FRONT.equals(purpose)) {
+        if (PromptPurpose.SPECIAL_FRONT.is(purpose)) {
             room.setPrompt(null);
             CardSlot card = find(player.getField(), prompt.getSubjectId());
             if (!picks.isEmpty() && card != null && !inFrontLine(card)) {
@@ -421,11 +416,11 @@ public final class Answers {
             advance(room);
             return "";
         }
-        if (PURPOSE_REINFORCE.equals(purpose) || PURPOSE_LIFE_PLAY.equals(purpose)) {
+        if (PromptPurpose.REINFORCE.is(purpose) || PromptPurpose.LIFE_PLAY.is(purpose)) {
             room.setPrompt(null);
             CardSlot card = find(player.getHand(), prompt.getSubjectId());
             if (!picks.isEmpty() && card != null) {
-                if (PURPOSE_REINFORCE.equals(purpose)) {
+                if (PromptPurpose.REINFORCE.is(purpose)) {
                     player.getHand().remove(card);
                     card.setFaceDown(false);
                     player.getLifeStack().add(card);
@@ -444,7 +439,7 @@ public final class Answers {
             advance(room);
             return "";
         }
-        if (PURPOSE_ORDER.equals(purpose)) {
+        if (PromptPurpose.ORDER.is(purpose)) {
             room.setPrompt(null);
             // The group at the head of the queue, chained in the order the sources were picked
             List<PendingEffect> queue = room.getTriggerQueue();
@@ -461,7 +456,7 @@ public final class Answers {
             advance(room);
             return "";
         }
-        if (PURPOSE_OPTIONAL.equals(purpose)) {
+        if (PromptPurpose.OPTIONAL.is(purpose)) {
             room.setPrompt(null);
             List<PendingEffect> queue = room.getTriggerQueue();
             int head = rank(queue.get(0), room.getCurrentTurnUserId());
@@ -490,7 +485,7 @@ public final class Answers {
             advance(room);
             return "";
         }
-        if (PURPOSE_PRIORITY.equals(purpose)) {
+        if (PromptPurpose.PRIORITY.is(purpose)) {
             PendingEffect top = room.getChain().isEmpty() ? null : room.getChain().get(room.getChain().size() - 1);
             if (top == null) {
                 room.setPrompt(null);

@@ -1,17 +1,12 @@
 package com.drive.drive_manager.simulator.engine;
 
-import com.drive.drive_manager.simulator.CardSlot;
-import com.drive.drive_manager.simulator.FloatingEffect;
-import com.drive.drive_manager.simulator.GameLogEntry;
-import com.drive.drive_manager.simulator.GameRoom;
-import com.drive.drive_manager.simulator.PlayerState;
-import com.drive.drive_manager.simulator.engine.EffectScript.Limit;
+import com.drive.drive_manager.simulator.room.CardSlot;
+import com.drive.drive_manager.simulator.room.Zone;
+import com.drive.drive_manager.simulator.room.GameRoom;
+import com.drive.drive_manager.simulator.room.PlayerState;
 import com.drive.drive_manager.simulator.engine.EffectStep.*;
-import com.drive.drive_manager.simulator.engine.effects.model.SpecialRule;
 
 import java.util.*;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import static com.drive.drive_manager.simulator.engine.Summons.*;
 import static com.drive.drive_manager.simulator.engine.SpecialRequirements.*;
@@ -65,7 +60,7 @@ public final class SpecialSummons {
                 List<CardSlot> shown = new ArrayList<>();
                 for (String z : req.summonerZones()) shown.addAll(zone(player, z));
                 shown.remove(card);
-                rulesPrompt(room, userId, PURPOSE_SPECIAL, name(card) + " · " + kind,
+                rulesPrompt(room, userId, PromptPurpose.SPECIAL.id(), name(card) + " · " + kind,
                         "Declara el invocador: 1 criatura nivel " + req.level() + " de " + zonesText(req.summonerZones()) + ". Luego eliges "
                                 + req.materialCount() + (req.moreMaterials() ? " o más " : " ") + plural(req.materialCount(), "material", "materiales")
                                 + ". Si no eliges ninguna, no se invoca.",
@@ -80,7 +75,7 @@ public final class SpecialSummons {
             shown.remove(card);
             shown.remove(summoner);
             List<CardSlot> materialOptions = specialMaterials(player, card, req, summoner);
-            rulesPrompt(room, userId, PURPOSE_SPECIAL, name(card) + " · " + kind, materialInstruction(req, card, summoner), "Material",
+            rulesPrompt(room, userId, PromptPurpose.SPECIAL.id(), name(card) + " · " + kind, materialInstruction(req, card, summoner), "Material",
                     materialOptions, shown);
             room.getPrompt().setMin(req.materialCount());
             room.getPrompt().setMax(req.moreMaterials() ? materialOptions.size() : req.materialCount());
@@ -93,17 +88,19 @@ public final class SpecialSummons {
             if (materials.size() < req.materialCount()) return missing;
             List<CardSlot> shown = new ArrayList<>();
             for (String z : req.materialZones()) shown.addAll(zone(player, z));
-            rulesPrompt(room, userId, PURPOSE_SPECIAL, name(card) + " · " + kind, materialInstruction(req, card, null), "Material", materials, shown);
+            rulesPrompt(room, userId, PromptPurpose.SPECIAL.id(), name(card) + " · " + kind, materialInstruction(req, card, null), "Material", materials, shown);
             room.getPrompt().setMin(req.materialCount());
             room.getPrompt().setMax(req.materialCount());
             room.getPrompt().setSubjectId(card.getInstanceId());
             room.getPrompt().setSummonerId(NO_SUMMONER);
             return null;
         }
-        List<CardSlot> summoners = specialSummoners(player, card, req).stream().filter(s -> materialsPossible(player, card, req, s)).toList();
+        List<CardSlot> possible = specialSummoners(player, card, req).stream().filter(s -> materialsPossible(player, card, req, s)).toList();
+        // Only those it can be paid with: one that could not would be refused once chosen
+        List<CardSlot> summoners = possible.stream().filter(s -> affordableWith(room, player, card, req, s)).toList();
         if (summonerId == null) {
-            if (summoners.isEmpty()) return missing;
-            rulesPrompt(room, userId, PURPOSE_SPECIAL, name(card) + " · " + kind,
+            if (summoners.isEmpty()) return possible.isEmpty() ? missing : "No tienes gemas suficientes para invocar a " + name(card) + " con ninguna de tus criaturas";
+            rulesPrompt(room, userId, PromptPurpose.SPECIAL.id(), name(card) + " · " + kind,
                     "Elige el invocador: 1 criatura nivel " + req.level() + (req.atLeast() ? " o mayor" : req.maxLevel() > req.level() ? " o " + req.maxLevel() : "")
                             + (req.alternative() != null ? " (o nivel " + req.alternative().level() + ")" : "") + ". " + name(card)
                             + " ocupa su lugar y hereda su estado. Si no eliges ninguna, no se invoca.",
@@ -113,13 +110,13 @@ public final class SpecialSummons {
         }
         CardSlot summoner = find(player.getField(), summonerId);
         if (summoner == null) return "El invocador debe ser una criatura de tu campo";
-        if (!summoners.contains(summoner)) return shares(summoner, card) ? missing : name(summoner) + " no comparte tipo ni color con " + name(card);
+        if (!possible.contains(summoner)) return shares(summoner, card) ? missing : name(summoner) + " no comparte tipo ni color con " + name(card);
         SpecialRequirement option = optionFor(req, summoner);
         if ("materialization".equals(req.kind()) && (option.materialCount() > 0 || option.levelSum() > 0)) {
             List<CardSlot> materials = specialMaterials(player, card, req, summoner);
             List<CardSlot> shown = new ArrayList<>();
             for (String z : option.materialZones()) shown.addAll(zone(player, z));
-            rulesPrompt(room, userId, PURPOSE_SPECIAL, name(card) + " · " + kind, materialInstruction(req, card, summoner), "Material", materials, shown);
+            rulesPrompt(room, userId, PromptPurpose.SPECIAL.id(), name(card) + " · " + kind, materialInstruction(req, card, summoner), "Material", materials, shown);
             room.getPrompt().setMin(Math.max(1, option.materialCount()));
             room.getPrompt().setMax(option.levelSum() > 0 ? materials.size() : option.materialCount());
             room.getPrompt().setSubjectId(card.getInstanceId());
@@ -148,7 +145,7 @@ public final class SpecialSummons {
             PlayerState opponent = room.getPlayer(room.getOpponentId(player.getUserId()));
             List<CardSlot> shown = new ArrayList<>(List.of(summoner));
             if (opponent != null) shown.addAll(opponent.getField());
-            rulesPrompt(room, player.getUserId(), PURPOSE_ASCEND_ATTACK, name(summoner) + " va a ser ascendida",
+            rulesPrompt(room, player.getUserId(), PromptPurpose.ASCEND_ATTACK.id(), name(summoner) + " va a ser ascendida",
                     "Puede declarar ataque antes: elige " + name(summoner) + " para atacar al oponente, o una criatura enemiga agotada. "
                             + "O ninguna para ascenderla ya.", "Atacar", options, shown);
             room.getPrompt().setMin(0);
@@ -163,7 +160,7 @@ public final class SpecialSummons {
         if (use != null) {
             room.getUsedThisTurn().removeIf(k -> k.startsWith(DISCOUNT_MATERIALS + card.getInstanceId() + "|"));
             if (!materials.isEmpty()) room.getUsedThisTurn().add(DISCOUNT_MATERIALS + card.getInstanceId() + "|" + String.join(",", ids(materials)));
-            rulesPrompt(room, player.getUserId(), PURPOSE_SUMMONER_DISCOUNT, name(use.holder()) + " · " + use.modifier().label(),
+            rulesPrompt(room, player.getUserId(), PromptPurpose.SUMMONER_DISCOUNT.id(), name(use.holder()) + " · " + use.modifier().label(),
                     CostModifiers.describe(use), "Pagar", CostModifiers.paymentOptions(player, use, card), player.getTributeZone());
             room.getPrompt().setMax(use.modifier().payment().count());
             if (use.modifier().payment().kind() == CostModifiers.PaymentKind.SELF_DAMAGE) room.getPrompt().setMin(0);
@@ -225,7 +222,7 @@ public final class SpecialSummons {
                     String from = player.getTributeZone().remove(material) ? "tributeZone" : player.getHand().remove(material) ? "hand"
                             : player.getDiscardPile().remove(material) ? "discardPile" : "field";
                     // A creature of the field used as a material loses its state; its attachments go to the Descarte
-                    if ("field".equals(from)) removeFromField(player, material);
+                    if (Zone.FIELD.is(from)) removeFromField(player, material);
                     material.setFaceDown(false);
                     card.getMaterials().add(material);
                     used += (used.isEmpty() ? "" : " y ") + name(material);
@@ -269,7 +266,7 @@ public final class SpecialSummons {
             for (String z : option.materialZones()) shown.addAll(zone(player, z));
             shown.remove(card);
             shown.remove(ally);
-            rulesPrompt(room, player.getUserId(), PURPOSE_REPLACE_SUMMON, name(card) + " · en lugar de que " + name(ally) + " sea removida",
+            rulesPrompt(room, player.getUserId(), PromptPurpose.REPLACE_SUMMON.id(), name(card) + " · en lugar de que " + name(ally) + " sea removida",
                     materialInstruction(req, card, ally), "Material", materials, shown);
             room.getPrompt().setMin(Math.max(1, option.materialCount()));
             room.getPrompt().setMax(option.levelSum() > 0 ? materials.size() : option.materialCount());
