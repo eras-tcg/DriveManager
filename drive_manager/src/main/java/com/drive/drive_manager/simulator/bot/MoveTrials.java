@@ -276,6 +276,10 @@ final class MoveTrials {
                 else side.played(copy, next);
                 if (me.equals(copy.getCurrentTurnUserId())) fewest = Math.min(fewest, EffectEngine.gemsOf(copy, me));
             }
+            // winFlat (duel st1-st2 s13395, 2026-11-06): a game won or lost in the try is worth that alone, without what the
+            // try added (structures used, the plan's bonus): else winning later, after more moves (a deck emptied, three
+            // Volcanes used), outscored the win at hand
+            if (settings.get("winFlat") >= 0.5 && copy.getStatus() != GameRoom.RoomStatus.IN_PROGRESS && copy.getWinnerId() != null) return score.applyAsDouble(copy, me);
             double debt = (fewest == Integer.MAX_VALUE ? 0 : Math.max(0, -fewest)) + (settings.get("overExtendRival") >= 0.5 ? paidInTheirs : 0);
             // rollTriggers: per effect of its own activated in the rest of its turn (searches, draws, summons by effect:
             // what a combo earns and the table at the end of the try barely shows)

@@ -17,7 +17,7 @@ import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 /**
  * Duels to read: {@code bot.duel.a} against {@code bot.duel.b}, each deal from both seats, on the deck pairs of
- * {@code bot.duel.pairs} ("st1-st2,st3-st3"), {@code bot.duel.seeds} deals each. Each game is summed up turn by turn:
+ * {@code bot.duel.pairs} ("st1-st2,st3-st3"), {@code bot.duel.seeds} deals each (from deal {@code bot.duel.from}, 1 by default). Each game is summed up turn by turn:
  * what each side did (summons, plays, attacks and blocks, destructions, hits on lives and where the life went), the
  * lives and the creatures on the field (with strength, "*" exhausted, "^" in the Línea frontal) at the turn's end. One
  * file per game in {@code bot.duel.out}; a line per game with who won.
@@ -34,12 +34,12 @@ class BotDuelRun {
         BotSettings b = BotSettings.DEFAULT.with(System.getProperty("bot.duel.b", ""));
         Path out = Path.of(System.getProperty("bot.duel.out", "target/bot-duels"));
         Files.createDirectories(out);
-        int seeds = Integer.getInteger("bot.duel.seeds", 1);
+        int seeds = Integer.getInteger("bot.duel.seeds", 1), from = Integer.getInteger("bot.duel.from", 1);
         ExecutorService pool = Executors.newFixedThreadPool(Integer.getInteger("bot.duel.threads", 2));
         List<Future<String>> games = new ArrayList<>();
         for (String pair : System.getProperty("bot.duel.pairs", "st1-st2").split(",")) {
             String[] d = pair.trim().split("-");
-            for (int s = 1; s <= seeds; s++) for (boolean aHosts : List.of(true, false)) {
+            for (int s = from; s < from + seeds; s++) for (boolean aHosts : List.of(true, false)) {
                 long seed = 13000L + s * 100 + pair.hashCode() % 97;
                 games.add(pool.submit(() -> {
                     StringBuilder sb = new StringBuilder();

@@ -152,6 +152,7 @@ public final class BotSettings {
         d.put("hReduce", 0.0);
         d.put("riskCuts", 0.0);
         d.put("lethalLives", 0.0);
+        d.put("winFlat", 0.0);
         // HandRank; TableScore (lifeMine, overExtend); SequenceSearch (cascade, seqPass); LeafPlay
         d.put("zHand", 0.0);
         d.put("zTribute", 0.0);
