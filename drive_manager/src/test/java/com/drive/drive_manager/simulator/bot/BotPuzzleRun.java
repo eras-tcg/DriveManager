@@ -79,6 +79,22 @@ class BotPuzzleRun {
                     t.host().getHand().addAll(List.of(card("Caballero Férreo"), card("Caballero Férreo")));
                     lives(t.guest(), 1, false);
                 }, t -> "host".equals(t.room().getWinnerId())),
+                // Duelo st1-st2 s13395 (2026-11-06): jugó Huevo, vació el mazo, evolucionó a Carmesí y no atacó; perdió por mazo
+                new Puzzle("remate-mazo-corto", "el rival (st1) tiene 1 vida y la mesa vacía; Dragón Volcánico, Dracoventus y Galveta listos, Huevo De Dragón y Dracoventus en la mano, 4 cartas en el mazo: atacar y ganar", t -> {
+                    gems(t, 5);
+                    t.host().getDeck().clear();
+                    deck(t.host(), "Huevo De Dragón", "Huevo De Dragón", "Flamagón", "Flamagón");
+                    for (String n : List.of("Dragón Carmesí", "Fadrake", "Flambreik", "Wyfreik", "Dragón Delta", "Llamarada", "Huevo De Dragón")) t.host().getTributeZone().add(card(n));
+                    CardSlot volc = front(t.host(), "Dragón Volcánico");
+                    for (String n : List.of("Saildreik", "Ddraig", "Galveta")) volc.getResources().add(card(n));
+                    front(t.host(), "Dracoventus").getResources().add(card("Wyverno De Pantano"));
+                    front(t.host(), "Galveta").getResources().add(card("Flamagón"));
+                    for (int i = 0; i < 3; i++) back(t.host(), "Volcán De Dragones");
+                    t.host().getHand().addAll(List.of(card("Dracoventus"), card("Huevo De Dragón")));
+                    lives(t.host(), 3, true);
+                    for (String n : List.of("Flarix", "Falanx", "Mathaus", "Falis", "Flarix", "Zula", "Paso Interdimensional", "Hez", "Mihel")) { CardSlot c = card(n); c.setFaceDown(true); t.guest().getHand().add(c); }
+                    lives(t.guest(), 1, true);
+                }, t -> "host".equals(t.room().getWinnerId())),
                 new Puzzle("perforante", "atacar con Franchute a la criatura agotada del rival y destruirla", t -> {
                     gems(t, 0);
                     front(t.host(), "Franchute");
