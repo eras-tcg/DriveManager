@@ -122,6 +122,10 @@ public class BotPlayer {
     /** The move went through. */
     public void played(GameRoom room, GameAction action) {
         movesThisTurn++;
+        // Its own turn ended: the next one is a new moment even when the bot was not asked during the rival's turn (a
+        // match driver that asks it only when it has something to do). Else the moves of its turns added up and, past
+        // MAX_MOVES_PER_TURN, it passed with the game won at hand (duel st1-st2 s13395, 2026-11-06)
+        if (ActionType.END_TURN.is(action)) moment = null;
     }
 
     /** The engine refused the move: it is not tried again at this moment. */
