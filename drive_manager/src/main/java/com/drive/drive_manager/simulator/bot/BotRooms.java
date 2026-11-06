@@ -4,6 +4,7 @@ import com.drive.drive_manager.simulator.actions.PreRoomActions;
 import com.drive.drive_manager.simulator.rank.RankRules;
 import com.drive.drive_manager.simulator.room.ActionType;
 import com.drive.drive_manager.simulator.room.CardSlot;
+import com.drive.drive_manager.simulator.room.DeckLoader;
 import com.drive.drive_manager.simulator.room.GameAction;
 import com.drive.drive_manager.simulator.room.GameRoom;
 import com.drive.drive_manager.simulator.room.GameStateUpdate;
@@ -127,8 +128,13 @@ public final class BotRooms {
         bot.setDeck(new ArrayList<>());
         bot.setOriginalDeck(new ArrayList<>());
         bot.setStarterCardId(null);
-        if (owner != null && owner.getDeckId() != null && owner.getOriginalDeck() != null)
-            mirrorDeck(room, owner, PreRoomActions.deepCopySlots(owner.getOriginalDeck()));
+        // Its own instances of the owner's cards (sharing their ids, the board and the engine would mix the two sides up),
+        // without the owner's finishes
+        if (owner != null && owner.getDeckId() != null && owner.getOriginalDeck() != null) {
+            List<CardSlot> copy = DeckLoader.freshCopy(owner.getOriginalDeck());
+            copy.forEach(c -> c.setFinish(null));
+            mirrorDeck(room, owner, copy);
+        }
     }
 
     /** The owner sets up the bot's side (its deck or starter) with this action. */
