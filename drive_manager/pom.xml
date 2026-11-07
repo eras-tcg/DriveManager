@@ -171,7 +171,18 @@
 				<version>${kotlin.version}</version>
 				<configuration>
 					<jvmTarget>${java.version}</jvmTarget>
+					<!-- Kotlin sees what Lombok generates on the Java classes not converted yet (getters, setters, constructors) -->
+					<compilerPlugins>
+						<plugin>lombok</plugin>
+					</compilerPlugins>
 				</configuration>
+				<dependencies>
+					<dependency>
+						<groupId>org.jetbrains.kotlin</groupId>
+						<artifactId>kotlin-maven-lombok</artifactId>
+						<version>${kotlin.version}</version>
+					</dependency>
+				</dependencies>
 				<executions>
 					<execution>
 						<id>compile</id>
