@@ -11,7 +11,7 @@ import com.drive.drive_manager.simulator.engine.EffectEngine.triggerEvent
 import com.drive.drive_manager.simulator.engine.EffectStep.*
 import com.drive.drive_manager.simulator.engine.Resolution.allPossibleAfterIfPossible
 import com.drive.drive_manager.simulator.engine.Resolution.possible
-import com.drive.drive_manager.simulator.engine.StepHelpers.*
+import com.drive.drive_manager.simulator.engine.StepHelpers.prompt
 import com.drive.drive_manager.simulator.room.CardSlot
 import com.drive.drive_manager.simulator.room.GameRoom
 import com.drive.drive_manager.simulator.room.PlayerState

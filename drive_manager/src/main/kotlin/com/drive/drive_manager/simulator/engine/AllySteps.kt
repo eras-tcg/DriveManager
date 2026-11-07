@@ -19,8 +19,21 @@ import com.drive.drive_manager.simulator.engine.EffectStep.*
 import com.drive.drive_manager.simulator.engine.Removals.destroy
 import com.drive.drive_manager.simulator.engine.Removals.leaveField
 import com.drive.drive_manager.simulator.engine.Removals.removeFromField
-import com.drive.drive_manager.simulator.engine.StepHelpers.*
-import com.drive.drive_manager.simulator.engine.SpecialRequirements.*
+import com.drive.drive_manager.simulator.engine.StepHelpers.allyMaterials
+import com.drive.drive_manager.simulator.engine.StepHelpers.allyMaterialsWhere
+import com.drive.drive_manager.simulator.engine.StepHelpers.attachSelfToSubject
+import com.drive.drive_manager.simulator.engine.StepHelpers.exhaustedAllyMaterials
+import com.drive.drive_manager.simulator.engine.StepHelpers.higherAllyResources
+import com.drive.drive_manager.simulator.engine.StepHelpers.higherThan
+import com.drive.drive_manager.simulator.engine.StepHelpers.pick
+import com.drive.drive_manager.simulator.engine.StepHelpers.placeOnField
+import com.drive.drive_manager.simulator.engine.StepHelpers.sacrificable
+import com.drive.drive_manager.simulator.engine.StepHelpers.subject
+import com.drive.drive_manager.simulator.engine.StepHelpers.withHigherAlly
+import com.drive.drive_manager.simulator.engine.StepHelpers.zoneOf
+import com.drive.drive_manager.simulator.engine.StepHelpers.zones
+import com.drive.drive_manager.simulator.engine.StepHelpers.zonesText
+import com.drive.drive_manager.simulator.engine.SpecialRequirements.zonesText
 import com.drive.drive_manager.simulator.room.CardSlot
 import com.drive.drive_manager.simulator.room.GameRoom
 import com.drive.drive_manager.simulator.room.PlayerState
@@ -147,7 +160,7 @@ object AllySteps {
                     return false
                 }
                 // Activated as the ally's own: a new link of the chain, after this one resolves
-                val link = pending(room, summon, userId, ally, room.eventSeq)
+                val link = pending(room, summon, userId, ally!!, room.eventSeq)
                 link.confirmed = true
                 link.ordered = true
                 room.triggerQueue.add(0, link)

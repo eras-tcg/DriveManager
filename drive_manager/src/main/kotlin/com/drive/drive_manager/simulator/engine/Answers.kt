@@ -26,10 +26,27 @@ import com.drive.drive_manager.simulator.engine.EffectEngine.record
 import com.drive.drive_manager.simulator.engine.EffectEngine.script
 import com.drive.drive_manager.simulator.engine.Removals.answerRemoval
 import com.drive.drive_manager.simulator.engine.Resolution.looker
-import com.drive.drive_manager.simulator.engine.Rituals.*
-import com.drive.drive_manager.simulator.engine.SpecialRequirements.*
-import com.drive.drive_manager.simulator.engine.SpecialSummons.*
-import com.drive.drive_manager.simulator.engine.Summons.*
+import com.drive.drive_manager.simulator.engine.Rituals.addsUpTo
+import com.drive.drive_manager.simulator.engine.Rituals.handRitual
+import com.drive.drive_manager.simulator.engine.Rituals.requirement
+import com.drive.drive_manager.simulator.engine.Rituals.ritualByPlayer
+import com.drive.drive_manager.simulator.engine.Rituals.ritualCost
+import com.drive.drive_manager.simulator.engine.SpecialRequirements.NO_SUMMONER
+import com.drive.drive_manager.simulator.engine.SpecialRequirements.checkMaterials
+import com.drive.drive_manager.simulator.engine.SpecialRequirements.fieldPiecesDiscount
+import com.drive.drive_manager.simulator.engine.SpecialRequirements.findDeclared
+import com.drive.drive_manager.simulator.engine.SpecialRequirements.specialRequirement
+import com.drive.drive_manager.simulator.engine.SpecialRequirements.specialSource
+import com.drive.drive_manager.simulator.engine.SpecialSummons.DISCOUNT_MATERIALS
+import com.drive.drive_manager.simulator.engine.SpecialSummons.answerSummonInsteadOfRemoval
+import com.drive.drive_manager.simulator.engine.SpecialSummons.handSpecial
+import com.drive.drive_manager.simulator.engine.SpecialSummons.specialByPlayer
+import com.drive.drive_manager.simulator.engine.SpecialSummons.specialSummon
+import com.drive.drive_manager.simulator.engine.Summons.NORMAL_SUMMON
+import com.drive.drive_manager.simulator.engine.Summons.completeAscension
+import com.drive.drive_manager.simulator.engine.Summons.normalSummon
+import com.drive.drive_manager.simulator.engine.Summons.play
+import com.drive.drive_manager.simulator.engine.Summons.regulatoryDraw
 import com.drive.drive_manager.simulator.room.CardSlot
 import com.drive.drive_manager.simulator.room.GameRoom
 import com.drive.drive_manager.simulator.room.PlayerState
@@ -241,9 +258,9 @@ object Answers {
             val req = requirement(card)
             val all: MutableList<CardSlot> = ArrayList(others)
             all.add(summoner)
-            if (req.sum() && !addsUpTo(all, req.level())) {
+            if (req!!.sum && !addsUpTo(all, req.level)) {
                 val total = all.sumOf { it.getLevel()!! }
-                return "Los niveles suman " + total + ": deben sumar exactamente " + req.level()
+                return "Los niveles suman " + total + ": deben sumar exactamente " + req.level
             }
             if (!canPay(room, userId, ritualCost(room, userId, card))) return "Ya no tienes gemas suficientes"
             room.prompt = null
@@ -289,7 +306,7 @@ object Answers {
             }
             val req = specialRequirement(card)
             val materials: MutableList<CardSlot> = ArrayList()
-            if (req.declaredSummoner()) {
+            if (req!!.declaredSummoner()) {
                 // The summoner declared from the hand or the Tributos is its first material; it enters the Retaguardia
                 val declared = findDeclared(player, req, prompt.summonerId) ?: return "Esa criatura ya no está disponible"
                 materials.add(declared)
@@ -304,9 +321,9 @@ object Answers {
                 materials.add(material)
             }
             if (summoner == null && !noSummoner) return "Esa criatura ya no está disponible"
-            val expected = req.materialCount() + (if (req.declaredSummoner()) 1 else 0)
-            if (noSummoner && (if (req.moreMaterials()) materials.size < expected else materials.size != expected))
-                return "Elige " + req.materialCount() + (if (req.moreMaterials()) " o más" else "") + " criaturas"
+            val expected = req.materialCount + (if (req.declaredSummoner()) 1 else 0)
+            if (noSummoner && (if (req.moreMaterials) materials.size < expected else materials.size != expected))
+                return "Elige " + req.materialCount + (if (req.moreMaterials) " o más" else "") + " criaturas"
             val wrong = if (noSummoner) null else checkMaterials(req, summoner, materials)
             if (wrong != null) return wrong
             if (!canPay(room, userId, card.specialCost!! - fieldPiecesDiscount(player, card, summoner, materials) -
@@ -359,14 +376,14 @@ object Answers {
                 return ""
             }
             val req = specialRequirement(card)
-            val use = CostModifiers.choice(room, player, CostModifiers.Event.SPECIAL_SUMMON, req.kind(), card, summoner)
+            val use = CostModifiers.choice(room, player, CostModifiers.Event.SPECIAL_SUMMON, req!!.kind, card, summoner)
             val count = if (use == null) 0 else use.modifier.payment!!.count
             val selfDamage = use != null && use.modifier.payment!!.kind == CostModifiers.PaymentKind.SELF_DAMAGE
             if (!picks.isEmpty() && (if (selfDamage) picks.size > count else picks.size != count)) return "Elige $count cartas, o ninguna"
             val reduce = if (picks.isEmpty() || use == null) 0 else use.modifier.reduceNow(room, userId) * (if (selfDamage) picks.size else 1)
             // Without it, the others still apply on their own
             if (!canPay(room, userId, card.specialCost!! - reduce -
-                        CostModifiers.available(room, player, CostModifiers.Event.SPECIAL_SUMMON, req.kind(), card, summoner) +
+                        CostModifiers.available(room, player, CostModifiers.Event.SPECIAL_SUMMON, req.kind, card, summoner) +
                         (if (use == null) 0 else use.modifier.reduceNow(room, userId))))
                 return "Sin la reducción no tienes gemas suficientes: elige $count cartas"
             // The materials chosen before this payment (Biok)

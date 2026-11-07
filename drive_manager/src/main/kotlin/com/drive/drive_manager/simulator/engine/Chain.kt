@@ -22,8 +22,9 @@ import com.drive.drive_manager.simulator.engine.Resolution.allPossibleAfterIfPos
 import com.drive.drive_manager.simulator.engine.Resolution.possible
 import com.drive.drive_manager.simulator.engine.Resolution.stepTop
 import com.drive.drive_manager.simulator.engine.Resolution.utilityToDiscard
-import com.drive.drive_manager.simulator.engine.StepHelpers.*
-import com.drive.drive_manager.simulator.engine.Summons.*
+import com.drive.drive_manager.simulator.engine.StepHelpers.pick
+import com.drive.drive_manager.simulator.engine.StepHelpers.prompt
+import com.drive.drive_manager.simulator.engine.Summons.completeAscension
 import com.drive.drive_manager.simulator.room.CardSlot
 import com.drive.drive_manager.simulator.room.GameRoom
 import com.drive.drive_manager.simulator.room.PlayerState

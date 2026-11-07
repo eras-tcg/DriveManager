@@ -201,3 +201,29 @@ IfPossible`) work on an object unchanged; only a record pattern (`case IfPossibl
 - **Java's `toLowerCase()` uses the default locale**: `lowercase(Locale.getDefault())` (Kotlin's `lowercase()` is ROOT);
   `toLowerCase(Locale.ROOT)` is `lowercase(Locale.ROOT)`. `replaceAll(regex, "")` is `replace(Regex(regex), "")` (keep the
   `Regex` in a `private val`).
+
+## Lessons from batch 8 (`Summons`, `SpecialRequirements`, `SpecialSummons`, `Rituals`, `StepHelpers`…)
+
+With it the engine is Kotlin but for `EffectJson`, `CardFiles` and `CardFilesCheck` (Jackson and Spring, server-only).
+
+- **A record nested in a class of statics** (`Rituals.Requirement`, `SpecialRequirements.SpecialRequirement`): a
+  `@JvmRecord data class` inside the `object`, with its extra constructors as secondary ones. Java (tests included) keeps
+  `Rituals.Requirement`, `req.fits(...)`, `req.materialZones()`; Kotlin callers move to properties (`fix-kotlin-calls.py`)
+  and, as `specialRequirement(...)` now says `SpecialRequirement?`, `fix-nullable-receivers.py` adds a `!!` at every use:
+  keep only the first in each block (the rest smart-cast).
+- **Java tests call package-private statics** (`StepHelpers.enemyTargets`, `TurnRules.offerAdvance`, `Rituals.requirement`):
+  every function of these objects is public (`internal` would be mangled).
+- **Write the new files with Java's star imports and let `fix-star-imports.py` replace them** (pass every object at once).
+  It also matches locals and parameters named like a member (`possible`, `pending`, `answer`, `picked`, `prompt`, `zones`,
+  `covers`): drop those imports too. Do not use `run { }` in a file that imports `Resolution.*`: call a private function.
+- **A parameter named like a member function** (`declaredFrom(..., zones: String?)` calling `zones(player, zones)`): Kotlin
+  tries to invoke the parameter; qualify the call (`StepHelpers.zones(player, zones)`).
+- **A Java method reference in a stream chain** (`list.stream().filter(special.filter()::matches)`) reads its receiver when
+  the pipeline is built: after the source list, before any element. Write `val zones = specialZones(...)`, then
+  `val filter = special.filter!!`, then one `zones.filter { ... && filter.matches(c) && ... }`.
+- **Java's `list.remove(card)` with a possibly null `card`, dereferenced right after**: `list.remove(card!!)` (removing
+  null did nothing; the NPE comes before anything changes). Where Java **added** a possibly null value to a list
+  (`tributeZone.add(summoner)`), add through a view: `(player.tributeZone as MutableList<CardSlot?>).add(summoner)`.
+- **A Kotlin caller that stores the result in a `MutableList` map** (`GameStateUpdate`: `specialSummonable`, `unplayable`):
+  return `MutableList<String>` (Java still sees `List<String>`).
+- **Java's `x.split(",")[0]`**: `Pattern.compile(",").split(x)[0]` (Java's split of `","` is empty and throws there).
