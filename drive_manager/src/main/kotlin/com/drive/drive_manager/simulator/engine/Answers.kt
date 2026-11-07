@@ -1,6 +1,11 @@
 package com.drive.drive_manager.simulator.engine
 
-import com.drive.drive_manager.simulator.engine.Chain.*
+import com.drive.drive_manager.simulator.engine.Chain.activate
+import com.drive.drive_manager.simulator.engine.Chain.advance
+import com.drive.drive_manager.simulator.engine.Chain.paying
+import com.drive.drive_manager.simulator.engine.Chain.picked
+import com.drive.drive_manager.simulator.engine.Chain.rank
+import com.drive.drive_manager.simulator.engine.Chain.responses
 import com.drive.drive_manager.simulator.engine.CombatRules.*
 import com.drive.drive_manager.simulator.engine.EffectEngine.*
 import com.drive.drive_manager.simulator.engine.Removals.*
@@ -339,14 +344,14 @@ object Answers {
             }
             val req = specialRequirement(card)
             val use = CostModifiers.choice(room, player, CostModifiers.Event.SPECIAL_SUMMON, req.kind(), card, summoner)
-            val count = if (use == null) 0 else use.modifier().payment().count()
-            val selfDamage = use != null && use.modifier().payment().kind() == CostModifiers.PaymentKind.SELF_DAMAGE
+            val count = if (use == null) 0 else use.modifier.payment!!.count
+            val selfDamage = use != null && use.modifier.payment!!.kind == CostModifiers.PaymentKind.SELF_DAMAGE
             if (!picks.isEmpty() && (if (selfDamage) picks.size > count else picks.size != count)) return "Elige $count cartas, o ninguna"
-            val reduce = if (picks.isEmpty() || use == null) 0 else use.modifier().reduceNow(room, userId) * (if (selfDamage) picks.size else 1)
+            val reduce = if (picks.isEmpty() || use == null) 0 else use.modifier.reduceNow(room, userId) * (if (selfDamage) picks.size else 1)
             // Without it, the others still apply on their own
             if (!canPay(room, userId, card.specialCost!! - reduce -
                         CostModifiers.available(room, player, CostModifiers.Event.SPECIAL_SUMMON, req.kind(), card, summoner) +
-                        (if (use == null) 0 else use.modifier().reduceNow(room, userId))))
+                        (if (use == null) 0 else use.modifier.reduceNow(room, userId))))
                 return "Sin la reducción no tienes gemas suficientes: elige $count cartas"
             // The materials chosen before this payment (Biok)
             val kept = room.usedThisTurn.firstOrNull { k -> k.startsWith(DISCOUNT_MATERIALS + card.instanceId + "|") }
@@ -363,17 +368,17 @@ object Answers {
             if (!picks.isEmpty() && use != null) CostModifiers.markUsed(room, player, use)
             room.prompt = null
             val paid: MutableList<CardSlot> = ArrayList()
-            val asResource = use != null && use.modifier().payment().kind() == CostModifiers.PaymentKind.TRIBUTE_AS_RESOURCE
+            val asResource = use != null && use.modifier.payment!!.kind == CostModifiers.PaymentKind.TRIBUTE_AS_RESOURCE
             if (selfDamage) {
                 var i = 0
                 while (i < picks.size && !player.lifeStack.isEmpty()) {
-                    Answers.selfDamage(room, player, use!!.holder(), use.modifier().payment().damage())
+                    Answers.selfDamage(room, player, use!!.holder, use.modifier.payment!!.damage())
                     i++
                 }
             }
             for (id in if (selfDamage) java.util.List.of<String>() else picks) {
                 // "puedes agotar 1 carta [filtro] bajo tu control para reducir…"
-                if (use != null && use.modifier().payment().kind() == CostModifiers.PaymentKind.TAP_CARD) {
+                if (use != null && use.modifier.payment!!.kind == CostModifiers.PaymentKind.TAP_CARD) {
                     val t = find(player.field, id)
                     if (t == null || t.tapped) continue
                     t.tapped = true
@@ -395,7 +400,7 @@ object Answers {
                 player.deck.add(c)
                 record(room, GameEvent.SEND, userId, c, "tributeZone", "deck", null, java.util.Map.of<String, Any?>("position", "bottom"), null)
             }
-            if (reduce > 0) log(room, player.username + " envía " + paid.size + " tributos al fondo de su mazo: " + name(use!!.holder()) +
+            if (reduce > 0) log(room, player.username + " envía " + paid.size + " tributos al fondo de su mazo: " + name(use!!.holder) +
                     " reduce en " + reduce + " el coste especial" + names(paid), room.eventSeq)
             specialSummon(room, player, card, req, summoner, keptMaterials, if (find(player.hand, card.instanceId) != null) "hand" else "tributeZone",
                 reduce, null)

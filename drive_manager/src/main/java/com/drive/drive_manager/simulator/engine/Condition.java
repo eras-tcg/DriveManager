@@ -290,19 +290,19 @@ public sealed interface Condition {
     }
 
     static Condition opponentLevelsExceed(int by) {
-        return new Compare(new Amount.OpponentLevels(), Op.AT_LEAST, new Amount.Scaled(new Amount.LevelsOnField(CardFilter.creatures()), 1, by));
+        return new Compare(Amount.OpponentLevels.INSTANCE, Op.AT_LEAST, new Amount.Scaled(new Amount.LevelsOnField(CardFilter.creatures()), 1, by));
     }
 
     static Condition levelsBelowOpponent() {
-        return new Compare(new Amount.LevelsOnField(CardFilter.creatures()), Op.LESS, new Amount.OpponentLevels());
+        return new Compare(new Amount.LevelsOnField(CardFilter.creatures()), Op.LESS, Amount.OpponentLevels.INSTANCE);
     }
 
     static Condition gemsAtLeast(int gems) {
-        return compare(new Amount.SignedGems(), Op.AT_LEAST, gems);
+        return compare(Amount.SignedGems.INSTANCE, Op.AT_LEAST, gems);
     }
 
     static Condition noEnemiesInFrontLine() {
-        return compare(new Amount.EnemiesInFrontLine(), Op.EQUAL, 0);
+        return compare(Amount.EnemiesInFrontLine.INSTANCE, Op.EQUAL, 0);
     }
 
     static Condition inFrontLine() {

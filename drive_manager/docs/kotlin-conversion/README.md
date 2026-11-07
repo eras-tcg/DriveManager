@@ -54,8 +54,8 @@ classes not converted yet). Once everything is Kotlin and free of JVM-only APIs 
      `Reaction`) has no Kotlin record: `@JvmRecord` needs a `data class`, and a `data class` needs a parameter. A plain
      class or a `data object` is not a record, so `EffectJson` (which registers only records) would stop reading and
      writing it; a dummy component would show in `getRecordComponents` (`LanguageCatalogExportTest`'s catalog) and be
-     accepted in the JSON. Families with such members (`Amount`, `EffectStep`, `Condition`, `Reaction`) stay Java until
-     that is decided.
+     accepted in the JSON. Decided: they become `data object`s (below, "Records without fields"); `Amount` and `Reaction`
+     moved that way (batch 4).
    - Generics Java implements or overrides: Kotlin adds `? extends` to a parameter `List<Open>`/`Map<K, Any?>` whose
      element type is open (an interface, `Any`), so a Java class implementing a Kotlin interface stops overriding it.
      Write `Map<String, @JvmSuppressWildcards Any?>`, `List<@JvmSuppressWildcards Action>`.
@@ -63,6 +63,19 @@ classes not converted yet). Once everything is Kotlin and free of JVM-only APIs 
      or `const val` on every constant, so Java keeps calling `Name.f()`. Static and instance members together →
      `companion object` with the same annotations.
    - **enum** → `enum class` with the same constants and members (`@JvmStatic` on its static functions).
+   - **Kotlin cannot star-import an `object`** ("Cannot import on demand from object"): once a class of statics is an
+     `object` (`Chain`), the Kotlin files that had `import ...Chain.*` import each member they use by name
+     (`import ...Chain.advance`). Java's `import static ...Chain.*` keeps working through `@JvmStatic`.
+   - **Kotlin callers of a record that becomes Kotlin** switch from the accessor calls they used on the Java record
+     (`use.modifier().payment().kind()`) to properties (`use.modifier.payment!!.kind`); `fix-accessors.py` fixes only
+     Java. A record's other methods (`damage()`, `needsChoice()`, `instead()`, `reduceNow()`) stay `fun`s: a
+     `val x get() = …` would add a `getX()` that Jackson writes as one more property.
+   - **Static initialization order**: an `object`'s properties and `init` blocks run in `<clinit>` in textual order, as
+     Java's static fields and blocks did. Keep the `init` that loads (`CardEffects`: `CardFiles.load().forEach(::install)`)
+     after every property, and in a cycle between two objects (`CostModifiers.init` calls `CardEffects.load()`, whose
+     `install` calls `CostModifiers.register`) declare each registry before the `init` that wakes the other, as in Java.
+   - Java's `String.split(",")` exactly: `java.util.regex.Pattern.compile(",").split(s)` (a literal `split("|")` with
+     Java's limit `-1` is Kotlin's `split("|")`).
    - Java static imports: Kotlin star-imports a Java class's statics (`import ...EffectEngine.*`), and Java's
      `import static ...Answers.*` keeps working on an `object` whose functions are `@JvmStatic`. Qualify a call whose name
      is also a local (`Answers.selfDamage` next to `val selfDamage`) or a Kotlin scope function (`Resolution.apply`).
@@ -110,3 +123,8 @@ A record without components (`record LastCount() implements Amount {}`) becomes 
 itself), and writes an object as its type alone (`{"type":"LastCount"}`), exactly as the empty record was written. A
 `data object` equals any instance of its type, as the empty record did; Java callers that wrote `new LastCount()` write
 `LastCount.INSTANCE`. In `kotlinx.serialization` (eras-engine) the same `data object` is the standard form.
+
+A `data object`'s `toString` is `LastCount` (the record's was `LastCount[]`) and its `hashCode` differs; nothing reads
+them. To check a change in a family `EffectJson` reads, dump `EffectJson.write` of every `CardEffects.definitions()`
+(and `ruleEffects()`) with a throwaway test, in this tree and in a `git worktree` of `HEAD`, and `cmp` the two: for
+batch 4 they were byte-identical (358 cards, each reading back equal).

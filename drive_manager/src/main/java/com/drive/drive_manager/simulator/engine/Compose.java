@@ -141,7 +141,7 @@ final class Compose {
 
     /** "toma 1 carta [filtro] de tus [zona] por cada material tributado". */
     static EffectStep takePerCount(String zone, CardFilter filter) {
-        return move(new Selector(zone, Selector.Owner.YOU, filter, new Amount.LastCount(), new Amount.LastCount(), Selector.Self.ANY, Selector.Mode.CHOOSE), Move.HAND);
+        return move(new Selector(zone, Selector.Owner.YOU, filter, Amount.LastCount.INSTANCE, Amount.LastCount.INSTANCE, Selector.Self.ANY, Selector.Mode.CHOOSE), Move.HAND);
     }
 
     // ------------------------------------------------------------------ This card
@@ -344,7 +344,7 @@ final class Compose {
     }
 
     static EffectStep drawLastCount() {
-        return act(new Action.Draw(new Amount.LastCount(), false));
+        return act(new Action.Draw(Amount.LastCount.INSTANCE, false));
     }
 
     static EffectStep eachPlayerDraws(int count) {
@@ -360,7 +360,7 @@ final class Compose {
     }
 
     static EffectStep damageBySelfStrength() {
-        return act(new Action.Damage(new Amount.SourceStrength()));
+        return act(new Action.Damage(Amount.SourceStrength.INSTANCE));
     }
 
     static EffectStep lookTop(int count) {
@@ -473,7 +473,7 @@ final class Compose {
     }
 
     static EffectStep gainStrengthPerCount(int each) {
-        return strength(SUBJECT_OR_SELF, new Amount.Times(new Amount.LastCount(), each), Action.Until.TURN);
+        return strength(SUBJECT_OR_SELF, new Amount.Times(Amount.LastCount.INSTANCE, each), Action.Until.TURN);
     }
 
     static EffectStep gainUntilEndOfAttack(String keyword) {
@@ -501,7 +501,7 @@ final class Compose {
     }
 
     static EffectStep reduceChosenPerCount(int each) {
-        return strength(TARGETS, new Amount.Times(new Amount.LastCount(), -each), Action.Until.TURN);
+        return strength(TARGETS, new Amount.Times(Amount.LastCount.INSTANCE, -each), Action.Until.TURN);
     }
 
     static EffectStep reduceChosenToZero() {
@@ -594,11 +594,11 @@ final class Compose {
 
     /** "por cada material tributado elige 1 enemigo distinto". */
     static EffectStep chooseEnemiesPerCount(CardFilter filter) {
-        return choose(exactly("frontLine", Selector.Owner.OPPONENT, filter, new Amount.LastCount()));
+        return choose(exactly("frontLine", Selector.Owner.OPPONENT, filter, Amount.LastCount.INSTANCE));
     }
 
     static EffectStep chooseEnemiesPerCountEvery(CardFilter filter, int per) {
-        return choose(exactly("frontLine", Selector.Owner.OPPONENT, filter, new Amount.Scaled(new Amount.LastCount(), per, 0)));
+        return choose(exactly("frontLine", Selector.Owner.OPPONENT, filter, new Amount.Scaled(Amount.LastCount.INSTANCE, per, 0)));
     }
 
     /** "elige 1 enemigo de nivel igual o menor [que el aliado elegido]". */
@@ -607,7 +607,7 @@ final class Compose {
     }
 
     static EffectStep chooseEnemyUpToSummonUsed() {
-        return choose(Selector.enemies(CardFilter.creatures(), 1).with(Selector.Relative.read(null, new Amount.UsedToSummon())));
+        return choose(Selector.enemies(CardFilter.creatures(), 1).with(Selector.Relative.read(null, Amount.UsedToSummon.INSTANCE)));
     }
 
     static EffectStep chooseEnemyBy(int count, EffectStep.FilterBy filter) {
@@ -641,7 +641,7 @@ final class Compose {
     // ------------------------------------------------------------------ More phrases
 
     static EffectStep tributeFromHandAsSubjectLevel() {
-        return move(exactly("hand", Selector.Owner.YOU, CardFilter.any(), new Amount.SubjectLevel()).with(Selector.Self.EXCLUDE), Move.TRIBUTES);
+        return move(exactly("hand", Selector.Owner.YOU, CardFilter.any(), Amount.SubjectLevel.INSTANCE).with(Selector.Self.EXCLUDE), Move.TRIBUTES);
     }
 
     /** "envía cartas de tu mano al fondo de tu mazo hasta tener N cartas en tu mano". */
@@ -741,7 +741,7 @@ final class Compose {
 
     /** "reduciendo su coste en 1 por cada N cartas enviadas". */
     static EffectStep summonSelfPerCount(String zone, int per) {
-        return act(new Action.Summon(Selector.self(zone), new Amount.Scaled(new Amount.LastCount(), per, 0), false, false));
+        return act(new Action.Summon(Selector.self(zone), new Amount.Scaled(Amount.LastCount.INSTANCE, per, 0), false, false));
     }
 
     static EffectStep summonUpTo(String zones, CardFilter filter, int max, int reduce) {
@@ -755,7 +755,7 @@ final class Compose {
 
     /** "de nivel igual a la cantidad de [copias agotadas]", free. */
     static EffectStep summonLevelLastCount(String zones, CardFilter filter) {
-        return act(new Action.Summon(Selector.yours(zones, filter, 1).with(Selector.Relative.read(new Amount.LastCount(), null)), new Amount.Fixed(FREE), false, true));
+        return act(new Action.Summon(Selector.yours(zones, filter, 1).with(Selector.Relative.read(Amount.LastCount.INSTANCE, null)), new Amount.Fixed(FREE), false, true));
     }
 
     /** "de nivel menor [que el aliado destruido]" ("lower"), or "de nivel igual o menor, pero distinto nombre". */
@@ -770,7 +770,7 @@ final class Compose {
 
     /** "reduciendo su coste en N por cada carta tributada". */
     static EffectStep playFromZoneByCount(String zones, CardFilter filter, int each) {
-        return act(new Action.Play(Selector.yours(zones, filter, 1), new Amount.Times(new Amount.LastCount(), each), true));
+        return act(new Action.Play(Selector.yours(zones, filter, 1), new Amount.Times(Amount.LastCount.INSTANCE, each), true));
     }
 
     static EffectStep playSelfFree() {
@@ -778,7 +778,7 @@ final class Compose {
     }
 
     static EffectStep playSelfFromZone(String zone, boolean reduceBySourceLevel) {
-        return act(new Action.Play(Selector.self(zone), reduceBySourceLevel ? new Amount.TriggerSourceLevel() : new Amount.Fixed(0), true));
+        return act(new Action.Play(Selector.self(zone), reduceBySourceLevel ? Amount.TriggerSourceLevel.INSTANCE : new Amount.Fixed(0), true));
     }
 
     static EffectStep playSelfReduced(String zone, int reduce) {
@@ -812,12 +812,12 @@ final class Compose {
 
     /** "reduciendo el coste especial en X donde X es el nivel del aliado elegido". */
     static EffectStep specialBySubjectLevel(String kind, String zone, CardFilter filter) {
-        return special(new SpecialRule(kind, zone, 0, "subject", filter, new Amount.SubjectLevel(), null));
+        return special(new SpecialRule(kind, zone, 0, "subject", filter, Amount.SubjectLevel.INSTANCE, null));
     }
 
     /** "reduciendo el coste especial en 1 por cada … tributado". */
     static EffectStep specialByCount(String kind, String zone, String summoner, CardFilter filter) {
-        return special(new SpecialRule(kind, zone, 0, summoner, filter, new Amount.LastCount(), null));
+        return special(new SpecialRule(kind, zone, 0, summoner, filter, Amount.LastCount.INSTANCE, null));
     }
 
     /** "del mismo nivel, pero distinto nombre [que la carta devuelta]". */
