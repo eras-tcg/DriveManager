@@ -4,7 +4,7 @@ import com.drive.drive_manager.simulator.room.ActionType;
 import com.drive.drive_manager.simulator.room.GameAction;
 import com.drive.drive_manager.simulator.room.GameRoom;
 import com.drive.drive_manager.simulator.room.GameStateUpdate;
-import com.drive.drive_manager.simulator.room.RoomService;
+import com.drive.drive_manager.simulator.room.RoomHost;
 import java.util.Collections;
 
 /**
@@ -15,13 +15,13 @@ public final class PostGameActions {
 
     private PostGameActions() {}
 
-    static GameStateUpdate choose(RoomService service, GameRoom room, String userId, GameAction action) {
+    static GameStateUpdate choose(RoomHost host, GameRoom room, String userId, GameAction action) {
         if (room.getStatus() != GameRoom.RoomStatus.POST_GAME)
             return GameStateUpdate.error(room.getRoomId(), "No estás en post-partida");
         String choice = action.getString("choice");
         if (choice == null) return GameStateUpdate.error(room.getRoomId(), "Falta choice");
         // Leaving frees the seat right away: the other player goes back to the pre-room
-        if ("exit".equals(choice)) return service.members.leave(room, userId);
+        if ("exit".equals(choice)) return host.leave(room, userId);
         room.getPostGameChoices().put(userId, choice);
         // A test room: its owner decides for both sides (the rival is not a real player)
         if (room.isEditor()) room.getPlayers().keySet().forEach(id -> room.getPostGameChoices().put(id, choice));

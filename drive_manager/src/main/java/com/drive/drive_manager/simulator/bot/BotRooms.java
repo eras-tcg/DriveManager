@@ -10,6 +10,7 @@ import com.drive.drive_manager.simulator.room.GameRoom;
 import com.drive.drive_manager.simulator.room.GameStateUpdate;
 import com.drive.drive_manager.simulator.room.PlayerState;
 import com.drive.drive_manager.simulator.room.RoomCopy;
+import com.drive.drive_manager.simulator.room.RoomEngine;
 import com.drive.drive_manager.simulator.room.RoomService;
 import java.util.ArrayList;
 import java.util.List;
@@ -303,7 +304,7 @@ public final class BotRooms {
 
     /** The seat the bot plays: its own in a room against it, the test rival's in a test room (Sala de pruebas) it plays. */
     static String seatOf(GameRoom room) {
-        return room.isEditor() ? RoomService.EDITOR_RIVAL : BOT;
+        return room.isEditor() ? RoomEngine.EDITOR_RIVAL : BOT;
     }
 
     /** A move of the bot: in a test room only its owner acts, so the bot moves for the rival as the owner does ("actAs"). */
@@ -317,9 +318,7 @@ public final class BotRooms {
      */
     public static GameStateUpdate applyAs(RoomService engine, GameRoom room, String seat, GameAction action) {
         if (!room.isEditor() || seat.equals(room.getHostId())) return engine.applyAction(room.getRoomId(), seat, action, false);
-        Map<String, Object> payload = new java.util.LinkedHashMap<>(action.getPayload() == null ? Map.of() : action.getPayload());
-        payload.put("actAs", RoomService.EDITOR_RIVAL);
-        return engine.applyAction(room.getRoomId(), room.getHostId(), BotPlayer.action(action.getType(), payload), false);
+        return engine.applyAction(room.getRoomId(), room.getHostId(), RoomEngine.asRival(action), false);
     }
 
     /**

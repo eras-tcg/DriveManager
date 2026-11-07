@@ -6,15 +6,16 @@ import com.drive.drive_manager.simulator.room.GameRoom;
 import com.drive.drive_manager.simulator.room.GameStateUpdate;
 import com.drive.drive_manager.simulator.room.PlayerState;
 import com.drive.drive_manager.simulator.room.RoomCopy;
-import com.drive.drive_manager.simulator.room.RoomService;
+import com.drive.drive_manager.simulator.room.RoomEngine;
+import com.drive.drive_manager.simulator.room.RoomHost;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
- * Where the bot tries its moves: copies of a room, played by a room service of their own (no database, no
- * messages, no missions), so the real game is never touched.
+ * Where the bot tries its moves: copies of a room, played by the room's rules alone ({@link RoomEngine}: no
+ * database, no messages, no missions), so the real game is never touched.
  * <p>
  * A copy holds only what the bot may know. The rival's hidden cards (hand, deck and face-down lives) are shuffled
  * together and dealt back, as many to each zone as there were: the bot knows how many cards each zone holds, not
@@ -24,7 +25,7 @@ public final class Sandbox {
 
     private static final AtomicLong IDS = new AtomicLong();
 
-    private final RoomService engine = new RoomService();
+    private final RoomEngine engine = new RoomEngine(RoomHost.gameOnly());
     /** The chance of the copies (their shuffles, the hidden cards dealt again): the bot's own, seedable. */
     private java.util.Random chance = new java.util.Random();
 
@@ -46,7 +47,6 @@ public final class Sandbox {
         copy.setEmptySince(null);
         copy.setHeadless(true);
         hideFrom(copy, me, chance);
-        engine.adopt(copy);
         return copy;
     }
 
@@ -57,11 +57,11 @@ public final class Sandbox {
 
     /** A move of {@code seat} on the copy (in a test room, the rival's side is played by its owner acting for it). */
     public GameStateUpdate act(GameRoom copy, String seat, GameAction action) {
-        return BotRooms.applyAs(engine, copy, seat, action);
+        return engine.applyAs(copy, seat, action);
     }
 
+    /** Done with a copy (kept for the callers: the copies are no longer registered anywhere). */
     public void drop(GameRoom copy) {
-        engine.drop(copy.getRoomId());
     }
 
     /** What the bot cannot see is dealt again at random (see the class). */

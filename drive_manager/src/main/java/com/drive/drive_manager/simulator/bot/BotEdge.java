@@ -4,7 +4,7 @@ import com.drive.drive_manager.simulator.rank.RankRules;
 import com.drive.drive_manager.simulator.room.GameLogEntry;
 import com.drive.drive_manager.simulator.room.GameRoom;
 import com.drive.drive_manager.simulator.room.PlayerState;
-import com.drive.drive_manager.simulator.room.RoomService;
+import com.drive.drive_manager.simulator.room.RoomEngine;
 
 /**
  * The bot's edge: past the strength of the hardest bot, a stronger player faces it with an advantage, in levels (one
@@ -54,7 +54,7 @@ public final class BotEdge {
     /** The side the edge favors: the bot of Modo solo, else (a test room) the rival's side. */
     public static String favoredSide(GameRoom room) {
         if (room.getPlayers().containsKey(BotRooms.BOT)) return BotRooms.BOT;
-        return room.isEditor() ? RoomService.EDITOR_RIVAL : null;
+        return room.isEditor() ? RoomEngine.EDITOR_RIVAL : null;
     }
 
     /**
