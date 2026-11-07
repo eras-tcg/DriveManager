@@ -227,3 +227,20 @@ With it the engine is Kotlin but for `EffectJson`, `CardFiles` and `CardFilesChe
 - **A Kotlin caller that stores the result in a `MutableList` map** (`GameStateUpdate`: `specialSummonable`, `unplayable`):
   return `MutableList<String>` (Java still sees `List<String>`).
 - **Java's `x.split(",")[0]`**: `Pattern.compile(",").split(x)[0]` (Java's split of `","` is empty and throws there).
+
+## Lessons from batch 9 (`actions`: `ActionDispatcher`, `CardActions`, `PreRoomActions`, `ZoneActions`…)
+
+- **A `switch` over an enum with `case null`** → `when (type) { null -> ...; ActionType.X -> ... }` with no `else`: Kotlin
+  checks it exhaustive over the nullable enum, as javac did. Keep `case A, B ->` as `ActionType.A, ActionType.B ->`.
+- **Package-private classes of statics** (`CardActions`, `RulesActions`, `ZoneActions`) become public `object`s with
+  public `@JvmStatic` functions: `internal` would mangle the names Java sees, and an `object` cannot be package-private.
+- **`id.equals(c.getInstanceId())` inside a stream lambda** throws on a null `id` only when the list has an element:
+  `list.firstOrNull { c -> id!! == c.instanceId }` keeps the `!!` inside the lambda, so an empty zone still returns
+  "not found" as before. Where Java dereferenced outside a lambda (`userId.equals(room.getHostId())`), `userId!! != ...`.
+- **A Kotlin `MutableMap<String, String>` on the room** (`starterSelections`, `postGameChoices`) that Java filled with a
+  possibly null key or value: write and query it through a private `as MutableMap<String?, String?>` view (the same as
+  the `MutableSet<String?>` view of batch 7, used again for `mulliganReady`).
+- **`stream().filter(a).forEach(b)` runs `a` and `b` per element**: when `b` could change what `a` reads, write a loop
+  (`for (c in ArrayList(p.field)) { if (!c.returnAtTurnEnd) continue; ... }`) instead of `filter { }.forEach { }`.
+- `Boolean.TRUE.equals(payload.get("x"))` is `payload["x"] == true`; a Java labelled `break outer` is `outer@ for (...)`
+  (label on the same line) and `break@outer`.
