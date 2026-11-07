@@ -12,11 +12,24 @@ class ResolutionTest {
         check(EffectStep.class);
     }
 
+    /** Every step (a record, or a Kotlin data object where a record had no fields) under the sealed families. */
     private void check(Class<?> type) {
-        if (type.isRecord()) {
+        if (type.isRecord() || kotlinObject(type)) {
             if (type != EffectStep.Do.class) assertThat(Resolution.hasFamily(type)).as(type.getSimpleName()).isTrue();
             return;
         }
-        for (Class<?> sub : type.getPermittedSubclasses()) check(sub);
+        Class<?>[] permitted = type.getPermittedSubclasses();
+        assertThat(permitted).as(type.getSimpleName() + " is neither a step nor a sealed family").isNotNull();
+        for (Class<?> sub : permitted) check(sub);
+    }
+
+    /** A Kotlin {@code object}: a final class whose one instance is its static {@code INSTANCE}. */
+    private static boolean kotlinObject(Class<?> type) {
+        if (type.isInterface() || !java.lang.reflect.Modifier.isFinal(type.getModifiers())) return false;
+        try {
+            return type.getField("INSTANCE").getType() == type;
+        } catch (NoSuchFieldException e) {
+            return false;
+        }
     }
 }
