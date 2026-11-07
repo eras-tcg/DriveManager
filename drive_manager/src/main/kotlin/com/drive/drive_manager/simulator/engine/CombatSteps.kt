@@ -22,7 +22,8 @@ import com.drive.drive_manager.simulator.engine.EffectEngine.record
 import com.drive.drive_manager.simulator.engine.EffectEngine.refreshContinuous
 import com.drive.drive_manager.simulator.engine.EffectEngine.strength
 import com.drive.drive_manager.simulator.engine.EffectStep.*
-import com.drive.drive_manager.simulator.engine.Removals.*
+import com.drive.drive_manager.simulator.engine.Removals.deferRemoval
+import com.drive.drive_manager.simulator.engine.Removals.removeFromField
 import com.drive.drive_manager.simulator.engine.StepHelpers.*
 import com.drive.drive_manager.simulator.room.CardSlot
 import com.drive.drive_manager.simulator.room.GameRoom
@@ -167,7 +168,7 @@ object CombatSteps {
                     record(room, GameEvent.SEND, userId, target, "field", "hand", effect, java.util.Map.of<String, Any?>("ownerId", opponent.userId),
                         player.username + " sube a " + name(target) + " a la mano de " + opponent.username + " (" + effect.sourceName + ")")
                 }
-                effect.isLastDone = any
+                effect.lastDone = any
                 return false
             }
             is NoUntapChosen -> {

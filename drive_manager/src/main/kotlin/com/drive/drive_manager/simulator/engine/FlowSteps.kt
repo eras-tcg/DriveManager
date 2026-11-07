@@ -9,7 +9,8 @@ import com.drive.drive_manager.simulator.engine.EffectEngine.name
 import com.drive.drive_manager.simulator.engine.EffectEngine.script
 import com.drive.drive_manager.simulator.engine.EffectEngine.triggerEvent
 import com.drive.drive_manager.simulator.engine.EffectStep.*
-import com.drive.drive_manager.simulator.engine.Resolution.*
+import com.drive.drive_manager.simulator.engine.Resolution.allPossibleAfterIfPossible
+import com.drive.drive_manager.simulator.engine.Resolution.possible
 import com.drive.drive_manager.simulator.engine.StepHelpers.*
 import com.drive.drive_manager.simulator.room.CardSlot
 import com.drive.drive_manager.simulator.room.GameRoom
@@ -74,19 +75,19 @@ object FlowSteps {
                 if (self != null) {
                     // It stays as a permanent: its effects on the field work like any other card's there
                     if (step.exhausted) self.tapped = true
-                    effect.isKeepOnField = true
+                    effect.keepOnField = true
                     log(room, name(self) + (if (step.exhausted) " queda agotada en la retaguardia" else " permanece en el campo"), null)
                 }
                 return false
             }
             is IfDone -> {
-                if (!effect.isLastDone) effect.stepIndex = effect.stepIndex + step.covers
-                effect.isLastDone = false
+                if (!effect.lastDone) effect.stepIndex = effect.stepIndex + step.covers
+                effect.lastDone = false
                 return false
             }
             is IfNotDone -> {
-                if (effect.isLastDone) effect.stepIndex = effect.stepIndex + step.covers
-                effect.isLastDone = false
+                if (effect.lastDone) effect.stepIndex = effect.stepIndex + step.covers
+                effect.lastDone = false
                 return false
             }
             is SubjectFromTrigger -> {

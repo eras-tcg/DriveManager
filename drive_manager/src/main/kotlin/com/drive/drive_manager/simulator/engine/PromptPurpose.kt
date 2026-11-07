@@ -1,12 +1,12 @@
-package com.drive.drive_manager.simulator.engine;
+package com.drive.drive_manager.simulator.engine
 
-import java.util.Optional;
+import java.util.Optional
 
 /**
- * What a rules prompt asks for, sent to the clients as the prompt's {@code purpose} string ({@link #id()}, the
+ * What a rules prompt asks for, sent to the clients as the prompt's `purpose` string ([id], the
  * constant's name). A prompt of a card's own effect carries none.
  */
-public enum PromptPurpose {
+enum class PromptPurpose {
     BLOCK,
     PROVOKE,
     ADVANCE,
@@ -43,18 +43,17 @@ public enum PromptPurpose {
     DAMAGE_TRIBUTE;
 
     /** The purpose string the prompt carries. */
-    public String id() {
-        return name();
-    }
+    fun id(): String = name
 
-    /** Whether {@code purpose} (a prompt's purpose string, maybe null) is this one. */
-    public boolean is(String purpose) {
-        return name().equals(purpose);
-    }
+    /** Whether `purpose` (a prompt's purpose string, maybe null) is this one. */
+    fun `is`(purpose: String?): Boolean = name == purpose
 
-    /** The purpose with that string, if there is one. */
-    public static Optional<PromptPurpose> parse(String purpose) {
-        if (purpose != null) for (PromptPurpose p : values()) if (p.name().equals(purpose)) return Optional.of(p);
-        return Optional.empty();
+    companion object {
+        /** The purpose with that string, if there is one. */
+        @JvmStatic
+        fun parse(purpose: String?): Optional<PromptPurpose> {
+            if (purpose != null) for (p in entries) if (p.name == purpose) return Optional.of(p)
+            return Optional.empty()
+        }
     }
 }

@@ -24,8 +24,8 @@ import com.drive.drive_manager.simulator.engine.EffectEngine.pay
 import com.drive.drive_manager.simulator.engine.EffectEngine.plural
 import com.drive.drive_manager.simulator.engine.EffectEngine.record
 import com.drive.drive_manager.simulator.engine.EffectEngine.script
-import com.drive.drive_manager.simulator.engine.Removals.*
-import com.drive.drive_manager.simulator.engine.Resolution.*
+import com.drive.drive_manager.simulator.engine.Removals.answerRemoval
+import com.drive.drive_manager.simulator.engine.Resolution.looker
 import com.drive.drive_manager.simulator.engine.Rituals.*
 import com.drive.drive_manager.simulator.engine.SpecialRequirements.*
 import com.drive.drive_manager.simulator.engine.SpecialSummons.*
@@ -62,8 +62,8 @@ object Answers {
                 "Debes elegir " + prompt.min + " " + plural(prompt.min, "carta", "cartas")
             else "Puedes elegir hasta " + prompt.max + " " + plural(prompt.max, "carta", "cartas")
         }
-        val allowed: MutableSet<String> = HashSet(prompt.validIds)
-        if (prompt.effects != null) prompt.effects.forEach { e -> allowed.add(e.effectId()) }
+        val allowed: MutableSet<String?> = HashSet(prompt.validIds)
+        if (prompt.effects != null) prompt.effects!!.forEach { e -> allowed.add(e.effectId) }
         if (!allowed.containsAll(picks)) return "Esa carta no cumple lo que pide el efecto"
         val player = room.getPlayer(userId) ?: return "No estás en la partida"
 
@@ -194,7 +194,7 @@ object Answers {
                 return ""
             }
             room.usedThisTurn.add(SUMMON_SACRIFICE + card.instanceId + "|" + (if (picks.isEmpty()) "-" else picks[0]))
-            val y = if (prompt.summonerId == null) "" else prompt.summonerId
+            val y = if (prompt.summonerId == null) "" else prompt.summonerId!!
             val error = normalSummon(room, userId, card.instanceId, 50.0, if (y.isEmpty()) null else java.lang.Double.valueOf(y))
             if (error != null) {
                 room.usedThisTurn.removeIf { k -> k.startsWith(SUMMON_SACRIFICE + card.instanceId + "|") }
@@ -259,8 +259,8 @@ object Answers {
                 return ""
             }
             room.usedThisTurn.add(CostModifiers.tapKey(holder, card, !picks.isEmpty()))
-            val normal = if (prompt.summonerId != null && prompt.summonerId.startsWith(NORMAL_SUMMON))
-                prompt.summonerId.substring(NORMAL_SUMMON.length) else null
+            val normal = if (prompt.summonerId != null && prompt.summonerId!!.startsWith(NORMAL_SUMMON))
+                prompt.summonerId!!.substring(NORMAL_SUMMON.length) else null
             val error = if (normal != null) normalSummon(room, userId, card.instanceId, 50.0, if (normal.isEmpty()) null else java.lang.Double.valueOf(normal))
             else specialByPlayer(room, userId, card.instanceId, prompt.summonerId)
             if (error != null) {
@@ -475,7 +475,7 @@ object Answers {
                 }
                 position
             })
-            group[0].isOrdered = true
+            group[0].ordered = true
             queue.addAll(0, group)
             advance(room)
             return ""
@@ -501,7 +501,7 @@ object Answers {
                 val chosen = group.firstOrNull { e -> e.id == picks[0] } ?: group.firstOrNull { e -> picked(e, picks[0]) }
                 if (chosen != null) {
                     queue.remove(chosen)
-                    chosen.isConfirmed = true
+                    chosen.confirmed = true
                     queue.add(0, chosen)
                 }
             }

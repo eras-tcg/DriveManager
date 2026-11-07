@@ -82,7 +82,8 @@ classes not converted yet). Once everything is Kotlin and free of JVM-only APIs 
      files that star-import it: write `kotlin.Any` there.
    - **Java method references evaluate their receiver at once**: `d.filter()::matches` throws on a null filter even
      over an empty list. Write `val f = d.filter()!!` before the lambda (`count { f.matches(it) }`).
-   - A Lombok `boolean` on a Java class not converted yet (`PendingEffect.lastDone`) is `isLastDone` from Kotlin.
+   - A Lombok `boolean` on a Java class not converted yet (`Foo.lastDone`) is `isLastDone` from Kotlin; once the class is
+     Kotlin (`@get:JvmName("isLastDone") var lastDone`) its Kotlin callers write `lastDone` (Java keeps `isLastDone()`).
    - **Static initialization order**: an `object`'s properties and `init` blocks run in `<clinit>` in textual order, as
      Java's static fields and blocks did. Keep the `init` that loads (`CardEffects`: `CardFiles.load().forEach(::install)`)
      after every property, and in a cycle between two objects (`CostModifiers.init` calls `CardEffects.load()`, whose
@@ -173,3 +174,30 @@ IfPossible`) work on an object unchanged; only a record pattern (`case IfPossibl
   the setter, and Kotlin callers that `put` still compile.
 - **A shuffle's `Random` that Java dereferenced only inside the loop** (`GameRandom.shuffle`): `random: Random?` and
   `random!!.nextInt(i)` there, so a list of 0 or 1 cards still shuffles without one, as before.
+
+## Lessons from batch 7 (`PendingEffect`, `Prompt`, `Removals`, `Resolution`, `EngineContext`…)
+
+- **Kotlin callers of a Lombok class that becomes Kotlin** used Lombok's boolean names (`effect.isConfirmed = true`):
+  the compiler reports "Unresolved reference 'isX' on receiver of type 'Foo'" at each; rename them to the property
+  (`effect.confirmed`). Only those lines: other `isX` in the same files belong to other classes.
+- **Lists of ids that Kotlin fills with nullable ids** (`effect.targetIds.add(card.instanceId)`, `lastTributed`,
+  `Prompt.validIds`, the values of `saved`, `passed`): type the element nullable, `MutableList<String?>` (Java still sees
+  `List<String>`, and `ArrayList(ids(cards))` infers `ArrayList<String?>` from the expected type). That also matches
+  `EffectContext.saved(): List<String?>`. A `java.util.List.of(x)` already throws on a null `x`, so `!!` inside one is
+  free. Lists Kotlin assigns from `map { }` (`Prompt.effects`, `requiredIds`) are read-only `List<T>?`.
+- **A Kotlin `MutableSet<String>` (an older conversion, `GameRoom.removalDecided`) that Java fed nullable ids**: read it
+  through a private `as MutableSet<String?>` view (`@Suppress("UNCHECKED_CAST")`) rather than `!!` on the id.
+- **`Map.merge(key, value, f)` throws on a null value** (Java's too): `merge(e.sourceInstanceId, e.label!!)` in the same
+  place; a null key is allowed, so the map is `MutableMap<String?, String>` returned `as MutableMap<String, String>`.
+- **A class that implements a Kotlin interface** (`EngineContext : EffectContext`): override with the interface's own
+  Kotlin types and keep its `@JvmSuppressWildcards` on the parameter (`data: Map<String, @JvmSuppressWildcards Any?>?`).
+  Java's unqualified `strength(card)` inside it was the class's own override, not `EffectEngine.strength`: qualify the
+  helpers (`EffectEngine.find`) instead of importing them, and write `this.amount(x)` where a parameter has the name.
+- **A Java `switch` on a `String`/enum throws on null**: `when (zone!!)`, `when (until!!)`, `when (FAMILY[step.javaClass]!!)`.
+  A switch *statement* that leaves cases out (`answerRemoval` on `ReplacementCost`) gets `else -> {}`.
+- **`fix-star-imports.py` matches names textually, comments included**: after it, drop imports the file does not call
+  (`Resolution.apply` came from the word "apply" in a comment); a member named like a Kotlin scope function (`apply`,
+  `run`) is called qualified (`Resolution.apply(...)`, `Resolution.run(...)`).
+- **Java's `toLowerCase()` uses the default locale**: `lowercase(Locale.getDefault())` (Kotlin's `lowercase()` is ROOT);
+  `toLowerCase(Locale.ROOT)` is `lowercase(Locale.ROOT)`. `replaceAll(regex, "")` is `replace(Regex(regex), "")` (keep the
+  `Regex` in a `private val`).

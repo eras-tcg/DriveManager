@@ -16,8 +16,12 @@ import com.drive.drive_manager.simulator.engine.EffectEngine.script
 import com.drive.drive_manager.simulator.engine.EffectEngine.zone
 import com.drive.drive_manager.simulator.engine.EffectScript.Limit
 import com.drive.drive_manager.simulator.engine.EffectStep.*
-import com.drive.drive_manager.simulator.engine.Removals.*
-import com.drive.drive_manager.simulator.engine.Resolution.*
+import com.drive.drive_manager.simulator.engine.Removals.leaveField
+import com.drive.drive_manager.simulator.engine.Removals.promptRemoval
+import com.drive.drive_manager.simulator.engine.Resolution.allPossibleAfterIfPossible
+import com.drive.drive_manager.simulator.engine.Resolution.possible
+import com.drive.drive_manager.simulator.engine.Resolution.stepTop
+import com.drive.drive_manager.simulator.engine.Resolution.utilityToDiscard
 import com.drive.drive_manager.simulator.engine.StepHelpers.*
 import com.drive.drive_manager.simulator.engine.Summons.*
 import com.drive.drive_manager.simulator.room.CardSlot
@@ -46,7 +50,7 @@ object Chain {
             val chain = room.chain
             // Rules 7.2.0.4 and 11.6.0.4: once a chain is closed and resolving nothing can be added to it; what
             // triggers meanwhile waits until the whole chain has resolved and then forms a new chain
-            val resolving = chain.any { e -> e.isPriorityDone || e.resolutionId != null }
+            val resolving = chain.any { e -> e.priorityDone || e.resolutionId != null }
             val top = if (chain.isEmpty()) null else chain[chain.size - 1]
             if (top != null && paying(top)) {
                 // The effect just activated pays its cost before anything else, choices included
@@ -284,7 +288,7 @@ object Chain {
             if (rank(e, active) != head) break
             group.add(e)
         }
-        if (script.mandatory && !effect.isOrdered) {
+        if (script.mandatory && !effect.ordered) {
             // Several mandatory effects (also several of one card, like its inherited ones): their controller
             // chains them one at a time (all of them are chained)
             // A lone one too (when the room asks for it): its controller sees what triggered and chains it
@@ -303,7 +307,7 @@ object Chain {
                 return
             }
         }
-        if (!script.mandatory && !effect.isConfirmed) {
+        if (!script.mandatory && !effect.confirmed) {
             // Optional effects that cannot be activated now (cost, nothing to do, limit) lose their moment, and so do
             // those of a player who turned the optional effects off (except "En Juego": the card was played for it)
             val controller = room.getPlayer(effect.controllerId)
@@ -343,7 +347,7 @@ object Chain {
                 return
             }
         }
-        if (script.mandatory || effect.isConfirmed) {
+        if (script.mandatory || effect.confirmed) {
             room.triggerQueue.removeAt(0)
             for (step in script.cost!!) {
                 if (!possible(room, effect, step)) {
@@ -407,10 +411,11 @@ object Chain {
 
     /** What each card of a group triggered ("Celeridad", "En Destrucción"), for the choice. */
     @JvmStatic
+    @Suppress("UNCHECKED_CAST")
     fun labels(group: List<PendingEffect>): MutableMap<String, String> {
-        val labels: MutableMap<String, String> = LinkedHashMap()
-        for (e in group) labels.merge(e.sourceInstanceId, e.label) { a, b -> "$a + $b" }
-        return labels
+        val labels: MutableMap<String?, String> = LinkedHashMap()
+        for (e in group) labels.merge(e.sourceInstanceId, e.label!!) { a, b -> "$a + $b" }
+        return labels as MutableMap<String, String>
     }
 
     /** Puts the effect in the chain; its cost, if any, is paid now (rule 11.2.0.2). */
@@ -516,7 +521,7 @@ object Chain {
     fun offerPriority(room: GameRoom): Boolean {
         val chain = room.chain
         val top = chain[chain.size - 1]
-        if (top.resolutionId != null || top.isPriorityDone) return false
+        if (top.resolutionId != null || top.priorityDone) return false
         val active = room.currentTurnUserId
         for (playerId in listOf(active, if (active == null) null else room.getOpponentId(active))) {
             if (playerId == null || top.passed.contains(playerId)) continue
@@ -531,7 +536,7 @@ object Chain {
                 "Activar", sources, sources)
             return true
         }
-        chain.forEach { e -> e.isPriorityDone = true }
+        chain.forEach { e -> e.priorityDone = true }
         return false
     }
 

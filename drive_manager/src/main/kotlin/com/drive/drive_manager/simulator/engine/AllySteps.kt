@@ -16,7 +16,9 @@ import com.drive.drive_manager.simulator.engine.EffectEngine.record
 import com.drive.drive_manager.simulator.engine.EffectEngine.triggerEvent
 import com.drive.drive_manager.simulator.engine.EffectEngine.zone
 import com.drive.drive_manager.simulator.engine.EffectStep.*
-import com.drive.drive_manager.simulator.engine.Removals.*
+import com.drive.drive_manager.simulator.engine.Removals.destroy
+import com.drive.drive_manager.simulator.engine.Removals.leaveField
+import com.drive.drive_manager.simulator.engine.Removals.removeFromField
 import com.drive.drive_manager.simulator.engine.StepHelpers.*
 import com.drive.drive_manager.simulator.engine.SpecialRequirements.*
 import com.drive.drive_manager.simulator.room.CardSlot
@@ -146,8 +148,8 @@ object AllySteps {
                 }
                 // Activated as the ally's own: a new link of the chain, after this one resolves
                 val link = pending(room, summon, userId, ally, room.eventSeq)
-                link.isConfirmed = true
-                link.isOrdered = true
+                link.confirmed = true
+                link.ordered = true
                 room.triggerQueue.add(0, link)
                 log(room, name(ally) + " activa su efecto En Invocación (" + effect.sourceName + ")", null)
                 return false
@@ -185,8 +187,8 @@ object AllySteps {
                 }
                 // The ally activates it as its own: a new link of the chain, after this one resolves
                 val link = pending(room, summon, userId, ally, room.eventSeq)
-                link.isConfirmed = true
-                link.isOrdered = true
+                link.confirmed = true
+                link.ordered = true
                 room.triggerQueue.add(0, link)
                 log(room, name(ally) + " activa el efecto En Invocación de " + name(material) + " (" + effect.sourceName + ")", null)
                 return false
@@ -250,7 +252,7 @@ object AllySteps {
                     for (ally in player.field) ally.materials!!.remove(card)
                     player.hand.add(card)
                     placeOnField(room, effect, player, card, "hand", false, false)
-                    effect.isLastDone = true
+                    effect.lastDone = true
                 }
             }
             is TributeAllyResources -> {
@@ -285,7 +287,7 @@ object AllySteps {
                 zone(player, from).remove(card)
                 card.faceDown = false
                 ally.resources!!.add(card)
-                effect.isLastDone = true
+                effect.lastDone = true
                 record(room, GameEvent.SEND, userId, card, from, "resources", effect, java.util.Map.of<String, Any?>("to", ally.instanceId),
                     player.username + " añade " + name(card) + " como recurso de " + name(ally))
             }
@@ -313,7 +315,7 @@ object AllySteps {
                 removeFromField(player, subject)
                 subject.faceDown = false
                 holder.materials!!.add(subject)
-                effect.isLastDone = true
+                effect.lastDone = true
                 record(room, GameEvent.SEND, userId, subject, "field", "materials", effect, java.util.Map.of<String, Any?>("to", holder.instanceId),
                     player.username + " añade " + name(subject) + " como material de " + name(holder) + " (" + effect.sourceName + ")")
             }

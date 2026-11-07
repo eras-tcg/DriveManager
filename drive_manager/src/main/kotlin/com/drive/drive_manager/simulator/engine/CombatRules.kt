@@ -26,7 +26,7 @@ import com.drive.drive_manager.simulator.engine.EffectEngine.name
 import com.drive.drive_manager.simulator.engine.EffectEngine.record
 import com.drive.drive_manager.simulator.engine.EffectEngine.rulesPrompt
 import com.drive.drive_manager.simulator.engine.EffectEngine.strength
-import com.drive.drive_manager.simulator.engine.Removals.*
+import com.drive.drive_manager.simulator.engine.Removals.destroy
 import com.drive.drive_manager.simulator.engine.StepHelpers.*
 import com.drive.drive_manager.simulator.engine.Summons.*
 import com.drive.drive_manager.simulator.room.CardSlot
