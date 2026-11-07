@@ -171,6 +171,9 @@
 				<version>${kotlin.version}</version>
 				<configuration>
 					<jvmTarget>${java.version}</jvmTarget>
+					<!-- Parameter names in the class files, as javac's -parameters (Spring Boot's default): Jackson puts the
+					     properties of a constructor's parameters first, in their order (CardSlot's JSON) -->
+					<javaParameters>true</javaParameters>
 					<!-- Kotlin sees what Lombok generates on the Java classes not converted yet (getters, setters, constructors) -->
 					<compilerPlugins>
 						<plugin>lombok</plugin>

@@ -1,10 +1,10 @@
 # Fixes Java calls to converted records' accessors (x() -> getX(), Type::x -> Type::getX) at the exact positions javac
-# reports as "cannot find symbol". Usage: fixacc.py <accessor names comma-separated> < mvn output
+# reports as "cannot find symbol" or "invalid method reference". Usage: fix-accessors.py <accessor names comma-separated> < mvn output
 import re,sys,collections
 names=set(sys.argv[1].split(','))
 errs=collections.defaultdict(set)
 for line in sys.stdin:
-    m=re.search(r'ERROR\] (/\S+\.java):\[(\d+),(\d+)\] cannot find symbol',line)
+    m=re.search(r'ERROR\] (/\S+\.java):\[(\d+),(\d+)\] (?:cannot find symbol|invalid method reference)',line)
     if m: errs[m.group(1)].add((int(m.group(2)),int(m.group(3))))
 fixed=0
 for f,locs in errs.items():
@@ -16,6 +16,9 @@ for f,locs in errs.items():
         m=re.compile(r'(\.|::)?\s*([a-zA-Z_]\w*)').match(s,i)
         if not m: continue
         name=m.group(2); start=m.start(2); end=m.end(2)
+        if s[end:].startswith('::'):  # "invalid method reference" points at the type of Type::x
+            m=re.compile(r'::\s*([a-zA-Z_]\w*)').match(s,end)
+            name=m.group(1); start=m.start(1); end=m.end(1)
         if name not in names: continue
         rest=s[end:]
         if rest.startswith('()') or (m.group(1)=='::' or s[max(0,start-2):start]=='::'):
