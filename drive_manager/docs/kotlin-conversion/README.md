@@ -244,3 +244,26 @@ With it the engine is Kotlin but for `EffectJson`, `CardFiles` and `CardFilesChe
   (`for (c in ArrayList(p.field)) { if (!c.returnAtTurnEnd) continue; ... }`) instead of `filter { }.forEach { }`.
 - `Boolean.TRUE.equals(payload.get("x"))` is `payload["x"] == true`; a Java labelled `break outer` is `outer@ for (...)`
   (label on the same line) and `break@outer`.
+
+## Lessons from batch 10 (`room`: `RoomCopy`, `RoomEngine`, `RoomHost`, `StateMask`…; `bot`: `Sandbox`, `CardWorth`, `HandRank`…)
+
+- **`DoubleStream.average()`/`sum()` sum with compensation (Kahan)**; Kotlin's `average()`/`sum()` add plainly and can differ in
+  the last bits, which moves a bot's choice. Keep the stream (`pool.stream().mapToDouble { … }.average().orElse(0.0)`,
+  `LifeHits`) until a helper replicates the JDK's summation. `IntStream.max()`, `Stream.max(comparator)` are exact:
+  `maxWith(Comparator.comparingDouble { … })` keeps the first of equal elements, as Java's did.
+- **Java's `c != best` on a class with `equals`** (a `CardSlot`) is identity: `!==` in Kotlin (`!=` would call `equals`).
+- **A Java interface with a static factory and a nested implementation** (`RoomHost.gameOnly()`, `GameOnly`): a Kotlin
+  `interface` with `companion object { @JvmStatic fun gameOnly() }` (a static method on the interface for Java) and a nested
+  `object GameOnly : RoomHost`. Keep the methods' return types non-null where Kotlin callers return them (`ActionDispatcher`);
+  Java implementations (`RoomService`) still override them.
+- **Package-private Java classes of statics in `bot`** become `internal object`s with plain (public) `@JvmStatic` functions:
+  Java sees a public class and unmangled names. Kotlin reaches the Java package's package-private classes, fields
+  (`BotSettings.vStr`) and `protected static` methods (`BotPlayer.value`) from the same package.
+- **`getOrDefault(id, …)` with a possibly null id on a map typed with non-null keys** (`LegalActions.of`, filled with nullable
+  ids): read it through a `Map<String?, V>` view, so a null key answers as the Java map did.
+- **An explicit copy with nullable helpers** (`RoomCopy.list/set/map/cards`): the helpers take and return nullable
+  collections, as Java's; assign them with `!!` to the non-null properties (the Kotlin setter would have thrown there), and
+  build lists of copied elements as `ArrayList<CardSlot?>` returned `as MutableList<CardSlot>`. `RoomCopyTest` and
+  `SimulatorJsonTest` stayed identical.
+- `Stream.toList()` into a property (`StateMask`'s masked zones, timeline, history) became `mapTo(ArrayList(n)) { … }`: the
+  same elements and JSON, but a mutable list (nothing writes to a view).
