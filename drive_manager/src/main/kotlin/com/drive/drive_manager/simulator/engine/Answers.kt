@@ -7,7 +7,23 @@ import com.drive.drive_manager.simulator.engine.Chain.picked
 import com.drive.drive_manager.simulator.engine.Chain.rank
 import com.drive.drive_manager.simulator.engine.Chain.responses
 import com.drive.drive_manager.simulator.engine.CombatRules.startCombat
-import com.drive.drive_manager.simulator.engine.EffectEngine.*
+import com.drive.drive_manager.simulator.engine.EffectEngine.SUMMON_SACRIFICE
+import com.drive.drive_manager.simulator.engine.EffectEngine.canPay
+import com.drive.drive_manager.simulator.engine.EffectEngine.find
+import com.drive.drive_manager.simulator.engine.EffectEngine.findAnywhere
+import com.drive.drive_manager.simulator.engine.EffectEngine.frontLine
+import com.drive.drive_manager.simulator.engine.EffectEngine.ids
+import com.drive.drive_manager.simulator.engine.EffectEngine.inFrontLine
+import com.drive.drive_manager.simulator.engine.EffectEngine.locate
+import com.drive.drive_manager.simulator.engine.EffectEngine.log
+import com.drive.drive_manager.simulator.engine.EffectEngine.lookingAs
+import com.drive.drive_manager.simulator.engine.EffectEngine.loseByLives
+import com.drive.drive_manager.simulator.engine.EffectEngine.name
+import com.drive.drive_manager.simulator.engine.EffectEngine.names
+import com.drive.drive_manager.simulator.engine.EffectEngine.pay
+import com.drive.drive_manager.simulator.engine.EffectEngine.plural
+import com.drive.drive_manager.simulator.engine.EffectEngine.record
+import com.drive.drive_manager.simulator.engine.EffectEngine.script
 import com.drive.drive_manager.simulator.engine.Removals.*
 import com.drive.drive_manager.simulator.engine.Resolution.*
 import com.drive.drive_manager.simulator.engine.Rituals.*
@@ -362,7 +378,7 @@ object Answers {
                 // As Java's String.split: the empty strings at the end are left out
                 for (id in if (list.isEmpty()) arrayOf<String>() else Pattern.compile(",").split(list)) {
                     val at = locate(player, id)
-                    if (at != null) keptMaterials.add(at.card())
+                    if (at != null) keptMaterials.add(at.card!!)
                 }
             }
             if (!picks.isEmpty() && use != null) CostModifiers.markUsed(room, player, use)

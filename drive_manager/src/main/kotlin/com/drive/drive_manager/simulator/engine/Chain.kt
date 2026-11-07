@@ -1,7 +1,19 @@
 package com.drive.drive_manager.simulator.engine
 
 import com.drive.drive_manager.simulator.engine.CombatRules.combatStep
-import com.drive.drive_manager.simulator.engine.EffectEngine.*
+import com.drive.drive_manager.simulator.engine.EffectEngine.DEFINITIVE_USED
+import com.drive.drive_manager.simulator.engine.EffectEngine.find
+import com.drive.drive_manager.simulator.engine.EffectEngine.findAnywhere
+import com.drive.drive_manager.simulator.engine.EffectEngine.findIn
+import com.drive.drive_manager.simulator.engine.EffectEngine.log
+import com.drive.drive_manager.simulator.engine.EffectEngine.name
+import com.drive.drive_manager.simulator.engine.EffectEngine.names
+import com.drive.drive_manager.simulator.engine.EffectEngine.ownerOf
+import com.drive.drive_manager.simulator.engine.EffectEngine.record
+import com.drive.drive_manager.simulator.engine.EffectEngine.refreshContinuous
+import com.drive.drive_manager.simulator.engine.EffectEngine.rulesPrompt
+import com.drive.drive_manager.simulator.engine.EffectEngine.script
+import com.drive.drive_manager.simulator.engine.EffectEngine.zone
 import com.drive.drive_manager.simulator.engine.EffectScript.Limit
 import com.drive.drive_manager.simulator.engine.EffectStep.*
 import com.drive.drive_manager.simulator.engine.Removals.*
@@ -426,13 +438,13 @@ object Chain {
     @JvmStatic
     fun covers(step: EffectStep): Int {
         return when (step) {
-            is IfDone -> step.covers()
-            is IfNotDone -> step.covers()
-            is IfTributed -> step.covers()
-            is IfCondition -> step.covers()
-            is IfChosenGone -> step.covers()
-            is IfSaved -> step.covers()
-            is MayDo -> step.covers()
+            is IfDone -> step.covers
+            is IfNotDone -> step.covers
+            is IfTributed -> step.covers
+            is IfCondition -> step.covers
+            is IfChosenGone -> step.covers
+            is IfSaved -> step.covers
+            is MayDo -> step.covers
             else -> 0
         }
     }
@@ -458,7 +470,7 @@ object Chain {
                 continue
             }
             val s = steps[i]
-            val needsCards = s is NeedsTarget || (s is EffectStep.Do && s.action().needsCards())
+            val needsCards = s is NeedsTarget || (s is EffectStep.Do && s.action!!.needsCards())
             if (needsCards && !possible(room, effect, steps[i])) return false
             i++
         }

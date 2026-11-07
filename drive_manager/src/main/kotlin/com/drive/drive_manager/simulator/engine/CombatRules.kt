@@ -1,7 +1,31 @@
 package com.drive.drive_manager.simulator.engine
 
 import com.drive.drive_manager.simulator.engine.Chain.advance
-import com.drive.drive_manager.simulator.engine.EffectEngine.*
+import com.drive.drive_manager.simulator.engine.EffectEngine.CANNOT_TAP
+import com.drive.drive_manager.simulator.engine.EffectEngine.CAUSE_BATTLE
+import com.drive.drive_manager.simulator.engine.EffectEngine.END_TURN_REQUESTED
+import com.drive.drive_manager.simulator.engine.EffectEngine.EXTRA_HIT
+import com.drive.drive_manager.simulator.engine.EffectEngine.NO_ATTACK
+import com.drive.drive_manager.simulator.engine.EffectEngine.NO_BLOCK
+import com.drive.drive_manager.simulator.engine.EffectEngine.PENDING_EFFECT_DAMAGE
+import com.drive.drive_manager.simulator.engine.EffectEngine.STRENGTH_ENTRY
+import com.drive.drive_manager.simulator.engine.EffectEngine.canPay
+import com.drive.drive_manager.simulator.engine.EffectEngine.find
+import com.drive.drive_manager.simulator.engine.EffectEngine.findAnywhere
+import com.drive.drive_manager.simulator.engine.EffectEngine.gemsOf
+import com.drive.drive_manager.simulator.engine.EffectEngine.gemsText
+import com.drive.drive_manager.simulator.engine.EffectEngine.ids
+import com.drive.drive_manager.simulator.engine.EffectEngine.immuneTo
+import com.drive.drive_manager.simulator.engine.EffectEngine.inFrontLine
+import com.drive.drive_manager.simulator.engine.EffectEngine.keywordLevel
+import com.drive.drive_manager.simulator.engine.EffectEngine.keywords
+import com.drive.drive_manager.simulator.engine.EffectEngine.levels
+import com.drive.drive_manager.simulator.engine.EffectEngine.log
+import com.drive.drive_manager.simulator.engine.EffectEngine.loseByLives
+import com.drive.drive_manager.simulator.engine.EffectEngine.name
+import com.drive.drive_manager.simulator.engine.EffectEngine.record
+import com.drive.drive_manager.simulator.engine.EffectEngine.rulesPrompt
+import com.drive.drive_manager.simulator.engine.EffectEngine.strength
 import com.drive.drive_manager.simulator.engine.Removals.*
 import com.drive.drive_manager.simulator.engine.StepHelpers.*
 import com.drive.drive_manager.simulator.engine.Summons.*
@@ -446,7 +470,7 @@ object CombatRules {
         for (id in picks) {
             val c = find(player.hand, id)
             player.hand.remove(c)
-            player.tributeZone.add(c)
+            player.tributeZone.add(c!!)
             record(room, GameEvent.TRIBUTE, player.userId, c, "hand", "tributeZone", null, null, null)
         }
         log(room, player.username + " tributa " + picks.joinToString(", ") { id -> name(find(player.tributeZone, id)) }

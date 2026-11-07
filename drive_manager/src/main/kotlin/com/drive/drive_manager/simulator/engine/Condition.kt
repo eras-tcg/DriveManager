@@ -89,11 +89,11 @@ sealed interface Condition {
             if (event == null || !isDestruction(event)) return false
             if (!sideIs(owner, ownerOf(event), controller) || !sideIs(by, event.playerId, controller)) return false
             if ("effect" == cause && !destroyedByEffect(event)) return false
-            if ("battle" == cause && !(event.data != null && EffectEngine.CAUSE_BATTLE == event.data["cause"])) return false
-            if (byThis && !(event.data != null && source!!.instanceId == event.data["byCard"])) return false
-            if (exceptAttacker && event.data != null && java.lang.Boolean.TRUE == event.data["asAttacker"]) return false
+            if ("battle" == cause && !(event.data != null && EffectEngine.CAUSE_BATTLE == event.data!!["cause"])) return false
+            if (byThis && !(event.data != null && source!!.instanceId == event.data!!["byCard"])) return false
+            if (exceptAttacker && event.data != null && java.lang.Boolean.TRUE == event.data!!["asAttacker"]) return false
             if (byCard != null) {
-                val id = if (event.data == null) null else event.data["byCard"]
+                val id = if (event.data == null) null else event.data!!["byCard"]
                 val card = if (id == null) null else EffectEngine.findInRoom(room, id as String)
                 if (card == null || !byCard.matches(card)) return false
             }
@@ -124,7 +124,7 @@ sealed interface Condition {
             }
             if (!matches || !sideIs(side, event.playerId, controller)) return false
             if (other && source!!.instanceId == event.cardInstanceId) return false
-            if (kind != null && (event.data == null || kind != event.data["summonType"])) return false
+            if (kind != null && (event.data == null || kind != event.data!!["summonType"])) return false
             if (filter == null) return true
             val summoned = EffectEngine.eventCard(room, event)
             return summoned != null && filter.matches(summoned)
@@ -157,7 +157,7 @@ sealed interface Condition {
             if (byEffect && event.effectId == null) return false
             for (pair in data!!) {
                 val at = pair.indexOf('=')
-                val value = if (event.data == null) null else event.data[pair.substring(0, at)]
+                val value = if (event.data == null) null else event.data!![pair.substring(0, at)]
                 var wanted: String? = pair.substring(at + 1)
                 if (wanted == "\$this") wanted = source!!.instanceId
                 if (wanted == "\$you") wanted = controller
@@ -227,8 +227,8 @@ sealed interface Condition {
     data class ByEffect(val by: Side?) : Condition {
         override fun test(room: GameRoom, event: GameEvent?, source: CardSlot?, controller: String?): Boolean {
             if (event == null || !sideIs(by, event.playerId, controller)) return false
-            return destroyedByEffect(event) || (event.data != null && EffectEngine.CAUSE_EFFECT == event.data["cause"]
-                    && event.data["byCard"] != null)
+            return destroyedByEffect(event) || (event.data != null && EffectEngine.CAUSE_EFFECT == event.data!!["cause"]
+                    && event.data!!["byCard"] != null)
         }
     }
 
@@ -237,7 +237,7 @@ sealed interface Condition {
     data class Targeted(val thisCard: Boolean) : Condition {
         override fun test(room: GameRoom, event: GameEvent?, source: CardSlot?, controller: String?): Boolean {
             if (event == null || GameEvent.TARGET != event.type || event.data == null) return false
-            val ids = event.data["targetIds"] as? List<*> ?: return false
+            val ids = event.data!!["targetIds"] as? List<*> ?: return false
             if (thisCard) return ids.contains(source!!.instanceId)
             val player = room.getPlayer(controller)
             return player != null && ids.any { id -> EffectEngine.find(player.field, id as String?) != null }
@@ -249,7 +249,7 @@ sealed interface Condition {
     data class AllyDealtDirectDamage(val filter: CardFilter?) : Condition {
         override fun test(room: GameRoom, event: GameEvent?, source: CardSlot?, controller: String?): Boolean {
             if (event == null || GameEvent.LIFE_DAMAGE != event.type || controller!! != event.playerId || event.data == null) return false
-            val attacker = EffectEngine.findInRoom(room, event.data["attackerId"] as String?)
+            val attacker = EffectEngine.findInRoom(room, event.data!!["attackerId"] as String?)
             return attacker != null && filter!!.matches(attacker)
         }
     }
@@ -272,7 +272,7 @@ sealed interface Condition {
             if (fromZone != null && fromZone != event.fromZone) return false
             if (exceptZone != null && exceptZone == event.fromZone) return false
             if (by == null) return true
-            val byId = if (event.data == null) null else event.data["byCard"]
+            val byId = if (event.data == null) null else event.data!!["byCard"]
             if (event.effectId == null || byId == null) return false
             val byCard = EffectEngine.findInRoom(room, byId as String)
             return byCard != null && by.matches(byCard)
@@ -284,7 +284,7 @@ sealed interface Condition {
     data class YouReducedStrength(val toAtMost: Int?, val enemyStillThere: Boolean) : Condition {
         override fun test(room: GameRoom, event: GameEvent?, source: CardSlot?, controller: String?): Boolean {
             if (event == null || GameEvent.STRENGTH_REDUCED != event.type || controller!! != event.playerId) return false
-            val to = if (event.data == null) null else event.data["to"]
+            val to = if (event.data == null) null else event.data!!["to"]
             if (toAtMost != null && !(to is Number && to.toInt() <= toAtMost)) return false
             if (!enemyStillThere) return true
             val target = EffectEngine.findIn(room, ownerOf(event), "field", event.cardInstanceId)
@@ -326,7 +326,7 @@ sealed interface Condition {
                 entered = card != null && EffectEngine.inFrontLine(card)
             }
             if (!entered) return false
-            val o = if (event.data != null) event.data["ownerId"] else null
+            val o = if (event.data != null) event.data!!["ownerId"] else null
             val owner = if (o is String) o else event.playerId
             if (enemy == (controller!! == owner)) return false
             val card = EffectEngine.findInRoom(room, event.cardInstanceId)
@@ -748,7 +748,7 @@ sealed interface Condition {
          * for a Ritual are sacrificed by the Ritual's rules, even when an effect summons it).
          */
         private fun destroyedByEffect(event: GameEvent): Boolean {
-            return event.effectId != null && !(event.data != null && EffectEngine.CAUSE_RITUAL == event.data["cause"])
+            return event.effectId != null && !(event.data != null && EffectEngine.CAUSE_RITUAL == event.data!!["cause"])
         }
 
         private fun isDestruction(event: GameEvent): Boolean {
@@ -756,7 +756,7 @@ sealed interface Condition {
         }
 
         private fun ownerOf(event: GameEvent): String? {
-            return if (event.data == null) null else event.data["ownerId"] as String?
+            return if (event.data == null) null else event.data!!["ownerId"] as String?
         }
     }
 }

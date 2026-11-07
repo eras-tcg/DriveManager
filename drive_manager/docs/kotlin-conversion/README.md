@@ -55,7 +55,7 @@ classes not converted yet). Once everything is Kotlin and free of JVM-only APIs 
      class or a `data object` is not a record, so `EffectJson` (which registers only records) would stop reading and
      writing it; a dummy component would show in `getRecordComponents` (`LanguageCatalogExportTest`'s catalog) and be
      accepted in the JSON. Decided: they become `data object`s (below, "Records without fields"); `Amount` and `Reaction`
-     moved that way (batch 4).
+     moved that way (batch 4), `Condition` (batch 5), `EffectStep` (batch 6).
    - Generics Java implements or overrides: Kotlin adds `? extends` to a parameter `List<Open>`/`Map<K, Any?>` whose
      element type is open (an interface, `Any`), so a Java class implementing a Kotlin interface stops overriding it.
      Write `Map<String, @JvmSuppressWildcards Any?>`, `List<@JvmSuppressWildcards Action>`.
@@ -120,6 +120,7 @@ classes not converted yet). Once everything is Kotlin and free of JVM-only APIs 
 ```bash
 mvn -q clean test-compile 2>&1 | python3 docs/kotlin-conversion/fix-accessors.py name1,name2,...   # record accessors
 mvn -q clean test-compile 2>&1 | python3 docs/kotlin-conversion/fix-kotlin-calls.py                  # x() -> x in Kotlin callers
+mvn -q clean test-compile 2>&1 | python3 docs/kotlin-conversion/fix-nullable-receivers.py           # !! where Java dereferenced
 mvn -q clean test-compile                                                                          # until it compiles
 mvn -q test -Dtest='com.drive.drive_manager.simulator.**.*Test' -Dsurefire.failIfNoSpecifiedTests=false
 ```
@@ -141,11 +142,34 @@ itself), and writes an object as its type alone (`{"type":"LastCount"}`), exactl
 A `data object`'s `toString` is `LastCount` (the record's was `LastCount[]`) and its `hashCode` differs; nothing reads
 them. To check a change in a family `EffectJson` reads, dump `EffectJson.write` of every `CardEffects.definitions()`
 (and `ruleEffects()`) with a throwaway test, in this tree and in a `git worktree` of `HEAD`, and `cmp` the two: for
-batch 4 they were byte-identical (358 cards, each reading back equal). Batch 5 (`Condition`, `EffectScript`): byte-identical too.
+batch 4 they were byte-identical (358 cards, each reading back equal). Batch 5 (`Condition`, `EffectScript`) and batch 6 (`EffectStep`): byte-identical too.
 
-**`EffectStep` cannot take `data object`s yet.** `ResolutionTest.everyStepHasItsFamily` walks `EffectStep`'s
-`getPermittedSubclasses()` and, for every member that is not a record, its own `getPermittedSubclasses()`: a
-`data object` is a final class, not sealed, so that is `null` and the loop throws a `NullPointerException`. Its 27 empty
-records need a decision first (the test treating a Kotlin object as a leaf member, as `EffectJson.collect` and
-`LanguageCatalogExportTest.collect` already do, and still asking `Resolution.hasFamily` of it); until then `EffectStep`
-stays Java, which Kotlin reads as before (`step.filter()`). `Condition` and `Amount` have no such test.
+**`EffectStep` took them in batch 6.** `ResolutionTest.everyStepHasItsFamily` treats a Kotlin object as a leaf member (as
+`EffectJson.collect` and `LanguageCatalogExportTest.collect` do) and still asks `Resolution.hasFamily` of it, so its 27 empty
+records are `data object`s now. Java's pattern switches over the family (`case IfPossible ignored ->`, `instanceof
+IfPossible`) work on an object unchanged; only a record pattern (`case IfPossible() ->`) or `new IfPossible()` would need
+`IfPossible.INSTANCE`. The cards' JSON stayed byte-identical (358 cards).
+
+## Lessons from batch 6 (`EffectEngine`, `Compose`, `EffectStep`, `GameEvent`…)
+
+- **A class of statics that Kotlin files star-imported** (`import ...EffectEngine.*`, `Compose.*`): once it is an `object`,
+  run `python3 docs/kotlin-conversion/fix-star-imports.py EffectEngine,Compose <the .kt files>`: it writes one import per
+  public member each file uses.
+- **Helpers that Kotlin callers fed with platform values** (`name(find(...))`, `keywords(card)`, `frontLine(p.field)`):
+  Java's parameters took nulls and threw only where they dereferenced them. Make the Kotlin parameter nullable and put
+  `!!` at that dereference (`fun name(card: CardSlot?) = if (card!!.cardName != null) …`): callers compile unchanged and
+  the NPE comes at the same moment. Return types stay honest (`find(...): CardSlot?`); then
+  `mvn -q clean test-compile 2>&1 | python3 docs/kotlin-conversion/fix-nullable-receivers.py` adds `!!` at each
+  "Only safe (?.) or non-null asserted" the compiler reports. Review its diff: only where Java dereferenced anyway.
+- **A stream `.toList()` of a nullable property** (`ids(cards)`: `List<String>` for Java, its elements `instanceId: String?`):
+  `cards.map { it.instanceId } as List<String>` with `@Suppress("UNCHECKED_CAST")` keeps the signature and the nulls
+  (`it.instanceId!!` would throw where Java did not). The same for a `LinkedHashMap` keyed by a nullable id returned as
+  `Map<String, …>` (`LegalActions`).
+- **Java's `Set.of(...)`/`List.of(...)` throw on `contains(null)`**: where Java asked one with a possibly null value
+  (`EFFECT_MOMENTS.contains(event.getType())`), write `contains(event.type!!)` in the same short-circuit position.
+- **A Lombok `@Data` property that Kotlin read through a smart cast** (`event.data != null && event.data["cause"]`): once
+  the class is Kotlin, `data` is a mutable property and does not smart-cast; write `event.data!!["cause"]` after the check.
+  Type a `Map<String, Object>` property as `MutableMap<String, Any?>?`: Java keeps `Map<String, Object>` on the getter and
+  the setter, and Kotlin callers that `put` still compile.
+- **A shuffle's `Random` that Java dereferenced only inside the loop** (`GameRandom.shuffle`): `random: Random?` and
+  `random!!.nextInt(i)` there, so a list of 0 or 1 cards still shuffles without one, as before.

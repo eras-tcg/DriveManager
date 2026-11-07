@@ -1,6 +1,26 @@
 package com.drive.drive_manager.simulator.engine
 
-import com.drive.drive_manager.simulator.engine.EffectEngine.*
+import com.drive.drive_manager.simulator.engine.EffectEngine.CANNOT_TAP
+import com.drive.drive_manager.simulator.engine.EffectEngine.CAUSE_EFFECT
+import com.drive.drive_manager.simulator.engine.EffectEngine.EXTRA_HIT
+import com.drive.drive_manager.simulator.engine.EffectEngine.STRENGTH_ENTRY
+import com.drive.drive_manager.simulator.engine.EffectEngine.UNREMOVABLE
+import com.drive.drive_manager.simulator.engine.EffectEngine.allies
+import com.drive.drive_manager.simulator.engine.EffectEngine.find
+import com.drive.drive_manager.simulator.engine.EffectEngine.findAnywhere
+import com.drive.drive_manager.simulator.engine.EffectEngine.floating
+import com.drive.drive_manager.simulator.engine.EffectEngine.frontLine
+import com.drive.drive_manager.simulator.engine.EffectEngine.ids
+import com.drive.drive_manager.simulator.engine.EffectEngine.inFrontLine
+import com.drive.drive_manager.simulator.engine.EffectEngine.keywordLevel
+import com.drive.drive_manager.simulator.engine.EffectEngine.keywords
+import com.drive.drive_manager.simulator.engine.EffectEngine.log
+import com.drive.drive_manager.simulator.engine.EffectEngine.name
+import com.drive.drive_manager.simulator.engine.EffectEngine.names
+import com.drive.drive_manager.simulator.engine.EffectEngine.plural
+import com.drive.drive_manager.simulator.engine.EffectEngine.record
+import com.drive.drive_manager.simulator.engine.EffectEngine.refreshContinuous
+import com.drive.drive_manager.simulator.engine.EffectEngine.strength
 import com.drive.drive_manager.simulator.engine.EffectStep.*
 import com.drive.drive_manager.simulator.engine.Removals.*
 import com.drive.drive_manager.simulator.engine.StepHelpers.*
@@ -18,13 +38,13 @@ object CombatSteps {
         val onField = find(player.field, effect.sourceInstanceId)
         return when (step) {
             is TributesToDeckBottomForKeyword -> {
-                val f = step.filter()!!
-                player.tributeZone.count { f.matches(it) } >= step.count()
+                val f = step.filter!!
+                player.tributeZone.count { f.matches(it) } >= step.count
             }
-            is ChooseWeakestEnemy -> !enemyTargets(room, effect, step.filter()).isEmpty()
+            is ChooseWeakestEnemy -> !enemyTargets(room, effect, step.filter).isEmpty()
             is PickAllyUpToSacrificedLevel -> allies(player).any { inFrontLine(it) }
             is ExtraHit -> room.combat != null && room.combat!!.step == Combat.Step.DAMAGE
-            is ChooseEnemiesLevelSum -> levelSumPossible(enemyTargets(room, effect, CardFilter.creatures()), step.sum())
+            is ChooseEnemiesLevelSum -> levelSumPossible(enemyTargets(room, effect, CardFilter.creatures()), step.sum)
             else -> true
         }
     }
@@ -54,34 +74,34 @@ object CombatSteps {
                 val valid = if (self == null) java.util.List.of<CardSlot>() else allies(player).filter { c -> c !== self && !c.tapped
                         && !keywords(c).contains(CANNOT_TAP) }
                 if (valid.isEmpty() || room.combat == null) return false
-                pick(room, effect, "Agrupar: puedes agotar hasta " + step.allies() + " " + plural(step.allies(), "aliado", "aliados") + "; " + name(self)
-                        + " gana su fuerza durante el ataque e inflige daño 1 vez extra por cada uno.", "Agotar", player.field, ids(valid), Math.min(step.allies(), valid.size))
+                pick(room, effect, "Agrupar: puedes agotar hasta " + step.allies + " " + plural(step.allies, "aliado", "aliados") + "; " + name(self)
+                        + " gana su fuerza durante el ataque e inflige daño 1 vez extra por cada uno.", "Agotar", player.field, ids(valid), Math.min(step.allies, valid.size))
                 room.prompt!!.min = 0
                 return true
             }
             is ChooseEnemiesLevelSum -> {
                 val valid = enemyTargets(room, effect, CardFilter.creatures())
-                if (!levelSumPossible(valid, step.sum())) return false
+                if (!levelSumPossible(valid, step.sum)) return false
                 val opponent = room.getPlayer(room.getOpponentId(userId))
-                pick(room, effect, "Elige enemigos que sumen " + step.sum() + " en nivel.", "Objetivo", frontLine(opponent!!.field), ids(valid), valid.size)
+                pick(room, effect, "Elige enemigos que sumen " + step.sum + " en nivel.", "Objetivo", frontLine(opponent!!.field), ids(valid), valid.size)
                 room.prompt!!.min = 1
                 return true
             }
             is AlliesGain -> {
                 // On the table: the allies that enter later get it too (refreshContinuous gives it)
-                val until = if ("nextTurn" == step.until()) "hasta el final del turno oponente" else "hasta el final del turno"
-                val except = if (step.others()) effect.sourceInstanceId else null
-                room.fieldGrants.add(FieldGrant(userId, step.filter(), step.keyword(), step.until(), effect.sourceName, except))
+                val until = if ("nextTurn" == step.until) "hasta el final del turno oponente" else "hasta el final del turno"
+                val except = if (step.others) effect.sourceInstanceId else null
+                room.fieldGrants.add(FieldGrant(userId, step.filter, step.keyword, step.until, effect.sourceName, except))
                 refreshContinuous(room)
-                val n = allies(player).count { c -> step.filter().matches(c) && c.instanceId != except }
-                record(room, GameEvent.GAIN, userId, null, null, null, effect, java.util.Map.of<String, Any?>("keyword", step.keyword(), "count", n),
-                    player.username + ": sus " + (if (step.others()) "otros " else "") + "aliados ganan " + step.keyword() + " " + until + ", también los que entren después ("
+                val n = allies(player).count { c -> step.filter!!.matches(c) && c.instanceId != except }
+                record(room, GameEvent.GAIN, userId, null, null, null, effect, java.util.Map.of<String, Any?>("keyword", step.keyword, "count", n),
+                    player.username + ": sus " + (if (step.others) "otros " else "") + "aliados ganan " + step.keyword + " " + until + ", también los que entren después ("
                             + effect.sourceName + ")")
                 return false
             }
             is PickAllyUpToSacrificedLevel -> {
                 val sacrificed = if (effect.lastTributed.isEmpty()) null else findAnywhere(room, userId, effect.lastTributed[0])
-                val max = levelWhenRemoved(room, sacrificed) + step.plus()
+                val max = levelWhenRemoved(room, sacrificed) + step.plus
                 val valid = allies(player).filter { c -> inFrontLine(c) && c.getLevel() != null && c.getLevel()!! <= max }
                 if (valid.isEmpty()) return false
                 pick(room, effect, "Elige 1 aliado de tu línea frontal nivel " + max + " o menor: declarará ataque.", "Elegido", player.field, ids(valid), 1)
@@ -103,26 +123,26 @@ object CombatSteps {
                 return false
             }
             is ReduceRepeatedly -> {
-                val total = if (step.times() < 0) effect.lastCount else step.times()
+                val total = if (step.times < 0) effect.lastCount else step.times
                 val valid = enemyTargets(room, effect, CardFilter.creatures())
                 if (effect.repeatsDone >= total || valid.isEmpty()) {
                     effect.repeatsDone = 0
                     return false
                 }
                 val opponent = room.getPlayer(room.getOpponentId(userId))
-                pick(room, effect, "Elige 1 enemigo: reduce en " + step.amount() + " su fuerza" + (if ("attack" == step.until()) " hasta el final del ataque" else "")
+                pick(room, effect, "Elige 1 enemigo: reduce en " + step.amount + " su fuerza" + (if ("attack" == step.until) " hasta el final del ataque" else "")
                         + " (" + (effect.repeatsDone + 1) + " de " + total + "). Puedes no elegir más.", "Reducir",
                     frontLine(opponent!!.field), ids(valid), 1)
                 room.prompt!!.min = 0
                 return true
             }
             is TributesToDeckBottomForKeyword -> {
-                val f = step.filter()!!
+                val f = step.filter!!
                 val valid = player.tributeZone.filter { f.matches(it) }
-                if (valid.size < step.count()) return false
-                pick(room, effect, "Puedes descartar " + step.count() + " tributos " + step.filter().describe() + " para que " + effect.sourceName + " gane "
-                        + step.keyword() + " 1 hasta el final del ataque (tantas veces como quieras). Elige ninguno para terminar.", "Descartar",
-                    player.tributeZone, ids(valid), step.count())
+                if (valid.size < step.count) return false
+                pick(room, effect, "Puedes descartar " + step.count + " tributos " + step.filter.describe() + " para que " + effect.sourceName + " gane "
+                        + step.keyword + " 1 hasta el final del ataque (tantas veces como quieras). Elige ninguno para terminar.", "Descartar",
+                    player.tributeZone, ids(valid), step.count)
                 room.prompt!!.min = 0
                 return true
             }
@@ -156,7 +176,7 @@ object CombatSteps {
                     val target = (if (opponent == null) null else find(opponent.field, id)) ?: continue
                     // Counted down at each change of turn: it is 1 during its owner's next turn
                     val turns = if (opponent!!.userId == room.currentTurnUserId) 3 else 2
-                    if (step.wholeTurn()) {
+                    if (step.wholeTurn) {
                         target.noUntap = turns
                         floating(target, effect, "No se puede reactivar durante el próximo turno de " + opponent.username, "nextTurn", 0, null)
                         log(room, name(target) + " no se podrá reactivar durante el próximo turno de " + opponent.username + " (" + effect.sourceName + ")", null)
@@ -169,7 +189,7 @@ object CombatSteps {
                 return false
             }
             is ChooseWeakestEnemy -> {
-                val valid = enemyTargets(room, effect, step.filter())
+                val valid = enemyTargets(room, effect, step.filter)
                 if (valid.isEmpty()) return false
                 val min = valid.minOf { strength(it) }
                 val ties = valid.filter { c -> strength(c) == min }
@@ -180,7 +200,7 @@ object CombatSteps {
                     return false
                 }
                 val opponent = room.getPlayer(room.getOpponentId(userId))
-                pick(room, effect, "Varios enemigos " + step.filter().describe() + " tienen la menor fuerza (" + min + "): elige 1.",
+                pick(room, effect, "Varios enemigos " + step.filter!!.describe() + " tienen la menor fuerza (" + min + "): elige 1.",
                     "Objetivo", frontLine(opponent!!.field), ids(ties), 1)
                 return true
             }
@@ -225,7 +245,7 @@ object CombatSteps {
                 val opponent = room.getPlayer(room.getOpponentId(userId))
                 val chosen = picks.map { id -> if (opponent == null) null else find(frontLine(opponent.field), id) }
                 if (chosen.contains(null)) return "Ese enemigo ya no está en la línea frontal"
-                if (chosen.sumOf { c -> if (c!!.getLevel() == null) 0 else c.getLevel()!! } != step.sum()) return "Sus niveles deben sumar " + step.sum()
+                if (chosen.sumOf { c -> if (c!!.getLevel() == null) 0 else c.getLevel()!! } != step.sum) return "Sus niveles deben sumar " + step.sum
                 effect.targetIds.addAll(picks)
                 record(room, GameEvent.TARGET, userId, chosen[0], null, null, effect, java.util.Map.of<String, Any?>("targetIds", picks),
                     player.username + " elige como objetivo a " + chosen.joinToString(", ") { name(it) } + " (" + effect.sourceName + ")")
@@ -242,15 +262,15 @@ object CombatSteps {
                 val opponent = room.getPlayer(room.getOpponentId(userId))
                 val target = (if (opponent == null) null else find(frontLine(opponent.field), picks[0]))
                     ?: return "Ese enemigo ya no está en la línea frontal"
-                reduceStrength(room, effect, opponent, target, step.amount(), false)
-                if ("attack" == step.until() && room.combat != null && find(opponent!!.field, target.instanceId) != null)
-                    room.combat!!.untilEndOfAttack.add(target.instanceId + "|" + STRENGTH_ENTRY + (-step.amount()))
+                reduceStrength(room, effect, opponent, target, step.amount, false)
+                if ("attack" == step.until && room.combat != null && find(opponent!!.field, target.instanceId) != null)
+                    room.combat!!.untilEndOfAttack.add(target.instanceId + "|" + STRENGTH_ENTRY + (-step.amount))
                 effect.repeatsDone = effect.repeatsDone + 1
                 repeat[0] = true
             }
             is TributesToDeckBottomForKeyword -> {
                 if (picks.isEmpty()) return null
-                if (picks.size != step.count()) return "Elige exactamente " + step.count() + " tributos, o ninguno"
+                if (picks.size != step.count) return "Elige exactamente " + step.count + " tributos, o ninguno"
                 if (!allIn(player.tributeZone, picks)) return "Esas cartas ya no están en tus tributos"
                 val discarded: MutableList<CardSlot> = ArrayList()
                 for (id in picks) {
@@ -262,11 +282,11 @@ object CombatSteps {
                 }
                 val self = find(player.field, effect.sourceInstanceId)
                 if (self != null) {
-                    val had = keywordLevel(self, step.keyword())
-                    val gained = step.keyword() + " " + ((had ?: 0) + 1)
+                    val had = keywordLevel(self, step.keyword)
+                    val gained = step.keyword + " " + ((had ?: 0) + 1)
                     self.turnKeywords!!.add(gained)
                     if (room.combat != null) room.combat!!.untilEndOfAttack.add(self.instanceId + "|" + gained)
-                    log(room, player.username + " descarta " + step.count() + " tributos (" + names(discarded).substring(2) + "): " + name(self)
+                    log(room, player.username + " descarta " + step.count + " tributos (" + names(discarded).substring(2) + "): " + name(self)
                             + " tiene " + gained + " hasta el final del ataque", room.eventSeq)
                 }
                 repeat[0] = true

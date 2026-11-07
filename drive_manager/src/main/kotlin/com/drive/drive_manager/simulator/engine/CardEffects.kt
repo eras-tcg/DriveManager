@@ -1,6 +1,6 @@
 package com.drive.drive_manager.simulator.engine
 
-import com.drive.drive_manager.simulator.engine.Compose.*
+import com.drive.drive_manager.simulator.engine.Compose.moveSelfToFront
 import com.drive.drive_manager.simulator.engine.Condition.*
 import com.drive.drive_manager.simulator.engine.CostModifiers.CostModifier
 import com.drive.drive_manager.simulator.engine.EffectScript.Limit

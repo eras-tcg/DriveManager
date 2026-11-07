@@ -1,7 +1,20 @@
 package com.drive.drive_manager.simulator.engine
 
 import com.drive.drive_manager.simulator.engine.Chain.pending
-import com.drive.drive_manager.simulator.engine.EffectEngine.*
+import com.drive.drive_manager.simulator.engine.EffectEngine.CAUSE_EFFECT
+import com.drive.drive_manager.simulator.engine.EffectEngine.allies
+import com.drive.drive_manager.simulator.engine.EffectEngine.concat
+import com.drive.drive_manager.simulator.engine.EffectEngine.find
+import com.drive.drive_manager.simulator.engine.EffectEngine.findAnywhere
+import com.drive.drive_manager.simulator.engine.EffectEngine.floating
+import com.drive.drive_manager.simulator.engine.EffectEngine.ids
+import com.drive.drive_manager.simulator.engine.EffectEngine.locate
+import com.drive.drive_manager.simulator.engine.EffectEngine.log
+import com.drive.drive_manager.simulator.engine.EffectEngine.name
+import com.drive.drive_manager.simulator.engine.EffectEngine.plural
+import com.drive.drive_manager.simulator.engine.EffectEngine.record
+import com.drive.drive_manager.simulator.engine.EffectEngine.triggerEvent
+import com.drive.drive_manager.simulator.engine.EffectEngine.zone
 import com.drive.drive_manager.simulator.engine.EffectStep.*
 import com.drive.drive_manager.simulator.engine.Removals.*
 import com.drive.drive_manager.simulator.engine.StepHelpers.*
@@ -22,23 +35,23 @@ object AllySteps {
                 val trigger = triggerEvent(room, effect)
                 val ally = if (trigger == null) null else find(player.field, trigger.cardInstanceId)
                 ally != null && ally.getLevel() != null && player.tributeZone
-                    .any { c -> step.filter().matches(c) && c.getLevel() != null && c.getLevel()!! < ally.getLevel()!! }
+                    .any { c -> step.filter!!.matches(c) && c.getLevel() != null && c.getLevel()!! < ally.getLevel()!! }
             }
             is TributeAlliesLevelSum -> {
-                val valid = allies(player).filter { step.filter().matches(it) }
-                valid.size >= step.minCount() && valid.sumOf { c -> if (c.getLevel() == null) 0 else c.getLevel()!! } >= step.minSum()
+                val valid = allies(player).filter { step.filter!!.matches(it) }
+                valid.size >= step.minCount && valid.sumOf { c -> if (c.getLevel() == null) 0 else c.getLevel()!! } >= step.minSum
             }
-            is PlaceFromHandUntilTurnEnd -> player.hand.any { step.filter().matches(it) }
+            is PlaceFromHandUntilTurnEnd -> player.hand.any { step.filter!!.matches(it) }
             is TributeAllyMaterialWhere -> !allyMaterialsWhere(player, step).isEmpty()
             is SacrificeAlly -> !sacrificable(effect, player, step).isEmpty()
             is TributeAllyMaterial -> !allyMaterials(player).isEmpty()
             is PickAllyWithHigherAlly -> !withHigherAlly(player).isEmpty()
-            is PickAllyWithMaterials -> allies(player).any { c -> c.materials!!.size >= step.count() }
-            is TributeAllyResources -> allies(player).any { a -> a.resources!!.any { step.filter().matches(it) } }
+            is PickAllyWithMaterials -> allies(player).any { c -> c.materials!!.size >= step.count }
+            is TributeAllyResources -> allies(player).any { a -> a.resources!!.any { step.filter!!.matches(it) } }
             is AddResourceToHigherAlly -> !higherAllyResources(player, step).isEmpty()
             is AttachSelfAsResourceToAlly -> {
                 val at = locate(player, effect.sourceInstanceId)
-                at != null && allies(player).any { c -> c !== at.card() }
+                at != null && allies(player).any { c -> c !== at.card }
             }
             else -> true
         }
@@ -51,9 +64,9 @@ object AllySteps {
 
         when (step) {
             is MaterialOfExhaustedAllyToBack -> {
-                val valid = exhaustedAllyMaterials(player, step.filter())
+                val valid = exhaustedAllyMaterials(player, step.filter)
                 if (valid.isEmpty()) return false
-                pick(room, effect, "Puedes colocar 1 " + step.filter().describe() + " de los materiales de un aliado agotado en tu retaguardia.", "Colocar",
+                pick(room, effect, "Puedes colocar 1 " + step.filter!!.describe() + " de los materiales de un aliado agotado en tu retaguardia.", "Colocar",
                     valid, ids(valid), 1)
                 room.prompt!!.min = 0
                 return true
@@ -61,14 +74,14 @@ object AllySteps {
             is TributeAllyResources -> {
                 val ally = if (effect.subjectId == null) null else find(player.field, effect.subjectId)
                 if (ally == null) {
-                    val valid = allies(player).filter { a -> a.resources!!.any { step.filter().matches(it) } }
+                    val valid = allies(player).filter { a -> a.resources!!.any { step.filter!!.matches(it) } }
                     if (valid.isEmpty()) return false
-                    pick(room, effect, "Elige 1 aliado con recursos " + step.filter().describe() + ".", "Elegido", player.field, ids(valid), 1)
+                    pick(room, effect, "Elige 1 aliado con recursos " + step.filter!!.describe() + ".", "Elegido", player.field, ids(valid), 1)
                     return true
                 }
-                val valid = ally.resources!!.filter { step.filter().matches(it) }
-                pick(room, effect, "Tributa hasta " + step.max() + " recursos " + step.filter().describe() + " de " + name(ally) + ".", "Tributar",
-                    ally.resources, ids(valid), Math.min(step.max(), valid.size))
+                val valid = ally.resources!!.filter { step.filter!!.matches(it) }
+                pick(room, effect, "Tributa hasta " + step.max + " recursos " + step.filter!!.describe() + " de " + name(ally) + ".", "Tributar",
+                    ally.resources, ids(valid), Math.min(step.max, valid.size))
                 room.prompt!!.min = 0
                 return true
             }
@@ -76,8 +89,8 @@ object AllySteps {
                 if (effect.ritualTargetId == null) {
                     val valid = higherAllyResources(player, step)
                     if (valid.isEmpty()) return false
-                    pick(room, effect, "Elige 1 carta " + step.filter().describe() + " de tus " + zonesText(step.zone()) + ": será recurso de un aliado de nivel mayor.",
-                        "Recurso", zones(player, step.zone()), ids(valid), 1)
+                    pick(room, effect, "Elige 1 carta " + step.filter!!.describe() + " de tus " + zonesText(step.zone) + ": será recurso de un aliado de nivel mayor.",
+                        "Recurso", zones(player, step.zone), ids(valid), 1)
                     return true
                 }
                 val card = findAnywhere(room, userId, effect.ritualTargetId)
@@ -99,7 +112,7 @@ object AllySteps {
             }
             is AttachSelfAsResourceToAlly -> {
                 val at = locate(player, effect.sourceInstanceId)
-                val valid: List<CardSlot> = if (at == null) java.util.List.of() else allies(player).filter { c -> c !== at.card() }
+                val valid: List<CardSlot> = if (at == null) java.util.List.of() else allies(player).filter { c -> c !== at.card }
                 if (valid.isEmpty()) return false
                 pick(room, effect, "Elige el aliado que recibe a " + effect.sourceName + " como recurso.", "Recibe", player.field, ids(valid), 1)
                 return true
@@ -118,9 +131,9 @@ object AllySteps {
                 return true
             }
             is PickAllyWithMaterials -> {
-                val valid = allies(player).filter { c -> c.materials!!.size >= step.count() }
+                val valid = allies(player).filter { c -> c.materials!!.size >= step.count }
                 if (valid.isEmpty()) return false
-                pick(room, effect, "Elige 1 aliado con " + step.count() + " o más materiales.", "Elegido", player.field, ids(valid), 1)
+                pick(room, effect, "Elige 1 aliado con " + step.count + " o más materiales.", "Elegido", player.field, ids(valid), 1)
                 return true
             }
             is ActivateSubjectSummonEffect -> {
@@ -140,16 +153,16 @@ object AllySteps {
                 return false
             }
             is TributeAlliesLevelSum -> {
-                val valid = allies(player).filter { step.filter().matches(it) }
-                pick(room, effect, "Tributa " + step.minCount() + " o más aliados " + step.filter().describe() + " que sumen " + step.minSum() + " o más en nivel.",
+                val valid = allies(player).filter { step.filter!!.matches(it) }
+                pick(room, effect, "Tributa " + step.minCount + " o más aliados " + step.filter!!.describe() + " que sumen " + step.minSum + " o más en nivel.",
                     "Tributar", player.field, ids(valid), valid.size)
-                room.prompt!!.min = step.minCount()
+                room.prompt!!.min = step.minCount
                 return true
             }
             is PlaceFromHandUntilTurnEnd -> {
-                val valid = player.hand.filter { step.filter().matches(it) }
+                val valid = player.hand.filter { step.filter!!.matches(it) }
                 if (valid.isEmpty()) return false
-                pick(room, effect, "Puedes colocar 1 criatura " + step.filter().describe() + " de tu mano en tu retaguardia; al final del turno vuelve a tu mano.",
+                pick(room, effect, "Puedes colocar 1 criatura " + step.filter!!.describe() + " de tu mano en tu retaguardia; al final del turno vuelve a tu mano.",
                     "A la retaguardia", player.hand, ids(valid), 1)
                 room.prompt!!.min = 0
                 return true
@@ -157,7 +170,7 @@ object AllySteps {
             is TributeAllyMaterialWhere -> {
                 val valid = allyMaterialsWhere(player, step)
                 if (valid.isEmpty()) return false
-                pick(room, effect, "Tributa 1 material " + step.material().describe() + " de un aliado " + step.ally().describe() + ".", "Tributar", valid, ids(valid), 1)
+                pick(room, effect, "Tributa 1 material " + step.material!!.describe() + " de un aliado " + step.ally!!.describe() + ".", "Tributar", valid, ids(valid), 1)
                 return true
             }
             is ActivateTributedSummonEffect -> {
@@ -198,18 +211,18 @@ object AllySteps {
                 val ally = if (trigger == null) null else find(player.field, trigger.cardInstanceId)
                 if (ally == null || ally.getLevel() == null) return false
                 val valid = player.tributeZone
-                    .filter { c -> step.filter().matches(c) && c.getLevel() != null && c.getLevel()!! < ally.getLevel()!! }
+                    .filter { c -> step.filter!!.matches(c) && c.getLevel() != null && c.getLevel()!! < ally.getLevel()!! }
                     .map { it.instanceId }
                 if (valid.isEmpty()) return false
                 effect.subjectId = ally.instanceId
-                pick(room, effect, "Añade a " + name(ally) + " 1 criatura " + step.filter().describe() + " de menor nivel de tus tributos como material.",
+                pick(room, effect, "Añade a " + name(ally) + " 1 criatura " + step.filter!!.describe() + " de menor nivel de tus tributos como material.",
                     "Material", player.tributeZone, valid, 1)
                 return true
             }
             is SacrificeAlly -> {
                 val valid = sacrificable(effect, player, step)
                 if (valid.isEmpty()) return false
-                pick(room, effect, if (step.toUntapAnother())
+                pick(room, effect, if (step.toUntapAnother)
                     "Sacrifica 1 aliado. No puede ser el único aliado agotado que queda por reactivar."
                 else "Sacrifica 1 aliado.", "Sacrificar", player.field, ids(valid), 1)
                 return true
@@ -233,7 +246,7 @@ object AllySteps {
         when (step) {
             is MaterialOfExhaustedAllyToBack -> {
                 if (!picks.isEmpty()) {
-                    val card = find(exhaustedAllyMaterials(player, step.filter()), picks[0]) ?: return "Ese material ya no está"
+                    val card = find(exhaustedAllyMaterials(player, step.filter), picks[0]) ?: return "Ese material ya no está"
                     for (ally in player.field) ally.materials!!.remove(card)
                     player.hand.add(card)
                     placeOnField(room, effect, player, card, "hand", false, false)
@@ -249,8 +262,8 @@ object AllySteps {
                 }
                 val ally = find(player.field, effect.subjectId)
                 for (id in picks) {
-                    val resource = find(ally.resources, id) ?: return "Ese recurso ya no está"
-                    ally.resources!!.remove(resource)
+                    val resource = find(ally!!.resources, id) ?: return "Ese recurso ya no está"
+                    ally!!.resources!!.remove(resource)
                     resource.faceDown = false
                     player.tributeZone.add(resource)
                     record(room, GameEvent.TRIBUTE, userId, resource, "resources", "tributeZone", effect, java.util.Map.of<String, Any?>("byCard", effect.sourceInstanceId),
@@ -268,7 +281,7 @@ object AllySteps {
                 val ally = find(player.field, picks[0])
                 effect.ritualTargetId = null
                 if (card == null || ally == null) return "Esa carta ya no está disponible"
-                val from = zoneOf(player, step.zone(), card)
+                val from = zoneOf(player, step.zone, card)
                 zone(player, from).remove(card)
                 card.faceDown = false
                 ally.resources!!.add(card)
@@ -312,12 +325,12 @@ object AllySteps {
                 val chosen: MutableList<CardSlot> = ArrayList()
                 for (id in picks) {
                     val c = find(player.field, id)
-                    if (c == null || !step.filter().matches(c)) return "Ese aliado ya no está en el campo"
+                    if (c == null || !step.filter!!.matches(c)) return "Ese aliado ya no está en el campo"
                     chosen.add(c)
                 }
                 val sum = chosen.sumOf { c -> if (c.getLevel() == null) 0 else c.getLevel()!! }
-                if (chosen.size < step.minCount() || sum < step.minSum())
-                    return "Elige " + step.minCount() + " o más aliados que sumen " + step.minSum() + " o más en nivel (suman " + sum + ")"
+                if (chosen.size < step.minCount || sum < step.minSum)
+                    return "Elige " + step.minCount + " o más aliados que sumen " + step.minSum + " o más en nivel (suman " + sum + ")"
                 for (c in chosen) {
                     player.field.remove(c)
                     for (a in concat(c.materials, c.resources)) player.discardPile.add(a)
@@ -350,14 +363,14 @@ object AllySteps {
                     player.username + " coloca " + name(card) + " en su retaguardia hasta el final del turno (" + effect.sourceName + ")")
             }
             is TributeAllyMaterialWhere -> {
-                val holder = allies(player).firstOrNull { a -> step.ally().matches(a) && find(a.materials, picks[0]) != null }
+                val holder = allies(player).firstOrNull { a -> step.ally!!.matches(a) && find(a.materials, picks[0]) != null }
                     ?: return "Ese material ya no está"
                 val material = find(holder.materials, picks[0])
                 holder.materials!!.remove(material)
-                material.faceDown = false
+                material!!.faceDown = false
                 player.tributeZone.add(material)
                 effect.subjectId = holder.instanceId
-                effect.lastTributed = ArrayList(java.util.List.of(material.instanceId))
+                effect.lastTributed = ArrayList(java.util.List.of(material!!.instanceId))
                 record(room, GameEvent.TRIBUTE, userId, material, "materials", "tributeZone", effect, java.util.Map.of<String, Any?>("byCard", effect.sourceInstanceId),
                     player.username + " tributa " + name(material) + " de los materiales de " + name(holder) + " (" + effect.sourceName + ")")
             }
@@ -380,7 +393,7 @@ object AllySteps {
                 val holder = allies(player).firstOrNull { a -> find(a.materials, picks[0]) != null } ?: return "Ese material ya no está"
                 val material = find(holder.materials, picks[0])
                 holder.materials!!.remove(material)
-                material.faceDown = false
+                material!!.faceDown = false
                 player.tributeZone.add(material)
                 record(room, GameEvent.TRIBUTE, userId, material, "materials", "tributeZone", effect, java.util.Map.of<String, Any?>("byCard", effect.sourceInstanceId),
                     player.username + " tributa " + name(material) + " de los materiales de " + name(holder) + " (" + effect.sourceName + ")")
