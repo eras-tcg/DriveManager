@@ -35,7 +35,7 @@ object CardEffects {
     private val KEYWORDS: Map<String, EffectScript> = java.util.Map.of(
         "celeridad", EffectScript("kw:celeridad", Moment.ON_SUMMON, false, "Celeridad",
             "Puede subir a tu línea frontal.", java.util.List.of(moveSelfToFront()))
-            .`when`(not(Condition.inFrontLine())),
+            .`when`(Condition.not(Condition.inFrontLine())),
         "agrupar 1", EffectScript("kw:agrupar", Moment.ON_ATTACK, false, "Agrupar 1",
             "Si esta carta declara ataque: puedes agotar 1 aliado para que esta carta, durante el ataque, gane su fuerza e inflija daño 1 vez " +
                     "extra en caso de hacerlo.", java.util.List.of<EffectStep>(GroupUp(1))))
@@ -92,7 +92,7 @@ object CardEffects {
     @JvmStatic
     fun inheritedFrom(scriptId: String?): String? {
         for ((key, value) in INHERITED) {
-            if (value.any { s -> s.id() == scriptId }) return key
+            if (value.any { s -> s.id == scriptId }) return key
         }
         return null
     }
@@ -245,9 +245,9 @@ object CardEffects {
     /** Looks an effect up by its id (card effects and keywords). */
     @JvmStatic
     fun byId(id: String): Optional<EffectScript> {
-        for (scripts in BY_NAME.values) for (s in scripts) if (s.id() == id) return Optional.of(s)
-        for (scripts in INHERITED.values) for (s in scripts) if (s.id() == id) return Optional.of(s)
-        for (s in KEYWORDS.values) if (s.id() == id) return Optional.of(s)
+        for (scripts in BY_NAME.values) for (s in scripts) if (s.id == id) return Optional.of(s)
+        for (scripts in INHERITED.values) for (s in scripts) if (s.id == id) return Optional.of(s)
+        for (s in KEYWORDS.values) if (s.id == id) return Optional.of(s)
         return if (id.startsWith("kw:agrupar-")) Optional.of(agrupar(Integer.parseInt(id.substring("kw:agrupar-".length)))) else Optional.empty()
     }
 

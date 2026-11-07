@@ -1,6 +1,6 @@
 package com.drive.drive_manager.simulator.engine
 
-import com.drive.drive_manager.simulator.engine.CombatRules.*
+import com.drive.drive_manager.simulator.engine.CombatRules.combatStep
 import com.drive.drive_manager.simulator.engine.EffectEngine.*
 import com.drive.drive_manager.simulator.engine.EffectScript.Limit
 import com.drive.drive_manager.simulator.engine.EffectStep.*
@@ -38,7 +38,7 @@ object Chain {
             val top = if (chain.isEmpty()) null else chain[chain.size - 1]
             if (top != null && paying(top)) {
                 // The effect just activated pays its cost before anything else, choices included
-                if (!Resolution.run(room, top, script(top).cost()[top.costIndex])) top.costIndex = top.costIndex + 1
+                if (!Resolution.run(room, top, script(top).cost!![top.costIndex])) top.costIndex = top.costIndex + 1
             } else if (chain.isEmpty() && !room.pendingEvents.isEmpty()) {
                 queueTriggers(room)
             } else if (!resolving && !room.triggerQueue.isEmpty()) {
@@ -84,11 +84,11 @@ object Chain {
         // nothing to resolve: it goes to the Descarte (rule 6.2.3.1)
         for (event in events) {
             if (GameEvent.PLAY != event.type) continue
-            val resolves = triggered.any { e -> e.sourceInstanceId == event.cardInstanceId && script(e).moment() == EffectScript.Moment.ON_PLAY }
+            val resolves = triggered.any { e -> e.sourceInstanceId == event.cardInstanceId && script(e).moment == EffectScript.Moment.ON_PLAY }
             val owner = room.getPlayer(event.playerId)
             val card = if (owner == null) null else find(owner.field, event.cardInstanceId)
             if (!resolves && card != null && "utility" == card.cardType &&
-                CardEffects.of(card).any { sc -> sc.moment() == EffectScript.Moment.ON_PLAY }) {
+                CardEffects.of(card).any { sc -> sc.moment == EffectScript.Moment.ON_PLAY }) {
                 owner!!.field.remove(card)
                 leaveField(card)
                 owner.discardPile.add(card)
@@ -122,7 +122,7 @@ object Chain {
                     for (n in names) scripts.addAll(CardEffects.inheritedOf(n as String?))
                 }
                 for (script in scripts) {
-                    if (script.moment() == moment) addIfTriggers(room, result, script, event, source, controllerId)
+                    if (script.moment == moment) addIfTriggers(room, result, script, event, source, controllerId)
                 }
             }
         }
@@ -148,8 +148,8 @@ object Chain {
             for (zone in java.util.List.of("field", "hand", "tributeZone", "discardPile")) {
                 for (card in ArrayList(EffectEngine.zone(p, zone))) {
                     for (script in CardEffects.of(card)) {
-                        if (script.moment() != EffectScript.Moment.ON_EVENT || script.sourceZone() != zone) continue
-                        if (script.allyTurn() && p.userId != room.currentTurnUserId) continue
+                        if (script.moment != EffectScript.Moment.ON_EVENT || script.sourceZone != zone) continue
+                        if (script.allyTurn && p.userId != room.currentTurnUserId) continue
                         // A card on the field cannot react to an event that happened before it got there
                         if (Zone.FIELD.`is`(zone) && event.seq < card.fieldSeq) continue
                         addIfTriggers(room, result, script, event, card, p.userId)
@@ -163,10 +163,10 @@ object Chain {
     @JvmStatic
     fun addIfTriggers(room: GameRoom, result: MutableList<PendingEffect>, script: EffectScript, event: GameEvent,
                       source: CardSlot, controllerId: String?) {
-        if (script.condition() != null && !script.condition().test(room, event, source, controllerId)) return
+        if (script.condition != null && !script.condition.test(room, event, source, controllerId)) return
         val e = pending(room, script, controllerId, source, event.seq)
         if (limitReached(room, e, script)) {
-            if (script.limit() == Limit.DEFINITIVE) log(room, name(source) + ": " + limitText(room, e, script), null)
+            if (script.limit == Limit.DEFINITIVE) log(room, name(source) + ": " + limitText(room, e, script), null)
             return
         }
         result.add(e)
@@ -178,14 +178,14 @@ object Chain {
      */
     @JvmStatic
     fun limitReached(room: GameRoom, e: PendingEffect, script: EffectScript): Boolean {
-        if (script.limit() == Limit.DEFINITIVE && room.firstTurn) return true
-        return script.limit() != Limit.NONE && room.usedThisTurn.contains(usageKey(e, script))
+        if (script.limit == Limit.DEFINITIVE && room.firstTurn) return true
+        return script.limit != Limit.NONE && room.usedThisTurn.contains(usageKey(e, script))
     }
 
     /** Why [limitReached] stops it, for the player. */
     @JvmStatic
     fun limitText(room: GameRoom, e: PendingEffect, script: EffectScript): String {
-        if (script.limit() != Limit.DEFINITIVE) return "su efecto ya se usó este turno"
+        if (script.limit != Limit.DEFINITIVE) return "su efecto ya se usó este turno"
         return if (room.firstTurn) "no se pueden activar Efectos Definitivos en el primer turno de la partida"
         else "ya activaste un Efecto Definitivo este turno (solo 1 por turno)"
     }
@@ -200,7 +200,7 @@ object Chain {
     @JvmStatic
     fun cannotActivateOnPlay(room: GameRoom, userId: String?, card: CardSlot): String? {
         if ("utility" != card.cardType) return null
-        val onPlay = CardEffects.of(card).filter { s -> s.moment() == EffectScript.Moment.ON_PLAY }
+        val onPlay = CardEffects.of(card).filter { s -> s.moment == EffectScript.Moment.ON_PLAY }
         val player = room.getPlayer(userId)
         if (onPlay.isEmpty() || player == null) return null
         val from = listOf(player.hand, player.tributeZone, player.discardPile, player.deck, player.lifeStack).firstOrNull { z -> z.contains(card) }
@@ -231,24 +231,24 @@ object Chain {
     private fun whyNot(room: GameRoom, userId: String?, card: CardSlot, script: EffectScript, played: GameEvent): String? {
         val e = candidate(script, userId, card, played.seq)
         if (limitReached(room, e, script)) return limitText(room, e, script)
-        if (script.condition() != null && !script.condition().test(room, played, card, userId)) return "no se cumple la condición de su efecto"
-        for (step in script.cost()) if (!possible(room, e, step)) return "no puedes pagar el coste de su efecto"
+        if (script.condition != null && !script.condition.test(room, played, card, userId)) return "no se cumple la condición de su efecto"
+        for (step in script.cost!!) if (!possible(room, e, step)) return "no puedes pagar el coste de su efecto"
         return null
     }
 
     @JvmStatic
     fun usageKey(e: PendingEffect, script: EffectScript): String {
-        if (script.limit() == Limit.DEFINITIVE) return e.controllerId + "|" + DEFINITIVE_USED
-        if (script.limit() == Limit.ONE_EFFECT_OF_NAME_PER_TURN) return e.controllerId + "|name:" + e.sourceName!!.lowercase(java.util.Locale.ROOT)
-        return if (script.limit() == Limit.ONCE_PER_TURN_BETWEEN_COPIES)
-            e.controllerId + "|" + script.id()
+        if (script.limit == Limit.DEFINITIVE) return e.controllerId + "|" + DEFINITIVE_USED
+        if (script.limit == Limit.ONE_EFFECT_OF_NAME_PER_TURN) return e.controllerId + "|name:" + e.sourceName!!.lowercase(java.util.Locale.ROOT)
+        return if (script.limit == Limit.ONCE_PER_TURN_BETWEEN_COPIES)
+            e.controllerId + "|" + script.id
         // "Una vez por turno" belongs to this card while it stays on the field (rule 11.8: back on the field it is a new card)
-        else e.controllerId + "|" + e.sourceInstanceId + "@" + e.sourceFieldSeq + "|" + script.id()
+        else e.controllerId + "|" + e.sourceInstanceId + "@" + e.sourceFieldSeq + "|" + script.id
     }
 
     @JvmStatic
     fun rank(e: PendingEffect, active: String?): Int {
-        val mandatory = script(e).mandatory()
+        val mandatory = script(e).mandatory
         val mine = e.controllerId == active
         return (if (mandatory) 0 else 2) + (if (mine) 0 else 1)
     }
@@ -272,7 +272,7 @@ object Chain {
             if (rank(e, active) != head) break
             group.add(e)
         }
-        if (script.mandatory() && !effect.isOrdered) {
+        if (script.mandatory && !effect.isOrdered) {
             // Several mandatory effects (also several of one card, like its inherited ones): their controller
             // chains them one at a time (all of them are chained)
             // A lone one too (when the room asks for it): its controller sees what triggered and chains it
@@ -291,14 +291,14 @@ object Chain {
                 return
             }
         }
-        if (!script.mandatory() && !effect.isConfirmed) {
+        if (!script.mandatory && !effect.isConfirmed) {
             // Optional effects that cannot be activated now (cost, nothing to do, limit) lose their moment, and so do
             // those of a player who turned the optional effects off (except "En Juego": the card was played for it)
             val controller = room.getPlayer(effect.controllerId)
             val skip = controller != null && controller.skipOptional
             var dropped = false
             for (e in group) {
-                if (skip && script(e).moment() != EffectScript.Moment.ON_PLAY) {
+                if (skip && script(e).moment != EffectScript.Moment.ON_PLAY) {
                     room.triggerQueue.remove(e)
                     // As if the player chose not to activate it: the switch is not revealed to anyone
                     record(room, GameEvent.EFFECT_DECLINED, controller!!.userId, null, null, null, e, null,
@@ -331,13 +331,13 @@ object Chain {
                 return
             }
         }
-        if (script.mandatory() || effect.isConfirmed) {
+        if (script.mandatory || effect.isConfirmed) {
             room.triggerQueue.removeAt(0)
-            for (step in script.cost()) {
+            for (step in script.cost!!) {
                 if (!possible(room, effect, step)) {
                     // A cost that cannot be paid (no valid target): it cannot be activated (rule 11.2.0.2)
                     log(room, effect.sourceName + ": " + effect.label + " no puede activarse (no hay objetivos válidos)", null)
-                    if (script.moment() == EffectScript.Moment.ON_PLAY) utilityToDiscard(room, effect)
+                    if (script.moment == EffectScript.Moment.ON_PLAY) utilityToDiscard(room, effect)
                     return
                 }
             }
@@ -405,7 +405,7 @@ object Chain {
     @JvmStatic
     fun activate(room: GameRoom, effect: PendingEffect) {
         val script = script(effect)
-        if (script.limit() != Limit.NONE) room.usedThisTurn.add(usageKey(effect, script))
+        if (script.limit != Limit.NONE) room.usedThisTurn.add(usageKey(effect, script))
         effect.link = room.chain.size + 1
         record(room, GameEvent.EFFECT_ACTIVATED, effect.controllerId, null, null, null, effect,
             java.util.Map.of<String, Any?>("label", effect.label, "link", effect.link, "sourceId", effect.sourceInstanceId,
@@ -418,7 +418,7 @@ object Chain {
     /** The effect is still paying its cost. */
     @JvmStatic
     fun paying(effect: PendingEffect): Boolean {
-        return effect.costIndex < script(effect).cost().size
+        return effect.costIndex < script(effect).cost!!.size
     }
 
     /** An optional effect is offered only when its cost can be paid and its choices have something to choose. */
@@ -439,14 +439,14 @@ object Chain {
 
     @JvmStatic
     fun canActivate(room: GameRoom, effect: PendingEffect, script: EffectScript): Boolean {
-        for (step in script.cost()) if (!possible(room, effect, step)) return false
+        for (step in script.cost!!) if (!possible(room, effect, step)) return false
         // Designer ruling (2026-10-30): the cost can be paid to activate an effect even when its resolution would do nothing
         // (Sacerdotisa Del Portal Del Eclipse with no valid creature in the Tributos)
-        if (!script.cost().isEmpty()) return true
-        if (!allPossibleAfterIfPossible(room, effect, script.steps(), 0)) return false
+        if (!script.cost!!.isEmpty()) return true
+        if (!allPossibleAfterIfPossible(room, effect, script.steps, 0)) return false
         // "Si ningún enemigo fue …: …" (IfNotDone): the effect does something even when there is nothing to choose
-        if (script.steps().any { s -> s is IfNotDone }) return true
-        val steps = script.steps()
+        if (script.steps!!.any { s -> s is IfNotDone }) return true
+        val steps = script.steps!!
         var i = 0
         while (i < steps.size) {
             // "puedes A para B": A was checked; what B needs does not stop it
@@ -476,15 +476,15 @@ object Chain {
     @JvmStatic
     fun candidate(script: EffectScript, controllerId: String?, source: CardSlot, triggerSeq: Long): PendingEffect {
         val e = PendingEffect()
-        e.scriptId = script.id()
+        e.scriptId = script.id
         e.controllerId = controllerId
         e.sourceInstanceId = source.instanceId
         e.sourceFieldSeq = source.fieldSeq
         e.sourceName = name(source)
-        e.label = script.label()
-        e.text = script.text()
+        e.label = script.label
+        e.text = script.text
         e.triggerSeq = triggerSeq
-        val from = CardEffects.inheritedFrom(script.id())
+        val from = CardEffects.inheritedFrom(script.id)
         if (from != null) {
             val resource = source.resources!!.firstOrNull { r -> from.equals(r.cardName, ignoreCase = true) }
             e.inheritedFromName = if (resource != null) resource.cardName else from
@@ -535,9 +535,9 @@ object Chain {
         for (zone in java.util.List.of("field", "hand")) {
             for (card in EffectEngine.zone(player, zone)) {
                 for (script in CardEffects.of(card)) {
-                    if (script.moment() != EffectScript.Moment.RESPONSE || script.sourceZone() != zone) continue
-                    if (script.allyTurn() && playerId != room.currentTurnUserId) continue
-                    if (script.condition() != null && (activation == null || !script.condition().test(room, activation, card, playerId))) continue
+                    if (script.moment != EffectScript.Moment.RESPONSE || script.sourceZone != zone) continue
+                    if (script.allyTurn && playerId != room.currentTurnUserId) continue
+                    if (script.condition != null && (activation == null || !script.condition.test(room, activation, card, playerId))) continue
                     val e = candidate(script, playerId, card, activation?.seq ?: room.eventSeq)
                     if (limitReached(room, e, script)) continue
                     if (canActivate(room, e, script)) result.add(e)
@@ -571,9 +571,9 @@ object Chain {
         for (zone in java.util.List.of("field", "hand", "tributeZone", "discardPile")) {
             for (card in EffectEngine.zone(player, zone)) {
                 for (script in CardEffects.of(card)) {
-                    if (script.moment() != EffectScript.Moment.ACTIVATED || script.sourceZone() != zone) continue
-                    if (script.allyTurn() && userId != room.currentTurnUserId) continue
-                    if (script.condition() != null && !script.condition().test(room, null, card, userId)) continue
+                    if (script.moment != EffectScript.Moment.ACTIVATED || script.sourceZone != zone) continue
+                    if (script.allyTurn && userId != room.currentTurnUserId) continue
+                    if (script.condition != null && !script.condition.test(room, null, card, userId)) continue
                     val e = candidate(script, userId, card, room.eventSeq)
                     if (limitReached(room, e, script)) continue
                     if (canActivate(room, e, script)) result.add(e)

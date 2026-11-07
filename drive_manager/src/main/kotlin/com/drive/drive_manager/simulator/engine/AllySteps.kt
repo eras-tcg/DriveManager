@@ -126,7 +126,7 @@ object AllySteps {
             is ActivateSubjectSummonEffect -> {
                 val ally = subject(room, effect)
                 val summon = if (ally == null) null else CardEffects.of(ally.cardName)
-                    .firstOrNull { sc -> sc.moment() == EffectScript.Moment.ON_SUMMON }
+                    .firstOrNull { sc -> sc.moment == EffectScript.Moment.ON_SUMMON }
                 if (summon == null) {
                     log(room, "No hay un efecto En Invocación que activar (" + effect.sourceName + ")", null)
                     return false
@@ -165,7 +165,7 @@ object AllySteps {
                 val materialId = if (effect.lastTributed.isEmpty()) null else effect.lastTributed[0]
                 val material = if (materialId == null) null else find(player.tributeZone, materialId)
                 val summon = if (material == null) null else CardEffects.of(material.cardName)
-                    .firstOrNull { sc -> sc.moment() == EffectScript.Moment.ON_SUMMON }
+                    .firstOrNull { sc -> sc.moment == EffectScript.Moment.ON_SUMMON }
                 if (ally == null || summon == null) {
                     log(room, "No hay un efecto En Invocación que activar (" + effect.sourceName + ")", null)
                     return false

@@ -69,7 +69,20 @@ classes not converted yet). Once everything is Kotlin and free of JVM-only APIs 
    - **Kotlin callers of a record that becomes Kotlin** switch from the accessor calls they used on the Java record
      (`use.modifier().payment().kind()`) to properties (`use.modifier.payment!!.kind`); `fix-accessors.py` fixes only
      Java. A record's other methods (`damage()`, `needsChoice()`, `instead()`, `reduceNow()`) stay `fun`s: a
-     `val x get() = …` would add a `getX()` that Jackson writes as one more property.
+     `val x get() = …` would add a `getX()` that Jackson writes as one more property. `fix-kotlin-calls.py` (below) drops
+     the `()` at each "cannot be invoked as a function" the compiler reports; then add `!!` where Java dereferenced a
+     component that is now nullable (`script.cost!!`, `for (step in script.cost!!)`), never on a null check
+     (`script.condition != null && !script.condition.test(...)` smart-casts).
+   - **Static methods of an interface** (`Condition.any(...)`, `Condition.yourTurn()`): a `companion object` inside the
+     sealed interface, every function `@JvmStatic` (Java keeps `Condition.any(...)`), the private ones `private fun`s
+     there (nested records reach them). The companion is no member of the family (it does not implement it). A Kotlin
+     file that star-imported the Java interface (`import ...Condition.*`) still gets its nested classes but not the
+     companion's functions: write `Condition.not(...)`.
+   - **A nested class named like a Kotlin built-in** (`Condition.Any`) shadows `kotlin.Any` inside the interface and in
+     files that star-import it: write `kotlin.Any` there.
+   - **Java method references evaluate their receiver at once**: `d.filter()::matches` throws on a null filter even
+     over an empty list. Write `val f = d.filter()!!` before the lambda (`count { f.matches(it) }`).
+   - A Lombok `boolean` on a Java class not converted yet (`PendingEffect.lastDone`) is `isLastDone` from Kotlin.
    - **Static initialization order**: an `object`'s properties and `init` blocks run in `<clinit>` in textual order, as
      Java's static fields and blocks did. Keep the `init` that loads (`CardEffects`: `CardFiles.load().forEach(::install)`)
      after every property, and in a cycle between two objects (`CostModifiers.init` calls `CardEffects.load()`, whose
@@ -106,6 +119,7 @@ classes not converted yet). Once everything is Kotlin and free of JVM-only APIs 
 
 ```bash
 mvn -q clean test-compile 2>&1 | python3 docs/kotlin-conversion/fix-accessors.py name1,name2,...   # record accessors
+mvn -q clean test-compile 2>&1 | python3 docs/kotlin-conversion/fix-kotlin-calls.py                  # x() -> x in Kotlin callers
 mvn -q clean test-compile                                                                          # until it compiles
 mvn -q test -Dtest='com.drive.drive_manager.simulator.**.*Test' -Dsurefire.failIfNoSpecifiedTests=false
 ```
@@ -127,4 +141,11 @@ itself), and writes an object as its type alone (`{"type":"LastCount"}`), exactl
 A `data object`'s `toString` is `LastCount` (the record's was `LastCount[]`) and its `hashCode` differs; nothing reads
 them. To check a change in a family `EffectJson` reads, dump `EffectJson.write` of every `CardEffects.definitions()`
 (and `ruleEffects()`) with a throwaway test, in this tree and in a `git worktree` of `HEAD`, and `cmp` the two: for
-batch 4 they were byte-identical (358 cards, each reading back equal).
+batch 4 they were byte-identical (358 cards, each reading back equal). Batch 5 (`Condition`, `EffectScript`): byte-identical too.
+
+**`EffectStep` cannot take `data object`s yet.** `ResolutionTest.everyStepHasItsFamily` walks `EffectStep`'s
+`getPermittedSubclasses()` and, for every member that is not a record, its own `getPermittedSubclasses()`: a
+`data object` is a final class, not sealed, so that is `null` and the loop throws a `NullPointerException`. Its 27 empty
+records need a decision first (the test treating a Kotlin object as a leaf member, as `EffectJson.collect` and
+`LanguageCatalogExportTest.collect` already do, and still asking `Resolution.hasFamily` of it); until then `EffectStep`
+stays Java, which Kotlin reads as before (`step.filter()`). `Condition` and `Amount` have no such test.

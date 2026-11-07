@@ -6,7 +6,7 @@ import com.drive.drive_manager.simulator.engine.Chain.paying
 import com.drive.drive_manager.simulator.engine.Chain.picked
 import com.drive.drive_manager.simulator.engine.Chain.rank
 import com.drive.drive_manager.simulator.engine.Chain.responses
-import com.drive.drive_manager.simulator.engine.CombatRules.*
+import com.drive.drive_manager.simulator.engine.CombatRules.startCombat
 import com.drive.drive_manager.simulator.engine.EffectEngine.*
 import com.drive.drive_manager.simulator.engine.Removals.*
 import com.drive.drive_manager.simulator.engine.Resolution.*
@@ -115,7 +115,7 @@ object Answers {
 
         val effect = room.chain.firstOrNull { e -> e.id == prompt.effectId } ?: return "El efecto ya no está pendiente"
         val paying = paying(effect)
-        val step = if (paying) script(effect).cost()[effect.costIndex] else script(effect).steps()[effect.stepIndex]
+        val step = if (paying) script(effect).cost!![effect.costIndex] else script(effect).steps!![effect.stepIndex]
         val repeat = booleanArrayOf(false)
         // Cleared first: the step may ask something else right away (a special summon's move up)
         room.prompt = null
