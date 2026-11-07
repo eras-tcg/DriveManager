@@ -1,4 +1,4 @@
-package com.drive.drive_manager.simulator.engine;
+package com.drive.drive_manager.simulator.engine
 
 /**
  * "Todos tus aliados [filtro] ganan [habilidad] hasta …": it applies to the table, not to the creatures there at the time,
@@ -7,4 +7,11 @@ package com.drive.drive_manager.simulator.engine;
  * @param until    "turn" (until the end of this turn) or "nextTurn" (until the end of the opponent's next turn)
  * @param exceptId "todos tus otros aliados": the card that gives it, which does not get it; null for all
  */
-public record FieldGrant(String controllerId, CardFilter filter, String keyword, String until, String source, String exceptId) {}
+data class FieldGrant(
+    val controllerId: String?,
+    val filter: CardFilter?,
+    val keyword: String?,
+    val until: String?,
+    val source: String?,
+    val exceptId: String?,
+)

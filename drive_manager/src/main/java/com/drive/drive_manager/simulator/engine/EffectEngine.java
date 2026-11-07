@@ -331,8 +331,8 @@ public final class EffectEngine {
                 }
                 // "Todos tus aliados … ganan …" on this side of the table
                 for (FieldGrant g : room.getFieldGrants()) {
-                    if (g.controllerId().equals(p.getUserId()) && !card.isFaceDown() && g.filter().matches(card)
-                            && !card.getInstanceId().equals(g.exceptId())) keywords.add(g.keyword());
+                    if (g.getControllerId().equals(p.getUserId()) && !card.isFaceDown() && g.getFilter().matches(card)
+                            && !card.getInstanceId().equals(g.getExceptId())) keywords.add(g.getKeyword());
                 }
                 card.setContinuousStrength(strength);
                 card.setContinuousLevel(level);

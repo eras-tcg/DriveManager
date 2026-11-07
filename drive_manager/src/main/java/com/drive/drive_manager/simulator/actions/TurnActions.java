@@ -123,8 +123,8 @@ public final class TurnActions {
             c.getFloating().replaceAll(f -> new FloatingEffect(f.text(), f.source(), "turn", f.strength(), f.keyword()));
         }));
         // What was given to the table "hasta el final del turno" ends; "del turno oponente" now lasts until the end of this one
-        room.getFieldGrants().removeIf(g -> "turn".equals(g.until()));
-        room.getFieldGrants().replaceAll(g -> new com.drive.drive_manager.simulator.engine.FieldGrant(g.controllerId(), g.filter(), g.keyword(), "turn", g.source(), g.exceptId()));
+        room.getFieldGrants().removeIf(g -> "turn".equals(g.getUntil()));
+        room.getFieldGrants().replaceAll(g -> new com.drive.drive_manager.simulator.engine.FieldGrant(g.getControllerId(), g.getFilter(), g.getKeyword(), "turn", g.getSource(), g.getExceptId()));
         // "el turno anterior": who used a Definitive effect this turn is remembered for the next one
         List<String> definitive = room.getUsedThisTurn().stream().filter(k -> k.endsWith("|" + EffectEngine.DEFINITIVE_USED))
                 .map(k -> EffectEngine.DEFINITIVE_LAST_TURN + k.substring(0, k.indexOf('|'))).toList();

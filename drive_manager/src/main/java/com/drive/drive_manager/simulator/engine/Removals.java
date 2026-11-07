@@ -206,7 +206,7 @@ public final class Removals {
         if (CAUSE_MANUAL.equals(cause) || card == null) return false;
         if (room.getRemovalDecided().remove(card.getInstanceId())) return false;
         if (replacementOptions(room, card, owner, destroy, byId, effect != null).isEmpty()) return false;
-        if (room.getPendingRemovals().stream().anyMatch(r -> r.cardId().equals(card.getInstanceId()))) return true;
+        if (room.getPendingRemovals().stream().anyMatch(r -> r.getCardId().equals(card.getInstanceId()))) return true;
         room.getPendingRemovals().add(new PendingRemoval(card.getInstanceId(), owner.getUserId(), destroy, cause, byId, byCard,
                 effect == null ? null : effect.getId()));
         return true;
@@ -277,18 +277,18 @@ public final class Removals {
     /** Asks the owner of the first pending removal whether to replace it; a removal with nothing left to replace it happens now. */
     static void promptRemoval(GameRoom room) {
         PendingRemoval pending = room.getPendingRemovals().get(0);
-        PlayerState owner = room.getPlayer(pending.ownerId());
-        CardSlot card = owner == null ? null : find(owner.getField(), pending.cardId());
-        List<ReplacementOption> options = card == null ? List.of() : replacementOptions(room, card, owner, pending.destroy(), pending.byId(),
-                pending.effectId() != null);
+        PlayerState owner = room.getPlayer(pending.getOwnerId());
+        CardSlot card = owner == null ? null : find(owner.getField(), pending.getCardId());
+        List<ReplacementOption> options = card == null ? List.of() : replacementOptions(room, card, owner, pending.getDestroy(), pending.getById(),
+                pending.getEffectId() != null);
         if (options.isEmpty()) {
             room.getPendingRemovals().remove(0);
             if (card != null) executeRemoval(room, pending, owner, card);
             return;
         }
         List<CardSlot> sources = options.stream().map(ReplacementOption::source).distinct().toList();
-        rulesPrompt(room, owner.getUserId(), PromptPurpose.REPLACE.id(), name(card) + (pending.destroy() ? " va a ser destruida" : " va a ser removida"),
-                "Puedes usar 1 de estos efectos, o dejar que " + (pending.destroy() ? "sea destruida." : "sea removida."),
+        rulesPrompt(room, owner.getUserId(), PromptPurpose.REPLACE.id(), name(card) + (pending.getDestroy() ? " va a ser destruida" : " va a ser removida"),
+                "Puedes usar 1 de estos efectos, o dejar que " + (pending.getDestroy() ? "sea destruida." : "sea removida."),
                 "Usar", sources, sources);
         room.getPrompt().setSubjectId(card.getInstanceId());
         room.getPrompt().setEffects(options.stream()
@@ -306,7 +306,7 @@ public final class Removals {
             return null;
         }
         PendingRemoval pending = room.getPendingRemovals().get(0);
-        CardSlot card = find(player.getField(), pending.cardId());
+        CardSlot card = find(player.getField(), pending.getCardId());
         if (PromptPurpose.REPLACE_MATERIALS.is(prompt.getPurpose())) {
             // Gémini: the chosen materials go to the Retaguardia, then the destruction goes on (a reaction, not "en su lugar")
             room.setPrompt(null);
@@ -367,11 +367,11 @@ public final class Removals {
             player.getTributeZone().add(material);
             record(room, GameEvent.TRIBUTE, player.getUserId(), material, "materials", "tributeZone", null, Map.of("byCard", guard.getInstanceId()),
                     player.getUsername() + " tributa " + name(material) + " de los materiales de " + name(guard));
-            List<PendingRemoval> saved = room.getPendingRemovals().stream().filter(p -> p.ownerId().equals(player.getUserId())
-                    && Objects.equals(p.effectId(), pending.effectId()) && find(player.getField(), p.cardId()) != null
-                    && g.allies().matches(find(player.getField(), p.cardId()))).toList();
+            List<PendingRemoval> saved = room.getPendingRemovals().stream().filter(p -> p.getOwnerId().equals(player.getUserId())
+                    && Objects.equals(p.getEffectId(), pending.getEffectId()) && find(player.getField(), p.getCardId()) != null
+                    && g.allies().matches(find(player.getField(), p.getCardId()))).toList();
             room.getPendingRemovals().removeAll(saved);
-            log(room, name(guard) + ": " + String.join(", ", saved.stream().map(p -> name(find(player.getField(), p.cardId()))).toList())
+            log(room, name(guard) + ": " + String.join(", ", saved.stream().map(p -> name(find(player.getField(), p.getCardId()))).toList())
                     + " no " + (saved.size() == 1 ? "es removida" : "son removidas"), null);
             destroy(room, sacrificed, player, true, CAUSE_EFFECT, player.getUserId(), guard.getInstanceId(), null);
             return null;
@@ -394,7 +394,7 @@ public final class Removals {
             room.getPendingRemovals().remove(0);
             return null;
         }
-        List<ReplacementOption> options = replacementOptions(room, card, player, pending.destroy(), pending.byId(), pending.effectId() != null);
+        List<ReplacementOption> options = replacementOptions(room, card, player, pending.getDestroy(), pending.getById(), pending.getEffectId() != null);
         ReplacementOption chosen = picks.isEmpty() ? null : options.stream()
                 .filter(o -> o.key().equals(picks.get(0)) || o.source().getInstanceId().equals(picks.get(0))).findFirst().orElse(null);
         if (chosen == null) {
@@ -459,7 +459,7 @@ public final class Removals {
                     player.getTributeZone().add(c);
                 }
                 log(room, player.getUsername() + " tributa " + paid.size() + " " + plural(paid.size(), "recurso", "recursos") + " de " + name(card)
-                        + ": no es " + (pending.destroy() ? "destruida" : "removida") + names(paid), null);
+                        + ": no es " + (pending.getDestroy() ? "destruida" : "removida") + names(paid), null);
             }
             case RESOURCES_TO_TRIBUTES_BEFORE -> {
                 // A reaction: the Recursos go to the Tributos first, then the removal goes on
@@ -471,7 +471,7 @@ public final class Removals {
                     record(room, GameEvent.TRIBUTE, player.getUserId(), c, "resources", "tributeZone", null, Map.of("byCard", card.getInstanceId()), null);
                 }
                 log(room, player.getUsername() + " tributa " + paid.size() + " " + plural(paid.size(), "recurso", "recursos") + " de " + name(card)
-                        + " antes de que sea " + (pending.destroy() ? "destruida" : "removida") + names(paid), null);
+                        + " antes de que sea " + (pending.getDestroy() ? "destruida" : "removida") + names(paid), null);
                 room.getPendingRemovals().remove(0);
                 executeRemoval(room, pending, player, card);
                 return null;
@@ -511,18 +511,18 @@ public final class Removals {
 
     /** The removal that was waiting, as it was going to happen. */
     static void executeRemoval(GameRoom room, PendingRemoval pending, PlayerState owner, CardSlot card) {
-        PendingEffect effect = pending.effectId() == null ? null
-                : room.getChain().stream().filter(e -> pending.effectId().equals(e.getId())).findFirst().orElse(null);
+        PendingEffect effect = pending.getEffectId() == null ? null
+                : room.getChain().stream().filter(e -> pending.getEffectId().equals(e.getId())).findFirst().orElse(null);
         room.getRemovalDecided().add(card.getInstanceId());
-        if (pending.destroy()) {
-            destroy(room, card, owner, false, pending.cause(), pending.byId(), pending.byCard(), effect);
+        if (pending.getDestroy()) {
+            destroy(room, card, owner, false, pending.getCause(), pending.getById(), pending.getByCard(), effect);
             return;
         }
         room.getRemovalDecided().remove(card.getInstanceId());
         removeFromField(owner, card);
         owner.getHand().add(card);
-        PlayerState by = room.getPlayer(pending.byId());
-        record(room, GameEvent.SEND, pending.byId(), card, "field", "hand", effect, Map.of("ownerId", owner.getUserId()),
+        PlayerState by = room.getPlayer(pending.getById());
+        record(room, GameEvent.SEND, pending.getById(), card, "field", "hand", effect, Map.of("ownerId", owner.getUserId()),
                 (by == null ? "" : by.getUsername() + " ") + "sube a " + name(card) + " a la mano de " + owner.getUsername());
     }
 

@@ -296,15 +296,15 @@ public final class Summons {
     static void completeAscension(GameRoom room) {
         PendingAscension pending = room.getPendingAscension();
         room.setPendingAscension(null);
-        PlayerState player = room.getPlayer(pending.playerId());
+        PlayerState player = room.getPlayer(pending.getPlayerId());
         if (player == null) return;
-        CardSlot card = find(zone(player, pending.fromZone()), pending.cardId());
-        CardSlot summoner = find(player.getField(), pending.summonerId());
+        CardSlot card = find(zone(player, pending.getFromZone()), pending.getCardId());
+        CardSlot summoner = find(player.getField(), pending.getSummonerId());
         if (card == null || summoner == null) {
             log(room, "El Ascenso no se completa: " + (summoner == null ? "el invocador dejó el campo" : "la carta ya no está"), null);
             return;
         }
-        specialSummon(room, player, card, specialRequirement(card), summoner, List.of(), pending.fromZone(), 0, null);
+        specialSummon(room, player, card, specialRequirement(card), summoner, List.of(), pending.getFromZone(), 0, null);
     }
 
     /**
