@@ -102,3 +102,11 @@ tests must stay green with the same counts per class: `SimulatorJsonTest` sums t
 player's view and the replay fingerprints, `RoomCopyTest` and `ShallowCopyTest` list the copied fields (a Kotlin
 property keeps its field name), `CoreBoundaryTest` keeps Spring, Jackson and reflection out of the core.
 `BotPlayTest.aCopyOfTheRoomPlaysApartFromTheRoom` fails about once in a hundred runs, also before the conversion.
+
+## Records without fields → `data object`
+
+A record without components (`record LastCount() implements Amount {}`) becomes a `data object LastCount : Amount`.
+`EffectJson` registers a sealed family's records **and** its Kotlin objects (a final class whose static `INSTANCE` is
+itself), and writes an object as its type alone (`{"type":"LastCount"}`), exactly as the empty record was written. A
+`data object` equals any instance of its type, as the empty record did; Java callers that wrote `new LastCount()` write
+`LastCount.INSTANCE`. In `kotlinx.serialization` (eras-engine) the same `data object` is the standard form.

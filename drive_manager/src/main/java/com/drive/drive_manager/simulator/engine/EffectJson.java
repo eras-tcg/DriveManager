@@ -60,6 +60,8 @@ public final class EffectJson {
                 .disable(DeserializationFeature.FAIL_ON_NULL_FOR_PRIMITIVES)
                 .enable(tools.jackson.core.StreamReadFeature.STRICT_DUPLICATE_DETECTION)
                 .enable(DeserializationFeature.FAIL_ON_INVALID_SUBTYPE)
+                // A member without fields (a Kotlin data object) is written as its type alone
+                .disable(SerializationFeature.FAIL_ON_EMPTY_BEANS)
                 .changeDefaultPropertyInclusion(v -> v.withValueInclusion(JsonInclude.Include.NON_EMPTY))
                 // A primitive false or 0 is what it is when absent; an Integer's 0 is not (null is "not asked")
                 .withConfigOverride(boolean.class, o -> o.setInclude(JsonInclude.Value.construct(JsonInclude.Include.NON_DEFAULT, JsonInclude.Include.NON_DEFAULT)))
@@ -73,13 +75,27 @@ public final class EffectJson {
         return builder.build();
     }
 
-    /** Every record of a sealed family, under its simple name. */
+    /**
+     * Every member of a sealed family, under its simple name: its records, and the Kotlin {@code data object}s that
+     * take the place of records without fields (Kotlin has no record without a component). Both are written as
+     * {@code {"type": "<name>", …}}; an object has nothing but its type.
+     */
     private static void collect(Class<?> type, List<NamedType> into) {
-        if (type.isRecord()) {
+        if (type.isRecord() || kotlinObject(type)) {
             into.add(new NamedType(type, type.getSimpleName()));
             return;
         }
         Class<?>[] permitted = type.getPermittedSubclasses();
         if (permitted != null) for (Class<?> sub : permitted) collect(sub, into);
+    }
+
+    /** A Kotlin {@code object}: a final class whose one instance is its static {@code INSTANCE}. */
+    private static boolean kotlinObject(Class<?> type) {
+        if (type.isInterface() || !java.lang.reflect.Modifier.isFinal(type.getModifiers())) return false;
+        try {
+            return type.getField("INSTANCE").getType() == type;
+        } catch (NoSuchFieldException e) {
+            return false;
+        }
     }
 }
