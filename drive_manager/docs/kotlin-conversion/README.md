@@ -41,6 +41,21 @@ classes not converted yet). Once everything is Kotlin and free of JVM-only APIs 
      `PermittedSubclasses` attribute (jvmTarget 21) **sorted by name**, not in declaration order: the same classes and
      simple names, so `EffectJson` (which names them by simple name) reads and writes the same JSON, but anything that
      depends on their order must sort them. Check with `javap -v -cp target/classes '<Family>'`.
+   - **A compact constructor that also copies** (`CardFilter`, `CardDefinition`: `x == null ? List.of() : List.copyOf(x)`):
+     the accessor gives what Java stored, `if (x == null) java.util.List.of() else java.util.List.copyOf(x)` (unmodifiable, as
+     Java's), and the class's own code reads a getter-only `private val xList get() = x ?: java.util.List.of()` so a hot path
+     (`matches`) does not copy (a record can have no field outside its components).
+   - **A sealed family moves in one step, wherever its members are written.** Kotlin refuses to extend a Java sealed
+     interface ("extending Java sealed classes is prohibited"), and javac refuses a Java member of a Kotlin one (Kotlin's
+     `PermittedSubclasses` lists only its own classes). So `Reaction` goes together with `CostModifiers.CostModifier` and
+     the records nested in `CardEffects` (`Replacement`, `AllyRemovalSummon`, `AllyGuard`, `DamageReplacement`), and
+     `CardEffects` waits for it.
+   - **A record without components** (`Amount.LastCount()`, 9 in `Amount`, 27 in `EffectStep`, 2 in `Condition`, 3 in
+     `Reaction`) has no Kotlin record: `@JvmRecord` needs a `data class`, and a `data class` needs a parameter. A plain
+     class or a `data object` is not a record, so `EffectJson` (which registers only records) would stop reading and
+     writing it; a dummy component would show in `getRecordComponents` (`LanguageCatalogExportTest`'s catalog) and be
+     accepted in the JSON. Families with such members (`Amount`, `EffectStep`, `Condition`, `Reaction`) stay Java until
+     that is decided.
    - Generics Java implements or overrides: Kotlin adds `? extends` to a parameter `List<Open>`/`Map<K, Any?>` whose
      element type is open (an interface, `Any`), so a Java class implementing a Kotlin interface stops overriding it.
      Write `Map<String, @JvmSuppressWildcards Any?>`, `List<@JvmSuppressWildcards Action>`.
@@ -48,6 +63,13 @@ classes not converted yet). Once everything is Kotlin and free of JVM-only APIs 
      or `const val` on every constant, so Java keeps calling `Name.f()`. Static and instance members together →
      `companion object` with the same annotations.
    - **enum** → `enum class` with the same constants and members (`@JvmStatic` on its static functions).
+   - Java static imports: Kotlin star-imports a Java class's statics (`import ...EffectEngine.*`), and Java's
+     `import static ...Answers.*` keeps working on an `object` whose functions are `@JvmStatic`. Qualify a call whose name
+     is also a local (`Answers.selfDamage` next to `val selfDamage`) or a Kotlin scope function (`Resolution.apply`).
+     Kotlin's `List`/`Map` have no `of`: write `java.util.List.of(...)`, and `java.util.Map.of<String, Any?>(...)` where
+     Java takes a `Map<String, Object>` (Kotlin will not pass a `Map<String, String>` there).
+   - A pattern `switch` over a sealed family → `when (step) { is X -> ... else -> ... }` with `step` smart-cast; a `break`
+     out of a case becomes an `if` around the rest of that branch.
    - Visibility: Java package-private → `internal` (same module) or `public` when Java in another package uses it.
      An `internal` **function** or property accessor gets a mangled JVM name (`toRoom$drive_manager`), so make one
      that Java calls `public` (`internal` is fine for `const val`, `@JvmField`, classes and annotations).
