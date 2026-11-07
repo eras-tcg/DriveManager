@@ -53,7 +53,7 @@ public final class BotEdge {
 
     /** The side the edge favors: the bot of Modo solo, else (a test room) the rival's side. */
     public static String favoredSide(GameRoom room) {
-        if (room.getPlayers().containsKey(BotRooms.BOT)) return BotRooms.BOT;
+        if (room.getPlayers().containsKey(BotSeat.BOT)) return BotSeat.BOT;
         return room.isEditor() ? RoomEngine.EDITOR_RIVAL : null;
     }
 

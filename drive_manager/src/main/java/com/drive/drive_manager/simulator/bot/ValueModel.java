@@ -1,15 +1,9 @@
 package com.drive.drive_manager.simulator.bot;
 
+import com.drive.drive_manager.simulator.engine.GameRandom;
 import com.drive.drive_manager.simulator.room.GameRoom;
-import tools.jackson.databind.SerializationFeature;
-import tools.jackson.databind.json.JsonMapper;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -23,11 +17,10 @@ import java.util.Random;
  * It learns from games already played ({@link #train}): each sample is a table seen by one player and whether
  * that player won; whole games are kept for validation. What it minimizes is the log loss (binary cross-entropy) plus an L2 penalty on its weights,
  * by Adam on mini-batches; it keeps the weights of the epoch with the lowest log loss on the validation samples
- * and stops when that has not improved for {@code patience} epochs. Saved and read as JSON.
+ * and stops when that has not improved for {@code patience} epochs. Saved and read as JSON by {@link ValueModelFiles}.
  */
 public final class ValueModel {
 
-    private static final JsonMapper JSON = JsonMapper.builder().build();
 
     /** The model as it is saved: its weights, how its input is standardized, and how it was trained. */
     public record Weights(List<String> features, double[] mean, double[] std, int hidden,
@@ -106,7 +99,7 @@ public final class ValueModel {
         long alone = Long.MIN_VALUE;
         for (Sample s : samples) byGame.computeIfAbsent(s.game() >= 0 ? s.game() : alone++, k -> new ArrayList<>()).add(s);
         List<List<Sample>> games = new ArrayList<>(byGame.values());
-        Collections.shuffle(games, random);
+        GameRandom.shuffle(games, random);
         List<Sample> train = new ArrayList<>();
         List<Sample> valid = new ArrayList<>();
         for (List<Sample> g : games) (valid.size() < samples.size() * t.validation() ? valid : train).addAll(g);
@@ -140,7 +133,7 @@ public final class ValueModel {
         List<Map<String, Object>> epochs = new ArrayList<>();
         for (int epoch = 1; epoch <= t.epochs(); epoch++) {
             List<Sample> order = new ArrayList<>(train);
-            Collections.shuffle(order, random);
+            GameRandom.shuffle(order, random);
             for (int start = 0; start < order.size(); start += t.batch()) {
                 List<Sample> batch = order.subList(start, Math.min(order.size(), start + t.batch()));
                 double[][] g1 = new double[hidden][n];
@@ -232,27 +225,9 @@ public final class ValueModel {
         return new Fit(loss / n, brier / n, right / n, samples.size());
     }
 
-    // ------------------------------------------------------------------ Saving and reading
+    // ------------------------------------------------------------------ From its weights (saved and read: ValueModelFiles)
 
-    public void save(Path file) throws IOException {
-        Files.createDirectories(file.toAbsolutePath().getParent());
-        Files.writeString(file, JSON.writer().with(SerializationFeature.INDENT_OUTPUT).writeValueAsString(w));
-    }
-
-    public static ValueModel read(Path file) throws IOException {
-        return of(JSON.readValue(Files.readString(file), Weights.class));
-    }
-
-    /** The model in the classpath at {@code resource}, or null when there is none. */
-    public static ValueModel resource(String resource) {
-        try (InputStream in = ValueModel.class.getResourceAsStream(resource)) {
-            return in == null ? null : of(JSON.readValue(in, Weights.class));
-        } catch (IOException | RuntimeException e) {
-            throw new IllegalStateException("Cannot read the bot's model " + resource, e);
-        }
-    }
-
-    private static ValueModel of(Weights weights) {
+    static ValueModel of(Weights weights) {
         if (!BoardFeatures.NAMES.equals(weights.features())) {
             throw new IllegalArgumentException("The model was trained with other table features: " + weights.features());
         }

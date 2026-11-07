@@ -1,20 +1,11 @@
 package com.drive.drive_manager.simulator.room;
 
-import com.drive.drive_manager.simulator.bot.BotRooms;
 import com.drive.drive_manager.simulator.engine.GameEvent;
 import com.drive.drive_manager.simulator.engine.Prompt;
-import org.springframework.beans.BeanUtils;
-import org.springframework.messaging.simp.SimpMessageHeaderAccessor;
-import org.springframework.messaging.simp.SimpMessageType;
-import org.springframework.messaging.simp.SimpMessagingTemplate;
-import org.springframework.messaging.simp.user.SimpSession;
-import org.springframework.messaging.simp.user.SimpUser;
-import org.springframework.messaging.simp.user.SimpUserRegistry;
 
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -31,71 +22,20 @@ import java.util.Set;
  * </ul>
  * A test room is played by its owner on both sides: it is sent whole. A player who may fix the board by hand (a site
  * editor) also sees their own deck and lives, which the manual actions work on.
+ * <p>
+ * Only the rule of what each one sees: sending it is {@link RoomMessages}'s (the server's), and a game in the browser
+ * uses the same rule.
  */
 public final class StateMask {
 
     private StateMask() {
     }
 
-    /**
-     * Sends each player their own view of the room on their queue (/user/queue/room/{id}). An error goes only to
-     * who caused it; a player who just left or was taken out still gets the update that says so. {@code room} is
-     * null once the room is closed: its last update still names who was in it.
-     */
-    static void send(SimpMessagingTemplate template, String roomId, GameRoom room, GameStateUpdate update) {
-        send(template, null, roomId, room, update);
-    }
-
-    /** {@code users}: who is connected, and from how many tabs (null: leave it to Spring). */
-    static void send(SimpMessagingTemplate template, SimpUserRegistry users, String roomId, GameRoom room,
-                     GameStateUpdate update) {
-        if (update == null || template == null) return;
-        String destination = "/queue/room/" + roomId;
-        if (update.getError() != null) {
-            if (update.getActorId() != null) toUser(template, users, update.getActorId(), destination, update);
-            return;
-        }
-        // A replay is only its viewer's (the game's players are not watching it)
-        Set<String> viewers = room != null && room.isReplay() ? new LinkedHashSet<>(Set.of(room.getHostId()))
-                : new LinkedHashSet<>(update.getPlayers() == null ? Set.of() : update.getPlayers().keySet());
-        if (update.getActorId() != null) viewers.add(update.getActorId());
-        if (update.getSubjectUserId() != null) viewers.add(update.getSubjectUserId());
-        viewers.remove(RoomService.EDITOR_RIVAL);
-        viewers.remove(BotRooms.BOT);
-        for (String viewer : viewers) {
-            boolean manual = room != null && room.getManualPlayers().contains(viewer);
-            toUser(template, users, viewer, destination, forViewer(update, viewer, manual));
-        }
-    }
-
-    /**
-     * Sends to each of the user's sessions (tabs) on its own. With setPreserveReceiveOrder(true), Spring 7.0.5 sends
-     * one user message to all their sessions as the same message, which the first send leaves immutable: every other
-     * session got "Expected mutable SimpMessageHeaderAccessor" and no update. A message with a session id goes only to
-     * that session, so each tab gets its own.
-     */
-    static void toUser(SimpMessagingTemplate template, SimpUserRegistry users, String userId, String destination,
-                       Object payload) {
-        SimpUser user = users == null ? null : users.getUser(userId);
-        Set<SimpSession> sessions = user == null ? Set.of() : user.getSessions();
-        if (sessions.size() < 2) {
-            template.convertAndSendToUser(userId, destination, payload);
-            return;
-        }
-        for (SimpSession session : sessions) {
-            SimpMessageHeaderAccessor headers = SimpMessageHeaderAccessor.create(SimpMessageType.MESSAGE);
-            headers.setSessionId(session.getId());
-            headers.setLeaveMutable(true);
-            template.convertAndSendToUser(userId, destination, payload, headers.getMessageHeaders());
-        }
-    }
-
     /** {@code manual}: the viewer may use the manual actions in this room. */
     public static GameStateUpdate forViewer(GameStateUpdate update, String viewerId, boolean manual) {
         // A test room, or a replay of a game over: everything in view
         if (update.getPlayers() == null || update.isEditor() || update.isReplay()) return update;
-        GameStateUpdate view = new GameStateUpdate();
-        BeanUtils.copyProperties(update, view);
+        GameStateUpdate view = ShallowCopy.of(update);
 
         Set<String> hidden = new HashSet<>();
         // The mulligan is chosen from the top of the player's own deck: those cards are theirs to see until they confirm
@@ -124,8 +64,7 @@ public final class StateMask {
 
     /** {@code shown}: how many cards on top of the deck keep their face (the owner's, in the mulligan). */
     private static PlayerState mask(PlayerState player, boolean mine, boolean manual, int shown, Set<String> hidden) {
-        PlayerState masked = new PlayerState(player.getUserId(), player.getUsername());
-        BeanUtils.copyProperties(player, masked);
+        PlayerState masked = ShallowCopy.of(player);
         boolean ownHidden = mine && manual;
         masked.setHand(mine ? player.getHand() : backs(player.getHand(), hidden));
         masked.setDeck(ownHidden ? player.getDeck() : deckBacks(player, shown, hidden));
@@ -176,8 +115,7 @@ public final class StateMask {
         boolean anyHidden = card.getMaterials().stream().anyMatch(CardSlot::isFaceDown)
                 || card.getResources().stream().anyMatch(CardSlot::isFaceDown);
         if (!anyHidden) return card;
-        CardSlot copy = new CardSlot();
-        BeanUtils.copyProperties(card, copy);
+        CardSlot copy = ShallowCopy.of(card);
         copy.setMaterials(faceDownBacks(card.getMaterials(), hidden));
         copy.setResources(faceDownBacks(card.getResources(), hidden));
         return copy;
@@ -227,16 +165,14 @@ public final class StateMask {
         boolean secret = !viewerId.equals(event.getPlayerId()) && (PRIVATE_EVENTS.contains(event.getType())
                 || MOVES.contains(event.getType()) && hidden.contains(event.getCardInstanceId()));
         if (!secret || event.getCardName() == null) return event;
-        GameEvent copy = new GameEvent();
-        BeanUtils.copyProperties(event, copy);
+        GameEvent copy = ShallowCopy.of(event);
         copy.setCardName(null);
         return copy;
     }
 
     private static GameLogEntry redact(GameLogEntry entry, Set<String> hidden) {
         if (entry.getSourceId() == null || !hidden.contains(entry.getSourceId())) return entry;
-        GameLogEntry copy = new GameLogEntry();
-        BeanUtils.copyProperties(entry, copy);
+        GameLogEntry copy = ShallowCopy.of(entry);
         copy.setSourceName(null);
         copy.setImageUrl(null);
         return copy;

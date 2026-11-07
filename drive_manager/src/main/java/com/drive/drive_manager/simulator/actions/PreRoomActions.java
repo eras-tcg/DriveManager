@@ -1,5 +1,6 @@
 package com.drive.drive_manager.simulator.actions;
 
+import com.drive.drive_manager.simulator.engine.GameRandom;
 import com.drive.drive_manager.simulator.bot.BotEdge;
 
 import com.drive.drive_manager.simulator.replay.MatchSetup;
@@ -114,7 +115,7 @@ public final class PreRoomActions {
             player.getField().add(starter);
             room.getStarterSelections().put(player.getUserId(), starter.getInstanceId());
         }
-        room.getPlayers().values().forEach(p -> Collections.shuffle(p.getDeck(), room.getRandom()));
+        room.getPlayers().values().forEach(p -> GameRandom.shuffle(p.getDeck(), room.getRandom()));
         room.setStatus(GameRoom.RoomStatus.MULLIGAN);
     }
 
@@ -139,7 +140,7 @@ public final class PreRoomActions {
         player.getField().add(starter);
         room.getStarterSelections().put(userId, instanceId);
         if (room.getStarterSelections().size() >= room.getPlayers().size()) {
-            room.getPlayers().values().forEach(p -> Collections.shuffle(p.getDeck(), room.getRandom()));
+            room.getPlayers().values().forEach(p -> GameRandom.shuffle(p.getDeck(), room.getRandom()));
             room.getMulliganReady().clear();
             room.setStatus(GameRoom.RoomStatus.MULLIGAN);
         }
@@ -172,7 +173,7 @@ public final class PreRoomActions {
             drawn.setFaceDown(false);
             player.getHand().add(drawn);
         }
-        Collections.shuffle(player.getDeck(), room.getRandom());
+        GameRandom.shuffle(player.getDeck(), room.getRandom());
         // Rule 3.0.6: after the mulligan the starter joins the hand (6 cards)
         String starterId = room.getStarterSelections().get(userId);
         player.getField().stream().filter(c -> c.getInstanceId().equals(starterId)).findFirst().ifPresent(starter -> {

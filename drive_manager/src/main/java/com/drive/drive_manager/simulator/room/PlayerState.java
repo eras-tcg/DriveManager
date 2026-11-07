@@ -15,7 +15,6 @@ public class PlayerState {
     private String playmat;
     private boolean connected;
     /** When they lost their connection (0 while connected): the owner passes on after a while (a reload is not leaving). */
-    @com.fasterxml.jackson.annotation.JsonIgnore
     private long disconnectedAt;
 
     private String deckId;

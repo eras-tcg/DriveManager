@@ -82,7 +82,7 @@ final class LookSteps {
                 PlayerState opponent = room.getPlayer(room.getOpponentId(userId));
                 if (opponent == null || opponent.getHand().isEmpty()) return false;
                 List<CardSlot> hand = new ArrayList<>(opponent.getHand());
-                Collections.shuffle(hand, room.getRandom());
+                GameRandom.shuffle(hand, room.getRandom());
                 List<CardSlot> revealed = hand.subList(0, Math.min(reveal.count(), hand.size()));
                 log(room, opponent.getUsername() + " revela " + String.join(", ", revealed.stream().map(EffectEngine::name).toList()) + " (" + effect.getSourceName() + ")", null);
                 pick(room, effect, "Envía 1 de las cartas reveladas al fondo del mazo de tu rival.", "Al fondo", revealed, ids(revealed), 1);
@@ -157,7 +157,7 @@ final class LookSteps {
                             player.getUsername() + " añade " + name(card) + " a su mano (" + effect.getSourceName() + ")");
                 }
                 List<CardSlot> rest = new ArrayList<>(effect.getLooked());
-                Collections.shuffle(rest, room.getRandom());
+                GameRandom.shuffle(rest, room.getRandom());
                 rest.forEach(c -> c.setFaceDown(true));
                 player.getDeck().addAll(rest);
                 if (!rest.isEmpty()) log(room, player.getUsername() + " envía " + rest.size() + " " + plural(rest.size(), "carta", "cartas")

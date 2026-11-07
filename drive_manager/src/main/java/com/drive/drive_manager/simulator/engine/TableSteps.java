@@ -87,7 +87,7 @@ final class TableSteps {
                 List<CardSlot> faceUp = player.getLifeStack().stream().filter(l -> !l.isFaceDown()).toList();
                 if (lives.all()) {
                     faceUp.forEach(l -> l.setFaceDown(true));
-                    if (lives.shuffle()) Collections.shuffle(player.getLifeStack(), room.getRandom());
+                    if (lives.shuffle()) GameRandom.shuffle(player.getLifeStack(), room.getRandom());
                     log(room, player.getUsername() + " coloca bocabajo sus " + faceUp.size() + " vidas bocarriba" + (lives.shuffle() ? " y baraja sus vidas" : "")
                             + " (" + effect.getSourceName() + ")", null);
                     return false;
@@ -158,7 +158,7 @@ final class TableSteps {
                 List<PlayerState> both = new ArrayList<>(room.getPlayers().values());
                 for (PlayerState p : both) {
                     List<CardSlot> hand = new ArrayList<>(p.getHand());
-                    Collections.shuffle(hand, room.getRandom());
+                    GameRandom.shuffle(hand, room.getRandom());
                     p.getHand().clear();
                     hand.forEach(c -> c.setFaceDown(true));
                     p.getDeck().addAll(hand);

@@ -89,6 +89,5 @@ public class CardSlot {
     /** This copy has one of its card's alternative arts (its imageUrl is that art). */
     private boolean alt;
     /** The card's alternative arts (from its metadata), art id → URL: what a copy with one shows. Kept on the server. */
-    @com.fasterxml.jackson.annotation.JsonIgnore
     private java.util.Map<String, String> altArtUrls = new java.util.HashMap<>();
 }

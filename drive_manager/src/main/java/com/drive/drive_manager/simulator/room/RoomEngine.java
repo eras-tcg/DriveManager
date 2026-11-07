@@ -1,7 +1,7 @@
 package com.drive.drive_manager.simulator.room;
 
 import com.drive.drive_manager.simulator.actions.ActionDispatcher;
-import com.drive.drive_manager.simulator.bot.BotRooms;
+import com.drive.drive_manager.simulator.bot.BotSeat;
 import com.drive.drive_manager.simulator.engine.EffectEngine;
 
 import java.util.ArrayList;
@@ -37,10 +37,10 @@ public final class RoomEngine {
             // The owner plays the rival's side too
             if (EDITOR_RIVAL.equals(action.getString("actAs")) && (type == null || !type.ownerOnly())) userId = EDITOR_RIVAL;
         }
-        if (BotRooms.forBot(room, action)) {
+        if (BotSeat.forBot(room, action)) {
             if (!userId.equals(room.getHostId())) return refused(room, "Solo el dueño de la sala elige el mazo del bot", userId);
             if (room.isRanked()) return refused(room, "En una partida ranked el bot juega con tu mismo mazo", userId);
-            userId = BotRooms.BOT;
+            userId = BotSeat.BOT;
         }
         return new Applied(null, userId);
     }

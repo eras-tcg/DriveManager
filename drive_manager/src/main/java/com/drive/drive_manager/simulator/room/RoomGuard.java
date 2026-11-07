@@ -1,6 +1,6 @@
 package com.drive.drive_manager.simulator.room;
 
-import com.drive.drive_manager.simulator.bot.BotRooms;
+import com.drive.drive_manager.simulator.bot.BotSeat;
 
 /**
  * Who may do what in a room, checked before any action (what each player is sent is StateMask's): only the room's
@@ -37,7 +37,7 @@ public final class RoomGuard {
 
     /** A deck the player may use: their own or a public one (the rival's side of a test room, and the bot, use its owner's). */
     public static boolean usableDeck(com.drive.drive_manager.dto.DeckList deck, GameRoom room, String userId) {
-        String owner = RoomService.EDITOR_RIVAL.equals(userId) || BotRooms.BOT.equals(userId) ? room.getHostId() : userId;
+        String owner = RoomService.EDITOR_RIVAL.equals(userId) || BotSeat.BOT.equals(userId) ? room.getHostId() : userId;
         return !deck.isPrivateDeck() || owner != null && owner.equals(deck.getUserId());
     }
 }

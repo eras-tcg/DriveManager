@@ -89,7 +89,7 @@ public final class BotMatch {
             String p = pair.trim();
             if (p.startsWith("model=")) {
                 try {
-                    model = ValueModel.read(java.nio.file.Path.of(p.substring("model=".length())));
+                    model = ValueModelFiles.read(java.nio.file.Path.of(p.substring("model=".length())));
                 } catch (IOException e) {
                     throw new UncheckedIOException(e);
                 }

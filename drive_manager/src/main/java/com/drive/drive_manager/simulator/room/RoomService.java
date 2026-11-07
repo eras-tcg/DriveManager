@@ -42,7 +42,7 @@ public class RoomService implements RoomHost {
 
     @Autowired(required = false)
     private SimpMessagingTemplate messagingTemplate;
-    /** Who is connected and from how many tabs: each tab gets the room on its own (StateMask.toUser). */
+    /** Who is connected and from how many tabs: each tab gets the room on its own (RoomMessages.toUser). */
     @Autowired(required = false)
     private SimpUserRegistry userRegistry;
     /** The players' icons and playmats, looked up when they join. */
@@ -162,7 +162,7 @@ public class RoomService implements RoomHost {
 
     /** Each player gets their own view of the room (StateMask): nothing hidden from them leaves the server. */
     public void broadcast(String roomId, GameStateUpdate update) {
-        StateMask.send(messagingTemplate, userRegistry, roomId, registry.get(roomId), update);
+        RoomMessages.send(messagingTemplate, userRegistry, roomId, registry.get(roomId), update);
     }
 
     /** An action of the server itself or of a test: the manual actions are allowed. */

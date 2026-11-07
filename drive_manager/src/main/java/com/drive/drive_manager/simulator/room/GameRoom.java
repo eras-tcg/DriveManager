@@ -9,7 +9,6 @@ import com.drive.drive_manager.simulator.engine.PendingEffect;
 import com.drive.drive_manager.simulator.engine.PendingRemoval;
 import com.drive.drive_manager.simulator.engine.Prompt;
 import com.drive.drive_manager.simulator.replay.MatchSetup;
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Data;
 
 import java.time.Instant;
@@ -50,7 +49,6 @@ public class GameRoom {
     /** A room to watch a kept game again (ReplayRooms): read only, everything shown to its viewer (the host). */
     @RoomSetting private boolean    replay;
     /** A room of the ranked queue: only these two players may enter it (not listed, always ranked). Empty: open. */
-    @JsonIgnore
     @RoomSetting private Set<String> reserved = Set.of();
     /** A test room (editor) whose rival side the bot plays: the owner tests it seeing everything (BotRooms#setEditorBot). */
     @RoomSetting private boolean    editorBot;
@@ -58,7 +56,6 @@ public class GameRoom {
     @RoomSetting private boolean    editorSelfBot;
     @RoomSetting private String     selfBotLevel     = BotCatalog.NORMAL;
     /** Grows with every action accepted: a bot that thought on an older copy of the room thinks again. */
-    @JsonIgnore
     @RoomSetting private long version;
     /** Sala de pruebas: the bots wait (the owner paused them, or went back in time). */
     @RoomSetting private volatile boolean paused;
@@ -91,10 +88,8 @@ public class GameRoom {
     private Map<String, String> starterSelections = new LinkedHashMap<>();
     private Set<String>         mulliganReady     = new HashSet<>();
     /** Players who may use the manual actions in this online game (site editors): they see their own deck and lives. */
-    @JsonIgnore
     @RoomSetting private Set<String>         manualPlayers     = new HashSet<>();
     /** Players with the simulator's administration permission (simulator_admin): a bot may play their own side. */
-    @JsonIgnore
     @RoomSetting private Set<String>         adminPlayers      = new HashSet<>();
     private Map<String, String> postGameChoices   = new LinkedHashMap<>();
 
@@ -145,22 +140,18 @@ public class GameRoom {
      * Where the room's chance comes from: every shuffle and random pick of the game. A room's own, so a game can be
      * played again exactly from a seed (the bot arena plays paired games); not part of the state sent to players.
      */
-    @JsonIgnore
     @RoomSetting private transient Random random = new Random();
 
     /**
      * A room only tried on (the bot's copies, a game played again): its updates carry no view for players (what may be
      * played, legal actions…), as nobody reads them; copied with the room.
      */
-    @JsonIgnore
     @RoomSetting private transient boolean headless;
 
     /** Only in the bot's copies: the player whose searches of the deck's top find the best valid cards (engine/SearchHope). */
-    @JsonIgnore
     private transient String searchHope;
 
     /** How the game in course started (its seed, seats and decks), to record and play it again (MatchRecorder). */
-    @JsonIgnore
     private MatchSetup startSetup;
 
     /** Closed game state (rule 7.2): a chain or a choice is pending, so no new actions can start. */

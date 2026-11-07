@@ -29,9 +29,7 @@ import java.util.concurrent.TimeUnit;
 public final class BotRooms {
 
     /** The bot's seat in a room against it. */
-    public static final String BOT = "bot";
-    /** What the owner of a room against the bot does for it, with "actAs" = BOT: choosing its deck and starter. */
-    static final Set<ActionType> SETUP = java.util.EnumSet.of(ActionType.SET_DECK, ActionType.SET_STARTER);
+    public static final String BOT = BotSeat.BOT;
     /** Moves the bot makes in a row at most when played right away (tests). */
     private static final int MAX_MOVES_NOW = 5000;
 
@@ -140,7 +138,7 @@ public final class BotRooms {
 
     /** The owner sets up the bot's side (its deck or starter) with this action. */
     public static boolean forBot(GameRoom room, GameAction action) {
-        return room.isBot() && BOT.equals(action.getString("actAs")) && SETUP.contains(ActionType.of(action));
+        return BotSeat.forBot(room, action);
     }
 
     /** The bot plays the owner's deck until they choose another one for it (ranked: always the owner's deck). */
@@ -304,7 +302,7 @@ public final class BotRooms {
 
     /** The seat the bot plays: its own in a room against it, the test rival's in a test room (Sala de pruebas) it plays. */
     static String seatOf(GameRoom room) {
-        return room.isEditor() ? RoomEngine.EDITOR_RIVAL : BOT;
+        return BotSeat.seatOf(room);
     }
 
     /** A move of the bot: in a test room only its owner acts, so the bot moves for the rival as the owner does ("actAs"). */

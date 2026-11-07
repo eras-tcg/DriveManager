@@ -1,11 +1,11 @@
 package com.drive.drive_manager.simulator.actions;
 
+import com.drive.drive_manager.simulator.engine.GameRandom;
 import com.drive.drive_manager.simulator.room.ActionType;
 import com.drive.drive_manager.simulator.room.GameAction;
 import com.drive.drive_manager.simulator.room.GameRoom;
 import com.drive.drive_manager.simulator.room.GameStateUpdate;
 import com.drive.drive_manager.simulator.room.RoomHost;
-import java.util.Collections;
 
 /**
  * After a game: each player's choice (a rematch, back to the pre-room to change decks, or leaving) and the room made
@@ -57,7 +57,7 @@ public final class PostGameActions {
                 player.getDeck().clear();
                 // The deck as chosen, its finishes included
                 player.setDeck(PreRoomActions.deepCopySlots(player.getOriginalDeck()));
-                Collections.shuffle(player.getDeck(), room.getRandom());
+                GameRandom.shuffle(player.getDeck(), room.getRandom());
             } else if (!keepDecks) {
                 player.getDeck().clear();
             }

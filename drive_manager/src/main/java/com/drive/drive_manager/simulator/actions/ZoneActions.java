@@ -1,6 +1,6 @@
 package com.drive.drive_manager.simulator.actions;
 
-import com.drive.drive_manager.dto.Card;
+import com.drive.drive_manager.simulator.engine.GameRandom;
 import com.drive.drive_manager.simulator.engine.Removals;
 import com.drive.drive_manager.simulator.room.ActionType;
 import com.drive.drive_manager.simulator.room.CardSlot;
@@ -202,7 +202,7 @@ final class ZoneActions {
     static GameStateUpdate handleShuffle(GameRoom room, String userId) {
         PlayerState player = room.getPlayer(userId);
         if (player == null) return GameStateUpdate.notInRoom(room);
-        Collections.shuffle(player.getDeck(), room.getRandom());
+        GameRandom.shuffle(player.getDeck(), room.getRandom());
         GameStateUpdate update = GameStateUpdate.from(room, ActionType.SHUFFLE_DECK, userId);
         update.setLogEntry(player.getUsername() + " barajó su mazo");
         return update;
@@ -267,7 +267,7 @@ final class ZoneActions {
         zone.removeAll(byId.values());
 
         List<CardSlot> ordered = new ArrayList<>(byId.values());
-        if (random) Collections.shuffle(ordered, room.getRandom());
+        if (random) GameRandom.shuffle(ordered, room.getRandom());
         ordered.forEach(c -> { c.setFaceDown(true); c.setTapped(false); c.setX(null); c.setY(null); });
         player.getDeck().addAll(ordered);
 
@@ -318,7 +318,7 @@ final class ZoneActions {
     static GameStateUpdate handleLifeShuffle(GameRoom room, String userId) {
         PlayerState player = room.getPlayer(userId);
         if (player == null) return GameStateUpdate.notInRoom(room);
-        Collections.shuffle(player.getLifeStack(), room.getRandom());
+        GameRandom.shuffle(player.getLifeStack(), room.getRandom());
         GameStateUpdate update = GameStateUpdate.from(room, ActionType.LIFE_SHUFFLE, userId);
         update.setLogEntry(player.getUsername() + " barajó su vida");
         return update;
@@ -379,7 +379,7 @@ final class ZoneActions {
         player.getDeck().removeAll(byId.values());
 
         List<CardSlot> ordered = new ArrayList<>(byId.values());
-        if (shuffle) Collections.shuffle(ordered, room.getRandom());
+        if (shuffle) GameRandom.shuffle(ordered, room.getRandom());
 
         if ("bottom".equals(position)) {
             player.getDeck().addAll(ordered);
@@ -426,7 +426,7 @@ final class ZoneActions {
         String names = discard.stream()
                 .map(c -> c.isFaceDown() ? "una carta oculta" : cardLabel(c))
                 .collect(Collectors.joining(", "));
-        Collections.shuffle(discard, room.getRandom());
+        GameRandom.shuffle(discard, room.getRandom());
         discard.forEach(c -> c.setFaceDown(true));
         player.getDiscardPile().clear();
         player.getDeck().addAll(discard);
@@ -443,7 +443,7 @@ final class ZoneActions {
         String names = tribute.stream()
                 .map(c -> c.isFaceDown() ? "una carta oculta" : cardLabel(c))
                 .collect(Collectors.joining(", "));
-        Collections.shuffle(tribute, room.getRandom());
+        GameRandom.shuffle(tribute, room.getRandom());
         tribute.forEach(c -> c.setFaceDown(true));
         player.getTributeZone().clear();
         player.getDeck().addAll(tribute);

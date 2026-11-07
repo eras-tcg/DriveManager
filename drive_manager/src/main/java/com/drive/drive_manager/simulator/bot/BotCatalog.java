@@ -17,7 +17,7 @@ public final class BotCatalog {
 
     /** The bot's trained model, promoted from a training run (null: none yet, the hand-set weights score). */
     static final String MODEL_RESOURCE = "/bot/value-model.json";
-    private static final ValueModel MODEL = ValueModel.resource(MODEL_RESOURCE);
+    private static final ValueModel MODEL = ValueModelFiles.resource(MODEL_RESOURCE);
     /** How it thinks at the hard level, found by playing variants against each other (BotThinkRun); none: the default. */
     static final String SETTINGS_RESOURCE = "/bot/settings.txt";
     private static final BotSettings SETTINGS = tunedSettings();

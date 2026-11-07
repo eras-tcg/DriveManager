@@ -1,5 +1,6 @@
 package com.drive.drive_manager.simulator.bot;
 
+import com.drive.drive_manager.simulator.engine.GameRandom;
 import com.drive.drive_manager.simulator.room.CardSlot;
 import com.drive.drive_manager.simulator.room.GameAction;
 import com.drive.drive_manager.simulator.room.GameRoom;
@@ -9,7 +10,6 @@ import com.drive.drive_manager.simulator.room.RoomCopy;
 import com.drive.drive_manager.simulator.room.RoomEngine;
 import com.drive.drive_manager.simulator.room.RoomHost;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -67,7 +67,7 @@ public final class Sandbox {
     /** What the bot cannot see is dealt again at random (see the class). */
     static void hideFrom(GameRoom copy, String me, java.util.Random chance) {
         PlayerState self = copy.getPlayer(me);
-        if (self != null) Collections.shuffle(self.getDeck(), chance);
+        if (self != null) GameRandom.shuffle(self.getDeck(), chance);
         PlayerState rival = copy.getPlayer(copy.getOpponentId(me));
         if (rival == null) return;
         List<CardSlot> lives = rival.getLifeStack();
@@ -76,7 +76,7 @@ public final class Sandbox {
         List<CardSlot> pool = new ArrayList<>(rival.getHand());
         pool.addAll(rival.getDeck());
         hiddenLives.forEach(i -> pool.add(lives.get(i)));
-        Collections.shuffle(pool, chance);
+        GameRandom.shuffle(pool, chance);
         int next = 0;
         for (int i = 0; i < rival.getHand().size(); i++) rival.getHand().set(i, faced(pool.get(next++), false));
         for (int i = 0; i < rival.getDeck().size(); i++) rival.getDeck().set(i, faced(pool.get(next++), true));

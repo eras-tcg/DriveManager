@@ -1,6 +1,5 @@
 package com.drive.drive_manager.simulator.actions;
 
-import com.drive.drive_manager.dto.Card;
 import com.drive.drive_manager.simulator.engine.Removals;
 import com.drive.drive_manager.simulator.room.ActionType;
 import com.drive.drive_manager.simulator.room.CardLocator;
