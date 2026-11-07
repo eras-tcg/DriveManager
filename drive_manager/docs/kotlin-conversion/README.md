@@ -32,6 +32,18 @@ classes not converted yet). Once everything is Kotlin and free of JVM-only APIs 
      component nullable (a missing JSON property comes as null). A plain `data class` (as `FieldGrant`,
      `PendingAscension`, `PendingRemoval`) turns `x()` into `getX()`: then fix the callers with `fix-accessors.py`
      (below), and check the classes' JSON and the reflective copy as well.
+   - **A record's compact constructor that fills defaults** (`Selector`: `filter`, `self`, `mode`): only a `data class`
+     can be `@JvmRecord`, and a Kotlin record cannot change what its constructor stores. Make those components
+     `private val` and write the record's accessor as a function that gives the default (`fun mode(): Mode = mode ?:
+     Mode.CHOOSE`): it is still the component's accessor, which Java callers and Jackson read. Write `equals`,
+     `hashCode` (`31 * h + hash(c)` from 0, as a record's) and `toString` (`Name[a=1, b=2]`) over the values as read.
+   - **A sealed family** (`Action`): `sealed interface` with `@JvmRecord data class` members. Kotlin writes the
+     `PermittedSubclasses` attribute (jvmTarget 21) **sorted by name**, not in declaration order: the same classes and
+     simple names, so `EffectJson` (which names them by simple name) reads and writes the same JSON, but anything that
+     depends on their order must sort them. Check with `javap -v -cp target/classes '<Family>'`.
+   - Generics Java implements or overrides: Kotlin adds `? extends` to a parameter `List<Open>`/`Map<K, Any?>` whose
+     element type is open (an interface, `Any`), so a Java class implementing a Kotlin interface stops overriding it.
+     Write `Map<String, @JvmSuppressWildcards Any?>`, `List<@JvmSuppressWildcards Action>`.
    - **Only static members** (`private Name() {}`) → `object Name` with `@JvmStatic` on every function and `@JvmField`
      or `const val` on every constant, so Java keeps calling `Name.f()`. Static and instance members together →
      `companion object` with the same annotations.
@@ -45,7 +57,14 @@ classes not converted yet). Once everything is Kotlin and free of JVM-only APIs 
    `LinkedHashSet` — Kotlin's names for them) and iteration orders, the same integer arithmetic, the same messages and
    exceptions, the same random draws (shuffles go through `GameRandom.shuffle`). Streams become collection operations
    with the same results; `Optional` may stay in a signature Java still calls (it goes away when the callers are Kotlin).
-4. Nullability: a reference Java may pass or leave null is `T?`. When unsure, nullable. No `!!` on what Java gives.
+   Kotlin's look-alikes that differ from Java's: `split(",")` keeps the empty strings at the end (Java's drops them,
+   unless nothing matched), `trim()` and `isBlank()` also take Unicode spaces (Java's: chars `<= ' '`, and
+   `Character.isWhitespace`; write `trim { it <= ' ' }`, `all { Character.isWhitespace(it) }`), and `when (s)` on a
+   null string takes `else` where Java's `switch` throws (`when (s!!)`). Chained stream filters run per element, one
+   after the other: write one `filter { a(it) && b(it) }` so the context is asked in the same order. Keep
+   `java.util.Map.of`/`ofEntries`/`List.of` where Java had them (`Actions`' handlers, an event's data).
+4. Nullability: a reference Java may pass or leave null is `T?`. When unsure, nullable. No `!!` on what Java gives,
+   but where Java dereferenced it anyway (`action.cards().min()`): there `!!` throws where Java threw.
 5. Comments move along (Javadoc → KDoc), same wording.
 
 ## Checking
