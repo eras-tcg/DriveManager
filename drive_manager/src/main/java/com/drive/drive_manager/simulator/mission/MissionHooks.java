@@ -51,7 +51,15 @@ public class MissionHooks {
      * ended, for the activity log (never stops the game).
      */
     public void count(GameRoom room, Before before) {
-        GameActivity.log(activityLog, room, before.status(), before.players());
+        count(room, before, Map.of());
+    }
+
+    /**
+     * The same, for a game the server did not host: an offline game against the bot, played again on the server
+     * (OfflineGames), counted exactly as the server counts its own; `extra` goes into its activity log's detail.
+     */
+    public void count(GameRoom room, Before before, Map<String, Object> extra) {
+        GameActivity.log(activityLog, room, before.status(), before.players(), extra);
         if (missions == null && progression == null) return;
         try {
             for (MissionEvents.Progress p : MissionEvents.of(room, before.status(), before.seq())) {

@@ -254,3 +254,66 @@ STOMP sending, sessions and sweeps, missions, match history and ranks, replays a
   repository; the workflow's build context changes from `./drive_manager` to `.`.
 - Maven Central may answer 429 (rate limit) in some sandboxes; a local Gradle init script with Google's mirror
   (`https://maven-central.storage-download.googleapis.com/maven2`) gets around it. Not needed on GitHub Actions.
+
+## Offline games and rewards (phase 7)
+
+A game of "Modo solo sin conexión" (a `LocalMatch` in the site's worker) that reaches its post-game counts, once the
+player connects, **exactly as a casual game against the server's bot counts** (never ranked), and only when the server,
+playing it again with this engine on the JVM, gets the same game. The site's side: eras-web README, "Offline games and
+rewards".
+
+**What a game against the server's bot grants today** (`RoomService.apply` → `MissionHooks.count`, `MatchRecorder` →
+`MatchHistory`): the activity log's start and end of the game (`ONLINE_GAME_START`/`ONLINE_GAME_END`, one per seat, the
+bot's too), and the game in the player's match history (`mode: "solo"`, with its log to watch it again). Missions,
+progression and gems count **nothing** for a game against the bot (`MissionEvents.of`: "missions are won against
+players"; progression counts the same events), and the rank moves only in a ranked game. An offline game accepted by
+the server goes through the same path (`MissionHooks.count(room, before, {"offline": true, "offlineId"})`, so if games
+against the bot ever count for missions, offline ones will too) and into the history flagged `offline: true` (with
+`offlineId`, `engineBuild`; never ranked; `hasLog: false`: the server has the player's actions, not a log of the bot's).
+
+**The record** (`POST /api/simulator/offline-games`, `{"games": [<game>]}`, at most 10 games and 2 MB; drive_manager
+`simulator/offline/OfflineGame`):
+
+```json
+{"id": "<UUID made by the site>", "engineBuild": "997a7a6326e9", "seed": "8461…", "botLevel": null,
+ "startedAt": 1762600000000, "endedAt": 1762600600000,
+ "decks": {"deck-st1": ["<card id>", "…one per copy, in the deck's order"]},
+ "actions": [{"body": "{\"type\":\"JOIN_ROOM\",\"payload\":{…}}", "botMoves": 0}, {"body": "…", "botMoves": 3}, …],
+ "result": {"gameNumber": 1, "winnerId": "bot", "endReason": "lives", "turns": 12, "digest": "07b16f261386427e"}}
+```
+
+`actions` holds every body the board sent since the room was made, each with the bot's moves the worker made after it
+before the next action (the worker moves the bot between the player's actions, so that order is part of the game);
+`result` is `LocalMatch.result()` the moment the room reached its post-game (`gameNumber` = `gamesEnded`: a rematch's
+game carries the whole room from its start). Each game gets a verdict: `accepted` (with what it counted: won, turns, the
+missions' progress, the history's id), `duplicate`, `rejected` (`reason`, `message`) or `retry` (kept by the site).
+
+**The checks** (`OfflineGames`, in order; limits in `application.properties`, `offline-games.*`):
+
+| Check | Answer |
+|---|---|
+| Shape: a UUID-like id, a 64-bit seed, 1–5,000 actions of at most 8,192 characters, at most 20,000 bot moves in all | `rejected`, `invalid` (not kept) |
+| A verdict for this player and id already given | the same answer again (`duplicate` when accepted) |
+| Started within the last 30 days (`window-days`), ended after it started and not in the future (10 minutes of clock skew) | `rejected`, `window` |
+| An accepted game of this player with the same seed and game number (the same game under another id) | `duplicate` |
+| Accepted games today (the server's zone, `wallet.zone`) under `daily-cap` (20) | `rejected`, `daily-cap` |
+| Games played again today under `daily-replays` (40: accepted and refused; bounds a client sending junk) | `retry` |
+| Each deck the actions chose (`SET_DECK`, the bot's included) is legal for the player (`OfflineDecks`): a starter deck in the engine's order (`eras/starter-decks.json`, now in the JVM jar; each card the starter's own id or a drive card of the same name and edition), or one of **the player's own saved decks exactly as saved now**, with every copy in their collection for their own seat (what `DeckChoice` demands on the server). The decks are then made from the server's data (its card metadata, never the site's) | `rejected`, `deck` |
+| Played again (`OfflineReplay`: `LocalMatch` on the JVM with the record's seed and bot level, the authenticated user's id, the server's decks, the bot's clock in `ticks` of the server's `tickNanos`, never the site's; each body sent, then `step()` exactly `botMoves` times, a missing move ends it) within `replay-budget-ms` (120 s, checked between every action and move), one replay at a time on the server (`concurrent-replays`; a player who waits more than 20 s gets `retry`) | over budget: `rejected`, `budget` |
+| The replay is in the post-game with the claimed game number, winner, end, turns and digest | else `rejected`, `mismatch` |
+
+The verdict is kept in Mongo, `offline_games` (`_id` "{userId}:{id}", a unique partial index on userId, seed and
+game number over the accepted ones), **before** crediting, so the same game sent twice at once is credited once.
+
+**A tampered game is caught by the replay, not by trusting the claim** (drive_manager `OfflineGamesTest`, games
+recorded by a real `LocalMatch` as the worker records them): a claimed winner or digest that is not the replay's →
+`mismatch`; an action taken out, or the bot's moves after an action changed → another game → `mismatch`; a deck that is
+someone else's, a starter deck with another card, a saved deck edited since or one missing cards of the collection →
+`deck`; the same game again (same id, or the same seed under another id) → `duplicate`, credited once; over the day's cap
+→ `daily-cap`; a game too old or in the future → `window`; too many actions or bot moves → `invalid`; a replay over its
+budget → `budget`. None of them credits anything.
+
+**The engine's build** travels with each game and is kept with the verdict and the history; it is not checked: the
+replay is the authority. A game played by another build is accepted when this build plays it the same (the same
+digest); when the rules changed in between (a card's metadata or rules, the starter decks, the bot) it is refused as a
+`mismatch`. Likewise a saved deck edited between playing and connecting is refused.

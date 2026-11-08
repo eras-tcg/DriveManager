@@ -33,6 +33,12 @@ public final class GameActivity {
      * action still gets the end of their game). The rival is kept by id: the log shows their current name.
      */
     public static List<Event> of(GameRoom room, GameRoom.RoomStatus statusBefore, Collection<String> playersBefore) {
+        return of(room, statusBefore, playersBefore, Map.of());
+    }
+
+    /** The same, with `extra` added to every event's detail (an offline game says so: "offline": true). */
+    public static List<Event> of(GameRoom room, GameRoom.RoomStatus statusBefore, Collection<String> playersBefore,
+                                 Map<String, Object> extra) {
         List<Event> out = new ArrayList<>();
         boolean solo = room.isEditor();
         boolean started = statusBefore == GameRoom.RoomStatus.WAITING && PLAYING.contains(room.getStatus());
@@ -42,6 +48,7 @@ public final class GameActivity {
             if (RoomService.EDITOR_RIVAL.equals(id)) continue;
             Map<String, Object> detail = new LinkedHashMap<>();
             detail.put("roomId", room.getRoomId());
+            detail.putAll(extra);
             if (!solo) {
                 playersBefore.stream().filter(other -> !other.equals(id)).findFirst()
                         .ifPresent(other -> detail.put("rivalId", other));
@@ -57,10 +64,11 @@ public final class GameActivity {
     }
 
     /** Writes the events of an action to the log, if there is one (never stops the game). */
-    static void log(ActivityLogService activityLog, GameRoom room, GameRoom.RoomStatus statusBefore, Collection<String> playersBefore) {
+    static void log(ActivityLogService activityLog, GameRoom room, GameRoom.RoomStatus statusBefore, Collection<String> playersBefore,
+                    Map<String, Object> extra) {
         if (activityLog == null) return;
         try {
-            for (Event e : of(room, statusBefore, playersBefore)) activityLog.record(e.userId(), e.action(), e.detail());
+            for (Event e : of(room, statusBefore, playersBefore, extra)) activityLog.record(e.userId(), e.action(), e.detail());
         } catch (RuntimeException e) {
             // The log is for the administrators: a failure there must not break the room
         }
