@@ -1,5 +1,6 @@
 package com.drive.drive_manager.simulator.engine.effects.actions
 
+import com.drive.drive_manager.simulator.engine.JavaText
 import com.drive.drive_manager.simulator.engine.effects.model.Action.Destroy
 import com.drive.drive_manager.simulator.engine.effects.model.Selector
 import com.drive.drive_manager.simulator.engine.effects.runtime.ActionHandler
@@ -31,7 +32,7 @@ class DestroyHandler : ActionHandler<Destroy> {
         val min = Math.min(ctx.amount(selector.min), max)
         val filter = selector.filter().describe()
         ctx.ask((if (action.sacrifice) "Sacrifica " else "Destruye ") + (if (min < max) "hasta " else "") + max + (if (max == 1) " criatura" else " criaturas")
-                        + (if (filter.all { Character.isWhitespace(it) }) "" else " $filter") + ".",
+                        + (if (filter.all { JavaText.isWhitespace(it) }) "" else " $filter") + ".",
                 if (action.sacrifice) "Sacrificar" else "Destruir", Selection.pool(ctx, selector), valid, min, max)
         return true
     }

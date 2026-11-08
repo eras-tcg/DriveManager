@@ -38,12 +38,11 @@ import com.drive.drive_manager.simulator.room.CardSlot
 import com.drive.drive_manager.simulator.room.GameRoom
 import com.drive.drive_manager.simulator.room.PlayerState
 import com.drive.drive_manager.simulator.room.Zone
-import java.util.regex.Pattern
 
 /** What the steps of an effect share. */
 object StepHelpers {
 
-    private val COMMA = Pattern.compile(",")
+    private val COMMA = Regex(",")
 
     /** Allies "sacrifica 1 [otro] aliado" may take. */
     @JvmStatic
@@ -331,14 +330,14 @@ object StepHelpers {
     @JvmStatic
     fun zones(player: PlayerState?, csv: String?): List<CardSlot> {
         val all: MutableList<CardSlot> = ArrayList()
-        for (z in COMMA.split(csv!!)) all.addAll(zone(player, z.trim { it <= ' ' }))
+        for (z in JavaText.split(COMMA, csv!!)) all.addAll(zone(player, z.trim { it <= ' ' }))
         return all
     }
 
     /** Which of those zones holds the card. */
     @JvmStatic
     fun zoneOf(player: PlayerState?, csv: String?, card: CardSlot?): String? {
-        for (z in COMMA.split(csv!!)) if (zone(player, z.trim { it <= ' ' }).contains(card)) return z.trim { it <= ' ' }
+        for (z in JavaText.split(COMMA, csv!!)) if (zone(player, z.trim { it <= ' ' }).contains(card)) return z.trim { it <= ' ' }
         return csv
     }
 
@@ -582,6 +581,6 @@ object StepHelpers {
     /** "tus tributos o descarte". */
     @JvmStatic
     fun zonesText(csv: String?): String {
-        return java.lang.String.join(" o ", COMMA.split(csv!!).map { z -> zoneName(z.trim { it <= ' ' }) })
+        return (JavaText.split(COMMA, csv!!).map { z -> zoneName(z.trim { it <= ' ' }) }).joinToString(" o ")
     }
 }

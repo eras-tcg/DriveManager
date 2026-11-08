@@ -9,7 +9,6 @@ import com.drive.drive_manager.simulator.engine.EffectStep.GroupUp
 import com.drive.drive_manager.simulator.room.CardSlot
 import com.drive.drive_manager.simulator.room.GameRoom
 import com.drive.drive_manager.simulator.room.Zone
-import java.util.Locale
 import java.util.Optional
 import java.util.TreeMap
 import java.util.TreeSet
@@ -48,7 +47,7 @@ object CardEffects {
     @JvmStatic
     fun of(cardName: String?): List<EffectScript> {
         if (cardName == null) return java.util.List.of()
-        return BY_NAME.getOrDefault(cardName.trim { it <= ' ' }.lowercase(Locale.ROOT), java.util.List.of())
+        return BY_NAME.getOrDefault(cardName.trim { it <= ' ' }.lowercase(), java.util.List.of())
     }
 
     /**
@@ -168,7 +167,7 @@ object CardEffects {
      */
     @JvmStatic
     fun pending(cardName: String?, own: Int, inherited: Int, keywords: List<String>): String? {
-        val name = cardName?.trim { it <= ' ' }?.lowercase(Locale.ROOT) ?: ""
+        val name = cardName?.trim { it <= ' ' }?.lowercase() ?: ""
         val ownDone = BY_NAME.getOrDefault(name, java.util.List.of()).size + CONTINUOUS.getOrDefault(name, java.util.List.of()).size +
                 CostModifiers.of(name).size + REPLACEMENTS.getOrDefault(name, java.util.List.of()).size +
                 ruleEffects().getOrDefault(name, java.util.List.of()).size
@@ -185,7 +184,7 @@ object CardEffects {
     /** What a card gives the creature it is a Recurso of. */
     @JvmStatic
     fun inheritedOf(name: String?): List<EffectScript> {
-        return if (name == null) java.util.List.of() else INHERITED.getOrDefault(name.trim { it <= ' ' }.lowercase(Locale.ROOT), java.util.List.of())
+        return if (name == null) java.util.List.of() else INHERITED.getOrDefault(name.trim { it <= ' ' }.lowercase(), java.util.List.of())
     }
 
     /** A creature's strength while it is a life: its own and what its continuous effects of the lives give it. */
@@ -197,7 +196,7 @@ object CardEffects {
         }
         // Helena: "reduce … las de las vidas oponentes en N, hasta el final del turno"
         val reduced = EffectEngine.LIFE_REDUCED + life.instanceId + "|"
-        for (k in room.usedThisTurn) if (k.startsWith(reduced)) strength -= Integer.parseInt(k.substring(reduced.length))
+        for (k in room.usedThisTurn) if (k.startsWith(reduced)) strength -= k.substring(reduced.length).toInt()
         return strength
     }
 
@@ -207,7 +206,7 @@ object CardEffects {
         return traits(card).specialFromTributes
     }
 
-    private val AGRUPAR: java.util.regex.Pattern = java.util.regex.Pattern.compile("agrupar\\s*(\\d+)")
+    private val AGRUPAR: Regex = Regex("agrupar\\s*(\\d+)")
 
     /** "Agrupar N": up to N allies, Letalidad 1 for each (designer ruling 2026-10-31). Agrupar 1 is the one in KEYWORDS. */
     @JvmStatic
@@ -222,7 +221,7 @@ object CardEffects {
     @JvmStatic
     fun continuousOf(card: CardSlot): List<Continuous> {
         if (card.cardName == null) return java.util.List.of()
-        return CONTINUOUS.getOrDefault(card.cardName!!.trim { it <= ' ' }.lowercase(Locale.ROOT), java.util.List.of())
+        return CONTINUOUS.getOrDefault(card.cardName!!.trim { it <= ' ' }.lowercase(), java.util.List.of())
     }
 
     /** The card's own effects, those its Recursos give it and those of the keywords the engine runs. */
@@ -230,13 +229,13 @@ object CardEffects {
     fun of(card: CardSlot): List<EffectScript> {
         val all: MutableList<EffectScript> = ArrayList(of(card.cardName))
         for (resource in card.resources!!) {
-            if (resource.cardName != null) all.addAll(INHERITED.getOrDefault(resource.cardName!!.trim { it <= ' ' }.lowercase(Locale.ROOT), java.util.List.of()))
+            if (resource.cardName != null) all.addAll(INHERITED.getOrDefault(resource.cardName!!.trim { it <= ' ' }.lowercase(), java.util.List.of()))
         }
         for (keyword in EffectEngine.keywords(card)) {
-            var script = KEYWORDS[keyword.lowercase(Locale.ROOT)]
+            var script = KEYWORDS[keyword.lowercase()]
             // Agrupar N: up to N allies
-            val groupUp = AGRUPAR.matcher(keyword.lowercase(Locale.ROOT))
-            if (script == null && groupUp.matches()) script = agrupar(Integer.parseInt(groupUp.group(1)))
+            val groupUp = AGRUPAR.matchEntire(keyword.lowercase())
+            if (script == null && groupUp != null) script = agrupar(groupUp.groupValues[1].toInt())
             if (script != null) all.add(script)
         }
         return all
@@ -248,7 +247,7 @@ object CardEffects {
         for (scripts in BY_NAME.values) for (s in scripts) if (s.id == id) return Optional.of(s)
         for (scripts in INHERITED.values) for (s in scripts) if (s.id == id) return Optional.of(s)
         for (s in KEYWORDS.values) if (s.id == id) return Optional.of(s)
-        return if (id.startsWith("kw:agrupar-")) Optional.of(agrupar(Integer.parseInt(id.substring("kw:agrupar-".length)))) else Optional.empty()
+        return if (id.startsWith("kw:agrupar-")) Optional.of(agrupar(id.substring("kw:agrupar-".length).toInt())) else Optional.empty()
     }
 
     /** Cost to play a utility or structure, after its cost modifiers (they ask for nothing to be paid). */
@@ -332,13 +331,13 @@ object CardEffects {
     /** The card's reaction of that kind, or null. */
     private fun <T : Reaction> reaction(card: CardSlot, kind: Class<T>): T? {
         if (card.cardName == null) return null
-        return REACTIONS.getOrDefault(card.cardName!!.trim { it <= ' ' }.lowercase(Locale.ROOT), java.util.List.of())
+        return REACTIONS.getOrDefault(card.cardName!!.trim { it <= ' ' }.lowercase(), java.util.List.of())
             .firstOrNull { kind.isInstance(it) }?.let { kind.cast(it) }
     }
 
     private fun traits(card: CardSlot): CardTraits {
         return if (card.cardName == null) CardTraits.NONE
-        else TRAITS.getOrDefault(card.cardName!!.trim { it <= ' ' }.lowercase(Locale.ROOT), CardTraits.NONE)
+        else TRAITS.getOrDefault(card.cardName!!.trim { it <= ' ' }.lowercase(), CardTraits.NONE)
     }
 
     @JvmRecord
@@ -413,10 +412,10 @@ object CardEffects {
     @JvmStatic
     fun replacementsOf(card: CardSlot): List<Replacement> {
         val all: MutableList<Replacement> = ArrayList()
-        if (card.cardName != null) all.addAll(REPLACEMENTS.getOrDefault(card.cardName!!.trim { it <= ' ' }.lowercase(Locale.ROOT), java.util.List.of()))
+        if (card.cardName != null) all.addAll(REPLACEMENTS.getOrDefault(card.cardName!!.trim { it <= ' ' }.lowercase(), java.util.List.of()))
         for (resource in card.resources!!) {
             if (resource.cardName != null)
-                all.addAll(INHERITED_REPLACEMENTS.getOrDefault(resource.cardName!!.trim { it <= ' ' }.lowercase(Locale.ROOT), java.util.List.of()))
+                all.addAll(INHERITED_REPLACEMENTS.getOrDefault(resource.cardName!!.trim { it <= ' ' }.lowercase(), java.util.List.of()))
         }
         return all
     }
@@ -426,7 +425,7 @@ object CardEffects {
     fun replacementGiver(card: CardSlot, replacement: Replacement?): CardSlot? {
         for (resource in card.resources!!) {
             if (resource.cardName != null &&
-                INHERITED_REPLACEMENTS.getOrDefault(resource.cardName!!.trim { it <= ' ' }.lowercase(Locale.ROOT), java.util.List.of()).contains(replacement)) return resource
+                INHERITED_REPLACEMENTS.getOrDefault(resource.cardName!!.trim { it <= ' ' }.lowercase(), java.util.List.of()).contains(replacement)) return resource
         }
         return null
     }
@@ -472,8 +471,8 @@ object CardEffects {
     @JvmStatic
     fun isNamed(card: CardSlot, name: String?): Boolean {
         if (card.cardName == null || name == null) return false
-        val own = card.cardName!!.trim { it <= ' ' }.lowercase(Locale.ROOT)
-        val wanted = name.trim { it <= ' ' }.lowercase(Locale.ROOT)
+        val own = card.cardName!!.trim { it <= ' ' }.lowercase()
+        val wanted = name.trim { it <= ' ' }.lowercase()
         return own == wanted || wanted == traits(card).alias
     }
 

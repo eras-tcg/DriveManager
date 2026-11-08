@@ -1,5 +1,6 @@
 package com.drive.drive_manager.simulator.actions
 
+import com.drive.drive_manager.simulator.engine.JavaText
 import com.drive.drive_manager.simulator.actions.ZoneActions.getZone
 import com.drive.drive_manager.simulator.actions.ZoneActions.zoneLabel
 import com.drive.drive_manager.simulator.engine.Removals
@@ -347,7 +348,7 @@ object CardActions {
         val zoneName = action.getString("zone")
         val zone = getZone(player, zoneName) ?: return GameStateUpdate.error(room.roomId, SimMessages.INVALID_ZONE)
         val name = action.getString("cardName")
-        if (name == null || name.all { Character.isWhitespace(it) }) return GameStateUpdate.error(room.roomId, "La carta necesita un nombre")
+        if (name == null || name.all { JavaText.isWhitespace(it) }) return GameStateUpdate.error(room.roomId, "La carta necesita un nombre")
 
         val card = CardSlot()
         card.instanceId = "dummy-" + UUID.randomUUID().toString().replace("-", "").substring(0, 10)

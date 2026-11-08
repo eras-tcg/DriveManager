@@ -6,9 +6,7 @@ import com.drive.drive_manager.simulator.engine.EffectScript
 import com.drive.drive_manager.simulator.room.CardSlot
 import com.drive.drive_manager.simulator.room.GameRoom
 import com.drive.drive_manager.simulator.room.PlayerState
-import java.util.Locale
 import java.util.concurrent.ConcurrentHashMap
-import java.util.regex.Pattern
 
 /**
  * frontRisk k (the user's call, 2026-11-05): a creature in the Línea frontal is where the rival's removal reaches (every
@@ -29,9 +27,9 @@ internal object RemovalRisk {
         }
     }
 
-    private val STRENGTH: Pattern = Pattern.compile("fuerza (\\d+) o menos")
-    private val LEVEL_MAX: Pattern = Pattern.compile("nivel (\\d+) o menor")
-    private val LEVEL: Pattern = Pattern.compile("nivel (\\d+)(?! o)")
+    private val STRENGTH: Regex = Regex("fuerza (\\d+) o menos")
+    private val LEVEL_MAX: Regex = Regex("nivel (\\d+) o menor")
+    private val LEVEL: Regex = Regex("nivel (\\d+)(?! o)")
     /** The destructions of each card, by name (none: not a removal). */
     private val BY_CARD: MutableMap<String, List<Reach>> = ConcurrentHashMap()
     /**
@@ -41,8 +39,8 @@ internal object RemovalRisk {
      * one at the start of its turn) threaten for sure next turn, when they have the materials it asks to tribute.
      */
     private val CUTS_BY_CARD: MutableMap<String, List<Reach>> = ConcurrentHashMap()
-    private val CUT: Pattern = Pattern.compile("(?:reduce|reducir)[^.;]*?fuerza en (\\d+)|(?:reduce|reducir) en (\\d+) su fuerza")
-    private val MATERIALS: Pattern = Pattern.compile("tributar (\\d+) materiales?")
+    private val CUT: Regex = Regex("(?:reduce|reducir)[^.;]*?fuerza en (\\d+)|(?:reduce|reducir) en (\\d+) su fuerza")
+    private val MATERIALS: Regex = Regex("tributar (\\d+) materiales?")
 
     /** The penalty each creature of its own in the Línea frontal carries when the rival's turn begins, by instanceId. */
     @JvmStatic
@@ -118,10 +116,10 @@ internal object RemovalRisk {
         return BY_CARD.computeIfAbsent(key) {
             val out: MutableList<Reach> = ArrayList()
             for (e in CardEffects.of(card)) {
-                val t = if (e.text == null) "" else e.text!!.lowercase(Locale.ROOT)
+                val t = if (e.text == null) "" else e.text!!.lowercase()
                 if (!t.contains("destrú") || !t.contains("enemigo")) continue
                 out.add(Reach(if (card.cost == null) 0 else card.cost!!, first(STRENGTH, t), first(LEVEL_MAX, t),
-                        if (LEVEL_MAX.matcher(t).find()) -1 else first(LEVEL, t)))
+                        if (LEVEL_MAX.containsMatchIn(t)) -1 else first(LEVEL, t)))
             }
             out
         }
@@ -139,10 +137,10 @@ internal object RemovalRisk {
         return CUTS_BY_CARD.computeIfAbsent(key) {
             val out: MutableList<Reach> = ArrayList()
             for (e in CardEffects.of(card)) {
-                val t = if (e.text == null) "" else e.text!!.lowercase(Locale.ROOT)
+                val t = if (e.text == null) "" else e.text!!.lowercase()
                 if (!t.contains("enemigo")) continue
-                val m = CUT.matcher(t)
-                if (m.find()) out.add(Reach(if (card.cost == null) 0 else card.cost!!, Integer.parseInt(if (m.group(1) != null) m.group(1) else m.group(2)), -1, -1))
+                val m = CUT.find(t)
+                if (m != null) out.add(Reach(if (card.cost == null) 0 else card.cost!!, (m.groups[1]?.value ?: m.groupValues[2]).toInt(), -1, -1))
             }
             out
         }
@@ -152,20 +150,20 @@ internal object RemovalRisk {
     private fun fieldCuts(creature: CardSlot): List<Reach> {
         val out: MutableList<Reach> = ArrayList()
         for (e in CardEffects.of(creature)) {
-            val t = if (e.text == null) "" else e.text!!.lowercase(Locale.ROOT)
+            val t = if (e.text == null) "" else e.text!!.lowercase()
             val own = e.moment == EffectScript.Moment.ACTIVATED || t.contains("al inicio del turno")
             if (!own || !t.contains("enemigo")) continue
-            val m = CUT.matcher(t)
-            if (!m.find()) continue
+            val m = CUT.find(t)
+            if (m == null) continue
             val need = first(MATERIALS, t)
             if (need > 0 && creature.materials!!.size < need) continue
-            out.add(Reach(0, Integer.parseInt(if (m.group(1) != null) m.group(1) else m.group(2)), -1, -1))
+            out.add(Reach(0, (m.groups[1]?.value ?: m.groupValues[2]).toInt(), -1, -1))
         }
         return out
     }
 
-    private fun first(p: Pattern, t: String): Int {
-        val m = p.matcher(t)
-        return if (m.find()) Integer.parseInt(m.group(1)) else -1
+    private fun first(p: Regex, t: String): Int {
+        val m = p.find(t)
+        return if (m != null) m.groupValues[1].toInt() else -1
     }
 }

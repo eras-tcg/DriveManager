@@ -1,5 +1,6 @@
 package com.drive.drive_manager.simulator.bot
 
+import com.drive.drive_manager.simulator.engine.JavaText
 import com.drive.drive_manager.simulator.engine.EffectEngine
 import com.drive.drive_manager.simulator.engine.GameEvent
 import com.drive.drive_manager.simulator.room.CardSlot
@@ -62,7 +63,7 @@ internal class MoveTrials(
      */
     private fun halving(room: GameRoom, me: String?, candidates: List<GameAction>): GameAction {
         val n = candidates.size
-        val rounds = Math.max(1, 32 - Integer.numberOfLeadingZeros(n - 1))
+        val rounds = Math.max(1, 32 - (n - 1).countLeadingZeroBits())
         val perRound = Math.max(1, settings.samples() * n / rounds)
         val sum = DoubleArray(n)
         val tries = IntArray(n)
@@ -234,9 +235,11 @@ internal class MoveTrials(
             for (i in candidates.indices) order.add(i)
             order.sortWith(Comparator.comparingInt { i: Int -> if (i == chosen) -1 else if (droppedIn[i] == 0) 0 else -droppedIn[i] + 1000 })
             for (i in order) {
-                out.add(java.lang.String.format(java.util.Locale.ROOT, "%s%-60s media %8.1f  pruebas %2d  %s", if (i == chosen) "ELEGIDA " else "        ",
-                        describe(room, candidates[i]), if (tries[i] == 0) Double.NaN else sum[i] / tries[i], tries[i],
-                        if (i == chosen) "" else if (droppedIn[i] == 0) "finalista" else "cayó en la ronda " + droppedIn[i]))
+                // String.format(Locale.ROOT, "%s%-60s media %8.1f  pruebas %2d  %s", ...), written out
+                val mean = if (tries[i] == 0) Double.NaN else sum[i] / tries[i]
+                out.add((if (i == chosen) "ELEGIDA " else "        ") + describe(room, candidates[i]).padEnd(60)
+                        + " media " + JavaText.fixed(mean, 1).padStart(8) + "  pruebas " + tries[i].toString().padStart(2) + "  "
+                        + (if (i == chosen) "" else if (droppedIn[i] == 0) "finalista" else "cayó en la ronda " + droppedIn[i]))
             }
         }
 
@@ -244,7 +247,7 @@ internal class MoveTrials(
         @JvmStatic
         fun describe(room: GameRoom, a: GameAction): String {
             if (SequenceSearch.SEQUENCE == a.type) {
-                return "cadena: " + java.lang.String.join(" → ", SequenceSearch.moves(a).map { m -> describe(room, m) })
+                return "cadena: " + (SequenceSearch.moves(a).map { m -> describe(room, m) }).joinToString(" → ")
             }
             val id = a.getString("instanceId")
             val target = a.getString("targetInstanceId")

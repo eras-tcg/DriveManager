@@ -1,7 +1,6 @@
 package com.drive.drive_manager.simulator.bot
 
-import java.util.Locale
-import java.util.regex.Pattern
+import com.drive.drive_manager.simulator.engine.JavaText
 
 /**
  * How the bot looks ahead and scores a table: named numbers (the knobs), each with its default. [with]
@@ -83,18 +82,18 @@ class BotSettings private constructor(values: Map<String, Double>, bias: Map<Str
     fun with(text: String?): BotSettings {
         val v: MutableMap<String, Double> = LinkedHashMap(values)
         val b: MutableMap<String, Double> = LinkedHashMap(bias)
-        if (text != null && !text.all { Character.isWhitespace(it) }) {
-            for (pair in COMMA.split(text)) {
-                if (pair.all { Character.isWhitespace(it) }) continue
-                val kv = EQUALS.split(pair.trim { it <= ' ' })
+        if (text != null && !text.all { JavaText.isWhitespace(it) }) {
+            for (pair in JavaText.split(COMMA, text)) {
+                if (pair.all { JavaText.isWhitespace(it) }) continue
+                val kv = JavaText.split(EQUALS, pair.trim { it <= ' ' })
                 val key = kv[0].trim { it <= ' ' }
                 val prefix = biasPrefix(key)
                 if (kv.size == 2 && prefix != null && key.length > prefix.length) {
-                    b[prefix + cardKey(key.substring(prefix.length))] = java.lang.Double.parseDouble(kv[1].trim { it <= ' ' })
+                    b[prefix + cardKey(key.substring(prefix.length))] = kv[1].trim { it <= ' ' }.toDouble()
                     continue
                 }
                 if (kv.size != 2 || !v.containsKey(key)) throw IllegalArgumentException("Unknown setting: " + pair)
-                v[key] = java.lang.Double.parseDouble(kv[1].trim { it <= ' ' })
+                v[key] = kv[1].trim { it <= ' ' }.toDouble()
             }
         }
         return BotSettings(v, b)
@@ -178,8 +177,8 @@ class BotSettings private constructor(values: Map<String, Double>, bias: Map<Str
         const val BIAS_DISCARD = "biasD:"
         private val BIASES: List<String> = java.util.List.of(BIAS, BIAS_TRIBUTE, BIAS_DISCARD)
 
-        private val COMMA = Pattern.compile(",")
-        private val EQUALS = Pattern.compile("=")
+        private val COMMA = Regex(",")
+        private val EQUALS = Regex("=")
 
         private val DEFAULTS: Map<String, Double> = defaults()
         @JvmField
@@ -307,7 +306,7 @@ class BotSettings private constructor(values: Map<String, Double>, bias: Map<Str
 
         @JvmStatic
         fun cardKey(cardName: String?): String {
-            return cardName!!.trim { it <= ' ' }.lowercase(Locale.ROOT)
+            return cardName!!.trim { it <= ' ' }.lowercase()
         }
     }
 }

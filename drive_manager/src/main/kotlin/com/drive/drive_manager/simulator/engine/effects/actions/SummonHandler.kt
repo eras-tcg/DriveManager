@@ -1,5 +1,6 @@
 package com.drive.drive_manager.simulator.engine.effects.actions
 
+import com.drive.drive_manager.simulator.engine.JavaText
 import com.drive.drive_manager.simulator.engine.effects.model.Action.Summon
 import com.drive.drive_manager.simulator.engine.effects.model.Selector
 import com.drive.drive_manager.simulator.engine.effects.runtime.ActionHandler
@@ -31,7 +32,7 @@ class SummonHandler : ActionHandler<Summon> {
         val min = Math.min(ctx.amount(selector.min), max)
         val filter = selector.filter().describe()
         val cost = if (reduce >= Summon.FREE) " sin pagar su coste" else if (reduce > 0) " reduciendo su coste en $reduce" else " pagando su coste"
-        ctx.ask("Invoca " + (if (min < max) "hasta " else "") + max + (if (max == 1) " criatura" else " criaturas") + (if (filter.all { Character.isWhitespace(it) }) "" else " $filter")
+        ctx.ask("Invoca " + (if (min < max) "hasta " else "") + max + (if (max == 1) " criatura" else " criaturas") + (if (filter.all { JavaText.isWhitespace(it) }) "" else " $filter")
                 + " de " + ctx.describeZones(selector.zones) + cost + ". Entra en " + (if (action.toFront) "tu línea frontal" else "Retaguardia") + " y robas 1 carta.", "Invocar", Selection.pool(ctx, selector), valid, min, max)
         return true
     }

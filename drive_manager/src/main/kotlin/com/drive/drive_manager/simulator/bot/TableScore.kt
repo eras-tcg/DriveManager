@@ -195,7 +195,7 @@ internal object TableScore {
             // of it still to play (hand, field, deck): times uDamp for each (uDamp 0: no loss while one copy is left)
             val left: MutableMap<String, Int> = java.util.HashMap()
             for (zone in java.util.List.of(p.hand, p.field, p.deck)) {
-                for (c in zone) left.merge(BotSettings.cardKey(c.cardName), 1) { a, b -> Integer.sum(a, b) }
+                for (c in zone) left.merge(BotSettings.cardKey(c.cardName), 1) { a, b -> a + b }
             }
             for (c in p.tributeZone) {
                 if ("utility" == c.cardType) s -= w.uTribute * Math.pow(w.uDamp, left.getOrDefault(BotSettings.cardKey(c.cardName), 0).toDouble())

@@ -10,4 +10,19 @@ object Platform {
     /** A seed for a chance nobody seeded (`new java.util.Random()`): different each time. */
     @JvmStatic
     fun randomSeed(): Long = java.util.Random().nextLong()
+
+    /**
+     * The text (UTF-8) of a resource shipped with the engine (`/bot/models.txt`), or null when there is none. A resource
+     * that cannot be read throws IllegalStateException with `failure` as its message.
+     */
+    @JvmStatic
+    fun resourceText(path: String, failure: String): String? {
+        try {
+            Platform::class.java.getResourceAsStream(path).use { input ->
+                return if (input == null) null else String(input.readAllBytes(), java.nio.charset.StandardCharsets.UTF_8)
+            }
+        } catch (e: java.io.IOException) {
+            throw IllegalStateException(failure, e)
+        }
+    }
 }

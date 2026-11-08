@@ -170,12 +170,12 @@ sealed interface Amount {
         override fun of(room: GameRoom, controller: String?): Int {
             var n = 0
             // Java's String.split: the empty strings at the end are dropped
-            for (z in COMMA.split(zones!!)) n += EffectEngine.countInZone(room, controller, z.trim { it <= ' ' }, filter).toInt()
+            for (z in JavaText.split(COMMA, zones!!)) n += EffectEngine.countInZone(room, controller, z.trim { it <= ' ' }, filter).toInt()
             return n
         }
 
         private companion object {
-            val COMMA: java.util.regex.Pattern = java.util.regex.Pattern.compile(",")
+            val COMMA: Regex = Regex(",")
         }
     }
 

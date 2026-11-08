@@ -9,8 +9,6 @@ import com.drive.drive_manager.simulator.room.CardSlot
 import com.drive.drive_manager.simulator.room.GameRoom
 import com.drive.drive_manager.simulator.room.PlayerState
 import com.drive.drive_manager.simulator.room.Zone
-import java.util.Locale
-import java.util.regex.Pattern
 
 /**
  * The game as actions see it. While old steps and new actions live together (until phase 7 of the refactor), the memory's
@@ -181,7 +179,7 @@ internal class EngineContext(private val room: GameRoom, private val effect: Pen
 
     override fun describeZones(zones: String?): String? {
         val names: MutableList<String> = ArrayList()
-        for (raw in Pattern.compile(",").split(zones!!)) {
+        for (raw in JavaText.split(Regex(","), zones!!)) {
             val zone = raw.trim { it <= ' ' }
             if (zone.startsWith("materials")) names.add("los materiales")
             else if (zone.startsWith("resources")) names.add("los recursos")
@@ -414,7 +412,7 @@ internal class EngineContext(private val room: GameRoom, private val effect: Pen
     private fun reduce(card: CardSlot, owner: PlayerState?, amount: Int, until: Action.Until?) {
         if (until == Action.Until.AS_EVENT) {
             val trigger = EffectEngine.triggerEvent(room, effect)
-            val later = trigger != null && trigger.data != null && java.lang.Boolean.TRUE == trigger.data!!["untilNextTurn"]
+            val later = trigger != null && trigger.data != null && trigger.data!!["untilNextTurn"] == true
             StepHelpers.reduceStrength(room, effect, owner, card, amount, later)
             return
         }
@@ -589,9 +587,9 @@ internal class EngineContext(private val room: GameRoom, private val effect: Pen
 
     override fun describe(selector: Selector?): String? {
         val who = if (selector!!.owner == Selector.Owner.OPPONENT) "enemigo"
-        else if (selector.zones!!.lowercase(Locale.getDefault()).contains("allies") || selector.zones.contains("ttackers")) "aliado" else "carta"
+        else if (selector.zones!!.lowercase().contains("allies") || selector.zones.contains("ttackers")) "aliado" else "carta"
         val filter = selector.filter().describe()
-        return if (filter.all { Character.isWhitespace(it) }) who else "$who $filter"
+        return if (filter.all { JavaText.isWhitespace(it) }) who else "$who $filter"
     }
 
     override fun name(card: CardSlot?): String? {

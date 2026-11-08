@@ -37,7 +37,7 @@ object HistoryDescriber {
                 sourceName = whose.sourceName
                 scriptId = whose.scriptId
             }
-            val regulatory = event.data != null && java.lang.Boolean.TRUE == event.data!!["regulatory"]
+            val regulatory = event.data != null && event.data!!["regulatory"] == true
             entry.detail = !regulatory && !EFFECT_MOMENTS.contains(event.type!!)
         }
         val card = source(room, entry, sourceId, sourceName)

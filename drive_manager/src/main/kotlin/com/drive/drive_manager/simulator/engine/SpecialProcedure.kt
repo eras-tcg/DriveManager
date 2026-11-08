@@ -5,12 +5,11 @@ import com.drive.drive_manager.simulator.engine.effects.model.SpecialRule
 import com.drive.drive_manager.simulator.room.CardSlot
 import com.drive.drive_manager.simulator.room.GameRoom
 import com.drive.drive_manager.simulator.room.PlayerState
-import java.util.regex.Pattern
 
 /** What each choice of a special summon by effect offers, under its rule. The choices themselves are plain Select actions. */
 object SpecialProcedure {
 
-    private val COMMA = Pattern.compile(",")
+    private val COMMA = Regex(",")
 
     /** The rule as it is now: what depends on the game, worked out. */
     @JvmStatic
@@ -197,7 +196,7 @@ object SpecialProcedure {
         }
         val req = SpecialRequirements.specialRequirement(target)
         val from = if (EffectEngine.find(player!!.hand, target.instanceId) != null) "hand"
-        else if (EffectEngine.find(player.tributeZone, target.instanceId) != null) "tributeZone" else COMMA.split(rule.zone!!)[0].trim { it <= ' ' }
+        else if (EffectEngine.find(player.tributeZone, target.instanceId) != null) "tributeZone" else JavaText.split(COMMA, rule.zone!!)[0].trim { it <= ' ' }
         effect.ritualTargetId = null
         effect.ritualSummonerId = null
         SpecialSummons.specialSummon(room, player, target, req!!, summoner, materials, from, rule.reduce, effect)

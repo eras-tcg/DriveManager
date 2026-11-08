@@ -8,8 +8,6 @@ import com.drive.drive_manager.simulator.room.CardSlot
 import com.drive.drive_manager.simulator.room.GameRoom
 import com.drive.drive_manager.simulator.room.PlayerState
 import com.drive.drive_manager.simulator.room.Zone
-import java.util.Locale
-import java.util.regex.Pattern
 
 /**
  * hReduce (the user's call, 2026-11-05, the ST1 deck): a creature reduced to 0 strength is destroyed, so a strength
@@ -25,17 +23,17 @@ import java.util.regex.Pattern
  */
 internal object StrengthCuts {
 
-    private val AMOUNT: Pattern = Pattern.compile("(?:reduce|reducir|reduzca)[^.;]*?fuerza en (\\d+)|(?:reduce|reducir) en (\\d+) su fuerza")
-    private val MORE: Pattern = Pattern.compile("reducir su fuerza en (\\d+) más")
-    private val TO_ZERO: Pattern = Pattern.compile("si reduces a (\\d+) o menos la fuerza[^.]*reducirla a 0")
+    private val AMOUNT: Regex = Regex("(?:reduce|reducir|reduzca)[^.;]*?fuerza en (\\d+)|(?:reduce|reducir) en (\\d+) su fuerza")
+    private val MORE: Regex = Regex("reducir su fuerza en (\\d+) más")
+    private val TO_ZERO: Regex = Regex("si reduces a (\\d+) o menos la fuerza[^.]*reducirla a 0")
 
     /** The amount a prompt reduces, from its texts; -1 when it is not a strength reduction. */
     @JvmStatic
     fun amount(prompt: Prompt): Int {
         for (t in arrayOf(prompt.effectText, prompt.instruction)) {
             if (t == null) continue
-            val m = AMOUNT.matcher(t.lowercase(Locale.ROOT))
-            if (m.find()) return Integer.parseInt(if (m.group(1) != null) m.group(1) else m.group(2))
+            val m = AMOUNT.find(t.lowercase())
+            if (m != null) return (m.groups[1]?.value ?: m.groupValues[2]).toInt()
         }
         return -1
     }
@@ -52,11 +50,11 @@ internal object StrengthCuts {
         own.addAll(self.hand)
         for (c in own) {
             for (e in CardEffects.of(c)) {
-                val t = if (e.text == null) "" else e.text!!.lowercase(Locale.ROOT)
-                val m = MORE.matcher(t)
-                if (m.find()) more = Math.max(more, Integer.parseInt(m.group(1)))
-                val z = TO_ZERO.matcher(t)
-                if (z.find() && self.field.contains(c)) zeroAt = Math.max(zeroAt, Integer.parseInt(z.group(1)))
+                val t = if (e.text == null) "" else e.text!!.lowercase()
+                val m = MORE.find(t)
+                if (m != null) more = Math.max(more, m.groupValues[1].toInt())
+                val z = TO_ZERO.find(t)
+                if (z != null && self.field.contains(c)) zeroAt = Math.max(zeroAt, z.groupValues[1].toInt())
             }
         }
         val enemies = choices.mapNotNull { id -> find(room, self, id)?.takeIf { c -> "creature" == c.cardType } }

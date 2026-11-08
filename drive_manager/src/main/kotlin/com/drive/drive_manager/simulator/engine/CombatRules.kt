@@ -34,8 +34,6 @@ import com.drive.drive_manager.simulator.engine.Summons.summonByEffect
 import com.drive.drive_manager.simulator.room.CardSlot
 import com.drive.drive_manager.simulator.room.GameRoom
 import com.drive.drive_manager.simulator.room.PlayerState
-import java.util.Locale
-import java.util.regex.Pattern
 
 /** Combat (rule 10): declaring an attack, then its steps one by one (attack, block, clash, direct damage, end). */
 object CombatRules {
@@ -102,10 +100,10 @@ object CombatRules {
     fun furia(card: CardSlot?): Int? {
         var best: Int? = null
         for (k in keywords(card)) {
-            if (!k.lowercase(Locale.ROOT).startsWith("furia")) continue
-            val m = Pattern.compile("(\\d+)").matcher(k)
-            if (!m.find()) return -1
-            best = if (best == null) Integer.parseInt(m.group(1)) else Math.max(best, Integer.parseInt(m.group(1)))
+            if (!k.lowercase().startsWith("furia")) continue
+            val m = Regex("(\\d+)").find(k)
+            if (m == null) return -1
+            best = if (best == null) m.groupValues[1].toInt() else Math.max(best, m.groupValues[1].toInt())
         }
         return best
     }
@@ -461,10 +459,10 @@ object CombatRules {
         if (picks.isEmpty()) {
             // Not replaced: an effect's damage happens now (an attack's goes on by itself)
             if (effectMark != null) {
-                val p = Pattern.compile("\\|").split(effectMark.substring(PENDING_EFFECT_DAMAGE.length))
+                val p = JavaText.split(Regex("\\|"), effectMark.substring(PENDING_EFFECT_DAMAGE.length))
                 val effect = room.chain.firstOrNull { e -> e.id == p[0] }
                 val controller = room.getPlayer(p[2])
-                if (effect != null && controller != null) StepHelpers.damageByEffect(room, effect, controller, Integer.parseInt(p[1]), false)
+                if (effect != null && controller != null) StepHelpers.damageByEffect(room, effect, controller, p[1].toInt(), false)
             }
             advance(room)
             return null
@@ -509,7 +507,7 @@ object CombatRules {
         for (mark in ArrayList(room.usedThisTurn)) {
             if (!mark.startsWith(StepHelpers.RETURN_AT_ATTACK_END)) continue
             room.usedThisTurn.remove(mark)
-            val p = Pattern.compile("\\|").split(mark.substring(StepHelpers.RETURN_AT_ATTACK_END.length))
+            val p = JavaText.split(Regex("\\|"), mark.substring(StepHelpers.RETURN_AT_ATTACK_END.length))
             val owner = room.getPlayer(p[0])
             val card = if (owner == null) null else find(owner.field, p[1])
             if (card == null) continue
@@ -525,11 +523,11 @@ object CombatRules {
                 owner.username + " sube " + name(card) + " y sus materiales a su mano al final del ataque")
         }
         for (entry in c.untilEndOfAttack) {
-            val parts = Pattern.compile("\\|").split(entry, 2)
+            val parts = JavaText.split(Regex("\\|"), entry, 2)
             for (p in room.players.values) {
                 val card = find(p.field, parts[0]) ?: continue
                 if (parts[1].startsWith(STRENGTH_ENTRY)) {
-                    val amount = Integer.parseInt(parts[1].substring(STRENGTH_ENTRY.length))
+                    val amount = parts[1].substring(STRENGTH_ENTRY.length).toInt()
                     card.turnStrength = card.turnStrength - amount
                     card.floating!!.removeIf { f -> "attack" == f.until && f.keyword == null && f.strength == amount }
                     continue

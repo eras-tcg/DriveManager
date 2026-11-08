@@ -1,7 +1,6 @@
 package com.drive.drive_manager.simulator.engine
 
 import com.drive.drive_manager.simulator.room.CardSlot
-import java.util.Locale
 
 /**
  * Which cards an effect may choose ("1 carta Violeta o Blanca", "1 criatura [bestia] nivel 1").
@@ -231,14 +230,14 @@ data class CardFilter(
         if (notName != null && notName.equals(card.cardName, ignoreCase = true)) return false
         if (!notColorList.isEmpty() && notColorList.any { cardColors.contains(it) }) return false
         if (nameContains != null && (card.cardName == null ||
-                    !card.cardName!!.lowercase(Locale.ROOT).contains(nameContains.lowercase(Locale.ROOT)))) return false
+                    !card.cardName!!.lowercase().contains(nameContains.lowercase()))) return false
         if (minCost != null && (card.cost == null || card.cost!! < minCost)) return false
         if (!cardTypeList.isEmpty() && !cardTypeList.contains(card.cardType) && !(cardTypeList.contains("creature") && asCreature != null)) return false
         if (!anyOfList.isEmpty() && anyOfList.none { f -> f.matches(card) }) return false
         if (mentions != null) {
-            val t = mentions.lowercase(Locale.ROOT)
+            val t = mentions.lowercase()
             val ofType = card.classes!!.any { c -> c.equals(t, ignoreCase = true) }
-            val inName = card.cardName != null && card.cardName!!.lowercase(Locale.ROOT).contains(t)
+            val inName = card.cardName != null && card.cardName!!.lowercase().contains(t)
             if (!ofType && !inName && (card.mentions == null || !card.mentions!!.contains(t))) return false
         }
         if (backOnly && EffectEngine.inFrontLine(card)) return false
@@ -267,7 +266,7 @@ data class CardFilter(
         if (maxCost != null) text += " de coste $maxCost o menos"
         if (starterOnly) text += " Iniciador"
         if (!cardTypeList.isEmpty()) text = cardTypeList.map { typeName(it) }.joinToString(" o ") + " " + text
-        if (!notColorList.isEmpty()) text += " " + notColorList.map { c -> "no-" + colorName(c).lowercase(Locale.ROOT) }.joinToString(" ")
+        if (!notColorList.isEmpty()) text += " " + notColorList.map { c -> "no-" + colorName(c).lowercase() }.joinToString(" ")
         if (nameContains != null) text += " con \"$nameContains\" en su nombre"
         if (minCost != null) text += " de coste $minCost o mayor"
         if (!anyOfList.isEmpty()) text += " " + anyOfList.map { it.describe() }.joinToString(" o ")

@@ -3,9 +3,7 @@ package com.drive.drive_manager.simulator.bot
 import com.drive.drive_manager.simulator.engine.CardEffects
 import com.drive.drive_manager.simulator.engine.EffectScript
 import com.drive.drive_manager.simulator.room.CardSlot
-import java.util.Locale
 import java.util.concurrent.ConcurrentHashMap
-import java.util.regex.Pattern
 
 /**
  * What a creature's effects do to a combat (the user's call, 2026-11-05: CombatSearch must see them; Mawser destroys a
@@ -36,11 +34,11 @@ internal data class CombatTraits(val bonusLevel: Int, val attackStr: Int, val at
         @JvmField
         val NONE = CombatTraits(-1, -1, -1, 0, false, 0.0, false, false)
 
-        private val LEVEL: Pattern = Pattern.compile("nivel (\\d+) o menor")
-        private val STRENGTH: Pattern = Pattern.compile("fuerza (\\d+) o menos")
-        private val DRAW: Pattern = Pattern.compile("roba (\\d+) carta")
-        private val TRIBUTE: Pattern = Pattern.compile("tributa (\\d+) carta")
-        private val SEND: Pattern = Pattern.compile("enviar (\\d+) de tus tributos")
+        private val LEVEL: Regex = Regex("nivel (\\d+) o menor")
+        private val STRENGTH: Regex = Regex("fuerza (\\d+) o menos")
+        private val DRAW: Regex = Regex("roba (\\d+) carta")
+        private val TRIBUTE: Regex = Regex("tributa (\\d+) carta")
+        private val SEND: Regex = Regex("enviar (\\d+) de tus tributos")
         private val BY_CARD: MutableMap<String, CombatTraits> = ConcurrentHashMap()
 
         @JvmStatic
@@ -64,7 +62,7 @@ internal data class CombatTraits(val bonusLevel: Int, val attackStr: Int, val at
             var refund = 0.0
             // CardEffects.of(card) holds the effects its Recursos give it too (a tower's inherited ones)
             for (e in CardEffects.of(card)) {
-                val t = if (e.text == null) "" else e.text!!.lowercase(Locale.ROOT)
+                val t = if (e.text == null) "" else e.text!!.lowercase()
                 val destroysEnemy = t.contains("destrú") && t.contains("enemigo")
                 when (e.moment!!) {
                     EffectScript.Moment.ON_ATTACK -> {
@@ -91,9 +89,9 @@ internal data class CombatTraits(val bonusLevel: Int, val attackStr: Int, val at
             return CombatTraits(bonus, aStr, aLevel, tributes, sacrifice, Math.max(0.0, refund), refundSummon, attackSummon)
         }
 
-        private fun first(p: Pattern, t: String): Int {
-            val m = p.matcher(t)
-            return if (m.find()) Integer.parseInt(m.group(1)) else -1
+        private fun first(p: Regex, t: String): Int {
+            val m = p.find(t)
+            return if (m != null) m.groupValues[1].toInt() else -1
         }
     }
 }

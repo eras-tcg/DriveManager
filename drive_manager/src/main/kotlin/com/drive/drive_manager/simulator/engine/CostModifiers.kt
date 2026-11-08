@@ -3,7 +3,6 @@ package com.drive.drive_manager.simulator.engine
 import com.drive.drive_manager.simulator.room.CardSlot
 import com.drive.drive_manager.simulator.room.GameRoom
 import com.drive.drive_manager.simulator.room.PlayerState
-import java.util.Locale
 
 /**
  * Reactivo–Modificadores of a cost ("Reacciones, modificadores y Reemplazos"): applied right before the event they change
@@ -114,7 +113,7 @@ object CostModifiers {
     fun usageKey(player: PlayerState, use: Use): String {
         // A Definitive one counts as the player's Definitive effect of the turn (only 1 per turn, whichever card)
         if (use.modifier.limit == EffectScript.Limit.DEFINITIVE) return player.userId + "|" + EffectEngine.DEFINITIVE_USED
-        return player.userId + "|cost-modifier|" + use.holder.cardName!!.trim { it <= ' ' }.lowercase(Locale.ROOT)
+        return player.userId + "|cost-modifier|" + use.holder.cardName!!.trim { it <= ' ' }.lowercase()
     }
 
     /** A limited modifier was used: it is not offered again this turn. */
@@ -136,7 +135,7 @@ object CostModifiers {
 
     @JvmStatic
     fun register(cardName: String, vararg modifiers: CostModifier) {
-        BY_NAME.computeIfAbsent(cardName.trim { it <= ' ' }.lowercase(Locale.ROOT)) { ArrayList() }.addAll(java.util.List.of(*modifiers))
+        BY_NAME.computeIfAbsent(cardName.trim { it <= ' ' }.lowercase()) { ArrayList() }.addAll(java.util.List.of(*modifiers))
     }
 
     /** The card's modifiers, by its name in lower case. */
@@ -153,7 +152,7 @@ object CostModifiers {
 
     private fun of(card: CardSlot?): List<CostModifier> {
         if (card == null || card.cardName == null) return java.util.List.of()
-        return BY_NAME.getOrDefault(card.cardName!!.trim { it <= ' ' }.lowercase(Locale.ROOT), java.util.List.of())
+        return BY_NAME.getOrDefault(card.cardName!!.trim { it <= ' ' }.lowercase(), java.util.List.of())
     }
 
     /**

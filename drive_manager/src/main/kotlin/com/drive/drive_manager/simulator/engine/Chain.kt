@@ -256,7 +256,7 @@ object Chain {
     @JvmStatic
     fun usageKey(e: PendingEffect, script: EffectScript): String {
         if (script.limit == Limit.DEFINITIVE) return e.controllerId + "|" + DEFINITIVE_USED
-        if (script.limit == Limit.ONE_EFFECT_OF_NAME_PER_TURN) return e.controllerId + "|name:" + e.sourceName!!.lowercase(java.util.Locale.ROOT)
+        if (script.limit == Limit.ONE_EFFECT_OF_NAME_PER_TURN) return e.controllerId + "|name:" + e.sourceName!!.lowercase()
         return if (script.limit == Limit.ONCE_PER_TURN_BETWEEN_COPIES)
             e.controllerId + "|" + script.id
         // "Una vez por turno" belongs to this card while it stays on the field (rule 11.8: back on the field it is a new card)

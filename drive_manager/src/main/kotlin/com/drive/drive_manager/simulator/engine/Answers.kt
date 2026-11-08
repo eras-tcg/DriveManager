@@ -50,7 +50,6 @@ import com.drive.drive_manager.simulator.engine.Summons.regulatoryDraw
 import com.drive.drive_manager.simulator.room.CardSlot
 import com.drive.drive_manager.simulator.room.GameRoom
 import com.drive.drive_manager.simulator.room.PlayerState
-import java.util.regex.Pattern
 
 /**
  * The players' answers to the engine's choices: the rules' own (Ritual, move up, Reforzar, chaining, responding) here; an
@@ -212,7 +211,7 @@ object Answers {
             }
             room.usedThisTurn.add(SUMMON_SACRIFICE + card.instanceId + "|" + (if (picks.isEmpty()) "-" else picks[0]))
             val y = if (prompt.summonerId == null) "" else prompt.summonerId!!
-            val error = normalSummon(room, userId, card.instanceId, 50.0, if (y.isEmpty()) null else java.lang.Double.valueOf(y))
+            val error = normalSummon(room, userId, card.instanceId, 50.0, if (y.isEmpty()) null else y.toDouble())
             if (error != null) {
                 room.usedThisTurn.removeIf { k -> k.startsWith(SUMMON_SACRIFICE + card.instanceId + "|") }
                 room.prompt = prompt
@@ -278,7 +277,7 @@ object Answers {
             room.usedThisTurn.add(CostModifiers.tapKey(holder, card, !picks.isEmpty()))
             val normal = if (prompt.summonerId != null && prompt.summonerId!!.startsWith(NORMAL_SUMMON))
                 prompt.summonerId!!.substring(NORMAL_SUMMON.length) else null
-            val error = if (normal != null) normalSummon(room, userId, card.instanceId, 50.0, if (normal.isEmpty()) null else java.lang.Double.valueOf(normal))
+            val error = if (normal != null) normalSummon(room, userId, card.instanceId, 50.0, if (normal.isEmpty()) null else normal.toDouble())
             else specialByPlayer(room, userId, card.instanceId, prompt.summonerId)
             if (error != null) {
                 // Without it the summon cannot be paid: ask again
@@ -393,7 +392,7 @@ object Answers {
                 room.usedThisTurn.remove(kept)
                 val list = kept.substring((DISCOUNT_MATERIALS + card.instanceId + "|").length)
                 // As Java's String.split: the empty strings at the end are left out
-                for (id in if (list.isEmpty()) arrayOf<String>() else Pattern.compile(",").split(list)) {
+                for (id in if (list.isEmpty()) arrayOf<String>() else JavaText.split(Regex(","), list)) {
                     val at = locate(player, id)
                     if (at != null) keptMaterials.add(at.card!!)
                 }

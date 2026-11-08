@@ -1,5 +1,6 @@
 package com.drive.drive_manager.simulator.engine.effects.actions
 
+import com.drive.drive_manager.simulator.engine.JavaText
 import com.drive.drive_manager.simulator.engine.effects.model.Action.SetTapped
 import com.drive.drive_manager.simulator.engine.effects.model.Selector
 import com.drive.drive_manager.simulator.engine.effects.runtime.ActionHandler
@@ -31,7 +32,7 @@ class SetTappedHandler : ActionHandler<SetTapped> {
         val min = Math.min(ctx.amount(selector.min), max)
         val verb = if (action.tapped) "Agota " else "Reactiva "
         val filter = selector.filter().describe()
-        ctx.ask(verb + (if (min < max) "hasta " else "") + max + (if (max == 1) " carta" else " cartas") + (if (filter.all { Character.isWhitespace(it) }) "" else " $filter") + ".",
+        ctx.ask(verb + (if (min < max) "hasta " else "") + max + (if (max == 1) " carta" else " cartas") + (if (filter.all { JavaText.isWhitespace(it) }) "" else " $filter") + ".",
                 if (action.tapped) "Agotar" else "Reactivar", Selection.pool(ctx, selector), valid, min, max)
         return true
     }

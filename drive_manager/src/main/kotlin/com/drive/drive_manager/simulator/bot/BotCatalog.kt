@@ -1,7 +1,8 @@
 package com.drive.drive_manager.simulator.bot
 
+import com.drive.drive_manager.simulator.engine.JavaText
+import com.drive.drive_manager.simulator.platform.Platform
 import com.drive.drive_manager.simulator.rank.RankRules
-import java.util.regex.Pattern
 
 /**
  * The bots the server can seat: its levels (easy, normal, hard) and the models to try, read from the resources (the
@@ -29,32 +30,29 @@ object BotCatalog {
     const val HARD = "hard"
     private val LEVEL_IDS: List<String> = java.util.List.of(EASY, NORMAL, HARD)
 
+    /** Splits a resource into lines as Java's `\R` (any Unicode line break; JavaScript's regular expressions have none). */
+    private val LINE_BREAK = Regex("\\r\\n|[\\n\\u000B\\u000C\\r\\u0085\\u2028\\u2029]")
+
     /**
      * The levels' bots and the bots to try out, by name: each line of the resource is "id|label|settings" (settings as
      * in BotSettings#with, over the defaults); # starts a comment. Lines other than the levels' are models,
      * offered apart from the levels.
      */
     internal const val MODELS_RESOURCE = "/bot/models.txt"
-    private val MODELS: Map<String?, Map.Entry<String, BotSettings>> = models()
+    private val MODELS: Map<String?, Pair<String, BotSettings>> = models()
     /** Every choice the owner has, in order: the levels, then the named models (id, label, and kind "level" or "model"). */
     @JvmField
     val CHOICES: MutableList<MutableMap<String, String>> = choices()
     @JvmField
     internal val LEVELS: Set<String> = CHOICES.stream().map { c -> c["id"]!! }.collect(java.util.stream.Collectors.toUnmodifiableSet())
 
-    private fun models(): Map<String?, Map.Entry<String, BotSettings>> {
-        val m = java.util.LinkedHashMap<String?, Map.Entry<String, BotSettings>>()
-        try {
-            BotCatalog::class.java.getResourceAsStream(MODELS_RESOURCE).use { input ->
-                if (input == null) return m
-                for (line in Pattern.compile("\\R").split(String(input.readAllBytes(), java.nio.charset.StandardCharsets.UTF_8))) {
-                    if (line.all { Character.isWhitespace(it) } || line.trim { it <= ' ' }.startsWith("#")) continue
-                    val f = Pattern.compile("\\|").split(line, 3)
-                    m[f[0].trim { it <= ' ' }] = java.util.Map.entry(f[1].trim { it <= ' ' }, BotSettings.DEFAULT.with(f[2].trim { it <= ' ' }))
-                }
-            }
-        } catch (e: java.io.IOException) {
-            throw IllegalStateException("Cannot read the bot's models $MODELS_RESOURCE", e)
+    private fun models(): Map<String?, Pair<String, BotSettings>> {
+        val m = LinkedHashMap<String?, Pair<String, BotSettings>>()
+        val text = Platform.resourceText(MODELS_RESOURCE, "Cannot read the bot's models $MODELS_RESOURCE") ?: return m
+        for (line in JavaText.split(LINE_BREAK, text)) {
+            if (line.all { JavaText.isWhitespace(it) } || line.trim { it <= ' ' }.startsWith("#")) continue
+            val f = JavaText.split(Regex("\\|"), line, 3)
+            m[f[0].trim { it <= ' ' }] = Pair(f[1].trim { it <= ' ' }, BotSettings.DEFAULT.with(f[2].trim { it <= ' ' }))
         }
         return m
     }
@@ -62,25 +60,19 @@ object BotCatalog {
     private fun choices(): MutableList<MutableMap<String, String>> {
         val c: MutableList<MutableMap<String, String>> = ArrayList(java.util.List.of(java.util.Map.of("id", EASY, "label", "Fácil", "kind", "level"),
                 java.util.Map.of("id", NORMAL, "label", "Normal", "kind", "level"), java.util.Map.of("id", HARD, "label", "Difícil", "kind", "level")))
-        MODELS.forEach { id, model -> if (!LEVEL_IDS.contains(id)) c.add(java.util.Map.of("id", id, "label", model.key, "kind", "model")) }
+        for ((id, model) in MODELS) if (!LEVEL_IDS.contains(id)) c.add(java.util.Map.of("id", id, "label", model.first, "kind", "model"))
         return java.util.List.copyOf(c)
     }
 
     private fun tunedSettings(): BotSettings {
-        try {
-            BotCatalog::class.java.getResourceAsStream(SETTINGS_RESOURCE).use { input ->
-                return if (input == null) BotSettings.DEFAULT
-                else BotSettings.DEFAULT.with(String(input.readAllBytes(), java.nio.charset.StandardCharsets.UTF_8).trim { it <= ' ' })
-            }
-        } catch (e: java.io.IOException) {
-            throw IllegalStateException("Cannot read the bot's settings $SETTINGS_RESOURCE", e)
-        }
+        val text = Platform.resourceText(SETTINGS_RESOURCE, "Cannot read the bot's settings $SETTINGS_RESOURCE")
+        return if (text == null) BotSettings.DEFAULT else BotSettings.DEFAULT.with(text.trim { it <= ' ' })
     }
 
     /** The bot's name at the table: its level (or the model it tries), so it reads as a rival of its own. */
     @JvmStatic
     fun nameOf(level: String?): String {
-        if (level != null && !LEVEL_IDS.contains(level) && MODELS.containsKey(level)) return "Bot (" + MODELS[level]!!.key + ")"
+        if (level != null && !LEVEL_IDS.contains(level) && MODELS.containsKey(level)) return "Bot (" + MODELS[level]!!.first + ")"
         return when (level ?: NORMAL) {
             EASY -> "Bot Fácil"
             HARD -> "Bot Difícil"
@@ -101,7 +93,7 @@ object BotCatalog {
     /** The bot of a level. With a trained model in the resources, the look-ahead ones score the tables with it. */
     @JvmStatic
     fun botAt(level: String?): BotPlayer {
-        if (MODELS.containsKey(level)) return LookaheadBot(MODELS[level]!!.value, MODEL)
+        if (MODELS.containsKey(level)) return LookaheadBot(MODELS[level]!!.second, MODEL)
         return when (level!!) {
             HARD, NORMAL -> LookaheadBot(SETTINGS, MODEL)
             else -> LookaheadBot(BotSettings.DEFAULT, MODEL)

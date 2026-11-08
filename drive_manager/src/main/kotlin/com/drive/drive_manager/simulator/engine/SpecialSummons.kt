@@ -191,7 +191,7 @@ object SpecialSummons {
         if (use != null && !materials.isEmpty() && use.modifier.payment!!.kind != CostModifiers.PaymentKind.SELF_DAMAGE) use = null
         if (use != null) {
             room.usedThisTurn.removeIf { k -> k.startsWith(DISCOUNT_MATERIALS + card.instanceId + "|") }
-            if (!materials.isEmpty()) room.usedThisTurn.add(DISCOUNT_MATERIALS + card.instanceId + "|" + java.lang.String.join(",", ids(materials)))
+            if (!materials.isEmpty()) room.usedThisTurn.add(DISCOUNT_MATERIALS + card.instanceId + "|" + ids(materials).joinToString(","))
             rulesPrompt(room, player.userId, PromptPurpose.SUMMONER_DISCOUNT.id(), name(use.holder) + " · " + use.modifier.label,
                     CostModifiers.describe(use), "Pagar", CostModifiers.paymentOptions(player, use, card), player.tributeZone)
             room.prompt!!.max = use.modifier.payment!!.count

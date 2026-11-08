@@ -7,8 +7,6 @@ import com.drive.drive_manager.simulator.room.GameLogEntry
 import com.drive.drive_manager.simulator.room.GameRoom
 import com.drive.drive_manager.simulator.room.PlayerState
 import com.drive.drive_manager.simulator.room.Zone
-import java.util.Locale
-import java.util.regex.Pattern
 
 /**
  * Rules engine of the simulator (Reglamento v1.1). Grows card by card: actions it knows are carried out by
@@ -102,7 +100,7 @@ object EffectEngine {
     /** The strength a card counts as a creature for the effect looking now (Fósil), or null when it does not. */
     @JvmStatic
     fun creatureForEffects(card: CardSlot?): Int? {
-        if ("creature" == card!!.cardType || LOOKER.get() == null || java.lang.Boolean.TRUE == SUMMONING.get()) return null
+        if ("creature" == card!!.cardType || LOOKER.get() == null || SUMMONING.get() == true) return null
         return CardEffects.creatureStrengthForEffects(card)
     }
 
@@ -276,7 +274,7 @@ object EffectEngine {
         for (later in room.timeline) {
             if (later.seq <= event.seq || BOOKKEEPING.contains(later.type!!)) continue
             if (event.resolutionId != null && event.resolutionId != later.resolutionId) continue
-            if (GameEvent.DRAW == later.type && later.data != null && java.lang.Boolean.TRUE == later.data!!["regulatory"]) continue
+            if (GameEvent.DRAW == later.type && later.data != null && later.data!!["regulatory"] == true) continue
             return false
         }
         return true
@@ -324,7 +322,7 @@ object EffectEngine {
                 if (source.faceDown) continue
                 for (c in CardEffects.continuousOf(source)) {
                     if (c.targets == null || c.enemies || !c.holds(room, source, p.userId!!)) continue
-                    for (ally in p.field) if (c.targets.matches(ally)) fromAllies.merge(ally.instanceId, c.strength) { a, b -> Integer.sum(a, b) }
+                    for (ally in p.field) if (c.targets.matches(ally)) fromAllies.merge(ally.instanceId, c.strength) { a, b -> a + b }
                 }
             }
             for (card in p.field) {
@@ -440,7 +438,7 @@ object EffectEngine {
         val names = cards!!.map { name(it) }
         if (names.isEmpty()) return ""
         if (names.size == 1) return ": " + names[0]
-        return ": " + java.lang.String.join(", ", names.subList(0, names.size - 1)) + " y " + names[names.size - 1]
+        return ": " + names.subList(0, names.size - 1).joinToString(", ") + " y " + names[names.size - 1]
     }
 
     /** Zones whose cards everybody sees (what leaves them can be named). */
@@ -505,8 +503,8 @@ object EffectEngine {
     fun immuneTo(card: CardSlot?, sourceLevel: Int): Boolean {
         for (k in keywords(card)) {
             if (!k.startsWith(IMMUNE)) continue
-            val m = Pattern.compile("(\\d+)").matcher(k)
-            if (!m.find() || sourceLevel <= Integer.parseInt(m.group(1))) return true
+            val m = Regex("(\\d+)").find(k)
+            if (m == null || sourceLevel <= m.groupValues[1].toInt()) return true
         }
         return false
     }
@@ -579,9 +577,9 @@ object EffectEngine {
     fun keywordLevel(card: CardSlot?, keyword: String?): Int? {
         var best: Int? = null
         for (k in keywords(card)) {
-            if (!k.lowercase(Locale.ROOT).startsWith(keyword!!.lowercase(Locale.ROOT))) continue
-            val m = Pattern.compile("(\\d+)").matcher(k)
-            val value = if (m.find()) Integer.parseInt(m.group(1)) else 0
+            if (!k.lowercase().startsWith(keyword!!.lowercase())) continue
+            val m = Regex("(\\d+)").find(k)
+            val value = if (m != null) m.groupValues[1].toInt() else 0
             best = if (best == null) value else Math.max(best, value)
         }
         return best

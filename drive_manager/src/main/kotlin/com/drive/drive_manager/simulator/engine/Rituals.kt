@@ -22,8 +22,6 @@ import com.drive.drive_manager.simulator.engine.effects.model.SpecialRule
 import com.drive.drive_manager.simulator.room.CardSlot
 import com.drive.drive_manager.simulator.room.GameRoom
 import com.drive.drive_manager.simulator.room.PlayerState
-import java.util.Locale
-import java.util.regex.Pattern
 
 /** Rituals, from the hand or by an effect. */
 object Rituals {
@@ -138,7 +136,7 @@ object Rituals {
         val used = ArrayList(java.util.List.of(name(summoner)))
         others.forEach { o -> used.add(name(o)) }
         ritualSummon(room, player, card, "hand", cost, summoner, others, null,
-                player.username + " invoca por Ritual a " + name(card) + " usando " + java.lang.String.join(", ", used) + " y pagando "
+                player.username + " invoca por Ritual a " + name(card) + " usando " + used.joinToString(", ") + " y pagando "
                         + gemsText(cost) + (if (advantage) " (ventaja del iniciador)" else ""))
         advance(room)
     }
@@ -161,13 +159,13 @@ object Rituals {
     @JvmStatic
     fun requirement(card: CardSlot?): Requirement? {
         if (card!!.requirement == null) return null
-        val text = card.requirement!!.lowercase(Locale.ROOT)
-        val m = Pattern.compile("nivel\\s*(\\d+)|sumen\\s*(\\d+)").matcher(text)
-        if (!m.find()) return null
-        val level = Integer.parseInt(if (m.group(1) != null) m.group(1) else m.group(2))
-        val atLeast = Pattern.compile("nivel\\s*\\d+\\s*o\\s*mayor").matcher(text).find()
-        val strength = Pattern.compile("fuerza\\s*(\\d+)\\s*o\\s*menos").matcher(text)
-        return Requirement(text.contains("sum"), level, atLeast, if (strength.find()) Integer.valueOf(strength.group(1)) else null)
+        val text = card.requirement!!.lowercase()
+        val m = Regex("nivel\\s*(\\d+)|sumen\\s*(\\d+)").find(text)
+        if (m == null) return null
+        val level = (m.groups[1]?.value ?: m.groupValues[2]).toInt()
+        val atLeast = Regex("nivel\\s*\\d+\\s*o\\s*mayor").containsMatchIn(text)
+        val strength = Regex("fuerza\\s*(\\d+)\\s*o\\s*menos").find(text)
+        return Requirement(text.contains("sum"), level, atLeast, if (strength != null) strength.groupValues[1].toInt() else null)
     }
 
     /** Creatures that can be the summoner of a level-sum Ritual: the rest of the field can complete the sum exactly. */

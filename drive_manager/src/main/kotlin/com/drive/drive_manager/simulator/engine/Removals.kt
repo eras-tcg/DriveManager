@@ -24,7 +24,6 @@ import com.drive.drive_manager.simulator.engine.EffectScript.Limit
 import com.drive.drive_manager.simulator.room.CardSlot
 import com.drive.drive_manager.simulator.room.GameRoom
 import com.drive.drive_manager.simulator.room.PlayerState
-import java.util.Locale
 
 /** Cards leaving the field: destruction and sacrifice (rule 12, "Sacrificio y destrucción") and the replacements that can stop them ("en su lugar", Protección). */
 object Removals {
@@ -286,7 +285,7 @@ object Removals {
         for (protector in owner.field) {
             if (protector === card) continue
             for (k in keywords(protector)) {
-                if (!k.lowercase(Locale.ROOT).startsWith("protección")) continue
+                if (!k.lowercase().startsWith("protección")) continue
                 val kind = k.replace(PROTECCION, "").replace(BRACKETS, "").trim { it <= ' ' }
                 val matches = kind.isEmpty() || (card.classes != null && card.classes!!.any { kind.equals(it, ignoreCase = true) })
                 if (matches) options.add(ReplacementOption("proteccion@" + protector.instanceId, protector, null, k,

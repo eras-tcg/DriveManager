@@ -4,7 +4,6 @@ import com.drive.drive_manager.simulator.engine.CardEffects
 import com.drive.drive_manager.simulator.engine.EffectEngine
 import com.drive.drive_manager.simulator.engine.EffectScript
 import com.drive.drive_manager.simulator.room.CardSlot
-import java.util.Locale
 import java.util.concurrent.ConcurrentHashMap
 
 /**
@@ -42,7 +41,7 @@ internal object CardWorth {
 
     @JvmStatic
     fun profile(card: CardSlot): Profile {
-        val name = if (card.cardName == null) "" else card.cardName!!.trim { it <= ' ' }.lowercase(Locale.ROOT)
+        val name = if (card.cardName == null) "" else card.cardName!!.trim { it <= ' ' }.lowercase()
         return PROFILES.computeIfAbsent(name) { n ->
             var activated = 0
             var event = 0

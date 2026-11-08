@@ -8,8 +8,6 @@ import com.drive.drive_manager.simulator.room.CardSlot
 import com.drive.drive_manager.simulator.room.GameAction
 import com.drive.drive_manager.simulator.room.GameRoom
 import com.drive.drive_manager.simulator.room.PlayerState
-import java.util.Locale
-import java.util.regex.Pattern
 
 /**
  * hCombat (the user's call, 2026-11-05): a combat is a game of its own, and its outcome is foreseeable. The attacks are
@@ -399,7 +397,7 @@ internal object CombatSearch {
     }
 
     private fun unit(c: CardSlot, owner: PlayerState, w: BotSettings, canAttack: Boolean, guard: Boolean): Unit {
-        val unblockable = EffectEngine.keywords(c).any { k -> k.lowercase(Locale.ROOT).startsWith("imbloqueable") }
+        val unblockable = EffectEngine.keywords(c).any { k -> k.lowercase().startsWith("imbloqueable") }
         val worth = CardWorth.of(c, w)
         val perk = w.get("combatPerk")
         val t = CombatTraits.of(c)
@@ -416,9 +414,9 @@ internal object CombatSearch {
     private fun hits(attacker: CardSlot): Int {
         var extra = 0
         for (k in EffectEngine.keywords(attacker)) {
-            if (!k.lowercase(Locale.ROOT).startsWith("letalidad")) continue
-            val m = Pattern.compile("(\\d+)").matcher(k)
-            if (m.find()) extra = Math.max(extra, Integer.parseInt(m.group(1)))
+            if (!k.lowercase().startsWith("letalidad")) continue
+            val m = Regex("(\\d+)").find(k)
+            if (m != null) extra = Math.max(extra, m.groupValues[1].toInt())
         }
         return 1 + extra
     }

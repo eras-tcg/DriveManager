@@ -1,5 +1,6 @@
 package com.drive.drive_manager.simulator.engine.effects.actions
 
+import com.drive.drive_manager.simulator.engine.JavaText
 import com.drive.drive_manager.simulator.engine.GameRandom
 import com.drive.drive_manager.simulator.engine.effects.model.Action.Move
 import com.drive.drive_manager.simulator.engine.effects.model.Memory
@@ -107,7 +108,7 @@ class MoveHandler : ActionHandler<Move> {
     private fun instruction(ctx: EffectContext, action: Move, min: Int, max: Int): String {
         val what = (if (min < max) "hasta " else "") + max + " " + (if (max == 1) "carta" else "cartas")
         val filter = action.cards!!.filter().describe()
-        var cards = what + (if (filter.all { Character.isWhitespace(it) }) "" else " $filter") + " de " + ctx.describeZones(action.cards.zones)
+        var cards = what + (if (filter.all { JavaText.isWhitespace(it) }) "" else " $filter") + " de " + ctx.describeZones(action.cards.zones)
         if (action.cards.self() == Selector.Self.REQUIRE) cards += ", incluida esta carta"
         val random = if (action.random) " en orden aleatorio" else ""
         if (action.to!!.startsWith("materials:") || action.to.startsWith("resources:")) {

@@ -75,7 +75,7 @@ object SummonSteps {
                 val summoner = findAnywhere(room, userId, effect.ritualSummonerId)
                 val materials = declaredMaterials(player, self, req, summoner)
                 pick(room, effect, "Elige los materiales de " + name(self) + (if (req.levelSum > 0) ": deben sumar exactamente " + req.levelSum + " en nivel." else "."),
-                        "Material", zones(player, java.lang.String.join(",", req.materialZones!!)), ids(materials), materials.size)
+                        "Material", zones(player, req.materialZones!!.joinToString(",")), ids(materials), materials.size)
                 room.prompt!!.min = 1
                 if (req.levelSum > 0) room.prompt!!.maxLevelSum = req.levelSum
                 return true

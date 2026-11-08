@@ -12,8 +12,6 @@ import com.drive.drive_manager.simulator.room.GameAction
 import com.drive.drive_manager.simulator.room.GameRoom
 import com.drive.drive_manager.simulator.room.PlayerState
 import com.drive.drive_manager.simulator.room.Zone
-import java.util.Locale
-import java.util.regex.Pattern
 
 /**
  * The bot that plays to win (phase 1), by simple rules over what it sees, with no look ahead:
@@ -160,7 +158,7 @@ open class HeuristicBot(rules: BotSettings) : BotPlayer() {
             // An even trade is taken when the attacker is worth no more than the blocker (a stalled table only ends by the deck)
             val even = power == bestBlocker && value(attacker) <= evenTrade * bestBlockerValue
             val unstoppable = bestBlocker < 0 || power > bestBlocker + directMargin || even
-                    || EffectEngine.keywords(attacker).any { k -> k.lowercase(Locale.ROOT).startsWith("imbloqueable") }
+                    || EffectEngine.keywords(attacker).any { k -> k.lowercase().startsWith("imbloqueable") }
             val finishing = rival.lifeStack.size <= hits(attacker) && bestBlocker < power
             if (unstoppable || finishing) {
                 val move = action(ActionType.ATTACK, java.util.Map.of<String, Any?>("instanceId", attacker.instanceId))
@@ -286,7 +284,7 @@ open class HeuristicBot(rules: BotSettings) : BotPlayer() {
         // Cards revealed from its own deck to take ("mira las primeras N cartas…") are its own, though out of the deck
         val reveal = prompt.kind != null && prompt.kind!!.name.startsWith("TAKE_REVEALED")
         val enemy = !reveal && choices.all { id -> self == null || own(self, id) == null }
-        val loss = prompt.chosenLabel != null && LOSS.matcher(prompt.chosenLabel!!.lowercase(Locale.ROOT)).find()
+        val loss = prompt.chosenLabel != null && LOSS.containsMatchIn(prompt.chosenLabel!!.lowercase())
         var ranked: MutableList<String?> = ArrayList(choices)
         // hPickPlay: its own cards that are not on the field (to take into the hand, or to give up from it) by what they
         // are worth to play soon, not by their size: a search takes the best card it can play soon, a tribute from the
@@ -336,7 +334,7 @@ open class HeuristicBot(rules: BotSettings) : BotPlayer() {
     companion object {
 
         /** What a chosen card goes through, by the prompt's label ("Destruir", "Tributar"…): a loss for its owner. */
-        private val LOSS = Pattern.compile("destru|sacrific|tribut|descart|envi|agot|reduc|fondo|devuelv|devolv|pierd|baraj|retir|quit")
+        private val LOSS = Regex("destru|sacrific|tribut|descart|envi|agot|reduc|fondo|devuelv|devolv|pierd|baraj|retir|quit")
 
         /** Offsets that keep the groups apart (above any card's value): creatures after the cards acting from there, then the rest. */
         private const val CREATURES_GROUP = 1000.0
@@ -348,7 +346,7 @@ open class HeuristicBot(rules: BotSettings) : BotPlayer() {
             var best: List<CardSlot>? = null
             var bestValue = Double.MAX_VALUE
             for (mask in 1 until (1 shl n)) {
-                if (Integer.bitCount(mask) > max) continue
+                if (mask.countOneBits() > max) continue
                 val group: MutableList<CardSlot> = ArrayList()
                 for (i in 0 until n) if ((mask and (1 shl i)) != 0) group.add(cards[i])
                 // DoubleStream.sum (compensated), as before
@@ -401,7 +399,7 @@ open class HeuristicBot(rules: BotSettings) : BotPlayer() {
         /** The cards to choose go from the hand to the Tributos ("tributa N cartas de tu mano"). */
         @JvmStatic
         fun tributesFromHand(self: PlayerState?, prompt: Prompt, choices: List<String?>): Boolean {
-            val label = if (prompt.chosenLabel == null) "" else prompt.chosenLabel!!.lowercase(Locale.ROOT)
+            val label = if (prompt.chosenLabel == null) "" else prompt.chosenLabel!!.lowercase()
             return self != null && label.contains("tribut")
                     && choices.all { id -> self.hand.any { c -> id!! == c.instanceId } }
         }
@@ -458,9 +456,9 @@ open class HeuristicBot(rules: BotSettings) : BotPlayer() {
         private fun hits(attacker: CardSlot): Int {
             var extra = 0
             for (k in EffectEngine.keywords(attacker)) {
-                if (!k.lowercase(Locale.ROOT).startsWith("letalidad")) continue
-                val m = Pattern.compile("(\\d+)").matcher(k)
-                if (m.find()) extra = Math.max(extra, Integer.parseInt(m.group(1)))
+                if (!k.lowercase().startsWith("letalidad")) continue
+                val m = Regex("(\\d+)").find(k)
+                if (m != null) extra = Math.max(extra, m.groupValues[1].toInt())
             }
             return 1 + extra
         }

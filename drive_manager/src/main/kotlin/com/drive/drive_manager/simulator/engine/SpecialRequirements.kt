@@ -23,13 +23,11 @@ import com.drive.drive_manager.simulator.room.CardSlot
 import com.drive.drive_manager.simulator.room.GameRoom
 import com.drive.drive_manager.simulator.room.PlayerState
 import com.drive.drive_manager.simulator.room.Zone
-import java.util.Locale
-import java.util.regex.Pattern
 
 /** What a special summon asks for: its Requerimiento, who can summon and with which materials. */
 object SpecialRequirements {
 
-    private val COMMA = Pattern.compile(",")
+    private val COMMA = Regex(",")
 
     // ------------------------------------------------------------------ Evolución, Ascenso, Materialización (rule 9)
 
@@ -108,14 +106,14 @@ object SpecialRequirements {
 
     @JvmStatic
     fun specialRequirement(card: CardSlot?): SpecialRequirement? {
-        val kind = if (card!!.specialSummonKind == null) "" else card.specialSummonKind!!.lowercase(Locale.ROOT)
+        val kind = if (card!!.specialSummonKind == null) "" else card.specialSummonKind!!.lowercase()
         if (!java.util.List.of("evolution", "promotion", "materialization").contains(kind) || card.requirement == null) return null
-        val text = card.requirement!!.lowercase(Locale.ROOT).trim { it <= ' ' }
+        val text = card.requirement!!.lowercase().trim { it <= ' ' }
         // "(criatura nivel 3) o (criatura nivel 2 + material nivel 2 en tu mano o campo)"
-        val either = Pattern.compile("^\\((.*)\\)\\s*o\\s*\\((.*)\\)\\.?$").matcher(text)
-        if (either.find()) {
-            val first = parseRequirement(kind, either.group(1))
-            val second = parseRequirement(kind, either.group(2))
+        val either = Regex("^\\((.*)\\)\\s*o\\s*\\((.*)\\)\\.?$").find(text)
+        if (either != null) {
+            val first = parseRequirement(kind, either.groupValues[1])
+            val second = parseRequirement(kind, either.groupValues[2])
             return if (first == null) second else first.withAlternative(second)
         }
         return parseRequirement(kind, text)
@@ -128,51 +126,51 @@ object SpecialRequirements {
         // "criatura nivel 3 en mano + 2 criaturas nivel 3 en tu mano o tributos": the summoner is declared from where it says (not
         // the field) and enters with the others as its materials (Roto-G0)
         // "criatura nivel 3 en mano o campo (invocador) + 1 o más criaturas nivel 3 en mano o campo" (Prototipo XTRM-1N3)
-        val declared = Pattern.compile("^(?:invocador|criatura)\\s+ni\\w*\\s*(\\d+)\\s+(en\\s+[^+]*)\\+\\s*(\\d+)(\\s*o\\s*m[aá]s)?\\s*criaturas?\\s*ni\\w*\\s*(\\d+)(.*)$")
-                .matcher(text)
-        if (materialization && declared.find()) {
-            val summonerZones = materialZones(declared.group(2))
-            val rest = if (declared.group(6).all { Character.isWhitespace(it) }) summonerZones else materialZones(declared.group(6))
-            val level = Integer.parseInt(declared.group(1))
-            return SpecialRequirement(kind, level, 0, Integer.parseInt(declared.group(5)), 0, false, level, Integer.parseInt(declared.group(3)),
-                    rest, true, null, false, false, summonerZones, declared.group(4) != null)
+        val declared = Regex("^(?:invocador|criatura)\\s+ni\\w*\\s*(\\d+)\\s+(en\\s+[^+]*)\\+\\s*(\\d+)(\\s*o\\s*m[aá]s)?\\s*criaturas?\\s*ni\\w*\\s*(\\d+)(.*)$")
+                .find(text)
+        if (materialization && declared != null) {
+            val summonerZones = materialZones(declared.groupValues[2])
+            val rest = if (declared.groupValues[6].all { JavaText.isWhitespace(it) }) summonerZones else materialZones(declared.groupValues[6])
+            val level = declared.groupValues[1].toInt()
+            return SpecialRequirement(kind, level, 0, declared.groupValues[5].toInt(), 0, false, level, declared.groupValues[3].toInt(),
+                    rest, true, null, false, false, summonerZones, declared.groups[4]?.value != null)
         }
         // "2 criaturas en mano" (Unidad de Seguridad A-5H): one is the summoner declared from there, the rest its materials, of any level
-        val anyLevel = Pattern.compile("^(\\d+)\\s*criaturas\\s+(en\\s+[^+]*?)\\.?$").matcher(text)
-        if (materialization && anyLevel.find()) {
-            val from = materialZones(anyLevel.group(2))
-            return SpecialRequirement(kind, ANY_LEVEL, 0, ANY_LEVEL, 0, false, ANY_LEVEL, Integer.parseInt(anyLevel.group(1)) - 1, from, true, null,
+        val anyLevel = Regex("^(\\d+)\\s*criaturas\\s+(en\\s+[^+]*?)\\.?$").find(text)
+        if (materialization && anyLevel != null) {
+            val from = materialZones(anyLevel.groupValues[2])
+            return SpecialRequirement(kind, ANY_LEVEL, 0, ANY_LEVEL, 0, false, ANY_LEVEL, anyLevel.groupValues[1].toInt() - 1, from, true, null,
                     false, false, from)
         }
         // "2 criaturas nivel 1 en tu mano o tributos": no summoner
-        val many = Pattern.compile("(\\d+)\\s*criaturas\\s*ni\\w*\\s*(\\d+)").matcher(text)
-        if (materialization && !text.contains("+") && many.find()) {
-            return SpecialRequirement(kind, 0, 0, Integer.parseInt(many.group(2)), 0, false, 0, Integer.parseInt(many.group(1)), zones, true, null,
+        val many = Regex("(\\d+)\\s*criaturas\\s*ni\\w*\\s*(\\d+)").find(text)
+        if (materialization && !text.contains("+") && many != null) {
+            return SpecialRequirement(kind, 0, 0, many.groupValues[2].toInt(), 0, false, 0, many.groupValues[1].toInt(), zones, true, null,
                     false, false)
         }
-        val level = Pattern.compile("ni[ev]*l\\s*(\\d+)(?:\\s*o\\s*(\\d+))?").matcher(text)
-        if (!level.find()) return null
-        val summonerLevel = Integer.parseInt(level.group(1))
-        val maxLevel = if (level.group(2) != null) Integer.parseInt(level.group(2)) else summonerLevel
-        val sum = Pattern.compile("suman\\s*(\\d+)").matcher(text)
-        val alliesSum = if ("promotion" == kind && sum.find()) Integer.parseInt(sum.group(1)) else 0
+        val level = Regex("ni[ev]*l\\s*(\\d+)(?:\\s*o\\s*(\\d+))?").find(text)
+        if (level == null) return null
+        val summonerLevel = level.groupValues[1].toInt()
+        val maxLevel = if (level.groups[2]?.value != null) level.groupValues[2].toInt() else summonerLevel
+        val sum = Regex("suman\\s*(\\d+)").find(text)
+        val alliesSum = if ("promotion" == kind && sum != null) sum.groupValues[1].toInt() else 0
         var materialLevel = summonerLevel
         var levelSum = 0
         var materialCount = 0
         if (materialization) {
             // "+ material nivel 2" (also with a misprint: "material novel 4", "material nivel en tributos")
-            val material = Pattern.compile("\\+\\s*material\\s*\\w*\\s*(\\d+)?").matcher(text)
-            if (material.find()) {
+            val material = Regex("\\+\\s*material\\s*\\w*\\s*(\\d+)?").find(text)
+            if (material != null) {
                 materialCount = 1
-                if (material.group(1) != null) materialLevel = Integer.parseInt(material.group(1))
+                if (material.groups[1]?.value != null) materialLevel = material.groupValues[1].toInt()
             }
             // "aliados que sumen 6 en nivel, incluido el invocador nivel 3 o mayor"
-            val allies = Pattern.compile("sumen\\s*(\\d+)").matcher(text)
-            if (allies.find()) levelSum = Integer.parseInt(allies.group(1))
+            val allies = Regex("sumen\\s*(\\d+)").find(text)
+            if (allies != null) levelSum = allies.groupValues[1].toInt()
         }
-        val atLeast = Pattern.compile("ni[ev]*l\\s*\\d+\\s*o\\s*mayor").matcher(text).find()
-        val alone = Pattern.compile("no\\s+control\\w*\\s+otras\\s+criaturas").matcher(text).find()
-        val strongest = Pattern.compile("fuerza\\s+igual\\s+o\\s+mayor\\s+que\\s+la\\s+de\\s+cualquier\\s+otro\\s+aliado").matcher(text).find()
+        val atLeast = Regex("ni[ev]*l\\s*\\d+\\s*o\\s*mayor").containsMatchIn(text)
+        val alone = Regex("no\\s+control\\w*\\s+otras\\s+criaturas").containsMatchIn(text)
+        val strongest = Regex("fuerza\\s+igual\\s+o\\s+mayor\\s+que\\s+la\\s+de\\s+cualquier\\s+otro\\s+aliado").containsMatchIn(text)
         return SpecialRequirement(kind, summonerLevel, alliesSum, materialLevel, levelSum, atLeast, maxLevel, materialCount, zones, false, null,
                 alone, strongest)
     }
@@ -180,13 +178,13 @@ object SpecialRequirements {
     /** "en campo o mano", "en tu mano o tributos", "en el campo"; when it says none, the Tributos or the field. */
     @JvmStatic
     fun materialZones(text: String): List<String> {
-        val m = Pattern.compile("(?:en|de)\\s+(?:tu\\s+|tus\\s+|el\\s+)?(campo|mano|tributos|descarte)(?:\\s*o\\s+(?:tu\\s+|tus\\s+|el\\s+)?(campo|mano|tributos|descarte))?")
-                .matcher(text)
-        if (!m.find()) return java.util.List.of("tributeZone", "field")
+        val m = Regex("(?:en|de)\\s+(?:tu\\s+|tus\\s+|el\\s+)?(campo|mano|tributos|descarte)(?:\\s*o\\s+(?:tu\\s+|tus\\s+|el\\s+)?(campo|mano|tributos|descarte))?")
+                .find(text)
+        if (m == null) return java.util.List.of("tributeZone", "field")
         val zones: MutableList<String> = ArrayList()
         for (g in 1..2) {
-            if (m.group(g) == null) continue
-            zones.add(when (m.group(g)) {
+            val group = m.groups[g]?.value ?: continue
+            zones.add(when (group) {
                 "campo" -> "field"
                 "mano" -> "hand"
                 "descarte" -> "discardPile"
@@ -330,9 +328,9 @@ object SpecialRequirements {
     @JvmStatic
     fun zonesText(zones: List<String>?): String {
         // Any other zone is read as the Tributos
-        return java.lang.String.join(" o ", zones!!.map { z ->
+        return (zones!!.map { z ->
             Zone.parse(z).filter { x -> x == Zone.FIELD || x == Zone.HAND }.orElse(Zone.TRIBUTE_ZONE)!!.ownLabel()
-        })
+        }).joinToString(" o ")
     }
 
     /** The card can be special summoned from where it is: the hand, or the Tributos when it says so (Falanx). */
@@ -369,8 +367,8 @@ object SpecialRequirements {
     @JvmStatic
     fun creaturesNeeded(card: CardSlot): Int {
         if (card.requirement == null) return 0
-        val m = Pattern.compile("controlas\\s+al\\s+menos\\s+(\\d+)\\s+criaturas?").matcher(card.requirement!!.lowercase(Locale.ROOT))
-        return if (m.find()) Integer.parseInt(m.group(1)) else 0
+        val m = Regex("controlas\\s+al\\s+menos\\s+(\\d+)\\s+criaturas?").find(card.requirement!!.lowercase())
+        return if (m != null) m.groupValues[1].toInt() else 0
     }
 
     @JvmStatic
@@ -468,7 +466,7 @@ object SpecialRequirements {
             "subject" -> effect.subjectId == null || summoner.instanceId!! == effect.subjectId
             // "1 aliado nivel N puede invocar…"
             else -> !special.summoner.startsWith("level:")
-                    || Integer.valueOf(special.summoner.substring(6)) == summoner.getLevel()
+                    || special.summoner.substring(6).toInt() == summoner.getLevel()
         }
     }
 
@@ -485,12 +483,12 @@ object SpecialRequirements {
     @JvmStatic
     fun specialZones(player: PlayerState?, special: SpecialRule): List<CardSlot> {
         val all: MutableList<CardSlot> = ArrayList()
-        for (z in COMMA.split(special.zone!!)) all.addAll(zone(player, z.trim { it <= ' ' }))
+        for (z in JavaText.split(COMMA, special.zone!!)) all.addAll(zone(player, z.trim { it <= ' ' }))
         return all
     }
 
     @JvmStatic
     fun zonesName(special: SpecialRule): String {
-        return java.lang.String.join(" o ", COMMA.split(special.zone!!).map { z -> zoneName(z.trim { it <= ' ' }) })
+        return (JavaText.split(COMMA, special.zone!!).map { z -> zoneName(z.trim { it <= ' ' }) }).joinToString(" o ")
     }
 }

@@ -238,7 +238,7 @@ internal object Usefulness {
             // the order of a zone, but the deck's (what comes next)
             for (zone in java.util.List.of(p.hand, p.field, p.tributeZone, p.discardPile, p.deck, p.lifeStack)) {
                 val cards = zone.filter { c -> !moving.contains(c.instanceId) }.map { c -> card(c) }
-                sb.append(java.lang.String.join(",", if (zone === p.deck) cards else cards.sorted())).append('/')
+                sb.append((if (zone === p.deck) cards else cards.sorted()).joinToString(",")).append('/')
             }
             // A card that may move but stays on the field (a utility kept in the Retaguardia) is worth something there
             for (c in p.field) if (moving.contains(c.instanceId)) sb.append("kept ").append(c.instanceId)
@@ -246,9 +246,9 @@ internal object Usefulness {
         return sb.append(room.fieldGrants as Any?).toString()
     }
 
-    private val PLACE: java.util.regex.Pattern = java.util.regex.Pattern.compile("\\b[xy]=[^,)]*, ?")
+    private val PLACE: Regex = Regex("\\b[xy]=[^,)]*, ?")
 
     private fun card(c: CardSlot): String {
-        return PLACE.matcher(c.toString()).replaceAll("") + ":" + EffectEngine.strength(c)
+        return PLACE.replace(c.toString(), "") + ":" + EffectEngine.strength(c)
     }
 }

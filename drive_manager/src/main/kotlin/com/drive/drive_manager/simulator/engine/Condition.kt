@@ -91,7 +91,7 @@ sealed interface Condition {
             if ("effect" == cause && !destroyedByEffect(event)) return false
             if ("battle" == cause && !(event.data != null && EffectEngine.CAUSE_BATTLE == event.data!!["cause"])) return false
             if (byThis && !(event.data != null && source!!.instanceId == event.data!!["byCard"])) return false
-            if (exceptAttacker && event.data != null && java.lang.Boolean.TRUE == event.data!!["asAttacker"]) return false
+            if (exceptAttacker && event.data != null && event.data!!["asAttacker"] == true) return false
             if (byCard != null) {
                 val id = if (event.data == null) null else event.data!!["byCard"]
                 val card = if (id == null) null else EffectEngine.findInRoom(room, id as String)
