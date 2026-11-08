@@ -23,8 +23,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 class CoreBoundaryTest {
 
     private static final Path ROOT = Path.of("src/main/java/com/drive/drive_manager/simulator");
-    /** Where the files already converted to Kotlin are (phase 2), under the same packages. */
-    private static final Path KOTLIN = Path.of("src/main/kotlin/com/drive/drive_manager/simulator");
+    /** Where the core's Kotlin is (phase 2, step B): eras-engine's common code, under the same packages. */
+    private static final Path KOTLIN = Path.of("../eras-engine/src/commonMain/kotlin/com/drive/drive_manager/simulator");
 
     /** The core's packages, every file in them... */
     private static final List<String> PACKAGES = List.of("engine", "bot", "actions");

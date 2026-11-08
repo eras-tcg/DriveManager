@@ -1,5 +1,6 @@
 package com.eras.engine
 
+import com.drive.drive_manager.simulator.engine.GameRandom
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
@@ -40,9 +41,9 @@ class GameRandomTest {
         for (g in golden) {
             val r = GameRandom(g.seed)
             assertEquals(g.nextInt, r.nextInt(), "nextInt, seed ${g.seed}")
-            assertEquals(g.below40, r.nextIntBelow(40), "nextInt(40), seed ${g.seed}")
-            assertEquals(g.below64, r.nextIntBelow(64), "nextInt(64), seed ${g.seed}")
-            assertEquals(g.belowBig, r.nextIntBelow(1_000_000_007), "nextInt(1e9+7), seed ${g.seed}")
+            assertEquals(g.below40, r.nextInt(40), "nextInt(40), seed ${g.seed}")
+            assertEquals(g.below64, r.nextInt(64), "nextInt(64), seed ${g.seed}")
+            assertEquals(g.belowBig, r.nextInt(1_000_000_007), "nextInt(1e9+7), seed ${g.seed}")
             assertEquals(g.nextLong, r.nextLong(), "nextLong, seed ${g.seed}")
             assertEquals(g.nextBoolean, r.nextBoolean(), "nextBoolean, seed ${g.seed}")
             assertEquals(g.nextDouble, r.nextDouble(), "nextDouble, seed ${g.seed}")
@@ -53,7 +54,7 @@ class GameRandomTest {
     fun shufflesAsCollectionsShuffle() {
         for (g in golden) {
             val deck = MutableList(40) { it }
-            deck.shuffleAs(GameRandom(g.seed))
+            GameRandom.shuffle(deck, GameRandom(g.seed))
             assertEquals(g.shuffled, deck, "shuffle, seed ${g.seed}")
         }
     }

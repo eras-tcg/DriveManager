@@ -1,10 +1,11 @@
 package com.eras.engine
 
+import com.drive.drive_manager.simulator.engine.GameRandom
 import kotlin.js.JsExport
 
 /**
  * What eras-web calls (the JavaScript artifact). Plain values in and out (numbers as strings where they need 64
- * bits), so the boundary stays simple. Phase 0: a shuffle and a card file's outline, to prove the round trip.
+ * bits), so the boundary stays simple. For now a shuffle (the core's [GameRandom], the game's own) and a card file's outline.
  */
 @OptIn(kotlin.js.ExperimentalJsExport::class)
 @JsExport
@@ -15,7 +16,7 @@ object EngineApi {
     /** The order of [count] cards (0..count-1) after shuffling with [seed], given as a decimal string. */
     fun shuffledOrder(seed: String, count: Int): Array<Int> {
         val cards = MutableList(count) { it }
-        cards.shuffleAs(GameRandom(seed.toLong()))
+        GameRandom.shuffle(cards, GameRandom(seed.toLong()))
         return cards.toTypedArray()
     }
 
