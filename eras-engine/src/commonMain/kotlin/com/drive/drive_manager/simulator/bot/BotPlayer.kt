@@ -29,6 +29,13 @@ open class BotPlayer {
     private val waking = AtomicFlag()
     /** Moves the engine refused (by [key]): not tried again while the memory is about the same moment. */
     private val refused: MutableSet<String> = HashSet()
+    /**
+     * Answers the engine refused to the choice that waits now ([refusedPrompt]), kept past a new moment: the same answer
+     * to the same choice is refused again, so it is never sent twice. (A driver that asks one bot for both seats starts
+     * a new moment at every call, which forgot [refused] and sent the refused answer forever: st3-st4 seeds 2, 3, 5.)
+     */
+    private val refusedAnswers: MutableSet<String> = HashSet()
+    private var refusedPrompt: String? = null
     /** The moment the memory is about: the room's status, whose turn it is and the bot's deck. */
     private var moment: String? = null
     private var movesThisTurn = 0
@@ -117,6 +124,14 @@ open class BotPlayer {
     /** The engine refused the move: it is not tried again at this moment. */
     open fun refused(action: GameAction, error: String?) {
         refused.add(key(action))
+        if (ActionType.RESOLVE_PROMPT.`is`(action)) {
+            val prompt = action.getString("promptId")
+            if (prompt != refusedPrompt) {
+                refusedPrompt = prompt
+                refusedAnswers.clear()
+            }
+            refusedAnswers.add(key(action))
+        }
     }
 
     /** Only one pending wake at a time: true when this call takes it. */
@@ -142,7 +157,8 @@ open class BotPlayer {
     }
 
     protected open fun isRefused(action: GameAction): Boolean {
-        return refused.contains(key(action))
+        val k = key(action)
+        return refused.contains(k) || refusedPrompt != null && refusedAnswers.contains(k) && refusedPrompt == action.getString("promptId")
     }
 
     /** The action, or null when the engine already refused it. */
