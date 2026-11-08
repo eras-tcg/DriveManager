@@ -5,9 +5,16 @@ plugins {
 }
 
 kotlin {
+    // The core's platform seam (simulator/platform) is expect/actual classes
+    compilerOptions { freeCompilerArgs.add("-Xexpect-actual-classes") }
     // The server: DriveManager (Java 21) uses the JVM artifact as a plain library
     jvm {
-        compilerOptions { jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_21) }
+        compilerOptions {
+            jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_21)
+            // Parameter names in the class files (as DriveManager compiled the core before): Jackson puts the properties
+            // of a constructor's parameters first, in their order (CardSlot's JSON)
+            javaParameters.set(true)
+        }
     }
     // The site: eras-web imports the JavaScript artifact as an npm package, with TypeScript definitions
     js(IR) {
