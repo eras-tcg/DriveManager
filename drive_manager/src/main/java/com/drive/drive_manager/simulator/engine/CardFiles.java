@@ -1,16 +1,18 @@
 package com.drive.drive_manager.simulator.engine;
 
-import org.springframework.core.io.Resource;
-import org.springframework.core.io.support.PathMatchingResourcePatternResolver;
+import com.drive.drive_manager.simulator.engine.cards.CardBundle;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 
-/** The programmed cards: one JSON file each, {@code resources/cards/<edition>/<card>.json} ({@link EffectJson}). */
+/**
+ * The programmed cards: one JSON file each, {@code eras-engine/cards/<edition>/<card>.json}, read by the engine's common
+ * reader ({@link com.drive.drive_manager.simulator.engine.cards.CardReader}, kotlinx.serialization) from the card bundle the
+ * engine's jar carries ({@link CardBundle#RESOURCE}): the same text and the same reader the site uses. The files themselves
+ * are on the class path too ({@code cards/**}), for the rules' version of the kept games.
+ */
 final class CardFiles {
 
     private CardFiles() {}
@@ -19,25 +21,16 @@ final class CardFiles {
      * @throws IllegalStateException when a file is invalid, or a card or an effect id is there twice: the engine does not run on a broken card
      */
     static List<CardDefinition> load() {
-        List<CardDefinition> cards = new ArrayList<>();
-        Set<String> names = new HashSet<>();
-        Set<String> ids = new HashSet<>();
-        try {
-            for (Resource file : new PathMatchingResourcePatternResolver().getResources("classpath*:cards/**/*.json")) {
-                CardDefinition card;
-                try {
-                    card = EffectJson.read(file.getContentAsString(StandardCharsets.UTF_8));
-                } catch (IllegalArgumentException e) {
-                    throw new IllegalStateException(file.getFilename() + ": " + e.getMessage(), e);
-                }
-                if (!names.add(card.name())) throw new IllegalStateException("Carta en dos archivos: " + card.name());
-                for (EffectScript script : card.effects()) if (!ids.add(script.id())) throw new IllegalStateException("Efecto repetido: " + script.id());
-                for (EffectScript script : card.inherited()) if (!ids.add(script.id())) throw new IllegalStateException("Efecto repetido: " + script.id());
-                cards.add(card);
-            }
+        return CardBundle.read(bundle());
+    }
+
+    /** The bundle's text, from the engine's jar. */
+    static String bundle() {
+        try (InputStream in = CardFiles.class.getClassLoader().getResourceAsStream(CardBundle.RESOURCE)) {
+            if (in == null) throw new IllegalStateException("No está el paquete de cartas (" + CardBundle.RESOURCE + ") en el class path");
+            return new String(in.readAllBytes(), StandardCharsets.UTF_8);
         } catch (IOException e) {
             throw new IllegalStateException("No se pudieron leer las cartas", e);
         }
-        return cards;
     }
 }

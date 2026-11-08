@@ -56,7 +56,7 @@ class SelectActionTest {
     @Test
     void everyActionHasAHandler() {
         assertThat(Actions.handled()).containsExactlyInAnyOrderElementsOf(
-                Arrays.stream(Action.class.getPermittedSubclasses()).map(c -> c.asSubclass(Action.class)).toList());
+                Arrays.stream(Action.class.getPermittedSubclasses()).map(c -> kotlin.jvm.JvmClassMappingKt.getKotlinClass(c.asSubclass(Action.class))).toList());
     }
 
     @Test

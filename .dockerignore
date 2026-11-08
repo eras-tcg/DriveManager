@@ -1,0 +1,9 @@
+# The image builds from the repository root (drive_manager/Dockerfile): only sources go in the context
+.git
+**/.gradle
+**/.kotlin
+**/build
+**/target
+**/node_modules
+**/.idea
+**/.env

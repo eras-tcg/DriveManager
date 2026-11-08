@@ -15,6 +15,7 @@ import org.springframework.data.mongodb.core.index.Index;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.stereotype.Service;
+import com.drive.drive_manager.simulator.json.SimulatorJson;
 import tools.jackson.databind.json.JsonMapper;
 
 import java.io.ByteArrayInputStream;
@@ -55,7 +56,7 @@ public class MatchHistory {
     /** The shape of a log (changes when what it holds changes). */
     static final int LOG_FORMAT = 1;
 
-    private static final JsonMapper JSON = JsonMapper.builder().build();
+    private static final JsonMapper JSON = SimulatorJson.configure(JsonMapper.builder()).build();
 
     private final MongoTemplate mongo;
     /** The ranked ladder: a ranked game moves its players' rank when kept (none in tests). */

@@ -50,8 +50,8 @@ class ValueModelTest {
         ValueModel model = ValueModel.train(samples(3000, 3), linear, null);
         assertThat(model.fit(samples(500, 4)).accuracy()).isGreaterThan(0.8);
         Path file = dir.resolve("model.json");
-        model.save(file);
-        ValueModel read = ValueModel.read(file);
+        ValueModelFiles.save(model, file);
+        ValueModel read = ValueModelFiles.read(file);
         for (ValueModel.Sample s : samples(20, 5)) assertThat(read.predict(s.x())).isCloseTo(model.predict(s.x()), org.assertj.core.data.Offset.offset(1e-12));
     }
 

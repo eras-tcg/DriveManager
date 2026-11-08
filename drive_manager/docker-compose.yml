@@ -1,6 +1,9 @@
 services:
   drive_manager:
-    build: .
+    build:
+      # The repository root: the image builds the game's engine (../eras-engine) too
+      context: ..
+      dockerfile: drive_manager/Dockerfile
     image: drive_manager:latest
     container_name: drive_manager
     ports:

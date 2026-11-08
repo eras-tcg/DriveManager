@@ -1,5 +1,6 @@
 package com.drive.drive_manager.simulator.room;
 
+import com.drive.drive_manager.simulator.engine.GameRandom;
 import com.drive.drive_manager.simulator.actions.PostGameActions;
 import com.drive.drive_manager.simulator.bot.BotCatalog;
 import com.drive.drive_manager.simulator.bot.BotMatch;
@@ -44,7 +45,7 @@ class AuditFixesTest {
     /** A test room started with two starter decks. */
     private GameRoom startedTestRoom() {
         GameRoom room = service.createRoom("owner", RoomOptions.TEST);
-        room.setRandom(new java.util.Random(9));
+        room.setRandom(new GameRandom(9));
         act(room.getRoomId(), "owner", "JOIN_ROOM", Map.of("username", "Ana"));
         int[] ids = {0};
         BotMatch.seat(room.getPlayer("owner"), "st2", ids);
