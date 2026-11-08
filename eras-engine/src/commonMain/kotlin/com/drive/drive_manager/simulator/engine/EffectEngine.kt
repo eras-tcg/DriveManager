@@ -1,5 +1,6 @@
 package com.drive.drive_manager.simulator.engine
 
+import com.drive.drive_manager.simulator.platform.Clocks
 import kotlin.jvm.JvmStatic
 import kotlin.jvm.JvmRecord
 import com.drive.drive_manager.simulator.platform.LocalValue
@@ -148,7 +149,7 @@ object EffectEngine {
         val e = GameEvent()
         e.seq = room.eventSeq + 1
         room.eventSeq = e.seq
-        e.ts = Platform.currentTimeMillis()
+        e.ts = Clocks.millis()
         e.type = type
         e.playerId = playerId
         if (card != null) {
@@ -164,7 +165,7 @@ object EffectEngine {
             e.resolutionId = effect.resolutionId
             // A tribute by an effect always says by which card ("si esta carta es tributada por efecto de 1 [bestia]")
             if (GameEvent.TRIBUTE == type && (data == null || !data.containsKey("byCard")) && effect.sourceInstanceId != null) {
-                data = if (data == null) HashMap() else HashMap(data)
+                data = if (data == null) Platform.hashMap() else Platform.hashMap(data)
                 data["byCard"] = effect.sourceInstanceId
             }
         }
@@ -179,7 +180,7 @@ object EffectEngine {
 
     @JvmStatic
     fun log(room: GameRoom, text: String?, seq: Long?) {
-        val entry = GameLogEntry(Platform.currentTimeMillis(), text, seq)
+        val entry = GameLogEntry(Clocks.millis(), text, seq)
         HistoryDescriber.describe(room, entry)
         room.eventLog.add(entry)
         if (room.eventLog.size > LOG_LIMIT) room.eventLog.removeAt(0)

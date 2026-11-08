@@ -1,7 +1,7 @@
 package com.drive.drive_manager.simulator.bot
 
+import com.drive.drive_manager.simulator.platform.Clocks
 import kotlin.jvm.JvmStatic
-import com.drive.drive_manager.simulator.platform.Platform
 import kotlin.math.max
 import kotlin.math.min
 import com.drive.drive_manager.simulator.engine.valueOr
@@ -90,7 +90,7 @@ internal object SequenceSearch {
             if (cascade != null) few.add(cascade)
             return few
         }
-        val deadline = Platform.nanoTime() + (s.budgetMs() * 1_000_000L * s.get("seqShare")).toLong()
+        val deadline = Clocks.nanos() + (s.budgetMs() * 1_000_000L * s.get("seqShare")).toLong()
         val seed = sandbox.deal()
         val triggers = s.get("seqTriggers")
         // Level 1: every first move; then each level extends the best ones by every move legal after them
@@ -103,12 +103,12 @@ internal object SequenceSearch {
         val singles: MutableList<Screened> = ArrayList(level)
         val found: MutableList<Screened> = ArrayList()
         var d = 2
-        while (d <= depth && Platform.nanoTime() < deadline) {
+        while (d <= depth && Clocks.nanos() < deadline) {
             level.sortWith(comparingDouble { x: Screened -> -x.score })
             val grown: MutableList<Screened> = ArrayList()
             for (x in level.subList(0, min(level.size, if (d == 2) level.size else keep))) {
                 for (m in x.next) {
-                    if (Platform.nanoTime() > deadline) break
+                    if (Clocks.nanos() > deadline) break
                     val seq: MutableList<GameAction> = ArrayList(x.moves)
                     seq.add(m)
                     val y = screen(sandbox, room, me, seq, seed, s, triggers)

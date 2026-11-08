@@ -1,8 +1,8 @@
 package com.drive.drive_manager.simulator.bot
 
+import com.drive.drive_manager.simulator.platform.Clocks
 import kotlin.jvm.JvmStatic
 import kotlin.jvm.JvmRecord
-import com.drive.drive_manager.simulator.platform.Platform
 import kotlin.math.max
 import kotlin.math.min
 import com.drive.drive_manager.simulator.engine.valueOr
@@ -193,10 +193,10 @@ open class LookaheadBot(settings: BotSettings, model: ValueModel?) : HeuristicBo
     private fun best(room: GameRoom, me: String?, candidates: List<GameAction>): GameAction? {
         if (candidates.isEmpty()) return null
         if (candidates.size == 1) return candidates[0]
-        val start = Platform.nanoTime()
+        val start = Clocks.nanos()
         val trials = MoveTrials(settings, sandbox, TableScoring { r: GameRoom, p: String? -> score(r, p) }, start + settings.budgetMs() * 1_000_000L)
         val best = trials.best(room, me, MoveTrials.top(sandbox, room, me, candidates, settings))
-        val spent = Platform.nanoTime() - start
+        val spent = Clocks.nanos() - start
         decisions++
         totalNanos += spent
         maxNanos = max(maxNanos, spent)

@@ -1,5 +1,6 @@
 package com.drive.drive_manager.simulator.bot
 
+import com.drive.drive_manager.simulator.platform.Clocks
 import kotlin.jvm.JvmStatic
 import kotlin.jvm.JvmField
 import com.drive.drive_manager.simulator.platform.LocalValue
@@ -59,7 +60,7 @@ internal class MoveTrials(
         val sum = DoubleArray(n)
         val tries = IntArray(n)
         for (i in 0 until n) {
-            if (i > 0 && Platform.nanoTime() > deadline) {
+            if (i > 0 && Clocks.nanos() > deadline) {
                 ranOutOfTime = true
                 break
             }
@@ -95,7 +96,7 @@ internal class MoveTrials(
             val deep = settings.get("innerFinal") < 1 || alive.size <= settings.get("innerFinal")
             for (k in dealt until dealt + more) {
                 for (i in alive) {
-                    if ((k > 0 || i > 0) && Platform.nanoTime() > deadline) {
+                    if ((k > 0 || i > 0) && Clocks.nanos() > deadline) {
                         ranOutOfTime = true
                         return pick(candidates, sum, tries, bestMean(sum, tries))
                     }
@@ -288,9 +289,9 @@ internal class MoveTrials(
             val quick: MutableMap<GameAction, Double> = Platform.identityMap()
             val seed = sandbox.deal()
             // At most a fifth of the decision's time: the moves not screened by then keep their place after the screened ones
-            val until = Platform.nanoTime() + settings.budgetMs() * 200_000L
+            val until = Clocks.nanos() + settings.budgetMs() * 200_000L
             for (a in candidates.subList(1, candidates.size)) {
-                if (Platform.nanoTime() > until) break
+                if (Clocks.nanos() > until) break
                 val copy = sandbox.fork(room, me, GameRandom(seed))
                 try {
                     val sides: Map<String?, BotPlayer> = frozenMapOf<String?, BotPlayer>(me, HeuristicBot(settings), copy.getOpponentId(me), HeuristicBot(settings))

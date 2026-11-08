@@ -30,6 +30,39 @@ actual object Platform {
     /** The Java pattern translated ([JavaRegex.toJavaScript]): Kotlin's `Regex` is a JavaScript `RegExp` here. */
     actual fun regex(pattern: String): Regex = Regex(JavaRegex.toJavaScript(pattern))
 
+    /**
+     * Java's layout of the shortest digits that read back as the same double (JavaScript's `toExponential()` gives them,
+     * as Java's `Double.toString` chooses them since JDK 19): plain from 10^-3 up to 10^7 with at least one decimal,
+     * else "d.dddE±n".
+     */
+    actual fun doubleText(value: Double): String {
+        if (value.isNaN()) return "NaN"
+        if (value.isInfinite()) return if (value > 0) "Infinity" else "-Infinity"
+        if (value == 0.0) return if (1.0 / value < 0) "-0.0" else "0.0"
+        var text = value.asDynamic().toExponential() as String
+        val negative = text.startsWith("-")
+        if (negative) text = text.substring(1)
+        val e = text.indexOf('e')
+        val digits = text.substring(0, e).replace(".", "")
+        val exponent = text.substring(e + 1).toInt()
+        val out = StringBuilder()
+        if (negative) out.append('-')
+        val magnitude = if (negative) -value else value
+        if (magnitude >= 1e-3 && magnitude < 1e7) {
+            val point = exponent + 1
+            when {
+                point <= 0 -> { out.append("0."); repeat(-point) { out.append('0') }; out.append(digits) }
+                point >= digits.length -> { out.append(digits); repeat(point - digits.length) { out.append('0') }; out.append(".0") }
+                else -> out.append(digits, 0, point).append('.').append(digits, point, digits.length)
+            }
+        } else {
+            out.append(digits[0]).append('.')
+            if (digits.length > 1) out.append(digits, 1, digits.length) else out.append('0')
+            out.append('E').append(exponent)
+        }
+        return out.toString()
+    }
+
     /** A version-4 UUID's 32 hex digits (as `UUID.randomUUID()` without the dashes). */
     actual fun randomHexId(): String {
         val digits = "0123456789abcdef"
@@ -45,6 +78,11 @@ actual object Platform {
             }
         }
     }
+
+    /** Java's order ([JavaHashMap]). */
+    actual fun <K, V> hashMap(): MutableMap<K, V> = JavaHashMap()
+
+    actual fun <K, V> hashMap(from: Map<out K, V>): MutableMap<K, V> = JavaHashMap(from)
 
     /** One thread: a plain map. */
     actual fun <K : Any, V : Any> concurrentMap(): MutableMap<K, V> = HashMap()

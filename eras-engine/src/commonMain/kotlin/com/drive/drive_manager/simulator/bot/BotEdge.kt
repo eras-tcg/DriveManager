@@ -1,7 +1,7 @@
 package com.drive.drive_manager.simulator.bot
 
+import com.drive.drive_manager.simulator.platform.Clocks
 import kotlin.jvm.JvmStatic
-import com.drive.drive_manager.simulator.platform.Platform
 import kotlin.math.max
 import kotlin.math.min
 import com.drive.drive_manager.simulator.rank.RankRules
@@ -73,7 +73,7 @@ object BotEdge {
         val delta = delta(room, player.userId, player.turnsStarted)
         val count = max(0, min(5, raised + delta))
         if (delta != 0 && count != max(0, min(5, raised))) {
-            room.eventLog.add(GameLogEntry(Platform.currentTimeMillis(), if (delta > 0)
+            room.eventLog.add(GameLogEntry(Clocks.millis(), if (delta > 0)
                 "Ventaja del bot: el Marcador de " + player.username + " sube 1 más en su turno " + player.turnsStarted
             else
                 "Ventaja del bot: el Marcador de " + player.username + " sube 1 menos en su turno " + player.turnsStarted))

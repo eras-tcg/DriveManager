@@ -1,8 +1,8 @@
 package com.drive.drive_manager.simulator.room
 
+import com.drive.drive_manager.simulator.platform.Clocks
 import kotlin.jvm.JvmStatic
 import kotlin.jvm.JvmRecord
-import com.drive.drive_manager.simulator.platform.Platform
 import com.drive.drive_manager.simulator.engine.frozenMapOf
 import com.drive.drive_manager.simulator.actions.ActionDispatcher
 import com.drive.drive_manager.simulator.actions.TurnActions
@@ -104,7 +104,7 @@ class RoomEngine(host: RoomHost) {
         @JvmStatic
         fun recordLog(room: GameRoom, update: GameStateUpdate, action: GameAction?) {
             if (update.logEntry == null) return
-            val entry = GameLogEntry(Platform.currentTimeMillis(), update.logEntry)
+            val entry = GameLogEntry(Clocks.millis(), update.logEntry)
             if (action != null) {
                 entry.kind = "MANUAL"
                 val id = action.getString("instanceId")

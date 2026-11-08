@@ -48,6 +48,22 @@ expect object Platform {
      */
     fun regex(pattern: String): Regex
 
+    /**
+     * A double as Java's `Double.toString` writes it (what Jackson sends): "50.0", "0.001", "1.0E7", "-0.0". Kotlin's
+     * `toString` on JavaScript writes JavaScript's ("50", "1e+21").
+     */
+    fun doubleText(value: Double): String
+
+    /**
+     * A `java.util.HashMap` (on the JVM, itself): a map that iterates in Java's hash order on every platform. JavaScript's
+     * `HashMap` iterates in insertion order, so a map whose order reaches what the players are sent (a timeline event's
+     * data, an effect's saved choices) is made with this one.
+     */
+    fun <K, V> hashMap(): MutableMap<K, V>
+
+    /** `new HashMap<>(from)`, as [hashMap]. */
+    fun <K, V> hashMap(from: Map<out K, V>): MutableMap<K, V>
+
     /** A map safe to share between threads (no null keys or values). */
     @JvmStatic
     fun <K : Any, V : Any> concurrentMap(): MutableMap<K, V>

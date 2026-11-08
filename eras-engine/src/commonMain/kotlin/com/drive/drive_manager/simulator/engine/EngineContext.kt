@@ -246,7 +246,7 @@ internal class EngineContext(private val room: GameRoom, private val effect: Pen
             else if (Zone.FIELD.`is`(from)) Removals.removeFromField(origin.owner, card)
             else EffectEngine.zone(origin.owner, from).remove(card)
             card.faceDown = Zone.DECK.`is`(zone) || faceDown
-            val data: MutableMap<String, Any?> = HashMap()
+            val data: MutableMap<String, Any?> = Platform.hashMap()
             data["byCard"] = if (origin.host != null) origin.host.instanceId else effect.sourceInstanceId
             data["ownerId"] = origin.owner.userId
             if (Zone.DECK.`is`(zone)) data["position"] = if (Action.Move.DECK_TOP == to) "top" else "bottom"

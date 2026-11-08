@@ -1,7 +1,7 @@
 package com.drive.drive_manager.simulator.actions
 
+import com.drive.drive_manager.simulator.platform.Clocks
 import kotlin.jvm.JvmStatic
-import com.drive.drive_manager.simulator.platform.Platform
 import kotlin.math.abs
 import kotlin.math.max
 import kotlin.math.min
@@ -109,7 +109,7 @@ object TurnActions {
                 p.field.remove(c)
                 com.drive.drive_manager.simulator.engine.Removals.leaveField(c)
                 p.hand.add(c)
-                room.eventLog.add(GameLogEntry(Platform.currentTimeMillis(), c.cardName + " vuelve a la mano de " + p.username))
+                room.eventLog.add(GameLogEntry(Clocks.millis(), c.cardName + " vuelve a la mano de " + p.username))
             }
         }
         room.players.values.forEach { p ->

@@ -136,7 +136,7 @@ object Removals {
         else if (CAUSE_EFFECT == cause) " (fuerza 0)"
         else if (CAUSE_RULES == cause) " por tener fuerza 0" else ""
         val text = if (sacrifice) who + " sacrifica " + name(card) + why else who + " destruye " + name(card) + whose + why
-        val data: MutableMap<String, Any?> = HashMap()
+        val data: MutableMap<String, Any?> = Platform.hashMap()
         data["cause"] = cause
         data["ownerId"] = owner.userId
         if (levelThere != null) data["level"] = levelThere

@@ -129,7 +129,7 @@ object CombatRules {
         attacker.untilNextAttack!!.forEach { entry -> combat.untilEndOfAttack.add(attacker.instanceId + "|" + entry) }
         attacker.untilNextAttack!!.clear()
         val target = if (targetId == null || opponent == null) null else find(opponent.field, targetId)
-        val data: MutableMap<String, Any?> = HashMap()
+        val data: MutableMap<String, Any?> = Platform.hashMap()
         data["byEffect"] = byEffect
         data["exhausted"] = !byEffect
         if (targetId != null) data["targetId"] = targetId

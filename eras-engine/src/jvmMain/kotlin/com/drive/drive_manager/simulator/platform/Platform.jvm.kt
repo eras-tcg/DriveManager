@@ -38,6 +38,14 @@ actual object Platform {
     @JvmStatic
     actual fun regex(pattern: String): Regex = Regex(pattern)
 
+    /** `java.util.HashMap`. */
+    actual fun <K, V> hashMap(): MutableMap<K, V> = HashMap()
+
+    actual fun <K, V> hashMap(from: Map<out K, V>): MutableMap<K, V> = HashMap(from)
+
+    /** `Double.toString`. */
+    actual fun doubleText(value: Double): String = value.toString()
+
     /** `ConcurrentHashMap`. */
     @JvmStatic
     actual fun <K : Any, V : Any> concurrentMap(): MutableMap<K, V> = java.util.concurrent.ConcurrentHashMap()

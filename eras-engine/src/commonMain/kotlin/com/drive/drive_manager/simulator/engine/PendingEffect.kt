@@ -1,5 +1,6 @@
 package com.drive.drive_manager.simulator.engine
 
+import com.drive.drive_manager.simulator.platform.Platform
 import kotlin.jvm.JvmName
 import com.drive.drive_manager.simulator.room.CardSlot
 
@@ -35,7 +36,7 @@ class PendingEffect {
     /** Which action of a sequence is running. */
     var sequenceIndex: Int = 0
     /** What its actions saved by name, other than the fields below (see EngineContext). */
-    var saved: MutableMap<String, MutableList<String?>> = HashMap()
+    var saved: MutableMap<String, MutableList<String?>> = Platform.hashMap()
     /** The ally chosen by "elige 1 aliado", which the next steps act on. */
     var subjectId: String? = null
     /** Ritual by effect: the creature chosen to be summoned, before choosing who meets its Requerimiento. */

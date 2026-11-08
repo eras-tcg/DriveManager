@@ -37,6 +37,20 @@ internal object Usefulness {
      */
     private val SEEN: LocalValue<MutableMap<String, Boolean>> = LocalValue { HashMap() }
 
+    /**
+     * Runs `block` with `memory` as this thread's verdicts, then puts back the thread's own: a game that must play the
+     * same from its seed whatever ran before on the thread (`com.eras.engine.local.LocalMatch`) keeps a memory of its own.
+     */
+    internal fun <T> withMemory(memory: MutableMap<String, Boolean>, block: () -> T): T {
+        val before = SEEN.get()
+        SEEN.set(memory)
+        try {
+            return block()
+        } finally {
+            SEEN.set(before)
+        }
+    }
+
     /** How often it was asked and how often the answer was "nothing" (the bot runs report them). */
     @JvmField
     val ASKED = AtomicCounter()

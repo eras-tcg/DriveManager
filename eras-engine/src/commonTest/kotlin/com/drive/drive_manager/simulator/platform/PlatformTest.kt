@@ -68,4 +68,38 @@ class PlatformTest {
         assertNull(Platform.emptySortedSetLike(listOf(1)))
         assertEquals(Platform.seconds(30), Platform.seconds(30))
     }
+
+    /** Platform.hashMap iterates as java.util.HashMap (the orders below are Java's; on JavaScript, JavaHashMap's). */
+    @Test
+    fun aHashMapIteratesInJavasOrder() {
+        val m = Platform.hashMap<String, Any?>()
+        m["byEffect"] = true
+        m["exhausted"] = false
+        m["targetId"] = "c1"
+        assertEquals(listOf("targetId", "byEffect", "exhausted"), m.keys.toList())
+        // Copies are sized as Java sizes them (a table of 2, then 4, for one entry): the order follows
+        val c = Platform.hashMap(linkedMapOf<String, Any?>("cause" to "x"))
+        c["byCard"] = 1
+        assertEquals(listOf("byCard", "cause"), c.keys.toList())
+        val c3 = Platform.hashMap(linkedMapOf<String, Any?>("ownerId" to 1, "frontLine" to 1, "to" to 1))
+        c3["byCard"] = 1
+        assertEquals(listOf("to", "ownerId", "frontLine", "byCard"), c3.keys.toList())
+        val e = Platform.hashMap(emptyMap<String, Any?>())
+        e["byCard"] = 1
+        e["damage"] = 1
+        assertEquals(listOf("damage", "byCard"), e.keys.toList())
+        // Growing past several tables, with keys removed and one put again
+        val big = Platform.hashMap<String, Any?>()
+        for (i in 0 until 40) big["k$i"] = i
+        for (i in 0 until 40 step 3) big.remove("k$i")
+        big["k3"] = 0
+        assertEquals(("k31, k11, k10, k32, k13, k35, k34, k37, k14, k17, k16, k38, k19, k1, k2, k20, k3, k4, k5, k22, k7, k8, k23, k26, " +
+            "k25, k28, k29").split(", "), big.keys.toList())
+        assertEquals(27, big.size)
+        assertEquals(0, big["k3"])
+        assertNull(big["k0"])
+        val it = big.entries.iterator()
+        while (it.hasNext()) if (it.next().key.length == 3) it.remove()
+        assertEquals(listOf("k1", "k2", "k3", "k4", "k5", "k7", "k8"), big.keys.toList())
+    }
 }
