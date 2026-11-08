@@ -1,5 +1,12 @@
 package com.drive.drive_manager.simulator.bot
 
+import com.drive.drive_manager.simulator.platform.Platform
+import kotlin.math.max
+import kotlin.math.min
+import com.drive.drive_manager.simulator.engine.valueOr
+import com.drive.drive_manager.simulator.engine.comparingDouble
+import com.drive.drive_manager.simulator.engine.frozenListOf
+import com.drive.drive_manager.simulator.engine.frozenMapOf
 import com.drive.drive_manager.simulator.engine.EffectEngine
 import com.drive.drive_manager.simulator.engine.LegalActions
 import com.drive.drive_manager.simulator.engine.Prompt
@@ -9,8 +16,6 @@ import com.drive.drive_manager.simulator.room.CardSlot
 import com.drive.drive_manager.simulator.room.GameAction
 import com.drive.drive_manager.simulator.room.GameRoom
 import com.drive.drive_manager.simulator.room.PlayerState
-import java.util.LinkedHashSet
-import java.util.function.ToDoubleBiFunction
 
 /**
  * The bot that looks one move ahead (phase 2). For each move it could make now (or each answer to its choice) it
@@ -45,8 +50,13 @@ open class LookaheadBot(settings: BotSettings, model: ValueModel?) : HeuristicBo
     private var decidedAt: String? = null
     private var decided: Any? = null
 
+    /** Told of every decision the bot looks ahead for (a `Consumer<Decision>` as before). */
+    fun interface Watcher {
+        fun accept(decision: Decision)
+    }
+
     /** Told of every decision it looks ahead for; none in the server. */
-    private var watcher: java.util.function.Consumer<Decision>? = null
+    private var watcher: Watcher? = null
 
     private var specialChances = 0
     private var specials = 0
@@ -92,7 +102,7 @@ open class LookaheadBot(settings: BotSettings, model: ValueModel?) : HeuristicBo
         return Choices(specialChances, specials, tributeChances, tributedCreatures, tributedOthers)
     }
 
-    fun watch(watcher: java.util.function.Consumer<Decision>?) {
+    fun watch(watcher: Watcher?) {
         this.watcher = watcher
     }
 
@@ -106,7 +116,7 @@ open class LookaheadBot(settings: BotSettings, model: ValueModel?) : HeuristicBo
         candidates.add(heuristic ?: endTurn())
         for (move in mainMoves(room, me)) if (!isRefused(move) && !same(move, candidates[0]) && (!on("hUseful") || Usefulness.playDoesSomething(room, me, move, settings))) candidates.add(move)
         if (heuristic != null) candidates.add(endTurn())
-        if (on("hUsefulEnd")) candidates.removeIf { m -> !Usefulness.playPaysOff(room, me, m, settings) } // a utility that leaves the turn no better
+        if (on("hUsefulEnd")) candidates.removeAll { m -> !Usefulness.playPaysOff(room, me, m, settings) } // a utility that leaves the turn no better
         candidates.addAll(1, SequenceSearch.best(sandbox, room, me, candidates, settings)); plan.offer(room, me, candidates, settings)
         val best = remember(at, plan.next(sandbox, room, me, best(room, me, candidates), settings)) as GameAction?
         if (candidates.any { a -> ActionType.RITUAL_SUMMON.`is`(a) }) {
@@ -124,34 +134,34 @@ open class LookaheadBot(settings: BotSettings, model: ValueModel?) : HeuristicBo
         val heuristic: List<String>? = super.answer(room, me, prompt)
         // hUseful: the heuristic said no to an optional effect of its own because it would do nothing
         if (on("hUseful") && optionalEffect(prompt) && heuristic != null && heuristic.isEmpty()) return heuristic
-        if (on("hUsefulEnd") && optionalEffect(prompt) && prompt.min == 0 && heuristic != null && !heuristic.isEmpty() && !Usefulness.yesPaysOff(room, me, prompt, heuristic, settings)) return java.util.List.of()
+        if (on("hUsefulEnd") && optionalEffect(prompt) && prompt.min == 0 && heuristic != null && !heuristic.isEmpty() && !Usefulness.yesPaysOff(room, me, prompt, heuristic, settings)) return frozenListOf()
         val options: MutableSet<List<String?>> = LinkedHashSet(); if (heuristic != null) options.add(heuristic)
         val choices: List<String?> = choices(prompt)
         val self = room.getPlayer(me)
         if (on("hTributeCreatures") && tributesFromHand(self, prompt, choices)) {
             // Which cards go to the Tributos is the rule's (the table's score cannot tell a creature there from a utility
             // kept in the hand); how many, when the card leaves it open, is tried: the first k in the rule's order
-            val order = choices.sortedWith(Comparator.comparingDouble { id: String? -> tributeOrder(cardIn(prompt, id)) })
-            for (k in prompt.min..Math.min(prompt.max, order.size)) options.add(ArrayList(order.subList(0, k)))
+            val order = choices.sortedWith(comparingDouble { id: String? -> tributeOrder(cardIn(prompt, id)) })
+            for (k in prompt.min..min(prompt.max, order.size)) options.add(ArrayList(order.subList(0, k)))
         } else {
             // A special summon it began is not called off unless the heuristic finds nothing to choose: in the copies the
             // heuristic summons it again for the rest of the turn, so calling it off scores as well and wins by noise
             val begun = PromptPurpose.SPECIAL.`is`(prompt.purpose) || PromptPurpose.RITUAL.`is`(prompt.purpose)
-            if (prompt.min == 0 && !(begun && heuristic != null && !heuristic.isEmpty())) options.add(java.util.List.of())
-            if (prompt.min <= 1 && prompt.max >= 1) choices.forEach { id -> options.add(java.util.List.of(id)) }
-            if (prompt.max > 1 && choices.size >= Math.max(prompt.min, 2)) {
-                options.add(ArrayList(choices.subList(0, Math.min(prompt.max, choices.size)))); AdvanceOptions.add(options, room, self, prompt, choices, settings)
+            if (prompt.min == 0 && !(begun && heuristic != null && !heuristic.isEmpty())) options.add(frozenListOf())
+            if (prompt.min <= 1 && prompt.max >= 1) choices.forEach { id -> options.add(frozenListOf(id)) }
+            if (prompt.max > 1 && choices.size >= max(prompt.min, 2)) {
+                options.add(ArrayList(choices.subList(0, min(prompt.max, choices.size)))); AdvanceOptions.add(options, room, self, prompt, choices, settings)
             }
             // With a loss for utilities in the Tributos (or the hand's ranking, hRank), the table can tell them apart: it also tries the weakest first
             if ((settings.uTribute != 0.0 || HandRank.on(settings)) && tributesFromHand(self, prompt, choices)) {
-                val order: List<String?> = if (HandRank.on(settings)) HandRank.weakestFirst(room, self!!, choices, settings) else choices.sortedWith(Comparator.comparingDouble { id: String? -> tributeOrder(cardIn(prompt, id)) })
-                for (k in Math.max(1, prompt.min)..Math.min(prompt.max, order.size)) options.add(ArrayList(order.subList(0, k)))
+                val order: List<String?> = if (HandRank.on(settings)) HandRank.weakestFirst(room, self!!, choices, settings) else choices.sortedWith(comparingDouble { id: String? -> tributeOrder(cardIn(prompt, id)) })
+                for (k in max(1, prompt.min)..min(prompt.max, order.size)) options.add(ArrayList(order.subList(0, k)))
             }
         }
         if (options.size <= 1) return counted(self, prompt, choices, heuristic)
         val candidates: MutableList<GameAction> = ArrayList()
         for (chosen in options) {
-            val a = action(ActionType.RESOLVE_PROMPT, java.util.Map.of<String, Any?>("promptId", prompt.id, "chosen", chosen, "order", java.util.List.of<Any>()))
+            val a = action(ActionType.RESOLVE_PROMPT, frozenMapOf<String, Any?>("promptId", prompt.id, "chosen", chosen, "order", frozenListOf<Any>()))
             if (!isRefused(a)) candidates.add(a)
         }
         val best = best(room, me, candidates)
@@ -181,13 +191,13 @@ open class LookaheadBot(settings: BotSettings, model: ValueModel?) : HeuristicBo
     private fun best(room: GameRoom, me: String?, candidates: List<GameAction>): GameAction? {
         if (candidates.isEmpty()) return null
         if (candidates.size == 1) return candidates[0]
-        val start = System.nanoTime()
-        val trials = MoveTrials(settings, sandbox, ToDoubleBiFunction { r: GameRoom, p: String? -> score(r, p) }, start + settings.budgetMs() * 1_000_000L)
+        val start = Platform.nanoTime()
+        val trials = MoveTrials(settings, sandbox, TableScoring { r: GameRoom, p: String? -> score(r, p) }, start + settings.budgetMs() * 1_000_000L)
         val best = trials.best(room, me, MoveTrials.top(sandbox, room, me, candidates, settings))
-        val spent = System.nanoTime() - start
+        val spent = Platform.nanoTime() - start
         decisions++
         totalNanos += spent
-        maxNanos = Math.max(maxNanos, spent)
+        maxNanos = max(maxNanos, spent)
         if (trials.ranOutOfTime) outOfTime++
         movesTried += trials.movesTried.toLong()
         val w = watcher
@@ -236,15 +246,15 @@ open class LookaheadBot(settings: BotSettings, model: ValueModel?) : HeuristicBo
             val legal = LegalActions.of(room, me)
             val targets = LegalActions.attackTargets(room, me)
             val x = HeuristicBot.summonX(room.getPlayer(me))
-            legal.forEach { id, can ->
+            for ((id, can) in legal) {
                 if (can.contains("attack")) {
-                    moves.add(BotPlayer.action(ActionType.ATTACK, java.util.Map.of<String, Any?>("instanceId", id)))
-                    for (target in targets.getOrDefault(id, java.util.List.of())) moves.add(BotPlayer.action(ActionType.ATTACK, java.util.Map.of<String, Any?>("instanceId", id, "targetInstanceId", target)))
+                    moves.add(BotPlayer.action(ActionType.ATTACK, frozenMapOf<String, Any?>("instanceId", id)))
+                    for (target in targets.valueOr(id, frozenListOf())) moves.add(BotPlayer.action(ActionType.ATTACK, frozenMapOf<String, Any?>("instanceId", id, "targetInstanceId", target)))
                 }
-                if (can.contains("summon")) moves.add(BotPlayer.action(ActionType.NORMAL_SUMMON, java.util.Map.of<String, Any?>("instanceId", id, "x", x, "y", 75.0)))
-                if (can.contains("play")) moves.add(BotPlayer.action(ActionType.PLAY_CARD, java.util.Map.of<String, Any?>("instanceId", id, "x", x, "y", 75.0)))
-                if (can.contains("ritual")) moves.add(BotPlayer.action(ActionType.RITUAL_SUMMON, java.util.Map.of<String, Any?>("instanceId", id)))
-                if (can.contains("activate")) moves.add(BotPlayer.action(ActionType.ACTIVATE_EFFECT, java.util.Map.of<String, Any?>("instanceId", id)))
+                if (can.contains("summon")) moves.add(BotPlayer.action(ActionType.NORMAL_SUMMON, frozenMapOf<String, Any?>("instanceId", id, "x", x, "y", 75.0)))
+                if (can.contains("play")) moves.add(BotPlayer.action(ActionType.PLAY_CARD, frozenMapOf<String, Any?>("instanceId", id, "x", x, "y", 75.0)))
+                if (can.contains("ritual")) moves.add(BotPlayer.action(ActionType.RITUAL_SUMMON, frozenMapOf<String, Any?>("instanceId", id)))
+                if (can.contains("activate")) moves.add(BotPlayer.action(ActionType.ACTIVATE_EFFECT, frozenMapOf<String, Any?>("instanceId", id)))
             }
             return moves
         }
@@ -255,7 +265,7 @@ open class LookaheadBot(settings: BotSettings, model: ValueModel?) : HeuristicBo
         }
 
         private fun endTurn(): GameAction {
-            return BotPlayer.action(ActionType.END_TURN, java.util.Map.of())
+            return BotPlayer.action(ActionType.END_TURN, frozenMapOf())
         }
 
         private fun same(a: GameAction, b: GameAction): Boolean {

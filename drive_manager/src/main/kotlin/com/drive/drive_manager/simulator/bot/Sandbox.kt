@@ -1,5 +1,6 @@
 package com.drive.drive_manager.simulator.bot
 
+import com.drive.drive_manager.simulator.platform.AtomicCounter
 import com.drive.drive_manager.simulator.engine.GameRandom
 import com.drive.drive_manager.simulator.room.CardSlot
 import com.drive.drive_manager.simulator.room.GameAction
@@ -8,7 +9,6 @@ import com.drive.drive_manager.simulator.room.GameStateUpdate
 import com.drive.drive_manager.simulator.room.RoomCopy
 import com.drive.drive_manager.simulator.room.RoomEngine
 import com.drive.drive_manager.simulator.room.RoomHost
-import java.util.concurrent.atomic.AtomicLong
 
 /**
  * Where the bot tries its moves: copies of a room, played by the room's rules alone ([RoomEngine]: no
@@ -60,7 +60,7 @@ class Sandbox {
     }
 
     companion object {
-        private val IDS = AtomicLong()
+        private val IDS = AtomicCounter()
 
         /** What the bot cannot see is dealt again at random (see the class). */
         @JvmStatic

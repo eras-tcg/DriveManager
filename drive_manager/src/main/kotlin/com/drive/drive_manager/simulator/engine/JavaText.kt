@@ -106,7 +106,7 @@ object JavaText {
             }
         }
         // kept holds the digits from 10^(newPoint-1) down to 10^-decimals
-        val all = String(kept)
+        val all = kept.concatToString()
         val intDigits = newPoint
         val sb = StringBuilder()
         if (negative) sb.append('-')

@@ -12,7 +12,7 @@ import com.drive.drive_manager.simulator.room.GameRoom
 object HistoryDescriber {
 
     /** An effect's own moments, not its steps. */
-    private val EFFECT_MOMENTS: Set<String> = java.util.Set.of(GameEvent.EFFECT_ACTIVATED, GameEvent.EFFECT_RESOLVED, GameEvent.EFFECT_DECLINED)
+    private val EFFECT_MOMENTS: Set<String> = frozenSetOf(GameEvent.EFFECT_ACTIVATED, GameEvent.EFFECT_RESOLVED, GameEvent.EFFECT_DECLINED)
 
     @JvmStatic
     fun describe(room: GameRoom, entry: GameLogEntry) {
@@ -77,7 +77,7 @@ object HistoryDescriber {
         val from = (if (scriptId == null) null else CardEffects.inheritedFrom(scriptId)) ?: return
         var resource = if (card == null) null
                 else card.resources!!.firstOrNull { r -> from.equals(r.cardName, ignoreCase = true) }
-        if (resource == null) resource = EffectEngine.cardsInRoom(room).filter { c -> from.equals(c.cardName, ignoreCase = true) }.findFirst().orElse(null)
+        if (resource == null) resource = EffectEngine.cardsInRoom(room).firstOrNull { c -> from.equals(c.cardName, ignoreCase = true) }
         entry.inheritedFromName = if (resource != null) resource.cardName else from
         if (resource != null) entry.inheritedFromImage = resource.imageUrl
     }

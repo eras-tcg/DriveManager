@@ -1,8 +1,14 @@
 package com.drive.drive_manager.simulator.bot
 
+import kotlin.math.exp
+import kotlin.math.ln
+import kotlin.math.max
+import kotlin.math.min
+import kotlin.math.pow
+import kotlin.math.sqrt
+import com.drive.drive_manager.simulator.engine.JavaMath
 import com.drive.drive_manager.simulator.engine.GameRandom
 import com.drive.drive_manager.simulator.room.GameRoom
-import java.util.LinkedHashMap
 
 /**
  * A trainable model of the table's worth: the chance that a player wins from it, read from the table's numbers
@@ -74,7 +80,7 @@ class ValueModel private constructor(private val w: Weights) {
         for (h in 0 until w.hidden) {
             var a = w.b1!![h]
             for (i in 0 until n) a += w.w1!![h][i] * z[i]
-            a = Math.max(0.0, a)
+            a = max(0.0, a)
             if (hiddenOut != null) hiddenOut[h] = a
             s += w.w2!![h] * a
         }
@@ -87,12 +93,12 @@ class ValueModel private constructor(private val w: Weights) {
         var brier = 0.0
         var right = 0.0
         for (s in samples) {
-            val p = Math.min(1 - 1e-7, Math.max(1e-7, predict(s.x!!)))
-            loss -= s.won * Math.log(p) + (1 - s.won) * Math.log(1 - p)
+            val p = min(1 - 1e-7, max(1e-7, predict(s.x!!)))
+            loss -= s.won * ln(p) + (1 - s.won) * ln(1 - p)
             brier += (p - s.won) * (p - s.won)
             if ((p >= 0.5) == (s.won >= 0.5)) right++
         }
-        val n = Math.max(1, samples.size)
+        val n = max(1, samples.size)
         return Fit(loss / n, brier / n, right / n, samples.size)
     }
 
@@ -100,17 +106,22 @@ class ValueModel private constructor(private val w: Weights) {
 
         // ------------------------------------------------------------------ Training
 
+        /** Receives a line per epoch of a training (a `Consumer<String>` as before). */
+        fun interface TrainingLog {
+            fun accept(line: String)
+        }
+
         /**
          * A model trained on the samples (see the class). `log` receives one line per epoch.
          */
         @JvmStatic
-        fun train(samples: List<Sample>, t: Training, log: java.util.function.Consumer<String>?): ValueModel {
+        fun train(samples: List<Sample>, t: Training, log: TrainingLog?): ValueModel {
             if (samples.size < 10) throw IllegalArgumentException("Too few samples to train: " + samples.size)
             val random = GameRandom(t.seed)
             // Whole games to validation (a sample without a game is a game of its own)
             val byGame: MutableMap<Long, MutableList<Sample>> = LinkedHashMap()
             var alone = Long.MIN_VALUE
-            for (s in samples) byGame.computeIfAbsent(if (s.game >= 0) s.game else alone++) { ArrayList() }.add(s)
+            for (s in samples) byGame.getOrPut(if (s.game >= 0) s.game else alone++) { ArrayList() }.add(s)
             val games: MutableList<MutableList<Sample>> = ArrayList(byGame.values)
             GameRandom.shuffle(games, random)
             val train: MutableList<Sample> = ArrayList()
@@ -121,16 +132,16 @@ class ValueModel private constructor(private val w: Weights) {
             val mean = DoubleArray(n)
             val std = DoubleArray(n)
             for (s in train) for (i in 0 until n) mean[i] += s.x!![i] / train.size
-            for (s in train) for (i in 0 until n) std[i] += Math.pow(s.x!![i] - mean[i], 2.0) / train.size
-            for (i in 0 until n) std[i] = Math.max(1e-6, Math.sqrt(std[i]))
+            for (s in train) for (i in 0 until n) std[i] += (s.x!![i] - mean[i]).pow(2.0) / train.size
+            for (i in 0 until n) std[i] = max(1e-6, sqrt(std[i]))
 
             val hidden = t.hidden
             val width = if (hidden == 0) n else hidden
             val w1 = Array(hidden) { DoubleArray(n) }
             val b1 = DoubleArray(hidden)
             val w2 = DoubleArray(width)
-            for (h in 0 until hidden) for (i in 0 until n) w1[h][i] = random.nextGaussian() * Math.sqrt(2.0 / n)
-            for (h in 0 until width) w2[h] = random.nextGaussian() * Math.sqrt(1.0 / width) * 0.1
+            for (h in 0 until hidden) for (i in 0 until n) w1[h][i] = random.nextGaussian() * sqrt(2.0 / n)
+            for (h in 0 until width) w2[h] = random.nextGaussian() * sqrt(1.0 / width) * 0.1
             val b2 = doubleArrayOf(0.0)
 
             // Adam moments, one per weight, in the same shapes
@@ -156,7 +167,7 @@ class ValueModel private constructor(private val w: Weights) {
                 GameRandom.shuffle(order, random)
                 var start = 0
                 while (start < order.size) {
-                    val batch = order.subList(start, Math.min(order.size, start + t.batch))
+                    val batch = order.subList(start, min(order.size, start + t.batch))
                     val g1 = Array(hidden) { DoubleArray(n) }
                     val gb1 = DoubleArray(hidden)
                     val g2 = DoubleArray(width)
@@ -182,28 +193,28 @@ class ValueModel private constructor(private val w: Weights) {
                         }
                     }
                     step++
-                    val c1 = 1 - Math.pow(beta1, step.toDouble())
-                    val c2 = 1 - Math.pow(beta2, step.toDouble())
+                    val c1 = 1 - beta1.pow(step.toDouble())
+                    val c2 = 1 - beta2.pow(step.toDouble())
                     for (h in 0 until hidden) {
                         for (i in 0 until n) {
                             val g = g1[h][i] + t.l2 * w1[h][i]
                             m1[h][i] = beta1 * m1[h][i] + (1 - beta1) * g
                             v1[h][i] = beta2 * v1[h][i] + (1 - beta2) * g * g
-                            w1[h][i] -= t.learningRate * (m1[h][i] / c1) / (Math.sqrt(v1[h][i] / c2) + eps)
+                            w1[h][i] -= t.learningRate * (m1[h][i] / c1) / (sqrt(v1[h][i] / c2) + eps)
                         }
                         mb1[h] = beta1 * mb1[h] + (1 - beta1) * gb1[h]
                         vb1[h] = beta2 * vb1[h] + (1 - beta2) * gb1[h] * gb1[h]
-                        b1[h] -= t.learningRate * (mb1[h] / c1) / (Math.sqrt(vb1[h] / c2) + eps)
+                        b1[h] -= t.learningRate * (mb1[h] / c1) / (sqrt(vb1[h] / c2) + eps)
                     }
                     for (h in 0 until width) {
                         val g = g2[h] + t.l2 * w2[h]
                         m2[h] = beta1 * m2[h] + (1 - beta1) * g
                         v2[h] = beta2 * v2[h] + (1 - beta2) * g * g
-                        w2[h] -= t.learningRate * (m2[h] / c1) / (Math.sqrt(v2[h] / c2) + eps)
+                        w2[h] -= t.learningRate * (m2[h] / c1) / (sqrt(v2[h] / c2) + eps)
                     }
                     mb2[0] = beta1 * mb2[0] + (1 - beta1) * gb2
                     vb2[0] = beta2 * vb2[0] + (1 - beta2) * gb2 * gb2
-                    b2[0] -= t.learningRate * (mb2[0] / c1) / (Math.sqrt(vb2[0] / c2) + eps)
+                    b2[0] -= t.learningRate * (mb2[0] / c1) / (sqrt(vb2[0] / c2) + eps)
                     start += t.batch
                 }
                 val now = ValueModel(Weights(BoardFeatures.NAMES, mean, std, hidden, w1, b1, w2, b2[0], null))
@@ -220,7 +231,7 @@ class ValueModel private constructor(private val w: Weights) {
                 if (validFit.logLoss < bestLoss - 1e-5) {
                     bestLoss = validFit.logLoss
                     sinceBest = 0
-                    best = Weights(BoardFeatures.NAMES, mean.clone(), std.clone(), hidden, deepClone(w1), b1.clone(), w2.clone(), b2[0], null)
+                    best = Weights(BoardFeatures.NAMES, mean.copyOf(), std.copyOf(), hidden, deepClone(w1), b1.copyOf(), w2.copyOf(), b2[0], null)
                 } else if (++sinceBest >= t.patience) {
                     break
                 }
@@ -249,15 +260,15 @@ class ValueModel private constructor(private val w: Weights) {
         // ------------------------------------------------------------------ Helpers
 
         private fun sigmoid(v: Double): Double {
-            return 1 / (1 + Math.exp(-v))
+            return 1 / (1 + exp(-v))
         }
 
         private fun deepClone(a: Array<DoubleArray>): Array<DoubleArray> {
-            return Array(a.size) { i -> a[i].clone() }
+            return Array(a.size) { i -> a[i].copyOf() }
         }
 
         private fun round(v: Double): Double {
-            return Math.round(v * 10000) / 10000.0
+            return JavaMath.round(v * 10000) / 10000.0
         }
     }
 }

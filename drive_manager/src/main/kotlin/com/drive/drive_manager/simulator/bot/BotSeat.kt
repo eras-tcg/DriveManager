@@ -15,7 +15,7 @@ object BotSeat {
     const val BOT = "bot"
     /** What the owner of a room against the bot does for it, with "actAs" = BOT: choosing its deck and starter. */
     @JvmField
-    internal val SETUP: Set<ActionType> = java.util.EnumSet.of(ActionType.SET_DECK, ActionType.SET_STARTER)
+    internal val SETUP: Set<ActionType> = setOf(ActionType.SET_DECK, ActionType.SET_STARTER)
 
     /** The owner choosing the bot's deck or starter ("actAs" = BOT) in a room against it. */
     @JvmStatic

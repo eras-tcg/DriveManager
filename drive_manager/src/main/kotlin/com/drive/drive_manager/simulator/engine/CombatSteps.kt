@@ -1,5 +1,6 @@
 package com.drive.drive_manager.simulator.engine
 
+import kotlin.math.min
 import com.drive.drive_manager.simulator.engine.EffectEngine.CANNOT_TAP
 import com.drive.drive_manager.simulator.engine.EffectEngine.CAUSE_EFFECT
 import com.drive.drive_manager.simulator.engine.EffectEngine.EXTRA_HIT
@@ -80,11 +81,11 @@ object CombatSteps {
             }
             is GroupUp -> {
                 val self = find(player.field, effect.sourceInstanceId)
-                val valid = if (self == null) java.util.List.of<CardSlot>() else allies(player).filter { c -> c !== self && !c.tapped
+                val valid = if (self == null) frozenListOf<CardSlot>() else allies(player).filter { c -> c !== self && !c.tapped
                         && !keywords(c).contains(CANNOT_TAP) }
                 if (valid.isEmpty() || room.combat == null) return false
                 pick(room, effect, "Agrupar: puedes agotar hasta " + step.allies + " " + plural(step.allies, "aliado", "aliados") + "; " + name(self)
-                        + " gana su fuerza durante el ataque e inflige daño 1 vez extra por cada uno.", "Agotar", player.field, ids(valid), Math.min(step.allies, valid.size))
+                        + " gana su fuerza durante el ataque e inflige daño 1 vez extra por cada uno.", "Agotar", player.field, ids(valid), min(step.allies, valid.size))
                 room.prompt!!.min = 0
                 return true
             }
@@ -103,7 +104,7 @@ object CombatSteps {
                 room.fieldGrants.add(FieldGrant(userId, step.filter, step.keyword, step.until, effect.sourceName, except))
                 refreshContinuous(room)
                 val n = allies(player).count { c -> step.filter!!.matches(c) && c.instanceId != except }
-                record(room, GameEvent.GAIN, userId, null, null, null, effect, java.util.Map.of<String, Any?>("keyword", step.keyword, "count", n),
+                record(room, GameEvent.GAIN, userId, null, null, null, effect, frozenMapOf<String, Any?>("keyword", step.keyword, "count", n),
                     player.username + ": sus " + (if (step.others) "otros " else "") + "aliados ganan " + step.keyword + " " + until + ", también los que entren después ("
                             + effect.sourceName + ")")
                 return false
@@ -173,7 +174,7 @@ object CombatSteps {
                     if (deferRemoval(room, target, opponent, false, CAUSE_EFFECT, userId, effect.sourceInstanceId, effect)) continue
                     removeFromField(opponent, target)
                     opponent!!.hand.add(target)
-                    record(room, GameEvent.SEND, userId, target, "field", "hand", effect, java.util.Map.of<String, Any?>("ownerId", opponent.userId),
+                    record(room, GameEvent.SEND, userId, target, "field", "hand", effect, frozenMapOf<String, Any?>("ownerId", opponent.userId),
                         player.username + " sube a " + name(target) + " a la mano de " + opponent.username + " (" + effect.sourceName + ")")
                 }
                 effect.lastDone = any
@@ -204,7 +205,7 @@ object CombatSteps {
                 val ties = valid.filter { c -> strength(c) == min }
                 if (ties.size == 1) {
                     effect.targetIds.add(ties[0].instanceId)
-                    record(room, GameEvent.TARGET, userId, ties[0], null, null, effect, java.util.Map.of<String, Any?>("targetIds", java.util.List.of(ties[0].instanceId)),
+                    record(room, GameEvent.TARGET, userId, ties[0], null, null, effect, frozenMapOf<String, Any?>("targetIds", frozenListOf(ties[0].instanceId)),
                         player.username + " elige como objetivo a " + name(ties[0]) + " (" + effect.sourceName + ")")
                     return false
                 }
@@ -246,7 +247,7 @@ object CombatSteps {
                     val extra = if (picks.size == 1) "1 vez extra" else picks.size.toString() + " veces extra"
                     floating(self, effect, "Gana fuerza " + gained + " hasta el final del ataque (Agrupar)", "attack", gained, null)
                     floating(self, effect, "Inflige daño " + extra + " (Agrupar)", "attack", 0, lethality)
-                    record(room, GameEvent.GAIN, userId, self, null, null, effect, java.util.Map.of<String, Any?>("keyword", "Agrupar", "strength", gained),
+                    record(room, GameEvent.GAIN, userId, self, null, null, effect, frozenMapOf<String, Any?>("keyword", "Agrupar", "strength", gained),
                         name(self) + " agrupa: gana fuerza " + gained + " e inflige daño " + extra + " durante el ataque")
                 }
             }
@@ -256,7 +257,7 @@ object CombatSteps {
                 if (chosen.contains(null)) return "Ese enemigo ya no está en la línea frontal"
                 if (chosen.sumOf { c -> if (c!!.getLevel() == null) 0 else c.getLevel()!! } != step.sum) return "Sus niveles deben sumar " + step.sum
                 effect.targetIds.addAll(picks)
-                record(room, GameEvent.TARGET, userId, chosen[0], null, null, effect, java.util.Map.of<String, Any?>("targetIds", picks),
+                record(room, GameEvent.TARGET, userId, chosen[0], null, null, effect, frozenMapOf<String, Any?>("targetIds", picks),
                     player.username + " elige como objetivo a " + chosen.joinToString(", ") { name(it) } + " (" + effect.sourceName + ")")
             }
             is PickAllyUpToSacrificedLevel -> {
@@ -305,7 +306,7 @@ object CombatSteps {
                 val target = (if (opponent == null) null else find(frontLine(opponent.field), picks[0]))
                     ?: return "Ese enemigo ya no está en la línea frontal"
                 effect.targetIds.add(target.instanceId)
-                record(room, GameEvent.TARGET, userId, target, null, null, effect, java.util.Map.of<String, Any?>("targetIds", picks),
+                record(room, GameEvent.TARGET, userId, target, null, null, effect, frozenMapOf<String, Any?>("targetIds", picks),
                     player.username + " elige como objetivo a " + name(target) + " (" + effect.sourceName + ")")
             }
             else -> {

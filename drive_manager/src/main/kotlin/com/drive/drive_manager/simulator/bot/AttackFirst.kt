@@ -1,5 +1,8 @@
 package com.drive.drive_manager.simulator.bot
 
+import com.drive.drive_manager.simulator.engine.valueOr
+import com.drive.drive_manager.simulator.engine.frozenListOf
+import com.drive.drive_manager.simulator.engine.frozenMapOf
 import com.drive.drive_manager.simulator.engine.EffectEngine
 import com.drive.drive_manager.simulator.engine.LegalActions
 import com.drive.drive_manager.simulator.room.ActionType
@@ -42,7 +45,7 @@ internal object AttackFirst {
         val before = view(room, me, attack)
         val copy = sandbox.fork(room, me, GameRandom(sandbox.deal()))
         try {
-            val sides = java.util.Map.of<String?, BotPlayer>(me, HeuristicBot(s), copy.getOpponentId(me), HeuristicBot(s))
+            val sides = frozenMapOf<String?, BotPlayer>(me, HeuristicBot(s), copy.getOpponentId(me), HeuristicBot(s))
             for (m in moves.subList(0, at)) {
                 val u = sandbox.act(copy, me, m)
                 if (u != null && u.error != null) return first
@@ -57,7 +60,7 @@ internal object AttackFirst {
     /** What a card may do by the rules' list (`getOrDefault`, a null id included, as the Java map answered it). */
     @Suppress("UNCHECKED_CAST")
     private fun can(byCard: Map<String, List<String>>, id: String?): List<String> {
-        return (byCard as Map<String?, List<String>>).getOrDefault(id, java.util.List.of())
+        return (byCard as Map<String?, List<String>>).valueOr(id, frozenListOf())
     }
 
     /** What the attack meets: the attacker as it stands, whether it may attack, the possible blockers and the target. */

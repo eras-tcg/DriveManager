@@ -1,6 +1,6 @@
 package com.drive.drive_manager.simulator.room
 
-import java.util.stream.Stream
+import com.drive.drive_manager.simulator.engine.frozenListOf
 
 /**
  * Finds a card by its instance id. Each caller says which zones are searched, in which order, and whether the cards
@@ -9,9 +9,9 @@ import java.util.stream.Stream
 object CardLocator {
 
     /** Every zone, in the engine's order: field, hand, tributes, discard pile, deck, lives. */
-    @JvmField val ENGINE_ORDER: List<Zone> = java.util.List.of(*Zone.values())
+    @JvmField val ENGINE_ORDER: List<Zone> = frozenListOf(*Zone.values())
     /** Every zone, in the board's manual actions' order: hand, deck, field, lives, tributes, discard pile. */
-    @JvmField val MANUAL_ORDER: List<Zone> = java.util.List.of(Zone.HAND, Zone.DECK, Zone.FIELD, Zone.LIFE_STACK,
+    @JvmField val MANUAL_ORDER: List<Zone> = frozenListOf(Zone.HAND, Zone.DECK, Zone.FIELD, Zone.LIFE_STACK,
             Zone.TRIBUTE_ZONE, Zone.DISCARD_PILE)
 
     /** A card found and the zone it is in (for an attached card, the zone of the card it is attached to). */
@@ -52,12 +52,12 @@ object CardLocator {
 
     /** Every card of the room's players in `zones`, each followed by its attached cards when asked. */
     @JvmStatic
-    fun cards(room: GameRoom, zones: List<Zone>, includeAttached: Boolean): Stream<CardSlot> {
-        return room.players.values.stream()
-            .flatMap { p -> zones.stream().flatMap { z -> z.of(p).stream() } }
+    fun cards(room: GameRoom, zones: List<Zone>, includeAttached: Boolean): Sequence<CardSlot> {
+        return room.players.values.asSequence()
+            .flatMap { p -> zones.asSequence().flatMap { z -> z.of(p).asSequence() } }
             .flatMap { c ->
-                if (includeAttached) Stream.concat(Stream.of(c), Stream.concat(c.materials!!.stream(), c.resources!!.stream()))
-                else Stream.of(c)
+                if (includeAttached) sequenceOf(c) + c.materials!!.asSequence() + c.resources!!.asSequence()
+                else sequenceOf(c)
             }
     }
 
@@ -65,6 +65,6 @@ object CardLocator {
     @JvmStatic
     fun findInRoom(room: GameRoom, instanceId: String?, zones: List<Zone>, includeAttached: Boolean): CardSlot? {
         if (instanceId == null) return null
-        return cards(room, zones, includeAttached).filter { instanceId == it.instanceId }.findFirst().orElse(null)
+        return cards(room, zones, includeAttached).firstOrNull { instanceId == it.instanceId }
     }
 }

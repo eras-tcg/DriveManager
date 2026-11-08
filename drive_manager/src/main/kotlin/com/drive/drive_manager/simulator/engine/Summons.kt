@@ -1,5 +1,6 @@
 package com.drive.drive_manager.simulator.engine
 
+import kotlin.math.max
 import com.drive.drive_manager.simulator.engine.Chain.advance
 import com.drive.drive_manager.simulator.engine.EffectEngine.CAUSE_EFFECT
 import com.drive.drive_manager.simulator.engine.EffectEngine.CAUSE_RITUAL
@@ -56,7 +57,7 @@ object Summons {
         val canSacrifice = CardEffects.sacrificeToSummon(card)
         val bySacrifice = if (canSacrifice == null) 0 else allies(player).filter { c -> canSacrifice.matches(c) && !name(c).equals(name(card), ignoreCase = true) }
                 .maxOfOrNull { c -> if (c.cost == null) 0 else c.cost!! } ?: 0
-        if (!canPay(room, userId, Math.max(0, cost - bySacrifice - CostModifiers.available(room, player, CostModifiers.Event.SUMMON, null, card, null))))
+        if (!canPay(room, userId, max(0, cost - bySacrifice - CostModifiers.available(room, player, CostModifiers.Event.SUMMON, null, card, null))))
             return "No tienes gemas suficientes: tienes " + gemsOf(room, userId) + " y cuesta " + cost
         return null
     }
@@ -97,22 +98,22 @@ object Summons {
             }
             if (sacrificed != null) {
                 val lower = if (sacrificed.cost == null) 0 else sacrificed.cost!!
-                if (!canPay(room, userId, Math.max(0, cost - lower))) return "No tienes gemas suficientes: tienes " + gemsOf(room, userId) + " y cuesta " + (cost - lower)
+                if (!canPay(room, userId, max(0, cost - lower))) return "No tienes gemas suficientes: tienes " + gemsOf(room, userId) + " y cuesta " + (cost - lower)
                 destroy(room, sacrificed, player, true, CAUSE_EFFECT, userId, card.instanceId, null)
-                cost = Math.max(0, cost - lower)
+                cost = max(0, cost - lower)
             }
         }
         val tap = CostModifiers.unansweredTap(room, player, CostModifiers.Event.SUMMON, null, card)
         if (tap != null) {
             rulesPrompt(room, userId, PromptPurpose.COST_TAP.id(), name(tap.holder) + " · " + tap.modifier.label,
                     "¿Agotas " + name(tap.holder) + " para reducir en " + tap.modifier.reduceNow(room, userId) + " el coste de " + name(card) + "?",
-                    "Agotar", java.util.List.of(tap.holder), java.util.List.of(tap.holder))
+                    "Agotar", frozenListOf(tap.holder), frozenListOf(tap.holder))
             room.prompt!!.kind = Prompt.Kind.CONFIRM
             room.prompt!!.subjectId = card.instanceId
             room.prompt!!.summonerId = NORMAL_SUMMON + (if (y == null) "" else y)
             return null
         }
-        cost = Math.max(0, cost - CostModifiers.applyAutomatic(room, player, CostModifiers.Event.SUMMON, null, card, null, cost))
+        cost = max(0, cost - CostModifiers.applyAutomatic(room, player, CostModifiers.Event.SUMMON, null, card, null, cost))
         if (!canPay(room, userId, cost)) return "No tienes gemas suficientes: tienes " + gemsOf(room, userId) + " y cuesta " + cost
         pay(room, userId, cost)
         if (advantage) room.starterAdvantageUserId = null
@@ -128,7 +129,7 @@ object Summons {
         if (assault) card.tapped = true
         player.field.add(card)
 
-        record(room, GameEvent.NORMAL_SUMMON, userId, card, "hand", "field", null, java.util.Map.of<String, Any?>("cost", cost),
+        record(room, GameEvent.NORMAL_SUMMON, userId, card, "hand", "field", null, frozenMapOf<String, Any?>("cost", cost),
                 player.username + " invocó " + name(card) + " pagando " + gemsText(cost) + (if (advantage) " (ventaja del iniciador)" else ""))
         offerAssault(room, player, card)
         advance(room)
@@ -172,7 +173,7 @@ object Summons {
     @JvmStatic
     fun unplayable(room: GameRoom, userId: String?): MutableList<String> {
         val player = room.getPlayer(userId)
-        if (player == null || room.status != GameRoom.RoomStatus.IN_PROGRESS) return java.util.List.of()
+        if (player == null || room.status != GameRoom.RoomStatus.IN_PROGRESS) return frozenListOf()
         @Suppress("UNCHECKED_CAST")
         return ArrayList(player.hand).filter { c -> Chain.cannotActivateOnPlay(room, userId, c) != null }
                 .map { it.instanceId } as MutableList<String>
@@ -192,7 +193,7 @@ object Summons {
         card.x = x ?: 50.0
         card.y = if (y != null && y >= 55) y else 75.0
         player.field.add(card)
-        record(room, GameEvent.PLAY, player.userId, card, "hand", "field", effect, java.util.Map.of<String, Any?>("cost", cost),
+        record(room, GameEvent.PLAY, player.userId, card, "hand", "field", effect, frozenMapOf<String, Any?>("cost", cost),
                 player.username + " juega " + name(card) + (if (cost == 0) " sin pagar su coste" else " pagando " + gemsText(cost))
                         + (if (effect != null) " (" + effect.sourceName + ")" else ""))
     }
@@ -216,7 +217,7 @@ object Summons {
         val player = room.getPlayer(userId) ?: return
         if ("ritual" == summonType) {
             record(room, GameEvent.SACRIFICE, userId, summoner, "field", "tributeZone", null,
-                    java.util.Map.of<String, Any?>("cause", CAUSE_RITUAL, "ownerId", userId), null)
+                    frozenMapOf<String, Any?>("cause", CAUSE_RITUAL, "ownerId", userId), null)
         } else if ("promotion" == summonType) {
             // Ascenso only tributes the summoner: not a sacrifice nor a destruction (rule 9.6.0.2)
             record(room, GameEvent.TRIBUTE, userId, summoner, "field", "tributeZone", null, null, null)
@@ -224,7 +225,7 @@ object Summons {
         // "manual": done by hand, nothing checked its cost or requirement (unlike specialByPlayer), so it does not count
         // for the missions (MissionEvents)
         record(room, GameEvent.SPECIAL_SUMMON, userId, summoned, null, "field", null,
-                java.util.Map.of<String, Any?>("summonType", summonType ?: "special", GameEvent.MANUAL, true), logText)
+                frozenMapOf<String, Any?>("summonType", summonType ?: "special", GameEvent.MANUAL, true), logText)
         afterSpecialSummon(room, player, summoned!!, null)
         advance(room)
     }
@@ -247,7 +248,7 @@ object Summons {
         if ("creature" == card.cardType && !inFrontLine(card) && find(player.field, card.instanceId) != null) {
             rulesPrompt(room, player.userId, PromptPurpose.SPECIAL_FRONT.id(), name(card) + " · Línea frontal",
                     "¿Mueves a " + name(card) + " a tu línea frontal? Después robas 1 carta por la invocación.",
-                    "A la línea frontal", java.util.List.of(card), java.util.List.of(card))
+                    "A la línea frontal", frozenListOf(card), frozenListOf(card))
             room.prompt!!.kind = Prompt.Kind.CONFIRM
             room.prompt!!.subjectId = card.instanceId
             if (effect != null) room.prompt!!.effectId = effect.id
@@ -265,7 +266,7 @@ object Summons {
         val use = CostModifiers.unansweredTap(room, player, CostModifiers.Event.SPECIAL_SUMMON, kind, card) ?: return false
         rulesPrompt(room, player.userId, PromptPurpose.COST_TAP.id(), name(use.holder) + " · " + use.modifier.label,
                 "¿Agotas " + name(use.holder) + " para reducir en " + use.modifier.reduceNow(room, player.userId) + " el coste especial de " + name(card) + "?",
-                "Agotar", java.util.List.of(use.holder), java.util.List.of(use.holder))
+                "Agotar", frozenListOf(use.holder), frozenListOf(use.holder))
         room.prompt!!.kind = Prompt.Kind.CONFIRM
         room.prompt!!.subjectId = card.instanceId
         room.prompt!!.summonerId = summonerId
@@ -325,7 +326,7 @@ object Summons {
             log(room, "El Ascenso no se completa: " + (if (summoner == null) "el invocador dejó el campo" else "la carta ya no está"), null)
             return
         }
-        specialSummon(room, player, card, specialRequirement(card)!!, summoner, java.util.List.of(), pending.fromZone, 0, null)
+        specialSummon(room, player, card, specialRequirement(card)!!, summoner, frozenListOf(), pending.fromZone, 0, null)
     }
 
     /**
@@ -336,7 +337,7 @@ object Summons {
     fun offerAssault(room: GameRoom, player: PlayerState, card: CardSlot) {
         if (room.prompt != null || keywordLevel(card, "Asalto") == null || inFrontLine(card)) return
         rulesPrompt(room, player.userId, PromptPurpose.ASSAULT.id(), name(card) + " · Asalto",
-                "En lugar de quedar en tu retaguardia, puedes colocarla agotada en tu línea frontal.", "Línea frontal", java.util.List.of(card), java.util.List.of(card))
+                "En lugar de quedar en tu retaguardia, puedes colocarla agotada en tu línea frontal.", "Línea frontal", frozenListOf(card), frozenListOf(card))
         room.prompt!!.kind = Prompt.Kind.CONFIRM
         room.prompt!!.subjectId = card.instanceId
     }
@@ -347,7 +348,7 @@ object Summons {
         room: GameRoom, effect: PendingEffect, player: PlayerState, target: CardSlot, ritual: SpecialRule,
         summoner: CardSlot?, others: List<CardSlot>,
     ) {
-        var cost = Math.max(0, target.specialCost!! - ritual.reduce)
+        var cost = max(0, target.specialCost!! - ritual.reduce)
         cost -= CostModifiers.applyAutomatic(room, player, CostModifiers.Event.SPECIAL_SUMMON, "ritual", target, summoner, cost)
         pay(room, player.userId, cost)
         zone(player, ritual.zone).remove(target)
@@ -371,7 +372,7 @@ object Summons {
         for (other in others) destroy(room, other, player, true, CAUSE_RITUAL, player.userId, null, effect)
         player.field.add(target)
         record(room, GameEvent.SPECIAL_SUMMON, player.userId, target, fromZone, "field", effect,
-                java.util.Map.of<String, Any?>("summonType", "ritual", "cost", cost, "used", 1 + others.size), logText)
+                frozenMapOf<String, Any?>("summonType", "ritual", "cost", cost, "used", 1 + others.size), logText)
         afterSpecialSummon(room, player, target, effect)
     }
 
@@ -381,7 +382,7 @@ object Summons {
         room: GameRoom, effect: PendingEffect, player: PlayerState?, card: CardSlot, fromZone: String?, reduce: Int,
         toFront: Boolean,
     ) {
-        val cost = Math.max(0, card.cost!! - reduce)
+        val cost = max(0, card.cost!! - reduce)
         pay(room, player!!.userId, cost)
         zone(player, fromZone).remove(card)
         card.faceDown = false
@@ -390,7 +391,7 @@ object Summons {
         // By effect it enters the Retaguardia, unless the effect says "en tu línea frontal"
         card.y = if (toFront) 25.0 else 75.0
         player.field.add(card)
-        record(room, GameEvent.EFFECT_SUMMON, player.userId, card, fromZone, "field", effect, java.util.Map.of<String, Any?>("cost", cost),
+        record(room, GameEvent.EFFECT_SUMMON, player.userId, card, fromZone, "field", effect, frozenMapOf<String, Any?>("cost", cost),
                 player.username + " invoca " + name(card) + (if (Zone.HAND.`is`(fromZone)) " de su mano" else " de sus " + zoneName(fromZone))
                         + " pagando " + gemsText(cost)
                         + " (" + effect.sourceName + ")")
@@ -410,6 +411,6 @@ object Summons {
         val card = player.deck.removeAt(0)
         card.faceDown = false
         player.hand.add(card)
-        record(room, GameEvent.DRAW, player.userId, card, "deck", "hand", effect, if (regulatory) java.util.Map.of<String, Any?>("regulatory", true) else null, null)
+        record(room, GameEvent.DRAW, player.userId, card, "deck", "hand", effect, if (regulatory) frozenMapOf<String, Any?>("regulatory", true) else null, null)
     }
 }

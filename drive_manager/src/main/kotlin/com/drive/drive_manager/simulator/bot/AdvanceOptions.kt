@@ -1,5 +1,6 @@
 package com.drive.drive_manager.simulator.bot
 
+import com.drive.drive_manager.simulator.engine.comparingDouble
 import com.drive.drive_manager.simulator.engine.EffectEngine
 import com.drive.drive_manager.simulator.engine.Prompt
 import com.drive.drive_manager.simulator.engine.PromptPurpose
@@ -20,7 +21,7 @@ internal object AdvanceOptions {
         val cards = choices.mapNotNull { id -> self.field.firstOrNull { c -> id!! == c.instanceId } }
         if (cards.size < 2) return
         // All but the most valuable (kept safe in the Retaguardia)
-        val best = cards.maxWith(Comparator.comparingDouble { c: CardSlot -> BotPlayer.value(c) })
+        val best = cards.maxWith(comparingDouble { c: CardSlot -> BotPlayer.value(c) })
         add(options, cards.filter { c -> c !== best }, prompt)
         // Only those that stop the rival's strongest creature (a block that wins or ties); none if none can
         val rival = room.getPlayer(room.getOpponentId(self.userId))

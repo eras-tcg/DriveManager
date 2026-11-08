@@ -1,5 +1,7 @@
 package com.drive.drive_manager.simulator.room
 
+import com.drive.drive_manager.simulator.engine.frozenListOf
+
 class GameAction {
     var type: String? = null
     var payload: MutableMap<String, Any?>? = null
@@ -22,8 +24,8 @@ class GameAction {
     /** A list of strings (ids) from the payload; empty when missing. */
     fun getStringList(key: String): List<String> {
         val v = payload?.get(key)
-        if (v !is List<*>) return java.util.List.of()
-        return v.stream().filter { it is String }.map { it as String }.toList()
+        if (v !is List<*>) return frozenListOf()
+        return v.filterIsInstance<String>()
     }
 
     fun getBoolean(key: String, defaultValue: Boolean): Boolean {

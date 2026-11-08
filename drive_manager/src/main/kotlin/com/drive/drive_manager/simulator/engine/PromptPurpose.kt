@@ -1,6 +1,5 @@
 package com.drive.drive_manager.simulator.engine
 
-import java.util.Optional
 
 /**
  * What a rules prompt asks for, sent to the clients as the prompt's `purpose` string ([id], the
@@ -51,9 +50,9 @@ enum class PromptPurpose {
     companion object {
         /** The purpose with that string, if there is one. */
         @JvmStatic
-        fun parse(purpose: String?): Optional<PromptPurpose> {
-            if (purpose != null) for (p in entries) if (p.name == purpose) return Optional.of(p)
-            return Optional.empty()
+        fun parse(purpose: String?): PromptPurpose? {
+            if (purpose != null) for (p in entries) if (p.name == purpose) return p
+            return null
         }
     }
 }

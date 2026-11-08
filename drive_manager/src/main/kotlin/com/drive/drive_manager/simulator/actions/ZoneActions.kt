@@ -1,5 +1,6 @@
 package com.drive.drive_manager.simulator.actions
 
+import kotlin.math.min
 import com.drive.drive_manager.simulator.engine.GameRandom
 import com.drive.drive_manager.simulator.room.ActionType
 import com.drive.drive_manager.simulator.room.CardSlot
@@ -110,7 +111,7 @@ object ZoneActions {
         val label = cardLabel(card)
         val from  = zoneLabel(fromZone)
 
-        when (Zone.parse(toZone).orElse(null)) {
+        when (Zone.parse(toZone)) {
             Zone.FIELD -> {
                 // A creature entering the field from a non-field zone while the game is
                 // in progress always triggers the effect-summon draw/no-draw prompt
@@ -332,7 +333,7 @@ object ZoneActions {
     fun handleLifeRestart(room: GameRoom, userId: String?): GameStateUpdate {
         val player = room.getPlayer(userId) ?: return GameStateUpdate.notInRoom(room)
         if (!player.lifeStack.isEmpty()) return GameStateUpdate.error(room.roomId, SimMessages.LIFE_STACK_NOT_EMPTY)
-        val count = Math.min(6, player.deck.size)
+        val count = min(6, player.deck.size)
         for (i in 0 until count) {
             val card = player.deck.removeAt(0)
             card.faceDown = true
@@ -449,6 +450,6 @@ object ZoneActions {
 
     @JvmStatic
     fun getZone(player: PlayerState, zoneName: String?): MutableList<CardSlot>? {
-        return Zone.parse(zoneName).map { z -> z.of(player) }.orElse(null)
+        return Zone.parse(zoneName)?.let { z -> z.of(player) }
     }
 }

@@ -1,5 +1,8 @@
 package com.drive.drive_manager.simulator.bot
 
+import com.drive.drive_manager.simulator.engine.valueOr
+import com.drive.drive_manager.simulator.engine.frozenListOf
+import com.drive.drive_manager.simulator.engine.frozenListCopy
 import com.drive.drive_manager.simulator.engine.GameEvent
 import com.drive.drive_manager.simulator.engine.LegalActions
 import com.drive.drive_manager.simulator.room.ActionType
@@ -19,7 +22,7 @@ import com.drive.drive_manager.simulator.room.GameRoom
 internal class PlanKeep {
 
     /** The rest of the plan, and the turn it is of (who plays it and when that turn began). */
-    private var rest: List<GameAction> = java.util.List.of()
+    private var rest: List<GameAction> = frozenListOf()
     private var soft = false
     private var turn: String? = null
 
@@ -37,7 +40,7 @@ internal class PlanKeep {
     /** The move to make now (AttackFirst's choice from the chosen one), remembering the rest of the chosen sequence. */
     fun next(sandbox: Sandbox, room: GameRoom, me: String?, chosen: GameAction?, s: BotSettings): GameAction? {
         val move = AttackFirst.first(sandbox, room, me, chosen, s)
-        rest = java.util.List.of()
+        rest = frozenListOf()
         turn = null
         // A cascade is not kept: it is worth it only while the win or its trades are still there (a block the tries did not
         // expect breaks it), and it is offered afresh at every decision anyway
@@ -47,7 +50,7 @@ internal class PlanKeep {
         // A plan's passing at its end is not kept: what it opens (a free card, an ally untapped) is weighed afresh
         while (!moves.isEmpty() && ActionType.END_TURN.`is`(moves[moves.size - 1])) moves.removeAt(moves.size - 1)
         if (!moves.isEmpty()) {
-            rest = java.util.List.copyOf(moves)
+            rest = frozenListCopy(moves)
             soft = SequenceSearch.soft(chosen)
             turn = turnOf(room)
         }
@@ -69,10 +72,10 @@ internal class PlanKeep {
             val type = ActionType.of(m)
             if (type == ActionType.END_TURN) return true
             val id = m.getString("instanceId")
-            val can: List<String> = if (id == null) java.util.List.of() else LegalActions.of(room, me).getOrDefault(id, java.util.List.of())
+            val can: List<String> = if (id == null) frozenListOf() else LegalActions.of(room, me).valueOr(id, frozenListOf())
             return when (type) {
                 ActionType.ATTACK -> can.contains("attack") && (m.getString("targetInstanceId") == null
-                        || (LegalActions.attackTargets(room, me) as Map<String?, List<String>>).getOrDefault(id, java.util.List.of())
+                        || (LegalActions.attackTargets(room, me) as Map<String?, List<String>>).valueOr(id, frozenListOf())
                             .contains(m.getString("targetInstanceId")))
                 ActionType.NORMAL_SUMMON -> can.contains("summon")
                 ActionType.PLAY_CARD -> can.contains("play")

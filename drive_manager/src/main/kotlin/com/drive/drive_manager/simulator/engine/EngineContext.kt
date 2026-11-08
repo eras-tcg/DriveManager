@@ -1,5 +1,7 @@
 package com.drive.drive_manager.simulator.engine
 
+import kotlin.math.max
+import kotlin.math.min
 import com.drive.drive_manager.simulator.engine.effects.model.Action
 import com.drive.drive_manager.simulator.engine.effects.model.Memory
 import com.drive.drive_manager.simulator.engine.effects.model.Selector
@@ -173,7 +175,7 @@ internal class EngineContext(private val room: GameRoom, private val effect: Pen
 
     override fun attached(zone: String?): List<CardSlot> {
         val host = if (zone!!.endsWith(":subject")) StepHelpers.subject(room, effect) else EffectEngine.find(player()!!.field, effect.sourceInstanceId)
-        if (host == null) return java.util.List.of()
+        if (host == null) return frozenListOf()
         return if (zone.startsWith("materials")) host.materials!! else host.resources!!
     }
 
@@ -203,7 +205,7 @@ internal class EngineContext(private val room: GameRoom, private val effect: Pen
 
     private fun origin(card: CardSlot): Origin? {
         if (EffectEngine.find(effect.looked, card.instanceId) != null) return Origin(player(), "deck", null, true)
-        for (id in java.util.List.of(effect.controllerId, if (room.getOpponentId(effect.controllerId) == null) "" else room.getOpponentId(effect.controllerId))) {
+        for (id in frozenListOf(effect.controllerId, if (room.getOpponentId(effect.controllerId) == null) "" else room.getOpponentId(effect.controllerId))) {
             val p = room.getPlayer(id) ?: continue
             val at = EffectEngine.locate(p, card.instanceId)
             if (at != null) return Origin(p, at.zone, null, false)
@@ -232,7 +234,7 @@ internal class EngineContext(private val room: GameRoom, private val effect: Pen
             // Moving within the field is not leaving it
             if (Zone.FIELD.`is`(from) && (Action.Move.FRONT == to || Action.Move.BACK == to)) {
                 card.y = if (Action.Move.FRONT == to) 25.0 else 75.0
-                EffectEngine.record(room, GameEvent.MOVE, player()!!.userId, card, null, to, effect, java.util.Map.of<String, Any?>("reason", "effect"), null)
+                EffectEngine.record(room, GameEvent.MOVE, player()!!.userId, card, null, to, effect, frozenMapOf<String, Any?>("reason", "effect"), null)
                 done.add(card)
                 continue
             }
@@ -241,7 +243,7 @@ internal class EngineContext(private val room: GameRoom, private val effect: Pen
             else if (Zone.FIELD.`is`(from)) Removals.removeFromField(origin.owner, card)
             else EffectEngine.zone(origin.owner, from).remove(card)
             card.faceDown = Zone.DECK.`is`(zone) || faceDown
-            val data: MutableMap<String, Any?> = java.util.HashMap()
+            val data: MutableMap<String, Any?> = HashMap()
             data["byCard"] = if (origin.host != null) origin.host.instanceId else effect.sourceInstanceId
             data["ownerId"] = origin.owner.userId
             if (Zone.DECK.`is`(zone)) data["position"] = if (Action.Move.DECK_TOP == to) "top" else "bottom"
@@ -329,8 +331,8 @@ internal class EngineContext(private val room: GameRoom, private val effect: Pen
     }
 
     override fun draw(count: Int, bothPlayers: Boolean) {
-        for (p in if (bothPlayers) java.util.List.copyOf(room.players.values) else java.util.List.of(player())) {
-            val n = Math.min(count, p!!.deck.size)
+        for (p in if (bothPlayers) frozenListCopy(room.players.values) else frozenListOf(player())) {
+            val n = min(count, p!!.deck.size)
             for (i in 0 until n) Summons.drawOne(room, p, effect, false)
             if (!bothPlayers) done(n > 0)
             if (n > 0 || count > 0) EffectEngine.log(room, p.username + " roba " + n + " " + (if (n == 1) "carta" else "cartas") + " (" + effect.sourceName + ")"
@@ -341,7 +343,7 @@ internal class EngineContext(private val room: GameRoom, private val effect: Pen
     override fun gainGems(count: Int) {
         val userId = player()!!.userId
         room.sharedCounter = EffectEngine.clamp(room.sharedCounter + count * EffectEngine.direction(room, userId))
-        EffectEngine.record(room, GameEvent.GAIN_GEMS, userId, null, null, null, effect, java.util.Map.of<String, Any?>("count", count),
+        EffectEngine.record(room, GameEvent.GAIN_GEMS, userId, null, null, null, effect, frozenMapOf<String, Any?>("count", count),
             player()!!.username + " gana " + EffectEngine.gemsText(count) + " (" + effect.sourceName + ")")
     }
 
@@ -350,9 +352,9 @@ internal class EngineContext(private val room: GameRoom, private val effect: Pen
     }
 
     override fun look(count: Int) {
-        val n = Math.min(count, player()!!.deck.size)
+        val n = min(count, player()!!.deck.size)
         for (i in 0 until n) effect.looked.add(player()!!.deck.removeAt(0))
-        EffectEngine.record(room, GameEvent.LOOK_TOP, player()!!.userId, null, "deck", null, effect, java.util.Map.of<String, Any?>("count", n),
+        EffectEngine.record(room, GameEvent.LOOK_TOP, player()!!.userId, null, "deck", null, effect, frozenMapOf<String, Any?>("count", n),
             player()!!.username + " mira las primeras " + n + " cartas de su mazo (" + effect.sourceName + ")")
     }
 
@@ -376,12 +378,12 @@ internal class EngineContext(private val room: GameRoom, private val effect: Pen
     override fun setTapped(card: CardSlot?, tapped: Boolean) {
         val owner = ownerOnField(card!!)
         card.tapped = tapped
-        EffectEngine.record(room, if (tapped) GameEvent.TAP else GameEvent.UNTAP, player()!!.userId, card, null, null, effect, java.util.Map.of<String, Any?>("ownerId", owner!!.userId),
+        EffectEngine.record(room, if (tapped) GameEvent.TAP else GameEvent.UNTAP, player()!!.userId, card, null, null, effect, frozenMapOf<String, Any?>("ownerId", owner!!.userId),
             player()!!.username + (if (tapped) " agota a " else " reactiva a ") + EffectEngine.name(card) + " (" + effect.sourceName + ")")
     }
 
     override fun strength(card: CardSlot?): Int {
-        return Math.max(0, EffectEngine.strength(card))
+        return max(0, EffectEngine.strength(card))
     }
 
     override fun changeStrength(card: CardSlot?, amount: Int, until: Action.Until?) {
@@ -405,7 +407,7 @@ internal class EngineContext(private val room: GameRoom, private val effect: Pen
             Action.Until.TURN, Action.Until.AS_EVENT -> card.turnStrength = card.turnStrength + amount
         }
         EffectEngine.floating(card, effect, "Gana fuerza " + amount + text, floatingUntil(until), amount, null)
-        EffectEngine.record(room, GameEvent.GAIN, effect.controllerId, card, null, null, effect, java.util.Map.of<String, Any?>("strength", amount),
+        EffectEngine.record(room, GameEvent.GAIN, effect.controllerId, card, null, null, effect, frozenMapOf<String, Any?>("strength", amount),
             EffectEngine.name(card) + " gana fuerza " + amount + text)
     }
 
@@ -425,7 +427,7 @@ internal class EngineContext(private val room: GameRoom, private val effect: Pen
         if (room.combat != null) room.combat!!.untilEndOfAttack.add(card.instanceId + "|" + EffectEngine.STRENGTH_ENTRY + (-amount))
         val now = strength(card)
         EffectEngine.record(room, GameEvent.STRENGTH_REDUCED, effect.controllerId, card, null, null, effect,
-            java.util.Map.of<String, Any?>("amount", amount, "to", now, "ownerId", owner!!.userId, "untilNextTurn", false),
+            frozenMapOf<String, Any?>("amount", amount, "to", now, "ownerId", owner!!.userId, "untilNextTurn", false),
             EffectEngine.name(card) + " pierde " + amount + " de fuerza hasta el final del ataque (" + effect.sourceName + "): queda en " + now)
         if (now <= 0) Removals.destroy(room, card, owner, false, EffectEngine.CAUSE_EFFECT, effect.controllerId, null, effect)
     }
@@ -446,7 +448,7 @@ internal class EngineContext(private val room: GameRoom, private val effect: Pen
         // A restriction already says what happens ("No puede agotarse"); an ability is gained
         val what = (if (keyword.startsWith("No puede")) keyword else "Gana " + keyword) + untilText(until)
         EffectEngine.floating(card, effect, what, floatingUntil(until), 0, keyword)
-        EffectEngine.record(room, GameEvent.GAIN, effect.controllerId, card, null, null, effect, java.util.Map.of<String, Any?>("keyword", keyword), EffectEngine.name(card) + ": " + what)
+        EffectEngine.record(room, GameEvent.GAIN, effect.controllerId, card, null, null, effect, frozenMapOf<String, Any?>("keyword", keyword), EffectEngine.name(card) + ": " + what)
     }
 
     override fun destroy(card: CardSlot?, sacrifice: Boolean) {
@@ -524,7 +526,7 @@ internal class EngineContext(private val room: GameRoom, private val effect: Pen
 
     override fun play(card: CardSlot?, reduce: Int) {
         val from = detach(card!!) ?: return
-        val cost = Math.max(0, (if (card.cost == null) 0 else card.cost!!) - reduce)
+        val cost = max(0, (if (card.cost == null) 0 else card.cost!!) - reduce)
         EffectEngine.pay(room, effect.controllerId, cost)
         if (!Zone.HAND.`is`(from)) {
             EffectEngine.zone(player(), from).remove(card)
@@ -543,7 +545,7 @@ internal class EngineContext(private val room: GameRoom, private val effect: Pen
     }
 
     override fun requireInChoice(card: CardSlot?) {
-        room.prompt!!.requiredIds = java.util.List.of(card!!.instanceId!!)
+        room.prompt!!.requiredIds = frozenListOf(card!!.instanceId!!)
     }
 
     override fun immune(card: CardSlot?): Boolean {
@@ -610,11 +612,11 @@ internal class EngineContext(private val room: GameRoom, private val effect: Pen
         return when (name!!) {
             Memory.TARGETS -> effect.targetIds
             Memory.LAST -> effect.lastTributed
-            Memory.SUBJECT -> if (effect.subjectId == null) java.util.List.of() else java.util.List.of(effect.subjectId)
-            Memory.SUMMONED -> if (effect.summonedId == null) java.util.List.of() else java.util.List.of(effect.summonedId)
+            Memory.SUBJECT -> if (effect.subjectId == null) frozenListOf() else frozenListOf(effect.subjectId)
+            Memory.SUMMONED -> if (effect.summonedId == null) frozenListOf() else frozenListOf(effect.summonedId)
             else -> {
                 val saved: Map<String, List<String?>> = effect.saved
-                saved.getOrDefault(name, java.util.List.of())
+                saved.valueOr(name, frozenListOf())
             }
         }
     }
@@ -633,7 +635,7 @@ internal class EngineContext(private val room: GameRoom, private val effect: Pen
             Memory.SUBJECT -> {
                 if (!instanceIds!!.isEmpty()) effect.subjectId = instanceIds[0]
             }
-            else -> effect.saved.computeIfAbsent(name) { ArrayList() }.addAll(instanceIds!!)
+            else -> effect.saved.getOrPut(name) { ArrayList() }.addAll(instanceIds!!)
         }
     }
 

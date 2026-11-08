@@ -1,5 +1,9 @@
 package com.drive.drive_manager.simulator.bot
 
+import kotlin.math.pow
+import com.drive.drive_manager.simulator.engine.valueOr
+import com.drive.drive_manager.simulator.engine.mergeWith
+import com.drive.drive_manager.simulator.engine.comparingDouble
 import com.drive.drive_manager.simulator.engine.Playability
 import com.drive.drive_manager.simulator.room.GameRoom
 import com.drive.drive_manager.simulator.room.PlayerState
@@ -39,23 +43,23 @@ internal object HandRank {
         for (i in 0 until n) {
             val c = hand[i]
             val key = if (c.cardName == null) "#$i" else BotSettings.cardKey(c.cardName)
-            val j = copies.merge(key, 1) { a, b -> a + b }!! - 1
+            val j = copies.mergeWith(key, 1) { a, b -> a + b }!! - 1
             var play = 1.0
             if (room != null && rPlay < 1) {
-                val level = levels.computeIfAbsent(key) { Playability.level(room, p.userId, c) }
-                play = Math.pow(rPlay, level.toDouble())
+                val level = levels.getOrPut(key) { Playability.level(room, p.userId, c) }
+                play = rPlay.pow(level.toDouble())
             }
-            q[i] = Math.pow(rCopy, j.toDouble()) * play
+            q[i] = rCopy.pow(j.toDouble()) * play
         }
         // Within each type the best go first: the k-th of a type counts rType^k
         val byType: MutableMap<String, MutableList<Int>> = HashMap()
         for (i in 0 until n) {
             val type = hand[i].cardType ?: ""
-            byType.computeIfAbsent(type) { ArrayList() }.add(i)
+            byType.getOrPut(type) { ArrayList() }.add(i)
         }
         for (same in byType.values) {
-            same.sortWith(Comparator.comparingDouble { i: Int -> -q[i] })
-            for (k in 0 until same.size) q[same[k]] *= Math.pow(rType, k.toDouble())
+            same.sortWith(comparingDouble { i: Int -> -q[i] })
+            for (k in 0 until same.size) q[same[k]] *= rType.pow(k.toDouble())
         }
         return q
     }
@@ -72,7 +76,7 @@ internal object HandRank {
             size[c.instanceId] = BotPlayer.value(c)
         }
         val order: MutableList<String?> = ArrayList(choices)
-        order.sortWith(Comparator.comparingDouble { id: String? -> byId.getOrDefault(id, 1.0) }.thenComparingDouble { id -> size.getOrDefault(id, 0.0) })
+        order.sortWith(comparingDouble { id: String? -> byId.valueOr(id, 1.0) }.then(comparingDouble { id -> size.valueOr(id, 0.0) }))
         return order
     }
 }

@@ -1,12 +1,18 @@
 package com.drive.drive_manager.simulator.bot
 
+import com.drive.drive_manager.simulator.platform.computeIfAbsentAtomic
+import com.drive.drive_manager.simulator.platform.Platform
+import kotlin.math.exp
+import kotlin.math.max
+import kotlin.math.min
+import kotlin.math.pow
+import com.drive.drive_manager.simulator.engine.JavaMath
 import com.drive.drive_manager.simulator.engine.CardEffects
 import com.drive.drive_manager.simulator.engine.EffectEngine
 import com.drive.drive_manager.simulator.engine.EffectScript
 import com.drive.drive_manager.simulator.room.CardSlot
 import com.drive.drive_manager.simulator.room.GameRoom
 import com.drive.drive_manager.simulator.room.PlayerState
-import java.util.concurrent.ConcurrentHashMap
 
 /**
  * frontRisk k (the user's call, 2026-11-05): a creature in the Línea frontal is where the rival's removal reaches (every
@@ -31,21 +37,21 @@ internal object RemovalRisk {
     private val LEVEL_MAX: Regex = Regex("nivel (\\d+) o menor")
     private val LEVEL: Regex = Regex("nivel (\\d+)(?! o)")
     /** The destructions of each card, by name (none: not a removal). */
-    private val BY_CARD: MutableMap<String, List<Reach>> = ConcurrentHashMap()
+    private val BY_CARD: MutableMap<String, List<Reach>> = Platform.concurrentMap()
     /**
      * riskCuts (the user's ST1 games, 2026-11-05): a creature reduced to 0 is destroyed, so a strength reduction of N is a
      * removal of every creature of strength N or less (Arc-xioma, Mathaus, Bertalum; Hez all of the Línea frontal at once).
      * The cuts of each card, by name; and the rival's creatures on the field that cut on their own (an activated effect,
      * one at the start of its turn) threaten for sure next turn, when they have the materials it asks to tribute.
      */
-    private val CUTS_BY_CARD: MutableMap<String, List<Reach>> = ConcurrentHashMap()
+    private val CUTS_BY_CARD: MutableMap<String, List<Reach>> = Platform.concurrentMap()
     private val CUT: Regex = Regex("(?:reduce|reducir)[^.;]*?fuerza en (\\d+)|(?:reduce|reducir) en (\\d+) su fuerza")
     private val MATERIALS: Regex = Regex("tributar (\\d+) materiales?")
 
     /** The penalty each creature of its own in the Línea frontal carries when the rival's turn begins, by instanceId. */
     @JvmStatic
     fun risks(room: GameRoom?, mine: PlayerState?, rival: PlayerState?, w: BotSettings): Map<String?, Double> {
-        val out: MutableMap<String?, Double> = java.util.HashMap()
+        val out: MutableMap<String?, Double> = HashMap()
         val k = w.get("frontRisk")
         if (k == 0.0 || mine == null || rival == null) return out
         val pool: MutableList<CardSlot> = ArrayList(rival.hand)
@@ -53,13 +59,13 @@ internal object RemovalRisk {
         if (pool.isEmpty()) return out
         val draws = rival.hand.size + 1
         // The gems the rival will have: its Marcador next turn, one more paid below 0 at most
-        val gems = Math.min(5, rival.resourceCount + 1) + 1
+        val gems = min(5, rival.resourceCount + 1) + 1
         // riskLives L (the user's call, 2026-11-05): with few lives of its own the bot must take risks (a creature kept
         // back lets the hits through), so the penalty is times 1 - e^(-lives / L): about 0.4 with 1 life, 0.6 with 2 (L=2)
         val lives = w.get("riskLives")
-        val frail = if (lives > 0) 1 - Math.exp(-mine.lifeStack.size / lives) else 1.0
+        val frail = if (lives > 0) 1 - exp(-mine.lifeStack.size / lives) else 1.0
         // riskCuts c: the cuts count c times what a destruction does (they often ask materials or a cost: 0.5 at half)
-        val cutWeight = Math.max(0.0, Math.min(1.0, w.get("riskCuts")))
+        val cutWeight = max(0.0, min(1.0, w.get("riskCuts")))
         val cuts = cutWeight > 0
         // The cuts the rival's creatures on the field make next turn (riskCuts)
         val sure: MutableList<Reach> = ArrayList()
@@ -67,10 +73,10 @@ internal object RemovalRisk {
         for (c in mine.field) {
             if ("creature" != c.cardType || !EffectEngine.inFrontLine(c)) continue
             val reaching = pool.count { r -> reaches(r, c, gems) }
-            var p = if (reaching == 0) 0.0 else 1 - Math.pow(1 - reaching.toDouble() / pool.size, draws.toDouble())
+            var p = if (reaching == 0) 0.0 else 1 - (1 - reaching.toDouble() / pool.size).pow(draws.toDouble())
             if (cuts) {
                 val cutting = pool.count { r -> !reaches(r, c, gems) && RemovalRisk.cuts(r, c, gems) }
-                var pc = if (cutting == 0) 0.0 else 1 - Math.pow(1 - cutting.toDouble() / pool.size, draws.toDouble())
+                var pc = if (cutting == 0) 0.0 else 1 - (1 - cutting.toDouble() / pool.size).pow(draws.toDouble())
                 if (sure.any { r -> r.hits(c) }) pc = 1.0
                 p = 1 - (1 - p) * (1 - cutWeight * pc)
             }
@@ -98,10 +104,10 @@ internal object RemovalRisk {
         // riskSum n (the user's st2 games, 2026-11-05): the rival may play more than one removal (the mirror's Ddraig,
         // Fadrake, Llamarada…), so the n creatures most at risk pay, not only the worst: several bodies within the reach
         // of the removals cost more than one tower beyond it (0 or 1: the worst only, as before)
-        each.sortWith(java.util.Comparator.reverseOrder())
-        val n = Math.max(1, Math.round(w.get("riskSum")).toInt())
+        each.sortWith(reverseOrder())
+        val n = max(1, JavaMath.round(w.get("riskSum")).toInt())
         var sum = 0.0
-        for (i in 0 until Math.min(n, each.size)) sum += each[i]
+        for (i in 0 until min(n, each.size)) sum += each[i]
         return sum
     }
 
@@ -113,7 +119,7 @@ internal object RemovalRisk {
 
     private fun reaches(card: CardSlot): List<Reach> {
         val key = if (card.cardName == null) "" else BotSettings.cardKey(card.cardName)
-        return BY_CARD.computeIfAbsent(key) {
+        return BY_CARD.computeIfAbsentAtomic(key) {
             val out: MutableList<Reach> = ArrayList()
             for (e in CardEffects.of(card)) {
                 val t = if (e.text == null) "" else e.text!!.lowercase()
@@ -134,7 +140,7 @@ internal object RemovalRisk {
     /** The strength reductions on enemies a card's effects make: each reaches strength N or less. */
     private fun cutsOf(card: CardSlot): List<Reach> {
         val key = if (card.cardName == null) "" else BotSettings.cardKey(card.cardName)
-        return CUTS_BY_CARD.computeIfAbsent(key) {
+        return CUTS_BY_CARD.computeIfAbsentAtomic(key) {
             val out: MutableList<Reach> = ArrayList()
             for (e in CardEffects.of(card)) {
                 val t = if (e.text == null) "" else e.text!!.lowercase()

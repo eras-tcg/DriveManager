@@ -25,15 +25,15 @@ data class CardDefinition(
     val traits: CardTraits?,
 ) {
 
-    fun effects(): List<EffectScript> = if (effects == null) java.util.List.of() else java.util.List.copyOf(effects)
+    fun effects(): List<EffectScript> = if (effects == null) frozenListOf() else frozenListCopy(effects)
 
-    fun inherited(): List<EffectScript> = if (inherited == null) java.util.List.of() else java.util.List.copyOf(inherited)
+    fun inherited(): List<EffectScript> = if (inherited == null) frozenListOf() else frozenListCopy(inherited)
 
-    fun continuous(): List<Continuous> = if (continuous == null) java.util.List.of() else java.util.List.copyOf(continuous)
+    fun continuous(): List<Continuous> = if (continuous == null) frozenListOf() else frozenListCopy(continuous)
 
-    fun reactions(): List<Reaction> = if (reactions == null) java.util.List.of() else java.util.List.copyOf(reactions)
+    fun reactions(): List<Reaction> = if (reactions == null) frozenListOf() else frozenListCopy(reactions)
 
-    fun inheritedReactions(): List<Reaction> = if (inheritedReactions == null) java.util.List.of() else java.util.List.copyOf(inheritedReactions)
+    fun inheritedReactions(): List<Reaction> = if (inheritedReactions == null) frozenListOf() else frozenListCopy(inheritedReactions)
 
     /** As a record's: every component, in order, with the lists as read. */
     override fun equals(other: Any?): Boolean {

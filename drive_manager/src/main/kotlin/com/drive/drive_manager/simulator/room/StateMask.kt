@@ -1,5 +1,6 @@
 package com.drive.drive_manager.simulator.room
 
+import com.drive.drive_manager.simulator.engine.frozenSetOf
 import com.drive.drive_manager.simulator.engine.GameEvent
 import com.drive.drive_manager.simulator.engine.Prompt
 
@@ -154,9 +155,9 @@ object StateMask {
     }
 
     /** Events that always name a card only their player sees. */
-    private val PRIVATE_EVENTS: Set<String> = java.util.Set.of(GameEvent.DRAW, GameEvent.LOOK_TOP)
+    private val PRIVATE_EVENTS: Set<String> = frozenSetOf(GameEvent.DRAW, GameEvent.LOOK_TOP)
     /** Events that name a card the viewer cannot see when it went to a hidden place. */
-    private val MOVES: Set<String> = java.util.Set.of(GameEvent.SEND, GameEvent.MOVE)
+    private val MOVES: Set<String> = frozenSetOf(GameEvent.SEND, GameEvent.MOVE)
 
     private fun redact(event: GameEvent, viewerId: String?, hidden: Set<String?>): GameEvent {
         val secret = viewerId!! != event.playerId && (PRIVATE_EVENTS.contains(event.type!!)

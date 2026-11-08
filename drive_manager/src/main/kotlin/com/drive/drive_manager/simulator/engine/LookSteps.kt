@@ -1,5 +1,6 @@
 package com.drive.drive_manager.simulator.engine
 
+import kotlin.math.min
 import com.drive.drive_manager.simulator.engine.EffectEngine.find
 import com.drive.drive_manager.simulator.engine.EffectEngine.ids
 import com.drive.drive_manager.simulator.engine.EffectEngine.log
@@ -49,7 +50,7 @@ object LookSteps {
                 prompt.cards = ArrayList(effect.looked)
                 prompt.validIds = ArrayList(valid)
                 prompt.min = 0
-                prompt.max = Math.min(step.filters!!.size, valid.size)
+                prompt.max = min(step.filters!!.size, valid.size)
                 prompt.reorderRest = true
                 prompt.chosenLabel = "A tu mano"
                 room.prompt = prompt
@@ -65,7 +66,7 @@ object LookSteps {
                 prompt.cards = ArrayList(effect.looked)
                 prompt.validIds = ArrayList(valid)
                 prompt.min = 0
-                prompt.max = Math.min(step.max, valid.size)
+                prompt.max = min(step.max, valid.size)
                 prompt.reorderRest = true
                 prompt.chosenLabel = "A tu mano"
                 room.prompt = prompt
@@ -84,7 +85,7 @@ object LookSteps {
                 if (opponent == null || opponent.hand.isEmpty()) return false
                 val hand: MutableList<CardSlot> = ArrayList(opponent.hand)
                 GameRandom.shuffle(hand, room.random)
-                val revealed = hand.subList(0, Math.min(step.count, hand.size))
+                val revealed = hand.subList(0, min(step.count, hand.size))
                 log(room, opponent.username + " revela " + revealed.joinToString(", ") { name(it) } + " (" + effect.sourceName + ")", null)
                 pick(room, effect, "Envía 1 de las cartas reveladas al fondo del mazo de tu rival.", "Al fondo", revealed, ids(revealed), 1)
                 return true
@@ -92,7 +93,7 @@ object LookSteps {
             is TakeFromLookedLikeSubject -> {
                 if (effect.looked.isEmpty()) return false
                 val subject = subject(room, effect)
-                val classes: List<String> = if (subject == null || subject.classes == null) java.util.List.of() else subject.classes!!
+                val classes: List<String> = if (subject == null || subject.classes == null) frozenListOf() else subject.classes!!
                 SearchHope.apply(room, effect, player, { c -> c.classes != null && c.classes!!.any { t -> classes.any { t.equals(it, ignoreCase = true) } } }, step.max)
                 val valid = effect.looked
                         .filter { c -> c.classes != null && c.classes!!.any { t -> classes.any { t.equals(it, ignoreCase = true) } } }
@@ -147,7 +148,7 @@ object LookSteps {
                 opponent!!.hand.remove(card)
                 card.faceDown = true
                 opponent.deck.add(card)
-                record(room, GameEvent.SEND, userId, card, "hand", "deck", effect, java.util.Map.of<String, Any?>("ownerId", opponent.userId),
+                record(room, GameEvent.SEND, userId, card, "hand", "deck", effect, frozenMapOf<String, Any?>("ownerId", opponent.userId),
                         player.username + " envía " + name(card) + " al fondo del mazo de " + opponent.username + " (" + effect.sourceName + ")")
             }
             is TakeFromLookedLikeSubject -> {

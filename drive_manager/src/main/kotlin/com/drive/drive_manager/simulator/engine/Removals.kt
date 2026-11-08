@@ -1,5 +1,6 @@
 package com.drive.drive_manager.simulator.engine
 
+import kotlin.math.min
 import com.drive.drive_manager.simulator.engine.Chain.advance
 import com.drive.drive_manager.simulator.engine.EffectEngine.ALLY_DESTROYED_BY_OPPONENT
 import com.drive.drive_manager.simulator.engine.EffectEngine.CAUSE_BATTLE
@@ -144,7 +145,7 @@ object Removals {
         val removed = record(room, if (sacrifice) GameEvent.SACRIFICE else GameEvent.DESTROY, byId, card, "field", toZone, effect, data, text)
         // Its materials went to the Descarte with it ("si esta carta es enviada a tu descarte como material")
         for (material in materials) {
-            record(room, GameEvent.SEND, owner.userId, material, "materials", "discardPile", null, java.util.Map.of<String, Any?>("from", card.instanceId), null)
+            record(room, GameEvent.SEND, owner.userId, material, "materials", "discardPile", null, frozenMapOf<String, Any?>("from", card.instanceId), null)
         }
         return removed
     }
@@ -171,7 +172,7 @@ object Removals {
                 resource.x = 50.0
                 resource.y = 75.0
                 owner.field.add(resource)
-                record(room, GameEvent.SEND, owner.userId, resource, "resources", "field", null, java.util.Map.of<String, Any?>("from", card.instanceId),
+                record(room, GameEvent.SEND, owner.userId, resource, "resources", "field", null, frozenMapOf<String, Any?>("from", card.instanceId),
                     name(resource) + " se coloca en la retaguardia de " + owner.username + (if (others.isEmpty()) "" else " con " + others.size
                             + " " + plural(others.size, "recurso", "recursos")) + " antes de que " + name(card) + " sea removida")
             }
@@ -259,7 +260,7 @@ object Removals {
         }
         // "cuando algún aliado fuera a ser removido: en su lugar, puede invocar especialmente esta carta" (EXO-91 from the Tributos, SARS-2 from the hand)
         if ("creature" == card.cardType) {
-            for (z in java.util.List.of("hand", "tributeZone")) {
+            for (z in frozenListOf("hand", "tributeZone")) {
                 for (c in zone(owner, z)) {
                     val s = CardEffects.allyRemovalSummon(c)
                     if (s == null || s.zone != z || !s.ally!!.matches(card)) continue
@@ -312,7 +313,7 @@ object Removals {
         val pending = room.pendingRemovals[0]
         val owner = room.getPlayer(pending.ownerId)
         val card = if (owner == null) null else find(owner.field, pending.cardId)
-        val options: List<ReplacementOption> = if (card == null) java.util.List.of() else replacementOptions(room, card, owner!!, pending.destroy, pending.byId,
+        val options: List<ReplacementOption> = if (card == null) frozenListOf() else replacementOptions(room, card, owner!!, pending.destroy, pending.byId,
             pending.effectId != null)
         if (options.isEmpty()) {
             room.pendingRemovals.removeAt(0)
@@ -354,7 +355,7 @@ object Removals {
                 m.x = 50.0
                 m.y = 75.0
                 player.field.add(m)
-                record(room, GameEvent.SEND, player.userId, m, "materials", "field", null, java.util.Map.of<String, Any?>("from", card.instanceId),
+                record(room, GameEvent.SEND, player.userId, m, "materials", "field", null, frozenMapOf<String, Any?>("from", card.instanceId),
                     player.username + " coloca " + name(m) + " (material de " + name(card) + ") en su retaguardia")
             }
             executeRemoval(room, pending, player, card)
@@ -368,10 +369,10 @@ object Removals {
             if (tributed == null || taken == null || tributed === taken) return "Elige 2 recursos distintos de " + name(card)
             room.prompt = null
             room.pendingRemovals.removeAt(0)
-            card.resources!!.removeAll(java.util.List.of(tributed, taken))
+            card.resources!!.removeAll(frozenListOf(tributed, taken))
             tributed.faceDown = false
             player.tributeZone.add(tributed)
-            record(room, GameEvent.TRIBUTE, player.userId, tributed, "resources", "tributeZone", null, java.util.Map.of<String, Any?>("byCard", card.instanceId), null)
+            record(room, GameEvent.TRIBUTE, player.userId, tributed, "resources", "tributeZone", null, frozenMapOf<String, Any?>("byCard", card.instanceId), null)
             taken.faceDown = false
             player.hand.add(taken)
             record(room, GameEvent.ADD_TO_HAND, player.userId, taken, "resources", "hand", null, null,
@@ -397,7 +398,7 @@ object Removals {
             guard!!.materials!!.remove(material)
             material.faceDown = false
             player.tributeZone.add(material)
-            record(room, GameEvent.TRIBUTE, player.userId, material, "materials", "tributeZone", null, java.util.Map.of<String, Any?>("byCard", guard.instanceId),
+            record(room, GameEvent.TRIBUTE, player.userId, material, "materials", "tributeZone", null, frozenMapOf<String, Any?>("byCard", guard.instanceId),
                 player.username + " tributa " + name(material) + " de los materiales de " + name(guard))
             val saved = room.pendingRemovals.filter { p -> p.ownerId == player.userId
                     && p.effectId == pending.effectId && find(player.field, p.cardId) != null
@@ -479,7 +480,7 @@ object Removals {
                     val m = card.materials!!.removeAt(0)
                     m.faceDown = false
                     player.tributeZone.add(m)
-                    record(room, GameEvent.TRIBUTE, player.userId, m, "materials", "tributeZone", null, java.util.Map.of<String, Any?>("byCard", card.instanceId), null)
+                    record(room, GameEvent.TRIBUTE, player.userId, m, "materials", "tributeZone", null, frozenMapOf<String, Any?>("byCard", card.instanceId), null)
                     i++
                 }
                 log(room, player.username + " tributa 2 materiales de " + name(card) + ": no es removida", null)
@@ -503,7 +504,7 @@ object Removals {
                 for (c in paid) {
                     c.faceDown = false
                     player.tributeZone.add(c)
-                    record(room, GameEvent.TRIBUTE, player.userId, c, "resources", "tributeZone", null, java.util.Map.of<String, Any?>("byCard", card.instanceId), null)
+                    record(room, GameEvent.TRIBUTE, player.userId, c, "resources", "tributeZone", null, frozenMapOf<String, Any?>("byCard", card.instanceId), null)
                 }
                 log(room, player.username + " tributa " + paid.size + " " + plural(paid.size, "recurso", "recursos") + " de " + name(card)
                         + " antes de que sea " + (if (pending.destroy) "destruida" else "removida") + names(paid), null)
@@ -516,7 +517,7 @@ object Removals {
                 rulesPrompt(room, player.userId, PromptPurpose.REPLACE_MATERIALS.id(), name(card) + " · " + r.label,
                     "Coloca hasta 2 de estas criaturas en tu retaguardia; luego " + name(card) + " es destruida.", "A la retaguardia", valid, card.materials)
                 room.prompt!!.min = 1
-                room.prompt!!.max = Math.min(2, valid.size)
+                room.prompt!!.max = min(2, valid.size)
                 return null
             }
             CardEffects.ReplacementCost.TRIBUTE_ONE_FROM_HAND -> {
@@ -560,7 +561,7 @@ object Removals {
         removeFromField(owner, card)
         owner.hand.add(card)
         val by = room.getPlayer(pending.byId)
-        record(room, GameEvent.SEND, pending.byId, card, "field", "hand", effect, java.util.Map.of<String, Any?>("ownerId", owner.userId),
+        record(room, GameEvent.SEND, pending.byId, card, "field", "hand", effect, frozenMapOf<String, Any?>("ownerId", owner.userId),
             (if (by == null) "" else by.username + " ") + "sube a " + name(card) + " a la mano de " + owner.username)
     }
 

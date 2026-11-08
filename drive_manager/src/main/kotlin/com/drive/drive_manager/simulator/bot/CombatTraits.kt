@@ -1,9 +1,11 @@
 package com.drive.drive_manager.simulator.bot
 
+import com.drive.drive_manager.simulator.platform.computeIfAbsentAtomic
+import com.drive.drive_manager.simulator.platform.Platform
+import kotlin.math.max
 import com.drive.drive_manager.simulator.engine.CardEffects
 import com.drive.drive_manager.simulator.engine.EffectScript
 import com.drive.drive_manager.simulator.room.CardSlot
-import java.util.concurrent.ConcurrentHashMap
 
 /**
  * What a creature's effects do to a combat (the user's call, 2026-11-05: CombatSearch must see them; Mawser destroys a
@@ -39,7 +41,7 @@ internal data class CombatTraits(val bonusLevel: Int, val attackStr: Int, val at
         private val DRAW: Regex = Regex("roba (\\d+) carta")
         private val TRIBUTE: Regex = Regex("tributa (\\d+) carta")
         private val SEND: Regex = Regex("enviar (\\d+) de tus tributos")
-        private val BY_CARD: MutableMap<String, CombatTraits> = ConcurrentHashMap()
+        private val BY_CARD: MutableMap<String, CombatTraits> = Platform.concurrentMap()
 
         @JvmStatic
         fun of(card: CardSlot?): CombatTraits {
@@ -48,7 +50,7 @@ internal data class CombatTraits(val bonusLevel: Int, val attackStr: Int, val at
             val key = StringBuilder(BotSettings.cardKey(card.cardName))
             card.resources!!.map { r -> if (r.cardName == null) "" else BotSettings.cardKey(r.cardName) }.sorted()
                     .forEach { n -> key.append('|').append(n) }
-            return BY_CARD.computeIfAbsent(key.toString()) { read(card) }
+            return BY_CARD.computeIfAbsentAtomic(key.toString()) { read(card) }
         }
 
         private fun read(card: CardSlot): CombatTraits {
@@ -70,7 +72,7 @@ internal data class CombatTraits(val bonusLevel: Int, val attackStr: Int, val at
                             aStr = first(STRENGTH, t)
                             aLevel = first(LEVEL, t)
                             if (aStr < 0 && aLevel < 0) aLevel = 99
-                            tributes = Math.max(0, first(SEND, t))
+                            tributes = max(0, first(SEND, t))
                             sacrifice = t.contains("sacrificar")
                         }
                         if (t.contains("invoca")) attackSummon = true
@@ -78,15 +80,15 @@ internal data class CombatTraits(val bonusLevel: Int, val attackStr: Int, val at
                     EffectScript.Moment.ON_DESTROY -> {
                         val draw = first(DRAW, t)
                         val trib = first(TRIBUTE, t)
-                        if (draw > 0) refund = draw - 0.5 * Math.max(0, trib)
+                        if (draw > 0) refund = draw - 0.5 * max(0, trib)
                         if (t.contains("invoca")) refundSummon = true
                     }
                     else -> {
-                        if (t.contains("si esta carta destruye") && destroysEnemy) bonus = Math.max(0, if (first(LEVEL, t) < 0) 99 else first(LEVEL, t))
+                        if (t.contains("si esta carta destruye") && destroysEnemy) bonus = max(0, if (first(LEVEL, t) < 0) 99 else first(LEVEL, t))
                     }
                 }
             }
-            return CombatTraits(bonus, aStr, aLevel, tributes, sacrifice, Math.max(0.0, refund), refundSummon, attackSummon)
+            return CombatTraits(bonus, aStr, aLevel, tributes, sacrifice, max(0.0, refund), refundSummon, attackSummon)
         }
 
         private fun first(p: Regex, t: String): Int {

@@ -45,7 +45,7 @@ object TurnRules {
             for (c in p.field) {
                 if (reactivable(c) && keywordLevel(c, "Reactivar") != null) {
                     c.tapped = false
-                    record(room, GameEvent.UNTAP, p.userId, c, null, null, null, java.util.Map.of<String, Any?>("keyword", "Reactivar"),
+                    record(room, GameEvent.UNTAP, p.userId, c, null, null, null, frozenMapOf<String, Any?>("keyword", "Reactivar"),
                             name(c) + " se reactiva (Reactivar)")
                 }
             }

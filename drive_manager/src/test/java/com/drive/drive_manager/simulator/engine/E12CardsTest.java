@@ -265,7 +265,7 @@ class E12CardsTest extends CardBatchSupport {
         CardEffects.register("tributador de recursos", new EffectScript("tributador:en-invocacion", EffectScript.Moment.ON_SUMMON, true,
                 "En Invocación", "Tributa Anna de los recursos de 1 aliado.", List.of(Compose.tributeResources(1, CardFilter.any()))));
         // The holder tributes its own resource (as its inherited cost would)
-        PendingEffect e = Chain.pending(room, CardEffects.byId("anna:hereda-todos-los-turnos").orElseThrow(), "host", holder, room.getEventSeq());
+        PendingEffect e = Chain.pending(room, java.util.Objects.requireNonNull(CardEffects.byId("anna:hereda-todos-los-turnos")), "host", holder, room.getEventSeq());
         Resolution.run(room, e, Compose.tributeResource("Anna"));
         Chain.advance(room);
         accept(anna);

@@ -372,12 +372,12 @@ sealed interface Condition {
 
         @JvmStatic
         fun any(vararg conditions: Condition): Condition {
-            return Any(java.util.List.of(*conditions))
+            return Any(frozenListOf(*conditions))
         }
 
         @JvmStatic
         fun all(vararg conditions: Condition): Condition {
-            return All(java.util.List.of(*conditions))
+            return All(frozenListOf(*conditions))
         }
 
         @JvmStatic
@@ -398,11 +398,11 @@ sealed interface Condition {
         }
 
         private fun happened(type: String?, thisCard: Boolean, vararg data: String): Condition {
-            return Happened(type, Side.ANY, Side.ANY, thisCard, null, null, null, false, java.util.List.of(*data))
+            return Happened(type, Side.ANY, Side.ANY, thisCard, null, null, null, false, frozenListOf(*data))
         }
 
         private fun moved(from: String?, to: String?): Condition {
-            return Happened(null, Side.ANY, Side.ANY, true, null, from, to, false, java.util.List.of())
+            return Happened(null, Side.ANY, Side.ANY, true, null, from, to, false, frozenListOf())
         }
 
         // The usual printed phrases
@@ -525,8 +525,8 @@ sealed interface Condition {
         @JvmStatic
         fun loneAllyAttacksOrBlocks(): Condition {
             val declared = any(
-                Happened(GameEvent.ATTACK_DECLARED, Side.YOU, Side.ANY, false, null, null, null, false, java.util.List.of()),
-                Happened(GameEvent.BLOCK, Side.YOU, Side.ANY, false, null, null, null, false, java.util.List.of()),
+                Happened(GameEvent.ATTACK_DECLARED, Side.YOU, Side.ANY, false, null, null, null, false, frozenListOf()),
+                Happened(GameEvent.BLOCK, Side.YOU, Side.ANY, false, null, null, null, false, frozenListOf()),
             )
             return all(declared, compare(Amount.OnField(CardFilter.creatures()), Op.EQUAL, 1))
         }
@@ -535,8 +535,8 @@ sealed interface Condition {
         @JvmStatic
         fun lifeRemoved(): Condition {
             return any(
-                Happened(null, Side.ANY, Side.YOU, false, null, "lifeStack", null, false, java.util.List.of()),
-                Happened(null, Side.ANY, Side.ANY, false, null, "lifeStack", null, false, java.util.List.of("defenderId=\$you")),
+                Happened(null, Side.ANY, Side.YOU, false, null, "lifeStack", null, false, frozenListOf()),
+                Happened(null, Side.ANY, Side.ANY, false, null, "lifeStack", null, false, frozenListOf("defenderId=\$you")),
             )
         }
 
@@ -549,7 +549,7 @@ sealed interface Condition {
         /** "si alguna criatura es destruida o invocada especialmente" (either player's). */
         @JvmStatic
         fun creatureDestroyedOrSpecialSummoned(): Condition {
-            val fromLives: Condition = Happened(null, Side.ANY, Side.ANY, false, null, "lifeStack", null, false, java.util.List.of())
+            val fromLives: Condition = Happened(null, Side.ANY, Side.ANY, false, null, "lifeStack", null, false, frozenListOf())
             return any(specialSummoned(), all(Destroyed(Side.ANY, Side.ANY, CardFilter.creatures(), null, false, null, false), Not(fromLives)))
         }
 
@@ -565,7 +565,7 @@ sealed interface Condition {
 
         @JvmStatic
         fun turnStarts(yours: Boolean): Condition {
-            return Happened(GameEvent.TURN_START, if (yours) Side.YOU else Side.ANY, Side.ANY, false, null, null, null, false, java.util.List.of())
+            return Happened(GameEvent.TURN_START, if (yours) Side.YOU else Side.ANY, Side.ANY, false, null, null, null, false, frozenListOf())
         }
 
         @JvmStatic
@@ -575,7 +575,7 @@ sealed interface Condition {
 
         @JvmStatic
         fun turnEnds(yours: Boolean): Condition {
-            return Happened(GameEvent.TURN_END, if (yours) Side.YOU else Side.ANY, Side.ANY, false, null, null, null, false, java.util.List.of())
+            return Happened(GameEvent.TURN_END, if (yours) Side.YOU else Side.ANY, Side.ANY, false, null, null, null, false, frozenListOf())
         }
 
         @JvmStatic
@@ -605,7 +605,7 @@ sealed interface Condition {
 
         @JvmStatic
         fun youPlayed(filter: CardFilter?): Condition {
-            return Happened(GameEvent.PLAY, Side.YOU, Side.ANY, false, filter, null, null, false, java.util.List.of())
+            return Happened(GameEvent.PLAY, Side.YOU, Side.ANY, false, filter, null, null, false, frozenListOf())
         }
 
         @JvmStatic
@@ -625,17 +625,17 @@ sealed interface Condition {
 
         @JvmStatic
         fun thisWentToDiscard(): Condition {
-            return Happened(null, Side.ANY, Side.ANY, false, null, null, "discardPile", false, java.util.List.of())
+            return Happened(null, Side.ANY, Side.ANY, false, null, null, "discardPile", false, frozenListOf())
         }
 
         @JvmStatic
         fun materialRemovedByYou(filter: CardFilter?): Condition {
-            return Happened(null, Side.YOU, Side.ANY, false, filter, "materials", null, true, java.util.List.of())
+            return Happened(null, Side.YOU, Side.ANY, false, filter, "materials", null, true, frozenListOf())
         }
 
         @JvmStatic
         fun allySentToDiscard(): Condition {
-            return Happened(null, Side.ANY, Side.YOU, false, CardFilter.creatures(), "field", "discardPile", false, java.util.List.of())
+            return Happened(null, Side.ANY, Side.YOU, false, CardFilter.creatures(), "field", "discardPile", false, frozenListOf())
         }
 
         @JvmStatic
@@ -735,12 +735,12 @@ sealed interface Condition {
 
         @JvmStatic
         fun allyDeclaresAttack(filter: CardFilter?): Condition {
-            return Happened(GameEvent.ATTACK_DECLARED, Side.YOU, Side.ANY, false, filter, null, null, false, java.util.List.of())
+            return Happened(GameEvent.ATTACK_DECLARED, Side.YOU, Side.ANY, false, filter, null, null, false, frozenListOf())
         }
 
         @JvmStatic
         fun enemyDeclaresAttack(): Condition {
-            return Happened(GameEvent.ATTACK_DECLARED, Side.ENEMY, Side.ANY, false, null, null, null, false, java.util.List.of())
+            return Happened(GameEvent.ATTACK_DECLARED, Side.ENEMY, Side.ANY, false, null, null, null, false, frozenListOf())
         }
 
         /**

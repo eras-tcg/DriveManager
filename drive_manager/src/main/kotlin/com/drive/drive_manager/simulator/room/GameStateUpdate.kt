@@ -1,8 +1,10 @@
 package com.drive.drive_manager.simulator.room
 
+import kotlin.math.max
 import com.drive.drive_manager.simulator.bot.BotCatalog
 import com.drive.drive_manager.simulator.engine.Chain
 import com.drive.drive_manager.simulator.engine.Combat
+import com.drive.drive_manager.simulator.engine.frozenListCopy
 import com.drive.drive_manager.simulator.engine.EffectEngine
 import com.drive.drive_manager.simulator.engine.GameEvent
 import com.drive.drive_manager.simulator.engine.LegalActions
@@ -171,10 +173,11 @@ class GameStateUpdate {
                 legalActions[id] = LegalActions.of(room, id)
                 attackTargets[id] = LegalActions.attackTargets(room, id)
             }
-            val structures = room.players.keys.stream().filter { id -> Summons.structurePlayed(room, id) }.toList()
+            // Unmodifiable, as Stream.toList() made it
+            val structures = frozenListCopy(room.players.keys.filter { id -> Summons.structurePlayed(room, id) })
             u.structurePlayed   = if (structures.isEmpty()) null else structures
             val tl = room.timeline
-            u.timeline          = if (tl.isEmpty()) null else ArrayList(tl.subList(Math.max(0, tl.size - 100), tl.size))
+            u.timeline          = if (tl.isEmpty()) null else ArrayList(tl.subList(max(0, tl.size - 100), tl.size))
             u.postGameChoices   = if (room.postGameChoices.isEmpty())
                                   null else LinkedHashMap(room.postGameChoices)
             return u

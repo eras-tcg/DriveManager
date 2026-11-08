@@ -1,5 +1,7 @@
 package com.drive.drive_manager.simulator.engine
 
+import kotlin.math.max
+import kotlin.math.min
 import com.drive.drive_manager.simulator.engine.EffectEngine.CAUSE_EFFECT
 import com.drive.drive_manager.simulator.engine.EffectEngine.NO_ATTACK
 import com.drive.drive_manager.simulator.engine.EffectEngine.PENDING_EFFECT_DAMAGE
@@ -87,8 +89,8 @@ object StepHelpers {
      */
     @JvmStatic
     fun enemyTargets(room: GameRoom, effect: PendingEffect, filter: CardFilter?): List<CardSlot> {
-        if (inRetaguardia(room, effect)) return java.util.List.of()
-        val opponent = room.getPlayer(room.getOpponentId(effect.controllerId)) ?: return java.util.List.of()
+        if (inRetaguardia(room, effect)) return frozenListOf()
+        val opponent = room.getPlayer(room.getOpponentId(effect.controllerId)) ?: return frozenListOf()
         val level = sourceLevel(room, effect)
         val front = frontLine(opponent.field)
         // Java's method reference (filter::matches) read the filter at once
@@ -106,9 +108,9 @@ object StepHelpers {
         else target.turnStrength = target.turnStrength - amount
         floating(target, effect, "Pierde " + amount + " de fuerza hasta el final del " + (if (untilNextTurn) "próximo turno" else "turno"),
                 if (untilNextTurn) "nextTurn" else "turn", -amount, null)
-        val now = Math.max(0, strength(target))
+        val now = max(0, strength(target))
         record(room, GameEvent.STRENGTH_REDUCED, effect.controllerId, target, null, null, effect,
-                java.util.Map.of<String, Any?>("amount", amount, "to", now, "ownerId", owner!!.userId, "untilNextTurn", untilNextTurn),
+                frozenMapOf<String, Any?>("amount", amount, "to", now, "ownerId", owner!!.userId, "untilNextTurn", untilNextTurn),
                 name(target) + " pierde " + amount + " de fuerza (" + effect.sourceName + "): queda en " + now)
         if (now <= 0) destroy(room, target, owner, false, CAUSE_EFFECT, effect.controllerId, null, effect)
     }
@@ -134,7 +136,7 @@ object StepHelpers {
         val tribute = "creature" == life.cardType && (life.strength == null || CardEffects.lifeStrength(room, defender.userId, life) <= damage)
         (if (tribute) defender.tributeZone else defender.hand).add(life)
         record(room, GameEvent.LIFE_DAMAGE, player.userId, life, "lifeStack", if (tribute) "tributeZone" else "hand", effect,
-                java.util.Map.of<String, Any?>("damage", damage, "attackerId", effect.sourceInstanceId, "defenderId", defender.userId),
+                frozenMapOf<String, Any?>("damage", damage, "attackerId", effect.sourceInstanceId, "defenderId", defender.userId),
                 effect.sourceName + " inflige " + damage + " de daño directo: " + defender.username + " pierde la vida "
                         + name(life) + (if (tribute) ", que va a sus tributos" else ", que va a su mano"))
         if (defender.lifeStack.isEmpty()) loseByLives(room, defender)
@@ -239,7 +241,7 @@ object StepHelpers {
         prompt.cards = ArrayList(effect.looked)
         prompt.validIds = ArrayList(valid)
         prompt.min = 0
-        prompt.max = Math.min(max, valid.size)
+        prompt.max = min(max, valid.size)
         prompt.chosenLabel = "A tu mano"
         room.prompt = prompt
     }
@@ -292,7 +294,7 @@ object StepHelpers {
         (if (asMaterial) ally.materials else ally.resources)!!.add(self)
         effect.lastDone = true
         record(room, GameEvent.SEND, player.userId, self, at.zone, if (asMaterial) "materials" else "resources", effect,
-                java.util.Map.of<String, Any?>("to", ally.instanceId),
+                frozenMapOf<String, Any?>("to", ally.instanceId),
                 player.username + " añade " + name(self) + " como " + (if (asMaterial) "material" else "recurso") + " de " + name(ally))
     }
 
@@ -344,7 +346,7 @@ object StepHelpers {
     /** "1 criatura en el campo": yours, or an enemy's in its Línea frontal when this card is in yours (and it is not immune). */
     @JvmStatic
     fun creaturesOnField(room: GameRoom, effect: PendingEffect, filter: CardFilter?): List<CardSlot> {
-        val player = room.getPlayer(effect.controllerId) ?: return java.util.List.of()
+        val player = room.getPlayer(effect.controllerId) ?: return frozenListOf()
         val all: MutableList<CardSlot> = ArrayList(player.field
                 .filter { c -> "creature" == c.cardType && c.instanceId!! != effect.sourceInstanceId && filter!!.matches(c) })
         all.addAll(enemyTargets(room, effect, filter))
@@ -355,7 +357,7 @@ object StepHelpers {
     /** Creatures of the zone of the ally's level and another name (summoned free). */
     @JvmStatic
     fun likeSubject(player: PlayerState?, like: SummonLikeSubject, ally: CardSlot): List<CardSlot> {
-        if (ally.getLevel() == null) return java.util.List.of()
+        if (ally.getLevel() == null) return frozenListOf()
         return zone(player, like.zone)
                 .filter { c ->
                     "creature" == c.cardType && c.cost != null && like.filter!!.matches(c)
@@ -366,7 +368,7 @@ object StepHelpers {
     /** Creatures that fit within the level sum on their own (summoned free). */
     @JvmStatic
     fun freeLevelSum(room: GameRoom, effect: PendingEffect, sum: SummonFreeLevelSum): List<CardSlot> {
-        val player = room.getPlayer(effect.controllerId) ?: return java.util.List.of()
+        val player = room.getPlayer(effect.controllerId) ?: return frozenListOf()
         val cards = zone(player, sum.zone)
         // Java's method reference (sum.filter()::matches) read the filter at once
         val filter = sum.filter!!
@@ -435,7 +437,7 @@ object StepHelpers {
         card.x = 50.0
         card.y = if (toFront) 25.0 else 75.0
         owner.field.add(card)
-        record(room, GameEvent.SEND, effect.controllerId, card, fromZone, "field", effect, java.util.Map.of<String, Any?>("ownerId", owner.userId, "frontLine", toFront),
+        record(room, GameEvent.SEND, effect.controllerId, card, fromZone, "field", effect, frozenMapOf<String, Any?>("ownerId", owner.userId, "frontLine", toFront),
                 owner.username + " coloca " + name(card) + " en su " + (if (toFront) "línea frontal" else "retaguardia") + (if (exhausted) ", agotada" else "")
                         + " (" + effect.sourceName + ")")
     }
@@ -447,7 +449,7 @@ object StepHelpers {
         if (subject == null || amount == 0) return
         subject.turnStrength = subject.turnStrength + amount
         floating(subject, effect, "Gana fuerza $amount hasta el final del turno", "turn", amount, null)
-        record(room, GameEvent.GAIN, effect.controllerId, subject, null, null, effect, java.util.Map.of<String, Any?>("strength", amount),
+        record(room, GameEvent.GAIN, effect.controllerId, subject, null, null, effect, frozenMapOf<String, Any?>("strength", amount),
                 name(subject) + " gana fuerza " + amount + " hasta el final del turno")
     }
 
@@ -505,7 +507,7 @@ object StepHelpers {
     /** "N criaturas en la línea frontal": yours, and the enemies this effect can affect. */
     @JvmStatic
     fun frontLineCreatures(room: GameRoom, effect: PendingEffect, filter: CardFilter?): List<CardSlot> {
-        val player = room.getPlayer(effect.controllerId) ?: return java.util.List.of()
+        val player = room.getPlayer(effect.controllerId) ?: return frozenListOf()
         val all: MutableList<CardSlot> = ArrayList(frontLine(player.field).filter { c -> "creature" == c.cardType && filter!!.matches(c) })
         all.addAll(enemyTargets(room, effect, filter))
         return all
@@ -515,7 +517,7 @@ object StepHelpers {
     @JvmStatic
     fun weakerThanSelf(room: GameRoom, effect: PendingEffect): List<CardSlot> {
         val player = room.getPlayer(effect.controllerId)
-        val self = (if (player == null) null else find(player.field, effect.sourceInstanceId)) ?: return java.util.List.of()
+        val self = (if (player == null) null else find(player.field, effect.sourceInstanceId)) ?: return frozenListOf()
         return creaturesOnField(room, effect, CardFilter.creatures().withMaxStrength(strength(self) - 1))
     }
 
@@ -564,7 +566,7 @@ object StepHelpers {
 
     private fun declaredMaterialsEnough(player: PlayerState, card: CardSlot, req: SpecialRequirement, c: CardSlot): Boolean {
         val materials = declaredMaterials(player, card, req, c)
-        return if (req.levelSum > 0) sumsExactly(materials, req.levelSum) else materials.size >= Math.max(1, req.materialCount)
+        return if (req.levelSum > 0) sumsExactly(materials, req.levelSum) else materials.size >= max(1, req.materialCount)
     }
 
     /** The materials of `card` besides that summoner, in the zones of its Requerimiento ("materiales que sumen 3 en tus tributos"). */

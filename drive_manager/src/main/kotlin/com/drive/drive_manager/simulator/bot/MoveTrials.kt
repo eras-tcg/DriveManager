@@ -1,5 +1,14 @@
 package com.drive.drive_manager.simulator.bot
 
+import com.drive.drive_manager.simulator.platform.LocalValue
+import com.drive.drive_manager.simulator.platform.Platform
+import kotlin.math.max
+import kotlin.math.min
+import com.drive.drive_manager.simulator.engine.valueOr
+import com.drive.drive_manager.simulator.engine.comparingDouble
+import com.drive.drive_manager.simulator.engine.comparingInt
+import com.drive.drive_manager.simulator.engine.frozenListOf
+import com.drive.drive_manager.simulator.engine.frozenMapOf
 import com.drive.drive_manager.simulator.engine.JavaText
 import com.drive.drive_manager.simulator.engine.EffectEngine
 import com.drive.drive_manager.simulator.engine.GameEvent
@@ -9,7 +18,6 @@ import com.drive.drive_manager.simulator.room.GameRoom
 import com.drive.drive_manager.simulator.room.GameStateUpdate
 import com.drive.drive_manager.simulator.room.PlayerState
 import com.drive.drive_manager.simulator.engine.GameRandom
-import java.util.function.ToDoubleBiFunction
 
 /**
  * One decision of the look-ahead bot: its tries of the candidate moves, until the best is found or time runs out. A
@@ -18,10 +26,15 @@ import java.util.function.ToDoubleBiFunction
  * the settings: `samples` for each move, or by successive halving; each on a deal of its own, or the k-th try of
  * every move on the same k-th deal.
  */
+/** How a tried table is scored for a player (the bot's table score, or its trained model): a `ToDoubleBiFunction` as before. */
+fun interface TableScoring {
+    fun applyAsDouble(room: GameRoom, me: String?): Double
+}
+
 internal class MoveTrials(
     private val settings: BotSettings,
     private val sandbox: Sandbox,
-    private val score: ToDoubleBiFunction<GameRoom, String?>,
+    private val score: TableScoring,
     private val deadline: Long,
 ) {
 
@@ -44,7 +57,7 @@ internal class MoveTrials(
         val sum = DoubleArray(n)
         val tries = IntArray(n)
         for (i in 0 until n) {
-            if (i > 0 && System.nanoTime() > deadline) {
+            if (i > 0 && Platform.nanoTime() > deadline) {
                 ranOutOfTime = true
                 break
             }
@@ -63,8 +76,8 @@ internal class MoveTrials(
      */
     private fun halving(room: GameRoom, me: String?, candidates: List<GameAction>): GameAction {
         val n = candidates.size
-        val rounds = Math.max(1, 32 - (n - 1).countLeadingZeroBits())
-        val perRound = Math.max(1, settings.samples() * n / rounds)
+        val rounds = max(1, 32 - (n - 1).countLeadingZeroBits())
+        val perRound = max(1, settings.samples() * n / rounds)
         val sum = DoubleArray(n)
         val tries = IntArray(n)
         var alive: MutableList<Int> = ArrayList()
@@ -74,13 +87,13 @@ internal class MoveTrials(
         var dealt = 0
         while (alive.size > 1) {
             // firstTries: at least this many tries for every move in the first round (one bad deal does not drop a good move)
-            val more = Math.max(if (dealt == 0) Math.max(1, settings.get("firstTries").toInt()) else 1, perRound / alive.size)
+            val more = max(if (dealt == 0) max(1, settings.get("firstTries").toInt()) else 1, perRound / alive.size)
             // innerFinal: the rest of its own turn thought (innerCands) only once this few moves are left: the cheap
             // tries sort the field, the deep ones decide among the finalists (each finalist gets the same tries)
             val deep = settings.get("innerFinal") < 1 || alive.size <= settings.get("innerFinal")
             for (k in dealt until dealt + more) {
                 for (i in alive) {
-                    if ((k > 0 || i > 0) && System.nanoTime() > deadline) {
+                    if ((k > 0 || i > 0) && Platform.nanoTime() > deadline) {
                         ranOutOfTime = true
                         return pick(candidates, sum, tries, bestMean(sum, tries))
                     }
@@ -92,7 +105,7 @@ internal class MoveTrials(
             dealt += more
             round++
             // Stable: on equal means the earlier move (the heuristic's first) stays ahead
-            alive.sortWith(Comparator.comparingDouble { i: Int -> -sum[i] / tries[i] })
+            alive.sortWith(comparingDouble { i: Int -> -sum[i] / tries[i] })
             for (i in alive.subList((alive.size + 1) / 2, alive.size)) droppedIn[i] = round
             alive = ArrayList(alive.subList(0, (alive.size + 1) / 2))
         }
@@ -136,7 +149,7 @@ internal class MoveTrials(
             var turn = copy.currentTurnUserId
             var passed = 0
             // Both sides of the copy play by the bot's own rules
-            val sides: Map<String?, BotPlayer> = java.util.Map.of<String?, BotPlayer>(me, HeuristicBot(settings), copy.getOpponentId(me), HeuristicBot(settings))
+            val sides: Map<String?, BotPlayer> = frozenMapOf<String?, BotPlayer>(me, HeuristicBot(settings), copy.getOpponentId(me), HeuristicBot(settings))
             // innerCands: the rest of its own turn decided by a small look-ahead (a few candidates, one try each, to the
             // end of the turn) instead of the heuristic; the rival's turn too with innerRival
             val thinker: BotPlayer? = if (!deep || settings.get("innerCands") < 1) null else inner(deal)
@@ -163,8 +176,8 @@ internal class MoveTrials(
                     if (soft && i > 0) continue
                     return Double.NEGATIVE_INFINITY
                 }
-                if (theirs) paidInTheirs += Math.max(0, before - EffectEngine.gemsOf(copy, me))
-                if (me == copy.currentTurnUserId) fewest = Math.min(fewest, EffectEngine.gemsOf(copy, me))
+                if (theirs) paidInTheirs += max(0, before - EffectEngine.gemsOf(copy, me))
+                if (me == copy.currentTurnUserId) fewest = min(fewest, EffectEngine.gemsOf(copy, me))
             }
             // frontRisk: the exposure to the rival's removal is taken when its turn begins (RemovalRisk), not at the end
             // of the try: by then its own turn has begun and everything moved up again
@@ -183,16 +196,16 @@ internal class MoveTrials(
                 val before = EffectEngine.gemsOf(copy, me)
                 val theirs = me!! == seat && me != copy.currentTurnUserId
                 val update = sandbox.act(copy, seat, next)
-                if (theirs) paidInTheirs += Math.max(0, before - EffectEngine.gemsOf(copy, me))
+                if (theirs) paidInTheirs += max(0, before - EffectEngine.gemsOf(copy, me))
                 if (update != null && update.error != null) side.refused(next, update.error)
                 else side.played(copy, next)
-                if (me == copy.currentTurnUserId) fewest = Math.min(fewest, EffectEngine.gemsOf(copy, me))
+                if (me == copy.currentTurnUserId) fewest = min(fewest, EffectEngine.gemsOf(copy, me))
             }
             // winFlat (duel st1-st2 s13395, 2026-11-06): a game won or lost in the try is worth that alone, without what the
             // try added (structures used, the plan's bonus): else winning later, after more moves (a deck emptied, three
             // Volcanes used), outscored the win at hand
             if (settings.get("winFlat") >= 0.5 && copy.status != GameRoom.RoomStatus.IN_PROGRESS && copy.winnerId != null) return score.applyAsDouble(copy, me)
-            val debt: Double = ((if (fewest == Int.MAX_VALUE) 0 else Math.max(0, -fewest)) + (if (settings.get("overExtendRival") >= 0.5) paidInTheirs else 0)).toDouble()
+            val debt: Double = ((if (fewest == Int.MAX_VALUE) 0 else max(0, -fewest)) + (if (settings.get("overExtendRival") >= 0.5) paidInTheirs else 0)).toDouble()
             // rollTriggers: per effect of its own activated in the rest of its turn (searches, draws, summons by effect:
             // what a combo earns and the table at the end of the try barely shows)
             var fired = 0.0
@@ -227,13 +240,13 @@ internal class MoveTrials(
          * its mean score, its tries and the round it was dropped in (0: it won), the chosen one first.
          */
         @JvmField
-        val AUDIT: ThreadLocal<MutableList<String>> = ThreadLocal()
+        val AUDIT: LocalValue<MutableList<String>?> = LocalValue()
 
         private fun audit(room: GameRoom, candidates: List<GameAction>, sum: DoubleArray, tries: IntArray, droppedIn: IntArray, chosen: Int) {
-            val out = AUDIT.get()
+            val out = AUDIT.get()!!
             val order: MutableList<Int> = ArrayList()
             for (i in candidates.indices) order.add(i)
-            order.sortWith(Comparator.comparingInt { i: Int -> if (i == chosen) -1 else if (droppedIn[i] == 0) 0 else -droppedIn[i] + 1000 })
+            order.sortWith(comparingInt { i: Int -> if (i == chosen) -1 else if (droppedIn[i] == 0) 0 else -droppedIn[i] + 1000 })
             for (i in order) {
                 // String.format(Locale.ROOT, "%s%-60s media %8.1f  pruebas %2d  %s", ...), written out
                 val mean = if (tries[i] == 0) Double.NaN else sum[i] / tries[i]
@@ -256,7 +269,7 @@ internal class MoveTrials(
 
         private fun name(room: GameRoom, id: String): String? {
             for (p in room.players.values)
-                for (z in java.util.List.of<List<CardSlot>>(p.hand, p.field, p.tributeZone, p.lifeStack, p.discardPile))
+                for (z in frozenListOf<List<CardSlot>>(p.hand, p.field, p.tributeZone, p.lifeStack, p.discardPile))
                     for (c in z) if (id == c.instanceId) return c.cardName
             return id
         }
@@ -269,16 +282,16 @@ internal class MoveTrials(
         @JvmStatic
         fun top(sandbox: Sandbox, room: GameRoom, me: String?, candidates: List<GameAction>, settings: BotSettings): List<GameAction> {
             val max = settings.maxCandidates()
-            if (candidates.size <= max || settings.get("rankCands") < 0.5) return candidates.subList(0, Math.min(candidates.size, max))
-            val quick: MutableMap<GameAction, Double> = java.util.IdentityHashMap()
+            if (candidates.size <= max || settings.get("rankCands") < 0.5) return candidates.subList(0, min(candidates.size, max))
+            val quick: MutableMap<GameAction, Double> = Platform.identityMap()
             val seed = sandbox.deal()
             // At most a fifth of the decision's time: the moves not screened by then keep their place after the screened ones
-            val until = System.nanoTime() + settings.budgetMs() * 200_000L
+            val until = Platform.nanoTime() + settings.budgetMs() * 200_000L
             for (a in candidates.subList(1, candidates.size)) {
-                if (System.nanoTime() > until) break
+                if (Platform.nanoTime() > until) break
                 val copy = sandbox.fork(room, me, GameRandom(seed))
                 try {
-                    val sides: Map<String?, BotPlayer> = java.util.Map.of<String?, BotPlayer>(me, HeuristicBot(settings), copy.getOpponentId(me), HeuristicBot(settings))
+                    val sides: Map<String?, BotPlayer> = frozenMapOf<String?, BotPlayer>(me, HeuristicBot(settings), copy.getOpponentId(me), HeuristicBot(settings))
                     var v = 0.0
                     val soft = SequenceSearch.soft(a)
                     for (m in SequenceSearch.moves(a)) {
@@ -298,8 +311,8 @@ internal class MoveTrials(
             }
             val rest: MutableList<GameAction> = ArrayList(candidates.subList(1, candidates.size))
             // Stable: the screened ones by their table, the rest (unscreened, -1e9) after them in the list's order
-            rest.sortWith(Comparator.comparingDouble { a: GameAction -> -quick.getOrDefault(a, -1e9) })
-            val out: MutableList<GameAction> = ArrayList(java.util.List.of(candidates[0]))
+            rest.sortWith(comparingDouble { a: GameAction -> -quick.valueOr(a, -1e9) })
+            val out: MutableList<GameAction> = ArrayList(frozenListOf(candidates[0]))
             out.addAll(rest.subList(0, max - 1))
             return out
         }

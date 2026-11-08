@@ -1,5 +1,9 @@
 package com.drive.drive_manager.simulator.bot
 
+import com.drive.drive_manager.simulator.engine.valueOr
+import com.drive.drive_manager.simulator.engine.unmodifiableMapOf
+import com.drive.drive_manager.simulator.engine.frozenListOf
+import com.drive.drive_manager.simulator.engine.frozenMapOf
 import com.drive.drive_manager.simulator.engine.JavaText
 
 /**
@@ -37,9 +41,9 @@ import com.drive.drive_manager.simulator.engine.JavaText
  */
 class BotSettings private constructor(values: Map<String, Double>, bias: Map<String, Double>) {
 
-    private val values: Map<String, Double> = java.util.Collections.unmodifiableMap(LinkedHashMap(values))
+    private val values: Map<String, Double> = unmodifiableMapOf(LinkedHashMap(values))
     /** The cards' own biases, by prefix and name in lower case ("biasT:dirumy"). */
-    private val bias: Map<String, Double> = java.util.Collections.unmodifiableMap(LinkedHashMap(bias))
+    private val bias: Map<String, Double> = unmodifiableMapOf(LinkedHashMap(bias))
     // Read for every table scored: kept apart from the map
     @JvmField internal val life: Double = values["life"]!!
     @JvmField internal val hand: Double = values["hand"]!!
@@ -117,7 +121,7 @@ class BotSettings private constructor(values: Map<String, Double>, bias: Map<Str
     /** A knob, or a card's bias ("bias:dirumy", "biasT:dirumy", "biasD:dirumy"). */
     fun get(name: String?): Double {
         val prefix = biasPrefix(name)
-        if (prefix != null) return bias.getOrDefault(prefix + cardKey(name!!.substring(prefix.length)), 0.0)
+        if (prefix != null) return bias.valueOr(prefix + cardKey(name!!.substring(prefix.length)), 0.0)
         val v = values[name] ?: throw IllegalArgumentException("Unknown setting: " + name)
         return v
     }
@@ -130,7 +134,7 @@ class BotSettings private constructor(values: Map<String, Double>, bias: Map<Str
     /** The card's own bias in the zone of that prefix (0 when not set). */
     fun bias(prefix: String?, cardName: String?): Double {
         if (bias.isEmpty() || cardName == null) return 0.0
-        return bias.getOrDefault(prefix + cardKey(cardName), 0.0)
+        return bias.valueOr(prefix + cardKey(cardName), 0.0)
     }
 
     fun hasBiases(): Boolean {
@@ -175,14 +179,14 @@ class BotSettings private constructor(values: Map<String, Double>, bias: Map<Str
         const val BIAS = "bias:"
         const val BIAS_TRIBUTE = "biasT:"
         const val BIAS_DISCARD = "biasD:"
-        private val BIASES: List<String> = java.util.List.of(BIAS, BIAS_TRIBUTE, BIAS_DISCARD)
+        private val BIASES: List<String> = frozenListOf(BIAS, BIAS_TRIBUTE, BIAS_DISCARD)
 
         private val COMMA = Regex(",")
         private val EQUALS = Regex("=")
 
         private val DEFAULTS: Map<String, Double> = defaults()
         @JvmField
-        val DEFAULT = BotSettings(DEFAULTS, java.util.Map.of())
+        val DEFAULT = BotSettings(DEFAULTS, frozenMapOf())
 
         private fun defaults(): Map<String, Double> {
             val d: MutableMap<String, Double> = LinkedHashMap()
@@ -265,10 +269,10 @@ class BotSettings private constructor(values: Map<String, Double>, bias: Map<Str
             d.put("innerFinal", 0.0)
             d.put("firstTries", 1.0)
             d.put("rankCands", 0.0)
-            for (k in java.util.List.of("uHand", "uCopies", "uTribute", "uDamp", "sHand", "sField", "vLanes", "hCopies", "hDead", "hDeadSpecial")) d.put(k, 0.0)
+            for (k in frozenListOf("uHand", "uCopies", "uTribute", "uDamp", "sHand", "sField", "vLanes", "hCopies", "hDead", "hDeadSpecial")) d.put(k, 0.0)
             // Gems paid below 0 go to the rival for their turn (shared Contador): minus gemDebt per gem below 0 when its turn ends
             d.put("gemDebt", 0.0)
-            for (e in java.util.List.of("eContinuous", "eActivated", "eEvent", "eSummon", "ePlay", "eAttack", "eDestroy", "eInherited")) d.put(e, 0.0)
+            for (e in frozenListOf("eContinuous", "eActivated", "eEvent", "eSummon", "ePlay", "eAttack", "eDestroy", "eInherited")) d.put(e, 0.0)
             // The heuristic bot's rules (HeuristicBot): their defaults are the rules as first written; flags are on at 0.5 or more
             d.put("hMullCost", 4.0)
             d.put("hMullKeep", 2.0)

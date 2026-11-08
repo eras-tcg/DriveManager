@@ -1,6 +1,5 @@
 package com.drive.drive_manager.simulator.room
 
-import java.util.Optional
 
 /**
  * A player's zones, by the id the clients and the card files use ("field", "hand"...). Declared in the order the
@@ -44,20 +43,20 @@ enum class Zone(
     companion object {
         /** The zone with that id, if there is one. */
         @JvmStatic
-        fun parse(zoneId: String?): Optional<Zone> {
-            if (zoneId != null) for (z in values()) if (z.id == zoneId) return Optional.of(z)
-            return Optional.empty()
+        fun parse(zoneId: String?): Zone? {
+            if (zoneId != null) for (z in values()) if (z.id == zoneId) return z
+            return null
         }
 
         /** The engine's word for a zone id; an unknown id is shown as it is. */
         @JvmStatic
-        fun shortLabel(zoneId: String?): String? = parse(zoneId).map { it.shortLabel() }.orElse(zoneId)
+        fun shortLabel(zoneId: String?): String? = parse(zoneId)?.shortLabel() ?: zoneId
 
         /** The manual log's word for a zone id; an unknown id is shown as it is, a missing one as "zona desconocida". */
         @JvmStatic
         fun logLabel(zoneId: String?): String? {
             if (zoneId == null) return "zona desconocida"
-            return parse(zoneId).map { it.logLabel() }.orElse(zoneId)
+            return parse(zoneId)?.logLabel() ?: zoneId
         }
     }
 }

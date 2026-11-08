@@ -1,5 +1,12 @@
 package com.drive.drive_manager.simulator.bot
 
+import kotlin.math.floor
+import kotlin.math.max
+import kotlin.math.min
+import com.drive.drive_manager.simulator.engine.valueOr
+import com.drive.drive_manager.simulator.engine.comparingDouble
+import com.drive.drive_manager.simulator.engine.comparingInt
+import com.drive.drive_manager.simulator.engine.frozenListOf
 import com.drive.drive_manager.simulator.engine.EffectEngine
 import com.drive.drive_manager.simulator.engine.LegalActions
 import com.drive.drive_manager.simulator.engine.Prompt
@@ -66,8 +73,8 @@ internal object CombatSearch {
          * attacks; the attacker's, for the counterattack. A hit takes a life only as LifeHits says: a creature stronger
          * than the damage goes back (Reforzar), a utility or structure goes to the hand.
          */
-        var poolD: List<IntArray> = java.util.List.of()
-        var poolA: List<IntArray> = java.util.List.of()
+        var poolD: List<IntArray> = frozenListOf()
+        var poolA: List<IntArray> = frozenListOf()
         val memo: MutableMap<Long, Double> = HashMap()
         val counters: MutableMap<Long, Double> = HashMap()
         /** States searched, shared with the counterattacks' searches: beyond MAX_NODES it gives up. */
@@ -132,7 +139,7 @@ internal object CombatSearch {
             if (!a[i].unblockable) {
                 for (k in d.indices) {
                     if ((avail and dAlive and (1 shl k)) == 0) continue
-                    best = Math.min(best, clash(i, k, rem, avail and (1 shl k).inv(), dAlive, aAlive, left))
+                    best = min(best, clash(i, k, rem, avail and (1 shl k).inv(), dAlive, aAlive, left))
                 }
             }
             return best
@@ -188,7 +195,7 @@ internal object CombatSearch {
             if (cached != null) return cached
             val theirs: MutableList<Unit> = ArrayList()
             for (k in d.indices) if ((dAlive and (1 shl k)) != 0) theirs.add(d[k])
-            theirs.sortWith(Comparator.comparingInt { u: Unit -> u.str }.reversed())
+            theirs.sortWith(comparingInt { u: Unit -> u.str }.reversed())
             val prey: MutableList<Unit> = ArrayList()
             val guards: MutableList<Unit> = ArrayList()
             for (i in a.indices) {
@@ -212,7 +219,7 @@ internal object CombatSearch {
             for (r in direct) {
                 var block: Unit? = null
                 for (g in guards) if (g.str > r.str && (block == null || g.str < block.str)) block = g
-                if (block == null && left <= r.hits && !guards.isEmpty()) block = guards.minWithOrNull(Comparator.comparingDouble { u: Unit -> u.worth })!!
+                if (block == null && left <= r.hits && !guards.isEmpty()) block = guards.minWithOrNull(comparingDouble { u: Unit -> u.worth })!!
                 if (block != null && !r.unblockable) {
                     guards.remove(block)
                     if (block.str >= r.str) v -= r.loss
@@ -227,7 +234,7 @@ internal object CombatSearch {
                 }
             }
             if (left > 1e-9) v += life * (worthOf(curveOther, livesOther) - worthOfPart(curveOther, left))
-            v = Math.max(0.0, v)
+            v = max(0.0, v)
             counters[key] = v
             return v
         }
@@ -246,7 +253,7 @@ internal object CombatSearch {
     /** In the counterattack: destroys the most valuable of the creatures there (exhausted or blocking) it reaches. */
     private fun take(prey: MutableList<Unit>, guards: MutableList<Unit>, maxStr: Int, maxLevel: Int): Double {
         var at: Unit? = null
-        for (group in java.util.List.of<List<Unit>>(prey, guards)) for (u in group) {
+        for (group in frozenListOf<List<Unit>>(prey, guards)) for (u in group) {
             if (u.within(maxStr, maxLevel) && (at == null || u.loss > at.loss)) at = u
         }
         if (at == null) return 0.0
@@ -257,7 +264,7 @@ internal object CombatSearch {
 
     /** The same for lives in expectation (between n and n + 1: the next life's share). */
     private fun worthOfPart(c: Double, n: Double): Double {
-        val whole = Math.floor(n).toInt()
+        val whole = floor(n).toInt()
         val w0 = worthOf(c, whole)
         val w1 = worthOf(c, whole + 1)
         return w0 + (n - whole) * (w1 - w0)
@@ -268,7 +275,7 @@ internal object CombatSearch {
     fun share(pool: List<IntArray>, damage: Int, w: BotSettings): Double {
         if (pool.isEmpty()) return 1.0
         var sum = 0.0
-        for (x in pool) sum += if (x[0] == 1) (if (x[1] <= damage) 1.0 else 0.0) else Math.max(0.0, w.life - w.hand) / w.life
+        for (x in pool) sum += if (x[0] == 1) (if (x[1] <= damage) 1.0 else 0.0) else max(0.0, w.life - w.hand) / w.life
         return sum / pool.size
     }
 
@@ -284,7 +291,7 @@ internal object CombatSearch {
 
     /** n lives counted from the last one (TableScore's curve; without one, one each). */
     private fun worthOf(c: Double, n: Int): Double {
-        return if (c > 0 && c < 1) TableScore.curve(c, Math.max(0, n)) else Math.max(0, n).toDouble()
+        return if (c > 0 && c < 1) TableScore.curve(c, max(0, n)) else max(0, n).toDouble()
     }
 
     /** The attack to make now by the search, or null to stop attacking; also null when it cannot decide (too big). */
@@ -302,12 +309,12 @@ internal object CombatSearch {
         val theirs = creatures(rival)
         if (mine.size > MAX_UNITS || theirs.size > MAX_UNITS) return null
         val a: MutableList<Unit> = ArrayList()
-        for (c in mine) a.add(unit(c, self, w, legal.getOrDefault(c.instanceId, java.util.List.of()).contains("attack"), guard(c)))
+        for (c in mine) a.add(unit(c, self, w, legal.valueOr(c.instanceId, frozenListOf()).contains("attack"), guard(c)))
         val d: MutableList<Unit> = ArrayList()
         for (c in theirs) d.add(unit(c, rival, w, true, guard(c)))
         val preyOf = IntArray(a.size)
         for (i in a.indices) {
-            for (id in targets.getOrDefault(a[i].id, java.util.List.of())) {
+            for (id in targets.valueOr(a[i].id, frozenListOf())) {
                 for (k in d.indices) if (d[k].id!! == id) preyOf[i] = preyOf[i] or (1 shl k)
             }
         }
@@ -383,12 +390,12 @@ internal object CombatSearch {
             }
         }
         if (f.tooBig || (chosen == null && prompt.min > 0)) return null
-        return if (chosen == null) java.util.List.of() else java.util.List.of(chosen)
+        return if (chosen == null) frozenListOf() else frozenListOf(chosen)
     }
 
     private fun creatures(p: PlayerState): List<CardSlot> {
         return p.field.filter { c -> "creature" == c.cardType }
-            .sortedWith(Comparator.comparingInt { c: CardSlot -> EffectEngine.strength(c) }.reversed())
+            .sortedWith(comparingInt { c: CardSlot -> EffectEngine.strength(c) }.reversed())
     }
 
     /** Active and in the Línea frontal: it can block. */
@@ -401,10 +408,10 @@ internal object CombatSearch {
         val worth = CardWorth.of(c, w)
         val perk = w.get("combatPerk")
         val t = CombatTraits.of(c)
-        val loss = Math.max(0.0, worth - t.refundCards * w.hand - (if (t.refundSummon) perk else 0.0))
+        val loss = max(0.0, worth - t.refundCards * w.hand - (if (t.refundSummon) perk else 0.0))
         // Its effect on attack only when it can pay it: the tributes to send, an ally to sacrifice
         val pays = t.attackKills() && owner.tributeZone.size >= t.attackTributes
-                && (!t.attackSacrifice || owner.field.stream().filter { x -> "creature" == x.cardType }.count() > 1)
+                && (!t.attackSacrifice || owner.field.count { x -> "creature" == x.cardType } > 1)
         return Unit(c.instanceId, EffectEngine.strength(c), worth, hits(c), unblockable, canAttack, guard,
                 if (c.getLevel() == null) 0 else c.getLevel()!!, EffectEngine.inFrontLine(c), loss, if (t.attackSummon) perk else 0.0,
                 t.bonusLevel, if (pays) t.attackStr else -1, if (pays) t.attackLevel else -1)
@@ -416,7 +423,7 @@ internal object CombatSearch {
         for (k in EffectEngine.keywords(attacker)) {
             if (!k.lowercase().startsWith("letalidad")) continue
             val m = Regex("(\\d+)").find(k)
-            if (m != null) extra = Math.max(extra, m.groupValues[1].toInt())
+            if (m != null) extra = max(extra, m.groupValues[1].toInt())
         }
         return 1 + extra
     }

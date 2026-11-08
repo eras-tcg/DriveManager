@@ -1,5 +1,7 @@
 package com.drive.drive_manager.simulator.bot
 
+import kotlin.math.max
+import com.drive.drive_manager.simulator.engine.frozenListOf
 import com.drive.drive_manager.simulator.engine.EffectEngine
 import com.drive.drive_manager.simulator.room.GameRoom
 import com.drive.drive_manager.simulator.room.PlayerState
@@ -12,7 +14,7 @@ import com.drive.drive_manager.simulator.room.PlayerState
 internal object BoardFeatures {
 
     @JvmField
-    val NAMES: List<String> = java.util.List.of(
+    val NAMES: List<String> = frozenListOf(
             "myLives", "oppLives", "myHand", "oppHand", "myDeck", "oppDeck",
             "myCreatures", "oppCreatures",
             "myFrontActiveStr", "oppFrontActiveStr", "myFrontTappedStr", "oppFrontTappedStr", "myBackStr", "oppBackStr",
@@ -61,7 +63,7 @@ internal object BoardFeatures {
             val str = EffectEngine.strength(c)
             creatures++
             value += BotPlayer.value(c)
-            maxStr = Math.max(maxStr, str.toDouble())
+            maxStr = max(maxStr, str.toDouble())
             keywords += EffectEngine.keywords(c).size.toDouble()
             if (!EffectEngine.inFrontLine(c)) back += str.toDouble()
             else if (c.tapped) frontTapped += str.toDouble()

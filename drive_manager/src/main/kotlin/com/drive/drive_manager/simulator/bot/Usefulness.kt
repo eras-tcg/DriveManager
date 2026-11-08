@@ -1,5 +1,15 @@
 package com.drive.drive_manager.simulator.bot
 
+import com.drive.drive_manager.simulator.platform.withLock
+import com.drive.drive_manager.simulator.platform.computeIfAbsentAtomic
+import com.drive.drive_manager.simulator.platform.Platform
+import com.drive.drive_manager.simulator.platform.LocalValue
+import com.drive.drive_manager.simulator.platform.AtomicCounter
+import kotlin.math.max
+import kotlin.math.min
+import com.drive.drive_manager.simulator.engine.frozenListOf
+import com.drive.drive_manager.simulator.engine.frozenSetOf
+import com.drive.drive_manager.simulator.engine.frozenMapOf
 import com.drive.drive_manager.simulator.engine.EffectEngine
 import com.drive.drive_manager.simulator.engine.GameEvent
 import com.drive.drive_manager.simulator.engine.Prompt
@@ -18,25 +28,25 @@ import com.drive.drive_manager.simulator.engine.GameRandom
  */
 internal object Usefulness {
 
-    private val SANDBOX: ThreadLocal<Sandbox> = ThreadLocal.withInitial { Sandbox() }
+    private val SANDBOX: LocalValue<Sandbox> = LocalValue { Sandbox() }
     /**
      * Verdicts already found, per thread: the same card in the same room with the same hand, field, Tributos and gems
      * gets the same answer (a simulation asks again at every step of a turn). Emptied when it grows large.
      */
-    private val SEEN: ThreadLocal<MutableMap<String, Boolean>> = ThreadLocal.withInitial { java.util.HashMap() }
+    private val SEEN: LocalValue<MutableMap<String, Boolean>> = LocalValue { HashMap() }
 
     /** How often it was asked and how often the answer was "nothing" (the bot runs report them). */
     @JvmField
-    val ASKED = java.util.concurrent.atomic.AtomicLong()
+    val ASKED = AtomicCounter()
     @JvmField
-    val NOTHING = java.util.concurrent.atomic.AtomicLong()
+    val NOTHING = AtomicCounter()
     /** Debug: the first tables that differed, before and after (null: not kept). */
     @JvmField
-    @Volatile
+    @kotlin.concurrent.Volatile
     var diffs: MutableList<String>? = null
     /** Debug: per card asked about as a yes, how often it did something and how often nothing. */
     @JvmField
-    val BY_CARD: MutableMap<String, IntArray> = java.util.concurrent.ConcurrentHashMap()
+    val BY_CARD: MutableMap<String, IntArray> = Platform.concurrentMap()
 
     /**
      * hUsefulEnd, for the bot's own decisions: is the turn better with the move than without it? The rest of the turn
@@ -50,7 +60,7 @@ internal object Usefulness {
         val id = play.getString("instanceId")
         val card = if (room.getPlayer(me) == null) null else room.getPlayer(me)!!.hand.firstOrNull { c -> c.instanceId!! == id }
         if (card == null || "utility" != card.cardType) return true
-        return paysOff(room, me, play, null, java.util.Set.of(id), rules)
+        return paysOff(room, me, play, null, frozenSetOf(id), rules)
     }
 
     /** The same for a yes to an optional effect of a utility of its own: against the no. */
@@ -58,10 +68,10 @@ internal object Usefulness {
     fun yesPaysOff(room: GameRoom, me: String?, prompt: Prompt, yes: List<String?>, rules: BotSettings): Boolean {
         val self = room.getPlayer(me)
         if (self == null || yes.isEmpty()) return true
-        val moving: MutableSet<String?> = java.util.HashSet(yes)
+        val moving: MutableSet<String?> = HashSet(yes)
         val source = if (prompt.sourceName == null) "" else BotSettings.cardKey(prompt.sourceName)
         var utility = false
-        for (zone in java.util.List.of(self.hand, self.tributeZone, self.field, self.lifeStack)) {
+        for (zone in frozenListOf(self.hand, self.tributeZone, self.field, self.lifeStack)) {
             for (c in zone) {
                 if (BotSettings.cardKey(c.cardName) == source) moving.add(c.instanceId)
                 if (moving.contains(c.instanceId) && "utility" == c.cardType) utility = true
@@ -69,8 +79,8 @@ internal object Usefulness {
         }
         for (c in prompt.cards) if (yes.contains(c.instanceId) && "utility" == c.cardType) utility = true
         if (!utility) return true
-        val accept = BotPlayer.action(ActionType.RESOLVE_PROMPT, java.util.Map.of<String, Any?>("promptId", prompt.id, "chosen", yes, "order", java.util.List.of<Any>()))
-        val decline = BotPlayer.action(ActionType.RESOLVE_PROMPT, java.util.Map.of<String, Any?>("promptId", prompt.id, "chosen", java.util.List.of<Any>(), "order", java.util.List.of<Any>()))
+        val accept = BotPlayer.action(ActionType.RESOLVE_PROMPT, frozenMapOf<String, Any?>("promptId", prompt.id, "chosen", yes, "order", frozenListOf<Any>()))
+        val decline = BotPlayer.action(ActionType.RESOLVE_PROMPT, frozenMapOf<String, Any?>("promptId", prompt.id, "chosen", frozenListOf<Any>(), "order", frozenListOf<Any>()))
         return paysOff(room, me, accept, decline, moving, rules)
     }
 
@@ -95,9 +105,9 @@ internal object Usefulness {
         val copy = sandbox.fork(room, me, GameRandom(1))
         try {
             val plain = rules.with("hUseful=0,hUsefulEnd=0")
-            val sides = java.util.Map.of<String?, BotPlayer>(me, HeuristicBot(plain), copy.getOpponentId(me), HeuristicBot(plain))
+            val sides = frozenMapOf<String?, BotPlayer>(me, HeuristicBot(plain), copy.getOpponentId(me), HeuristicBot(plain))
             // Without the move, the card is not there to play later in the turn either
-            if (without) for (p in copy.players.values) p.hand.removeIf { c -> moving.contains(c.instanceId) }
+            if (without) for (p in copy.players.values) p.hand.removeAll { c -> moving.contains(c.instanceId) }
             val turn = copy.currentTurnUserId
             if (move != null) {
                 val u = sandbox.act(copy, me, move)
@@ -126,9 +136,9 @@ internal object Usefulness {
         val id = play.getString("instanceId")
         val card = if (room.getPlayer(me) == null) null else room.getPlayer(me)!!.hand.firstOrNull { c -> c.instanceId!! == id }
         if (card == null || "utility" != card.cardType) return true
-        val r = doesSomething(room, me, play, null, java.util.Set.of(id), rules)
-        val n = BY_CARD.computeIfAbsent("[jugar] " + card.cardName) { IntArray(2) }
-        synchronized(n) { n[if (r) 0 else 1]++ }
+        val r = doesSomething(room, me, play, null, frozenSetOf(id), rules)
+        val n = BY_CARD.computeIfAbsentAtomic("[jugar] " + card.cardName) { IntArray(2) }
+        withLock(n) { n[if (r) 0 else 1]++ }
         return r
     }
 
@@ -138,24 +148,24 @@ internal object Usefulness {
         val source = if (prompt.sourceName == null) "" else BotSettings.cardKey(prompt.sourceName)
         val self = room.getPlayer(me) ?: return true
         // The card the effect is of (asked as a yes: its name; as the effects to chain: the card chosen) may move
-        val names: MutableSet<String> = java.util.HashSet(java.util.Set.of(source))
+        val names: MutableSet<String> = HashSet(frozenSetOf(source))
         for (c in prompt.cards) if (yes.contains(c.instanceId)) names.add(BotSettings.cardKey(c.cardName))
-        val moving: MutableSet<String?> = java.util.HashSet(yes)
-        for (zone in java.util.List.of(self.hand, self.tributeZone, self.field)) {
+        val moving: MutableSet<String?> = HashSet(yes)
+        for (zone in frozenListOf(self.hand, self.tributeZone, self.field)) {
             for (c in zone) if (names.contains(BotSettings.cardKey(c.cardName))) moving.add(c.instanceId)
         }
         // Only utilities are judged: a structure or a creature stays and is worth having (its value is the table's)
         var utility = false
-        for (zone in java.util.List.of(self.hand, self.tributeZone, self.field, self.lifeStack)) {
+        for (zone in frozenListOf(self.hand, self.tributeZone, self.field, self.lifeStack)) {
             for (c in zone) if (moving.contains(c.instanceId) && "utility" == c.cardType) utility = true
         }
         for (c in prompt.cards) if (yes.contains(c.instanceId) && "utility" == c.cardType) utility = true
         if (!utility) return true
-        val accept = BotPlayer.action(ActionType.RESOLVE_PROMPT, java.util.Map.of<String, Any?>("promptId", prompt.id, "chosen", yes, "order", java.util.List.of<Any>()))
-        val decline = BotPlayer.action(ActionType.RESOLVE_PROMPT, java.util.Map.of<String, Any?>("promptId", prompt.id, "chosen", java.util.List.of<Any>(), "order", java.util.List.of<Any>()))
+        val accept = BotPlayer.action(ActionType.RESOLVE_PROMPT, frozenMapOf<String, Any?>("promptId", prompt.id, "chosen", yes, "order", frozenListOf<Any>()))
+        val decline = BotPlayer.action(ActionType.RESOLVE_PROMPT, frozenMapOf<String, Any?>("promptId", prompt.id, "chosen", frozenListOf<Any>(), "order", frozenListOf<Any>()))
         val r = doesSomething(room, me, accept, decline, moving, rules)
-        val n = BY_CARD.computeIfAbsent(names.toString() + " " + prompt.purpose + " " + prompt.kind) { IntArray(2) }
-        synchronized(n) { n[if (r) 0 else 1]++ }
+        val n = BY_CARD.computeIfAbsentAtomic(names.toString() + " " + prompt.purpose + " " + prompt.kind) { IntArray(2) }
+        withLock(n) { n[if (r) 0 else 1]++ }
         return r
     }
 
@@ -179,7 +189,7 @@ internal object Usefulness {
         val p = room.getPlayer(me)
         val sb = StringBuilder(room.roomId!!).append('|').append(move.type).append(move.payload as Any?).append('|')
                 .append(EffectEngine.gemsOf(room, me)).append(room.currentTurnUserId).append(room.chain.size)
-        for (zone in java.util.List.of(p!!.hand, p.field, p.tributeZone)) {
+        for (zone in frozenListOf(p!!.hand, p.field, p.tributeZone)) {
             sb.append('/')
             for (c in zone) sb.append(c.instanceId).append(if (c.tapped) "t," else ",")
         }
@@ -210,7 +220,7 @@ internal object Usefulness {
                 if (u != null && u.error != null) return null
                 // What the move opens, answered without this check (no copies within copies)
                 val plain = rules.with("hUseful=0")
-                SequenceSearch.settle(sandbox, copy, me, java.util.Map.of<String?, BotPlayer>(me, HeuristicBot(plain), copy.getOpponentId(me), HeuristicBot(plain)))
+                SequenceSearch.settle(sandbox, copy, me, frozenMapOf<String?, BotPlayer>(me, HeuristicBot(plain), copy.getOpponentId(me), HeuristicBot(plain)))
             }
             if (copy.status != GameRoom.RoomStatus.IN_PROGRESS) return null
             // The gems with what was paid to play cards given back: paying is not doing
@@ -226,7 +236,7 @@ internal object Usefulness {
     private fun firstDiff(a: String, b: String): String {
         var i = 0
         while (i < a.length && i < b.length && a[i] == b[i]) i++
-        return "@" + i + " [" + a.substring(Math.max(0, i - 60), Math.min(a.length, i + 120)) + "] vs [" + b.substring(Math.max(0, i - 60), Math.min(b.length, i + 120)) + "]"
+        return "@" + i + " [" + a.substring(max(0, i - 60), min(a.length, i + 120)) + "] vs [" + b.substring(max(0, i - 60), min(b.length, i + 120)) + "]"
     }
 
     /** Every card of both sides but the ones that may move, zone by zone, and the grants on the field. */
@@ -236,7 +246,7 @@ internal object Usefulness {
             sb.append(p.userId).append('|')
             // Every card as it stands (keywords and marks given included), but not where it is drawn on the table nor
             // the order of a zone, but the deck's (what comes next)
-            for (zone in java.util.List.of(p.hand, p.field, p.tributeZone, p.discardPile, p.deck, p.lifeStack)) {
+            for (zone in frozenListOf(p.hand, p.field, p.tributeZone, p.discardPile, p.deck, p.lifeStack)) {
                 val cards = zone.filter { c -> !moving.contains(c.instanceId) }.map { c -> card(c) }
                 sb.append((if (zone === p.deck) cards else cards.sorted()).joinToString(",")).append('/')
             }

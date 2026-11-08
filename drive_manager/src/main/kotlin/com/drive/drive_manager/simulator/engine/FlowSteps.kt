@@ -1,5 +1,6 @@
 package com.drive.drive_manager.simulator.engine
 
+import kotlin.math.min
 import com.drive.drive_manager.simulator.engine.EffectEngine.END_TURN_REQUESTED
 import com.drive.drive_manager.simulator.engine.EffectEngine.find
 import com.drive.drive_manager.simulator.engine.EffectEngine.findAnywhere
@@ -102,7 +103,7 @@ object FlowSteps {
                 // "puedes A para B": offered only when everything it covers can be done
                 var can = next < steps.size
                 var i = next
-                while (can && i < Math.min(steps.size, next + step.covers)) {
+                while (can && i < min(steps.size, next + step.covers)) {
                     if (steps[i] !is IfDone && !possible(room, effect, steps[i])) can = false
                     i++
                 }
@@ -113,8 +114,8 @@ object FlowSteps {
                 val prompt = prompt(room, effect, Prompt.Kind.CONFIRM, step.question)
                 val source = findAnywhere(room, userId, effect.sourceInstanceId)
                 if (source != null) {
-                    prompt.cards = ArrayList(java.util.List.of(source))
-                    prompt.validIds = ArrayList(java.util.List.of(source.instanceId))
+                    prompt.cards = ArrayList(frozenListOf(source))
+                    prompt.validIds = ArrayList(frozenListOf(source.instanceId))
                 }
                 prompt.min = 0
                 prompt.max = 1

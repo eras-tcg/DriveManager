@@ -45,7 +45,7 @@ object LegalActions {
     }
 
     private fun add(legal: MutableMap<String?, MutableList<String>>, id: String?, action: String) {
-        val actions = legal.computeIfAbsent(id) { ArrayList() }
+        val actions = legal.getOrPut(id) { ArrayList() }
         if (!actions.contains(action)) actions.add(action)
     }
 }

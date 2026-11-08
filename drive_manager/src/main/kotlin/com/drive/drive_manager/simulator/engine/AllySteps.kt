@@ -1,5 +1,6 @@
 package com.drive.drive_manager.simulator.engine
 
+import kotlin.math.min
 import com.drive.drive_manager.simulator.engine.Chain.pending
 import com.drive.drive_manager.simulator.engine.EffectEngine.CAUSE_EFFECT
 import com.drive.drive_manager.simulator.engine.EffectEngine.allies
@@ -96,7 +97,7 @@ object AllySteps {
                 }
                 val valid = ally.resources!!.filter { step.filter!!.matches(it) }
                 pick(room, effect, "Tributa hasta " + step.max + " recursos " + step.filter!!.describe() + " de " + name(ally) + ".", "Tributar",
-                    ally.resources, ids(valid), Math.min(step.max, valid.size))
+                    ally.resources, ids(valid), min(step.max, valid.size))
                 room.prompt!!.min = 0
                 return true
             }
@@ -109,7 +110,7 @@ object AllySteps {
                     return true
                 }
                 val card = findAnywhere(room, userId, effect.ritualTargetId)
-                val valid: List<CardSlot> = if (card == null) java.util.List.of() else higherThan(player, card).filter { c -> c !== card }
+                val valid: List<CardSlot> = if (card == null) frozenListOf() else higherThan(player, card).filter { c -> c !== card }
                 if (valid.isEmpty()) {
                     effect.ritualTargetId = null
                     return false
@@ -127,7 +128,7 @@ object AllySteps {
             }
             is AttachSelfAsResourceToAlly -> {
                 val at = locate(player, effect.sourceInstanceId)
-                val valid: List<CardSlot> = if (at == null) java.util.List.of() else allies(player).filter { c -> c !== at.card }
+                val valid: List<CardSlot> = if (at == null) frozenListOf() else allies(player).filter { c -> c !== at.card }
                 if (valid.isEmpty()) return false
                 pick(room, effect, "Elige el aliado que recibe a " + effect.sourceName + " como recurso.", "Recibe", player.field, ids(valid), 1)
                 return true
@@ -216,7 +217,7 @@ object AllySteps {
                 ally.materials!!.clear()
                 summoned.materials!!.add(ally)
                 summoned.materials!!.addAll(materials)
-                record(room, GameEvent.SEND, userId, ally, "field", "materials", effect, java.util.Map.of<String, Any?>("to", summoned.instanceId),
+                record(room, GameEvent.SEND, userId, ally, "field", "materials", effect, frozenMapOf<String, Any?>("to", summoned.instanceId),
                     player.username + " añade " + name(ally) + (if (materials.isEmpty()) "" else " y sus " + materials.size + " " +
                             plural(materials.size, "material", "materiales")) + " como materiales de " + name(summoned))
                 return false
@@ -281,7 +282,7 @@ object AllySteps {
                     ally!!.resources!!.remove(resource)
                     resource.faceDown = false
                     player.tributeZone.add(resource)
-                    record(room, GameEvent.TRIBUTE, userId, resource, "resources", "tributeZone", effect, java.util.Map.of<String, Any?>("byCard", effect.sourceInstanceId),
+                    record(room, GameEvent.TRIBUTE, userId, resource, "resources", "tributeZone", effect, frozenMapOf<String, Any?>("byCard", effect.sourceInstanceId),
                         player.username + " tributa " + name(resource) + " de los recursos de " + name(ally))
                 }
                 effect.lastCount = picks.size
@@ -301,14 +302,14 @@ object AllySteps {
                 card.faceDown = false
                 ally.resources!!.add(card)
                 effect.lastDone = true
-                record(room, GameEvent.SEND, userId, card, from, "resources", effect, java.util.Map.of<String, Any?>("to", ally.instanceId),
+                record(room, GameEvent.SEND, userId, card, from, "resources", effect, frozenMapOf<String, Any?>("to", ally.instanceId),
                     player.username + " añade " + name(card) + " como recurso de " + name(ally))
             }
             is ReturnAllyOfSummonedLevel -> {
                 val ally = find(player.field, picks[0]) ?: return "Ese aliado ya no está en el campo"
                 removeFromField(player, ally)
                 player.hand.add(ally)
-                effect.lastTributed = ArrayList(java.util.List.of(ally.instanceId))
+                effect.lastTributed = ArrayList(frozenListOf(ally.instanceId))
                 record(room, GameEvent.SEND, userId, ally, "field", "hand", effect, null,
                     player.username + " sube " + name(ally) + " a su mano (" + effect.sourceName + ")")
             }
@@ -329,7 +330,7 @@ object AllySteps {
                 subject.faceDown = false
                 holder.materials!!.add(subject)
                 effect.lastDone = true
-                record(room, GameEvent.SEND, userId, subject, "field", "materials", effect, java.util.Map.of<String, Any?>("to", holder.instanceId),
+                record(room, GameEvent.SEND, userId, subject, "field", "materials", effect, frozenMapOf<String, Any?>("to", holder.instanceId),
                     player.username + " añade " + name(subject) + " como material de " + name(holder) + " (" + effect.sourceName + ")")
             }
             is PickAllyWithMaterials -> {
@@ -353,7 +354,7 @@ object AllySteps {
                     c.resources = ArrayList()
                     leaveField(c)
                     player.tributeZone.add(c)
-                    record(room, GameEvent.TRIBUTE, userId, c, "field", "tributeZone", effect, java.util.Map.of<String, Any?>("byCard", effect.sourceInstanceId),
+                    record(room, GameEvent.TRIBUTE, userId, c, "field", "tributeZone", effect, frozenMapOf<String, Any?>("byCard", effect.sourceInstanceId),
                         player.username + " tributa a " + name(c) + " (" + effect.sourceName + ")")
                 }
             }
@@ -374,7 +375,7 @@ object AllySteps {
                     .firstOrNull { from!!.equals(it, ignoreCase = true) } ?: from
                 floating(card, effect, "Colocada hasta el final del turno: entonces vuelve a tu mano" + (if (giver == null) "" else " (heredado de $giver)"),
                     "turn", 0, null)
-                record(room, GameEvent.SEND, userId, card, "hand", "field", effect, java.util.Map.of<String, Any?>("placed", true),
+                record(room, GameEvent.SEND, userId, card, "hand", "field", effect, frozenMapOf<String, Any?>("placed", true),
                     player.username + " coloca " + name(card) + " en su retaguardia hasta el final del turno (" + effect.sourceName + ")")
             }
             is TributeAllyMaterialWhere -> {
@@ -385,13 +386,13 @@ object AllySteps {
                 material!!.faceDown = false
                 player.tributeZone.add(material)
                 effect.subjectId = holder.instanceId
-                effect.lastTributed = ArrayList(java.util.List.of(material!!.instanceId))
-                record(room, GameEvent.TRIBUTE, userId, material, "materials", "tributeZone", effect, java.util.Map.of<String, Any?>("byCard", effect.sourceInstanceId),
+                effect.lastTributed = ArrayList(frozenListOf(material!!.instanceId))
+                record(room, GameEvent.TRIBUTE, userId, material, "materials", "tributeZone", effect, frozenMapOf<String, Any?>("byCard", effect.sourceInstanceId),
                     player.username + " tributa " + name(material) + " de los materiales de " + name(holder) + " (" + effect.sourceName + ")")
             }
             is SacrificeAlly -> {
                 val ally = find(player.field, picks[0]) ?: return "Ese aliado ya no está en el campo"
-                effect.lastTributed = ArrayList(java.util.List.of(ally.instanceId))
+                effect.lastTributed = ArrayList(frozenListOf(ally.instanceId))
                 destroy(room, ally, player, true, CAUSE_EFFECT, userId, null, effect)
             }
             is AttachLowerFromTributes -> {
@@ -401,7 +402,7 @@ object AllySteps {
                 player.tributeZone.remove(card)
                 card.faceDown = false
                 ally.materials!!.add(card)
-                record(room, GameEvent.SEND, userId, card, "tributeZone", "materials", effect, java.util.Map.of<String, Any?>("to", ally.instanceId),
+                record(room, GameEvent.SEND, userId, card, "tributeZone", "materials", effect, frozenMapOf<String, Any?>("to", ally.instanceId),
                     player.username + " añade " + name(card) + " como material de " + name(ally) + " (" + effect.sourceName + ")")
             }
             is TributeAllyMaterial -> {
@@ -410,7 +411,7 @@ object AllySteps {
                 holder.materials!!.remove(material)
                 material!!.faceDown = false
                 player.tributeZone.add(material)
-                record(room, GameEvent.TRIBUTE, userId, material, "materials", "tributeZone", effect, java.util.Map.of<String, Any?>("byCard", effect.sourceInstanceId),
+                record(room, GameEvent.TRIBUTE, userId, material, "materials", "tributeZone", effect, frozenMapOf<String, Any?>("byCard", effect.sourceInstanceId),
                     player.username + " tributa " + name(material) + " de los materiales de " + name(holder) + " (" + effect.sourceName + ")")
             }
             else -> {

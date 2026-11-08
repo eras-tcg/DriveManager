@@ -1,5 +1,7 @@
 package com.drive.drive_manager.simulator.room
 
+import com.drive.drive_manager.simulator.platform.Platform
+import com.drive.drive_manager.simulator.engine.frozenMapOf
 import com.drive.drive_manager.simulator.actions.ActionDispatcher
 import com.drive.drive_manager.simulator.actions.TurnActions
 import com.drive.drive_manager.simulator.bot.BotSeat
@@ -88,11 +90,11 @@ class RoomEngine(host: RoomHost) {
         /** The same action, as the test room's owner acting for its rival. */
         @JvmStatic
         fun asRival(action: GameAction): GameAction {
-            val payload: MutableMap<String, Any?> = java.util.LinkedHashMap(action.payload ?: java.util.Map.of<String, Any?>())
+            val payload: MutableMap<String, Any?> = LinkedHashMap(action.payload ?: frozenMapOf<String, Any?>())
             payload["actAs"] = EDITOR_RIVAL
             val rival = GameAction()
             rival.type = action.type
-            rival.payload = java.util.HashMap(payload)
+            rival.payload = HashMap(payload)
             return rival
         }
 
@@ -100,7 +102,7 @@ class RoomEngine(host: RoomHost) {
         @JvmStatic
         fun recordLog(room: GameRoom, update: GameStateUpdate, action: GameAction?) {
             if (update.logEntry == null) return
-            val entry = GameLogEntry(System.currentTimeMillis(), update.logEntry)
+            val entry = GameLogEntry(Platform.currentTimeMillis(), update.logEntry)
             if (action != null) {
                 entry.kind = "MANUAL"
                 val id = action.getString("instanceId")

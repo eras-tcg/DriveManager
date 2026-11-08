@@ -1,5 +1,11 @@
 package com.drive.drive_manager.simulator.rank
 
+import kotlin.math.max
+import kotlin.math.min
+import kotlin.math.pow
+import com.drive.drive_manager.simulator.engine.JavaMath
+import com.drive.drive_manager.simulator.engine.frozenListOf
+import com.drive.drive_manager.simulator.engine.frozenMapOf
 import com.drive.drive_manager.simulator.bot.BotCatalog
 
 /**
@@ -24,11 +30,11 @@ object RankRules {
         DIAMOND("Diamante", 5), CHALLENGER("Retador", 0);
 
         fun up(): Tier {
-            return values()[Math.min(ordinal + 1, values().size - 1)]
+            return values()[min(ordinal + 1, values().size - 1)]
         }
 
         fun down(): Tier {
-            return values()[Math.max(ordinal - 1, 0)]
+            return values()[max(ordinal - 1, 0)]
         }
 
         /** Low ranks: losing costs nothing. */
@@ -62,7 +68,7 @@ object RankRules {
     internal const val MIN_POINTS = 10
     internal const val MAX_POINTS = 30
     /** The server's bot strength by level, for the MMR of a ranked game against it. */
-    @JvmField val BOT_MMR: Map<String, Int> = java.util.Map.of(BotCatalog.EASY, 900, BotCatalog.NORMAL, 1100, BotCatalog.HARD, 1300)
+    @JvmField val BOT_MMR: Map<String, Int> = frozenMapOf(BotCatalog.EASY, 900, BotCatalog.NORMAL, 1100, BotCatalog.HARD, 1300)
 
     /**
      * A player's standing.
@@ -93,7 +99,7 @@ object RankRules {
     /** The chance of winning against a rival (Elo). */
     @JvmStatic
     fun expected(mmr: Int, rivalMmr: Int): Double {
-        return 1.0 / (1.0 + Math.pow(10.0, (rivalMmr - mmr) / ELO_SCALE))
+        return 1.0 / (1.0 + 10.0.pow((rivalMmr - mmr) / ELO_SCALE))
     }
 
     /** The standing after a ranked game against a rival of `rivalMmr`. */
@@ -101,7 +107,7 @@ object RankRules {
     fun after(s: Standing, won: Boolean, rivalMmr: Int): Change {
         val e = expected(s.mmr, rivalMmr)
         val k = if (s.games < PLACEMENT_GAMES) K_PLACEMENT else K
-        val mmrDelta = Math.round(k * ((if (won) 1 else 0) - e)).toInt()
+        val mmrDelta = JavaMath.round(k * ((if (won) 1 else 0) - e)).toInt()
         val base = Standing(s.mmr + mmrDelta, s.games + 1, s.wins + (if (won) 1 else 0), s.losses + (if (won) 0 else 1),
                 s.tier, s.gems, s.shields, s.inSeries, s.seriesWins, s.seriesLosses, s.points, s.peak)
         val step = if (s.tier == Tier.CHALLENGER) challenger(base, won, e) else if (won) win(base) else loss(base)
@@ -139,11 +145,11 @@ object RankRules {
             return Step(gems(s, 0, left), "Tu escudo te protege (" + (if (left == 1) "queda 1" else if (left == 0) "no quedan más" else "quedan " + left) + ")")
         }
         val down = t.down()
-        return Step(entered(s, down, Math.min(AFTER_SERIES, down.gems - 1)), "Bajas a " + down.label)
+        return Step(entered(s, down, min(AFTER_SERIES, down.gems - 1)), "Bajas a " + down.label)
     }
 
     private fun challenger(s: Standing, won: Boolean, expected: Double): Step {
-        val delta = Math.round(MIN_POINTS + (MAX_POINTS - MIN_POINTS) * (if (won) 1 - expected else expected)).toInt()
+        val delta = JavaMath.round(MIN_POINTS + (MAX_POINTS - MIN_POINTS) * (if (won) 1 - expected else expected)).toInt()
         val points = s.points + (if (won) delta else -delta)
         if (points < 0) return Step(entered(s, Tier.DIAMOND, AFTER_SERIES), "Bajas a Diamante")
         val after = Standing(s.mmr, s.games, s.wins, s.losses, s.tier, 0, 0, false, 0, 0, points, s.peak)
@@ -178,6 +184,6 @@ object RankRules {
     /** The tiers in order, as the web shows them. */
     @JvmStatic
     fun tiers(): List<Tier> {
-        return java.util.List.of(*Tier.values())
+        return frozenListOf(*Tier.values())
     }
 }

@@ -1,5 +1,6 @@
 package com.drive.drive_manager.simulator.engine
 
+import kotlin.math.max
 import com.drive.drive_manager.simulator.engine.Chain.advance
 import com.drive.drive_manager.simulator.engine.EffectEngine.canPay
 import com.drive.drive_manager.simulator.engine.EffectEngine.find
@@ -146,7 +147,7 @@ object SpecialSummons {
             val shown: MutableList<CardSlot> = ArrayList()
             for (z in option.materialZones!!) shown.addAll(zone(player, z))
             rulesPrompt(room, userId, PromptPurpose.SPECIAL.id(), name(card) + " · " + kind, materialInstruction(req, card, summoner), "Material", materials, shown)
-            room.prompt!!.min = Math.max(1, option.materialCount)
+            room.prompt!!.min = max(1, option.materialCount)
             room.prompt!!.max = if (option.levelSum > 0) materials.size else option.materialCount
             room.prompt!!.subjectId = card.instanceId
             room.prompt!!.summonerId = summoner.instanceId
@@ -155,7 +156,7 @@ object SpecialSummons {
         if (!canPay(room, userId, card.specialCost!! - CostModifiers.available(room, player, CostModifiers.Event.SPECIAL_SUMMON, req.kind, card, summoner))) {
             return "No tienes gemas suficientes para invocarla con " + name(summoner)
         }
-        handSpecial(room, player, card, req, summoner, java.util.List.of(), fromZone)
+        handSpecial(room, player, card, req, summoner, frozenListOf(), fromZone)
         return null
     }
 
@@ -172,10 +173,10 @@ object SpecialSummons {
         // "cuando esta carta fuera a ser ascendida: puede declarar ataque" (Príncipe Charles): asked before the Ascenso
         if ("promotion" == req.kind && summoner != null && CardEffects.attacksBeforeAscended(summoner) && room.combat == null
                 && room.pendingAscension == null && inFrontLine(summoner)) {
-            val options: MutableList<CardSlot> = ArrayList(java.util.List.of(summoner))
+            val options: MutableList<CardSlot> = ArrayList(frozenListOf(summoner))
             options.addAll(CombatRules.attackTargets(room, player.userId, summoner))
             val opponent = room.getPlayer(room.getOpponentId(player.userId))
-            val shown: MutableList<CardSlot> = ArrayList(java.util.List.of(summoner))
+            val shown: MutableList<CardSlot> = ArrayList(frozenListOf(summoner))
             if (opponent != null) shown.addAll(opponent.field)
             rulesPrompt(room, player.userId, PromptPurpose.ASCEND_ATTACK.id(), name(summoner) + " va a ser ascendida",
                     "Puede declarar ataque antes: elige " + name(summoner) + " para atacar al oponente, o una criatura enemiga agotada. "
@@ -190,7 +191,7 @@ object SpecialSummons {
         var use = CostModifiers.choice(room, player, CostModifiers.Event.SPECIAL_SUMMON, req.kind, card, summoner)
         if (use != null && !materials.isEmpty() && use.modifier.payment!!.kind != CostModifiers.PaymentKind.SELF_DAMAGE) use = null
         if (use != null) {
-            room.usedThisTurn.removeIf { k -> k.startsWith(DISCOUNT_MATERIALS + card.instanceId + "|") }
+            room.usedThisTurn.removeAll { k -> k.startsWith(DISCOUNT_MATERIALS + card.instanceId + "|") }
             if (!materials.isEmpty()) room.usedThisTurn.add(DISCOUNT_MATERIALS + card.instanceId + "|" + ids(materials).joinToString(","))
             rulesPrompt(room, player.userId, PromptPurpose.SUMMONER_DISCOUNT.id(), name(use.holder) + " · " + use.modifier.label,
                     CostModifiers.describe(use), "Pagar", CostModifiers.paymentOptions(player, use, card), player.tributeZone)
@@ -220,7 +221,7 @@ object SpecialSummons {
         materials: List<CardSlot>, fromZone: String?, reduce: Int, effect: PendingEffect?,
     ) {
         val userId = player.userId
-        var cost = Math.max(0, card.specialCost!! - reduce - fieldPiecesDiscount(player, card, summoner, materials))
+        var cost = max(0, card.specialCost!! - reduce - fieldPiecesDiscount(player, card, summoner, materials))
         // Its cost modifiers that ask for no choice ("reduce en 1 el coste especial", "puedes agotar esta carta para reducir…")
         cost -= CostModifiers.applyAutomatic(room, player, CostModifiers.Event.SPECIAL_SUMMON, req.kind, card, summoner, cost)
         pay(room, userId, cost)
@@ -250,7 +251,7 @@ object SpecialSummons {
                 // Java added the summoner as it was (a null one too)
                 @Suppress("UNCHECKED_CAST")
                 (player.tributeZone as MutableList<CardSlot?>).add(summoner)
-                record(room, GameEvent.TRIBUTE, userId, summoner, "field", "tributeZone", null, java.util.Map.of<String, Any?>("cause", "promotion"), null)
+                record(room, GameEvent.TRIBUTE, userId, summoner, "field", "tributeZone", null, frozenMapOf<String, Any?>("cause", "promotion"), null)
             }
             "evolution" -> {
                 @Suppress("UNCHECKED_CAST")
@@ -271,7 +272,7 @@ object SpecialSummons {
         }
         player.field.add(card)
         record(room, GameEvent.SPECIAL_SUMMON, userId, card, fromZone, "field", effect,
-                java.util.Map.of<String, Any?>("summonType", req.kind, "cost", cost, "used", (if (summoner == null) 0 else 1) + materials.size),
+                frozenMapOf<String, Any?>("summonType", req.kind, "cost", cost, "used", (if (summoner == null) 0 else 1) + materials.size),
                 player.username + " invoca por " + kindName(req.kind) + " a " + name(card) + " usando " + used + " y pagando "
                         + gemsText(cost) + (if (effect != null) " (" + effect.sourceName + ")" else ""))
         afterSpecialSummon(room, player, card, effect)
@@ -311,13 +312,13 @@ object SpecialSummons {
             shown.remove(ally)
             rulesPrompt(room, player.userId, PromptPurpose.REPLACE_SUMMON.id(), name(card) + " · en lugar de que " + name(ally) + " sea removida",
                     materialInstruction(req, card, ally), "Material", materials, shown)
-            room.prompt!!.min = Math.max(1, option.materialCount)
+            room.prompt!!.min = max(1, option.materialCount)
             room.prompt!!.max = if (option.levelSum > 0) materials.size else option.materialCount
             room.prompt!!.subjectId = card.instanceId
             room.prompt!!.summonerId = ally.instanceId
             return
         }
-        specialSummon(room, player, card, req, ally, java.util.List.of(), from, if (s == null) 0 else s.reduce, null)
+        specialSummon(room, player, card, req, ally, frozenListOf(), from, if (s == null) 0 else s.reduce, null)
     }
 
     /** The materials chosen for [summonInsteadOfRemoval]. */

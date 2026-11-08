@@ -1,7 +1,7 @@
 package com.drive.drive_manager.simulator.room
 
-import java.time.Instant
-import java.util.UUID
+import com.drive.drive_manager.simulator.platform.Platform
+
 
 /** How a room is set up: a new one (friendly, ranked or a test room) and a waiting room turned into a test room. */
 internal object RoomSetup {
@@ -20,8 +20,8 @@ internal object RoomSetup {
             seatTestRival(room)
         }
         room.ranked = ranked && !editor
-        room.emptySince = Instant.now()
-        room.roomId = UUID.randomUUID().toString().replace("-", "").substring(0, 8)
+        room.emptySince = Platform.now()
+        room.roomId = Platform.randomHexId().substring(0, 8)
         return room
     }
 

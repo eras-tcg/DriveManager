@@ -1,5 +1,6 @@
 package com.drive.drive_manager.simulator.engine;
 
+import kotlin.jvm.JvmClassMappingKt;
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -15,7 +16,7 @@ class ResolutionTest {
     /** Every step (a record, or a Kotlin data object where a record had no fields) under the sealed families. */
     private void check(Class<?> type) {
         if (type.isRecord() || kotlinObject(type)) {
-            if (type != EffectStep.Do.class) assertThat(Resolution.hasFamily(type)).as(type.getSimpleName()).isTrue();
+            if (type != EffectStep.Do.class) assertThat(Resolution.hasFamily(JvmClassMappingKt.getKotlinClass(type))).as(type.getSimpleName()).isTrue();
             return;
         }
         Class<?>[] permitted = type.getPermittedSubclasses();

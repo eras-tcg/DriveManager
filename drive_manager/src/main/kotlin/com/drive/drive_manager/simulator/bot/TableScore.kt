@@ -1,5 +1,11 @@
 package com.drive.drive_manager.simulator.bot
 
+import kotlin.math.max
+import kotlin.math.min
+import kotlin.math.pow
+import com.drive.drive_manager.simulator.engine.valueOr
+import com.drive.drive_manager.simulator.engine.mergeWith
+import com.drive.drive_manager.simulator.engine.frozenListOf
 import com.drive.drive_manager.simulator.engine.EffectEngine
 import com.drive.drive_manager.simulator.room.CardSlot
 import com.drive.drive_manager.simulator.room.GameRoom
@@ -67,7 +73,7 @@ internal object TableScore {
     @JvmStatic
     fun overExtend(debt: Double, rivalHand: Int, w: BotSettings): Double {
         if (debt <= 0) return 0.0
-        return w.get("gemDebt") * Math.pow(debt, w.get("overExtendPow")) * (1 + w.get("overExtendUnc") * rivalHand)
+        return w.get("gemDebt") * debt.pow(w.get("overExtendPow")) * (1 + w.get("overExtendUnc") * rivalHand)
     }
 
     /**
@@ -90,7 +96,7 @@ internal object TableScore {
      */
     @JvmStatic
     fun dead(room: GameRoom, me: String?, p: PlayerState, w: BotSettings): Double {
-        val next = Math.min(5, p.resourceCount + 1)
+        val next = min(5, p.resourceCount + 1)
         var s = 0.0
         for (c in p.hand) {
             if ("creature" != c.cardType) continue
@@ -132,8 +138,8 @@ internal object TableScore {
         val n = p.hand.size
         if (!(d > 0 && d < 1) && !(h > 0 && h < 1) && !rank) return n.toDouble()
         val each = if (rank) HandRank.quality(room, p, w) else DoubleArray(n)
-        for (i in 0 until n) each[i] = (if (rank) each[i] else 1.0) * (if (h > 0 && h < 1) Math.pow(h, waitOf(p.hand[i], p).toDouble()) else 1.0)
-        java.util.Arrays.sort(each)
+        for (i in 0 until n) each[i] = (if (rank) each[i] else 1.0) * (if (h > 0 && h < 1) h.pow(waitOf(p.hand[i], p).toDouble()) else 1.0)
+        each.sort()
         var sum = 0.0
         var f = 1.0
         for (i in n - 1 downTo 0) {
@@ -146,15 +152,15 @@ internal object TableScore {
     /** Turns until the card can be played, by its cost and the player's Marcador (an estimate). */
     @JvmStatic
     fun waitOf(c: CardSlot, p: PlayerState): Int {
-        val next = Math.min(5, p.resourceCount + 1)
+        val next = min(5, p.resourceCount + 1)
         val cost = c.cost
         if (cost == null) {
             // Only by a special summon: its price and a material to find
             val special = if (c.specialCost == null) 6 else c.specialCost!!
-            return Math.max(1, special - next) + 2
+            return max(1, special - next) + 2
         }
         // Beyond 5 the Marcador never pays it alone: it waits for reductions
-        return if (cost <= 5) Math.max(0, cost - next) else cost - next + 2
+        return if (cost <= 5) max(0, cost - next) else cost - next + 2
     }
 
     /** What a side is worth: its lives, its hand, its field (by position), its Tributos and Descarte, a deck about to run out. */
@@ -171,15 +177,15 @@ internal object TableScore {
         // handLow: the last cards are scarce (the user's game, 2026-11-04: it emptied its hand for little): minus handLow
         // per card short of handFloor in the hand, so giving up the last ones costs more than one card's worth
         val low = w.get("handLow")
-        if (low != 0.0) s -= low * Math.max(0.0, w.get("handFloor") - p.hand.size)
+        if (low != 0.0) s -= low * max(0.0, w.get("handFloor") - p.hand.size)
         if (w.zHand != 0.0) for (c in p.hand) s += w.zHand * CardWorth.of(c, w)
         // zHandPlay: the hand's quality, each card's worth while it can be played soon (hPickWait per turn of waiting):
         // a search that brings a good card it can play is worth more than any card
         val zp = w.get("zHandPlay")
-        if (zp != 0.0) for (c in p.hand) s += zp * CardWorth.of(c, w) * Math.pow(w.get("hPickWait"), waitOf(c, p).toDouble())
+        if (zp != 0.0) for (c in p.hand) s += zp * CardWorth.of(c, w) * (w.get("hPickWait")).pow(waitOf(c, p).toDouble())
         if (w.uHand != 0.0 || w.uCopies != 0.0 || w.sHand != 0.0) {
             // A utility is worth holding once: each further copy of it in the hand is worth uCopies less
-            val held: MutableSet<String> = java.util.HashSet()
+            val held: MutableSet<String> = HashSet()
             for (c in p.hand) {
                 if ("structure" == c.cardType) s += w.sHand
                 else if ("utility" == c.cardType) s += if (held.add(BotSettings.cardKey(c.cardName))) w.uHand else w.uHand - w.uCopies
@@ -187,18 +193,18 @@ internal object TableScore {
         }
         if (w.hCopies != 0.0) {
             // A second copy of a card in the hand adds less than the first: hCopies less for each copy beyond one
-            val seen: MutableSet<String> = java.util.HashSet()
+            val seen: MutableSet<String> = HashSet()
             for (c in p.hand) if (!seen.add(BotSettings.cardKey(c.cardName))) s -= w.hCopies
         }
         if (w.uTribute != 0.0) {
             // A utility in the Tributos does nothing there (designer, 2026-11-04): a loss of uTribute, damped by the copies
             // of it still to play (hand, field, deck): times uDamp for each (uDamp 0: no loss while one copy is left)
-            val left: MutableMap<String, Int> = java.util.HashMap()
-            for (zone in java.util.List.of(p.hand, p.field, p.deck)) {
-                for (c in zone) left.merge(BotSettings.cardKey(c.cardName), 1) { a, b -> a + b }
+            val left: MutableMap<String, Int> = HashMap()
+            for (zone in frozenListOf(p.hand, p.field, p.deck)) {
+                for (c in zone) left.mergeWith(BotSettings.cardKey(c.cardName), 1) { a, b -> a + b }
             }
             for (c in p.tributeZone) {
-                if ("utility" == c.cardType) s -= w.uTribute * Math.pow(w.uDamp, left.getOrDefault(BotSettings.cardKey(c.cardName), 0).toDouble())
+                if ("utility" == c.cardType) s -= w.uTribute * w.uDamp.pow(left.valueOr(BotSettings.cardKey(c.cardName), 0).toDouble())
             }
         }
         if (w.zTribute != 0.0 || w.hasBiases()) {

@@ -5,8 +5,6 @@ import com.drive.drive_manager.simulator.room.ActionType.Flag.OWNER_ONLY
 import com.drive.drive_manager.simulator.room.ActionType.Flag.REPLAY
 import com.drive.drive_manager.simulator.room.ActionType.Flag.RULES
 import com.drive.drive_manager.simulator.room.ActionType.Flag.WHILE_RESOLVING
-import java.util.EnumSet
-import java.util.Optional
 
 /**
  * Every action a client (or a bot) can send to a room, by its `type` string (the constant's name), with what
@@ -103,7 +101,7 @@ enum class ActionType(vararg flags: Flag) {
         REPLAY
     }
 
-    private val flags: Set<Flag> = if (flags.isEmpty()) EnumSet.noneOf(Flag::class.java) else EnumSet.of(flags[0], *flags)
+    private val flags: Set<Flag> = setOf(*flags)
 
     /** Whether the action is of this type. */
     fun `is`(action: GameAction?): Boolean = action != null && name == action.type
@@ -117,18 +115,18 @@ enum class ActionType(vararg flags: Flag) {
     companion object {
         /** The action with that `type` string, if there is one. */
         @JvmStatic
-        fun parse(type: String?): Optional<ActionType> {
-            if (type == null) return Optional.empty()
+        fun parse(type: String?): ActionType? {
+            if (type == null) return null
             return try {
-                Optional.of(valueOf(type))
+                valueOf(type)
             } catch (unknown: IllegalArgumentException) {
-                Optional.empty()
+                null
             }
         }
 
         /** The action's type, or null when it is not a known one. */
         @JvmStatic
-        fun of(action: GameAction?): ActionType? = if (action == null) null else parse(action.type).orElse(null)
+        fun of(action: GameAction?): ActionType? = if (action == null) null else parse(action.type)
 
         /** Whether the action is a known type with that flag. */
         @JvmStatic

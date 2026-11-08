@@ -1,5 +1,6 @@
 package com.drive.drive_manager.simulator.engine
 
+import kotlin.math.max
 import com.drive.drive_manager.simulator.engine.Chain.advance
 import com.drive.drive_manager.simulator.engine.EffectEngine.canPay
 import com.drive.drive_manager.simulator.engine.EffectEngine.find
@@ -62,11 +63,11 @@ object Rituals {
             if (!materials.contains(summoner)) return name(summoner) + " no comparte tipo ni color con " + name(card)
             if (!req.sum) {
                 if (!req.fits(summoner)) return missing
-                handRitual(room, player, card, summoner, java.util.List.of())
+                handRitual(room, player, card, summoner, frozenListOf())
                 return null
             }
             if (hasLevel(summoner, req.level)) {
-                handRitual(room, player, card, summoner, java.util.List.of())
+                handRitual(room, player, card, summoner, frozenListOf())
                 return null
             }
             val others = materials.filter { c -> c !== summoner }
@@ -109,7 +110,7 @@ object Rituals {
     fun ritualCost(room: GameRoom, userId: String?, card: CardSlot?): Int {
         val cost = card!!.specialCost!! - (if (starterAdvantage(room, userId, card, card.specialCost)) 1 else 0)
         val player = room.getPlayer(userId)
-        return if (player == null) cost else Math.max(0, cost - CostModifiers.available(room, player, CostModifiers.Event.SPECIAL_SUMMON, "ritual", card, null))
+        return if (player == null) cost else max(0, cost - CostModifiers.available(room, player, CostModifiers.Event.SPECIAL_SUMMON, "ritual", card, null))
     }
 
     @JvmStatic
@@ -128,12 +129,12 @@ object Rituals {
     fun handRitual(room: GameRoom, player: PlayerState, card: CardSlot, summoner: CardSlot?, others: List<CardSlot>) {
         val userId = player.userId
         val advantage = starterAdvantage(room, userId, card, card.specialCost)
-        var cost = Math.max(0, card.specialCost!! - (if (advantage) 1 else 0))
+        var cost = max(0, card.specialCost!! - (if (advantage) 1 else 0))
         cost -= CostModifiers.applyAutomatic(room, player, CostModifiers.Event.SPECIAL_SUMMON, "ritual", card, summoner, cost)
         pay(room, userId, cost)
         if (advantage) room.starterAdvantageUserId = null
         player.hand.remove(card)
-        val used = ArrayList(java.util.List.of(name(summoner)))
+        val used = ArrayList(frozenListOf(name(summoner)))
         others.forEach { o -> used.add(name(o)) }
         ritualSummon(room, player, card, "hand", cost, summoner, others, null,
                 player.username + " invoca por Ritual a " + name(card) + " usando " + used.joinToString(", ") + " y pagando "
@@ -196,7 +197,7 @@ object Rituals {
         var reachable = BooleanArray(target + 1)
         reachable[0] = true
         for (c in cards) {
-            val next = reachable.clone()
+            val next = reachable.copyOf()
             for (level in levels(c)) {
                 if (level <= 0) continue
                 for (t in target downTo level) if (reachable[t - level]) next[t] = true
@@ -209,10 +210,10 @@ object Rituals {
     /** All these creatures together add up exactly to `target`, each counting as any level it can. */
     @JvmStatic
     fun addsUpTo(cards: List<CardSlot>, target: Int): Boolean {
-        var sums: MutableSet<Int> = HashSet(java.util.List.of(0))
+        var sums: MutableSet<Int> = HashSet(frozenListOf(0))
         for (c in cards) {
             val next: MutableSet<Int> = HashSet()
-            val options = if (levels(c).isEmpty()) java.util.List.of(0) else levels(c)
+            val options = if (levels(c).isEmpty()) frozenListOf(0) else levels(c)
             for (s in sums) for (l in options) next.add(s + l)
             sums = next
         }
@@ -244,7 +245,7 @@ object Rituals {
     fun ritualFeasible(room: GameRoom, effect: PendingEffect, ritual: SpecialRule, player: PlayerState, target: CardSlot): Boolean {
         val req = requirement(target)
         if (req == null || target.specialCost == null) return false
-        if (!canPay(room, player.userId, Math.max(0, target.specialCost!! - ritual.reduce
+        if (!canPay(room, player.userId, max(0, target.specialCost!! - ritual.reduce
                         - CostModifiers.available(room, player, CostModifiers.Event.SPECIAL_SUMMON, "ritual", target, null)))) return false
         val materials = ritualMaterials(player, target)
         if (ritual.selfSummoner()) {
@@ -259,7 +260,7 @@ object Rituals {
 
     @JvmStatic
     fun ritualTargets(room: GameRoom, effect: PendingEffect, ritual: SpecialRule): List<CardSlot> {
-        val player = room.getPlayer(effect.controllerId) ?: return java.util.List.of()
+        val player = room.getPlayer(effect.controllerId) ?: return frozenListOf()
         return zone(player, ritual.zone)
                 .filter { c ->
                     "creature" == c.cardType && "ritual".equals(c.specialSummonKind, ignoreCase = true)

@@ -1,5 +1,8 @@
 package com.drive.drive_manager.simulator.engine.effects.actions
 
+import kotlin.math.min
+import com.drive.drive_manager.simulator.engine.frozenListOf
+import com.drive.drive_manager.simulator.engine.frozenMapOf
 import com.drive.drive_manager.simulator.engine.GameEvent
 import com.drive.drive_manager.simulator.engine.effects.model.Action.Select
 import com.drive.drive_manager.simulator.engine.effects.model.Memory
@@ -37,7 +40,7 @@ class SelectHandler : ActionHandler<Select> {
         }
         // "elige todos los enemigos": no choice, but they are targets
         if (selector.mode() == Selector.Mode.ALL) {
-            answer(ctx, action, Answer(valid.map { it.instanceId }, java.util.List.of()))
+            answer(ctx, action, Answer(valid.map { it.instanceId }, frozenListOf()))
             return false
         }
         if (selector.special != null) {
@@ -46,8 +49,8 @@ class SelectHandler : ActionHandler<Select> {
             if (bounds[2] > 0) ctx.limitLevelSum(bounds[2])
             return true
         }
-        val max = Math.min(ctx.amount(selector.max), valid.size)
-        val min = Math.min(ctx.amount(selector.min), max)
+        val max = min(ctx.amount(selector.max), valid.size)
+        val min = min(ctx.amount(selector.min), max)
         val instruction = (if (action.target) "Elige " else "Selecciona ") + (if (min < max) "hasta " else "") + max + " " + ctx.describe(selector) +
                 (if (selector.self() == Selector.Self.REQUIRE) ", incluida esta carta" else "") + "."
         val label = action.label ?: if (action.target) "Objetivo" else "Elegida"
@@ -75,7 +78,7 @@ class SelectHandler : ActionHandler<Select> {
         ctx.done(!picks.isEmpty())
         if (action.target && !picks.isEmpty()) {
             val names = picks.map { ctx.name(ctx.find(it)) }
-            ctx.event(GameEvent.TARGET, ctx.find(picks[0]), java.util.Map.of<String, Any?>("targetIds", picks),
+            ctx.event(GameEvent.TARGET, ctx.find(picks[0]), frozenMapOf<String, Any?>("targetIds", picks),
                     ctx.player()!!.username + " elige como objetivo a " + names.joinToString(", "))
         }
         return null

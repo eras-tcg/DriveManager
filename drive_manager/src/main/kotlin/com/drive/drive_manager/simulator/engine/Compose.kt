@@ -937,7 +937,7 @@ object Compose {
     // ------------------------------------------------------------------ Special summons: the creature, its summoner, its materials, and the summon
 
     private fun special(rule: SpecialRule): EffectStep {
-        return act(Action.Sequence(java.util.List.of(
+        return act(Action.Sequence(frozenListOf(
                 Action.Select(Selector.of(rule, Selector.Stage.CARD), false, EngineContext.SPECIAL_CARD, "Invocar"),
                 Action.Select(Selector.of(rule, Selector.Stage.SUMMONER), false, EngineContext.SPECIAL_SUMMONER, "Invocador"),
                 Action.Select(Selector.of(rule, Selector.Stage.MATERIAL), false, EngineContext.SPECIAL_MATERIALS, "Material"),
@@ -981,7 +981,7 @@ object Compose {
     }
 
     private fun ritual(rule: SpecialRule): EffectStep {
-        return act(Action.Sequence(java.util.List.of(
+        return act(Action.Sequence(frozenListOf(
                 Action.Select(Selector.of(rule, Selector.Stage.CARD), false, EngineContext.SPECIAL_CARD, "Invocar"),
                 Action.Select(Selector.of(rule, Selector.Stage.SUMMONER), false, EngineContext.SPECIAL_SUMMONER, "Invocador"),
                 Action.Select(Selector.of(rule, Selector.Stage.MATERIAL), false, EngineContext.SPECIAL_MATERIALS, "Sacrificar"),

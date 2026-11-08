@@ -1,5 +1,6 @@
 package com.drive.drive_manager.simulator.replay
 
+import com.drive.drive_manager.simulator.engine.frozenListCopy
 import com.drive.drive_manager.simulator.actions.PreRoomActions
 import com.drive.drive_manager.simulator.room.CardSlot
 import com.drive.drive_manager.simulator.room.GameRoom
@@ -59,7 +60,9 @@ data class MatchSetup(
 
     /** The player's username, or the id when they are not in it. */
     fun username(userId: String?): String? {
-        return seats!!.stream().filter { s -> s.userId!! == userId }.map { it.username }.findFirst().orElse(userId)
+        // Stream.findFirst() throws on a null name, as before
+        val seat = seats!!.firstOrNull { s -> s.userId!! == userId } ?: return userId
+        return seat.username!!
     }
 
     companion object {
@@ -69,10 +72,10 @@ data class MatchSetup(
             val seats = ArrayList<Seat>()
             for (p in room.players.values) {
                 seats.add(Seat(p.userId, p.username, p.deckId, p.deckName, p.starterCardId,
-                        p.skipOptional, java.util.List.copyOf(PreRoomActions.deepCopySlots(p.deck))))
+                        p.skipOptional, frozenListCopy(PreRoomActions.deepCopySlots(p.deck))))
             }
             return MatchSetup(seed, room.editor, room.bot, room.ranked, room.confirmMandatory, room.hostId,
-                    room.firstChoice, room.idSeq, room.eventSeq, java.util.List.copyOf(seats), room.botEdge)
+                    room.firstChoice, room.idSeq, room.eventSeq, frozenListCopy(seats), room.botEdge)
         }
     }
 }

@@ -1,5 +1,6 @@
 package com.drive.drive_manager.simulator.bot
 
+import kotlin.math.max
 import com.drive.drive_manager.simulator.engine.GameEvent
 import com.drive.drive_manager.simulator.room.GameRoom
 
@@ -18,7 +19,7 @@ internal object StructureUse {
         val tl = room.timeline
         val self = room.getPlayer(me) ?: return 0
         var n = 0
-        for (i in Math.max(0, from) until tl.size) {
+        for (i in max(0, from) until tl.size) {
             val e = tl[i]
             if (GameEvent.EFFECT_ACTIVATED != e.type || me!! != e.playerId || e.data == null) continue
             val source = e.data!!["sourceId"] ?: continue

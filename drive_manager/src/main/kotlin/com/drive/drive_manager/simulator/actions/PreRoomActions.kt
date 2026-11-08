@@ -1,5 +1,7 @@
 package com.drive.drive_manager.simulator.actions
 
+import kotlin.math.max
+import kotlin.math.min
 import com.drive.drive_manager.simulator.actions.TurnActions.getPlayerDirection
 import com.drive.drive_manager.simulator.bot.BotEdge
 import com.drive.drive_manager.simulator.engine.GameRandom
@@ -156,8 +158,8 @@ object PreRoomActions {
         val toBottom: List<String?>? = if (payload != null && payload.containsKey("toBottom"))
             payload["toBottom"] as List<String?>?
         else
-            java.util.Collections.emptyList()
-        val topN = Math.min(5, player.deck.size)
+            emptyList()
+        val topN = min(5, player.deck.size)
         val top5: List<CardSlot> = ArrayList(player.deck.subList(0, topN))
         player.deck.subList(0, topN).clear()
         val toBottomCards = top5.filter { c -> toBottom!!.contains(c.instanceId) }
@@ -179,7 +181,7 @@ object PreRoomActions {
             starter.y = null
             player.hand.add(starter)
         }
-        val lifeCount = Math.min(6, player.deck.size)
+        val lifeCount = min(6, player.deck.size)
         for (i in 0 until lifeCount) {
             val c = player.deck.removeAt(0)
             c.faceDown = true
@@ -195,7 +197,7 @@ object PreRoomActions {
                 val count = BotEdge.marcador(room, first, 1)
                 first.resourceCount = count
                 val dir = getPlayerDirection(room, firstId)
-                room.sharedCounter = Math.max(-10, Math.min(10, room.sharedCounter + count * dir))
+                room.sharedCounter = max(-10, min(10, room.sharedCounter + count * dir))
             }
         }
         return GameStateUpdate.from(room, ActionType.CONFIRM_MULLIGAN, userId)
@@ -253,7 +255,7 @@ object PreRoomActions {
             c.mentions = ArrayList(s.mentions!!)
             c.finish = s.finish
             c.alt = s.alt
-            c.altArtUrls = if (s.altArtUrls == null) java.util.HashMap() else java.util.HashMap(s.altArtUrls!!)
+            c.altArtUrls = if (s.altArtUrls == null) HashMap() else HashMap(s.altArtUrls!!)
             c.faceDown = true
             c
         }

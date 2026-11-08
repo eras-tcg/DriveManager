@@ -1,5 +1,7 @@
 package com.drive.drive_manager.simulator.engine
 
+import kotlin.math.max
+import kotlin.math.min
 import com.drive.drive_manager.simulator.room.CardSlot
 import com.drive.drive_manager.simulator.room.GameRoom
 import com.drive.drive_manager.simulator.room.PlayerState
@@ -135,13 +137,13 @@ object CostModifiers {
 
     @JvmStatic
     fun register(cardName: String, vararg modifiers: CostModifier) {
-        BY_NAME.computeIfAbsent(cardName.trim { it <= ' ' }.lowercase()) { ArrayList() }.addAll(java.util.List.of(*modifiers))
+        BY_NAME.getOrPut(cardName.trim { it <= ' ' }.lowercase()) { ArrayList() }.addAll(frozenListOf(*modifiers))
     }
 
     /** The card's modifiers, by its name in lower case. */
     @JvmStatic
     fun of(name: String?): List<CostModifier> {
-        return BY_NAME.getOrDefault(name, java.util.List.of())
+        return BY_NAME.valueOr(name, frozenListOf())
     }
 
     /** The names of the cards with modifiers. */
@@ -151,8 +153,8 @@ object CostModifiers {
     }
 
     private fun of(card: CardSlot?): List<CostModifier> {
-        if (card == null || card.cardName == null) return java.util.List.of()
-        return BY_NAME.getOrDefault(card.cardName!!.trim { it <= ' ' }.lowercase(), java.util.List.of())
+        if (card == null || card.cardName == null) return frozenListOf()
+        return BY_NAME.valueOr(card.cardName!!.trim { it <= ' ' }.lowercase(), frozenListOf())
     }
 
     /**
@@ -162,7 +164,7 @@ object CostModifiers {
      */
     @JvmStatic
     fun applicable(room: GameRoom, player: PlayerState?, event: Event?, kind: String?, card: CardSlot?, summoner: CardSlot?): List<Use> {
-        if (player == null) return java.util.List.of()
+        if (player == null) return frozenListOf()
         val uses: MutableList<Use> = ArrayList()
         val holders: MutableList<CardSlot> = ArrayList()
         // The card itself ("cuando fueras a jugar / invocar esta carta"), while it is not on the field yet
@@ -263,9 +265,9 @@ object CostModifiers {
             markUsed(room, player, use)
         }
         // The answers given for this summon are used up
-        if (card != null) room.usedThisTurn.removeIf { k -> k.startsWith("cost-tap") && k.endsWith("|" + card.instanceId) }
+        if (card != null) room.usedThisTurn.removeAll { k -> k.startsWith("cost-tap") && k.endsWith("|" + card.instanceId) }
         // A cost does not go below 0
-        return Math.min(reduced, Math.max(0, cost))
+        return min(reduced, max(0, cost))
     }
 
     /** The first one that asks the player for its payment (Flambreik's tributes), or null. */
@@ -284,8 +286,8 @@ object CostModifiers {
         val payment = use.modifier.payment!!
         if (payment.kind == PaymentKind.TAP_CARD) return player.field.filter { c -> !c.tapped && payment.filter!!.matches(c) }
         // Each life of the top it may take, one per time
-        if (payment.kind == PaymentKind.SELF_DAMAGE) return player.lifeStack.subList(0, Math.min(payment.count, player.lifeStack.size))
-        return if (payment.needsChoice()) tributesFor(player, payment, card) else java.util.List.of()
+        if (payment.kind == PaymentKind.SELF_DAMAGE) return player.lifeStack.subList(0, min(payment.count, player.lifeStack.size))
+        return if (payment.needsChoice()) tributesFor(player, payment, card) else frozenListOf()
     }
 
     /** What is asked, for the choice. */

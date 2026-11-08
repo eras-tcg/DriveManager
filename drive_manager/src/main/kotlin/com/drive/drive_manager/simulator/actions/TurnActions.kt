@@ -1,5 +1,10 @@
 package com.drive.drive_manager.simulator.actions
 
+import com.drive.drive_manager.simulator.platform.Platform
+import kotlin.math.abs
+import kotlin.math.max
+import kotlin.math.min
+import com.drive.drive_manager.simulator.engine.replaceEach
 import com.drive.drive_manager.simulator.bot.BotEdge
 import com.drive.drive_manager.simulator.engine.EffectEngine
 import com.drive.drive_manager.simulator.engine.TurnRules
@@ -76,7 +81,7 @@ object TurnActions {
         val newCount = BotEdge.marcador(room, player, player.resourceCount + 1)
         player.resourceCount = newCount
         val dir = getPlayerDirection(room, playerId)
-        room.sharedCounter = Math.max(-10, Math.min(10, room.sharedCounter + newCount * dir))
+        room.sharedCounter = max(-10, min(10, room.sharedCounter + newCount * dir))
         // Not being able to draw at the start of the turn loses the game
         if (player.deck.isEmpty()) {
             EffectEngine.loseByDeckOut(room, playerId)
@@ -103,7 +108,7 @@ object TurnActions {
                 p.field.remove(c)
                 com.drive.drive_manager.simulator.engine.Removals.leaveField(c)
                 p.hand.add(c)
-                room.eventLog.add(GameLogEntry(System.currentTimeMillis(), c.cardName + " vuelve a la mano de " + p.username))
+                room.eventLog.add(GameLogEntry(Platform.currentTimeMillis(), c.cardName + " vuelve a la mano de " + p.username))
             }
         }
         room.players.values.forEach { p ->
@@ -117,13 +122,13 @@ object TurnActions {
                 // What lasts until the end of the next turn now lasts until the end of this one
                 c.turnStrength = c.laterStrength
                 c.laterStrength = 0
-                c.floating!!.removeIf { f -> "nextTurn" != f.until }
-                c.floating!!.replaceAll { f -> FloatingEffect(f.text, f.source, "turn", f.strength, f.keyword) }
+                c.floating!!.removeAll { f -> "nextTurn" != f.until }
+                c.floating!!.replaceEach { f -> FloatingEffect(f.text, f.source, "turn", f.strength, f.keyword) }
             }
         }
         // What was given to the table "hasta el final del turno" ends; "del turno oponente" now lasts until the end of this one
-        room.fieldGrants.removeIf { g -> "turn" == g.until }
-        room.fieldGrants.replaceAll { g -> com.drive.drive_manager.simulator.engine.FieldGrant(g.controllerId, g.filter, g.keyword, "turn", g.source, g.exceptId) }
+        room.fieldGrants.removeAll { g -> "turn" == g.until }
+        room.fieldGrants.replaceEach { g -> com.drive.drive_manager.simulator.engine.FieldGrant(g.controllerId, g.filter, g.keyword, "turn", g.source, g.exceptId) }
         // "el turno anterior": who used a Definitive effect this turn is remembered for the next one
         val definitive = room.usedThisTurn.filter { k -> k.endsWith("|" + EffectEngine.DEFINITIVE_USED) }
                 .map { k -> EffectEngine.DEFINITIVE_LAST_TURN + k.substring(0, k.indexOf('|')) }
@@ -144,11 +149,11 @@ object TurnActions {
     fun handleGrantResource(room: GameRoom, userId: String?): GameStateUpdate {
         val opponentId = room.getOpponentId(userId) ?: return GameStateUpdate.error(room.roomId, SimMessages.NO_OPPONENT)
         val opponent = room.getPlayer(opponentId)
-        val newCount = Math.min(5, opponent!!.resourceCount + 1)
+        val newCount = min(5, opponent!!.resourceCount + 1)
         opponent.resourceCount = newCount
         val dir = getPlayerDirection(room, opponentId)
         val next = room.sharedCounter + newCount * dir
-        room.sharedCounter = Math.max(-10, Math.min(10, next))
+        room.sharedCounter = max(-10, min(10, next))
         return GameStateUpdate.from(room, ActionType.GRANT_RESOURCE, userId)
     }
 
@@ -156,7 +161,7 @@ object TurnActions {
     fun handleSetCounter(room: GameRoom, userId: String?, action: GameAction): GameStateUpdate {
         val d = action.getDouble("value") ?: return GameStateUpdate.error(room.roomId, SimMessages.NO_VALUE)
         val prev = room.sharedCounter
-        room.sharedCounter = Math.max(-10, Math.min(10, d.toInt()))
+        room.sharedCounter = max(-10, min(10, d.toInt()))
         val player = room.getPlayer(userId)
         val update = GameStateUpdate.from(room, ActionType.SET_COUNTER, userId)
         val who = if (player != null) player.username else userId
@@ -168,9 +173,9 @@ object TurnActions {
     fun handleUseResources(room: GameRoom, userId: String?, action: GameAction): GameStateUpdate {
         val d = action.getDouble("amount") ?: return GameStateUpdate.error(room.roomId, SimMessages.NO_AMOUNT)
         val next = room.sharedCounter + d.toInt()
-        room.sharedCounter = Math.max(-10, Math.min(10, next))
+        room.sharedCounter = max(-10, min(10, next))
         val player = room.getPlayer(userId)
-        if (player != null) player.resourceCount = Math.abs(d.toInt())
+        if (player != null) player.resourceCount = abs(d.toInt())
         return GameStateUpdate.from(room, ActionType.USE_RESOURCES, userId)
     }
 
@@ -179,7 +184,7 @@ object TurnActions {
         val d = action.getDouble("value") ?: return GameStateUpdate.error(room.roomId, SimMessages.NO_VALUE)
         val player = room.getPlayer(userId) ?: return GameStateUpdate.notInRoom(room)
         val prev = player.resourceCount
-        player.resourceCount = Math.min(5, Math.max(0, d.toInt()))
+        player.resourceCount = min(5, max(0, d.toInt()))
         val update = GameStateUpdate.from(room, ActionType.SET_MARKER, userId)
         update.logEntry = player.username + " ajustó su marcador de recursos de " + prev + " a " + player.resourceCount
         return update

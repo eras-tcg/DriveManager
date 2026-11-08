@@ -1,5 +1,6 @@
 package com.drive.drive_manager.simulator.engine
 
+import kotlin.math.max
 import com.drive.drive_manager.simulator.engine.Compose.moveSelfToFront
 import com.drive.drive_manager.simulator.engine.Condition.*
 import com.drive.drive_manager.simulator.engine.CostModifiers.CostModifier
@@ -9,9 +10,6 @@ import com.drive.drive_manager.simulator.engine.EffectStep.GroupUp
 import com.drive.drive_manager.simulator.room.CardSlot
 import com.drive.drive_manager.simulator.room.GameRoom
 import com.drive.drive_manager.simulator.room.Zone
-import java.util.Optional
-import java.util.TreeMap
-import java.util.TreeSet
 
 /**
  * Effects implemented by the engine, by card name (reprints keep their effects), plus the keyword abilities
@@ -31,23 +29,23 @@ object CardEffects {
      * Keyword abilities with an effect the engine runs ("Celeridad"). Others (Provocar, Letalidad…) are combat rules; Asalto modifies the
      * summon itself (Summons.offerAssault).
      */
-    private val KEYWORDS: Map<String, EffectScript> = java.util.Map.of(
+    private val KEYWORDS: Map<String, EffectScript> = frozenMapOf(
         "celeridad", EffectScript("kw:celeridad", Moment.ON_SUMMON, false, "Celeridad",
-            "Puede subir a tu línea frontal.", java.util.List.of(moveSelfToFront()))
+            "Puede subir a tu línea frontal.", frozenListOf(moveSelfToFront()))
             .`when`(Condition.not(Condition.inFrontLine())),
         "agrupar 1", EffectScript("kw:agrupar", Moment.ON_ATTACK, false, "Agrupar 1",
             "Si esta carta declara ataque: puedes agotar 1 aliado para que esta carta, durante el ataque, gane su fuerza e inflija daño 1 vez " +
-                    "extra en caso de hacerlo.", java.util.List.of<EffectStep>(GroupUp(1))))
+                    "extra en caso de hacerlo.", frozenListOf<EffectStep>(GroupUp(1))))
 
     @JvmStatic
     fun register(name: String, vararg scripts: EffectScript) {
-        BY_NAME[name] = java.util.List.of(*scripts)
+        BY_NAME[name] = frozenListOf(*scripts)
     }
 
     @JvmStatic
     fun of(cardName: String?): List<EffectScript> {
-        if (cardName == null) return java.util.List.of()
-        return BY_NAME.getOrDefault(cardName.trim { it <= ' ' }.lowercase(), java.util.List.of())
+        if (cardName == null) return frozenListOf()
+        return BY_NAME.valueOr(cardName.trim { it <= ' ' }.lowercase(), frozenListOf())
     }
 
     /**
@@ -104,17 +102,18 @@ object CardEffects {
     /** Everything programmed, card by card (by name in lower case), as data: see [EffectJson]. */
     @JvmStatic
     fun definitions(): Map<String, CardDefinition> {
-        val names: MutableSet<String> = TreeSet()
-        for (registry in java.util.List.of<Map<String, *>>(BY_NAME, INHERITED, CONTINUOUS, REPLACEMENTS, INHERITED_REPLACEMENTS)) {
+        // In the order of the names (a TreeSet's): collected, then sorted
+        val names: MutableSet<String> = HashSet()
+        for (registry in frozenListOf<Map<String, *>>(BY_NAME, INHERITED, CONTINUOUS, REPLACEMENTS, INHERITED_REPLACEMENTS)) {
             names.addAll(registry.keys)
         }
         names.addAll(CostModifiers.names())
         names.addAll(TRAITS.keys)
         names.addAll(REACTIONS.keys)
         val all: MutableMap<String, CardDefinition> = LinkedHashMap()
-        for (name in names) {
+        for (name in names.sorted()) {
             all[name] = CardDefinition(name, BY_NAME[name], INHERITED[name], CONTINUOUS[name],
-                reactionsOf(name), if (INHERITED_REPLACEMENTS.containsKey(name)) java.util.List.copyOf(INHERITED_REPLACEMENTS[name]!!) else null,
+                reactionsOf(name), if (INHERITED_REPLACEMENTS.containsKey(name)) frozenListCopy(INHERITED_REPLACEMENTS[name]!!) else null,
                 TRAITS[name])
         }
         return all
@@ -127,9 +126,9 @@ object CardEffects {
      */
     @JvmStatic
     fun ruleEffects(): Map<String, List<String>> {
-        val all: MutableMap<String, MutableList<String>> = TreeMap()
-        TRAITS.forEach { n, t ->
-            val rules = all.computeIfAbsent(n) { ArrayList() }
+        val all: MutableMap<String, MutableList<String>> = HashMap()
+        for ((n, t) in TRAITS) {
+            val rules = all.getOrPut(n) { ArrayList() }
             if (t.specialFromTributes) rules.add("En Tributos: cuenta como en la mano para invocaciones especiales")
             if (t.oneEffectPerTurn) rules.add("solo 1 de sus efectos por turno")
             if (t.alias != null) rules.add("puede ser tratada como \"" + t.alias + "\"")
@@ -139,8 +138,8 @@ object CardEffects {
             if (t.sacrificeToSummon != null) rules.add("se invoca sacrificando un aliado")
             if (t.fieldPiecesDiscount != null) rules.add("cuesta " + t.fieldPiecesDiscount.reduce + " menos usando " + t.fieldPiecesDiscount.pieces + " criaturas de tu campo")
         }
-        REACTIONS.forEach { n, reactions ->
-            val rules = all.computeIfAbsent(n) { ArrayList() }
+        for ((n, reactions) in REACTIONS) {
+            val rules = all.getOrPut(n) { ArrayList() }
             for (r in reactions) {
                 if (r is Reaction.SwapsBlocker) rules.add("cambia al bloqueador declarado por otro aliado")
                 if (r is Reaction.AttacksBeforeAscended) rules.add("declara ataque antes de ser ascendida")
@@ -151,12 +150,15 @@ object CardEffects {
                 if (r is DamageReplacement) rules.add("se invoca en lugar de recibir " + r.maxDamage + " o menos de daño")
             }
         }
-        return all
+        // In the order of the names, as the TreeMap it was
+        val sorted: MutableMap<String, List<String>> = LinkedHashMap()
+        for (n in all.keys.sorted()) sorted[n] = all[n]!!
+        return sorted
     }
 
     /** Keyword abilities the engine applies (combat rules, KEYWORDS, Asalto); the rest are played by hand. */
     @JvmField
-    val ENGINE_KEYWORDS: Set<String> = java.util.Set.of("Provocar", "Enfrentar", "Celeridad", "Asalto", "Furia", "Reactivar",
+    val ENGINE_KEYWORDS: Set<String> = frozenSetOf("Provocar", "Enfrentar", "Celeridad", "Asalto", "Furia", "Reactivar",
         "Letalidad", "Imbloqueable", "Perforante", "Alcance", "Protección", "Agrupar")
 
     private val TRAILING_NUMBER = Regex("\\s*\\d+$")
@@ -168,10 +170,10 @@ object CardEffects {
     @JvmStatic
     fun pending(cardName: String?, own: Int, inherited: Int, keywords: List<String>): String? {
         val name = cardName?.trim { it <= ' ' }?.lowercase() ?: ""
-        val ownDone = BY_NAME.getOrDefault(name, java.util.List.of()).size + CONTINUOUS.getOrDefault(name, java.util.List.of()).size +
-                CostModifiers.of(name).size + REPLACEMENTS.getOrDefault(name, java.util.List.of()).size +
-                ruleEffects().getOrDefault(name, java.util.List.of()).size
-        val inheritedDone = INHERITED.getOrDefault(name, java.util.List.of()).size + INHERITED_REPLACEMENTS.getOrDefault(name, java.util.List.of()).size
+        val ownDone = BY_NAME.valueOr(name, frozenListOf()).size + CONTINUOUS.valueOr(name, frozenListOf()).size +
+                CostModifiers.of(name).size + REPLACEMENTS.valueOr(name, frozenListOf()).size +
+                ruleEffects().valueOr(name, frozenListOf()).size
+        val inheritedDone = INHERITED.valueOr(name, frozenListOf()).size + INHERITED_REPLACEMENTS.valueOr(name, frozenListOf()).size
         val pending: MutableList<String> = ArrayList()
         if (own > ownDone) pending.add((own - ownDone).toString() + " de " + own + " efectos propios")
         if (inherited > inheritedDone) pending.add((inherited - inheritedDone).toString() + " de " + inherited + " heredados")
@@ -184,7 +186,7 @@ object CardEffects {
     /** What a card gives the creature it is a Recurso of. */
     @JvmStatic
     fun inheritedOf(name: String?): List<EffectScript> {
-        return if (name == null) java.util.List.of() else INHERITED.getOrDefault(name.trim { it <= ' ' }.lowercase(), java.util.List.of())
+        return if (name == null) frozenListOf() else INHERITED.valueOr(name.trim { it <= ' ' }.lowercase(), frozenListOf())
     }
 
     /** A creature's strength while it is a life: its own and what its continuous effects of the lives give it. */
@@ -214,14 +216,14 @@ object CardEffects {
         if (allies == 1) return KEYWORDS["agrupar 1"]!!
         return EffectScript("kw:agrupar-$allies", Moment.ON_ATTACK, false, "Agrupar $allies",
             "Si esta carta declara ataque: puedes agotar hasta " + allies + " aliados para que esta carta, durante el ataque, gane sus fuerzas e " +
-                    "inflija daño 1 vez extra por cada uno.", java.util.List.of<EffectStep>(GroupUp(allies)))
+                    "inflija daño 1 vez extra por cada uno.", frozenListOf<EffectStep>(GroupUp(allies)))
     }
 
     /** The card's own continuous effects. */
     @JvmStatic
     fun continuousOf(card: CardSlot): List<Continuous> {
-        if (card.cardName == null) return java.util.List.of()
-        return CONTINUOUS.getOrDefault(card.cardName!!.trim { it <= ' ' }.lowercase(), java.util.List.of())
+        if (card.cardName == null) return frozenListOf()
+        return CONTINUOUS.valueOr(card.cardName!!.trim { it <= ' ' }.lowercase(), frozenListOf())
     }
 
     /** The card's own effects, those its Recursos give it and those of the keywords the engine runs. */
@@ -229,7 +231,7 @@ object CardEffects {
     fun of(card: CardSlot): List<EffectScript> {
         val all: MutableList<EffectScript> = ArrayList(of(card.cardName))
         for (resource in card.resources!!) {
-            if (resource.cardName != null) all.addAll(INHERITED.getOrDefault(resource.cardName!!.trim { it <= ' ' }.lowercase(), java.util.List.of()))
+            if (resource.cardName != null) all.addAll(INHERITED.valueOr(resource.cardName!!.trim { it <= ' ' }.lowercase(), frozenListOf()))
         }
         for (keyword in EffectEngine.keywords(card)) {
             var script = KEYWORDS[keyword.lowercase()]
@@ -243,18 +245,18 @@ object CardEffects {
 
     /** Looks an effect up by its id (card effects and keywords). */
     @JvmStatic
-    fun byId(id: String): Optional<EffectScript> {
-        for (scripts in BY_NAME.values) for (s in scripts) if (s.id == id) return Optional.of(s)
-        for (scripts in INHERITED.values) for (s in scripts) if (s.id == id) return Optional.of(s)
-        for (s in KEYWORDS.values) if (s.id == id) return Optional.of(s)
-        return if (id.startsWith("kw:agrupar-")) Optional.of(agrupar(id.substring("kw:agrupar-".length).toInt())) else Optional.empty()
+    fun byId(id: String): EffectScript? {
+        for (scripts in BY_NAME.values) for (s in scripts) if (s.id == id) return s
+        for (scripts in INHERITED.values) for (s in scripts) if (s.id == id) return s
+        for (s in KEYWORDS.values) if (s.id == id) return s
+        return if (id.startsWith("kw:agrupar-")) agrupar(id.substring("kw:agrupar-".length).toInt()) else null
     }
 
     /** Cost to play a utility or structure, after its cost modifiers (they ask for nothing to be paid). */
     @JvmStatic
     fun playCost(room: GameRoom, userId: String?, card: CardSlot): Int {
         val cost = if (card.cost == null) 0 else card.cost!!
-        return Math.max(0, cost - CostModifiers.available(room, room.getPlayer(userId), CostModifiers.Event.PLAY, null, card, null))
+        return max(0, cost - CostModifiers.available(room, room.getPlayer(userId), CostModifiers.Event.PLAY, null, card, null))
     }
 
     // ------------------------------------------------------------------ Replacements ("en su lugar")
@@ -323,21 +325,21 @@ object CardEffects {
     /** Everything the card reacts with. */
     private fun reactionsOf(name: String): List<Reaction> {
         val all: MutableList<Reaction> = ArrayList(CostModifiers.of(name))
-        all.addAll(REPLACEMENTS.getOrDefault(name, java.util.List.of()))
-        all.addAll(REACTIONS.getOrDefault(name, java.util.List.of()))
+        all.addAll(REPLACEMENTS.valueOr(name, frozenListOf()))
+        all.addAll(REACTIONS.valueOr(name, frozenListOf()))
         return all
     }
 
     /** The card's reaction of that kind, or null. */
-    private fun <T : Reaction> reaction(card: CardSlot, kind: Class<T>): T? {
+    private inline fun <reified T : Reaction> reaction(card: CardSlot): T? {
         if (card.cardName == null) return null
-        return REACTIONS.getOrDefault(card.cardName!!.trim { it <= ' ' }.lowercase(), java.util.List.of())
-            .firstOrNull { kind.isInstance(it) }?.let { kind.cast(it) }
+        return REACTIONS.valueOr(card.cardName!!.trim { it <= ' ' }.lowercase(), frozenListOf())
+            .firstOrNull { it is T } as T?
     }
 
     private fun traits(card: CardSlot): CardTraits {
         return if (card.cardName == null) CardTraits.NONE
-        else TRAITS.getOrDefault(card.cardName!!.trim { it <= ' ' }.lowercase(), CardTraits.NONE)
+        else TRAITS.valueOr(card.cardName!!.trim { it <= ' ' }.lowercase(), CardTraits.NONE)
     }
 
     @JvmRecord
@@ -352,7 +354,7 @@ object CardEffects {
 
     @JvmStatic
     fun allyGuard(card: CardSlot): AllyGuard? {
-        return reaction(card, AllyGuard::class.java)
+        return reaction<AllyGuard>(card)
     }
 
     /**
@@ -362,7 +364,7 @@ object CardEffects {
      */
     @JvmStatic
     fun tributesInsteadOfDamage(card: CardSlot): Boolean {
-        return reaction(card, Reaction.TributesInsteadOfDamage::class.java) != null
+        return reaction<Reaction.TributesInsteadOfDamage>(card) != null
     }
 
     /** "esta carta puede ser considerada nivel N por tus cartas [filtro]" (designer ruling 2026-10-31: for everything, special summons and effects). */
@@ -405,17 +407,17 @@ object CardEffects {
 
     @JvmStatic
     fun allyRemovalSummon(card: CardSlot): AllyRemovalSummon? {
-        return reaction(card, AllyRemovalSummon::class.java)
+        return reaction<AllyRemovalSummon>(card)
     }
 
     /** The card's own replacements and those its Recursos give it. */
     @JvmStatic
     fun replacementsOf(card: CardSlot): List<Replacement> {
         val all: MutableList<Replacement> = ArrayList()
-        if (card.cardName != null) all.addAll(REPLACEMENTS.getOrDefault(card.cardName!!.trim { it <= ' ' }.lowercase(), java.util.List.of()))
+        if (card.cardName != null) all.addAll(REPLACEMENTS.valueOr(card.cardName!!.trim { it <= ' ' }.lowercase(), frozenListOf()))
         for (resource in card.resources!!) {
             if (resource.cardName != null)
-                all.addAll(INHERITED_REPLACEMENTS.getOrDefault(resource.cardName!!.trim { it <= ' ' }.lowercase(), java.util.List.of()))
+                all.addAll(INHERITED_REPLACEMENTS.valueOr(resource.cardName!!.trim { it <= ' ' }.lowercase(), frozenListOf()))
         }
         return all
     }
@@ -425,7 +427,7 @@ object CardEffects {
     fun replacementGiver(card: CardSlot, replacement: Replacement?): CardSlot? {
         for (resource in card.resources!!) {
             if (resource.cardName != null &&
-                INHERITED_REPLACEMENTS.getOrDefault(resource.cardName!!.trim { it <= ' ' }.lowercase(), java.util.List.of()).contains(replacement)) return resource
+                INHERITED_REPLACEMENTS.valueOr(resource.cardName!!.trim { it <= ' ' }.lowercase(), frozenListOf()).contains(replacement)) return resource
         }
         return null
     }
@@ -434,7 +436,7 @@ object CardEffects {
     /** "cuando esta carta fuera a ser ascendida: puede declarar ataque" (SpecialSummons.handSpecial, then completeAscension). */
     @JvmStatic
     fun attacksBeforeAscended(card: CardSlot): Boolean {
-        return reaction(card, Reaction.AttacksBeforeAscended::class.java) != null
+        return reaction<Reaction.AttacksBeforeAscended>(card) != null
     }
 
     /** "Para jugar esta carta desde tus vidas debes pagar N gemas" (an absolute effect: CombatRules.directDamage offers it only then). */
@@ -447,14 +449,14 @@ object CardEffects {
     /** "cuando esta carta fuera a ser ascendida: esta carta gana [habilidad] hasta el final del turno" (Turno Aliado; Summons.specialSummon). */
     @JvmStatic
     fun gainBeforeAscended(card: CardSlot): String? {
-        val gain = reaction(card, Reaction.GainBeforeAscended::class.java)
+        val gain = reaction<Reaction.GainBeforeAscended>(card)
         return gain?.keyword
     }
 
     /** "cuando un aliado sea declarado bloqueador: en su lugar, puedes reactivarlo y elegir otro aliado …" (CombatRules.offerBlockerSwap). */
     @JvmStatic
     fun swapsBlocker(card: CardSlot): Boolean {
-        return reaction(card, Reaction.SwapsBlocker::class.java) != null
+        return reaction<Reaction.SwapsBlocker>(card) != null
     }
 
     /** "cuando fueras a recibir N o menos de daño directo por ataque: en su lugar, puedes invocar esta carta … reduciendo su coste en M". */
@@ -463,7 +465,7 @@ object CardEffects {
 
     @JvmStatic
     fun damageReplacement(card: CardSlot): DamageReplacement? {
-        return reaction(card, DamageReplacement::class.java)
+        return reaction<DamageReplacement>(card)
     }
 
     /** "Esta carta puede ser tratada como «X»": the name it also answers to. */

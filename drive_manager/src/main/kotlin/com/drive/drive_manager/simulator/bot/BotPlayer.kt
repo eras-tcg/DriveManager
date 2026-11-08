@@ -1,5 +1,10 @@
 package com.drive.drive_manager.simulator.bot
 
+import com.drive.drive_manager.simulator.platform.AtomicFlag
+import kotlin.math.max
+import kotlin.math.min
+import com.drive.drive_manager.simulator.engine.frozenListOf
+import com.drive.drive_manager.simulator.engine.frozenMapOf
 import com.drive.drive_manager.simulator.engine.EffectEngine
 import com.drive.drive_manager.simulator.engine.Prompt
 import com.drive.drive_manager.simulator.room.ActionType
@@ -7,8 +12,6 @@ import com.drive.drive_manager.simulator.room.CardSlot
 import com.drive.drive_manager.simulator.room.GameAction
 import com.drive.drive_manager.simulator.room.GameRoom
 import com.drive.drive_manager.simulator.room.PlayerState
-import java.util.TreeMap
-import java.util.concurrent.atomic.AtomicBoolean
 
 /**
  * A side of the table played by the server (a room against the bot). It sends the same actions as a player and
@@ -22,7 +25,7 @@ import java.util.concurrent.atomic.AtomicBoolean
  */
 open class BotPlayer {
 
-    private val waking = AtomicBoolean()
+    private val waking = AtomicFlag()
     /** Moves the engine refused (by [key]): not tried again while the memory is about the same moment. */
     private val refused: MutableSet<String> = HashSet()
     /** The moment the memory is about: the room's status, whose turn it is and the bot's deck. */
@@ -38,15 +41,15 @@ open class BotPlayer {
         @Suppress("UNCHECKED_CAST")
         return when (room.status) {
             GameRoom.RoomStatus.WAITING -> if (self.deckId != null && self.starterCardId != null && !self.ready)
-                untried(action(ActionType.SET_READY, java.util.Map.of<String, Any?>("ready", true))) else null
+                untried(action(ActionType.SET_READY, frozenMapOf<String, Any?>("ready", true))) else null
             GameRoom.RoomStatus.SELECTING_STARTER -> if ((room.starterSelections as Map<String?, String>).containsKey(me)) null
                 else self.deck.firstOrNull { it.starter }
-                    ?.let { c -> untried(action(ActionType.SELECT_STARTER, java.util.Map.of<String, Any?>("instanceId", c.instanceId))) }
+                    ?.let { c -> untried(action(ActionType.SELECT_STARTER, frozenMapOf<String, Any?>("instanceId", c.instanceId))) }
             GameRoom.RoomStatus.MULLIGAN -> if ((room.mulliganReady as Set<String?>).contains(me)) null else untried(action("CONFIRM_MULLIGAN",
-                java.util.Map.of<String, Any?>("toBottom", mulligan(room, self, ArrayList(self.deck.subList(0, Math.min(5, self.deck.size)))))))
+                frozenMapOf<String, Any?>("toBottom", mulligan(room, self, ArrayList(self.deck.subList(0, min(5, self.deck.size)))))))
             GameRoom.RoomStatus.IN_PROGRESS -> inGame(room, me)
             GameRoom.RoomStatus.POST_GAME -> if ((room.postGameChoices as Map<String?, String>).containsKey(me)) null
-                else untried(action(ActionType.POST_GAME_CHOICE, java.util.Map.of<String, Any?>("choice", "rematch")))
+                else untried(action(ActionType.POST_GAME_CHOICE, frozenMapOf<String, Any?>("choice", "rematch")))
             else -> null
         }
     }
@@ -60,7 +63,7 @@ open class BotPlayer {
             if (move != null && !isRefused(move)) return move
         }
         // The end phase with nothing pending passes the turn too
-        return untried(action(ActionType.END_TURN, java.util.Map.of()))
+        return untried(action(ActionType.END_TURN, frozenMapOf()))
     }
 
     /** The answer to the bot's choice: its own, else the plainest ones the prompt allows; conceding when none is left. */
@@ -70,17 +73,17 @@ open class BotPlayer {
         if (own != null) options.add(own)
         options.addAll(fallbacks(prompt))
         for (chosen in options) {
-            val answer = action(ActionType.RESOLVE_PROMPT, java.util.Map.of<String, Any?>("promptId", prompt.id, "chosen", chosen, "order", order(prompt, chosen)))
+            val answer = action(ActionType.RESOLVE_PROMPT, frozenMapOf<String, Any?>("promptId", prompt.id, "chosen", chosen, "order", order(prompt, chosen)))
             if (!isRefused(answer)) return answer
         }
-        return action(ActionType.SURRENDER, java.util.Map.of())
+        return action(ActionType.SURRENDER, frozenMapOf())
     }
 
     // ------------------------------------------------------------------ What a bot decides (phase 0: the least it can)
 
     /** Mulligan: the instance ids of the deck's top cards sent to the bottom. Phase 0 keeps them all. */
     protected open fun mulligan(room: GameRoom, self: PlayerState, top: List<CardSlot>): List<String> {
-        return java.util.List.of()
+        return frozenListOf()
     }
 
     /** The cards (or offered effects) chosen in the bot's choice; null leaves it to the fallbacks. Phase 0: the fewest. */
@@ -179,7 +182,9 @@ open class BotPlayer {
         private const val MAX_COMBINED = 10
 
         private fun key(action: GameAction): String {
-            return action.type + TreeMap(action.payload ?: java.util.Map.of())
+            // As the toString of a TreeMap of the payload: "{a=1, b=x}" by key
+            val payload: Map<String, Any?> = action.payload ?: frozenMapOf()
+            return action.type + payload.keys.sorted().joinToString(", ", "{", "}") { k -> k + "=" + payload[k] }
         }
 
         @JvmStatic
@@ -211,14 +216,14 @@ open class BotPlayer {
         private fun fallbacks(prompt: Prompt): List<List<String?>> {
             val choices = choices(prompt)
             val min = prompt.min
-            val max = Math.min(prompt.max, choices.size)
+            val max = min(prompt.max, choices.size)
             val out: MutableSet<List<String?>> = LinkedHashSet()
-            if (min == 0) out.add(java.util.List.of())
+            if (min == 0) out.add(frozenListOf())
             if (min > 0 && choices.size >= min) out.add(ArrayList(choices.subList(0, min)))
-            if (min <= 1 && max >= 1) choices.forEach { id -> out.add(java.util.List.of(id)) }
+            if (min <= 1 && max >= 1) choices.forEach { id -> out.add(frozenListOf(id)) }
             if (max > min) out.add(ArrayList(choices.subList(0, max)))
             if (choices.size <= MAX_COMBINED) {
-                for (size in Math.max(1, min)..max) groups(choices, size, 0, ArrayList(), out)
+                for (size in max(1, min)..max) groups(choices, size, 0, ArrayList(), out)
             }
             return ArrayList(out)
         }
@@ -237,8 +242,8 @@ open class BotPlayer {
 
         /** The cards not chosen, in the order they are shown, when the prompt lets them be reordered. */
         private fun order(prompt: Prompt, chosen: List<String?>): List<String?> {
-            if (!prompt.reorderRest) return java.util.List.of()
-            return prompt.cards.stream().map { it.instanceId }.filter { id -> !chosen.contains(id) }.toList()
+            if (!prompt.reorderRest) return frozenListOf()
+            return prompt.cards.map { it.instanceId }.filter { id -> !chosen.contains(id) }
         }
 
         /** A rough worth of a card to its owner: its cost, its strength, its abilities and what it carries. */
@@ -258,7 +263,7 @@ open class BotPlayer {
         /** One of the player's cards, in any zone (attachments included), or null. */
         @JvmStatic
         protected fun own(player: PlayerState?, instanceId: String?): CardSlot? {
-            for (zone in java.util.List.of(player!!.hand, player.field, player.deck, player.lifeStack,
+            for (zone in frozenListOf(player!!.hand, player.field, player.deck, player.lifeStack,
                     player.tributeZone, player.discardPile)) {
                 for (c in zone) {
                     if (instanceId!! == c.instanceId) return c

@@ -1,5 +1,9 @@
 package com.drive.drive_manager.simulator.bot
 
+import kotlin.math.max
+import com.drive.drive_manager.simulator.engine.comparingDouble
+import com.drive.drive_manager.simulator.engine.comparingInt
+import com.drive.drive_manager.simulator.engine.frozenListOf
 import com.drive.drive_manager.simulator.engine.CardEffects
 import com.drive.drive_manager.simulator.engine.EffectEngine
 import com.drive.drive_manager.simulator.engine.Prompt
@@ -52,30 +56,30 @@ internal object StrengthCuts {
             for (e in CardEffects.of(c)) {
                 val t = if (e.text == null) "" else e.text!!.lowercase()
                 val m = MORE.find(t)
-                if (m != null) more = Math.max(more, m.groupValues[1].toInt())
+                if (m != null) more = max(more, m.groupValues[1].toInt())
                 val z = TO_ZERO.find(t)
-                if (z != null && self.field.contains(c)) zeroAt = Math.max(zeroAt, z.groupValues[1].toInt())
+                if (z != null && self.field.contains(c)) zeroAt = max(zeroAt, z.groupValues[1].toInt())
             }
         }
         val enemies = choices.mapNotNull { id -> find(room, self, id)?.takeIf { c -> "creature" == c.cardType } }
         if (enemies.isEmpty()) return null
         val reach = n + more
         val zero = zeroAt
-        val kill = enemies.filter { c -> EffectEngine.strength(c) - reach <= Math.max(0, zero) }
-                .maxWithOrNull(Comparator.comparingDouble { c: CardSlot -> BotPlayer.value(c) })
-        if (kill != null) return java.util.List.of(kill.instanceId!!)
+        val kill = enemies.filter { c -> EffectEngine.strength(c) - reach <= max(0, zero) }
+                .maxWithOrNull(comparingDouble { c: CardSlot -> BotPlayer.value(c) })
+        if (kill != null) return frozenListOf(kill.instanceId!!)
         // A blocker that beats one of its ready attackers and would not after the reduction
         val attackers = self.field.filter { c -> "creature" == c.cardType && !c.tapped && EffectEngine.inFrontLine(c) }
         val opened = enemies.filter { c -> !c.tapped && EffectEngine.inFrontLine(c)
                     && attackers.any { a -> EffectEngine.strength(c) >= EffectEngine.strength(a) && EffectEngine.strength(c) - n < EffectEngine.strength(a) } }
-                .maxWithOrNull(Comparator.comparingInt { c: CardSlot -> EffectEngine.strength(c) })
-        if (opened != null) return java.util.List.of(opened.instanceId!!)
-        if (prompt.min == 0) return java.util.List.of()
-        return java.util.List.of(enemies.maxWith(Comparator.comparingDouble { c: CardSlot -> BotPlayer.value(c) }).instanceId!!)
+                .maxWithOrNull(comparingInt { c: CardSlot -> EffectEngine.strength(c) })
+        if (opened != null) return frozenListOf(opened.instanceId!!)
+        if (prompt.min == 0) return frozenListOf()
+        return frozenListOf(enemies.maxWith(comparingDouble { c: CardSlot -> BotPlayer.value(c) }).instanceId!!)
     }
 
     private fun find(room: GameRoom, self: PlayerState, id: String?): CardSlot? {
         val rival = room.getPlayer(room.getOpponentId(self.userId))
-        return CardLocator.find(java.util.Arrays.asList(rival, self), id, java.util.List.of(Zone.FIELD), false)
+        return CardLocator.find(listOf(rival, self), id, frozenListOf(Zone.FIELD), false)
     }
 }

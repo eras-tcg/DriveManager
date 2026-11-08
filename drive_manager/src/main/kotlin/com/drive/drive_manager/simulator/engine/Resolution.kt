@@ -1,5 +1,6 @@
 package com.drive.drive_manager.simulator.engine
 
+import kotlin.reflect.KClass
 import com.drive.drive_manager.simulator.engine.EffectEngine.find
 import com.drive.drive_manager.simulator.engine.EffectEngine.findAnywhere
 import com.drive.drive_manager.simulator.engine.EffectEngine.lookingAs
@@ -26,24 +27,24 @@ object Resolution {
 
     private enum class Family { FLOW, LOOK, COMBAT, ALLY, SUMMON, TABLE }
 
-    private val FAMILY: MutableMap<Class<*>, Family> = HashMap()
+    private val FAMILY: MutableMap<KClass<*>, Family> = HashMap()
 
-    private fun family(family: Family, vararg steps: Class<*>) {
+    private fun family(family: Family, vararg steps: KClass<*>) {
         for (step in steps) FAMILY[step] = family
     }
 
     @JvmStatic
-    fun hasFamily(step: Class<*>?): Boolean {
+    fun hasFamily(step: KClass<*>?): Boolean {
         return FAMILY.containsKey(step)
     }
 
     init {
-        family(Family.FLOW, EndYourTurn::class.java, IfChosenGone::class.java, IfSaved::class.java, IfCondition::class.java, IfDone::class.java, IfNotDone::class.java, IfPossible::class.java, IfTributed::class.java, KeepOnField::class.java, MayDo::class.java, SubjectFromTrigger::class.java, SubjectIsThisCard::class.java)
-        family(Family.LOOK, RevealFromHand::class.java, RevealOpponentHandSendOneToBottom::class.java, TakeFromLookedDistinctLevels::class.java, TakeFromLookedEachRestToBottom::class.java, TakeFromLookedLikeSubject::class.java)
-        family(Family.COMBAT, AlliesGain::class.java, BounceChosen::class.java, ChooseEnemiesLevelSum::class.java, ChooseWeakestEnemy::class.java, DeclareBlockSelf::class.java, ExtraCombatHitThenEndTurn::class.java, ExtraHit::class.java, GroupUp::class.java, NoUntapChosen::class.java, PickAllyUpToSacrificedLevel::class.java, ReduceRepeatedly::class.java, ReturnSubjectAtAttackEnd::class.java, SkipBlockStep::class.java, TributesToDeckBottomForKeyword::class.java)
-        family(Family.ALLY, ActivateSubjectSummonEffect::class.java, ActivateTributedSummonEffect::class.java, AddResourceToHigherAlly::class.java, AttachLowerFromTributes::class.java, AttachSelfAsResourceToAlly::class.java, AttachSubjectToHigherAlly::class.java, AttachSubjectToSummoned::class.java, MaterialOfExhaustedAllyToBack::class.java, PickAllyWithHigherAlly::class.java, PickAllyWithMaterials::class.java, PlaceFromHandUntilTurnEnd::class.java, ReturnAllyOfSummonedLevel::class.java, SacrificeAlly::class.java, TributeAlliesLevelSum::class.java, TributeAllyMaterial::class.java, TributeAllyMaterialWhere::class.java, TributeAllyResources::class.java)
-        family(Family.SUMMON, ChooseOpponentTribute::class.java, MaterializeSelfOnTriggerAlly::class.java, PlaceChosenTributeAndSelf::class.java, SpecialSelfDeclaredSummoner::class.java, SummonFreeLevelSum::class.java, SummonLikeSubject::class.java)
-        family(Family.TABLE, DestroyFaceUpLife::class.java, DestroyTopLife::class.java, EachPlayerDiscards::class.java, EachPlayerKeepsOneInFrontLine::class.java, EachPlayerLowersMarker::class.java, GainGemsPerOwnSacrificed::class.java, HandsToBottomDrawOpponentLives::class.java, LivesFaceDown::class.java, OpponentGainsGemsAsCounter::class.java, OpponentMovesOneToFront::class.java, ReduceOpponentLivesBy::class.java)
+        family(Family.FLOW, EndYourTurn::class, IfChosenGone::class, IfSaved::class, IfCondition::class, IfDone::class, IfNotDone::class, IfPossible::class, IfTributed::class, KeepOnField::class, MayDo::class, SubjectFromTrigger::class, SubjectIsThisCard::class)
+        family(Family.LOOK, RevealFromHand::class, RevealOpponentHandSendOneToBottom::class, TakeFromLookedDistinctLevels::class, TakeFromLookedEachRestToBottom::class, TakeFromLookedLikeSubject::class)
+        family(Family.COMBAT, AlliesGain::class, BounceChosen::class, ChooseEnemiesLevelSum::class, ChooseWeakestEnemy::class, DeclareBlockSelf::class, ExtraCombatHitThenEndTurn::class, ExtraHit::class, GroupUp::class, NoUntapChosen::class, PickAllyUpToSacrificedLevel::class, ReduceRepeatedly::class, ReturnSubjectAtAttackEnd::class, SkipBlockStep::class, TributesToDeckBottomForKeyword::class)
+        family(Family.ALLY, ActivateSubjectSummonEffect::class, ActivateTributedSummonEffect::class, AddResourceToHigherAlly::class, AttachLowerFromTributes::class, AttachSelfAsResourceToAlly::class, AttachSubjectToHigherAlly::class, AttachSubjectToSummoned::class, MaterialOfExhaustedAllyToBack::class, PickAllyWithHigherAlly::class, PickAllyWithMaterials::class, PlaceFromHandUntilTurnEnd::class, ReturnAllyOfSummonedLevel::class, SacrificeAlly::class, TributeAlliesLevelSum::class, TributeAllyMaterial::class, TributeAllyMaterialWhere::class, TributeAllyResources::class)
+        family(Family.SUMMON, ChooseOpponentTribute::class, MaterializeSelfOnTriggerAlly::class, PlaceChosenTributeAndSelf::class, SpecialSelfDeclaredSummoner::class, SummonFreeLevelSum::class, SummonLikeSubject::class)
+        family(Family.TABLE, DestroyFaceUpLife::class, DestroyTopLife::class, EachPlayerDiscards::class, EachPlayerKeepsOneInFrontLine::class, EachPlayerLowersMarker::class, GainGemsPerOwnSacrificed::class, HandsToBottomDrawOpponentLives::class, LivesFaceDown::class, OpponentGainsGemsAsCounter::class, OpponentMovesOneToFront::class, ReduceOpponentLivesBy::class)
     }
 
     // ------------------------------------------------------------------ Resolution
@@ -119,7 +120,7 @@ object Resolution {
     fun possibleAs(room: GameRoom, effect: PendingEffect, step: EffectStep): Boolean {
         if (room.getPlayer(effect.controllerId) == null) return false
         if (step is Do) return Actions.possible(EngineContext(room, effect), step.action!!)
-        return when (FAMILY[step.javaClass]!!) {
+        return when (FAMILY[step::class]!!) {
             Family.FLOW -> FlowSteps.possibleStep(room, effect, step)
             Family.LOOK -> LookSteps.possibleStep(room, effect, step)
             Family.COMBAT -> CombatSteps.possibleStep(room, effect, step)
@@ -140,7 +141,7 @@ object Resolution {
     fun runAs(room: GameRoom, effect: PendingEffect, step: EffectStep): Boolean {
         if (room.getPlayer(effect.controllerId) == null) return false
         if (step is Do) return Actions.run(EngineContext(room, effect), step.action!!)
-        return when (FAMILY[step.javaClass]!!) {
+        return when (FAMILY[step::class]!!) {
             Family.FLOW -> FlowSteps.runStep(room, effect, step)
             Family.LOOK -> LookSteps.runStep(room, effect, step)
             Family.COMBAT -> CombatSteps.runStep(room, effect, step)
@@ -166,7 +167,7 @@ object Resolution {
         order: List<String>?, repeat: BooleanArray,
     ): String? {
         if (step is Do) return Actions.answer(EngineContext(room, effect, repeat), step.action!!, ActionHandler.Answer(picks, order))
-        return when (FAMILY[step.javaClass]!!) {
+        return when (FAMILY[step::class]!!) {
             Family.FLOW -> FlowSteps.applyStep(room, effect, step, player, picks, order, repeat)
             Family.LOOK -> LookSteps.applyStep(room, effect, step, player, picks, order, repeat)
             Family.COMBAT -> CombatSteps.applyStep(room, effect, step, player, picks, order, repeat)

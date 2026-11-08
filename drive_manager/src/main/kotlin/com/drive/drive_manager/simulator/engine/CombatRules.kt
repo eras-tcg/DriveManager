@@ -1,5 +1,6 @@
 package com.drive.drive_manager.simulator.engine
 
+import kotlin.math.max
 import com.drive.drive_manager.simulator.engine.Chain.advance
 import com.drive.drive_manager.simulator.engine.EffectEngine.CANNOT_TAP
 import com.drive.drive_manager.simulator.engine.EffectEngine.CAUSE_BATTLE
@@ -103,7 +104,7 @@ object CombatRules {
             if (!k.lowercase().startsWith("furia")) continue
             val m = Regex("(\\d+)").find(k)
             if (m == null) return -1
-            best = if (best == null) m.groupValues[1].toInt() else Math.max(best, m.groupValues[1].toInt())
+            best = if (best == null) m.groupValues[1].toInt() else max(best, m.groupValues[1].toInt())
         }
         return best
     }
@@ -160,7 +161,7 @@ object CombatRules {
                     return
                 }
                 record(room, GameEvent.COMBAT_STEP, owner!!.userId, attacker, null, null, null,
-                    java.util.Map.of<String, Any?>("step", c.step!!.name, "moment", "ENTER"), "Paso de " + stepName(c.step))
+                    frozenMapOf<String, Any?>("step", c.step!!.name, "moment", "ENTER"), "Paso de " + stepName(c.step))
                 c.phase = Combat.Phase.ACT
             }
             Combat.Phase.ACT -> {
@@ -168,7 +169,7 @@ object CombatRules {
             }
             Combat.Phase.EXIT -> {
                 record(room, GameEvent.COMBAT_STEP, owner!!.userId, attacker, null, null, null,
-                    java.util.Map.of<String, Any?>("step", c.step!!.name, "moment", "EXIT"), null)
+                    frozenMapOf<String, Any?>("step", c.step!!.name, "moment", "EXIT"), null)
                 c.step = nextStep(c, defender, attacker)
                 c.phase = Combat.Phase.ENTER
             }
@@ -227,7 +228,7 @@ object CombatRules {
                 // Rule 10.1.2.3: the defender may declare a blocker, unless one was already declared
                 if (c.blockerId == null && !c.blockAsked) {
                     c.blockAsked = true
-                    val options = if (keywordLevel(attacker, "Imbloqueable") != null) java.util.List.of<CardSlot>()
+                    val options = if (keywordLevel(attacker, "Imbloqueable") != null) frozenListOf<CardSlot>()
                     else blockers(defender).filter { b -> b.instanceId != c.targetId }
                     if (!options.isEmpty()) {
                         rulesPrompt(room, defender.userId, PromptPurpose.BLOCK.id(), name(attacker) + " ataca",
@@ -249,7 +250,7 @@ object CombatRules {
                 val a = strength(attacker)
                 val b = strength(blocker)
                 record(room, GameEvent.CLASH, owner.userId, attacker, null, null, null,
-                    java.util.Map.of<String, Any?>("blockerId", blocker.instanceId, "attackerStrength", a, "blockerStrength", b),
+                    frozenMapOf<String, Any?>("blockerId", blocker.instanceId, "attackerStrength", a, "blockerStrength", b),
                     "Enfrentamiento: " + name(attacker) + " (" + a + ") contra " + name(blocker) + " (" + b + ")")
                 // Rule 10.1.3.2: the weaker one is destroyed; both when equal. Attributed to the opponent and the other creature.
                 if (b <= a) destroy(room, blocker, defender, false, CAUSE_BATTLE, owner.userId, attacker.instanceId, null)
@@ -312,7 +313,7 @@ object CombatRules {
             val tribute = creature && (life.strength == null || CardEffects.lifeStrength(room, defender.userId, life) <= damage)
             (if (tribute) defender.tributeZone else defender.hand).add(life)
             record(room, GameEvent.LIFE_DAMAGE, owner.userId, life, "lifeStack", if (tribute) "tributeZone" else "hand", null,
-                java.util.Map.of<String, Any?>("damage", damage, "attackerId", attacker.instanceId, "defenderId", defender.userId),
+                frozenMapOf<String, Any?>("damage", damage, "attackerId", attacker.instanceId, "defenderId", defender.userId),
                 name(attacker) + " inflige " + damage + " de daño directo: " + defender.username + " pierde la vida " +
                         name(life) + (if (tribute) ", que va a sus tributos" else ", que va a su mano"))
             if (creature && !tribute && revealedNow) {
@@ -369,7 +370,7 @@ object CombatRules {
         // The effect declares it: it is not exhausted for blocking (an active one stays active)
         c.blockerId = other.instanceId
         record(room, GameEvent.UNTAP, defender.userId, first, null, null, null, null, defender.username + " reactiva a " + name(first))
-        record(room, GameEvent.BLOCK, defender.userId, other, null, null, null, java.util.Map.of<String, Any?>("forced", false),
+        record(room, GameEvent.BLOCK, defender.userId, other, null, null, null, frozenMapOf<String, Any?>("forced", false),
             name(other) + " bloquea el ataque en lugar de " + name(first))
     }
 
@@ -387,7 +388,7 @@ object CombatRules {
             val r = CardEffects.damageReplacement(card)
             r != null && damage <= r.maxDamage && card.cost != null
                     && !room.usedThisTurn.contains(defender.userId + "|damage-replace|" + card.cardName)
-                    && canPay(room, defender.userId, Math.max(0, card.cost!! - r.reduce))
+                    && canPay(room, defender.userId, max(0, card.cost!! - r.reduce))
         }
         if (options.isEmpty()) return false
         rulesPrompt(room, defender.userId, PromptPurpose.DAMAGE_REPLACE.id(), "Daño directo: " + damage,
@@ -484,7 +485,7 @@ object CombatRules {
 
     @JvmStatic
     fun lifePrompt(room: GameRoom, defender: PlayerState, life: CardSlot, purpose: String?, title: String?, instruction: String?, label: String?) {
-        rulesPrompt(room, defender.userId, purpose, title, instruction, label, java.util.List.of(life), java.util.List.of(life))
+        rulesPrompt(room, defender.userId, purpose, title, instruction, label, frozenListOf(life), frozenListOf(life))
         room.prompt!!.kind = Prompt.Kind.CONFIRM
         room.prompt!!.subjectId = life.instanceId
     }
@@ -498,7 +499,7 @@ object CombatRules {
         val owner = room.getPlayer(c.attackerOwnerId)
         val attacker = if (owner == null) null else findAnywhere(room, owner.userId, c.attackerId)
         if (owner != null) record(room, GameEvent.ATTACK_ENDED, owner.userId, attacker, null, null, null,
-            java.util.Map.of<String, Any?>("enemyDestroyed", c.enemyDestroyed), "Termina el combate")
+            frozenMapOf<String, Any?>("enemyDestroyed", c.enemyDestroyed), "Termina el combate")
     }
 
     /** "hasta el final del ataque" ends with the combat (and "al final del ataque súbelo a tu mano con todos sus materiales"). */
@@ -529,11 +530,11 @@ object CombatRules {
                 if (parts[1].startsWith(STRENGTH_ENTRY)) {
                     val amount = parts[1].substring(STRENGTH_ENTRY.length).toInt()
                     card.turnStrength = card.turnStrength - amount
-                    card.floating!!.removeIf { f -> "attack" == f.until && f.keyword == null && f.strength == amount }
+                    card.floating!!.removeAll { f -> "attack" == f.until && f.keyword == null && f.strength == amount }
                     continue
                 }
                 card.turnKeywords!!.remove(parts[1])
-                card.floating!!.removeIf { f -> "attack" == f.until && parts[1] == f.keyword }
+                card.floating!!.removeAll { f -> "attack" == f.until && parts[1] == f.keyword }
             }
         }
         c.untilEndOfAttack.clear()
@@ -549,7 +550,7 @@ object CombatRules {
     /** Enemy creatures that can be attacked (rule 10.0.0.1): exhausted ones, or active ones the attacker can face (Enfrentar). */
     @JvmStatic
     fun attackTargets(room: GameRoom, userId: String?, attacker: CardSlot?): List<CardSlot> {
-        val opponent = room.getPlayer(room.getOpponentId(userId)) ?: return java.util.List.of()
+        val opponent = room.getPlayer(room.getOpponentId(userId)) ?: return frozenListOf()
         // Rule 4.0.6.2: the Retaguardia cannot be attacked
         return opponent.field
             .filter { c -> "creature" == c.cardType && inFrontLine(c) && (c.tapped || challenges(attacker, c)) }
@@ -572,7 +573,7 @@ object CombatRules {
             log(room, name(subject) + " no puede atacar: no está en la línea frontal", null)
             return false
         }
-        val targets = if (opponentOnly) java.util.List.of<CardSlot>() else attackTargets(room, userId, subject)
+        val targets = if (opponentOnly) frozenListOf<CardSlot>() else attackTargets(room, userId, subject)
         if (targets.isEmpty()) {
             startCombat(room, userId, subject, null, true, effect)
             return false

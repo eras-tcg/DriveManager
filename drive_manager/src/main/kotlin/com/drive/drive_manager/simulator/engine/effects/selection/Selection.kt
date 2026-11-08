@@ -1,5 +1,6 @@
 package com.drive.drive_manager.simulator.engine.effects.selection
 
+import com.drive.drive_manager.simulator.engine.frozenListOf
 import com.drive.drive_manager.simulator.engine.effects.model.Selector
 import com.drive.drive_manager.simulator.engine.effects.runtime.EffectContext
 import com.drive.drive_manager.simulator.room.CardSlot
@@ -40,7 +41,7 @@ object Selection {
             }
             found.add(card)
         }
-        if (selector.mode() == Selector.Mode.NEWEST) java.util.Collections.reverse(found)
+        if (selector.mode() == Selector.Mode.NEWEST) found.reverse()
         return found
     }
 
@@ -68,7 +69,7 @@ object Selection {
         if (r.differentName && name != null && name.equals(other.cardName, ignoreCase = true)) return false
         if (r.sameName && (name == null || !name.equals(other.cardName, ignoreCase = true))) return false
         if (r.sharesClass) {
-            val theirs: List<String> = other.classes ?: java.util.List.of()
+            val theirs: List<String> = other.classes ?: frozenListOf()
             val classes = card.classes
             if (classes == null || classes.none { t -> theirs.any { t.equals(it, ignoreCase = true) } }) return false
         }

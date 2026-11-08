@@ -1,5 +1,14 @@
 package com.drive.drive_manager.simulator.bot
 
+import kotlin.math.max
+import kotlin.math.min
+import kotlin.math.pow
+import com.drive.drive_manager.simulator.engine.valueOr
+import com.drive.drive_manager.simulator.engine.comparingDouble
+import com.drive.drive_manager.simulator.engine.comparingInt
+import com.drive.drive_manager.simulator.engine.JavaMath
+import com.drive.drive_manager.simulator.engine.frozenListOf
+import com.drive.drive_manager.simulator.engine.frozenMapOf
 import com.drive.drive_manager.simulator.engine.CardEffects
 import com.drive.drive_manager.simulator.engine.EffectEngine
 import com.drive.drive_manager.simulator.engine.LegalActions
@@ -45,10 +54,10 @@ open class HeuristicBot(rules: BotSettings) : BotPlayer() {
     override fun mulligan(room: GameRoom, self: PlayerState, top: List<CardSlot>): List<String> {
         val bottom: MutableList<String?> = ArrayList()
         val cost = rules.get("hMullCost")
-        val keep = Math.round(rules.get("hMullKeep")).toInt()
-        top.sortedWith(Comparator.comparingDouble { c: CardSlot -> if (c.cost == null) 0.0 else c.cost!!.toDouble() }.reversed())
+        val keep = JavaMath.round(rules.get("hMullKeep")).toInt()
+        top.sortedWith(comparingDouble { c: CardSlot -> if (c.cost == null) 0.0 else c.cost!!.toDouble() }.reversed())
             .filter { c -> c.cost != null && c.cost!! >= cost }
-            .take(Math.max(0, top.size - keep))
+            .take(max(0, top.size - keep))
             .forEach { c -> bottom.add(c.instanceId) }
         @Suppress("UNCHECKED_CAST")
         return bottom as List<String>
@@ -71,22 +80,22 @@ open class HeuristicBot(rules: BotSettings) : BotPlayer() {
 
         // Rituals, summons and plays: the most valuable first, keeping hHold cards in the hand
         val fromHand: MutableList<GameAction> = ArrayList()
-        val hold = self!!.hand.size <= Math.round(rules.get("hHold"))
+        val hold = self!!.hand.size <= JavaMath.round(rules.get("hHold"))
         val hand: MutableList<CardSlot> = ArrayList(self.hand)
-        hand.sortWith(Comparator.comparingDouble { c: CardSlot -> value(c) }.reversed())
+        hand.sortWith(comparingDouble { c: CardSlot -> value(c) }.reversed())
         // hStructFirst: structures before the Rituals and summons (their effects pay off on the invocations that follow)
         if (on("hStructFirst")) for (card in hand) {
-            if ("structure" == card.cardType && legalOf.getOrDefault(card.instanceId, java.util.List.of()).contains("play"))
-                fromHand.add(action(ActionType.PLAY_CARD, java.util.Map.of<String, Any?>("instanceId", card.instanceId, "x", summonX(self), "y", 75.0)))
+            if ("structure" == card.cardType && legalOf.valueOr(card.instanceId, frozenListOf()).contains("play"))
+                fromHand.add(action(ActionType.PLAY_CARD, frozenMapOf<String, Any?>("instanceId", card.instanceId, "x", summonX(self), "y", 75.0)))
         }
         for (id in legal.keys) {
-            if (legal[id]!!.contains("ritual")) fromHand.add(action(ActionType.RITUAL_SUMMON, java.util.Map.of<String, Any?>("instanceId", id)))
+            if (legal[id]!!.contains("ritual")) fromHand.add(action(ActionType.RITUAL_SUMMON, frozenMapOf<String, Any?>("instanceId", id)))
         }
         val x = summonX(self)
         for (card in hand) {
-            val can = legalOf.getOrDefault(card.instanceId, java.util.List.of())
-            if (can.contains("summon")) fromHand.add(action(ActionType.NORMAL_SUMMON, java.util.Map.of<String, Any?>("instanceId", card.instanceId, "x", x, "y", 75.0)))
-            if (can.contains("play")) fromHand.add(action(ActionType.PLAY_CARD, java.util.Map.of<String, Any?>("instanceId", card.instanceId, "x", x, "y", 75.0)))
+            val can = legalOf.valueOr(card.instanceId, frozenListOf())
+            if (can.contains("summon")) fromHand.add(action(ActionType.NORMAL_SUMMON, frozenMapOf<String, Any?>("instanceId", card.instanceId, "x", x, "y", 75.0)))
+            if (can.contains("play")) fromHand.add(action(ActionType.PLAY_CARD, frozenMapOf<String, Any?>("instanceId", card.instanceId, "x", x, "y", 75.0)))
         }
         // hUseful: a utility whose effect would do nothing now stays in the hand
         if (!hold) for (move in fromHand) if (!isRefused(move) && (!on("hNoDebt") || !overextends(room, me, self, move))
@@ -101,7 +110,7 @@ open class HeuristicBot(rules: BotSettings) : BotPlayer() {
         for (e in legal.entries) {
             if (!on("hActivate")) break
             if (!e.value.contains("activate") || activated.contains(e.key)) continue
-            val move = action(ActionType.ACTIVATE_EFFECT, java.util.Map.of<String, Any?>("instanceId", e.key))
+            val move = action(ActionType.ACTIVATE_EFFECT, frozenMapOf<String, Any?>("instanceId", e.key))
             if (isRefused(move)) continue
             return move
         }
@@ -133,8 +142,8 @@ open class HeuristicBot(rules: BotSettings) : BotPlayer() {
         val legalOf = legal as Map<String?, List<String>>
         @Suppress("UNCHECKED_CAST")
         val targets = LegalActions.attackTargets(room, me) as Map<String?, List<String>>
-        val attackers = self!!.field.filter { c -> legalOf.getOrDefault(c.instanceId, java.util.List.of()).contains("attack") }
-            .sortedWith(Comparator.comparingInt { c: CardSlot -> EffectEngine.strength(c) }.reversed())
+        val attackers = self!!.field.filter { c -> legalOf.valueOr(c.instanceId, frozenListOf()).contains("attack") }
+            .sortedWith(comparingInt { c: CardSlot -> EffectEngine.strength(c) }.reversed())
         val theirs = blockers(rival)
         val bestBlocker = theirs.maxOfOrNull { c -> EffectEngine.strength(c) } ?: -1
         val bestBlockerValue = theirs.filter { c -> EffectEngine.strength(c) == bestBlocker }.maxOfOrNull { c -> value(c) } ?: 0.0
@@ -144,15 +153,15 @@ open class HeuristicBot(rules: BotSettings) : BotPlayer() {
         for (attacker in attackers) {
             val power = EffectEngine.strength(attacker)
             // A clash it wins against an exhausted enemy (that one cannot block, so the clash is with it or a stronger blocker)
-            var prey: CardSlot? = targets.getOrDefault(attacker.instanceId, java.util.List.of())
+            var prey: CardSlot? = targets.valueOr(attacker.instanceId, frozenListOf())
                 .map { id -> onField(rival, id) }.filter { t -> t != null && EffectEngine.strength(t) < power - preyMargin }
-                .maxWithOrNull(Comparator.comparingDouble { c: CardSlot? -> value(c) })
+                .maxWithOrNull(comparingDouble { c: CardSlot? -> value(c) })
             // hPreyGuard (the user's call, 2026-11-05): an active enemy that wins the clash blocks it (or one as strong, when
             // that trade is not worth it): the prey is never reached and the attacker dies for nothing (Ddraig into Rhogler)
             if (prey != null && on("hPreyGuard") && (bestBlocker > power
                     || (bestBlocker == power && value(attacker) > evenTrade * bestBlockerValue))) prey = null
             if (prey != null) {
-                val move = action(ActionType.ATTACK, java.util.Map.of<String, Any?>("instanceId", attacker.instanceId, "targetInstanceId", prey.instanceId))
+                val move = action(ActionType.ATTACK, frozenMapOf<String, Any?>("instanceId", attacker.instanceId, "targetInstanceId", prey.instanceId))
                 if (!isRefused(move)) return move
             }
             // An even trade is taken when the attacker is worth no more than the blocker (a stalled table only ends by the deck)
@@ -161,7 +170,7 @@ open class HeuristicBot(rules: BotSettings) : BotPlayer() {
                     || EffectEngine.keywords(attacker).any { k -> k.lowercase().startsWith("imbloqueable") }
             val finishing = rival.lifeStack.size <= hits(attacker) && bestBlocker < power
             if (unstoppable || finishing) {
-                val move = action(ActionType.ATTACK, java.util.Map.of<String, Any?>("instanceId", attacker.instanceId))
+                val move = action(ActionType.ATTACK, frozenMapOf<String, Any?>("instanceId", attacker.instanceId))
                 if (!isRefused(move)) return move
             }
         }
@@ -178,18 +187,18 @@ open class HeuristicBot(rules: BotSettings) : BotPlayer() {
         // hUseful: no to an optional effect of its own that would do nothing (a free play of a utility with nothing to
         // do), whether it is asked as a yes or as the effects to chain
         if (on("hUseful") && optionalEffect(prompt) && prompt.min == 0 && !choices.isEmpty()) {
-            choices = ArrayList(choices.stream().filter { id -> Usefulness.yesDoesSomething(room, me, prompt, java.util.List.of(id), rules) }.toList())
-            if (choices.isEmpty()) return java.util.List.of()
+            choices = ArrayList(choices.filter { id -> Usefulness.yesDoesSomething(room, me, prompt, frozenListOf(id), rules) })
+            if (choices.isEmpty()) return frozenListOf()
         }
-        val chosen: List<String?>? = when (PromptPurpose.parse(purpose).orElse(null)) {
+        val chosen: List<String?>? = when (PromptPurpose.parse(purpose)) {
             PromptPurpose.BLOCK -> block(room, self, rival, prompt)
             PromptPurpose.PROVOKE -> provoke(room, rival, prompt)
             // Everything moves up: the Línea frontal attacks, and only an exhausted creature can be attacked there
             PromptPurpose.ADVANCE, PromptPurpose.SPECIAL_FRONT -> advance(self, prompt, choices)
             // Entering the Línea frontal exhausted only gives the rival a target (hAssault: use it anyway)
-            PromptPurpose.ASSAULT -> if (on("hAssault") && !choices.isEmpty()) take(choices, Math.max(1, prompt.min)) else if (prompt.min == 0) java.util.List.of() else null
+            PromptPurpose.ASSAULT -> if (on("hAssault") && !choices.isEmpty()) take(choices, max(1, prompt.min)) else if (prompt.min == 0) frozenListOf() else null
             PromptPurpose.PRIORITY -> respond(room, me, prompt)
-            PromptPurpose.ORDER -> take(choices, Math.max(1, prompt.min))
+            PromptPurpose.ORDER -> take(choices, max(1, prompt.min))
             PromptPurpose.RITUAL -> ritual(self, prompt, choices)
             else -> pick(room, self, rival, prompt, choices)
         }
@@ -204,12 +213,12 @@ open class HeuristicBot(rules: BotSettings) : BotPlayer() {
      */
     private fun ritual(self: PlayerState?, prompt: Prompt, choices: List<String?>): List<String?>? {
         val cards = choices.map { id -> onField(self, id) }.filter { c -> c != null }.map { c -> c!! }
-        if (cards.isEmpty()) return if (prompt.min == 0) java.util.List.of() else null
+        if (cards.isEmpty()) return if (prompt.min == 0) frozenListOf() else null
         if (prompt.summonerId == null || prompt.maxLevelSum == null) {
-            return java.util.List.of(cards.minWithOrNull(Comparator.comparingDouble { c: CardSlot -> value(c) })!!.instanceId)
+            return frozenListOf(cards.minWithOrNull(comparingDouble { c: CardSlot -> value(c) })!!.instanceId)
         }
         val group = cheapestGroup(cards, prompt.maxLevelSum!!, prompt.max)
-        return if (group == null) java.util.List.of() else group.map { it.instanceId }
+        return if (group == null) frozenListOf() else group.map { it.instanceId }
     }
 
     /** Moves up the creatures with at least hAdvanceMinStr strength (as many as allowed, the strongest first). */
@@ -218,7 +227,7 @@ open class HeuristicBot(rules: BotSettings) : BotPlayer() {
         val up = choices.filter { id ->
             val c = if (self == null) null else onField(self, id)
             c == null || EffectEngine.strength(c) >= min
-        }.sortedWith(Comparator.comparingInt { id: String? -> val c = onField(self, id); if (c == null) 0 else EffectEngine.strength(c) }.reversed())
+        }.sortedWith(comparingInt { id: String? -> val c = onField(self, id); if (c == null) 0 else EffectEngine.strength(c) }.reversed())
         return take(if (up.size < prompt.min) choices else up, prompt.max)
     }
 
@@ -227,8 +236,8 @@ open class HeuristicBot(rules: BotSettings) : BotPlayer() {
         val chain = room.chain
         val rivals = !chain.isEmpty() && me!! != chain[chain.size - 1].controllerId
         val choices = choices(prompt)
-        if (!on("hRespond") || !rivals || choices.isEmpty()) return if (prompt.min == 0) java.util.List.of() else null
-        return java.util.List.of(choices[0])
+        if (!on("hRespond") || !rivals || choices.isEmpty()) return if (prompt.min == 0) frozenListOf() else null
+        return frozenListOf(choices[0])
     }
 
     /** Blocks with what wins the clash (the weakest of them), trades evenly for a better attacker, or saves its last lives. */
@@ -244,21 +253,21 @@ open class HeuristicBot(rules: BotSettings) : BotPlayer() {
         }
         val combat = room.combat
         val attacker = if (combat == null) null else onField(rival, combat.attackerId)
-        if (attacker == null) return if (prompt.min == 0) java.util.List.of() else null
+        if (attacker == null) return if (prompt.min == 0) frozenListOf() else null
         val power = EffectEngine.strength(attacker)
         val mine = prompt.validIds.map { id -> onField(self, id) }.filter { c -> c != null }.map { c -> c!! }
-        val winner = mine.filter { c -> EffectEngine.strength(c) > power }.minWithOrNull(Comparator.comparingDouble { c: CardSlot -> value(c) })
-        if (winner != null) return java.util.List.of(winner.instanceId)
+        val winner = mine.filter { c -> EffectEngine.strength(c) > power }.minWithOrNull(comparingDouble { c: CardSlot -> value(c) })
+        if (winner != null) return frozenListOf(winner.instanceId)
         val blockEven = rules.get("hBlockEven")
         val even = mine.filter { c -> EffectEngine.strength(c) == power && value(c) <= blockEven * value(attacker) }
-            .minWithOrNull(Comparator.comparingDouble { c: CardSlot -> value(c) })
-        if (even != null) return java.util.List.of(even.instanceId)
+            .minWithOrNull(comparingDouble { c: CardSlot -> value(c) })
+        if (even != null) return frozenListOf(even.instanceId)
         // Attacking one of its creatures: an unblocked attack only reaches that one
         val direct = combat!!.targetId == null
         if (direct && self!!.lifeStack.size <= hits(attacker) + rules.get("hChumpLives") && !mine.isEmpty()) {
-            return java.util.List.of(mine.minWithOrNull(Comparator.comparingDouble { c: CardSlot -> value(c) })!!.instanceId)
+            return frozenListOf(mine.minWithOrNull(comparingDouble { c: CardSlot -> value(c) })!!.instanceId)
         }
-        return if (prompt.min == 0) java.util.List.of() else null
+        return if (prompt.min == 0) frozenListOf() else null
     }
 
     /** Provocar: the enemy forced to block is the most valuable one it destroys, else the weakest. */
@@ -268,9 +277,9 @@ open class HeuristicBot(rules: BotSettings) : BotPlayer() {
         val attacker = if (combat == null) null else onField(attackerOwner, combat.attackerId)
         val power = if (attacker == null) 0 else EffectEngine.strength(attacker)
         val enemies = prompt.validIds.map { id -> onField(rival, id) }.filter { c -> c != null }.map { c -> c!! }
-        val prey = enemies.filter { c -> EffectEngine.strength(c) < power }.maxWithOrNull(Comparator.comparingDouble { c: CardSlot -> value(c) })
-            ?: enemies.minWithOrNull(Comparator.comparingInt { c: CardSlot -> EffectEngine.strength(c) })
-        return if (prey == null) null else java.util.List.of(prey.instanceId)
+        val prey = enemies.filter { c -> EffectEngine.strength(c) < power }.maxWithOrNull(comparingDouble { c: CardSlot -> value(c) })
+            ?: enemies.minWithOrNull(comparingInt { c: CardSlot -> EffectEngine.strength(c) })
+        return if (prey == null) null else frozenListOf(prey.instanceId)
     }
 
     /**
@@ -279,8 +288,8 @@ open class HeuristicBot(rules: BotSettings) : BotPlayer() {
      * effect asks it to pay: it chose to activate it); for a gain, the most valuable, as many as allowed.
      */
     private fun pick(room: GameRoom, self: PlayerState?, rival: PlayerState?, prompt: Prompt, choices: List<String?>): List<String?>? {
-        if (choices.isEmpty()) return if (prompt.min == 0) java.util.List.of() else null
-        if (prompt.kind == Prompt.Kind.CONFIRM) return if (on("hOptional") || prompt.min > 0) take(choices, Math.max(1, prompt.min)) else java.util.List.of()
+        if (choices.isEmpty()) return if (prompt.min == 0) frozenListOf() else null
+        if (prompt.kind == Prompt.Kind.CONFIRM) return if (on("hOptional") || prompt.min > 0) take(choices, max(1, prompt.min)) else frozenListOf()
         // Cards revealed from its own deck to take ("mira las primeras N cartas…") are its own, though out of the deck
         val reveal = prompt.kind != null && prompt.kind!!.name.startsWith("TAKE_REVEALED")
         val enemy = !reveal && choices.all { id -> self == null || own(self, id) == null }
@@ -289,7 +298,7 @@ open class HeuristicBot(rules: BotSettings) : BotPlayer() {
         // hPickPlay: its own cards that are not on the field (to take into the hand, or to give up from it) by what they
         // are worth to play soon, not by their size: a search takes the best card it can play soon, a tribute from the
         // hand gives up the one it would wait longest for
-        val byValue: Comparator<String?> = Comparator.comparingDouble { id: String? ->
+        val byValue: Comparator<String?> = comparingDouble { id: String? ->
             val c = card(prompt, id)
             if (on("hPickPlay") && !enemy && self != null && (reveal || own(self, id) != null) && self.field.none { f -> f.instanceId!! == id })
                 playValue(room, c, self) else value(c)
@@ -298,9 +307,9 @@ open class HeuristicBot(rules: BotSettings) : BotPlayer() {
             // hRank: from the hand, the card least worth keeping (copies, then its type's crowd, then playability)
             if (on("hRank") && tributesFromHand(self, prompt, choices)) ranked = ArrayList(HandRank.weakestFirst(room, self!!, choices, rules))
             else ranked.sortWith(if (on("hTributeCreatures") && tributesFromHand(self, prompt, choices))
-                Comparator.comparingDouble { id: String? -> tributeOrder(card(prompt, id)) } else byValue)
+                comparingDouble { id: String? -> tributeOrder(card(prompt, id)) } else byValue)
             val n = if (prompt.min > 0) prompt.min else if (prompt.effectId != null && prompt.purpose == null) 1 else 0
-            return take(ranked, Math.min(n, prompt.max))
+            return take(ranked, min(n, prompt.max))
         }
         // hReduce: a strength reduction goes where it reaches 0 (a removal), or opens a clash; else nowhere (StrengthCuts)
         if (on("hReduce") && enemy) {
@@ -313,8 +322,8 @@ open class HeuristicBot(rules: BotSettings) : BotPlayer() {
             if (attacker != null) {
                 val power = EffectEngine.strength(attacker)
                 val target = ranked.map { id -> card(prompt, id) }.filter { c -> c != null && EffectEngine.strength(c) < power }
-                    .maxWithOrNull(Comparator.comparingDouble { c: CardSlot? -> value(c) })
-                return if (target == null) java.util.List.of() else java.util.List.of(target.instanceId)
+                    .maxWithOrNull(comparingDouble { c: CardSlot? -> value(c) })
+                return if (target == null) frozenListOf() else frozenListOf(target.instanceId)
             }
         }
         ranked.sortWith(byValue.reversed())
@@ -328,7 +337,7 @@ open class HeuristicBot(rules: BotSettings) : BotPlayer() {
      */
     private fun playValue(room: GameRoom, c: CardSlot?, self: PlayerState): Double {
         if (c == null) return 0.0
-        return value(c) * Math.pow(rules.get("hPickWait"), Playability.level(room, self.userId, c).toDouble())
+        return value(c) * (rules.get("hPickWait")).pow(Playability.level(room, self.userId, c).toDouble())
     }
 
     companion object {
@@ -342,7 +351,7 @@ open class HeuristicBot(rules: BotSettings) : BotPlayer() {
 
         /** The least valuable group of at most `max` cards whose levels add up exactly to `target`; null if none. */
         private fun cheapestGroup(cards: List<CardSlot>, target: Int, max: Int): List<CardSlot>? {
-            val n = Math.min(cards.size, 12)
+            val n = min(cards.size, 12)
             var best: List<CardSlot>? = null
             var bestValue = Double.MAX_VALUE
             for (mask in 1 until (1 shl n)) {
@@ -350,7 +359,7 @@ open class HeuristicBot(rules: BotSettings) : BotPlayer() {
                 val group: MutableList<CardSlot> = ArrayList()
                 for (i in 0 until n) if ((mask and (1 shl i)) != 0) group.add(cards[i])
                 // DoubleStream.sum (compensated), as before
-                val v = group.stream().mapToDouble { c -> value(c) }.sum()
+                val v = JavaMath.sum(group) { c -> value(c) }
                 if (v < bestValue && addsUp(group, target)) {
                     bestValue = v
                     best = group
@@ -361,9 +370,9 @@ open class HeuristicBot(rules: BotSettings) : BotPlayer() {
 
         /** The cards' levels add up exactly to `target`, each counting as any level it can (as the engine checks it). */
         private fun addsUp(group: List<CardSlot>, target: Int): Boolean {
-            var sums: MutableSet<Int> = HashSet(java.util.List.of(0))
+            var sums: MutableSet<Int> = HashSet(frozenListOf(0))
             for (c in group) {
-                val options: List<Int> = if (EffectEngine.levels(c).isEmpty()) java.util.List.of(0) else EffectEngine.levels(c)
+                val options: List<Int> = if (EffectEngine.levels(c).isEmpty()) frozenListOf(0) else EffectEngine.levels(c)
                 val next: MutableSet<Int> = HashSet()
                 for (s in sums) for (l in options) next.add(s + l)
                 sums = next
@@ -382,7 +391,7 @@ open class HeuristicBot(rules: BotSettings) : BotPlayer() {
             if (self == null || at <= 0 || "Atacar" != prompt.chosenLabel) return null
             val name = text.substring(0, at)
             return self.field.filter { c -> name == c.cardName && "creature" == c.cardType }
-                .maxWithOrNull(Comparator.comparingInt { c: CardSlot -> EffectEngine.strength(c) })
+                .maxWithOrNull(comparingInt { c: CardSlot -> EffectEngine.strength(c) })
         }
 
         /**
@@ -458,7 +467,7 @@ open class HeuristicBot(rules: BotSettings) : BotPlayer() {
             for (k in EffectEngine.keywords(attacker)) {
                 if (!k.lowercase().startsWith("letalidad")) continue
                 val m = Regex("(\\d+)").find(k)
-                if (m != null) extra = Math.max(extra, m.groupValues[1].toInt())
+                if (m != null) extra = max(extra, m.groupValues[1].toInt())
             }
             return 1 + extra
         }
@@ -468,7 +477,7 @@ open class HeuristicBot(rules: BotSettings) : BotPlayer() {
         }
 
         private fun take(ids: List<String?>, n: Int): List<String?> {
-            return ArrayList(ids.subList(0, Math.max(0, Math.min(n, ids.size))))
+            return ArrayList(ids.subList(0, max(0, min(n, ids.size))))
         }
     }
 }

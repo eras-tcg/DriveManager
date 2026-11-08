@@ -71,7 +71,7 @@ object Answers {
         val prompt = room.prompt
         if (prompt == null || prompt.id != promptId) return "No hay ninguna elección pendiente"
         if (prompt.playerId != userId) return "Esta elección le corresponde al otro jugador"
-        val picks: List<String> = chosen ?: java.util.List.of()
+        val picks: List<String> = chosen ?: frozenListOf()
         if (HashSet(picks).size != picks.size) return "Elegiste la misma carta dos veces"
         if (picks.size < prompt.min || picks.size > prompt.max) {
             return if (prompt.min == prompt.max)
@@ -92,7 +92,7 @@ object Answers {
                 if (card == null || inFrontLine(card)) continue
                 card.y = 25.0
                 moved.add(name(card))
-                record(room, GameEvent.MOVE, userId, card, null, "frontLine", null, java.util.Map.of<String, Any?>("reason", "advance"), null)
+                record(room, GameEvent.MOVE, userId, card, null, "frontLine", null, frozenMapOf<String, Any?>("reason", "advance"), null)
             }
             if (!moved.isEmpty()) log(room, player.username + " sube a la línea frontal: " + moved.joinToString(", "), room.eventSeq)
             advance(room)
@@ -120,7 +120,7 @@ object Answers {
                     blocker.tapped = true
                     c.blockerId = blocker.instanceId
                     val forced = PromptPurpose.PROVOKE.`is`(prompt.purpose)
-                    record(room, GameEvent.BLOCK, defender.userId, blocker, null, null, null, java.util.Map.of<String, Any?>("forced", forced),
+                    record(room, GameEvent.BLOCK, defender.userId, blocker, null, null, null, frozenMapOf<String, Any?>("forced", forced),
                         name(blocker) + (if (forced) " debe bloquear (Provocar)" else " bloquea el ataque"))
                     // "cuando un aliado sea declarado bloqueador: en su lugar, puedes …" (Comandante Veterano)
                     if (CombatRules.offerBlockerSwap(room, defender, blocker)) return null
@@ -178,7 +178,7 @@ object Answers {
         val tribute = "creature" == life.cardType && (life.strength == null || CardEffects.lifeStrength(room, player.userId, life) <= damage)
         (if (tribute) player.tributeZone else player.hand).add(life)
         record(room, GameEvent.LIFE_DAMAGE, player.userId, life, "lifeStack", if (tribute) "tributeZone" else "hand", null,
-            java.util.Map.of<String, Any?>("damage", damage, "attackerId", by.instanceId, "defenderId", player.userId),
+            frozenMapOf<String, Any?>("damage", damage, "attackerId", by.instanceId, "defenderId", player.userId),
             player.username + " se inflige " + damage + " de daño (" + name(by) + "): pierde la vida " + name(life) +
                     (if (tribute) ", que va a sus tributos" else ", que va a su mano"))
         if (player.lifeStack.isEmpty()) loseByLives(room, player)
@@ -213,7 +213,7 @@ object Answers {
             val y = if (prompt.summonerId == null) "" else prompt.summonerId!!
             val error = normalSummon(room, userId, card.instanceId, 50.0, if (y.isEmpty()) null else y.toDouble())
             if (error != null) {
-                room.usedThisTurn.removeIf { k -> k.startsWith(SUMMON_SACRIFICE + card.instanceId + "|") }
+                room.usedThisTurn.removeAll { k -> k.startsWith(SUMMON_SACRIFICE + card.instanceId + "|") }
                 room.prompt = prompt
                 return error
             }
@@ -338,7 +338,7 @@ object Answers {
             if (card != null && !picks.isEmpty() && !inFrontLine(card)) {
                 card.y = 25.0
                 card.tapped = true
-                record(room, GameEvent.MOVE, userId, card, null, "frontLine", null, java.util.Map.of<String, Any?>("reason", "Asalto"),
+                record(room, GameEvent.MOVE, userId, card, null, "frontLine", null, frozenMapOf<String, Any?>("reason", "Asalto"),
                     name(card) + " entra agotada en la línea frontal (Asalto)")
             }
             advance(room)
@@ -408,7 +408,7 @@ object Answers {
                     i++
                 }
             }
-            for (id in if (selfDamage) java.util.List.of<String>() else picks) {
+            for (id in if (selfDamage) frozenListOf<String>() else picks) {
                 // "puedes agotar 1 carta [filtro] bajo tu control para reducir…"
                 if (use != null && use.modifier.payment!!.kind == CostModifiers.PaymentKind.TAP_CARD) {
                     val t = find(player.field, id)
@@ -424,13 +424,13 @@ object Answers {
                     // It becomes a Recurso of the summoner, which passes its Recursos on to the creature it summons
                     c.faceDown = false
                     summoner.resources!!.add(c)
-                    record(room, GameEvent.SEND, userId, c, "tributeZone", "resources", null, java.util.Map.of<String, Any?>("to", summoner.instanceId),
+                    record(room, GameEvent.SEND, userId, c, "tributeZone", "resources", null, frozenMapOf<String, Any?>("to", summoner.instanceId),
                         player.username + " añade " + name(c) + " como recurso de " + name(summoner))
                     continue
                 }
                 c.faceDown = true
                 player.deck.add(c)
-                record(room, GameEvent.SEND, userId, c, "tributeZone", "deck", null, java.util.Map.of<String, Any?>("position", "bottom"), null)
+                record(room, GameEvent.SEND, userId, c, "tributeZone", "deck", null, frozenMapOf<String, Any?>("position", "bottom"), null)
             }
             if (reduce > 0) log(room, player.username + " envía " + paid.size + " tributos al fondo de su mazo: " + name(use!!.holder) +
                     " reduce en " + reduce + " el coste especial" + names(paid), room.eventSeq)
@@ -444,7 +444,7 @@ object Answers {
             val card = find(player.field, prompt.subjectId)
             if (!picks.isEmpty() && card != null && !inFrontLine(card)) {
                 card.y = 25.0
-                record(room, GameEvent.MOVE, userId, card, null, "frontLine", null, java.util.Map.of<String, Any?>("reason", "special-summon"),
+                record(room, GameEvent.MOVE, userId, card, null, "frontLine", null, frozenMapOf<String, Any?>("reason", "special-summon"),
                     name(card) + " sube a la línea frontal tras su invocación especial")
             }
             val effect = if (prompt.effectId == null) null else room.chain.firstOrNull { e -> e.id == prompt.effectId }
@@ -460,7 +460,7 @@ object Answers {
                     player.hand.remove(card)
                     card.faceDown = false
                     player.lifeStack.add(card)
-                    record(room, GameEvent.SEND, userId, card, "hand", "lifeStack", null, java.util.Map.of<String, Any?>("reinforce", true),
+                    record(room, GameEvent.SEND, userId, card, "hand", "lifeStack", null, frozenMapOf<String, Any?>("reinforce", true),
                         player.username + " refuerza con " + name(card) + ": va bocarriba al fondo de su pila de vidas")
                 } else {
                     val lifeCost = CardEffects.lifePlayCost(card)
@@ -483,7 +483,7 @@ object Answers {
             val group: MutableList<PendingEffect> = ArrayList()
             while (!queue.isEmpty() && rank(queue[0], room.currentTurnUserId) == head) group.add(queue.removeAt(0))
             // The chosen one is chained now; the rest are asked for again
-            group.sortWith(Comparator.comparingInt<PendingEffect> { e ->
+            group.sortWith(comparingInt<PendingEffect> { e ->
                 var position = picks.size
                 for (at in picks.indices) if (picked(e, picks[at])) {
                     position = at

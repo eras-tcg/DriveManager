@@ -1,5 +1,7 @@
 package com.drive.drive_manager.simulator.engine.effects.actions
 
+import kotlin.math.max
+import kotlin.math.min
 import com.drive.drive_manager.simulator.engine.JavaText
 import com.drive.drive_manager.simulator.engine.effects.model.Action.Play
 import com.drive.drive_manager.simulator.engine.effects.model.Selector
@@ -13,7 +15,7 @@ import com.drive.drive_manager.simulator.room.CardSlot
 class PlayHandler : ActionHandler<Play> {
 
     override fun possible(ctx: EffectContext, action: Play): Boolean {
-        return candidates(ctx, action).size >= Math.max(1, ctx.amount(action.cards!!.min))
+        return candidates(ctx, action).size >= max(1, ctx.amount(action.cards!!.min))
     }
 
     override fun run(ctx: EffectContext, action: Play): Boolean {
@@ -23,13 +25,13 @@ class PlayHandler : ActionHandler<Play> {
             ctx.note("No hay cartas que este efecto pueda jugar")
             return false
         }
-        val max = Math.min(ctx.amount(selector.max), valid.size)
+        val max = min(ctx.amount(selector.max), valid.size)
         if (selector.mode() != Selector.Mode.CHOOSE) {
             apply(ctx, action, ArrayList(valid.subList(0, max)))
             return false
         }
         val reduce = ctx.amount(action.reduce)
-        val min = Math.min(ctx.amount(selector.min), max)
+        val min = min(ctx.amount(selector.min), max)
         val filter = selector.filter().describe()
         val cost = if (reduce >= Play.FREE) " sin pagar su coste" else if (reduce > 0) " reduciendo su coste en $reduce" else " pagando su coste"
         ctx.ask("Juega " + (if (min < max) "hasta " else "") + max + (if (max == 1) " carta" else " cartas") + (if (filter.all { JavaText.isWhitespace(it) }) "" else " $filter")
@@ -45,7 +47,7 @@ class PlayHandler : ActionHandler<Play> {
             picked.add(card)
         }
         val reduce = ctx.amount(action.reduce)
-        val total = picked.sumOf { Math.max(0, (it.cost ?: 0) - reduce) }
+        val total = picked.sumOf { max(0, (it.cost ?: 0) - reduce) }
         if (!ctx.canPay(total)) return "No tienes gemas para pagarlas todas ($total)"
         apply(ctx, action, picked)
         return null
@@ -54,7 +56,7 @@ class PlayHandler : ActionHandler<Play> {
     private fun candidates(ctx: EffectContext, action: Play): List<CardSlot> {
         val reduce = ctx.amount(action.reduce)
         return Selection.candidates(ctx, action.cards!!, false).filter { c ->
-            ("utility" == c.cardType || "structure" == c.cardType) && ctx.canPay(Math.max(0, (c.cost ?: 0) - reduce)) && ctx.canBePlayed(c)
+            ("utility" == c.cardType || "structure" == c.cardType) && ctx.canPay(max(0, (c.cost ?: 0) - reduce)) && ctx.canBePlayed(c)
                     // An effect does not act on its own card, unless it says "esta carta" or comes back later
                     && (action.cards.mode() == Selector.Mode.SELF || !ctx.isSelf(c) || ctx.delayed())
         }

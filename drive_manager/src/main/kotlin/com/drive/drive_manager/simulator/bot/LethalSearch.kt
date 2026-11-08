@@ -1,5 +1,8 @@
 package com.drive.drive_manager.simulator.bot
 
+import com.drive.drive_manager.simulator.platform.Platform
+import com.drive.drive_manager.simulator.engine.comparingInt
+import com.drive.drive_manager.simulator.engine.frozenMapOf
 import com.drive.drive_manager.simulator.room.ActionType
 import com.drive.drive_manager.simulator.room.GameAction
 import com.drive.drive_manager.simulator.room.GameRoom
@@ -28,8 +31,8 @@ internal object LethalSearch {
         val rival = room.getPlayer(room.getOpponentId(me))
         if (lives <= 0 || rival == null || rival.lifeStack.size > lives || me!! != room.currentTurnUserId
                 || room.prompt != null || room.status != GameRoom.RoomStatus.IN_PROGRESS) return null
-        val sides = java.util.Map.of<String?, BotPlayer>(me, HeuristicBot(s), room.getOpponentId(me), HeuristicBot(s))
-        val deadline = System.nanoTime() + MAX_NANOS
+        val sides = frozenMapOf<String?, BotPlayer>(me, HeuristicBot(s), room.getOpponentId(me), HeuristicBot(s))
+        val deadline = Platform.nanoTime() + MAX_NANOS
         val nodes = intArrayOf(0)
         val seed = sandbox.deal()
         val line = dfs(sandbox, room, me, sides, ArrayList(), seed, nodes, deadline) ?: return null
@@ -49,9 +52,9 @@ internal object LethalSearch {
             }
         })
         // Attacks first: a win found sooner costs fewer copies
-        moves.sortWith(Comparator.comparingInt { m: GameAction -> if (ActionType.ATTACK.`is`(m)) 0 else if (ActionType.RITUAL_SUMMON.`is`(m)) 1 else 2 })
+        moves.sortWith(comparingInt { m: GameAction -> if (ActionType.ATTACK.`is`(m)) 0 else if (ActionType.RITUAL_SUMMON.`is`(m)) 1 else 2 })
         for (m in moves) {
-            if (++nodes[0] > MAX_NODES || System.nanoTime() > deadline) return null
+            if (++nodes[0] > MAX_NODES || Platform.nanoTime() > deadline) return null
             val copy = sandbox.fork(room, me, GameRandom(seed))
             try {
                 val u = sandbox.act(copy, me, m)

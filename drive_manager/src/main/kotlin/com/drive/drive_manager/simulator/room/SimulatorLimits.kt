@@ -1,6 +1,8 @@
 package com.drive.drive_manager.simulator.room
 
-import java.time.Duration
+import com.drive.drive_manager.simulator.platform.Platform
+import com.drive.drive_manager.simulator.platform.Duration
+
 
 /** The rooms' caps and timeouts. */
 internal object SimulatorLimits {
@@ -11,7 +13,7 @@ internal object SimulatorLimits {
      * A room with nobody connected is closed. It waits this long first, so a reload or a lost connection (the
      * socket drops and comes back) does not close it.
      */
-    @JvmField val EMPTY_ROOM_TTL: Duration = Duration.ofSeconds(30)
+    @JvmField val EMPTY_ROOM_TTL: Duration = Platform.seconds(30)
     /** An owner disconnected this long has left: another player owns the room. */
     const val OWNER_GRACE_MS: Long = 15_000
     /** A player disconnected this long during an online game has left it: the one who stays wins (a reload is shorter). */

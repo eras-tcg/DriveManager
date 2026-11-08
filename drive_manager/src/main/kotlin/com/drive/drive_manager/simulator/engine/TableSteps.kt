@@ -1,5 +1,7 @@
 package com.drive.drive_manager.simulator.engine
 
+import kotlin.math.max
+import kotlin.math.min
 import com.drive.drive_manager.simulator.engine.EffectEngine.CAUSE_EFFECT
 import com.drive.drive_manager.simulator.engine.EffectEngine.LIFE_REDUCED
 import com.drive.drive_manager.simulator.engine.EffectEngine.clamp
@@ -69,7 +71,7 @@ object TableSteps {
                     return false
                 }
                 val who = if (effect.repeatsDone == 0) player else room.getPlayer(room.getOpponentId(userId))
-                val mine = if (who == null) java.util.List.of() else frontLine(who.field).filter { c -> "creature" == c.cardType }
+                val mine = if (who == null) frozenListOf() else frontLine(who.field).filter { c -> "creature" == c.cardType }
                 if (mine.isEmpty()) {
                     effect.repeatsDone = effect.repeatsDone + 1
                     return Resolution.run(room, effect, step)
@@ -81,7 +83,7 @@ object TableSteps {
             }
             is EachPlayerLowersMarker -> {
                 for (p in room.players.values) {
-                    p.resourceCount = Math.max(0, p.resourceCount - step.count)
+                    p.resourceCount = max(0, p.resourceCount - step.count)
                     log(room, p.username + " reduce en " + step.count + " su marcador: queda en " + p.resourceCount + " (" + effect.sourceName + ")", null)
                 }
                 return false
@@ -110,7 +112,7 @@ object TableSteps {
                     effect.repeatsDone = effect.repeatsDone + 1
                     return Resolution.run(room, effect, step)
                 }
-                val n = Math.min(step.count, who.hand.size)
+                val n = min(step.count, who.hand.size)
                 pick(room, effect, "Descarta " + n + " " + plural(n, "carta", "cartas") + " de tu mano, bocabajo (" + effect.sourceName + ").",
                         "Descartar", who.hand, ids(who.hand), n)
                 room.prompt!!.playerId = who.userId
@@ -119,10 +121,10 @@ object TableSteps {
             is OpponentGainsGemsAsCounter -> {
                 val opponentId = room.getOpponentId(userId)
                 val opponent = room.getPlayer(opponentId)
-                val gems = if (opponent == null) 0 else Math.max(0, gemsOf(room, opponentId))
+                val gems = if (opponent == null) 0 else max(0, gemsOf(room, opponentId))
                 if (gems > 0) {
                     room.sharedCounter = clamp(room.sharedCounter + gems * direction(room, opponentId))
-                    record(room, GameEvent.GAIN_GEMS, opponentId, null, null, null, effect, java.util.Map.of<String, Any?>("count", gems),
+                    record(room, GameEvent.GAIN_GEMS, opponentId, null, null, null, effect, frozenMapOf<String, Any?>("count", gems),
                             opponent!!.username + " gana " + gemsText(gems) + " (" + effect.sourceName + ")")
                 }
                 return false
@@ -139,14 +141,14 @@ object TableSteps {
                 life.faceDown = false
                 opponent.discardPile.add(life)
                 record(room, GameEvent.DESTROY, userId, life, "lifeStack", "discardPile", effect,
-                        java.util.Map.of<String, Any?>("cause", CAUSE_EFFECT, "ownerId", opponent.userId, "byCard", effect.sourceInstanceId, "defenderId", opponent.userId),
+                        frozenMapOf<String, Any?>("cause", CAUSE_EFFECT, "ownerId", opponent.userId, "byCard", effect.sourceInstanceId, "defenderId", opponent.userId),
                         player.username + " destruye la vida " + name(life) + " de " + opponent.username + " (" + effect.sourceName + ")")
                 if (opponent.lifeStack.isEmpty()) loseByLives(room, opponent)
                 return false
             }
             is OpponentMovesOneToFront -> {
                 val opponent = room.getPlayer(room.getOpponentId(userId))
-                val back = if (opponent == null) java.util.List.of() else opponent.field
+                val back = if (opponent == null) frozenListOf() else opponent.field
                         .filter { c -> "creature" == c.cardType && !inFrontLine(c) }
                 if (back.isEmpty()) {
                     log(room, "El oponente no tiene criaturas en su retaguardia (" + effect.sourceName + ")", null)
@@ -169,7 +171,7 @@ object TableSteps {
                 }
                 for (p in both) {
                     val other = room.getPlayer(room.getOpponentId(p.userId))
-                    val n = Math.min(if (other == null) 0 else other.lifeStack.size, p.deck.size)
+                    val n = min(if (other == null) 0 else other.lifeStack.size, p.deck.size)
                     for (i in 0 until n) drawOne(room, p, effect, false)
                     log(room, p.username + " roba " + n + " " + plural(n, "carta", "cartas") + " (" + effect.sourceName + ")", null)
                 }
@@ -177,7 +179,7 @@ object TableSteps {
             }
             is DestroyFaceUpLife -> {
                 val opponent = room.getPlayer(room.getOpponentId(userId))
-                val valid = if (opponent == null) java.util.List.of() else opponent.lifeStack.filter { l -> !l.faceDown }
+                val valid = if (opponent == null) frozenListOf() else opponent.lifeStack.filter { l -> !l.faceDown }
                 if (valid.isEmpty()) return false
                 pick(room, effect, "Puedes destruir 1 carta bocarriba de las vidas de tu rival, o ninguna.", "Destruir",
                         opponent!!.lifeStack, ids(valid), 1)
@@ -222,7 +224,7 @@ object TableSteps {
                 val card = find(player.field, picks[0])
                 if (card == null || inFrontLine(card)) return "Esa criatura ya no está en tu retaguardia"
                 card.y = 25.0
-                record(room, GameEvent.MOVE, userId, card, null, "frontLine", effect, java.util.Map.of<String, Any?>("reason", "effect"),
+                record(room, GameEvent.MOVE, userId, card, null, "frontLine", effect, frozenMapOf<String, Any?>("reason", "effect"),
                         player.username + " mueve " + name(card) + " a su línea frontal (" + effect.sourceName + ")")
             }
             is DestroyFaceUpLife -> {
@@ -232,7 +234,7 @@ object TableSteps {
                     opponent!!.lifeStack.remove(life)
                     opponent.discardPile.add(life)
                     record(room, GameEvent.DESTROY, userId, life, "lifeStack", "discardPile", effect,
-                            java.util.Map.of<String, Any?>("cause", CAUSE_EFFECT, "ownerId", opponent.userId, "byCard", effect.sourceInstanceId),
+                            frozenMapOf<String, Any?>("cause", CAUSE_EFFECT, "ownerId", opponent.userId, "byCard", effect.sourceInstanceId),
                             player.username + " destruye la vida " + name(life) + " de " + opponent.username + " (" + effect.sourceName + ")")
                 }
             }

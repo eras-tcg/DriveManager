@@ -1,5 +1,6 @@
 package com.drive.drive_manager.simulator.engine
 
+import kotlin.math.max
 import com.drive.drive_manager.simulator.room.GameRoom
 
 /**
@@ -42,7 +43,7 @@ sealed interface Amount {
     @JvmRecord
     data class HandOver(val keep: Int) : Amount {
         override fun of(room: GameRoom, controller: String?): Int {
-            return Math.max(0, room.getPlayer(controller)!!.hand.size - keep)
+            return max(0, room.getPlayer(controller)!!.hand.size - keep)
         }
     }
 
@@ -160,7 +161,7 @@ sealed interface Amount {
             if (you == null || opponent == null) return 0
             val mine = you.lifeStack.count { l -> !faceDownOnly || l.faceDown }.toLong()
             val theirs = opponent.lifeStack.count { l -> !faceDownOnly || l.faceDown }.toLong()
-            return Math.max(0, theirs - mine).toInt()
+            return max(0, theirs - mine).toInt()
         }
     }
 
@@ -182,7 +183,7 @@ sealed interface Amount {
     /** Your gems now ("el valor de tu marcador de gemas"), 0 when below 0. */
     data object Gems : Amount {
         override fun of(room: GameRoom, controller: String?): Int {
-            return Math.max(0, EffectEngine.gemsOf(room, controller))
+            return max(0, EffectEngine.gemsOf(room, controller))
         }
     }
 

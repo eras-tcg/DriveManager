@@ -1,10 +1,11 @@
 package com.drive.drive_manager.simulator.bot
 
+import com.drive.drive_manager.simulator.platform.computeIfAbsentAtomic
+import com.drive.drive_manager.simulator.platform.Platform
 import com.drive.drive_manager.simulator.engine.CardEffects
 import com.drive.drive_manager.simulator.engine.EffectEngine
 import com.drive.drive_manager.simulator.engine.EffectScript
 import com.drive.drive_manager.simulator.room.CardSlot
-import java.util.concurrent.ConcurrentHashMap
 
 /**
  * What a card is worth to the look-ahead bot, by the weights of its [BotSettings]: its stats (cost,
@@ -21,7 +22,7 @@ internal object CardWorth {
     data class Profile(val continuous: Int, val activated: Int, val event: Int, val summon: Int, val play: Int, val attack: Int,
                        val destroy: Int, val inherited: Int)
 
-    private val PROFILES: MutableMap<String, Profile> = ConcurrentHashMap()
+    private val PROFILES: MutableMap<String, Profile> = Platform.concurrentMap()
 
     @JvmStatic
     fun of(card: CardSlot?, w: BotSettings): Double {
@@ -42,7 +43,7 @@ internal object CardWorth {
     @JvmStatic
     fun profile(card: CardSlot): Profile {
         val name = if (card.cardName == null) "" else card.cardName!!.trim { it <= ' ' }.lowercase()
-        return PROFILES.computeIfAbsent(name) { n ->
+        return PROFILES.computeIfAbsentAtomic(name) { n ->
             var activated = 0
             var event = 0
             var summon = 0

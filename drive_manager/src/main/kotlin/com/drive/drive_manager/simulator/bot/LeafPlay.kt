@@ -1,10 +1,11 @@
 package com.drive.drive_manager.simulator.bot
 
+import kotlin.math.max
+import com.drive.drive_manager.simulator.engine.frozenMapOf
 import com.drive.drive_manager.simulator.engine.EffectEngine
 import com.drive.drive_manager.simulator.room.ActionType
 import com.drive.drive_manager.simulator.room.GameRoom
 import com.drive.drive_manager.simulator.engine.GameRandom
-import java.util.function.ToDoubleBiFunction
 
 /**
  * leafPlay w (the user's game, 2026-11-04): a try ends at the start of the bot's next turn, before it can use what it
@@ -20,10 +21,10 @@ internal object LeafPlay {
     private const val MAX_MOVES = 10
 
     @JvmStatic
-    fun bonus(sandbox: Sandbox, copy: GameRoom, me: String?, s: BotSettings, score: ToDoubleBiFunction<GameRoom, String?>, deal: GameRandom?): Double {
+    fun bonus(sandbox: Sandbox, copy: GameRoom, me: String?, s: BotSettings, score: TableScoring, deal: GameRandom?): Double {
         val w = s.get("leafPlay")
         if (w <= 0 || copy.status != GameRoom.RoomStatus.IN_PROGRESS || me!! != copy.currentTurnUserId) return 0.0
-        val sides = java.util.Map.of<String?, BotPlayer>(me, HeuristicBot(s), copy.getOpponentId(me), HeuristicBot(s))
+        val sides = frozenMapOf<String?, BotPlayer>(me, HeuristicBot(s), copy.getOpponentId(me), HeuristicBot(s))
         // The start of its turn first (its triggers, the rival's answers): the main phase is where it moves
         SequenceSearch.settle(sandbox, copy, me, sides)
         if (copy.status != GameRoom.RoomStatus.IN_PROGRESS || "MAIN" != copy.currentPhase || copy.prompt != null) return 0.0
@@ -38,10 +39,10 @@ internal object LeafPlay {
                 val from = next.timeline.size
                 val u = sandbox.act(next, me, m)
                 if (u != null && u.error != null) continue
-                SequenceSearch.settle(sandbox, next, me, java.util.Map.of<String?, BotPlayer>(me, HeuristicBot(s), next.getOpponentId(me), HeuristicBot(s)))
-                val debt = Math.max(0, -EffectEngine.gemsOf(next, me)).toDouble()
+                SequenceSearch.settle(sandbox, next, me, frozenMapOf<String?, BotPlayer>(me, HeuristicBot(s), next.getOpponentId(me), HeuristicBot(s)))
+                val debt = max(0, -EffectEngine.gemsOf(next, me)).toDouble()
                 val used = if (s.get("sUse") != 0.0) s.get("sUse") * StructureUse.count(next, me, from) else 0.0
-                best = Math.max(best, score.applyAsDouble(next, me) - TableScore.overExtend(debt, rivalHand, s) + used)
+                best = max(best, score.applyAsDouble(next, me) - TableScore.overExtend(debt, rivalHand, s) + used)
             } finally {
                 sandbox.drop(next)
             }

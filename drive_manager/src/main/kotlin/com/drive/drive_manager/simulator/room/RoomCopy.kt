@@ -1,14 +1,10 @@
 package com.drive.drive_manager.simulator.room
 
+import com.drive.drive_manager.simulator.platform.Platform
 import com.drive.drive_manager.simulator.engine.GameRandom
 import com.drive.drive_manager.simulator.engine.Combat
 import com.drive.drive_manager.simulator.engine.PendingEffect
 import com.drive.drive_manager.simulator.engine.Prompt
-import java.util.IdentityHashMap
-import java.util.SortedMap
-import java.util.SortedSet
-import java.util.TreeMap
-import java.util.TreeSet
 
 /**
  * A deep copy of a room, to try moves on it (the bot's look ahead) without touching the real one. Every mutable object
@@ -26,7 +22,7 @@ class RoomCopy private constructor(
     private val chance: GameRandom?,
 ) {
 
-    private val copies: MutableMap<Any, Any> = IdentityHashMap()
+    private val copies: MutableMap<Any, Any> = Platform.identityMap()
 
     companion object {
         /** A copy with a chance of its own, seeded from `chance`. */
@@ -78,8 +74,8 @@ class RoomCopy private constructor(
 
         @Suppress("UNCHECKED_CAST")
         private fun <T> setLike(o: Collection<T>): MutableSet<T> {
-            return if (o is SortedSet<*>) TreeSet(o.comparator() as Comparator<in T>?)
-            else if (o is LinkedHashSet<*>) LinkedHashSet() else HashSet()
+            return Platform.emptySortedSetLike(o)
+                ?: if (o is LinkedHashSet<*>) LinkedHashSet() else HashSet()
         }
 
         @Suppress("UNCHECKED_CAST")
@@ -393,8 +389,8 @@ class RoomCopy private constructor(
         if (o == null) return null
         val done = copies[o]
         if (done != null) return cast(done)
-        val c: MutableMap<K, V> = if (o is SortedMap<*, *>) TreeMap(o.comparator() as Comparator<in K>?)
-                else if (o is LinkedHashMap<*, *>) LinkedHashMap() else HashMap()
+        val c: MutableMap<K, V> = Platform.emptySortedMapLike(o)
+                ?: if (o is LinkedHashMap<*, *>) LinkedHashMap() else HashMap()
         copies[o] = c
         return c
     }

@@ -1,9 +1,9 @@
 package com.drive.drive_manager.simulator.engine
 
+import kotlin.math.min
 import com.drive.drive_manager.simulator.room.CardSlot
 import com.drive.drive_manager.simulator.room.GameRoom
 import com.drive.drive_manager.simulator.room.PlayerState
-import java.util.function.Predicate
 
 /**
  * The bot's optimistic search, in its simulations only (the room's searchHope names whose searches it is): when a
@@ -16,24 +16,24 @@ object SearchHope {
 
     /** Puts the best valid cards of the deck among the looked ones, as many as the valid ones it found (up to `max`). */
     @JvmStatic
-    fun apply(room: GameRoom, effect: PendingEffect, player: PlayerState, valid: Predicate<CardSlot>, max: Int) {
+    fun apply(room: GameRoom, effect: PendingEffect, player: PlayerState, valid: (CardSlot) -> Boolean, max: Int) {
         if (room.searchHope == null || room.searchHope != player.userId) return
         val looked = effect.looked
-        val found = looked.count { valid.test(it) }
-        val k = Math.min(found, max)
+        val found = looked.count { valid(it) }
+        val k = min(found, max)
         if (k == 0) return
         val pool: MutableList<CardSlot> = ArrayList()
-        for (c in looked) if (valid.test(c)) pool.add(c)
-        for (c in player.deck) if (valid.test(c)) pool.add(c)
+        for (c in looked) if (valid(c)) pool.add(c)
+        for (c in player.deck) if (valid(c)) pool.add(c)
         val me = player.userId
-        pool.sortWith(Comparator.comparingInt { c: CardSlot -> Playability.level(room, me, c) }
-                .thenComparing(Comparator.comparingInt { c: CardSlot -> if (c.strength == null) 0 else c.strength!! }.reversed())
-                .thenComparing(Comparator.comparingInt { c: CardSlot -> if (c.cost == null) 0 else c.cost!! }.reversed()))
-        val best = pool.subList(0, Math.min(k, pool.size))
+        pool.sortWith(comparingInt { c: CardSlot -> Playability.level(room, me, c) }
+                .then(comparingInt { c: CardSlot -> if (c.strength == null) 0 else c.strength!! }.reversed())
+                .then(comparingInt { c: CardSlot -> if (c.cost == null) 0 else c.cost!! }.reversed()))
+        val best = pool.subList(0, min(k, pool.size))
         // Each best card from the deck swaps places with a valid looked card that is not among the best
         for (b in ArrayList(best)) {
             if (looked.contains(b)) continue
-            val out = looked.firstOrNull { c -> valid.test(c) && !best.contains(c) } ?: break
+            val out = looked.firstOrNull { c -> valid(c) && !best.contains(c) } ?: break
             val li = looked.indexOf(out)
             val di = player.deck.indexOf(b)
             if (di < 0) continue

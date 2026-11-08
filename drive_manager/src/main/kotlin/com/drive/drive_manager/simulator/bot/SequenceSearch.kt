@@ -1,11 +1,18 @@
 package com.drive.drive_manager.simulator.bot
 
+import com.drive.drive_manager.simulator.platform.Platform
+import kotlin.math.max
+import kotlin.math.min
+import com.drive.drive_manager.simulator.engine.valueOr
+import com.drive.drive_manager.simulator.engine.comparingDouble
+import com.drive.drive_manager.simulator.engine.comparingInt
+import com.drive.drive_manager.simulator.engine.frozenListOf
+import com.drive.drive_manager.simulator.engine.frozenMapOf
 import com.drive.drive_manager.simulator.room.ActionType
 import com.drive.drive_manager.simulator.room.CardSlot
 import com.drive.drive_manager.simulator.room.GameAction
 import com.drive.drive_manager.simulator.room.GameRoom
 import com.drive.drive_manager.simulator.engine.GameRandom
-import java.util.function.ToDoubleBiFunction
 
 /**
  * Sequences of the bot's own moves within its turn, so a combo is found by search and not left to the heuristic that
@@ -27,7 +34,7 @@ internal object SequenceSearch {
 
     @JvmStatic
     fun of(moves: List<GameAction>): GameAction {
-        return BotPlayer.action(SEQUENCE, java.util.Map.of<String, Any?>("moves", moves))
+        return BotPlayer.action(SEQUENCE, frozenMapOf<String, Any?>("moves", moves))
     }
 
     /**
@@ -42,10 +49,10 @@ internal object SequenceSearch {
         val self = room.getPlayer(me) ?: return null
         @Suppress("UNCHECKED_CAST")
         val legal = com.drive.drive_manager.simulator.engine.LegalActions.of(room, me) as Map<String?, List<String>>
-        val attacks = self.field.filter { c -> legal.getOrDefault(c.instanceId, java.util.List.of()).contains("attack") }
-                .sortedWith(Comparator.comparingInt { c: CardSlot -> com.drive.drive_manager.simulator.engine.EffectEngine.strength(c) }.reversed())
-                .map { c -> BotPlayer.action(ActionType.ATTACK, java.util.Map.of<String, Any?>("instanceId", c.instanceId)) }
-        return if (attacks.size < 2) null else BotPlayer.action(SEQUENCE, java.util.Map.of<String, Any?>("moves", attacks, "soft", true))
+        val attacks = self.field.filter { c -> legal.valueOr(c.instanceId, frozenListOf()).contains("attack") }
+                .sortedWith(comparingInt { c: CardSlot -> com.drive.drive_manager.simulator.engine.EffectEngine.strength(c) }.reversed())
+                .map { c -> BotPlayer.action(ActionType.ATTACK, frozenMapOf<String, Any?>("instanceId", c.instanceId)) }
+        return if (attacks.size < 2) null else BotPlayer.action(SEQUENCE, frozenMapOf<String, Any?>("moves", attacks, "soft", true))
     }
 
     /** A sequence whose later moves are skipped when no longer possible (the cascade), not one that fails with them. */
@@ -57,7 +64,7 @@ internal object SequenceSearch {
     @JvmStatic
     @Suppress("UNCHECKED_CAST")
     fun moves(a: GameAction?): List<GameAction> {
-        return if (a != null && SEQUENCE == a.type) a.payload!!["moves"] as List<GameAction> else java.util.List.of(a!!)
+        return if (a != null && SEQUENCE == a.type) a.payload!!["moves"] as List<GameAction> else frozenListOf(a!!)
     }
 
     /** The move to play now: a sequence's first, or the move itself. */
@@ -72,7 +79,7 @@ internal object SequenceSearch {
     @JvmStatic
     fun best(sandbox: Sandbox, room: GameRoom, me: String?, firsts: List<GameAction>, s: BotSettings): List<GameAction> {
         val depth = s.get("seqDepth").toInt()
-        val keep = Math.max(1, s.get("seqKeep").toInt())
+        val keep = max(1, s.get("seqKeep").toInt())
         val cascade = if (s.get("cascade") >= 0.5) cascade(room, me) else null
         // lethalLives: a win found by the engine first (LethalSearch), ahead of every sequence
         val lethal = LethalSearch.find(sandbox, room, me, s)
@@ -82,25 +89,25 @@ internal object SequenceSearch {
             if (cascade != null) few.add(cascade)
             return few
         }
-        val deadline = System.nanoTime() + (s.budgetMs() * 1_000_000L * s.get("seqShare")).toLong()
+        val deadline = Platform.nanoTime() + (s.budgetMs() * 1_000_000L * s.get("seqShare")).toLong()
         val seed = sandbox.deal()
         val triggers = s.get("seqTriggers")
         // Level 1: every first move; then each level extends the best ones by every move legal after them
         var level: MutableList<Screened> = ArrayList()
         for (m in firsts) {
             if (ActionType.END_TURN.`is`(m) || SEQUENCE == m.type) continue
-            val x = screen(sandbox, room, me, java.util.List.of(m), seed, s, triggers)
+            val x = screen(sandbox, room, me, frozenListOf(m), seed, s, triggers)
             if (x != null) level.add(x)
         }
         val singles: MutableList<Screened> = ArrayList(level)
         val found: MutableList<Screened> = ArrayList()
         var d = 2
-        while (d <= depth && System.nanoTime() < deadline) {
-            level.sortWith(Comparator.comparingDouble { x: Screened -> -x.score })
+        while (d <= depth && Platform.nanoTime() < deadline) {
+            level.sortWith(comparingDouble { x: Screened -> -x.score })
             val grown: MutableList<Screened> = ArrayList()
-            for (x in level.subList(0, Math.min(level.size, if (d == 2) level.size else keep))) {
+            for (x in level.subList(0, min(level.size, if (d == 2) level.size else keep))) {
                 for (m in x.next) {
-                    if (System.nanoTime() > deadline) break
+                    if (Platform.nanoTime() > deadline) break
                     val seq: MutableList<GameAction> = ArrayList(x.moves)
                     seq.add(m)
                     val y = screen(sandbox, room, me, seq, seed, s, triggers)
@@ -111,18 +118,18 @@ internal object SequenceSearch {
             level = grown
             d++
         }
-        found.sortWith(Comparator.comparingDouble { x: Screened -> -x.score })
+        found.sortWith(comparingDouble { x: Screened -> -x.score })
         val out: MutableList<GameAction> = ArrayList(found.take(keep).map { x -> of(x.moves) })
         if (s.get("seqPass") >= 0.5) {
             // seqPass: the best single moves and sequences, then the turn passed: what it keeps in the hand stays there in
             // the tries (the heuristic finishing the turn plays all it can), so keeping a card is a candidate too
-            singles.sortWith(Comparator.comparingDouble { x: Screened -> -x.score })
+            singles.sortWith(comparingDouble { x: Screened -> -x.score })
             val bases: MutableList<List<GameAction>> = ArrayList()
             singles.take(keep).forEach { x -> bases.add(x.moves) }
             found.take(keep).forEach { x -> bases.add(x.moves) }
             for (b in bases) {
                 val seq: MutableList<GameAction> = ArrayList(b)
-                seq.add(BotPlayer.action(ActionType.END_TURN, java.util.Map.of()))
+                seq.add(BotPlayer.action(ActionType.END_TURN, frozenMapOf()))
                 out.add(of(seq))
             }
         }
@@ -136,7 +143,7 @@ internal object SequenceSearch {
         val copy = sandbox.fork(room, me, GameRandom(seed))
         try {
             val before = copy.timeline.size
-            val sides = java.util.Map.of<String?, BotPlayer>(me, HeuristicBot(s), copy.getOpponentId(me), HeuristicBot(s))
+            val sides = frozenMapOf<String?, BotPlayer>(me, HeuristicBot(s), copy.getOpponentId(me), HeuristicBot(s))
             for (m in moves) {
                 val u = sandbox.act(copy, me, m)
                 if (u != null && u.error != null) return null
@@ -146,13 +153,13 @@ internal object SequenceSearch {
                     .count { e -> com.drive.drive_manager.simulator.engine.GameEvent.EFFECT_ACTIVATED == e.type && me!! == e.playerId }.toLong()
             val mine = copy.status == GameRoom.RoomStatus.IN_PROGRESS && me!! == copy.currentTurnUserId && !copy.isEngineBusy()
             // hUseful: no utility that would do nothing in a sequence either (its activation would earn the trigger bonus)
-            val next: List<GameAction> = if (!mine) java.util.List.of() else LookaheadBot.mainMoves(copy, me)
+            val next: List<GameAction> = if (!mine) frozenListOf() else LookaheadBot.mainMoves(copy, me)
                     .filter { m -> s.get("hUseful") < 0.5 || Usefulness.playDoesSomething(copy, me, m, s) }
             // Gems paid below 0 go to the rival for their turn
-            val debt = Math.max(0, -com.drive.drive_manager.simulator.engine.EffectEngine.gemsOf(copy, me)).toDouble()
+            val debt = max(0, -com.drive.drive_manager.simulator.engine.EffectEngine.gemsOf(copy, me)).toDouble()
             // seqRollout: screened by one try (the rest of the turn and the rival's by the heuristic) instead of the table now
             val table = if (s.get("seqRollout") >= 0.5)
-                MoveTrials(s, sandbox, ToDoubleBiFunction { r: GameRoom, p: String? -> TableScore.score(r, p, s) }, Long.MAX_VALUE)
+                MoveTrials(s, sandbox, TableScoring { r: GameRoom, p: String? -> TableScore.score(r, p, s) }, Long.MAX_VALUE)
                         .once(room, me, if (moves.size == 1) moves[0] else of(moves), seed)
             else TableScore.score(copy, me, s) - TableScore.overExtend(debt, copy.getPlayer(copy.getOpponentId(me))!!.hand.size, s)
             return Screened(moves, table + triggers * fired, next)

@@ -56,32 +56,32 @@ object SpecialProcedure {
         val player = room.getPlayer(effect.controllerId)
         if (ritual(special)) return ritualOptions(room, effect, rule, special.stage, player)
         if (special.stage == Selector.Stage.CARD) {
-            return if (effect.ritualTargetId != null) java.util.List.of() else SpecialRequirements.specialTargets(room, effect, rule)
+            return if (effect.ritualTargetId != null) frozenListOf() else SpecialRequirements.specialTargets(room, effect, rule)
         }
-        val target = target(room, effect, rule) ?: return java.util.List.of()
+        val target = target(room, effect, rule) ?: return frozenListOf()
         val req = SpecialRequirements.specialRequirement(target)
         val summoner = summoner(room, effect, rule)
         if (special.stage == Selector.Stage.SUMMONER) {
-            if (summoner != null) return java.util.List.of()
+            if (summoner != null) return frozenListOf()
             return SpecialRequirements.specialSummoners(player!!, target, req!!)
                     .filter { s -> SpecialRequirements.summonerAllowed(rule, s, effect) && SpecialRequirements.materialsPossible(player, target, req, s) }
         }
-        if (summoner == null || "materialization" != req!!.kind) return java.util.List.of()
+        if (summoner == null || "materialization" != req!!.kind) return frozenListOf()
         return SpecialRequirements.specialMaterials(player!!, target, req, summoner)
     }
 
     private fun ritualOptions(room: GameRoom, effect: PendingEffect, rule: SpecialRule, stage: Selector.Stage?, player: PlayerState?): List<CardSlot> {
-        if (stage == Selector.Stage.CARD) return if (effect.ritualTargetId != null) java.util.List.of() else Rituals.ritualTargets(room, effect, rule)
-        val target = target(room, effect, rule) ?: return java.util.List.of()
+        if (stage == Selector.Stage.CARD) return if (effect.ritualTargetId != null) frozenListOf() else Rituals.ritualTargets(room, effect, rule)
+        val target = target(room, effect, rule) ?: return frozenListOf()
         val req = Rituals.requirement(target)
         val materials = Rituals.ritualMaterials(player!!, target)
         val summoner = summoner(room, effect, rule)
         if (stage == Selector.Stage.SUMMONER) {
             // Rule 9.2.0.13: the summoner is declared first; it must meet part of the Requerimiento
-            if (summoner != null) return java.util.List.of()
+            if (summoner != null) return frozenListOf()
             return if (req!!.sum) Rituals.summonerCandidates(materials, req.level) else materials.filter { req.fits(it) }
         }
-        if (summoner == null || !req!!.sum || EffectEngine.hasLevel(summoner, req.level)) return java.util.List.of()
+        if (summoner == null || !req!!.sum || EffectEngine.hasLevel(summoner, req.level)) return frozenListOf()
         return Rituals.fittingSacrifices(materials.filter { c -> c !== summoner }, remaining(player, target, req, summoner))
     }
 
@@ -184,7 +184,7 @@ object SpecialProcedure {
         }
         val summoner = summoner(room, effect, rule)
         val materials: MutableList<CardSlot> = ArrayList()
-        for (id in effect.saved.getOrDefault(EngineContext.SPECIAL_MATERIALS, java.util.List.of())) {
+        for (id in effect.saved.valueOr(EngineContext.SPECIAL_MATERIALS, frozenListOf())) {
             val material = EngineContext(room, effect).find(id)
             if (material != null) materials.add(material)
         }

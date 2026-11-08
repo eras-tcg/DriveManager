@@ -43,7 +43,7 @@ data class CardFilter(
         activeOnly: Boolean, exhaustedOnly: Boolean, minLevel: Int?, minStrength: Int?, maxCost: Int?, name: String?,
         notName: String?, starterOnly: Boolean, colorAndClass: Boolean,
     ) : this(colors, classes, cardType, level, maxLevel, maxStrength, activeOnly, exhaustedOnly, minLevel, minStrength, maxCost, name, notName,
-        starterOnly, colorAndClass, java.util.List.of(), null, null, java.util.List.of(), java.util.List.of(), null, false)
+        starterOnly, colorAndClass, frozenListOf(), null, null, frozenListOf(), frozenListOf(), null, false)
 
     constructor(colors: List<String>?, classes: List<String>?, cardType: String?, level: Int?, maxLevel: Int?) :
             this(colors, classes, cardType, level, maxLevel, null)
@@ -52,29 +52,29 @@ data class CardFilter(
             this(colors, classes, cardType, level, maxLevel, maxStrength, false, false, null, null, null, null, null, false, false)
 
     // What the record holds, as Java's compact constructor stored it (null: empty)
-    private val colorList: List<String> get() = colors ?: java.util.List.of()
-    private val classList: List<String> get() = classes ?: java.util.List.of()
-    private val notColorList: List<String> get() = notColors ?: java.util.List.of()
-    private val cardTypeList: List<String> get() = cardTypes ?: java.util.List.of()
-    private val anyOfList: List<CardFilter> get() = anyOf ?: java.util.List.of()
+    private val colorList: List<String> get() = colors ?: frozenListOf()
+    private val classList: List<String> get() = classes ?: frozenListOf()
+    private val notColorList: List<String> get() = notColors ?: frozenListOf()
+    private val cardTypeList: List<String> get() = cardTypes ?: frozenListOf()
+    private val anyOfList: List<CardFilter> get() = anyOf ?: frozenListOf()
 
-    fun colors(): List<String> = if (colors == null) java.util.List.of() else java.util.List.copyOf(colors)
+    fun colors(): List<String> = if (colors == null) frozenListOf() else frozenListCopy(colors)
 
-    fun classes(): List<String> = if (classes == null) java.util.List.of() else java.util.List.copyOf(classes)
+    fun classes(): List<String> = if (classes == null) frozenListOf() else frozenListCopy(classes)
 
-    fun notColors(): List<String> = if (notColors == null) java.util.List.of() else java.util.List.copyOf(notColors)
+    fun notColors(): List<String> = if (notColors == null) frozenListOf() else frozenListCopy(notColors)
 
-    fun cardTypes(): List<String> = if (cardTypes == null) java.util.List.of() else java.util.List.copyOf(cardTypes)
+    fun cardTypes(): List<String> = if (cardTypes == null) frozenListOf() else frozenListCopy(cardTypes)
 
-    fun anyOf(): List<CardFilter> = if (anyOf == null) java.util.List.of() else java.util.List.copyOf(anyOf)
+    fun anyOf(): List<CardFilter> = if (anyOf == null) frozenListOf() else frozenListCopy(anyOf)
 
     fun withColors(vararg colors: String): CardFilter {
-        return CardFilter(java.util.List.of(*colors), classList, cardType, level, maxLevel, maxStrength, activeOnly, exhaustedOnly, minLevel, minStrength,
+        return CardFilter(frozenListOf(*colors), classList, cardType, level, maxLevel, maxStrength, activeOnly, exhaustedOnly, minLevel, minStrength,
             maxCost, name, notName, starterOnly, colorAndClass, notColorList, nameContains, minCost, cardTypeList, anyOfList, mentions, backOnly)
     }
 
     fun withClasses(vararg classes: String): CardFilter {
-        return CardFilter(colorList, java.util.List.of(*classes), cardType, level, maxLevel, maxStrength, activeOnly, exhaustedOnly, minLevel, minStrength,
+        return CardFilter(colorList, frozenListOf(*classes), cardType, level, maxLevel, maxStrength, activeOnly, exhaustedOnly, minLevel, minStrength,
             maxCost, name, notName, starterOnly, colorAndClass, notColorList, nameContains, minCost, cardTypeList, anyOfList, mentions, backOnly)
     }
 
@@ -156,14 +156,14 @@ data class CardFilter(
 
     /** "Violeta [bestia]": the color and one of the classes (not either). */
     fun colorAndClass(color: String, vararg classes: String): CardFilter {
-        return CardFilter(java.util.List.of(color), java.util.List.of(*classes), cardType, level, maxLevel, maxStrength, activeOnly, exhaustedOnly, minLevel,
+        return CardFilter(frozenListOf(color), frozenListOf(*classes), cardType, level, maxLevel, maxStrength, activeOnly, exhaustedOnly, minLevel,
             minStrength, maxCost, name, notName, starterOnly, true, notColorList, nameContains, minCost, cardTypeList, anyOfList, mentions, backOnly)
     }
 
     /** "no-blanca": none of these colors. */
     fun notColors(vararg notColors: String): CardFilter {
         return CardFilter(colorList, classList, cardType, level, maxLevel, maxStrength, activeOnly, exhaustedOnly, minLevel, minStrength,
-            maxCost, name, notName, starterOnly, colorAndClass, java.util.List.of(*notColors), nameContains, minCost, cardTypeList, anyOfList, mentions, backOnly)
+            maxCost, name, notName, starterOnly, colorAndClass, frozenListOf(*notColors), nameContains, minCost, cardTypeList, anyOfList, mentions, backOnly)
     }
 
     /** "con "X" en su nombre". */
@@ -181,13 +181,13 @@ data class CardFilter(
     /** "utilidad", "estructura", "utilidad o estructura" ("creature", "utility", "structure"). */
     fun ofTypes(vararg types: String): CardFilter {
         return CardFilter(colorList, classList, cardType, level, maxLevel, maxStrength, activeOnly, exhaustedOnly, minLevel, minStrength,
-            maxCost, name, notName, starterOnly, colorAndClass, notColorList, nameContains, minCost, java.util.List.of(*types), anyOfList, mentions, backOnly)
+            maxCost, name, notName, starterOnly, colorAndClass, notColorList, nameContains, minCost, frozenListOf(*types), anyOfList, mentions, backOnly)
     }
 
     /** One of these, besides everything this filter asks ("1 utilidad Violeta o [brujería]"). */
     fun orAnyOf(vararg alternatives: CardFilter): CardFilter {
         return CardFilter(colorList, classList, cardType, level, maxLevel, maxStrength, activeOnly, exhaustedOnly, minLevel, minStrength,
-            maxCost, name, notName, starterOnly, colorAndClass, notColorList, nameContains, minCost, cardTypeList, java.util.List.of(*alternatives), mentions,
+            maxCost, name, notName, starterOnly, colorAndClass, notColorList, nameContains, minCost, cardTypeList, frozenListOf(*alternatives), mentions,
             backOnly)
     }
 
@@ -208,8 +208,8 @@ data class CardFilter(
         // "puede ser considerada como una criatura de fuerza N por efectos aliados" (Fósil)
         val asCreature = EffectEngine.creatureForEffects(card)
         if (cardType != null && cardType != card.cardType && !("creature" == cardType && asCreature != null)) return false
-        val cardColors: List<String> = card.colors ?: java.util.List.of()
-        val cardClasses: List<String> = card.classes ?: java.util.List.of()
+        val cardColors: List<String> = card.colors ?: frozenListOf()
+        val cardClasses: List<String> = card.classes ?: frozenListOf()
         val colorMatch = colorList.any { cardColors.contains(it) }
         val classMatch = classList.any { c -> cardClasses.any { cc -> cc.equals(c, ignoreCase = true) } }
         if (colorAndClass) {
@@ -309,17 +309,17 @@ data class CardFilter(
     companion object {
         @JvmStatic
         fun any(): CardFilter {
-            return CardFilter(java.util.List.of(), java.util.List.of(), null, null, null)
+            return CardFilter(frozenListOf(), frozenListOf(), null, null, null)
         }
 
         @JvmStatic
         fun colors(vararg colors: String): CardFilter {
-            return CardFilter(java.util.List.of(*colors), java.util.List.of(), null, null, null)
+            return CardFilter(frozenListOf(*colors), frozenListOf(), null, null, null)
         }
 
         @JvmStatic
         fun creatures(): CardFilter {
-            return CardFilter(java.util.List.of(), java.util.List.of(), "creature", null, null)
+            return CardFilter(frozenListOf(), frozenListOf(), "creature", null, null)
         }
 
         @JvmStatic

@@ -1,5 +1,6 @@
 package com.drive.drive_manager.simulator.engine
 
+import kotlin.math.max
 import com.drive.drive_manager.simulator.engine.EffectEngine.canPay
 import com.drive.drive_manager.simulator.engine.EffectEngine.find
 import com.drive.drive_manager.simulator.engine.EffectEngine.findAnywhere
@@ -86,15 +87,15 @@ object SummonSteps {
                 val ally = if (by == null) null else find(player.field, by as String)
                 val self = find(player.hand, effect.sourceInstanceId)
                 if (ally == null || self == null) return false
-                val req = SpecialRequirement("materialization", if (ally.getLevel() == null) 0 else ally.getLevel()!!, 0, 0, 0, true, 0, 0, java.util.List.of(), false, null, false, false)
+                val req = SpecialRequirement("materialization", if (ally.getLevel() == null) 0 else ally.getLevel()!!, 0, 0, 0, true, 0, 0, frozenListOf(), false, null, false, false)
                 val free = if (self.specialCost == null) 0 else self.specialCost!!
-                specialSummon(room, player, self, req, ally, java.util.List.of(), "hand", free, effect)
+                specialSummon(room, player, self, req, ally, frozenListOf(), "hand", free, effect)
                 effect.lastDone = true
                 return false
             }
             is ChooseOpponentTribute -> {
                 val opponent = room.getPlayer(room.getOpponentId(userId))
-                val valid = if (opponent == null) java.util.List.of() else step.filter!!.let { f -> opponent.tributeZone.filter { f.matches(it) } }
+                val valid = if (opponent == null) frozenListOf() else step.filter!!.let { f -> opponent.tributeZone.filter { f.matches(it) } }
                 if (valid.isEmpty()) return false
                 pick(room, effect, "Elige 1 criatura " + step.filter!!.describe() + " de los tributos de tu rival.", "Elegir", opponent!!.tributeZone, ids(valid), 1)
                 return true
@@ -110,7 +111,7 @@ object SummonSteps {
             }
             is SummonLikeSubject -> {
                 val ally = subject(room, effect)
-                val valid = if (ally == null) java.util.List.of() else likeSubject(player, step, ally)
+                val valid = if (ally == null) frozenListOf() else likeSubject(player, step, ally)
                 if (valid.isEmpty()) {
                     log(room, "No hay criaturas que " + effect.sourceName + " pueda invocar", null)
                     return false
@@ -161,11 +162,11 @@ object SummonSteps {
                 if (summoner == null || picked.contains(null)) return "Esa criatura ya no está disponible"
                 @Suppress("UNCHECKED_CAST")
                 val materials = picked as List<CardSlot>
-                if (if (req.levelSum > 0) !addsUpTo(materials, req.levelSum) else materials.size < Math.max(1, req.materialCount))
+                if (if (req.levelSum > 0) !addsUpTo(materials, req.levelSum) else materials.size < max(1, req.materialCount))
                     return if (req.levelSum > 0) "Los materiales deben sumar exactamente " + req.levelSum + " en nivel" else "Elige " + req.materialCount + " materiales"
                 if (!canPay(room, userId, self.specialCost!! - CostModifiers.available(room, player, CostModifiers.Event.SPECIAL_SUMMON, req.kind, self, null)))
                     return "No tienes gemas suficientes"
-                val all: MutableList<CardSlot> = ArrayList(java.util.List.of(summoner))
+                val all: MutableList<CardSlot> = ArrayList(frozenListOf(summoner))
                 all.addAll(materials)
                 effect.ritualSummonerId = null
                 specialSummon(room, player, self, req, null, all, "hand", 0, effect)

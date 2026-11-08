@@ -1,5 +1,6 @@
 package com.drive.drive_manager.simulator.engine
 
+import kotlin.math.min
 import com.drive.drive_manager.simulator.room.CardSlot
 import com.drive.drive_manager.simulator.room.GameRoom
 
@@ -27,7 +28,7 @@ object Playability {
         val turn = room.currentTurnUserId
         val phase = room.currentPhase
         try {
-            room.sharedCounter = Math.min(5, player.resourceCount + 1) * EffectEngine.direction(room, userId)
+            room.sharedCounter = min(5, player.resourceCount + 1) * EffectEngine.direction(room, userId)
             room.currentTurnUserId = userId
             room.currentPhase = "MAIN"
             return if (playableNow(room, userId, card)) NEXT_TURN else LATER

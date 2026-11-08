@@ -1,6 +1,10 @@
 package com.drive.drive_manager.simulator.bot
 
+import com.drive.drive_manager.simulator.engine.frozenListOf
+import com.drive.drive_manager.simulator.engine.frozenListCopy
+import com.drive.drive_manager.simulator.engine.frozenMapOf
 import com.drive.drive_manager.simulator.engine.JavaText
+import com.drive.drive_manager.simulator.engine.frozenSetCopy
 import com.drive.drive_manager.simulator.platform.Platform
 import com.drive.drive_manager.simulator.rank.RankRules
 
@@ -28,7 +32,7 @@ object BotCatalog {
     const val EASY = "easy"
     const val NORMAL = "normal"
     const val HARD = "hard"
-    private val LEVEL_IDS: List<String> = java.util.List.of(EASY, NORMAL, HARD)
+    private val LEVEL_IDS: List<String> = frozenListOf(EASY, NORMAL, HARD)
 
     /** Splits a resource into lines as Java's `\R` (any Unicode line break; JavaScript's regular expressions have none). */
     private val LINE_BREAK = Regex("\\r\\n|[\\n\\u000B\\u000C\\r\\u0085\\u2028\\u2029]")
@@ -44,7 +48,7 @@ object BotCatalog {
     @JvmField
     val CHOICES: MutableList<MutableMap<String, String>> = choices()
     @JvmField
-    internal val LEVELS: Set<String> = CHOICES.stream().map { c -> c["id"]!! }.collect(java.util.stream.Collectors.toUnmodifiableSet())
+    internal val LEVELS: Set<String> = frozenSetCopy(CHOICES.map { c -> c["id"]!! })
 
     private fun models(): Map<String?, Pair<String, BotSettings>> {
         val m = LinkedHashMap<String?, Pair<String, BotSettings>>()
@@ -58,10 +62,10 @@ object BotCatalog {
     }
 
     private fun choices(): MutableList<MutableMap<String, String>> {
-        val c: MutableList<MutableMap<String, String>> = ArrayList(java.util.List.of(java.util.Map.of("id", EASY, "label", "Fácil", "kind", "level"),
-                java.util.Map.of("id", NORMAL, "label", "Normal", "kind", "level"), java.util.Map.of("id", HARD, "label", "Difícil", "kind", "level")))
-        for ((id, model) in MODELS) if (!LEVEL_IDS.contains(id)) c.add(java.util.Map.of("id", id, "label", model.first, "kind", "model"))
-        return java.util.List.copyOf(c)
+        val c: MutableList<MutableMap<String, String>> = ArrayList(frozenListOf(frozenMapOf("id", EASY, "label", "Fácil", "kind", "level"),
+                frozenMapOf("id", NORMAL, "label", "Normal", "kind", "level"), frozenMapOf("id", HARD, "label", "Difícil", "kind", "level")))
+        for ((id, model) in MODELS) if (!LEVEL_IDS.contains(id)) c.add(frozenMapOf("id", id!!, "label", model.first, "kind", "model"))
+        return frozenListCopy(c)
     }
 
     private fun tunedSettings(): BotSettings {

@@ -1,5 +1,7 @@
 package com.drive.drive_manager.simulator.engine.effects.actions
 
+import kotlin.math.max
+import kotlin.math.min
 import com.drive.drive_manager.simulator.engine.JavaText
 import com.drive.drive_manager.simulator.engine.effects.model.Action.Destroy
 import com.drive.drive_manager.simulator.engine.effects.model.Selector
@@ -14,13 +16,13 @@ class DestroyHandler : ActionHandler<Destroy> {
 
     override fun possible(ctx: EffectContext, action: Destroy): Boolean {
         if (action.cards!!.fromMemory()) return true
-        return candidates(ctx, action).size >= Math.max(1, ctx.amount(action.cards.min))
+        return candidates(ctx, action).size >= max(1, ctx.amount(action.cards.min))
     }
 
     override fun run(ctx: EffectContext, action: Destroy): Boolean {
         val selector = action.cards!!
         val valid = candidates(ctx, action)
-        val max = Math.min(ctx.amount(selector.max), valid.size)
+        val max = min(ctx.amount(selector.max), valid.size)
         if (max <= 0) {
             ctx.done(false)
             return false
@@ -29,7 +31,7 @@ class DestroyHandler : ActionHandler<Destroy> {
             apply(ctx, action, ArrayList(valid.subList(0, max)))
             return false
         }
-        val min = Math.min(ctx.amount(selector.min), max)
+        val min = min(ctx.amount(selector.min), max)
         val filter = selector.filter().describe()
         ctx.ask((if (action.sacrifice) "Sacrifica " else "Destruye ") + (if (min < max) "hasta " else "") + max + (if (max == 1) " criatura" else " criaturas")
                         + (if (filter.all { JavaText.isWhitespace(it) }) "" else " $filter") + ".",

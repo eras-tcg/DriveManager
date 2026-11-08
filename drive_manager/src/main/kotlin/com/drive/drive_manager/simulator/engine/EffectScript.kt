@@ -26,7 +26,7 @@ data class EffectScript(
 ) {
 
     constructor(id: String?, moment: Moment?, mandatory: Boolean, label: String?, text: String?, steps: List<@JvmSuppressWildcards EffectStep>?) :
-        this(id, moment, mandatory, label, text, java.util.List.of(), steps, null, "field", false, Limit.NONE)
+        this(id, moment, mandatory, label, text, frozenListOf(), steps, null, "field", false, Limit.NONE)
 
     constructor(
         id: String?, moment: Moment?, mandatory: Boolean, label: String?, text: String?, cost: List<@JvmSuppressWildcards EffectStep>?,

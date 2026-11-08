@@ -85,8 +85,8 @@ object Chain {
                 // "si …" triggers once per window however many events match (rule 11.7.0.1); the same effect given twice
                 // to one card (2 Recursos of the same name) is 2 effects, and both trigger
                 val key = e.sourceInstanceId + "|" + e.scriptId
-                val n = now.merge(key, 1) { a, b -> a + b }!!
-                if (n > seen.getOrDefault(key, 0)) {
+                val n = now.mergeWith(key, 1) { a, b -> a + b }!!
+                if (n > seen.valueOr(key, 0)) {
                     seen[key] = n
                     triggered.add(e)
                 }
@@ -95,7 +95,7 @@ object Chain {
         // Rule 11.7.0.5: mandatory of the active player, mandatory of the opponent, optional of the active
         // player, optional of the opponent (within a group, in the order they happened)
         val active = room.currentTurnUserId
-        triggered.sortWith(Comparator.comparingInt { e: PendingEffect -> rank(e, active) })
+        triggered.sortWith(comparingInt { e: PendingEffect -> rank(e, active) })
         room.triggerQueue.addAll(triggered)
         // A utility played whose "En Juego" does not activate (its condition, a Definitive one already used) has
         // nothing to resolve: it goes to the Descarte (rule 6.2.3.1)
@@ -149,7 +149,7 @@ object Chain {
                 if (!mark.startsWith(StepHelpers.DELAYED)) continue
                 room.usedThisTurn.remove(mark)
                 val p = mark.substring(StepHelpers.DELAYED.length).split("|")
-                val script = CardEffects.byId(p[2]).orElse(null)
+                val script = CardEffects.byId(p[2])
                 val source = findAnywhere(room, p[0], p[1])
                 if (script == null || source == null) continue
                 val e = pending(room, script, p[0], source, event.seq)
@@ -162,7 +162,7 @@ object Chain {
         }
         // Passive effects with a trigger condition, from the cards in play (or in the hand for "En Mano")
         for (p in room.players.values) {
-            for (zone in java.util.List.of("field", "hand", "tributeZone", "discardPile")) {
+            for (zone in frozenListOf("field", "hand", "tributeZone", "discardPile")) {
                 for (card in ArrayList(EffectEngine.zone(p, zone))) {
                     for (script in CardEffects.of(card)) {
                         if (script.moment != EffectScript.Moment.ON_EVENT || script.sourceZone != zone) continue
@@ -371,8 +371,8 @@ object Chain {
         else "¿Lo encadenas como Cadena $link? Se resolverá antes que los eslabones que ya están en la cadena. ") + effect.text)
         val source = findAnywhere(room, effect.controllerId, effect.sourceInstanceId)
         if (source != null) {
-            prompt.cards = ArrayList(java.util.List.of(source))
-            prompt.validIds = ArrayList(java.util.List.of(source.instanceId))
+            prompt.cards = ArrayList(frozenListOf(source))
+            prompt.validIds = ArrayList(frozenListOf(source.instanceId))
         }
         prompt.min = 0
         prompt.max = 1
@@ -415,7 +415,7 @@ object Chain {
     @Suppress("UNCHECKED_CAST")
     fun labels(group: List<PendingEffect>): MutableMap<String, String> {
         val labels: MutableMap<String?, String> = LinkedHashMap()
-        for (e in group) labels.merge(e.sourceInstanceId, e.label!!) { a, b -> "$a + $b" }
+        for (e in group) labels.mergeWith(e.sourceInstanceId, e.label!!) { a, b -> "$a + $b" }
         return labels as MutableMap<String, String>
     }
 
@@ -426,7 +426,7 @@ object Chain {
         if (script.limit != Limit.NONE) room.usedThisTurn.add(usageKey(effect, script))
         effect.link = room.chain.size + 1
         record(room, GameEvent.EFFECT_ACTIVATED, effect.controllerId, null, null, null, effect,
-            java.util.Map.of<String, Any?>("label", effect.label, "link", effect.link, "sourceId", effect.sourceInstanceId,
+            frozenMapOf<String, Any?>("label", effect.label, "link", effect.link, "sourceId", effect.sourceInstanceId,
                 "sourceName", effect.sourceName, "scriptId", effect.scriptId),
             "Cadena " + effect.link + ": se activa el efecto " + effect.label + " de " + effect.sourceName)
         // Its cost is paid next (advance), before anything else happens
@@ -544,13 +544,13 @@ object Chain {
     /** Effects a player could add in response to `top`: "RESPONSE" effects whose condition accepts its activation. */
     @JvmStatic
     fun responses(room: GameRoom, playerId: String?, top: PendingEffect): List<PendingEffect> {
-        val player = room.getPlayer(playerId) ?: return java.util.List.of()
+        val player = room.getPlayer(playerId) ?: return frozenListOf()
         var activation: GameEvent? = null
         for (e in room.timeline) {
             if (GameEvent.EFFECT_ACTIVATED == e.type && top.id == e.effectId) activation = e
         }
         val result: MutableList<PendingEffect> = ArrayList()
-        for (zone in java.util.List.of("field", "hand")) {
+        for (zone in frozenListOf("field", "hand")) {
             for (card in EffectEngine.zone(player, zone)) {
                 for (script in CardEffects.of(card)) {
                     if (script.moment != EffectScript.Moment.RESPONSE || script.sourceZone != zone) continue
@@ -582,11 +582,11 @@ object Chain {
      */
     @JvmStatic
     fun slowEffects(room: GameRoom, userId: String?): List<PendingEffect> {
-        if (room.status != GameRoom.RoomStatus.IN_PROGRESS || "MAIN" != room.currentPhase || room.isEngineBusy()) return java.util.List.of()
-        val player = room.getPlayer(userId) ?: return java.util.List.of()
+        if (room.status != GameRoom.RoomStatus.IN_PROGRESS || "MAIN" != room.currentPhase || room.isEngineBusy()) return frozenListOf()
+        val player = room.getPlayer(userId) ?: return frozenListOf()
         val result: MutableList<PendingEffect> = ArrayList()
         // "En Tributos" / "En Descarte" effects are activated from those zones too (Zamaranzas)
-        for (zone in java.util.List.of("field", "hand", "tributeZone", "discardPile")) {
+        for (zone in frozenListOf("field", "hand", "tributeZone", "discardPile")) {
             for (card in EffectEngine.zone(player, zone)) {
                 for (script in CardEffects.of(card)) {
                     if (script.moment != EffectScript.Moment.ACTIVATED || script.sourceZone != zone) continue

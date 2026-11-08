@@ -1,5 +1,9 @@
 package com.drive.drive_manager.simulator.room
 
+import com.drive.drive_manager.simulator.platform.Transient
+import com.drive.drive_manager.simulator.platform.Platform
+import com.drive.drive_manager.simulator.platform.Instant
+import com.drive.drive_manager.simulator.engine.frozenSetOf
 import com.drive.drive_manager.simulator.engine.GameRandom
 import com.drive.drive_manager.simulator.bot.BotCatalog
 import com.drive.drive_manager.simulator.engine.Combat
@@ -10,7 +14,6 @@ import com.drive.drive_manager.simulator.engine.PendingEffect
 import com.drive.drive_manager.simulator.engine.PendingRemoval
 import com.drive.drive_manager.simulator.engine.Prompt
 import com.drive.drive_manager.simulator.replay.MatchSetup
-import java.time.Instant
 
 /**
  * A room and the game played in it, as sent to the board (field names and order are its JSON). The fields marked
@@ -52,7 +55,7 @@ class GameRoom {
     var replay: Boolean = false
     /** A room of the ranked queue: only these two players may enter it (not listed, always ranked). Empty: open. */
     @field:RoomSetting
-    var reserved: MutableSet<String> = java.util.Set.of()
+    var reserved: MutableSet<String> = frozenSetOf()
     /** A test room (editor) whose rival side the bot plays: the owner tests it seeing everything (BotRooms#setEditorBot). */
     @field:RoomSetting @get:JvmName("isEditorBot")
     var editorBot: Boolean = false
@@ -65,7 +68,7 @@ class GameRoom {
     @field:RoomSetting
     var version: Long = 0
     /** Sala de pruebas: the bots wait (the owner paused them, or went back in time). */
-    @field:RoomSetting @Volatile @get:JvmName("isPaused")
+    @field:RoomSetting @kotlin.concurrent.Volatile @get:JvmName("isPaused")
     var paused: Boolean = false
     /** Sala de pruebas: the step of the time line shown (from 0) and how many there are (see TestTimeline). */
     @field:RoomSetting
@@ -73,7 +76,7 @@ class GameRoom {
     @field:RoomSetting
     var timelineSize: Int = 0
     /** The pause before each move of the room's bots, chosen by the owner (null: each bot's own). */
-    @field:RoomSetting @Volatile
+    @field:RoomSetting @kotlin.concurrent.Volatile
     var botDelayMs: Int? = null
     /** The bot's edge, 0–8 (BotEdge): Modo solo ranked from the owner's MMR, or a test room's choice for its rival. */
     @field:RoomSetting
@@ -95,7 +98,7 @@ class GameRoom {
     var currentPhase: String? = "MAIN"
     var sharedCounter: Int = 0
     @field:RoomSetting
-    var createdAt: Instant? = Instant.now()
+    var createdAt: Instant? = Platform.now()
     /** Pre-room: who takes the first turn, chosen by the host ("random" or a player id). */
     var firstChoice: String? = "random"
     /** Since when nobody is connected (null while someone is): the room is kept a while so reloading does not lose it. */
@@ -198,10 +201,7 @@ class GameRoom {
     }
 
     fun getOpponentId(userId: String?): String? {
-        return players.keys.stream()
-                .filter { id -> id != userId }
-                .findFirst()
-                .orElse(null)
+        return players.keys.firstOrNull { id -> id != userId }
     }
 
     // --- What Lombok's @Data generated ---

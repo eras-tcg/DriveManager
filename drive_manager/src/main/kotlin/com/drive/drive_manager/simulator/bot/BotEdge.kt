@@ -1,5 +1,8 @@
 package com.drive.drive_manager.simulator.bot
 
+import com.drive.drive_manager.simulator.platform.Platform
+import kotlin.math.max
+import kotlin.math.min
 import com.drive.drive_manager.simulator.rank.RankRules
 import com.drive.drive_manager.simulator.room.GameLogEntry
 import com.drive.drive_manager.simulator.room.GameRoom
@@ -27,7 +30,7 @@ object BotEdge {
     @JvmStatic
     fun levelFor(mmr: Int): Int {
         val over = mmr - RankRules.BOT_MMR[BotCatalog.HARD]!!
-        return Math.max(0, Math.min(MAX, over / MMR_STEP))
+        return max(0, min(MAX, over / MMR_STEP))
     }
 
     /** How strong the hardest bot is with this edge, for the ranks. */
@@ -38,13 +41,13 @@ object BotEdge {
 
     @JvmStatic
     fun clamp(level: Int): Int {
-        return Math.max(0, Math.min(MAX, level))
+        return max(0, min(MAX, level))
     }
 
     /** The bot's own turn in which its Marcador goes up 1 more (0: none). */
     @JvmStatic
     fun botTurn(level: Int): Int {
-        return if (level <= 0) 0 else Math.max(1, 5 - level)
+        return if (level <= 0) 0 else max(1, 5 - level)
     }
 
     /** The rival's own turn in which their Marcador goes up 1 less (0: none). */
@@ -67,9 +70,9 @@ object BotEdge {
     @JvmStatic
     fun marcador(room: GameRoom, player: PlayerState, raised: Int): Int {
         val delta = delta(room, player.userId, player.turnsStarted)
-        val count = Math.max(0, Math.min(5, raised + delta))
-        if (delta != 0 && count != Math.max(0, Math.min(5, raised))) {
-            room.eventLog.add(GameLogEntry(System.currentTimeMillis(), if (delta > 0)
+        val count = max(0, min(5, raised + delta))
+        if (delta != 0 && count != max(0, min(5, raised))) {
+            room.eventLog.add(GameLogEntry(Platform.currentTimeMillis(), if (delta > 0)
                 "Ventaja del bot: el Marcador de " + player.username + " sube 1 más en su turno " + player.turnsStarted
             else
                 "Ventaja del bot: el Marcador de " + player.username + " sube 1 menos en su turno " + player.turnsStarted))

@@ -1,5 +1,8 @@
 package com.drive.drive_manager.simulator.engine.effects.actions
 
+import kotlin.math.max
+import kotlin.math.min
+import com.drive.drive_manager.simulator.engine.frozenListOf
 import com.drive.drive_manager.simulator.engine.JavaText
 import com.drive.drive_manager.simulator.engine.GameRandom
 import com.drive.drive_manager.simulator.engine.effects.model.Action.Move
@@ -24,7 +27,7 @@ class MoveHandler : ActionHandler<Move> {
         if (selector.zones!! == "looked" || selector.fromMemory()) return true
         val found = candidates(ctx, action)
         if (selector.self() == Selector.Self.REQUIRE && found.none { ctx.isSelf(it) }) return false
-        return found.size >= Math.max(1, ctx.amount(selector.min))
+        return found.size >= max(1, ctx.amount(selector.min))
     }
 
     override fun run(ctx: EffectContext, action: Move): Boolean {
@@ -38,23 +41,23 @@ class MoveHandler : ActionHandler<Move> {
             return true
         }
         val valid = candidates(ctx, action)
-        val max = Math.min(ctx.amount(selector.max), valid.size)
+        val max = min(ctx.amount(selector.max), valid.size)
         // With nothing to pick, the rest of the looked cards are still ordered
         if (action.rest != null && !ctx.looked().isEmpty()) {
-            val min = Math.min(ctx.amount(selector.min), max)
+            val min = min(ctx.amount(selector.min), max)
             ctx.ask(instruction(ctx, action, min, max), action.label ?: label(action.to), ctx.looked(), valid, min, max)
             ctx.asksOrder(Move.DECK_TOP == action.rest)
             return true
         }
         if (max <= 0) {
-            ctx.moved(java.util.List.of())
+            ctx.moved(frozenListOf())
             return false
         }
         if (selector.mode() != Selector.Mode.CHOOSE) {
             move(ctx, action, valid.subList(0, max))
             return false
         }
-        val min = Math.min(ctx.amount(selector.min), max)
+        val min = min(ctx.amount(selector.min), max)
         ctx.ask(instruction(ctx, action, min, max), action.label ?: label(action.to), Selection.pool(ctx, selector), valid, min, max)
         if (selector.self() == Selector.Self.REQUIRE) valid.firstOrNull { ctx.isSelf(it) }?.let { ctx.requireInChoice(it) }
         return true

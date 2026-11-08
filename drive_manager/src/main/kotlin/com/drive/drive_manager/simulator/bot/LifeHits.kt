@@ -1,5 +1,8 @@
 package com.drive.drive_manager.simulator.bot
 
+import kotlin.math.pow
+import com.drive.drive_manager.simulator.engine.frozenListOf
+import com.drive.drive_manager.simulator.engine.JavaMath
 import com.drive.drive_manager.simulator.engine.GameEvent
 import com.drive.drive_manager.simulator.room.CardLocator
 import com.drive.drive_manager.simulator.room.CardSlot
@@ -40,9 +43,9 @@ internal object LifeHits {
             if (me!! != defender.userId) pool.addAll(defender.hand)
             pool.add(life)
             val c0 = w.get(if (me == defender.userId) "lifeMine" else "lifeFoe")
-            val worth = if (w.get("lifeCurveExp") >= 0.5 && c0 > 0 && c0 < 1) w.life * Math.pow(c0, defender.lifeStack.size.toDouble()) else w.life
+            val worth = if (w.get("lifeCurveExp") >= 0.5 && c0 > 0 && c0 < 1) w.life * c0.pow(defender.lifeStack.size.toDouble()) else w.life
             // DoubleStream.average() sums with compensation (Kahan): Kotlin's average() would round differently
-            val avg = pool.stream().mapToDouble { x -> value(x, dmg.toInt(), w, worth) }.average().orElse(0.0)
+            val avg = JavaMath.average(pool) { x -> value(x, dmg.toInt(), w, worth) } ?: 0.0
             val diff = avg - value(life, dmg.toInt(), w, worth)
             // For the bot: its hits on the rival count for it (times aggression), the rival's on it against it
             c += if (me == defender.userId) -diff else w.aggression * diff
@@ -59,7 +62,7 @@ internal object LifeHits {
     }
 
     /** Where a hit life may end up (or be): tributes, hand, lives, field, discard pile. */
-    private val SEARCHED: List<Zone> = java.util.List.of(Zone.TRIBUTE_ZONE, Zone.HAND, Zone.LIFE_STACK, Zone.FIELD, Zone.DISCARD_PILE)
+    private val SEARCHED: List<Zone> = frozenListOf(Zone.TRIBUTE_ZONE, Zone.HAND, Zone.LIFE_STACK, Zone.FIELD, Zone.DISCARD_PILE)
 
     private fun find(p: PlayerState?, id: String?): CardSlot? {
         return CardLocator.find(p, id, SEARCHED, false)

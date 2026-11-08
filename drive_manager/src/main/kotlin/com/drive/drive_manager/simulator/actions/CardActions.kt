@@ -1,5 +1,9 @@
 package com.drive.drive_manager.simulator.actions
 
+import com.drive.drive_manager.simulator.platform.Platform
+import kotlin.math.max
+import kotlin.math.min
+import com.drive.drive_manager.simulator.engine.frozenListOf
 import com.drive.drive_manager.simulator.engine.JavaText
 import com.drive.drive_manager.simulator.actions.ZoneActions.getZone
 import com.drive.drive_manager.simulator.actions.ZoneActions.zoneLabel
@@ -14,7 +18,6 @@ import com.drive.drive_manager.simulator.room.PlayerState
 import com.drive.drive_manager.simulator.room.RoomGuard
 import com.drive.drive_manager.simulator.room.SimMessages
 import com.drive.drive_manager.simulator.room.Zone
-import java.util.UUID
 
 /** Changing a card on the field by hand (editor mode): state, materials and Recursos. */
 object CardActions {
@@ -45,7 +48,7 @@ object CardActions {
         val tp = action.getString("targetPlayerId")
         val player = room.getPlayer(tp ?: userId) ?: return GameStateUpdate.notInRoom(room)
         val instanceId = action.getString("instanceId")
-        val delta = Math.max(-RoomGuard.MAX_STRENGTH_CHANGE, Math.min(RoomGuard.MAX_STRENGTH_CHANGE, action.getInt("delta", 0)))
+        val delta = max(-RoomGuard.MAX_STRENGTH_CHANGE, min(RoomGuard.MAX_STRENGTH_CHANGE, action.getInt("delta", 0)))
         val card = player.field.firstOrNull { c -> instanceId!! == c.instanceId }
                 ?: return GameStateUpdate.error(room.roomId, SimMessages.CARD_NOT_FOUND)
         card.strengthModifier = card.strengthModifier + delta
@@ -242,18 +245,18 @@ object CardActions {
         val player = (if (targetPlayerId != null) room.getPlayer(targetPlayerId) else room.getPlayer(userId))
                 ?: return GameStateUpdate.notInRoom(room)
 
-        val zones: List<MutableList<CardSlot>> = java.util.List.of(
+        val zones: List<MutableList<CardSlot>> = frozenListOf(
                 player.hand, player.deck, player.field,
                 player.lifeStack, player.tributeZone, player.discardPile)
         var removed = false
         for (zone in zones) {
-            if (zone.removeIf { c -> instanceId == c.instanceId }) { removed = true; break }
+            if (zone.removeAll { c -> instanceId == c.instanceId }) { removed = true; break }
         }
         if (!removed) {
             outer@ for (zone in zones) {
                 for (c in zone) {
-                    if (c.materials!!.removeIf { m -> instanceId == m.instanceId }) { removed = true; break@outer }
-                    if (c.resources!!.removeIf { r -> instanceId == r.instanceId }) { removed = true; break@outer }
+                    if (c.materials!!.removeAll { m -> instanceId == m.instanceId }) { removed = true; break@outer }
+                    if (c.resources!!.removeAll { r -> instanceId == r.instanceId }) { removed = true; break@outer }
                 }
             }
         }
@@ -351,7 +354,7 @@ object CardActions {
         if (name == null || name.all { JavaText.isWhitespace(it) }) return GameStateUpdate.error(room.roomId, "La carta necesita un nombre")
 
         val card = CardSlot()
-        card.instanceId = "dummy-" + UUID.randomUUID().toString().replace("-", "").substring(0, 10)
+        card.instanceId = "dummy-" + Platform.randomHexId().substring(0, 10)
         card.cardId = if (action.getString("cardId") != null) action.getString("cardId") else "dummy"
         card.imageUrl = action.getString("imageUrl")
         card.cardName = name.trim { it <= ' ' }

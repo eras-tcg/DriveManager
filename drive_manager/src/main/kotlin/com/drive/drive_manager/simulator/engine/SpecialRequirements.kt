@@ -1,5 +1,6 @@
 package com.drive.drive_manager.simulator.engine
 
+import kotlin.math.max
 import com.drive.drive_manager.simulator.engine.EffectEngine.allies
 import com.drive.drive_manager.simulator.engine.EffectEngine.canPay
 import com.drive.drive_manager.simulator.engine.EffectEngine.find
@@ -107,7 +108,7 @@ object SpecialRequirements {
     @JvmStatic
     fun specialRequirement(card: CardSlot?): SpecialRequirement? {
         val kind = if (card!!.specialSummonKind == null) "" else card.specialSummonKind!!.lowercase()
-        if (!java.util.List.of("evolution", "promotion", "materialization").contains(kind) || card.requirement == null) return null
+        if (!frozenListOf("evolution", "promotion", "materialization").contains(kind) || card.requirement == null) return null
         val text = card.requirement!!.lowercase().trim { it <= ' ' }
         // "(criatura nivel 3) o (criatura nivel 2 + material nivel 2 en tu mano o campo)"
         val either = Regex("^\\((.*)\\)\\s*o\\s*\\((.*)\\)\\.?$").find(text)
@@ -180,7 +181,7 @@ object SpecialRequirements {
     fun materialZones(text: String): List<String> {
         val m = Regex("(?:en|de)\\s+(?:tu\\s+|tus\\s+|el\\s+)?(campo|mano|tributos|descarte)(?:\\s*o\\s+(?:tu\\s+|tus\\s+|el\\s+)?(campo|mano|tributos|descarte))?")
                 .find(text)
-        if (m == null) return java.util.List.of("tributeZone", "field")
+        if (m == null) return frozenListOf("tributeZone", "field")
         val zones: MutableList<String> = ArrayList()
         for (g in 1..2) {
             val group = m.groups[g]?.value ?: continue
@@ -238,7 +239,7 @@ object SpecialRequirements {
         if (req.declaredSummoner() && summoner != null) {
             return specialMaterials(player, card, req, null).filter { c -> c !== summoner }
         }
-        val option = optionFor(req, summoner) ?: return java.util.List.of()
+        val option = optionFor(req, summoner) ?: return frozenListOf()
         if (option.levelSum > 0) {
             return player.field
                     .filter { c -> c !== summoner && c !== card && "creature" == c.cardType && c.getLevel() != null && shares(c, card) }
@@ -329,7 +330,7 @@ object SpecialRequirements {
     fun zonesText(zones: List<String>?): String {
         // Any other zone is read as the Tributos
         return (zones!!.map { z ->
-            Zone.parse(z).filter { x -> x == Zone.FIELD || x == Zone.HAND }.orElse(Zone.TRIBUTE_ZONE)!!.ownLabel()
+            (Zone.parse(z)?.takeIf { x -> x == Zone.FIELD || x == Zone.HAND } ?: Zone.TRIBUTE_ZONE).ownLabel()
         }).joinToString(" o ")
     }
 
@@ -347,7 +348,7 @@ object SpecialRequirements {
     fun specialSummonable(room: GameRoom, userId: String?): MutableList<String> {
         val player = room.getPlayer(userId)
         if (player == null || room.status != GameRoom.RoomStatus.IN_PROGRESS || userId!! != room.currentTurnUserId
-                || "MAIN" != room.currentPhase || room.isEngineBusy()) return java.util.List.of()
+                || "MAIN" != room.currentPhase || room.isEngineBusy()) return frozenListOf()
         val cards: MutableList<CardSlot> = ArrayList(player.hand)
         player.tributeZone.filter { CardEffects.specialFromTributes(it) }.forEach { cards.add(it) }
         @Suppress("UNCHECKED_CAST")
@@ -430,7 +431,7 @@ object SpecialRequirements {
     /** Creatures an effect lets be summoned by a special summon of that kind, from that zone. */
     @JvmStatic
     fun specialTargets(room: GameRoom, effect: PendingEffect, special: SpecialRule): List<CardSlot> {
-        val player = room.getPlayer(effect.controllerId) ?: return java.util.List.of()
+        val player = room.getPlayer(effect.controllerId) ?: return frozenListOf()
         val zones = specialZones(player, special)
         // Java's method reference (special.filter()::matches) read the filter at once
         val filter = special.filter!!
@@ -443,7 +444,7 @@ object SpecialRequirements {
                             && filter.matches(c)
                             && summoningAs(c) {
                         val req = specialRequirement(c)
-                        if (req == null || !canPay(room, player.userId, Math.max(0, c.specialCost!! - special.reduce
+                        if (req == null || !canPay(room, player.userId, max(0, c.specialCost!! - special.reduce
                                         - CostModifiers.available(room, player, CostModifiers.Event.SPECIAL_SUMMON, req.kind, c, null)))) return@summoningAs false
                         if ("promotion" == req.kind && !alliesAddUp(player, req)) return@summoningAs false
                         if (!enoughCreatures(player, c)) return@summoningAs false

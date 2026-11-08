@@ -1,5 +1,9 @@
 package com.drive.drive_manager.simulator.engine
 
+import com.drive.drive_manager.simulator.platform.LocalValue
+import com.drive.drive_manager.simulator.platform.Platform
+import kotlin.math.max
+import kotlin.math.min
 import com.drive.drive_manager.simulator.room.CardLocator
 import com.drive.drive_manager.simulator.room.CardSlot
 import com.drive.drive_manager.simulator.room.FloatingEffect
@@ -60,14 +64,14 @@ object EffectEngine {
      * The card whose rules read the table now: the effect resolving or being checked, or the creature being special summoned. Some cards
      * count as another level for some cards (Abraza Almas: "puede ser considerada nivel 2 por tus cartas [espectro]").
      */
-    private val LOOKER = ThreadLocal<CardSlot?>()
+    private val LOOKER = LocalValue<CardSlot?>()
 
     @JvmStatic
-    fun <T> lookingAs(looker: CardSlot?, body: java.util.function.Supplier<T>): T {
+    fun <T> lookingAs(looker: CardSlot?, body: () -> T): T {
         val previous = LOOKER.get()
         LOOKER.set(looker)
         try {
-            return body.get()
+            return body()
         } finally {
             if (previous == null) LOOKER.remove()
             else LOOKER.set(previous)
@@ -77,16 +81,16 @@ object EffectEngine {
     /** The levels the card can count as for the card looking now: its own, and another one some cards may count as. */
     @JvmStatic
     fun levels(card: CardSlot?): List<Int> {
-        if (card!!.getLevel() == null) return java.util.List.of()
+        if (card!!.getLevel() == null) return frozenListOf()
         val other = CardEffects.alternativeLevel(card, LOOKER.get())
-        return if (other == null || other == card.getLevel()) java.util.List.of(card.getLevel()!!) else java.util.List.of(card.getLevel()!!, other)
+        return if (other == null || other == card.getLevel()) frozenListOf(card.getLevel()!!) else frozenListOf(card.getLevel()!!, other)
     }
 
     /** The card looking now is being special summoned (not an effect reading the table). */
-    private val SUMMONING = ThreadLocal<Boolean?>()
+    private val SUMMONING = LocalValue<Boolean?>()
 
     @JvmStatic
-    fun <T> summoningAs(summoned: CardSlot?, body: java.util.function.Supplier<T>): T {
+    fun <T> summoningAs(summoned: CardSlot?, body: () -> T): T {
         val previous = SUMMONING.get()
         SUMMONING.set(true)
         try {
@@ -142,7 +146,7 @@ object EffectEngine {
         val e = GameEvent()
         e.seq = room.eventSeq + 1
         room.eventSeq = e.seq
-        e.ts = System.currentTimeMillis()
+        e.ts = Platform.currentTimeMillis()
         e.type = type
         e.playerId = playerId
         if (card != null) {
@@ -173,7 +177,7 @@ object EffectEngine {
 
     @JvmStatic
     fun log(room: GameRoom, text: String?, seq: Long?) {
-        val entry = GameLogEntry(System.currentTimeMillis(), text, seq)
+        val entry = GameLogEntry(Platform.currentTimeMillis(), text, seq)
         HistoryDescriber.describe(room, entry)
         room.eventLog.add(entry)
         if (room.eventLog.size > LOG_LIMIT) room.eventLog.removeAt(0)
@@ -197,7 +201,7 @@ object EffectEngine {
     /** The game ends at once: nothing pending goes on (combat, chain, triggers), and the room goes to the post-game. */
     @JvmStatic
     fun endGame(room: GameRoom, loser: PlayerState, reason: String, text: String?) {
-        record(room, GameEvent.GAME_LOST, loser.userId, null, null, null, null, java.util.Map.of<String, Any?>("reason", reason), text)
+        record(room, GameEvent.GAME_LOST, loser.userId, null, null, null, null, frozenMapOf<String, Any?>("reason", reason), text)
         room.winnerId = room.getOpponentId(loser.userId)
         room.endReason = reason
         room.combat = null
@@ -248,7 +252,7 @@ object EffectEngine {
 
     /** Every card of the room, in every zone, with the cards attached to them. */
     @JvmStatic
-    fun cardsInRoom(room: GameRoom): java.util.stream.Stream<CardSlot> {
+    fun cardsInRoom(room: GameRoom): Sequence<CardSlot> {
         return CardLocator.cards(room, CardLocator.ENGINE_ORDER, true)
     }
 
@@ -257,12 +261,12 @@ object EffectEngine {
     @JvmStatic
     fun script(effect: PendingEffect?): EffectScript {
         return CardEffects.byId(effect!!.scriptId!!)
-                .orElseThrow { IllegalStateException("Unknown effect " + effect.scriptId) }
+                ?: throw IllegalStateException("Unknown effect " + effect.scriptId)
     }
 
     // The card an event is about, where it is now (its zone after the event).
     /** Records that are not things that happen in the game: activating and resolving effects, choosing targets, combat steps. */
-    private val BOOKKEEPING: Set<String> = java.util.Set.of(GameEvent.EFFECT_TRIGGERED, GameEvent.EFFECT_ACTIVATED, GameEvent.EFFECT_RESOLVED,
+    private val BOOKKEEPING: Set<String> = frozenSetOf(GameEvent.EFFECT_TRIGGERED, GameEvent.EFFECT_ACTIVATED, GameEvent.EFFECT_RESOLVED,
             GameEvent.EFFECT_DECLINED, GameEvent.TARGET, GameEvent.COMBAT_STEP)
 
     /**
@@ -322,11 +326,11 @@ object EffectEngine {
                 if (source.faceDown) continue
                 for (c in CardEffects.continuousOf(source)) {
                     if (c.targets == null || c.enemies || !c.holds(room, source, p.userId!!)) continue
-                    for (ally in p.field) if (c.targets.matches(ally)) fromAllies.merge(ally.instanceId, c.strength) { a, b -> a + b }
+                    for (ally in p.field) if (c.targets.matches(ally)) fromAllies.mergeWith(ally.instanceId, c.strength) { a, b -> a + b }
                 }
             }
             for (card in p.field) {
-                var strength = fromAllies.getOrDefault(card.instanceId, 0)
+                var strength = fromAllies.valueOr(card.instanceId, 0)
                 var level = 0
                 val keywords = ArrayList<String>()
                 for (c in CardEffects.continuousOf(card)) {
@@ -387,7 +391,7 @@ object EffectEngine {
     /** The player's cards in that zone; none for an unknown one. */
     @JvmStatic
     fun zone(player: PlayerState?, zone: String?): MutableList<CardSlot> {
-        return Zone.parse(zone).map { z -> z.of(player!!) }.orElse(java.util.List.of())
+        return Zone.parse(zone)?.let { z -> z.of(player!!) } ?: frozenListOf()
     }
 
     @JvmStatic
@@ -422,7 +426,7 @@ object EffectEngine {
 
     @JvmStatic
     fun concatStrings(a: List<String>?, b: List<String>?): MutableList<String> {
-        val all = ArrayList<String>(a ?: java.util.List.of())
+        val all = ArrayList<String>(a ?: frozenListOf())
         if (b != null) all.addAll(b)
         return all
     }
@@ -459,7 +463,7 @@ object EffectEngine {
 
     @JvmStatic
     fun clamp(value: Int): Int {
-        return Math.max(-10, Math.min(10, value))
+        return max(-10, min(10, value))
     }
 
     @JvmStatic
@@ -580,7 +584,7 @@ object EffectEngine {
             if (!k.lowercase().startsWith(keyword!!.lowercase())) continue
             val m = Regex("(\\d+)").find(k)
             val value = if (m != null) m.groupValues[1].toInt() else 0
-            best = if (best == null) value else Math.max(best, value)
+            best = if (best == null) value else max(best, value)
         }
         return best
     }
