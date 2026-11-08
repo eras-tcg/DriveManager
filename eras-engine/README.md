@@ -3,16 +3,32 @@
 The game engine in Kotlin Multiplatform: one code, built for the JVM (DriveManager) and for JavaScript (eras-web,
 to play against the bot offline). Plan: "ERAS: plan del motor en Kotlin Multiplatform".
 
-**Status: phase 2, step B.** The game's core (rules, effects, bot, rooms' state) is here, in `src/commonMain/kotlin`,
+**Status: phase 2, step C.** The game's core (rules, effects, bot, rooms' state) is here, in `src/commonMain/kotlin`,
 under its original packages `com.drive.drive_manager.simulator.*`; DriveManager depends on the JVM artifact. The
-platform seam (`simulator/platform`) is `expect`/`actual` (`jvmMain`, `jsMain`). The card files are still read by the
-server (Jackson) and handed to the core through `CardSource`; the web facade (`com.eras.engine.EngineApi`) still only
-offers a shuffle and a card file's outline. Details: `drive_manager/docs/kotlin-conversion/README.md`, "Step B".
+platform seam (`simulator/platform`) is `expect`/`actual` (`jvmMain`, `jsMain`). The card files live here too and are read
+in common code (kotlinx.serialization), on the server and in JavaScript. Details: `drive_manager/docs/kotlin-conversion/README.md`,
+"Step B" and "Step C".
+
+## The cards
+
+- **`cards/<edition>/<card>.json`**: the programmed cards (358), the one copy of their data.
+- The build makes the **card bundle** from them (task `cardBundle`): `build/generated/cardBundle/card-bundle.json`, every
+  file's text in one JSON document (`{"format": "eras-card-bundle/1", "files": [{"path": "E1/a-la-carga.json", "text": "…"}, …]}`).
+  The JVM jar carries the files (`cards/**`) and the bundle (`eras/card-bundle.json`); the site will fetch the bundle.
+- The reader: `simulator/engine/cards` (`CardReader.read(json)`, `CardBundle.read(bundle)`), the same definitions the server's
+  Jackson reader built (checked on every card by DriveManager's `CardReaderParityTest`). `CardModelReader.kt` is generated
+  from the model's classes: after changing one, `./gradlew jvmTest -PregenerateCardReader`.
+- Installing them as the core's cards, before the engine is first used:
+  - Kotlin (JVM or JS): `CardSources.install(BundleCardSource(bundleText))`;
+  - the site: `EngineApi.installCards(bundleText)` (returns how many cards);
+  - DriveManager: its `ServerCardSource` service reads `eras/card-bundle.json` from this jar (found with no start-up code).
+- The tests (JVM and Node) read the bundle from the build and play seeded bot games with it (`SeededBotGameTest`: the same
+  fingerprints on both); they read the starter decks from `../drive_manager/src/test/resources/simulator`.
 
 ## Build
 
 ```bash
-./gradlew build                              # tests on the JVM (jvmTest) and on Node (jsNodeTest)
+./gradlew build                              # card bundle, tests on the JVM (jvmTest) and on Node (jsNodeTest)
 ./gradlew publishToMavenLocal                # com.eras:eras-engine-jvm, for DriveManager
 ./gradlew jsBrowserProductionLibraryDistribution   # npm package @eras/engine in build/dist/js/productionLibrary
 ```
@@ -45,6 +61,8 @@ builds the engine before the server's tests and image.
   site calls goes through `EngineApi` with plain values (seeds as decimal strings, later JSON); `GameRandom` and
   the rest stay internal.
 - **ES modules** (`useEsModules()`): Angular's build bundles and optimizes them; CommonJS would warn and bail out.
+- **Java's regular expressions** are not JavaScript's: the core builds every pattern with `Platform.regex` (on JavaScript,
+  `JavaRegex.toJavaScript` gives `\s`, `.` and `$` Java's meaning and refuses inline flags such as `(?i)`).
 - **No browser test runner.** The JavaScript tests run on Node (`jsNodeTest`); Karma is not needed, and it is
   fetched from GitHub, which some networks block.
 - **Java names**: top-level functions live in `<File>Kt` (`CardFileKt.readCardOutline`) unless `@file:kotlin.jvm.JvmName` names it;

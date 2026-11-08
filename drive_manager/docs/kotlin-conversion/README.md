@@ -9,6 +9,9 @@ classes not converted yet). Once everything is Kotlin and free of JVM-only APIs 
 > **Done (step B, 2026-11-08):** the core now lives in `eras-engine/src/commonMain/kotlin` and drive_manager uses it as
 > a library (`com.eras:eras-engine-jvm`); drive_manager has no Kotlin sources and no `kotlin-maven-plugin` any more.
 > The batch notes below describe how the conversion was done; see "Step B" at the end for where things are now.
+>
+> **Done (step C, 2026-11-08):** the card files live in `eras-engine/cards` and are read by the engine's common reader
+> (kotlinx.serialization) on the server and in JavaScript, from one generated card bundle; see "Step C".
 
 ## Converting a file
 
@@ -387,7 +390,7 @@ in its main build. Behaviour is the one of step A: 652 simulator tests (0 failur
 counts, the golden hashes unchanged.
 
 What stays in drive_manager (Java): the card files' readers (`CardFiles`, `EffectJson`, `CardFilesCheck`: Jackson; step C
-replaces them with kotlinx.serialization in common), `ValueModelFiles`, `BotRooms`, the rooms' service and messages
+replaced them with kotlinx.serialization in common, see "Step C"), `ValueModelFiles`, `BotRooms`, the rooms' service and messages
 (`RoomService`, `RoomMessages`, `RoomDecks`, …), controllers, missions, ranks' and replays' server parts, `json/SimulatorJson`.
 The resources (`cards/`, `bot/`) stay in drive_manager's class path too.
 
@@ -465,3 +468,125 @@ sources). In IntelliJ, open both builds (Gradle and Maven); the server's Maven p
 - `.github/workflows/ci-cd.yml`: the `test` job sets up Gradle and runs `./gradlew publishToMavenLocal` in `eras-engine`
   before `mvn verify`; the `build` job's `docker/build-push-action` uses `context: .` and `file: drive_manager/Dockerfile`;
   the `engine` job is unchanged (engine tests on the JVM and Node, publish, interop test).
+
+## Step C: the card files read in common code
+
+The programmed cards' data and their reader moved to eras-engine, so the browser loads exactly the cards the server runs.
+Nothing changed for the players: 358 cards read into the same definitions (checked below), the golden hashes and the seeded
+bot games unchanged, the simulator's per-class test counts those of step B plus the new tests.
+
+### Where the card data lives
+
+- **`eras-engine/cards/<edition>/<card>.json`**: the one copy of the card files (moved from
+  `drive_manager/src/main/resources/cards`, unchanged, history kept by `git mv`).
+- eras-engine's build makes from them (`build.gradle.kts`):
+  - task **`cardBundle`** → `build/generated/cardBundle/card-bundle.json`: every file's text in one JSON document, in the
+    order of their paths: `{"format": "eras-card-bundle/1", "files": [{"path": "E1/a-la-carga.json", "text": "…"}, …]}`
+    (~900 KB, the files' text kept byte for byte so each is read exactly as before);
+  - task `cardResources` → the JVM jar's resources: the files at `cards/**` (where Spring's `classpath*:cards/**/*.json`
+    finds them: `MatchHistory.rulesVersion`, `KotlinEngineInteropTest`, the parity tests) and the bundle at
+    `eras/card-bundle.json` (`CardBundle.RESOURCE`).
+- drive_manager has no card files of its own any more: they come with the engine's jar (and so into the Docker image,
+  whose engine stage copies `eras-engine/cards`).
+
+### The reader (`eras-engine/src/commonMain/kotlin/.../simulator/engine/cards`)
+
+| File | What |
+|---|---|
+| `CardReader.kt` | `CardReader.read(json): CardDefinition`: parses with kotlinx.serialization (`Json.parseToJsonElement`, not lenient) and builds the definition from the tree; errors are `IllegalArgumentException("Efectos inválidos: <path>: <reason>")`, as `EffectJson.read`'s. `DuplicateKeys`: Jackson's `STRICT_DUPLICATE_DETECTION` (kotlinx's tree keeps the last value), and its refusal of raw control characters in strings. |
+| `JsonFields.kt` | How each value is read, as Jackson read it with `EffectJson`'s settings: absent/null `boolean`/`int` → false/0; absent/null list or set → empty `ArrayList`/`HashSet` (Jackson's `Nulls.AS_EMPTY` also applies to an absent creator property); any other absent/null value → null (so `sourceZone` and `limit` are null when absent, not "field"/`NONE`: what Jackson gave); an unknown field → error; enums by exact name. |
+| `CardModelReader.kt` | **Generated**: one function per class of the card model (102 records, 41 Kotlin `data object`s, 16 enums, 6 typed families), calling each record's constructor with named arguments. |
+| `CardBundle.kt` | `CardBundle.files(text)`, `CardBundle.read(text)` (every card, with the old `CardFiles` checks: "<file name>: Efectos inválidos: …", "Carta en dos archivos: …", "Efecto repetido: …"), and **`BundleCardSource(text)`**: the core's `CardSource` for a bundle's text. |
+
+Typed values follow `EffectJson`: the registered type ids are the simple names of the members of `EffectStep`, `Action`,
+`Condition`, `Amount` and `Reaction` (their records and data objects, through the sealed hierarchy); a value is typed when its
+declared class is one of those or `EffectStep.NeedsTarget`, or a subtype of one (so a `Replacement` property carries
+`"type": "Replacement"` too), and its id must name a registered subtype of the declared type. An id can name members of two
+families (`Amount.Gems` and `Action.Gems`): the declared type decides, as in Jackson. A data object is its type alone and reads as
+the object itself (Jackson made a new instance, equal to it).
+
+**The generator** (`src/jvmTest/.../engine/cards/CardModelReaderGenerator.kt`, kotlin-reflect on the JVM classes) writes
+`CardModelReader.kt` from the model; `CardModelReaderGeneratorTest` fails while the checked-in file differs from what the model
+gives. After changing a card model class: `./gradlew jvmTest -PregenerateCardReader`, then commit the file.
+
+**Stricter than Jackson, on purpose**: no coercions (a text `"3"` or `2.7` for an int, `"true"` or `1` for a boolean, a
+number for a text, an enum's index) and no null inside a list (Jackson kept it and the definition broke later, with an NPE).
+No card file uses any of them: each file is, as a tree, exactly the JSON `EffectJson` writes for it
+(`CardReaderParityTest.everyCardFileIsCanonical`), and the differences are listed in `refusesJacksonsCoercions`.
+
+### The server
+
+- `CardFiles.load()` (Java, still the server's loader) = `CardBundle.read(<eras/card-bundle.json from the class path>)`;
+  `ServerCardSource` (the `CardSource` service) calls it, as before. `CardFilesCheck` (the start-up check that logs the count
+  and fails the start on a broken card) is unchanged.
+- `EffectJson` moved to `src/test/java` (same package): the server's main code no longer reads or writes card JSON with
+  Jackson. It stays as the parity tests' oracle and for the tests that write definitions as JSON (`EffectJsonTest`,
+  `DefinitionsExportTest`, `LanguageCatalogExportTest`). `JacksonCardFiles` (test) is the old `CardFiles.load()`: class-path
+  scanning plus `EffectJson.read`.
+- `kotlinx-serialization-json` is now on the server's class path (the engine needs it at run time; the pom's exclusion and the
+  `kmp-engine` profile's own copy are gone), at the engine's version: the pom sets `kotlin-serialization.version` to 1.12.0
+  (Spring Boot's dependency management would otherwise downgrade it to 1.9.0). Spring still uses Jackson for the server's types, checked by starting the
+  application against a local MongoDB: the STOMP converters are String, bytes and Jackson (Boot's configuration replaces
+  Spring's defaults, which would otherwise put kotlinx's message converter, one that takes every type, first); among the HTTP
+  converters Spring adds `KotlinSerializationJsonHttpMessageConverter` before Jackson's, but it refuses everything that is not
+  `@Serializable` (maps, lists, `GameRoom`…: Jackson's, as before), and no response of the server is.
+- `CoreBoundaryTest`: `engine/EffectJson.java` left the list of server files of the core's packages.
+
+### Parity (`drive_manager/.../engine/CardReaderParityTest`)
+
+- `theBundleHoldsTheCardFilesOfTheClassPath`: 358 files, the bundle's paths and texts equal to the class path's files, in
+  Spring's scanning order (the order the server loaded them in).
+- `everyCardReadsAsJacksonReadIt`: for each of the 358 files, `CardReader.read` and `EffectJson.read` give definitions whose
+  JSON is **byte-identical** with both of the server's mappers (`EffectJson.write`/`pretty` and `SimulatorJson`'s, the rooms'
+  JSON), that are `equals` both ways with equal `hashCode` and `toString`, and whose **object graphs** match field by field
+  (the same record classes, list and set classes — `ArrayList`, `HashSet` — element order, enum constants, data objects).
+- `theServerLoadsWhatJacksonLoaded`: `CardFiles.load()` / `ServerCardSource` equal the old loader's list.
+- `refusesWhatJacksonRefused`: 33 broken inputs (unknown step/condition/field, a type of another family, a missing or null
+  type, a repeated key — also written with an escape —, wrong kinds, an unknown enum name, int overflow, trailing or missing
+  text, comments, unquoted keys, a non-object root…): both refuse; the common reader with "Efectos inválidos: …".
+- `theLoaderRefusesWhatItRefused`: a card in two files, an effect id twice (in two cards, or as own and inherited), a broken
+  file: the same failures, with the same messages (for a broken file, the same "<file>: Efectos inválidos: " and then each
+  reader's own reason).
+- eras-engine's `CardReaderTest` (common, JVM and Node) covers the reader's values and refusals; `CardBundleTest` reads the
+  build's bundle on both platforms.
+
+### JavaScript: the same game as the JVM
+
+- **Installing the cards**: `CardSources.install(BundleCardSource(bundleText))` before the engine is first used (Kotlin), or
+  `EngineApi.installCards(bundleText)` from the site (exported; reads every card at once and returns how many). On the JVM the
+  server keeps its service (`ServerCardSource`); `BundleCardSource` works there too (eras-engine's own JVM tests use it). The
+  site will fetch `card-bundle.json` (phase 4); the tests read it from the build (`ERAS_CARD_BUNDLE`).
+- **`SeededBotGameTest`** (commonTest: runs on the JVM and on Node): installs the bundle and plays whole games between two
+  bots through the core alone (`RoomEngine` with `RoomHost.gameOnly()`): the decks of drive_manager's `BotMatch.seat` from the
+  same starter decks' metadata (`drive_manager/src/test/resources/simulator/st*-cards.json`, `ERAS_DECKS`; `CardMeta.apply`
+  ported to the test), started like `MatchReplay.play` (`PreRoomActions.startFromPreRoom(room, seed)`), then the loop of
+  `SimulatorJsonTest` (one seeded `HeuristicBot` moving for the first seat that has a move). `GameFingerprint` (common, no
+  Jackson) sums up the final state (room counters, every card of every zone with its fields; doubles by their bits), the
+  history's lines and the actions (FNV-1a 64). Four games (st1–st2 seed 11, st2–st3 3, st1–st3 2 — with refused answers on the
+  way —, st4–st1 1), 173–198 actions each, all to the end: **the same fingerprints on the JVM and on Node**, asserted against
+  the same constants on both. (The bots play with their defaults there: no bot resources are installed in eras-engine.)
+- Node tests (`jsNodeTest`) run in `./gradlew build`, as before; the browser's (Karma) stay disabled.
+
+What JavaScript did differently, fixed in the core without changing the JVM's behaviour:
+
+| Found | Fix |
+|---|---|
+| `Removals.PROTECCION = Regex("(?i)protección")`: JavaScript has no inline flags (`SyntaxError: Invalid group` the first time a "Protección" keyword was checked) | `[pP][rR][oO][tT][eE][cC][cC][iI]ó[nN]`: exactly Java's `(?i)`, which without `UNICODE_CASE` folds ASCII letters only (`RegexOption.IGNORE_CASE` would have added `UNICODE_CASE` on the JVM) |
+| Java's and JavaScript's regular expressions mean different things by `\s` (JavaScript adds the Unicode spaces, e.g. a no-break space), `.` (JavaScript lets `\u0085` through) and `$` (Java also matches before a final line terminator). Not seen in the games (the texts have none of those characters), but card metadata (requirements, keywords) is free text | Every pattern of the core is built with **`Platform.regex(pattern)`**: on the JVM `Regex(pattern)` (unchanged); on JavaScript `Regex(JavaRegex.toJavaScript(pattern))`, which writes Java's meaning out (`[ \t\n\u000B\f\r]`, `[^\n\r\u0085\u2028\u2029]`, a look-ahead for `$`) and refuses inline flags and `\Q…\E` (`JavaRegexTest`, both platforms) |
+
+Checked and the same on both: `Double.toString` does not reach the state or the history of these games (the fingerprint
+writes doubles by their bits anyway), `String.hashCode` is Java's on every target, `Long` arithmetic is exact on JavaScript.
+Still worth knowing: Kotlin/JS's `HashMap`/`HashSet` iterate in insertion order, the JVM's in hash order; the core iterates
+some (`usedThisTurn`, the bot's caches…). No game showed a difference; a future one would show as a fingerprint mismatch in
+`SeededBotGameTest`.
+
+### Building
+
+```bash
+cd eras-engine && ./gradlew build publishToMavenLocal   # bundle, reader, tests on the JVM and Node, jar (with the cards) into ~/.m2
+cd ../drive_manager && mvn test                         # the server reads the cards from the engine's jar
+```
+
+After editing a card file, publish the engine again (the server takes the cards from the jar in `~/.m2`). The Docker image
+(`docker build -f drive_manager/Dockerfile .`) copies `eras-engine/cards` into its engine stage; built and started against a
+local MongoDB, it logs "Cartas programadas cargadas: 358".
