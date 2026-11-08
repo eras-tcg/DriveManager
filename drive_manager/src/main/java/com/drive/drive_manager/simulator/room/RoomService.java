@@ -4,6 +4,7 @@ import com.drive.drive_manager.service.ActivityTracker;
 import com.drive.drive_manager.service.AvatarService;
 import com.drive.drive_manager.service.PlaymatService;
 import com.drive.drive_manager.simulator.bot.BotRooms;
+import com.drive.drive_manager.simulator.bot.RoomBots;
 import com.drive.drive_manager.simulator.engine.EffectEngine;
 import com.drive.drive_manager.simulator.mission.MissionHooks;
 import com.drive.drive_manager.simulator.rank.RankService;
@@ -26,7 +27,9 @@ import java.util.Set;
 /**
  * The simulator's rooms: the entry point of the controllers, the bots and the tests. Each action goes through the
  * guards here (one at a time per room) to {@link ActionDispatcher}, and what it changed is then logged, counted and
- * recorded. The rooms are kept by {@link RoomRegistry}; who is in them is {@link RoomMembership}'s.
+ * recorded. The rooms are kept by {@link RoomRegistry}; who is in them is {@link RoomMembership}'s. The rules of the room
+ * session (seats, decks, bots) are common with the game in the browser ({@link RoomSeats}, {@link DeckChoice},
+ * {@link RoomBots}); this class and its helpers add Spring, Mongo, locks, scheduling, STOMP, missions, history and ranks.
  */
 @Service
 public class RoomService implements RoomHost {
@@ -126,11 +129,6 @@ public class RoomService implements RoomHost {
         replays.keepOnly(open);
     }
 
-    private static GameStateUpdate withActor(GameStateUpdate update, String userId) {
-        update.setActorId(userId);
-        return update;
-    }
-
     public void applyAndBroadcast(String roomId, String userId, GameAction action, boolean manual) {
         applyAndBroadcast(roomId, userId, action, manual, false);
     }
@@ -145,8 +143,7 @@ public class RoomService implements RoomHost {
         GameRoom lock = registry.get(roomId);
         // The bots' pace, at once even while a bot thinks with the room held; the board shows it and the next update has it
         if (lock != null && ActionType.SET_BOT_DELAY.is(action)) {
-            String refused = botRooms.pace(lock, userId, action);
-            if (refused != null) broadcast(roomId, withActor(GameStateUpdate.error(roomId, refused), userId));
+            broadcast(roomId, RoomBots.paceAtOnce(lock, userId, action));
             return;
         }
         if (lock == null) { broadcast(roomId, applyAction(roomId, userId, action, manual)); return; }
@@ -177,9 +174,8 @@ public class RoomService implements RoomHost {
         GameStateUpdate update;
         if (lock == null) update = apply(roomId, userId, action, manual);
         else synchronized (lock) { update = apply(roomId, userId, action, manual); }
-        // Errors go to the whole room topic: tag who caused them so only that player is shown the message
-        if (update != null && update.getError() != null && update.getActorId() == null) update.setActorId(userId);
-        return update;
+        // Errors go only to who caused them: tag them
+        return RoomEngine.blamed(update, userId);
     }
 
     private GameStateUpdate apply(String roomId, String userId, GameAction action, boolean manual) {
@@ -232,15 +228,7 @@ public class RoomService implements RoomHost {
 
     @Override
     public GameStateUpdate botSetting(ActionType type, GameRoom room, String userId, GameAction action) {
-        return switch (type) {
-            case SET_BOT_LEVEL -> botRooms.setLevel(room, userId, action);
-            case SET_EDITOR_BOT -> botRooms.setEditorBot(room, userId, action);
-            case SET_EDITOR_SELF_BOT -> botRooms.setEditorSelfBot(room, userId, action);
-            case SET_BOT_DELAY -> botRooms.setDelay(room, userId, action);
-            case SET_BOT_EDGE -> botRooms.setEdge(room, userId, action);
-            case SET_RANKED -> botRooms.setRanked(room, userId, action);
-            default -> throw new IllegalArgumentException("Not a bot setting: " + type);
-        };
+        return botRooms.setting(type, room, userId, action);
     }
 
     @Override

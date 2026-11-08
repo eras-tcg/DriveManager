@@ -23,6 +23,13 @@ classes not converted yet). Once everything is Kotlin and free of JVM-only APIs 
 > materials or resources with its continuous level bonus counted twice. The copy now takes the printed level (the
 > field); `ShallowCopyTest` checks against BeanUtils with that field corrected and `StateMaskTest` plays the case
 > (Xiromorfo with a copy in the Tributos and a face-down material). No golden changed: no seeded game has a continuous level.
+>
+> **One copy of the room logic (2026-11-08):** the room session's rules that `LocalMatch` had ported from the server's Java
+> (joining, leaving, kicking, closing, the deck choice, the bot's seat, settings and moves, who is sent an update) are
+> common code in eras-engine (`room/RoomSeats`, `room/DeckChoice`, `bot/RoomBots`, `StateMask.recipients`,
+> `RoomEngine.blamed`), used by both. `RoomMembership`, `RoomDecks`, `BotRooms`, `RoomService` and `RoomMessages` keep
+> only Spring, Mongo, the registry and locks, scheduling, STOMP, sessions and sweeps, missions, history and ranks; see
+> eras-engine's README, "The room session".
 
 ## Converting a file
 
@@ -403,6 +410,8 @@ counts, the golden hashes unchanged.
 What stays in drive_manager (Java): the card files' readers (`CardFiles`, `EffectJson`, `CardFilesCheck`: Jackson; step C
 replaced them with kotlinx.serialization in common, see "Step C"), `ValueModelFiles`, `BotRooms`, the rooms' service and messages
 (`RoomService`, `RoomMessages`, `RoomDecks`, …), controllers, missions, ranks' and replays' server parts, `json/SimulatorJson`.
+(Since then the rules inside `BotRooms`, `RoomMembership`, `RoomDecks` and `RoomMessages` moved to common code too: see "One
+copy of the room logic" at the top.)
 The resources (`cards/`, `bot/`) stay in drive_manager's class path too.
 
 ### The seams (the core names no server class)

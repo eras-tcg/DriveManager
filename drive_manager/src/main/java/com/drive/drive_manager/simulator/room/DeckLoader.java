@@ -6,7 +6,6 @@ import com.drive.drive_manager.dto.DriveCard;
 import com.drive.drive_manager.repository.CardRepository;
 import com.drive.drive_manager.repository.DeckListRepository;
 import com.drive.drive_manager.repository.DriveCardRepository;
-import com.drive.drive_manager.simulator.actions.PreRoomActions;
 import com.drive.drive_manager.simulator.engine.CardEffects;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
@@ -38,6 +37,11 @@ public class DeckLoader {
      * {@code com.eras.engine.local.LocalMatch}, numbers them "c1", "c2"…, and its parity test compares the two).
      */
     static java.util.function.Supplier<String> instanceIds = () -> UUID.randomUUID().toString();
+
+    /** The id of a new card instance ({@link #instanceIds}). */
+    public static String newInstanceId() {
+        return instanceIds.get();
+    }
 
     private final DeckListRepository decks;
     private final CardRepository cards;
@@ -88,9 +92,7 @@ public class DeckLoader {
 
     /** The same cards as new instances (another seat playing the same deck: the bot's copy of its owner's). */
     public static List<CardSlot> freshCopy(List<CardSlot> slots) {
-        List<CardSlot> copy = PreRoomActions.deepCopySlots(slots);
-        copy.forEach(s -> s.setInstanceId(instanceIds.get()));
-        return copy;
+        return DeckChoice.freshCopy(slots, DeckLoader::newInstanceId);
     }
 
     /** A card's metadata as it is now, by its drive file id; null when it is not found. */
@@ -103,30 +105,15 @@ public class DeckLoader {
 
     /** Every copy of the card in the room takes its metadata again. */
     public static void refresh(GameRoom room, String cardId, Card meta) {
-        for (PlayerState player : room.getPlayers().values()) {
-            for (List<CardSlot> zone : List.of(player.getHand(), player.getDeck(), player.getOriginalDeck(), player.getLifeStack(),
-                    player.getTributeZone(), player.getDiscardPile())) {
-                refreshIn(zone, cardId, meta);
-            }
-            for (CardSlot fs : player.getField()) {
-                if (cardId.equals(fs.getCardId())) CardMeta.apply(fs, cardId, meta);
-                refreshIn(fs.getMaterials(), cardId, meta);
-                refreshIn(fs.getResources(), cardId, meta);
-            }
-        }
+        DeckChoice.refresh(room, cardId, slot -> {
+            CardMeta.apply(slot, cardId, meta);
+            return kotlin.Unit.INSTANCE;
+        });
     }
 
     /** The names of a deck's cards the engine does not run in full ("×2 Roto-G0, Sicario R3-D"), or null. */
     public static String unprogrammedIn(List<CardSlot> slots) {
-        Map<String, Integer> names = new LinkedHashMap<>();
-        for (CardSlot s : slots) if (s.getUnprogrammed() != null) names.merge(s.getCardName() != null ? s.getCardName() : "?", 1, Integer::sum);
-        if (names.isEmpty()) return null;
-        return names.entrySet().stream().map(e -> e.getValue() > 1 ? "×" + e.getValue() + " " + e.getKey() : e.getKey())
-                .collect(Collectors.joining(", "));
-    }
-
-    private static void refreshIn(List<CardSlot> slots, String cardId, Card meta) {
-        slots.stream().filter(s -> cardId.equals(s.getCardId())).forEach(s -> CardMeta.apply(s, cardId, meta));
+        return DeckChoice.unprogrammedIn(slots);
     }
 
     /**

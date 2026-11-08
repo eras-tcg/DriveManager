@@ -1,6 +1,5 @@
 package com.drive.drive_manager.simulator.room;
 
-import com.drive.drive_manager.simulator.bot.BotRooms;
 import org.springframework.messaging.simp.SimpMessageHeaderAccessor;
 import org.springframework.messaging.simp.SimpMessageType;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
@@ -8,7 +7,6 @@ import org.springframework.messaging.simp.user.SimpSession;
 import org.springframework.messaging.simp.user.SimpUser;
 import org.springframework.messaging.simp.user.SimpUserRegistry;
 
-import java.util.LinkedHashSet;
 import java.util.Set;
 
 /** The server sending each player their own view of a room ({@link StateMask}) over the WebSocket. */
@@ -30,18 +28,9 @@ final class RoomMessages {
                      GameStateUpdate update) {
         if (update == null || template == null) return;
         String destination = "/queue/room/" + roomId;
-        if (update.getError() != null) {
-            if (update.getActorId() != null) toUser(template, users, update.getActorId(), destination, update);
-            return;
-        }
-        // A replay is only its viewer's (the game's players are not watching it)
-        Set<String> viewers = room != null && room.isReplay() ? new LinkedHashSet<>(Set.of(room.getHostId()))
-                : new LinkedHashSet<>(update.getPlayers() == null ? Set.of() : update.getPlayers().keySet());
-        if (update.getActorId() != null) viewers.add(update.getActorId());
-        if (update.getSubjectUserId() != null) viewers.add(update.getSubjectUserId());
-        viewers.remove(RoomEngine.EDITOR_RIVAL);
-        viewers.remove(BotRooms.BOT);
-        for (String viewer : viewers) {
+        // Who gets it is the room session's rule (StateMask.recipients): an error only who caused it, as it is
+        for (String viewer : StateMask.recipients(room, update)) {
+            if (update.getError() != null) { toUser(template, users, viewer, destination, update); continue; }
             boolean manual = room != null && room.getManualPlayers().contains(viewer);
             toUser(template, users, viewer, destination, StateMask.forViewer(update, viewer, manual));
         }
