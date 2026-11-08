@@ -15,8 +15,10 @@ import java.util.List;
 import java.util.Set;
 
 /**
- * A card's programmed effects as JSON ({@link CardDefinition}): the files in {@code resources/cards}. What a field has by default
- * (false, 0, empty, null) is not written.
+ * A card's programmed effects as JSON ({@link CardDefinition}) with Jackson: how the server read the card files up to step B
+ * of phase 2, kept in the tests as the oracle of the engine's common reader ({@code CardReader}, kotlinx.serialization:
+ * {@link CardReaderParityTest}) and to write definitions as JSON. What a field has by default (false, 0, empty, null) is not
+ * written.
  * <p>
  * Steps, conditions and amounts are sealed families of records: each one is written with its record name as
  * {@code "type"} ({@code {"type": "TributeTop", "count": 4}}). Reading only accepts those names and their fields, so the

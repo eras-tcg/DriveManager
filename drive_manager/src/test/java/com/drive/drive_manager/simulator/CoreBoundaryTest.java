@@ -28,15 +28,14 @@ class CoreBoundaryTest {
 
     /** The core's packages, every file in them... */
     private static final List<String> PACKAGES = List.of("engine", "bot", "actions");
-    /** ...but for the server's own (the bot's scheduler) and the JVM's readers, which Kotlin replaces in phase 2. */
+    /** ...but for the server's own (the bot's scheduler, the card files offered to the core) and the JVM's readers. */
     private static final Set<String> OUTSIDE = Set.of(
             "bot/BotRooms.java",          // the server running the bots (scheduler, locks, messages)
             "bot/ValueModelFiles.java",   // the bot's model read and saved with Jackson
             "bot/ServerBotResourceSource.java", // the bot's resources from the class path, offered to the core
-            "engine/CardFiles.java",      // the card files found with Spring's classpath scanning
+            "engine/CardFiles.java",      // the card bundle read from the engine's jar (the common CardReader reads it)
             "engine/CardFilesCheck.java", // the server's start-up check of the card files
-            "engine/ServerCardSource.java", // the card files offered to the core (CardSource)
-            "engine/EffectJson.java");    // the card files read with Jackson (kotlinx.serialization in Kotlin)
+            "engine/ServerCardSource.java"); // the card files offered to the core (CardSource)
     /** The core's files in other packages. */
     private static final List<String> FILES = List.of(
             "room/ActionType.java", "room/CardLocator.java", "room/CardSlot.java", "room/FloatingEffect.java",

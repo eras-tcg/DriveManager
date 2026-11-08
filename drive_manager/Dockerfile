@@ -10,6 +10,8 @@ COPY eras-engine/gradle ./gradle
 RUN ./gradlew --no-daemon --version -q
 COPY eras-engine/kotlin-js-store ./kotlin-js-store
 COPY eras-engine/src ./src
+# The card files (the one copy of the cards' data): the jar carries them and their bundle
+COPY eras-engine/cards ./cards
 RUN ./gradlew --no-daemon publishToMavenLocal
 
 # Stage 2: the server, with the engine's artifact (com.eras:eras-engine-jvm) from stage 1

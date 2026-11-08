@@ -31,6 +31,8 @@
 		<testcontainers.version>1.19.8</testcontainers.version>
 		<!-- The game's core is Kotlin Multiplatform, built in ../eras-engine (Gradle) and used here as a JVM library -->
 		<kotlin.version>2.4.21</kotlin.version>
+		<!-- The kotlinx.serialization the engine is built with (eras-engine/build.gradle.kts), not Spring Boot's 1.9.0 -->
+		<kotlin-serialization.version>1.12.0</kotlin-serialization.version>
 		<eras-engine.version>0.1.0-SNAPSHOT</eras-engine.version>
 	</properties>
 
@@ -162,14 +164,9 @@
 			<groupId>com.eras</groupId>
 			<artifactId>eras-engine-jvm</artifactId>
 			<version>${eras-engine.version}</version>
-			<exclusions>
-				<!-- Only the engine's web facade (com.eras.engine) reads JSON with it; on the server's class path it would
-				     also offer Spring a second JSON converter -->
-				<exclusion>
-					<groupId>org.jetbrains.kotlinx</groupId>
-					<artifactId>kotlinx-serialization-json-jvm</artifactId>
-				</exclusion>
-			</exclusions>
+			<!-- With kotlinx-serialization-json: the engine reads the card files with it (CardReader, step C). Spring sees it
+			     too but uses Jackson for the server's types: Boot's STOMP converters (String, bytes, Jackson) replace Spring's
+			     defaults, and Spring's kotlinx HTTP converter only takes @Serializable classes (no response is one) -->
 		</dependency>
 	</dependencies>
 
@@ -184,18 +181,10 @@
 
 	<!-- The engine's JVM artifact from Java on real data (src/test-kmp: GameRandom against java.util.Random, the card files
 	     read with kotlinx.serialization against Jackson): `mvn -Pkmp-engine test -Dtest='KotlinEngineInteropTest'`.
-	     The engine itself is a dependency of the main build; this profile adds those tests and the JSON library they need. -->
+	     The engine itself (with kotlinx-serialization-json) is a dependency of the main build; this profile adds those tests. -->
 	<profiles>
 		<profile>
 			<id>kmp-engine</id>
-			<dependencies>
-				<dependency>
-					<groupId>org.jetbrains.kotlinx</groupId>
-					<artifactId>kotlinx-serialization-json-jvm</artifactId>
-					<version>1.12.0</version>
-					<scope>test</scope>
-				</dependency>
-			</dependencies>
 			<build>
 				<plugins>
 					<plugin>
