@@ -267,3 +267,28 @@ With it the engine is Kotlin but for `EffectJson`, `CardFiles` and `CardFilesChe
   `SimulatorJsonTest` stayed identical.
 - `Stream.toList()` into a property (`StateMask`'s masked zones, timeline, history) became `mapTo(ArrayList(n)) { … }`: the
   same elements and JSON, but a mutable list (nothing writes to a view).
+
+## Lessons from batch 11 (`bot`: `LookaheadBot`, `SequenceSearch`, `LethalSearch`, `TableScore`, `ValueModel`, `Usefulness`…)
+
+The seeded bot games (`BotPlayTest`, `BotThinksApartTest`, `BotEdgeTest`) and `ValueModelTest` stayed identical with no
+special care beyond the rules above: `Math.*` kept as is, `Double.toInt()`/`toLong()` for Java's `(int)`/`(long)` casts (the
+same saturating conversion), `sortWith` for `List.sort` (the same stable TimSort), `removeIf` kept (not Kotlin's `removeAll`).
+
+- **A local named like a function of the same object** (`var wins` beside `wins(...)`, `val cuts` beside `cuts(...)`): Kotlin
+  tries to invoke the local ("cannot be invoked as a function"); qualify the call (`LethalSearch.wins(...)`). A call inside the
+  local's own initializer (`val best = best(...)`, `val choices = choices(prompt)`) still reaches the function.
+- **`==` on two lists in Java** (`zone == p.getDeck()`) is identity: `===` (two empty `ArrayList`s are `equals`).
+- **A Kotlin class extending a Java class** (`LookaheadBot : HeuristicBot`): its instance members call the Java superclasses'
+  statics unqualified (`action(...)`, `choices(prompt)`, `tributesFromHand(...)`), its `companion object` does not: write
+  `BotPlayer.action(...)`, `HeuristicBot.summonX(...)`. An `override` of a `protected` Java method stays `protected`, which Java
+  tests of the same package still call (`new LookaheadBot(rule).answer(...)`).
+- **A record with array components** (`ValueModel.Weights`, `Sample`): `@JvmRecord data class` with `DoubleArray?`/`Array<DoubleArray>?`;
+  `equals`/`hashCode` stay by identity on the arrays, as the record's, and Jackson writes and reads it unchanged. A record's static
+  constant (`Training.DEFAULT`) goes in a `companion object` as `@JvmField`. A private static factory that Java calls
+  (`ValueModel.of`) becomes a companion `@JvmStatic` function; the companion reaches the class's private constructor and members.
+- **A Java functional parameter of a package-private Java class** (`MoveTrials(…, ToDoubleBiFunction<GameRoom, String>, …)`):
+  pass `ToDoubleBiFunction { r: GameRoom, p: String? -> score(r, p) }`.
+- **try-with-resources** → `stream.use { input -> if (input == null) return m; … }` (inline: `return` leaves the function; a null
+  resource is not closed, as in Java). `String.split("\\R")` → `Pattern.compile("\\R").split(s)`.
+- **A `for` whose condition reads the room** (`for (step = 0; step < MAX && copy.getStatus() == …; step++)`) →
+  `for (step in 0 until MAX) { if (!(cond)) break; … }`, or a `while` with `step++` at the end of the body when nothing `continue`s.
