@@ -16,6 +16,13 @@ classes not converted yet). Once everything is Kotlin and free of JVM-only APIs 
 > **Phase 3 (2026-11-08):** a game against the bot runs in the browser as the server runs it (`com.eras.engine.local.LocalMatch`,
 > byte-identical messages checked by `room/LocalMatchParityTest`); see eras-engine's README, "Phase 3". In the core, the
 > clocks are read through `platform/Clocks` and the maps whose order reaches the messages are `Platform.hashMap()`.
+>
+> **Fixed after the migration (2026-11-08):** `room/ShallowCopy` (StateMask's copies, which replaced Spring's
+> `BeanUtils.copyProperties`) had kept BeanUtils' quirk of copying a card's level through `getLevel()`, which already
+> adds the continuous level, besides copying the continuous level itself: the rival saw a face-up card with face-down
+> materials or resources with its continuous level bonus counted twice. The copy now takes the printed level (the
+> field); `ShallowCopyTest` checks against BeanUtils with that field corrected and `StateMaskTest` plays the case
+> (Xiromorfo with a copy in the Tributos and a face-down material). No golden changed: no seeded game has a continuous level.
 
 ## Converting a file
 

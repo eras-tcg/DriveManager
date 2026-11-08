@@ -135,6 +135,33 @@ class StateMaskTest {
     }
 
     @Test
+    void aRivalsCardWithFaceDownMaterialsShowsItsContinuousLevelOnce() throws Exception {
+        // A face-up card of the rival with a face-down material under it (the mask copies it to hide the material)
+        // and a level its continuous effect gives it (Xiromorfo, nivel 2: "gana 1 nivel … por cada copia de esta carta
+        // en tus tributos", one copy there): the viewer sees the level its owner sees, the bonus counted once
+        CardSlot xyz = xiromorfo("p2-xyz");
+        xyz.getMaterials().add(card("p2-material", true));
+        room.getPlayer("p2").getField().add(xyz);
+        room.getPlayer("p2").getTributeZone().add(xiromorfo("p2-tribute"));
+        GameStateUpdate update = GameStateUpdate.from(room, "X", "p1");
+        assertThat(xyz.getContinuousLevel()).isEqualTo(1);
+
+        CardSlot owners = StateMask.forViewer(update, "p2", false).getPlayers().get("p2").getField().get(2);
+        CardSlot seen = StateMask.forViewer(update, "p1", false).getPlayers().get("p2").getField().get(2);
+
+        assertThat(seen).isNotSameAs(xyz);
+        assertThat(seen.getMaterials()).singleElement().satisfies(StateMaskTest::isBack);
+        assertThat(owners.getLevel()).isEqualTo(3);
+        assertThat(seen.getLevel()).isEqualTo(owners.getLevel());
+        assertThat(seen.getPrintedLevel()).isEqualTo(2);
+        assertThat(seen.getContinuousLevel()).isEqualTo(1);
+        // And so in what is sent
+        tools.jackson.databind.json.JsonMapper json =
+                com.drive.drive_manager.simulator.json.SimulatorJson.configure(tools.jackson.databind.json.JsonMapper.builder()).build();
+        assertThat(json.valueToTree(seen).get("level").asInt()).isEqualTo(json.valueToTree(owners).get("level").asInt()).isEqualTo(3);
+    }
+
+    @Test
     void aTestRoomIsSentWhole() {
         room.setEditor(true);
         GameStateUpdate update = GameStateUpdate.from(room, "X", "p1");
@@ -155,6 +182,15 @@ class StateMaskTest {
         c.setCardName(cardId);
         c.setImageUrl("https://img/" + cardId);
         c.setFaceDown(faceDown);
+        return c;
+    }
+
+    private static CardSlot xiromorfo(String cardId) {
+        CardSlot c = card(cardId, false);
+        c.setCardName("Xiromorfo");
+        c.setCardType("creature");
+        c.setLevel(2);
+        c.setStrength(4);
         return c;
     }
 
