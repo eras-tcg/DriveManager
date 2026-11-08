@@ -72,7 +72,16 @@ match.playBot(): Array<string>;                        // step() until null, all
 match.botPauseMs(): number;                            // how long the server's bot waits before its next move
 match.status(): string;                                // WAITING, MULLIGAN, IN_PROGRESS, POST_GAME, FINISHED…
 match.lastError(): string | null;                      // why the last send/step sent nothing (unreadable body, engine failure)
+match.result(): string;                                // {"status","gamesEnded","winnerId","endReason","turns","digest"} (JSON)
 ```
+
+`result()` is what an offline game claims when the site sends it to the server ("Offline games and rewards", below):
+`gamesEnded` counts the times the room reached the post-game (a rematch plays another game in the same room), `turns` is
+counted as the server's match history counts them, and `digest` is `MatchDigest`: FNV-1a 64 over the room's game without
+anything the clock or the device decides (the history's times, icons, playmats, connection, the cards' pictures and file
+ids), so the same game gives the same digest on the JVM and in the browser whatever `time` was (`LocalMatchTest` checks
+four games' results on both platforms). On the JVM, `LocalMatchRoom.of(match)` gives the match's `GameRoom` (not
+exported to JavaScript).
 
 The configuration (JSON; every member optional but `decks`):
 
