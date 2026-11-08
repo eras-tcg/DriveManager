@@ -36,10 +36,13 @@ object RoomGuard {
         return room.players.size == 2 && playing(room)
     }
 
-    /** A deck the player may use: their own or a public one (the rival's side of a test room, and the bot, use its owner's). */
+    /**
+     * A deck the player may use: their own or a public one (the rival's side of a test room, and the bot, use its owner's).
+     * `privateDeck` and `deckOwner`: the deck's (the server's DeckList), so the core needs none of the server's classes.
+     */
     @JvmStatic
-    fun usableDeck(deck: com.drive.drive_manager.dto.DeckList, room: GameRoom, userId: String?): Boolean {
-        val owner = if (RoomService.EDITOR_RIVAL == userId || BotSeat.BOT == userId) room.hostId else userId
-        return !deck.isPrivateDeck || owner != null && owner == deck.userId
+    fun usableDeck(privateDeck: Boolean, deckOwner: String?, room: GameRoom, userId: String?): Boolean {
+        val owner = if (RoomEngine.EDITOR_RIVAL == userId || BotSeat.BOT == userId) room.hostId else userId
+        return !privateDeck || owner != null && owner == deckOwner
     }
 }

@@ -25,7 +25,7 @@ final class RoomDecks {
         String deckId = action.getString("deckId");
         if (deckId == null) return GameStateUpdate.error(room.getRoomId(), "Falta el mazo");
                 DeckList deck = service.decks == null ? null : service.decks.deck(deckId).orElse(null);
-        if (deck == null || !RoomGuard.usableDeck(deck, room, userId)) return GameStateUpdate.error(room.getRoomId(), SimMessages.DECK_NOT_FOUND);
+        if (deck == null || !RoomGuard.usableDeck(deck.isPrivateDeck(), deck.getUserId(), room, userId)) return GameStateUpdate.error(room.getRoomId(), SimMessages.DECK_NOT_FOUND);
         List<CardSlot> slots = service.decks.slots(deck);
         if (slots.isEmpty()) return GameStateUpdate.error(room.getRoomId(), SimMessages.DECK_NOT_FOUND);
         // The bot plays the same deck as its own cards (new instances, without the owner's finishes)

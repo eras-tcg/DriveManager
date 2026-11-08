@@ -5,7 +5,6 @@ import com.drive.drive_manager.simulator.engine.frozenListCopy
 import com.drive.drive_manager.simulator.engine.frozenMapOf
 import com.drive.drive_manager.simulator.engine.JavaText
 import com.drive.drive_manager.simulator.engine.frozenSetCopy
-import com.drive.drive_manager.simulator.platform.Platform
 import com.drive.drive_manager.simulator.rank.RankRules
 
 /**
@@ -17,7 +16,7 @@ object BotCatalog {
 
     /** The bot's trained model, promoted from a training run (null: none yet, the hand-set weights score). */
     internal const val MODEL_RESOURCE = "/bot/value-model.json"
-    private val MODEL: ValueModel? = ValueModelFiles.resource(MODEL_RESOURCE)
+    private val MODEL: ValueModel? = BotResourceSources.current().valueModel(MODEL_RESOURCE)
     /** How it thinks at the hard level, found by playing variants against each other (BotThinkRun); none: the default. */
     internal const val SETTINGS_RESOURCE = "/bot/settings.txt"
     private val SETTINGS: BotSettings = tunedSettings()
@@ -52,7 +51,7 @@ object BotCatalog {
 
     private fun models(): Map<String?, Pair<String, BotSettings>> {
         val m = LinkedHashMap<String?, Pair<String, BotSettings>>()
-        val text = Platform.resourceText(MODELS_RESOURCE, "Cannot read the bot's models $MODELS_RESOURCE") ?: return m
+        val text = BotResourceSources.current().text(MODELS_RESOURCE, "Cannot read the bot's models $MODELS_RESOURCE") ?: return m
         for (line in JavaText.split(LINE_BREAK, text)) {
             if (line.all { JavaText.isWhitespace(it) } || line.trim { it <= ' ' }.startsWith("#")) continue
             val f = JavaText.split(Regex("\\|"), line, 3)
@@ -69,7 +68,7 @@ object BotCatalog {
     }
 
     private fun tunedSettings(): BotSettings {
-        val text = Platform.resourceText(SETTINGS_RESOURCE, "Cannot read the bot's settings $SETTINGS_RESOURCE")
+        val text = BotResourceSources.current().text(SETTINGS_RESOURCE, "Cannot read the bot's settings $SETTINGS_RESOURCE")
         return if (text == null) BotSettings.DEFAULT else BotSettings.DEFAULT.with(text.trim { it <= ' ' })
     }
 

@@ -12,19 +12,13 @@ object Platform {
     fun randomSeed(): Long = java.util.Random().nextLong()
 
     /**
-     * The text (UTF-8) of a resource shipped with the engine (`/bot/models.txt`), or null when there is none. A resource
-     * that cannot be read throws IllegalStateException with `failure` as its message.
+     * The implementations of `type` the program offers as services (`java.util.ServiceLoader`, from the
+     * META-INF/services files of `type`'s class loader), in the order found: how the core finds what the server fills in
+     * for it (the cards, the bot's resources) without depending on the server.
      */
     @JvmStatic
-    fun resourceText(path: String, failure: String): String? {
-        try {
-            Platform::class.java.getResourceAsStream(path).use { input ->
-                return if (input == null) null else String(input.readAllBytes(), java.nio.charset.StandardCharsets.UTF_8)
-            }
-        } catch (e: java.io.IOException) {
-            throw IllegalStateException(failure, e)
-        }
-    }
+    fun <T : Any> discover(type: kotlin.reflect.KClass<T>): List<T> =
+        java.util.ServiceLoader.load(type.java, type.java.classLoader).toList()
 
     /** The wall clock in milliseconds since the epoch (`System.currentTimeMillis()`): the log's and events' times. */
     @JvmStatic

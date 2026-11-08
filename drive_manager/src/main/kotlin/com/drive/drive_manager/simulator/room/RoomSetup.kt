@@ -39,8 +39,8 @@ internal object RoomSetup {
     }
 
     private fun seatTestRival(room: GameRoom) {
-        val rival = PlayerState(RoomService.EDITOR_RIVAL, "Rival (prueba)")
+        val rival = PlayerState(RoomEngine.EDITOR_RIVAL, "Rival (prueba)")
         rival.connected = true
-        room.players[RoomService.EDITOR_RIVAL] = rival
+        room.players[RoomEngine.EDITOR_RIVAL] = rival
     }
 }

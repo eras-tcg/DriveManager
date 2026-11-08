@@ -499,6 +499,6 @@ object CardEffects {
     }
 
     init {
-        CardFiles.load().forEach(::install)
+        CardSources.cards().forEach(::install)
     }
 }

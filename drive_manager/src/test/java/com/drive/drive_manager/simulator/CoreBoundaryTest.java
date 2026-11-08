@@ -32,8 +32,10 @@ class CoreBoundaryTest {
     private static final Set<String> OUTSIDE = Set.of(
             "bot/BotRooms.java",          // the server running the bots (scheduler, locks, messages)
             "bot/ValueModelFiles.java",   // the bot's model read and saved with Jackson
+            "bot/ServerBotResourceSource.java", // the bot's resources from the class path, offered to the core
             "engine/CardFiles.java",      // the card files found with Spring's classpath scanning
             "engine/CardFilesCheck.java", // the server's start-up check of the card files
+            "engine/ServerCardSource.java", // the card files offered to the core (CardSource)
             "engine/EffectJson.java");    // the card files read with Jackson (kotlinx.serialization in Kotlin)
     /** The core's files in other packages. */
     private static final List<String> FILES = List.of(
