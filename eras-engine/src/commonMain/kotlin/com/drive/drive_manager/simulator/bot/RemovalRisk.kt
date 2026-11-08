@@ -34,9 +34,9 @@ internal object RemovalRisk {
         }
     }
 
-    private val STRENGTH: Regex = Regex("fuerza (\\d+) o menos")
-    private val LEVEL_MAX: Regex = Regex("nivel (\\d+) o menor")
-    private val LEVEL: Regex = Regex("nivel (\\d+)(?! o)")
+    private val STRENGTH: Regex = Platform.regex("fuerza (\\d+) o menos")
+    private val LEVEL_MAX: Regex = Platform.regex("nivel (\\d+) o menor")
+    private val LEVEL: Regex = Platform.regex("nivel (\\d+)(?! o)")
     /** The destructions of each card, by name (none: not a removal). */
     private val BY_CARD: MutableMap<String, List<Reach>> = Platform.concurrentMap()
     /**
@@ -46,8 +46,8 @@ internal object RemovalRisk {
      * one at the start of its turn) threaten for sure next turn, when they have the materials it asks to tribute.
      */
     private val CUTS_BY_CARD: MutableMap<String, List<Reach>> = Platform.concurrentMap()
-    private val CUT: Regex = Regex("(?:reduce|reducir)[^.;]*?fuerza en (\\d+)|(?:reduce|reducir) en (\\d+) su fuerza")
-    private val MATERIALS: Regex = Regex("tributar (\\d+) materiales?")
+    private val CUT: Regex = Platform.regex("(?:reduce|reducir)[^.;]*?fuerza en (\\d+)|(?:reduce|reducir) en (\\d+) su fuerza")
+    private val MATERIALS: Regex = Platform.regex("tributar (\\d+) materiales?")
 
     /** The penalty each creature of its own in the Línea frontal carries when the rival's turn begins, by instanceId. */
     @JvmStatic

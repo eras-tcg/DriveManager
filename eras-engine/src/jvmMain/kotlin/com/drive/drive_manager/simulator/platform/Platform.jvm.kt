@@ -34,6 +34,10 @@ actual object Platform {
     @JvmStatic
     actual fun randomHexId(): String = java.util.UUID.randomUUID().toString().replace("-", "")
 
+    /** The pattern as it is (Kotlin's `Regex` is `java.util.regex.Pattern` on the JVM). */
+    @JvmStatic
+    actual fun regex(pattern: String): Regex = Regex(pattern)
+
     /** `ConcurrentHashMap`. */
     @JvmStatic
     actual fun <K : Any, V : Any> concurrentMap(): MutableMap<K, V> = java.util.concurrent.ConcurrentHashMap()

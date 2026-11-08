@@ -1,5 +1,6 @@
 package com.drive.drive_manager.simulator.engine
 
+import com.drive.drive_manager.simulator.platform.Platform
 import kotlin.jvm.JvmStatic
 import kotlin.jvm.JvmRecord
 import kotlin.math.max
@@ -178,7 +179,7 @@ sealed interface Amount {
         }
 
         private companion object {
-            val COMMA: Regex = Regex(",")
+            val COMMA: Regex = Platform.regex(",")
         }
     }
 

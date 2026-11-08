@@ -42,6 +42,12 @@ expect object Platform {
     @JvmStatic
     fun randomHexId(): String
 
+    /**
+     * A regular expression written in Java's syntax and meaning, the core's (`Pattern`): itself on the JVM; on JavaScript,
+     * [JavaRegex.toJavaScript] of it, so `\s`, `.` and `$` match there what they match in Java.
+     */
+    fun regex(pattern: String): Regex
+
     /** A map safe to share between threads (no null keys or values). */
     @JvmStatic
     fun <K : Any, V : Any> concurrentMap(): MutableMap<K, V>

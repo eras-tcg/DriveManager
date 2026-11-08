@@ -509,7 +509,7 @@ object EffectEngine {
     fun immuneTo(card: CardSlot?, sourceLevel: Int): Boolean {
         for (k in keywords(card)) {
             if (!k.startsWith(IMMUNE)) continue
-            val m = Regex("(\\d+)").find(k)
+            val m = Platform.regex("(\\d+)").find(k)
             if (m == null || sourceLevel <= m.groupValues[1].toInt()) return true
         }
         return false
@@ -584,7 +584,7 @@ object EffectEngine {
         var best: Int? = null
         for (k in keywords(card)) {
             if (!k.lowercase().startsWith(keyword!!.lowercase())) continue
-            val m = Regex("(\\d+)").find(k)
+            val m = Platform.regex("(\\d+)").find(k)
             val value = if (m != null) m.groupValues[1].toInt() else 0
             best = if (best == null) value else max(best, value)
         }

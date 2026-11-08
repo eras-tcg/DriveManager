@@ -1,5 +1,6 @@
 package com.drive.drive_manager.simulator.engine
 
+import com.drive.drive_manager.simulator.platform.Platform
 import kotlin.jvm.JvmStatic
 import kotlin.math.max
 import com.drive.drive_manager.simulator.engine.Chain.advance
@@ -103,7 +104,7 @@ object CombatRules {
         var best: Int? = null
         for (k in keywords(card)) {
             if (!k.lowercase().startsWith("furia")) continue
-            val m = Regex("(\\d+)").find(k)
+            val m = Platform.regex("(\\d+)").find(k)
             if (m == null) return -1
             best = if (best == null) m.groupValues[1].toInt() else max(best, m.groupValues[1].toInt())
         }
@@ -461,7 +462,7 @@ object CombatRules {
         if (picks.isEmpty()) {
             // Not replaced: an effect's damage happens now (an attack's goes on by itself)
             if (effectMark != null) {
-                val p = JavaText.split(Regex("\\|"), effectMark.substring(PENDING_EFFECT_DAMAGE.length))
+                val p = JavaText.split(Platform.regex("\\|"), effectMark.substring(PENDING_EFFECT_DAMAGE.length))
                 val effect = room.chain.firstOrNull { e -> e.id == p[0] }
                 val controller = room.getPlayer(p[2])
                 if (effect != null && controller != null) StepHelpers.damageByEffect(room, effect, controller, p[1].toInt(), false)
@@ -509,7 +510,7 @@ object CombatRules {
         for (mark in ArrayList(room.usedThisTurn)) {
             if (!mark.startsWith(StepHelpers.RETURN_AT_ATTACK_END)) continue
             room.usedThisTurn.remove(mark)
-            val p = JavaText.split(Regex("\\|"), mark.substring(StepHelpers.RETURN_AT_ATTACK_END.length))
+            val p = JavaText.split(Platform.regex("\\|"), mark.substring(StepHelpers.RETURN_AT_ATTACK_END.length))
             val owner = room.getPlayer(p[0])
             val card = if (owner == null) null else find(owner.field, p[1])
             if (card == null) continue
@@ -525,7 +526,7 @@ object CombatRules {
                 owner.username + " sube " + name(card) + " y sus materiales a su mano al final del ataque")
         }
         for (entry in c.untilEndOfAttack) {
-            val parts = JavaText.split(Regex("\\|"), entry, 2)
+            val parts = JavaText.split(Platform.regex("\\|"), entry, 2)
             for (p in room.players.values) {
                 val card = find(p.field, parts[0]) ?: continue
                 if (parts[1].startsWith(STRENGTH_ENTRY)) {

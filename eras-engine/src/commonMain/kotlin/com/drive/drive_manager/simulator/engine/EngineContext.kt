@@ -1,5 +1,6 @@
 package com.drive.drive_manager.simulator.engine
 
+import com.drive.drive_manager.simulator.platform.Platform
 import kotlin.jvm.JvmSuppressWildcards
 import kotlin.jvm.JvmRecord
 import kotlin.math.max
@@ -183,7 +184,7 @@ internal class EngineContext(private val room: GameRoom, private val effect: Pen
 
     override fun describeZones(zones: String?): String? {
         val names: MutableList<String> = ArrayList()
-        for (raw in JavaText.split(Regex(","), zones!!)) {
+        for (raw in JavaText.split(Platform.regex(","), zones!!)) {
             val zone = raw.trim { it <= ' ' }
             if (zone.startsWith("materials")) names.add("los materiales")
             else if (zone.startsWith("resources")) names.add("los recursos")

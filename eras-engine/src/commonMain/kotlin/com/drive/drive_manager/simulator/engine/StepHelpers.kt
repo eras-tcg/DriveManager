@@ -1,5 +1,6 @@
 package com.drive.drive_manager.simulator.engine
 
+import com.drive.drive_manager.simulator.platform.Platform
 import kotlin.jvm.JvmStatic
 import kotlin.math.max
 import kotlin.math.min
@@ -45,7 +46,7 @@ import com.drive.drive_manager.simulator.room.Zone
 /** What the steps of an effect share. */
 object StepHelpers {
 
-    private val COMMA = Regex(",")
+    private val COMMA = Platform.regex(",")
 
     /** Allies "sacrifica 1 [otro] aliado" may take. */
     @JvmStatic

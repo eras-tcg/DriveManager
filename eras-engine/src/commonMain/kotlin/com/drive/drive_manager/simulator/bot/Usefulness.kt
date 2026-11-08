@@ -258,7 +258,7 @@ internal object Usefulness {
         return sb.append(room.fieldGrants as Any?).toString()
     }
 
-    private val PLACE: Regex = Regex("\\b[xy]=[^,)]*, ?")
+    private val PLACE: Regex = Platform.regex("\\b[xy]=[^,)]*, ?")
 
     private fun card(c: CardSlot): String {
         return PLACE.replace(c.toString(), "") + ":" + EffectEngine.strength(c)

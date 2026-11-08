@@ -1,5 +1,6 @@
 package com.drive.drive_manager.simulator.engine
 
+import com.drive.drive_manager.simulator.platform.Platform
 import kotlin.jvm.JvmStatic
 import com.drive.drive_manager.simulator.engine.effects.model.Selector
 import com.drive.drive_manager.simulator.engine.effects.model.SpecialRule
@@ -10,7 +11,7 @@ import com.drive.drive_manager.simulator.room.PlayerState
 /** What each choice of a special summon by effect offers, under its rule. The choices themselves are plain Select actions. */
 object SpecialProcedure {
 
-    private val COMMA = Regex(",")
+    private val COMMA = Platform.regex(",")
 
     /** The rule as it is now: what depends on the game, worked out. */
     @JvmStatic

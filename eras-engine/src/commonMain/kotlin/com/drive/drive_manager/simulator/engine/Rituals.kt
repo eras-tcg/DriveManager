@@ -1,5 +1,6 @@
 package com.drive.drive_manager.simulator.engine
 
+import com.drive.drive_manager.simulator.platform.Platform
 import kotlin.jvm.JvmStatic
 import kotlin.jvm.JvmRecord
 import kotlin.math.max
@@ -163,11 +164,11 @@ object Rituals {
     fun requirement(card: CardSlot?): Requirement? {
         if (card!!.requirement == null) return null
         val text = card.requirement!!.lowercase()
-        val m = Regex("nivel\\s*(\\d+)|sumen\\s*(\\d+)").find(text)
+        val m = Platform.regex("nivel\\s*(\\d+)|sumen\\s*(\\d+)").find(text)
         if (m == null) return null
         val level = (m.groups[1]?.value ?: m.groupValues[2]).toInt()
-        val atLeast = Regex("nivel\\s*\\d+\\s*o\\s*mayor").containsMatchIn(text)
-        val strength = Regex("fuerza\\s*(\\d+)\\s*o\\s*menos").find(text)
+        val atLeast = Platform.regex("nivel\\s*\\d+\\s*o\\s*mayor").containsMatchIn(text)
+        val strength = Platform.regex("fuerza\\s*(\\d+)\\s*o\\s*menos").find(text)
         return Requirement(text.contains("sum"), level, atLeast, if (strength != null) strength.groupValues[1].toInt() else null)
     }
 

@@ -27,6 +27,9 @@ actual object Platform {
 
     actual fun seconds(seconds: Long): Duration = Duration(seconds)
 
+    /** The Java pattern translated ([JavaRegex.toJavaScript]): Kotlin's `Regex` is a JavaScript `RegExp` here. */
+    actual fun regex(pattern: String): Regex = Regex(JavaRegex.toJavaScript(pattern))
+
     /** A version-4 UUID's 32 hex digits (as `UUID.randomUUID()` without the dashes). */
     actual fun randomHexId(): String {
         val digits = "0123456789abcdef"

@@ -1,5 +1,6 @@
 package com.drive.drive_manager.simulator.bot
 
+import com.drive.drive_manager.simulator.platform.Platform
 import kotlin.jvm.JvmStatic
 import kotlin.math.max
 import com.drive.drive_manager.simulator.engine.comparingDouble
@@ -28,9 +29,9 @@ import com.drive.drive_manager.simulator.room.Zone
  */
 internal object StrengthCuts {
 
-    private val AMOUNT: Regex = Regex("(?:reduce|reducir|reduzca)[^.;]*?fuerza en (\\d+)|(?:reduce|reducir) en (\\d+) su fuerza")
-    private val MORE: Regex = Regex("reducir su fuerza en (\\d+) más")
-    private val TO_ZERO: Regex = Regex("si reduces a (\\d+) o menos la fuerza[^.]*reducirla a 0")
+    private val AMOUNT: Regex = Platform.regex("(?:reduce|reducir|reduzca)[^.;]*?fuerza en (\\d+)|(?:reduce|reducir) en (\\d+) su fuerza")
+    private val MORE: Regex = Platform.regex("reducir su fuerza en (\\d+) más")
+    private val TO_ZERO: Regex = Platform.regex("si reduces a (\\d+) o menos la fuerza[^.]*reducirla a 0")
 
     /** The amount a prompt reduces, from its texts; -1 when it is not a strength reduction. */
     @JvmStatic

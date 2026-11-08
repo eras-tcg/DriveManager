@@ -39,11 +39,11 @@ internal data class CombatTraits(val bonusLevel: Int, val attackStr: Int, val at
         @JvmField
         val NONE = CombatTraits(-1, -1, -1, 0, false, 0.0, false, false)
 
-        private val LEVEL: Regex = Regex("nivel (\\d+) o menor")
-        private val STRENGTH: Regex = Regex("fuerza (\\d+) o menos")
-        private val DRAW: Regex = Regex("roba (\\d+) carta")
-        private val TRIBUTE: Regex = Regex("tributa (\\d+) carta")
-        private val SEND: Regex = Regex("enviar (\\d+) de tus tributos")
+        private val LEVEL: Regex = Platform.regex("nivel (\\d+) o menor")
+        private val STRENGTH: Regex = Platform.regex("fuerza (\\d+) o menos")
+        private val DRAW: Regex = Platform.regex("roba (\\d+) carta")
+        private val TRIBUTE: Regex = Platform.regex("tributa (\\d+) carta")
+        private val SEND: Regex = Platform.regex("enviar (\\d+) de tus tributos")
         private val BY_CARD: MutableMap<String, CombatTraits> = Platform.concurrentMap()
 
         @JvmStatic

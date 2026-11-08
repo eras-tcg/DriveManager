@@ -1,5 +1,6 @@
 package com.drive.drive_manager.simulator.bot
 
+import com.drive.drive_manager.simulator.platform.Platform
 import kotlin.jvm.JvmStatic
 import kotlin.math.floor
 import kotlin.math.max
@@ -423,7 +424,7 @@ internal object CombatSearch {
         var extra = 0
         for (k in EffectEngine.keywords(attacker)) {
             if (!k.lowercase().startsWith("letalidad")) continue
-            val m = Regex("(\\d+)").find(k)
+            val m = Platform.regex("(\\d+)").find(k)
             if (m != null) extra = max(extra, m.groupValues[1].toInt())
         }
         return 1 + extra

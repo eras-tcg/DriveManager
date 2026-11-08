@@ -1,5 +1,6 @@
 package com.drive.drive_manager.simulator.bot
 
+import com.drive.drive_manager.simulator.platform.Platform
 import kotlin.jvm.JvmStatic
 import kotlin.jvm.JvmField
 import com.drive.drive_manager.simulator.engine.valueOr
@@ -183,8 +184,8 @@ class BotSettings private constructor(values: Map<String, Double>, bias: Map<Str
         const val BIAS_DISCARD = "biasD:"
         private val BIASES: List<String> = frozenListOf(BIAS, BIAS_TRIBUTE, BIAS_DISCARD)
 
-        private val COMMA = Regex(",")
-        private val EQUALS = Regex("=")
+        private val COMMA = Platform.regex(",")
+        private val EQUALS = Platform.regex("=")
 
         private val DEFAULTS: Map<String, Double> = defaults()
         @JvmField

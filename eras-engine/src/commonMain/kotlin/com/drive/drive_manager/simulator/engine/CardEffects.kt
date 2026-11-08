@@ -1,5 +1,6 @@
 package com.drive.drive_manager.simulator.engine
 
+import com.drive.drive_manager.simulator.platform.Platform
 import kotlin.jvm.JvmStatic
 import kotlin.jvm.JvmField
 import kotlin.jvm.JvmRecord
@@ -164,7 +165,7 @@ object CardEffects {
     val ENGINE_KEYWORDS: Set<String> = frozenSetOf("Provocar", "Enfrentar", "Celeridad", "Asalto", "Furia", "Reactivar",
         "Letalidad", "Imbloqueable", "Perforante", "Alcance", "Protección", "Agrupar")
 
-    private val TRAILING_NUMBER = Regex("\\s*\\d+$")
+    private val TRAILING_NUMBER = Platform.regex("\\s*\\d+$")
 
     /**
      * What of a card's metadata the engine does not run yet (as the vault's status counts it: sync_vault_status.py),
@@ -211,7 +212,7 @@ object CardEffects {
         return traits(card).specialFromTributes
     }
 
-    private val AGRUPAR: Regex = Regex("agrupar\\s*(\\d+)")
+    private val AGRUPAR: Regex = Platform.regex("agrupar\\s*(\\d+)")
 
     /** "Agrupar N": up to N allies, Letalidad 1 for each (designer ruling 2026-10-31). Agrupar 1 is the one in KEYWORDS. */
     @JvmStatic

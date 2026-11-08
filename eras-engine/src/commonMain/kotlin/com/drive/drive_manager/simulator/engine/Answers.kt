@@ -1,5 +1,6 @@
 package com.drive.drive_manager.simulator.engine
 
+import com.drive.drive_manager.simulator.platform.Platform
 import kotlin.jvm.JvmStatic
 import com.drive.drive_manager.simulator.engine.Chain.activate
 import com.drive.drive_manager.simulator.engine.Chain.advance
@@ -393,7 +394,7 @@ object Answers {
                 room.usedThisTurn.remove(kept)
                 val list = kept.substring((DISCOUNT_MATERIALS + card.instanceId + "|").length)
                 // As Java's String.split: the empty strings at the end are left out
-                for (id in if (list.isEmpty()) arrayOf<String>() else JavaText.split(Regex(","), list)) {
+                for (id in if (list.isEmpty()) arrayOf<String>() else JavaText.split(Platform.regex(","), list)) {
                     val at = locate(player, id)
                     if (at != null) keptMaterials.add(at.card!!)
                 }

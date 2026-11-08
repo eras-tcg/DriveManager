@@ -1,5 +1,6 @@
 package com.drive.drive_manager.simulator.bot
 
+import com.drive.drive_manager.simulator.platform.Platform
 import kotlin.jvm.JvmStatic
 import kotlin.math.max
 import kotlin.math.min
@@ -344,7 +345,7 @@ open class HeuristicBot(rules: BotSettings) : BotPlayer() {
     companion object {
 
         /** What a chosen card goes through, by the prompt's label ("Destruir", "Tributar"…): a loss for its owner. */
-        private val LOSS = Regex("destru|sacrific|tribut|descart|envi|agot|reduc|fondo|devuelv|devolv|pierd|baraj|retir|quit")
+        private val LOSS = Platform.regex("destru|sacrific|tribut|descart|envi|agot|reduc|fondo|devuelv|devolv|pierd|baraj|retir|quit")
 
         /** Offsets that keep the groups apart (above any card's value): creatures after the cards acting from there, then the rest. */
         private const val CREATURES_GROUP = 1000.0
@@ -467,7 +468,7 @@ open class HeuristicBot(rules: BotSettings) : BotPlayer() {
             var extra = 0
             for (k in EffectEngine.keywords(attacker)) {
                 if (!k.lowercase().startsWith("letalidad")) continue
-                val m = Regex("(\\d+)").find(k)
+                val m = Platform.regex("(\\d+)").find(k)
                 if (m != null) extra = max(extra, m.groupValues[1].toInt())
             }
             return 1 + extra

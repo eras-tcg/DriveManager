@@ -1,5 +1,6 @@
 package com.drive.drive_manager.simulator.bot
 
+import com.drive.drive_manager.simulator.platform.Platform
 import kotlin.jvm.JvmStatic
 import kotlin.jvm.JvmField
 import com.drive.drive_manager.simulator.engine.frozenListOf
@@ -36,7 +37,7 @@ object BotCatalog {
     private val LEVEL_IDS: List<String> = frozenListOf(EASY, NORMAL, HARD)
 
     /** Splits a resource into lines as Java's `\R` (any Unicode line break; JavaScript's regular expressions have none). */
-    private val LINE_BREAK = Regex("\\r\\n|[\\n\\u000B\\u000C\\r\\u0085\\u2028\\u2029]")
+    private val LINE_BREAK = Platform.regex("\\r\\n|[\\n\\u000B\\u000C\\r\\u0085\\u2028\\u2029]")
 
     /**
      * The levels' bots and the bots to try out, by name: each line of the resource is "id|label|settings" (settings as
@@ -56,7 +57,7 @@ object BotCatalog {
         val text = BotResourceSources.current().text(MODELS_RESOURCE, "Cannot read the bot's models $MODELS_RESOURCE") ?: return m
         for (line in JavaText.split(LINE_BREAK, text)) {
             if (line.all { JavaText.isWhitespace(it) } || line.trim { it <= ' ' }.startsWith("#")) continue
-            val f = JavaText.split(Regex("\\|"), line, 3)
+            val f = JavaText.split(Platform.regex("\\|"), line, 3)
             m[f[0].trim { it <= ' ' }] = Pair(f[1].trim { it <= ' ' }, BotSettings.DEFAULT.with(f[2].trim { it <= ' ' }))
         }
         return m
