@@ -4,7 +4,7 @@ import com.drive.drive_manager.simulator.room.ActionType
 import com.drive.drive_manager.simulator.room.CardSlot
 import com.drive.drive_manager.simulator.room.GameAction
 import com.drive.drive_manager.simulator.room.GameRoom
-import java.util.Random
+import com.drive.drive_manager.simulator.engine.GameRandom
 import java.util.function.ToDoubleBiFunction
 
 /**
@@ -133,7 +133,7 @@ internal object SequenceSearch {
 
     /** The sequence on a copy, scored right away, with the moves legal after it (null: a move was refused). */
     private fun screen(sandbox: Sandbox, room: GameRoom, me: String?, moves: List<GameAction>, seed: Long, s: BotSettings, triggers: Double): Screened? {
-        val copy = sandbox.fork(room, me, Random(seed))
+        val copy = sandbox.fork(room, me, GameRandom(seed))
         try {
             val before = copy.timeline.size
             val sides = java.util.Map.of<String?, BotPlayer>(me, HeuristicBot(s), copy.getOpponentId(me), HeuristicBot(s))

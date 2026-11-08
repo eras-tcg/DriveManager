@@ -3,7 +3,6 @@ package com.drive.drive_manager.simulator.bot
 import com.drive.drive_manager.simulator.engine.GameRandom
 import com.drive.drive_manager.simulator.room.GameRoom
 import java.util.LinkedHashMap
-import java.util.Random
 
 /**
  * A trainable model of the table's worth: the chance that a player wins from it, read from the table's numbers
@@ -107,7 +106,7 @@ class ValueModel private constructor(private val w: Weights) {
         @JvmStatic
         fun train(samples: List<Sample>, t: Training, log: java.util.function.Consumer<String>?): ValueModel {
             if (samples.size < 10) throw IllegalArgumentException("Too few samples to train: " + samples.size)
-            val random = Random(t.seed)
+            val random = GameRandom(t.seed)
             // Whole games to validation (a sample without a game is a game of its own)
             val byGame: MutableMap<Long, MutableList<Sample>> = LinkedHashMap()
             var alone = Long.MIN_VALUE

@@ -86,7 +86,7 @@ object PreRoomActions {
     @JvmStatic
     fun startFromPreRoom(room: GameRoom, seed: Long) {
         room.startSetup = MatchSetup.of(room, seed)
-        room.random = java.util.Random(seed)
+        room.random = GameRandom(seed)
         var first = room.firstChoice
         if (first == null || "random" == first || !room.players.containsKey(first)) {
             val ids: List<String> = ArrayList(room.players.keys)

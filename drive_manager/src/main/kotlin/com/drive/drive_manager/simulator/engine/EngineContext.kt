@@ -17,7 +17,7 @@ import java.util.regex.Pattern
  * well-known names are the fields the old steps read, so one effect can mix both.
  */
 internal class EngineContext(private val room: GameRoom, private val effect: PendingEffect, private val repeat: BooleanArray?) : EffectContext {
-    override fun random(): java.util.Random? = room.random
+    override fun random(): GameRandom? = room.random
 
     constructor(room: GameRoom, effect: PendingEffect) : this(room, effect, BooleanArray(1))
 

@@ -7,7 +7,7 @@ import com.drive.drive_manager.simulator.room.ActionType
 import com.drive.drive_manager.simulator.room.CardSlot
 import com.drive.drive_manager.simulator.room.GameAction
 import com.drive.drive_manager.simulator.room.GameRoom
-import java.util.Random
+import com.drive.drive_manager.simulator.engine.GameRandom
 
 /**
  * Does a move do anything? It is played on a copy of the room, what it opens answered by the heuristic until the
@@ -92,7 +92,7 @@ internal object Usefulness {
     /** The score once the turn passes, the move played (or none) and the rest of the turn by the heuristic; null: refused. */
     private fun endScore(room: GameRoom, me: String?, move: GameAction?, moving: Set<String?>, rules: BotSettings, without: Boolean): Double? {
         val sandbox = SANDBOX.get()
-        val copy = sandbox.fork(room, me, Random(1))
+        val copy = sandbox.fork(room, me, GameRandom(1))
         try {
             val plain = rules.with("hUseful=0,hUsefulEnd=0")
             val sides = java.util.Map.of<String?, BotPlayer>(me, HeuristicBot(plain), copy.getOpponentId(me), HeuristicBot(plain))
@@ -201,7 +201,7 @@ internal object Usefulness {
     /** The table once the move is played and what it opens answered (null: refused, or the game ended). */
     private fun outcome(room: GameRoom, me: String?, move: GameAction?, moving: Set<String?>, rules: BotSettings): String? {
         val sandbox = SANDBOX.get()
-        val copy = sandbox.fork(room, me, Random(1))
+        val copy = sandbox.fork(room, me, GameRandom(1))
         try {
             val events = copy.timeline.size
             if (move != null) {

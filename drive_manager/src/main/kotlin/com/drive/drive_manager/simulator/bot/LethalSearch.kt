@@ -3,7 +3,7 @@ package com.drive.drive_manager.simulator.bot
 import com.drive.drive_manager.simulator.room.ActionType
 import com.drive.drive_manager.simulator.room.GameAction
 import com.drive.drive_manager.simulator.room.GameRoom
-import java.util.Random
+import com.drive.drive_manager.simulator.engine.GameRandom
 
 /**
  * lethalLives n (the user's st2 game, 2026-11-05): with the rival at n lives or fewer, the turn is first searched for a
@@ -52,7 +52,7 @@ internal object LethalSearch {
         moves.sortWith(Comparator.comparingInt { m: GameAction -> if (ActionType.ATTACK.`is`(m)) 0 else if (ActionType.RITUAL_SUMMON.`is`(m)) 1 else 2 })
         for (m in moves) {
             if (++nodes[0] > MAX_NODES || System.nanoTime() > deadline) return null
-            val copy = sandbox.fork(room, me, Random(seed))
+            val copy = sandbox.fork(room, me, GameRandom(seed))
             try {
                 val u = sandbox.act(copy, me, m)
                 if (u != null && u.error != null) continue
@@ -72,7 +72,7 @@ internal object LethalSearch {
 
     /** The line played on the deal of `seed` wins the game. */
     private fun wins(sandbox: Sandbox, room: GameRoom, me: String, sides: Map<String?, BotPlayer>, line: List<GameAction>, seed: Long): Boolean {
-        val copy = sandbox.fork(room, me, Random(seed))
+        val copy = sandbox.fork(room, me, GameRandom(seed))
         try {
             for (m in line) {
                 if (copy.status != GameRoom.RoomStatus.IN_PROGRESS) break

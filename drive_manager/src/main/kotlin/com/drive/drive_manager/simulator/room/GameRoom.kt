@@ -1,5 +1,6 @@
 package com.drive.drive_manager.simulator.room
 
+import com.drive.drive_manager.simulator.engine.GameRandom
 import com.drive.drive_manager.simulator.bot.BotCatalog
 import com.drive.drive_manager.simulator.engine.Combat
 import com.drive.drive_manager.simulator.engine.FieldGrant
@@ -162,7 +163,7 @@ class GameRoom {
      * played again exactly from a seed (the bot arena plays paired games); not part of the state sent to players.
      */
     @field:RoomSetting @Transient
-    var random: java.util.Random? = java.util.Random()
+    var random: GameRandom? = GameRandom()
 
     /**
      * A room only tried on (the bot's copies, a game played again): its updates carry no view for players (what may be

@@ -7,7 +7,7 @@ import com.drive.drive_manager.simulator.room.GameAction
 import com.drive.drive_manager.simulator.room.GameRoom
 import com.drive.drive_manager.simulator.room.GameStateUpdate
 import com.drive.drive_manager.simulator.room.PlayerState
-import java.util.Random
+import com.drive.drive_manager.simulator.engine.GameRandom
 import java.util.function.ToDoubleBiFunction
 
 /**
@@ -106,14 +106,14 @@ internal class MoveTrials(
     }
 
     /** The k-th deal of this decision when every move is tried on the same deals; else null (the sandbox's own chance). */
-    private fun deal(k: Int): Random? {
+    private fun deal(k: Int): GameRandom? {
         if (!settings.sameDeals()) return null
         while (deals.size <= k) deals.add(sandbox.deal())
-        return Random(deals[k])
+        return GameRandom(deals[k])
     }
 
     /** The small look-ahead that plays the rest of the bot's own turn in a try (innerCands, innerMs). */
-    private fun inner(deal: Random?): BotPlayer {
+    private fun inner(deal: GameRandom?): BotPlayer {
         val bot = LookaheadBot(settings.with("turns=1,samples=1,halving=0,seqDepth=0,innerCands=0,maxCandidates="
                 + settings.get("innerCands").toInt() + ",budgetMs=" + settings.get("innerMs").toInt()))
         if (deal != null) bot.seed(deal.nextLong())
@@ -122,11 +122,11 @@ internal class MoveTrials(
 
     /** One try of the move on the deal of `seed` (the sequence search screens by it with seqRollout). */
     fun once(room: GameRoom, me: String?, move: GameAction, seed: Long): Double {
-        return tryMove(room, me, move, Random(seed), false)
+        return tryMove(room, me, move, GameRandom(seed), false)
     }
 
     /** Plays the move on a copy and then both sides by the heuristic until the turn passes; the score of the table left. */
-    private fun tryMove(room: GameRoom, me: String?, move: GameAction, deal: Random?, deep: Boolean): Double {
+    private fun tryMove(room: GameRoom, me: String?, move: GameAction, deal: GameRandom?, deep: Boolean): Double {
         val copy = sandbox.fork(room, me, deal)
         // searchHope: in this try its searches of the deck's top find the best valid cards when they find any
         if (settings.get("searchHope") >= 0.5) copy.searchHope = me
@@ -273,7 +273,7 @@ internal class MoveTrials(
             val until = System.nanoTime() + settings.budgetMs() * 200_000L
             for (a in candidates.subList(1, candidates.size)) {
                 if (System.nanoTime() > until) break
-                val copy = sandbox.fork(room, me, Random(seed))
+                val copy = sandbox.fork(room, me, GameRandom(seed))
                 try {
                     val sides: Map<String?, BotPlayer> = java.util.Map.of<String?, BotPlayer>(me, HeuristicBot(settings), copy.getOpponentId(me), HeuristicBot(settings))
                     var v = 0.0

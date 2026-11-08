@@ -1,5 +1,6 @@
 package com.drive.drive_manager.simulator.room;
 
+import com.drive.drive_manager.simulator.engine.GameRandom;
 import com.drive.drive_manager.simulator.engine.GameEvent;
 import org.springframework.objenesis.Objenesis;
 import org.springframework.objenesis.ObjenesisStd;
@@ -39,14 +40,14 @@ final class ReflectiveRoomCopy {
 
     private final Map<Object, Object> copies = new IdentityHashMap<>();
     /** Seeds the copy's own chance (never the room's: trying moves must not change what the real game draws next). */
-    private final java.util.Random chance;
+    private final GameRandom chance;
 
-    private ReflectiveRoomCopy(java.util.Random chance) {
+    private ReflectiveRoomCopy(GameRandom chance) {
         this.chance = chance;
     }
 
     /** A copy with a chance of its own, seeded from {@code chance}. */
-    public static GameRoom of(GameRoom room, java.util.Random chance) {
+    public static GameRoom of(GameRoom room, GameRandom chance) {
         return (GameRoom) new ReflectiveRoomCopy(chance).copy(room);
     }
 
@@ -54,7 +55,7 @@ final class ReflectiveRoomCopy {
      * Puts the state of {@code from} into {@code target} (a copy of it: {@code from} stays as it is), but for the
      * room's own settings (the fields marked {@link RoomSetting}).
      */
-    public static void restore(GameRoom target, GameRoom from, java.util.Random chance) {
+    public static void restore(GameRoom target, GameRoom from, GameRandom chance) {
         GameRoom copy = of(from, chance);
         try {
             for (Field f : fields(GameRoom.class)) if (!f.isAnnotationPresent(RoomSetting.class)) f.set(target, f.get(copy));
@@ -76,8 +77,8 @@ final class ReflectiveRoomCopy {
             for (int i = 0; i < n; i++) Array.set(out, i, copy(Array.get(o, i)));
             return out;
         }
-        if (o instanceof java.util.Random) {
-            Object out = new java.util.Random(chance.nextLong());
+        if (o instanceof GameRandom) {
+            Object out = new GameRandom(chance.nextLong());
             copies.put(o, out);
             return out;
         }

@@ -3,7 +3,7 @@ package com.drive.drive_manager.simulator.bot
 import com.drive.drive_manager.simulator.engine.Prompt
 import com.drive.drive_manager.simulator.room.ActionType
 import com.drive.drive_manager.simulator.room.GameRoom
-import java.util.Random
+import com.drive.drive_manager.simulator.engine.GameRandom
 
 /**
  * The best block (hBlockBest): the defender tries every answer it has (no block, if allowed, and each creature it
@@ -28,7 +28,7 @@ internal object BlockSearch {
         var best: List<String>? = null
         var bestScore = Double.NEGATIVE_INFINITY
         for (chosen in options) {
-            val copy = sandbox.fork(room, me, Random(seed))
+            val copy = sandbox.fork(room, me, GameRandom(seed))
             try {
                 val u = sandbox.act(copy, me, BotPlayer.action(ActionType.RESOLVE_PROMPT,
                         java.util.Map.of<String, Any>("promptId", prompt.id!!, "chosen", chosen, "order", java.util.List.of<Any>())))

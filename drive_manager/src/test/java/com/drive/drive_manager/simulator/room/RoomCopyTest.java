@@ -1,5 +1,6 @@
 package com.drive.drive_manager.simulator.room;
 
+import com.drive.drive_manager.simulator.engine.GameRandom;
 import com.drive.drive_manager.simulator.bot.BotMatch;
 import com.drive.drive_manager.simulator.bot.BotPlayer;
 import com.drive.drive_manager.simulator.bot.HeuristicBot;
@@ -19,7 +20,6 @@ import java.util.IdentityHashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Random;
 import java.util.Set;
 import java.util.TreeSet;
 
@@ -80,12 +80,12 @@ class RoomCopyTest {
     void restoreKeepsTheRoomsSettings() {
         RoomService service = new RoomService();
         GameRoom room = startedGame(service, "st1", "st2", 7L);
-        GameRoom before = RoomCopy.of(room, new Random(1));
+        GameRoom before = RoomCopy.of(room, new GameRandom(1));
         room.setBotLevel("easy");
         room.setPaused(true);
         BotPlayer bot = new HeuristicBot();
         for (int i = 0; i < 30 && room.getStatus() == GameRoom.RoomStatus.IN_PROGRESS; i++) step(service, room, bot);
-        RoomCopy.restore(room, before, new Random(2));
+        RoomCopy.restore(room, before, new GameRandom(2));
         assertThat(room.getBotLevel()).isEqualTo("easy");
         assertThat(room.isPaused()).isTrue();
         assertThat(room.getEventSeq()).isEqualTo(before.getEventSeq());
@@ -97,7 +97,7 @@ class RoomCopyTest {
 
     private static GameRoom startedGame(RoomService service, String hostDeck, String guestDeck, long seed) {
         GameRoom room = service.createRoom("host");
-        room.setRandom(new Random(seed));
+        room.setRandom(new GameRandom(seed));
         String id = room.getRoomId();
         service.applyAction(id, "host", BotPlayer.action("JOIN_ROOM", Map.of("username", "Ana")), false);
         service.applyAction(id, "guest", BotPlayer.action("JOIN_ROOM", Map.of("username", "Beto")), false);
@@ -126,8 +126,8 @@ class RoomCopyTest {
         bot.seed(seed);
         int compared = 0;
         for (int actions = 0; actions < 600 && room.getStatus() != GameRoom.RoomStatus.POST_GAME; actions++) {
-            GameRoom explicit = RoomCopy.of(room, new Random(seed + actions));
-            GameRoom reflective = ReflectiveRoomCopy.of(room, new Random(seed + actions));
+            GameRoom explicit = RoomCopy.of(room, new GameRandom(seed + actions));
+            GameRoom reflective = ReflectiveRoomCopy.of(room, new GameRandom(seed + actions));
             same(explicit, reflective, new IdentityHashMap<>(), "room");
             apart(room, explicit, java.util.Collections.newSetFromMap(new IdentityHashMap<>()));
             compared++;
@@ -161,8 +161,8 @@ class RoomCopyTest {
         }
         paired.put(a, b);
         assertThat(b.getClass()).as(path).isEqualTo(a.getClass());
-        if (a instanceof Random ra) {
-            assertThat(((Random) b).nextLong()).as(path).isEqualTo(ra.nextLong());
+        if (a instanceof GameRandom ra) {
+            assertThat(((GameRandom) b).nextLong()).as(path).isEqualTo(ra.nextLong());
         } else if (a instanceof Map<?, ?> ma) {
             Map<?, ?> mb = (Map<?, ?>) b;
             assertThat(mb.keySet()).as(path).isEqualTo(ma.keySet());

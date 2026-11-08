@@ -1,5 +1,6 @@
 package com.drive.drive_manager.simulator.engine.effects.runtime
 
+import com.drive.drive_manager.simulator.engine.GameRandom
 import com.drive.drive_manager.simulator.engine.Amount
 import com.drive.drive_manager.simulator.engine.effects.model.Action
 import com.drive.drive_manager.simulator.engine.effects.model.Selector
@@ -16,7 +17,7 @@ interface EffectContext {
     fun player(): PlayerState?
 
     /** The room's chance (see GameRoom#getRandom). */
-    fun random(): java.util.Random?
+    fun random(): GameRandom?
 
     fun opponent(): PlayerState?
 

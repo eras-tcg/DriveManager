@@ -1,5 +1,6 @@
 package com.drive.drive_manager.simulator.room;
 
+import com.drive.drive_manager.simulator.engine.GameRandom;
 import com.drive.drive_manager.simulator.bot.BotMatch;
 import com.drive.drive_manager.simulator.bot.BotPlayer;
 import com.drive.drive_manager.simulator.bot.HeuristicBot;
@@ -33,7 +34,7 @@ class TestTimelineTest {
     private void playTestGame(int moves) {
         room = service.createRoom("owner", RoomOptions.TEST);
         id = room.getRoomId();
-        room.setRandom(new java.util.Random(4));
+        room.setRandom(new GameRandom(4));
         act("JOIN_ROOM", Map.of("username", "Ana"));
         int[] ids = {0};
         BotMatch.seat(room.getPlayer("owner"), "st1", ids);

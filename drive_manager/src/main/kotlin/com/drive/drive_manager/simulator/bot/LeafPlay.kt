@@ -3,7 +3,7 @@ package com.drive.drive_manager.simulator.bot
 import com.drive.drive_manager.simulator.engine.EffectEngine
 import com.drive.drive_manager.simulator.room.ActionType
 import com.drive.drive_manager.simulator.room.GameRoom
-import java.util.Random
+import com.drive.drive_manager.simulator.engine.GameRandom
 import java.util.function.ToDoubleBiFunction
 
 /**
@@ -20,7 +20,7 @@ internal object LeafPlay {
     private const val MAX_MOVES = 10
 
     @JvmStatic
-    fun bonus(sandbox: Sandbox, copy: GameRoom, me: String?, s: BotSettings, score: ToDoubleBiFunction<GameRoom, String?>, deal: Random?): Double {
+    fun bonus(sandbox: Sandbox, copy: GameRoom, me: String?, s: BotSettings, score: ToDoubleBiFunction<GameRoom, String?>, deal: GameRandom?): Double {
         val w = s.get("leafPlay")
         if (w <= 0 || copy.status != GameRoom.RoomStatus.IN_PROGRESS || me!! != copy.currentTurnUserId) return 0.0
         val sides = java.util.Map.of<String?, BotPlayer>(me, HeuristicBot(s), copy.getOpponentId(me), HeuristicBot(s))
@@ -33,7 +33,7 @@ internal object LeafPlay {
         val moves = LookaheadBot.mainMoves(copy, me).filter { m -> !ActionType.ATTACK.`is`(m) }.take(MAX_MOVES)
         val seed = deal?.nextLong() ?: sandbox.deal()
         for (m in moves) {
-            val next = sandbox.fork(copy, me, Random(seed))
+            val next = sandbox.fork(copy, me, GameRandom(seed))
             try {
                 val from = next.timeline.size
                 val u = sandbox.act(next, me, m)

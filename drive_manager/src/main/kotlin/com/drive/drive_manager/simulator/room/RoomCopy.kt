@@ -1,5 +1,6 @@
 package com.drive.drive_manager.simulator.room
 
+import com.drive.drive_manager.simulator.engine.GameRandom
 import com.drive.drive_manager.simulator.engine.Combat
 import com.drive.drive_manager.simulator.engine.PendingEffect
 import com.drive.drive_manager.simulator.engine.Prompt
@@ -22,7 +23,7 @@ import java.util.TreeSet
  */
 class RoomCopy private constructor(
     /** Seeds the copy's own chance (never the room's: trying moves must not change what the real game draws next). */
-    private val chance: java.util.Random?,
+    private val chance: GameRandom?,
 ) {
 
     private val copies: MutableMap<Any, Any> = IdentityHashMap()
@@ -30,7 +31,7 @@ class RoomCopy private constructor(
     companion object {
         /** A copy with a chance of its own, seeded from `chance`. */
         @JvmStatic
-        fun of(room: GameRoom?, chance: java.util.Random?): GameRoom? {
+        fun of(room: GameRoom?, chance: GameRandom?): GameRoom? {
             return RoomCopy(chance).room(room)
         }
 
@@ -39,7 +40,7 @@ class RoomCopy private constructor(
          * room's own settings (the fields marked [RoomSetting]).
          */
         @JvmStatic
-        fun restore(target: GameRoom, from: GameRoom?, chance: java.util.Random?) {
+        fun restore(target: GameRoom, from: GameRoom?, chance: GameRandom?) {
             val c = of(from, chance)!!
             target.status = c.status
             target.players = c.players
@@ -148,7 +149,7 @@ class RoomCopy private constructor(
         c.startPhasePending = o.startPhasePending
         c.winnerId = o.winnerId
         c.endReason = o.endReason
-        c.random = if (o.random == null) null else java.util.Random(chance!!.nextLong())
+        c.random = if (o.random == null) null else GameRandom(chance!!.nextLong())
         c.headless = o.headless
         c.searchHope = o.searchHope
         c.startSetup = o.startSetup

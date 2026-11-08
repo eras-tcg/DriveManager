@@ -1,5 +1,6 @@
 package com.drive.drive_manager.simulator.room;
 
+import com.drive.drive_manager.simulator.engine.GameRandom;
 import com.drive.drive_manager.simulator.bot.BotRooms;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -45,7 +46,7 @@ public final class TestTimeline {
         if (line == null || (!playing && !wasPlaying)) return;
         // A move from the past: its future is forgotten
         while (line.steps.size() > line.at + 1) line.steps.remove(line.steps.size() - 1);
-        line.steps.add(RoomCopy.of(room, chance));
+        line.steps.add(RoomCopy.of(room, new GameRandom(chance.nextLong())));
         if (line.steps.size() > MAX_STEPS) line.steps.remove(0);
         line.at = line.steps.size() - 1;
         mark(room, line);
@@ -84,7 +85,7 @@ public final class TestTimeline {
     /** The game of {@code step} in the room, with the room's own settings and the players' connections as they are now. */
     private void restore(GameRoom room, GameRoom step) {
         Map<String, PlayerState> now = new HashMap<>(room.getPlayers());
-        RoomCopy.restore(room, step, chance);
+        RoomCopy.restore(room, step, new GameRandom(chance.nextLong()));
         room.getPlayers().forEach((id, p) -> {
             PlayerState was = now.get(id);
             if (was == null) return;

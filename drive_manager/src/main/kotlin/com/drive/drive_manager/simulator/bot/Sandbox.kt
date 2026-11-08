@@ -22,11 +22,11 @@ class Sandbox {
 
     private val engine = RoomEngine(RoomHost.gameOnly())
     /** The chance of the copies (their shuffles, the hidden cards dealt again): the bot's own, seedable. */
-    private var chance = java.util.Random()
+    private var chance = GameRandom()
 
     /** The same seed, the same copies: two bots seeded alike try their moves on the same deals. */
     fun seed(seed: Long) {
-        chance = java.util.Random(seed)
+        chance = GameRandom(seed)
     }
 
     /** A copy of the room as the bot may know it, ready to play on. */
@@ -35,7 +35,7 @@ class Sandbox {
     }
 
     /** The same, dealt by `deal` (the same seed, the same copy) or, when null, by the sandbox's own chance. */
-    fun fork(room: GameRoom, me: String?, deal: java.util.Random?): GameRoom {
+    fun fork(room: GameRoom, me: String?, deal: GameRandom?): GameRoom {
         val chance = deal ?: this.chance
         val copy = RoomCopy.of(room, chance)!!
         copy.roomId = "sim-" + IDS.incrementAndGet()
@@ -64,7 +64,7 @@ class Sandbox {
 
         /** What the bot cannot see is dealt again at random (see the class). */
         @JvmStatic
-        fun hideFrom(copy: GameRoom, me: String?, chance: java.util.Random?) {
+        fun hideFrom(copy: GameRoom, me: String?, chance: GameRandom?) {
             val self = copy.getPlayer(me)
             if (self != null) GameRandom.shuffle(self.deck, chance)
             val rival = copy.getPlayer(copy.getOpponentId(me)) ?: return

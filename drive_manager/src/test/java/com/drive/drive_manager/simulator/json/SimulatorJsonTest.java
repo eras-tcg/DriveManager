@@ -1,5 +1,6 @@
 package com.drive.drive_manager.simulator.json;
 
+import com.drive.drive_manager.simulator.engine.GameRandom;
 import com.drive.drive_manager.simulator.bot.BotMatch;
 import com.drive.drive_manager.simulator.bot.BotPlayer;
 import com.drive.drive_manager.simulator.bot.HeuristicBot;
@@ -16,7 +17,6 @@ import java.security.MessageDigest;
 import java.util.HexFormat;
 import java.util.List;
 import java.util.Map;
-import java.util.Random;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -66,7 +66,7 @@ class SimulatorJsonTest {
     private static String play(JsonMapper json, String hostDeck, String guestDeck, long seed, boolean views) throws Exception {
         RoomService service = new RoomService();
         GameRoom room = service.createRoom("host");
-        room.setRandom(new Random(seed));
+        room.setRandom(new GameRandom(seed));
         room.setCreatedAt(java.time.Instant.EPOCH);
         String id = room.getRoomId();
         service.applyAction(id, "host", BotPlayer.action("JOIN_ROOM", Map.of("username", "Ana")), false);

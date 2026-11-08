@@ -1,5 +1,6 @@
 package com.drive.drive_manager.simulator.replay;
 
+import com.drive.drive_manager.simulator.engine.GameRandom;
 import com.drive.drive_manager.simulator.room.ActionType;
 import com.drive.drive_manager.simulator.room.GameAction;
 import com.drive.drive_manager.simulator.room.GameRoom;
@@ -74,7 +75,7 @@ public final class ReplayRooms {
     private void show(GameRoom room, int step) {
         Game game = games.get(room.getRoomId());
         GameRoom played = MatchReplay.play(game.setup(), game.actions(), step, null);
-        RoomCopy.restore(room, played, chance);
+        RoomCopy.restore(room, played, new GameRandom(chance.nextLong()));
         room.setTimelineAt(step);
         // Steps 0 … actions: one more than the actions
         room.setTimelineSize(game.actions().size() + 1);

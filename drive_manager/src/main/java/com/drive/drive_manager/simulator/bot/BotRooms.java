@@ -1,5 +1,6 @@
 package com.drive.drive_manager.simulator.bot;
 
+import com.drive.drive_manager.simulator.engine.GameRandom;
 import com.drive.drive_manager.simulator.actions.PreRoomActions;
 import com.drive.drive_manager.simulator.rank.RankRules;
 import com.drive.drive_manager.simulator.room.ActionType;
@@ -213,7 +214,7 @@ public final class BotRooms {
             synchronized (live) {
                 if (!mayMove(live)) return;
                 version = live.getVersion();
-                copy = RoomCopy.of(live, chance);
+                copy = RoomCopy.of(live, new GameRandom(chance.nextLong()));
             }
             GameAction action = bot.next(copy, seat);
             if (action == null) return;

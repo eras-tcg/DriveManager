@@ -1,5 +1,6 @@
 package com.drive.drive_manager.simulator.bot;
 
+import com.drive.drive_manager.simulator.engine.GameRandom;
 import com.drive.drive_manager.dto.Card;
 import com.drive.drive_manager.simulator.actions.PreRoomActions;
 import com.drive.drive_manager.simulator.engine.GameEvent;
@@ -612,7 +613,7 @@ class BotPuzzleRun {
     private List<String> play(Table t, BotSettings s, long seed) {
         RoomService service = new RoomService();
         service.adopt(t.room());
-        t.room().setRandom(new Random(seed));
+        t.room().setRandom(new GameRandom(seed));
         LookaheadBot bot = new LookaheadBot(s);
         bot.seed(seed);
         // bot.puzzle.rival: the rival is a look-ahead bot with these settings (e.g. the Difícil line) instead of the heuristic

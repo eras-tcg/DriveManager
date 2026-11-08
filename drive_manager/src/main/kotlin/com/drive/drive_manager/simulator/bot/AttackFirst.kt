@@ -6,7 +6,7 @@ import com.drive.drive_manager.simulator.room.ActionType
 import com.drive.drive_manager.simulator.room.CardSlot
 import com.drive.drive_manager.simulator.room.GameAction
 import com.drive.drive_manager.simulator.room.GameRoom
-import java.util.Random
+import com.drive.drive_manager.simulator.engine.GameRandom
 
 /**
  * attackFirst (the user's rule, 2026-11-04): attack while playing a card first does not make that attack better. The
@@ -40,7 +40,7 @@ internal object AttackFirst {
         }
         if (!can(LegalActions.of(room, me), attack.getString("instanceId")).contains("attack")) return first
         val before = view(room, me, attack)
-        val copy = sandbox.fork(room, me, Random(sandbox.deal()))
+        val copy = sandbox.fork(room, me, GameRandom(sandbox.deal()))
         try {
             val sides = java.util.Map.of<String?, BotPlayer>(me, HeuristicBot(s), copy.getOpponentId(me), HeuristicBot(s))
             for (m in moves.subList(0, at)) {
