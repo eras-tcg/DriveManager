@@ -1,20 +1,15 @@
 package com.drive.drive_manager.simulator.bot;
 
 import com.drive.drive_manager.simulator.engine.GameRandom;
-import com.drive.drive_manager.simulator.actions.PreRoomActions;
 import com.drive.drive_manager.simulator.rank.RankRules;
 import com.drive.drive_manager.simulator.room.ActionType;
-import com.drive.drive_manager.simulator.room.CardSlot;
 import com.drive.drive_manager.simulator.room.DeckLoader;
 import com.drive.drive_manager.simulator.room.GameAction;
 import com.drive.drive_manager.simulator.room.GameRoom;
 import com.drive.drive_manager.simulator.room.GameStateUpdate;
-import com.drive.drive_manager.simulator.room.PlayerState;
 import com.drive.drive_manager.simulator.room.RoomCopy;
 import com.drive.drive_manager.simulator.room.RoomEngine;
 import com.drive.drive_manager.simulator.room.RoomService;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -23,9 +18,11 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
 /**
- * The rooms played against the bot: the bot's seat, its deck, and when it moves. After each action in the room the
- * bot is woken; it waits a moment (so the player sees each of its moves on the board) and sends its next move
- * through the room service, as a player would, until it has nothing to do.
+ * The rooms played against the bot, on the server: the bot's seat, its deck, the owner's settings and what one move of a
+ * bot is are the room session's ({@link RoomBots}, common with the game in the browser); here are the bot players of each
+ * room and when they move. After each action in the room the bot is woken; it waits a moment (so the player sees each of
+ * its moves on the board), thinks on a copy of the room on the bots' threads and sends its next move through the room
+ * service, as a player would, until it has nothing to do.
  */
 public final class BotRooms {
 
@@ -51,106 +48,53 @@ public final class BotRooms {
         this.service = service;
     }
 
+    /** What the room session's bots ask of the server: the bot players of each room, the ladder, the instance ids. */
+    private final RoomBots.Roster roster = new RoomBots.Roster() {
+        @Override
+        public void newBot(GameRoom room, String level) {
+            bots.put(room.getRoomId(), BotCatalog.botAt(level));
+        }
+
+        /** The owner's strength in the ranked ladder (a new player's when there is no ladder: tests). */
+        @Override
+        public int ownerStrength(GameRoom room) {
+            return service.ranks == null || room.getHostId() == null ? RankRules.START_MMR : service.ranks.of(room.getHostId()).mmr();
+        }
+
+        @Override
+        public String nextInstanceId() {
+            return DeckLoader.newInstanceId();
+        }
+
+        @Override
+        public void dropBot(GameRoom room) {
+            bots.remove(room.getRoomId());
+        }
+
+        @Override
+        public void newSelfBot(GameRoom room, String level) {
+            selfBots.put(room.getRoomId(), BotCatalog.botAt(level));
+        }
+
+        @Override
+        public void dropSelfBot(GameRoom room) {
+            selfBots.remove(room.getRoomId());
+        }
+    };
+
     /** Seats the bot in a new room against it. */
     public void seat(GameRoom room) {
-        room.setBot(true);
-        PlayerState seat = new PlayerState(BOT, BotCatalog.nameOf(room.getBotLevel()));
-        seat.setConnected(true);
-        room.getPlayers().put(BOT, seat);
-        bots.put(room.getRoomId(), BotCatalog.botAt(room.getBotLevel()));
-        if (room.isRanked()) rankedBot(room);
+        RoomBots.seat(room, roster);
     }
 
-    /** The owner's strength in the ranked ladder (a new player's when there is no ladder: tests). */
-    private int ownerStrength(GameRoom room) {
-        return service.ranks == null || room.getHostId() == null ? RankRules.START_MMR : service.ranks.of(room.getHostId()).mmr();
-    }
-
-    /** The owner chooses the bot's level before the game (in the Sala de pruebas, at any moment) ("level": easy, normal or hard); a new bot takes the seat. */
-    public GameStateUpdate setLevel(GameRoom room, String userId, GameAction action) {
-        String level = action.getString("level");
-        if ("self".equals(action.getString("side"))) return setSelfLevel(room, userId, level);
-        if (!room.isBot() && !room.isEditorBot()) return GameStateUpdate.error(room.getRoomId(), "Esta sala no es contra el bot");
-        if (!userId.equals(room.getHostId())) return GameStateUpdate.error(room.getRoomId(), "Solo el dueño de la sala elige el nivel del bot");
-        if (room.isRanked()) return GameStateUpdate.error(room.getRoomId(), "En una partida ranked el nivel del bot lo da tu rango");
-        if (!room.isEditor() && room.getStatus() != GameRoom.RoomStatus.WAITING) return GameStateUpdate.error(room.getRoomId(), "El nivel se elige antes de empezar la partida");
-        if (level == null || !BotCatalog.LEVELS.contains(level)) return GameStateUpdate.error(room.getRoomId(), "Ese nivel no existe");
-        room.setBotLevel(level);
-        bots.put(room.getRoomId(), BotCatalog.botAt(level));
-        if (room.isBot() && room.getPlayer(BOT) != null) room.getPlayer(BOT).setUsername(BotCatalog.nameOf(level));
-        return GameStateUpdate.from(room, ActionType.SET_BOT_LEVEL, userId);
-    }
-
-    /** Sala de pruebas: the level or model of the bot that plays the owner's side (kept for when it is switched on). */
-    private GameStateUpdate setSelfLevel(GameRoom room, String userId, String level) {
-        if (!room.isEditor()) return GameStateUpdate.error(room.getRoomId(), "Solo en la sala de pruebas un bot juega tu lado");
-        if (!userId.equals(room.getHostId())) return GameStateUpdate.error(room.getRoomId(), "Solo el dueño de la sala elige el nivel del bot");
-        if (level == null || !BotCatalog.LEVELS.contains(level)) return GameStateUpdate.error(room.getRoomId(), "Ese nivel no existe");
-        room.setSelfBotLevel(level);
-        if (room.isEditorSelfBot()) selfBots.put(room.getRoomId(), BotCatalog.botAt(level));
-        return GameStateUpdate.from(room, ActionType.SET_BOT_LEVEL, userId);
-    }
-
-    /**
-     * The owner makes the game ranked ("ranked": true) or friendly, before it starts (not in a test room). Ranked: who
-     * goes first is drawn and, against the bot, it plays the owner's deck at the level of their strength (MMR).
-     */
-    public GameStateUpdate setRanked(GameRoom room, String userId, GameAction action) {
-        if (room.isEditor()) return GameStateUpdate.error(room.getRoomId(), "La sala de pruebas no es ranked");
-        if (!userId.equals(room.getHostId())) return GameStateUpdate.error(room.getRoomId(), "Solo el dueño de la sala elige el tipo de partida");
-        if (room.getStatus() != GameRoom.RoomStatus.WAITING) return GameStateUpdate.error(room.getRoomId(), "El tipo de partida se elige antes de empezar");
-        if (!room.getReserved().isEmpty()) return GameStateUpdate.error(room.getRoomId(), "Una partida de la cola ranked siempre es ranked");
-        boolean ranked = action.getBoolean("ranked", false);
-        room.setRanked(ranked);
-        room.getPlayers().values().forEach(p -> { if (!BOT.equals(p.getUserId())) p.setReady(false); });
-        if (ranked) {
-            room.setFirstChoice("random");
-            if (room.isBot()) rankedBot(room);
-        } else if (room.isBot()) {
-            room.setBotEdge(0);
-        }
-        return GameStateUpdate.from(room, ActionType.SET_RANKED, userId);
-    }
-
-    /** Ranked against the bot: it plays at the level of the owner's strength (MMR) with a copy of their deck. */
-    private void rankedBot(GameRoom room) {
-        int strength = ownerStrength(room);
-        String level = BotCatalog.levelFor(strength);
-        room.setBotLevel(level);
-        room.setBotEdge(BotCatalog.HARD.equals(level) ? BotEdge.levelFor(strength) : 0);
-        bots.put(room.getRoomId(), BotCatalog.botAt(level));
-        PlayerState bot = room.getPlayer(BOT);
-        PlayerState owner = room.getPlayer(room.getHostId());
-        if (bot == null) return;
-        bot.setUsername(BotCatalog.nameOf(level));
-        bot.setDeckId(null);
-        bot.setDeckName(null);
-        bot.setDeck(new ArrayList<>());
-        bot.setOriginalDeck(new ArrayList<>());
-        bot.setStarterCardId(null);
-        // Its own instances of the owner's cards (sharing their ids, the board and the engine would mix the two sides up),
-        // without the owner's finishes
-        if (owner != null && owner.getDeckId() != null && owner.getOriginalDeck() != null) {
-            List<CardSlot> copy = DeckLoader.freshCopy(owner.getOriginalDeck());
-            copy.forEach(c -> c.setFinish(null));
-            mirrorDeck(room, owner, copy);
-        }
+    /** The owner's settings of the room's bots (RoomHost.botSetting): level, ranked, the test room's bots, pace, edge. */
+    public GameStateUpdate setting(ActionType type, GameRoom room, String userId, GameAction action) {
+        return RoomBots.setting(type, room, userId, action, roster);
     }
 
     /** The owner sets up the bot's side (its deck or starter) with this action. */
     public static boolean forBot(GameRoom room, GameAction action) {
         return BotSeat.forBot(room, action);
-    }
-
-    /** The bot plays the owner's deck until they choose another one for it (ranked: always the owner's deck). */
-    public void mirrorDeck(GameRoom room, PlayerState owner, List<CardSlot> deck) {
-        PlayerState bot = room.isBot() ? room.getPlayer(BOT) : null;
-        if (bot == null || bot.getDeckId() != null && !room.isRanked() || owner.getUserId().equals(BOT)) return;
-        bot.setDeckId(owner.getDeckId());
-        bot.setDeckName(owner.getDeckName());
-        bot.setDeck(new ArrayList<>(deck));
-        bot.setOriginalDeck(PreRoomActions.deepCopySlots(deck));
-        bot.setStarterCardId(deck.stream().filter(CardSlot::isStarter).map(CardSlot::getCardId).findFirst().orElse(null));
     }
 
     /** The game changed under the bots (the Sala de pruebas went back or forth in time): they start afresh on it. */
@@ -212,14 +156,14 @@ public final class BotRooms {
             GameRoom copy;
             long version;
             synchronized (live) {
-                if (!mayMove(live)) return;
+                if (!RoomBots.mayMove(live)) return;
                 version = live.getVersion();
                 copy = RoomCopy.of(live, new GameRandom(chance.nextLong()));
             }
             GameAction action = bot.next(copy, seat);
             if (action == null) return;
             synchronized (live) {
-                if (service.liveRoom(roomId) != live || live.getVersion() != version || !mayMove(live)) {
+                if (service.liveRoom(roomId) != live || live.getVersion() != version || !RoomBots.mayMove(live)) {
                     again = true;
                     return;
                 }
@@ -231,7 +175,7 @@ public final class BotRooms {
                     again = true;
                 } else if (misses.merge(bot, 1, Integer::sum) >= BotPlayer.MAX_ATTEMPTS) {
                     misses.remove(bot);
-                    concede(live, seat);
+                    RoomBots.concede(live, a -> apply(live, seat, a), u -> broadcast(live, u));
                 } else {
                     bot.refused(action, update.getError());
                     again = true;
@@ -243,12 +187,6 @@ public final class BotRooms {
             bot.releaseWake();
         }
         if (again) wake(roomId);
-    }
-
-    /** The bots may play in the room now: not paused, and in a test room only the game itself (not the pre-room nor its end). */
-    private static boolean mayMove(GameRoom room) {
-        if (room.isPaused()) return false;
-        return !room.isEditor() || (room.getStatus() != GameRoom.RoomStatus.WAITING && room.getStatus() != GameRoom.RoomStatus.POST_GAME);
     }
 
     private synchronized ScheduledExecutorService clock() {
@@ -264,41 +202,20 @@ public final class BotRooms {
     }
 
     /**
-     * One move of the bot, sent to the room. A move the engine refuses is told to the bot, which then tries another
-     * one; a bot that runs out of moves concedes, so a game never waits for it forever. False: it had nothing to do.
+     * One move of the bot, sent to the room ({@link RoomBots#move}: a refused move is told to the bot, which tries another
+     * one; a bot that runs out of moves concedes). False: it had nothing to do (or conceded).
      */
     boolean move(GameRoom room, BotPlayer bot) {
         return move(room, bot, seatOf(room));
     }
 
     private boolean move(GameRoom room, BotPlayer bot, String seat) {
-        String roomId = room.getRoomId();
-        // Sala de pruebas: the owner confirms for both sides and chooses after the game, so the bot only plays the game
-        if (!mayMove(room)) return false;
-        for (int attempt = 0; attempt < BotPlayer.MAX_ATTEMPTS; attempt++) {
-            GameAction action = bot.next(room, seat);
-            if (action == null) return false;
-            GameStateUpdate update = apply(room, seat, action);
-            if (update == null || update.getError() == null) {
-                bot.played(room, action);
-                service.broadcast(roomId, update);
-                return true;
-            }
-            bot.refused(action, update.getError());
-        }
-        concede(room, seat);
-        return false;
+        return RoomBots.move(room, bot, seat, a -> apply(room, seat, a), u -> broadcast(room, u)) == RoomBots.Move.MOVED;
     }
 
-    /** A bot out of valid moves concedes (a game never waits for it forever). */
-    private void concede(GameRoom room, String seat) {
-        GameStateUpdate update = apply(room, seat, BotPlayer.action(ActionType.SURRENDER, Map.of()));
-        if (update != null && update.getError() == null) {
-            update.setLogEntry("El bot no encontró una jugada válida y se rindió");
-            service.recordLog(room, update);
-            update.setEventLog(new ArrayList<>(room.getEventLog()));
-            service.broadcast(room.getRoomId(), update);
-        }
+    private kotlin.Unit broadcast(GameRoom room, GameStateUpdate update) {
+        service.broadcast(room.getRoomId(), update);
+        return kotlin.Unit.INSTANCE;
     }
 
     /** The seat the bot plays: its own in a room against it, the test rival's in a test room (Sala de pruebas) it plays. */
@@ -318,63 +235,6 @@ public final class BotRooms {
     public static GameStateUpdate applyAs(RoomService engine, GameRoom room, String seat, GameAction action) {
         if (!room.isEditor() || seat.equals(room.getHostId())) return engine.applyAction(room.getRoomId(), seat, action, false);
         return engine.applyAction(room.getRoomId(), room.getHostId(), RoomEngine.asRival(action), false);
-    }
-
-    /**
-     * Sala de pruebas: the owner has the bot play the test rival's side ("on": true) or plays it again by hand (false), at
-     * any moment (on, it takes the rival's next decision: the service wakes it after every action); the bot plays at the room's level or model, and everything stays in view as in any test room.
-     */
-    public GameStateUpdate setEditorBot(GameRoom room, String userId, GameAction action) {
-        if (!room.isEditor()) return GameStateUpdate.error(room.getRoomId(), "Solo en la sala de pruebas el bot juega el lado del rival");
-        if (!userId.equals(room.getHostId())) return GameStateUpdate.error(room.getRoomId(), "Solo el dueño de la sala decide quién juega el rival");
-        boolean on = Boolean.TRUE.equals(action.getPayload() == null ? null : action.getPayload().get("on"));
-        room.setEditorBot(on);
-        if (on) bots.put(room.getRoomId(), BotCatalog.botAt(room.getBotLevel()));
-        else bots.remove(room.getRoomId());
-        return GameStateUpdate.from(room, ActionType.SET_EDITOR_BOT, userId);
-    }
-
-    /**
-     * Sala de pruebas: a bot plays the owner's own side too ("on": true), at the level or model "selfBotLevel", so the owner
-     * watches two bots play; off, they play it by hand again. At any moment.
-     */
-    public GameStateUpdate setEditorSelfBot(GameRoom room, String userId, GameAction action) {
-        if (!room.isEditor()) return GameStateUpdate.error(room.getRoomId(), "Solo en la sala de pruebas un bot juega tu lado");
-        if (!userId.equals(room.getHostId())) return GameStateUpdate.error(room.getRoomId(), "Solo el dueño de la sala decide quién juega su lado");
-        boolean on = Boolean.TRUE.equals(action.getPayload() == null ? null : action.getPayload().get("on"));
-        if (on && !room.getAdminPlayers().contains(userId))
-            return GameStateUpdate.error(room.getRoomId(), "Solo un administrador del simulador puede hacer que un bot juegue su lado");
-        room.setEditorSelfBot(on);
-        if (on) selfBots.put(room.getRoomId(), BotCatalog.botAt(room.getSelfBotLevel()));
-        else selfBots.remove(room.getRoomId());
-        return GameStateUpdate.from(room, ActionType.SET_EDITOR_SELF_BOT, userId);
-    }
-
-    /** The pause before each move of the room's bots, in ms ("ms"; null or below 0: each bot's own); at any moment. */
-    public GameStateUpdate setDelay(GameRoom room, String userId, GameAction action) {
-        String refused = pace(room, userId, action);
-        return refused != null ? GameStateUpdate.error(room.getRoomId(), refused) : GameStateUpdate.from(room, ActionType.SET_BOT_DELAY, userId);
-    }
-
-    /**
-     * Sets the pace, with no need of the room's lock (a bot may be thinking with it held): it changes no game state,
-     * only how long the next pause is. The refusal, or null.
-     */
-    public String pace(GameRoom room, String userId, GameAction action) {
-        if (!room.isEditor() && !room.isBot()) return "Esta sala no tiene bots";
-        if (!userId.equals(room.getHostId())) return "Solo el dueño de la sala elige el ritmo de los bots";
-        Object ms = action.getPayload() == null ? null : action.getPayload().get("ms");
-        room.setBotDelayMs(ms instanceof Number n && n.intValue() >= 0 ? Math.min(10_000, n.intValue()) : null);
-        return null;
-    }
-
-    /** A test room's owner gives its rival's side an edge, 0–8 (BotEdge); it applies from the next turn on. */
-    public GameStateUpdate setEdge(GameRoom room, String userId, GameAction action) {
-        if (!room.isEditor()) return GameStateUpdate.error(room.getRoomId(), "La ventaja del bot se elige solo en la sala de pruebas");
-        if (!userId.equals(room.getHostId())) return GameStateUpdate.error(room.getRoomId(), "Solo el dueño de la sala elige la ventaja del bot");
-        Object level = action.getPayload() == null ? null : action.getPayload().get("level");
-        room.setBotEdge(BotEdge.clamp(level instanceof Number n ? n.intValue() : 0));
-        return GameStateUpdate.from(room, ActionType.SET_BOT_EDGE, userId);
     }
 
     /** Plays the bots' moves right away until they have none (tests: no pause, no thread). Returns how many they made. */

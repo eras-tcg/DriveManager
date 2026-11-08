@@ -1,6 +1,7 @@
 package com.drive.drive_manager.simulator.room
 
 import kotlin.jvm.JvmStatic
+import com.drive.drive_manager.simulator.bot.BotSeat
 import com.drive.drive_manager.simulator.engine.frozenSetOf
 import com.drive.drive_manager.simulator.engine.GameEvent
 import com.drive.drive_manager.simulator.engine.Prompt
@@ -17,8 +18,8 @@ import com.drive.drive_manager.simulator.engine.Prompt
  * A test room is played by its owner on both sides: it is sent whole. A player who may fix the board by hand (a site
  * editor) also sees their own deck and lives, which the manual actions work on.
  *
- * Only the rule of what each one sees: sending it is [RoomMessages]'s (the server's), and a game in the browser
- * uses the same rule.
+ * Only the rule of what each one sees and who is sent it ([recipients]): sending it is [RoomMessages]'s (the server's),
+ * and a game in the browser uses the same rules.
  */
 object StateMask {
 
@@ -52,6 +53,24 @@ object StateMask {
         val eventLog = update.eventLog
         if (eventLog != null) view.eventLog = eventLog.mapTo(ArrayList(eventLog.size)) { e -> redact(e, hidden) }
         return view
+    }
+
+    /**
+     * Who is sent an update (each their own [forViewer] of it): an error only who caused it (as it is); any other
+     * update the room's players, who caused it and who it is about (a player who just left or was taken out still
+     * gets the update that says so), never the test room's rival nor the bot. A replay is only its viewer's. `room` is
+     * null once it is closed: its last update still names who was in it.
+     */
+    @JvmStatic
+    fun recipients(room: GameRoom?, update: GameStateUpdate): Set<String> {
+        if (update.error != null) return if (update.actorId == null) emptySet() else setOf(update.actorId!!)
+        val viewers = LinkedHashSet<String>()
+        if (room != null && room.replay) room.hostId?.let { viewers.add(it) } else update.players?.let { viewers.addAll(it.keys) }
+        update.actorId?.let { viewers.add(it) }
+        update.subjectUserId?.let { viewers.add(it) }
+        viewers.remove(RoomEngine.EDITOR_RIVAL)
+        viewers.remove(BotSeat.BOT)
+        return viewers
     }
 
     /** The cards a player chooses from in the mulligan (PreRoomActions.handleConfirmMulligan). */

@@ -98,7 +98,8 @@ server), `SET_BOT_LEVEL`, `SET_READY`, `CONFIRM_MULLIGAN`, the game's actions, `
   Java writes them (`50.0`), strings escaped as Jackson escapes them. `UpdateJson.PROPERTIES` lists each class's properties;
   drive_manager's `LocalMatchParityTest` checks them against Jackson's own.
 - What the player sees of it is `StateMask.forViewer(update, player, manual = false)` (the rival's hand, decks, face-down
-  cards and choices are backs, as online); `RoomMessages.send`'s rules decide whether they get it at all.
+  cards and choices are backs, as online); `StateMask.recipients` (which the server's `RoomMessages.send` uses too) decides
+  whether they get it at all.
 - An action the rules refuse answers with an error update (`roomId`, `error`, `actorId` = the player; every other
   property null/false/0), sent only to the player. An accepted `SET_BOT_DELAY` sends nothing (it shows in the next
   update), a refused one its error. A body the server could not read (not JSON, a payload that is not an object) sends
@@ -169,6 +170,23 @@ package (`@eras/engine/card-bundle.json`…): the site can copy them as assets o
 | The same bundled and minified by esbuild (as Angular's build does), `EngineApi` and `LocalMatch` | 853 KB | 253 KB |
 | `card-bundle.json` | 918 KB | 70 KB |
 | `bot-resources.json`, `starter-decks.json` | 6 KB, 80 KB | 1 KB, 7 KB |
+
+### The room session: one copy of the room logic
+
+The rules of a room that are neither the game's actions nor the server's plumbing live once, in common code, and both
+the server and `LocalMatch` call them (each through a small interface for what only it knows):
+
+| Common (eras-engine) | What | Asks of its host | Server (drive_manager, Java) | Browser (`LocalRoom`) |
+|---|---|---|---|---|
+| `room/RoomSeats` | join and reconnect, leave, kick, close, a player taken out (`remove`), the ownership passed on, a ranked game against the bot lost by leaving, their messages | `Keeper`: `dress` (icon, playmat), `closed`, `forgetSessions` | `RoomMembership`: profiles, the registry; keeps sessions dropping, test room, the sweeps (abandons, owner gone) with missions and recording | the match's avatar/playmat; `closed` ends the room |
+| `room/DeckChoice` | `SET_DECK` from a deck found by id (guards, unprogrammed cards, the bot's mirrored copy), `REFRESH_CARD_METADATA`, `freshCopy`, `unprogrammedIn`, the walk over every copy of a card | `Shelf`: `find` (name, private, owner, slots), `nextInstanceId`, `refusal` (collection), `withFinishes`, `refresh` | `RoomDecks` (Mongo via `DeckLoader`, missions' collection and finishes, UUIDs) | `LocalDecks`, ids `c1`, `c2`… |
+| `bot/RoomBots` | the bot's seat, every bot setting (level, ranked with the copy of the owner's deck, the test room's bots, pace, edge), `paceAtOnce`, `mayMove`, one move of a bot (`move`: refusals, conceding after `MAX_ATTEMPTS`), `concede` | `Roster`: `newBot`, `ownerStrength`, `nextInstanceId`, the test room's `dropBot`/`newSelfBot`/`dropSelfBot` | `BotRooms`: the bot players by room, wake/think on the bots' threads, `playNow` | one seeded bot, a new player's strength |
+| `room/StateMask.recipients` | who is sent an update (error: who caused it) | | `RoomMessages` (STOMP, one message per tab) | the one player |
+| `room/RoomEngine.blamed` | an error tagged with who caused it | | `RoomService.applyAction` | `LocalRoom.applyAction` |
+
+What stays server-only: Spring, Mongo lookups, the registry and its locks, the bots' scheduling and thinking on copies,
+STOMP sending, sessions and sweeps, missions, match history and ranks, replays and the test room's timeline. What stays in
+`LocalMatch`/`LocalRoom`: the JSON in and out, the clocks, the closed flag, the match's decks and placeholder ids.
 
 ### What makes it the server's game
 
