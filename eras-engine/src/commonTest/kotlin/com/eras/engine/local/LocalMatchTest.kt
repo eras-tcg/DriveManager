@@ -37,6 +37,27 @@ class LocalMatchTest {
         assertNull(game.match.lastError())
         assertEquals(GameRoom.RoomStatus.POST_GAME, game.status, "the game ends")
         assertEquals(EXPECTED[name], game.digest, name)
+        // What an offline game claims: the same on both platforms, without the clock's times
+        val result = game.match.result()
+        println("$name result: $result")
+        assertEquals(EXPECTED_RESULT[name], result, name)
+    }
+
+    @Test
+    fun theDigestLeavesTheClockOut() {
+        TestCards.install()
+        fun play(time: String): String {
+            val match = LocalMatch(LocalGames.config(4).replace("\"time\":0", "\"time\":$time"))
+            match.send(LocalGames.body("JOIN_ROOM", mapOf("username" to "Ana")))
+            match.send(LocalGames.body("SET_DECK", mapOf("deckId" to "deck-st1")))
+            match.playBot()
+            match.send(LocalGames.body("SET_READY", mapOf("ready" to true)))
+            match.playBot()
+            return match.result()
+        }
+        val early = play("1000")
+        assertEquals(early, play("1767225600000"))
+        assertTrue(early.contains("\"gamesEnded\":0"), early)
     }
 
     @Test
@@ -103,6 +124,14 @@ class LocalMatchTest {
     }
 
     companion object {
+        /** LocalMatch.result() at the end of each game: taken on the JVM; JavaScript must give the same. */
+        val EXPECTED_RESULT = mapOf(
+            "st1-st1-1-easy" to "{\"status\":\"POST_GAME\",\"gamesEnded\":1,\"winnerId\":\"local-player\",\"endReason\":\"lives\",\"turns\":16,\"digest\":\"ee7a64e2429505ee\"}",
+            "st2-st3-2-easy" to "{\"status\":\"POST_GAME\",\"gamesEnded\":1,\"winnerId\":\"local-player\",\"endReason\":\"lives\",\"turns\":17,\"digest\":\"2810ac77b1be5505\"}",
+            "st4-st1-3-easy" to "{\"status\":\"POST_GAME\",\"gamesEnded\":1,\"winnerId\":\"local-player\",\"endReason\":\"lives\",\"turns\":12,\"digest\":\"07b16f261386427e\"}",
+            "st3-st4-5-normal" to "{\"status\":\"POST_GAME\",\"gamesEnded\":1,\"winnerId\":\"bot\",\"endReason\":\"lives\",\"turns\":11,\"digest\":\"71b04a9fecf39937\"}",
+        )
+
         /** Taken on the JVM; JavaScript must give the same. */
         val EXPECTED = mapOf(
             "st1-st1-1-easy" to "7d9b9d3e9ad86f43",

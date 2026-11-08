@@ -4,6 +4,7 @@ import com.drive.drive_manager.service.ActivityLogService;
 import com.drive.drive_manager.service.CollectionRules;
 import com.drive.drive_manager.service.CollectionService;
 import com.drive.drive_manager.service.MissionService;
+import com.drive.drive_manager.service.ProgressionRules;
 import com.drive.drive_manager.service.ProgressionService;
 import com.drive.drive_manager.simulator.room.CardSlot;
 import com.drive.drive_manager.simulator.room.GameRoom;
@@ -51,11 +52,21 @@ public class MissionHooks {
      * ended, for the activity log (never stops the game).
      */
     public void count(GameRoom room, Before before) {
-        GameActivity.log(activityLog, room, before.status(), before.players());
+        count(room, before, Map.of());
+    }
+
+    /**
+     * The same, for a game the server did not host: an offline game against the bot, played again on the server
+     * (OfflineGames), counted exactly as the server counts its own games against the bot (missions and progression
+     * included); `extra` goes into its activity log's detail.
+     */
+    public void count(GameRoom room, Before before, Map<String, Object> extra) {
+        GameActivity.log(activityLog, room, before.status(), before.players(), extra);
         if (missions == null && progression == null) return;
         try {
             for (MissionEvents.Progress p : MissionEvents.of(room, before.status(), before.seq())) {
-                if (missions != null) missions.record(p.userId(), p.counts(), p.amount());
+                // A game against the bot is a mission's game like any other: its own counter is the progression's
+                if (missions != null && !ProgressionRules.BOT_GAME_PLAYED.equals(p.counts())) missions.record(p.userId(), p.counts(), p.amount());
                 if (progression != null) progression.record(p.userId(), p.counts(), p.amount());
             }
         } catch (RuntimeException e) {

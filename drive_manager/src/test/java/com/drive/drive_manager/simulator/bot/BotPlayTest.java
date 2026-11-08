@@ -238,7 +238,7 @@ class BotPlayTest {
         assertThat(service.applyAction(id, "other", BotPlayer.action("JOIN_ROOM", Map.of("username", "Beto")), false).getError()).isNotNull();
         assertThat(service.applyAction(id, "owner", BotPlayer.action("KICK_PLAYER", Map.of("userId", BotRooms.BOT)), false).getError())
                 .contains("bot");
-        // A game against the bot counts no missions
+        // The pre-room counts no missions (a game against the bot counts once played: BotGameMissionsTest)
         assertThat(MissionEvents.of(room, GameRoom.RoomStatus.WAITING, -1)).isEmpty();
     }
 

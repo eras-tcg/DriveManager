@@ -100,6 +100,8 @@ val cardResources by tasks.registering(Sync::class) {
     into(layout.buildDirectory.dir("generated/cardResources"))
     from("cards") { include("**/*.json"); into("cards") }
     from(cardBundle) { into("eras") }
+    // The starter decks as LocalMatch reads them: the server plays offline games again with them (OfflineGames)
+    from(starterDecks) { into("eras") }
 }
 kotlin {
     // The core's platform seam (simulator/platform) is expect/actual classes
