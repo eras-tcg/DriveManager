@@ -21,9 +21,6 @@ public interface OfflineGameStore {
     /** Whether this player already has an accepted game with this seed and game number (the same game under another id). */
     boolean acceptedGame(String userId, String seed, int gameNumber);
 
-    /** This player's accepted games since then. */
-    long accepted(String userId, Instant since);
-
     /** This player's games played again since then (accepted and rejected). */
     long replayed(String userId, Instant since);
 

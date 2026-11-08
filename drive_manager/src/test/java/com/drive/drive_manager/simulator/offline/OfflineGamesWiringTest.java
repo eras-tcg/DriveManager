@@ -24,7 +24,7 @@ class OfflineGamesWiringTest {
                 .run(context -> {
                     assertThat(context).hasNotFailed().hasSingleBean(OfflineGameController.class);
                     OfflineGames.Rules rules = context.getBean(OfflineGames.class).rules();
-                    assertThat(rules.dailyCap()).isEqualTo(20);
+                    assertThat(rules.dailyReplays()).isEqualTo(200);
                     assertThat(rules.windowDays()).isEqualTo(30);
                     assertThat(rules.tickNanos()).isEqualTo(1_000_000L);
                 });

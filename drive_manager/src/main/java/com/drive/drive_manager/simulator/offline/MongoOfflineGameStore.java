@@ -61,12 +61,6 @@ public class MongoOfflineGameStore implements OfflineGameStore {
     }
 
     @Override
-    public long accepted(String userId, Instant since) {
-        return mongo.count(Query.query(Criteria.where("userId").is(userId).and("status").is(OfflineGames.ACCEPTED)
-                .and("at").gte(Date.from(since))), COLLECTION);
-    }
-
-    @Override
     public long replayed(String userId, Instant since) {
         return mongo.count(Query.query(Criteria.where("userId").is(userId).and("at").gte(Date.from(since))), COLLECTION);
     }

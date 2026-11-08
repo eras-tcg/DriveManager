@@ -1,5 +1,6 @@
 package com.drive.drive_manager.simulator.offline;
 
+import com.drive.drive_manager.service.ProgressionRules;
 import com.drive.drive_manager.simulator.mission.MissionEvents;
 import com.drive.drive_manager.simulator.mission.MissionHooks;
 import com.drive.drive_manager.simulator.replay.MatchHistory;
@@ -38,13 +39,15 @@ import java.util.regex.Pattern;
  *   <li>its shape is bounded (actions, the bot's moves, each action's size) and its time plausible (started within
  *       {@code windowDays} days, not in the future);</li>
  *   <li>it is new: the same id, or an accepted game with the same seed and game number, answers "duplicate";</li>
- *   <li>the player is under today's caps: accepted games ({@code dailyCap}) and games played again ({@code dailyReplays});</li>
+ *   <li>the server is not overloaded by this player: games looked at today under {@code dailyReplays} (a generous guard
+ *       against a client sending junk; over it the game is "retry", kept by the site and sent again, never lost). There
+ *       is no cap on the games accepted: every honest game counts;</li>
  *   <li>every deck it chose is legal for the player, made from the server's data ({@link OfflineDecks});</li>
  *   <li>the engine on the server ({@link OfflineReplay}: LocalMatch on the JVM, the bot moved as the browser moved it)
  *       reaches the post-game with the claimed game number, winner, end, turns and digest, within {@code budgetMs};</li>
  * </ol>
  * then it is credited by the server's own path for a game that ends ({@link MissionHooks#count}: missions, progression
- * and the activity log, which for a game against the bot is what the server counts for it) and kept in the match
+ * and the activity log, exactly what the server counts for its own games against the bot) and kept in the match
  * history flagged {@code offline} ({@link MatchHistory#saveOffline}). Never ranked. At most {@code concurrentReplays}
  * games are played again at once on the server; a player who finds it busy is told to send it later.
  */
@@ -57,7 +60,7 @@ public class OfflineGames {
     public static final String ACCEPTED = "accepted";
     public static final String DUPLICATE = "duplicate";
     public static final String REJECTED = "rejected";
-    /** Not decided now (the server is busy, or today's replays are spent): the site keeps it and sends it again later. */
+    /** Not decided now (the server is busy, or this player's replays of the day are spent): the site keeps it and sends it again later. */
     public static final String RETRY = "retry";
 
     private static final Pattern ID = Pattern.compile("[A-Za-z0-9-]{8,64}");
@@ -67,10 +70,10 @@ public class OfflineGames {
     static final Duration CLOCK_SKEW = Duration.ofMinutes(10);
 
     /** The limits (application properties {@code offline-games.*}). */
-    public record Rules(int dailyCap, int dailyReplays, int windowDays, int maxActions, int maxBotMoves, int maxActionChars,
+    public record Rules(int dailyReplays, int windowDays, int maxActions, int maxBotMoves, int maxActionChars,
                         long budgetMs, int concurrentReplays, long busyWaitMs, long tickNanos) {
         public static Rules defaults() {
-            return new Rules(20, 40, 30, 5000, 20000, 8192, 120_000, 1, 20_000, LocalMatch.DEFAULT_TICK_NANOS);
+            return new Rules(200, 30, 5000, 20000, 8192, 120_000, 1, 20_000, LocalMatch.DEFAULT_TICK_NANOS);
         }
     }
 
@@ -79,8 +82,8 @@ public class OfflineGames {
     }
 
     /**
-     * What an accepted game counted: whether the player won, its turns, the missions' progress it made for them (the same
-     * the server counts for its own games against the bot) and its entry in the match history.
+     * What an accepted game counted: whether the player won, its turns, the missions' and progression's progress it made
+     * for them (the same the server counts for its own games against the bot) and its entry in the match history.
      */
     public record Credit(boolean won, int turns, List<MissionEvents.Progress> progress, String matchId) {
     }
@@ -97,15 +100,14 @@ public class OfflineGames {
     @Autowired
     public OfflineGames(OfflineDecks decks, OfflineGameStore store, ObjectProvider<MissionHooks> hooks,
                         ObjectProvider<MatchHistory> history,
-                        @Value("${offline-games.daily-cap:20}") int dailyCap,
-                        @Value("${offline-games.daily-replays:40}") int dailyReplays,
+                        @Value("${offline-games.daily-replays:200}") int dailyReplays,
                         @Value("${offline-games.window-days:30}") int windowDays,
                         @Value("${offline-games.max-actions:5000}") int maxActions,
                         @Value("${offline-games.max-bot-moves:20000}") int maxBotMoves,
                         @Value("${offline-games.replay-budget-ms:120000}") long budgetMs,
                         @Value("${offline-games.concurrent-replays:1}") int concurrentReplays,
                         @Value("${wallet.zone:America/Santiago}") String zone) {
-        this(decks, store, hooks.getIfAvailable(), history.getIfAvailable(), new Rules(dailyCap, dailyReplays, windowDays, maxActions, maxBotMoves,
+        this(decks, store, hooks.getIfAvailable(), history.getIfAvailable(), new Rules(dailyReplays, windowDays, maxActions, maxBotMoves,
                 Rules.defaults().maxActionChars(), budgetMs, concurrentReplays, Rules.defaults().busyWaitMs(), Rules.defaults().tickNanos()), ZoneId.of(zone), Instant::now);
     }
 
@@ -148,8 +150,6 @@ public class OfflineGames {
             return new Outcome(id, DUPLICATE, "duplicate", "Esa partida ya estaba registrada", null);
 
         Instant today = LocalDate.ofInstant(now, zone).atStartOfDay(zone).toInstant();
-        if (store.accepted(userId, today) >= rules.dailyCap())
-            return rejected(id, "daily-cap", "Ya registraste " + rules.dailyCap() + " partidas sin conexión hoy");
         if (store.replayed(userId, today) >= rules.dailyReplays())
             return new Outcome(id, RETRY, "daily-replays", "Hoy ya revisamos muchas partidas tuyas: se enviará mañana", null);
 
@@ -202,7 +202,7 @@ public class OfflineGames {
         if (!store.insert(verdict)) return new Outcome(id, DUPLICATE, "duplicate", "Esa partida ya estaba registrada", null);
         List<MissionEvents.Progress> progress = new ArrayList<>();
         for (MissionEvents.Progress p : MissionEvents.of(room, GameRoom.RoomStatus.IN_PROGRESS, replay.gameStartSeq())) {
-            if (userId.equals(p.userId())) progress.add(p);
+            if (userId.equals(p.userId()) && !ProgressionRules.BOT_GAME_PLAYED.equals(p.counts())) progress.add(p);
         }
         if (hooks != null) {
             Map<String, Object> extra = new LinkedHashMap<>();
