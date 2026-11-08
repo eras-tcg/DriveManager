@@ -71,8 +71,8 @@ jobs:
         run: mvn -B -ntp verify
 
   # The Kotlin Multiplatform engine (eras-engine/: the game's core in common Kotlin): its tests on the JVM and on Node,
-  # then its artifact against java.util.Random and Jackson from DriveManager's Java (the kmp-engine profile). The server's
-  # own build (test job, image) builds the engine first.
+  # its npm package (kept as an artifact) and a game played with it, then its artifact against java.util.Random and Jackson
+  # from DriveManager's Java (the kmp-engine profile). The server's own build (test job, image) builds the engine first.
   engine:
     if: github.event_name != 'workflow_dispatch'
     runs-on: ubuntu-latest
@@ -87,6 +87,20 @@ jobs:
       - name: Engine tests (JVM and JavaScript) and publish to the local Maven repository
         working-directory: eras-engine
         run: ./gradlew --no-daemon build publishToMavenLocal
+      # The npm package eras-web will use for games against the bot offline (LocalMatch): ES modules, TypeScript
+      # definitions, the card bundle, the bot's resources and the starter decks; a whole game played with it on Node.
+      # Kept as this run's artifact (not published to any registry).
+      - name: The npm package @eras/engine and a game played with it on Node
+        working-directory: eras-engine
+        run: |
+          ./gradlew --no-daemon jsBrowserProductionLibraryDistribution
+          node js-smoke/smoke.mjs build/dist/js/productionLibrary
+      - name: Keep the npm package
+        uses: actions/upload-artifact@v4
+        with:
+          name: eras-engine-npm
+          path: eras-engine/build/dist/js/productionLibrary
+          if-no-files-found: error
       - name: The engine from DriveManager's Java
         working-directory: drive_manager
         run: mvn -B -ntp -Pkmp-engine test -Dtest='KotlinEngineInteropTest' -Dsurefire.failIfNoSpecifiedTests=false

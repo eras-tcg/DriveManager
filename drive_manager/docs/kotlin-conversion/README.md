@@ -12,6 +12,10 @@ classes not converted yet). Once everything is Kotlin and free of JVM-only APIs 
 >
 > **Done (step C, 2026-11-08):** the card files live in `eras-engine/cards` and are read by the engine's common reader
 > (kotlinx.serialization) on the server and in JavaScript, from one generated card bundle; see "Step C".
+>
+> **Phase 3 (2026-11-08):** a game against the bot runs in the browser as the server runs it (`com.eras.engine.local.LocalMatch`,
+> byte-identical messages checked by `room/LocalMatchParityTest`); see eras-engine's README, "Phase 3". In the core, the
+> clocks are read through `platform/Clocks` and the maps whose order reaches the messages are `Platform.hashMap()`.
 
 ## Converting a file
 
