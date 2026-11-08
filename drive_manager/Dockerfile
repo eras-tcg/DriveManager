@@ -12,6 +12,10 @@ COPY eras-engine/kotlin-js-store ./kotlin-js-store
 COPY eras-engine/src ./src
 # The card files (the one copy of the cards' data): the jar carries them and their bundle
 COPY eras-engine/cards ./cards
+# The starter decks (ST1–ST4) the jar carries for the offline games' check (eras/starter-decks.json, task starterDecks)
+COPY drive_manager/src/test/resources/simulator/st1-cards.json drive_manager/src/test/resources/simulator/st2-cards.json \
+     drive_manager/src/test/resources/simulator/st3-cards.json drive_manager/src/test/resources/simulator/st4-cards.json \
+     /build/drive_manager/src/test/resources/simulator/
 RUN ./gradlew --no-daemon publishToMavenLocal
 
 # Stage 2: the server, with the engine's artifact (com.eras:eras-engine-jvm) from stage 1
