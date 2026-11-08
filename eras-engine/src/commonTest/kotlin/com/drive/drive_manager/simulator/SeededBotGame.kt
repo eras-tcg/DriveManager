@@ -1,7 +1,14 @@
 package com.drive.drive_manager.simulator
 
 import com.drive.drive_manager.simulator.actions.PreRoomActions
+import com.drive.drive_manager.simulator.bot.BotPlayer
+import com.drive.drive_manager.simulator.bot.BotResourceSources
+import com.drive.drive_manager.simulator.bot.BotSettings
+import com.drive.drive_manager.simulator.bot.LookaheadBot
+import com.drive.drive_manager.simulator.bot.Usefulness
+import com.drive.drive_manager.simulator.platform.Clocks
 import com.drive.drive_manager.simulator.bot.HeuristicBot
+import com.eras.engine.local.BotResources
 import com.drive.drive_manager.simulator.engine.CardEffects
 import com.drive.drive_manager.simulator.engine.CardSources
 import com.drive.drive_manager.simulator.engine.cards.BundleCardSource
@@ -21,7 +28,10 @@ import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 
-/** The cards of the build's bundle, installed once as the core's card source (before the engine first reads them). */
+/**
+ * The cards of the build's bundle, installed once as the core's card source (before the engine first reads them), and the
+ * bot's resources (drive_manager's, as the server's bot reads them) before the bot first reads them.
+ */
 object TestCards {
     private var installed = false
 
@@ -29,6 +39,7 @@ object TestCards {
         if (installed) return
         installed = true
         CardSources.install(BundleCardSource(TestFiles.text("ERAS_CARD_BUNDLE")))
+        BotResourceSources.install(BotResources(TestFiles.text("ERAS_BOT_RESOURCES")))
         CardEffects.load()
     }
 }
@@ -46,6 +57,27 @@ object SeededBotGame {
     class Result(val room: GameRoom, val log: List<String>, val fingerprint: String)
 
     fun play(hostDeck: String, guestDeck: String, seed: Long): Result {
+        val bot = HeuristicBot()
+        bot.seed(seed)
+        return play(hostDeck, guestDeck, seed, mapOf("host" to bot, "guest" to bot))
+    }
+
+    /**
+     * The same with a look-ahead bot on each side (the server's bot, with the default settings and no trained model),
+     * seeded (BotMatch's seeds: seed × 31 + 1 and + 2), its time counted in clock readings (20 ms each:
+     * [Clocks.ticks]) and its memory of verdicts its own: it plays the same game from the seed on every machine.
+     */
+    fun playLookahead(hostDeck: String, guestDeck: String, seed: Long): Result {
+        val host = LookaheadBot(BotSettings.DEFAULT, null)
+        val guest = LookaheadBot(BotSettings.DEFAULT, null)
+        host.seed(seed * 31 + 1)
+        guest.seed(seed * 31 + 2)
+        return Clocks.using({ 0L }, Clocks.ticks(20_000_000L)) {
+            Usefulness.withMemory(HashMap()) { play(hostDeck, guestDeck, seed, mapOf("host" to host, "guest" to guest)) }
+        }
+    }
+
+    private fun play(hostDeck: String, guestDeck: String, seed: Long, bots: Map<String, BotPlayer>): Result {
         TestCards.install()
         val room = GameRoom()
         room.roomId = "seeded"
@@ -60,13 +92,12 @@ object SeededBotGame {
         }
         PreRoomActions.startFromPreRoom(room, seed)
         val engine = RoomEngine(RoomHost.gameOnly())
-        val bot = HeuristicBot()
-        bot.seed(seed)
         val log = ArrayList<String>()
         var actions = 0
         while (actions < MAX_ACTIONS && room.status != GameRoom.RoomStatus.POST_GAME) {
             var moved = false
             for (seat in listOf("host", "guest")) {
+                val bot = bots.getValue(seat)
                 val action = bot.next(room, seat) ?: continue
                 val update = engine.applyAction(room, seat, action, false)
                 actions++

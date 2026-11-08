@@ -33,6 +33,12 @@ public class DeckLoader {
     /** How long the list of cards not run in full is kept before it is read again. */
     static final long UNPROGRAMMED_TTL_MS = 60_000;
 
+    /**
+     * Where each new card instance gets its id: a random UUID. A test may make them predictable (the browser's game,
+     * {@code com.eras.engine.local.LocalMatch}, numbers them "c1", "c2"…, and its parity test compares the two).
+     */
+    static java.util.function.Supplier<String> instanceIds = () -> UUID.randomUUID().toString();
+
     private final DeckListRepository decks;
     private final CardRepository cards;
     private final DriveCardRepository driveCards;
@@ -64,7 +70,7 @@ public class DeckLoader {
                 .collect(Collectors.toMap(c -> c.getCardName().toLowerCase() + ":" + c.getEdition(), c -> c, (a, b) -> a));
         return new ArrayList<>(fileIds.stream().map(driveFileId -> {
             CardSlot slot = new CardSlot();
-            slot.setInstanceId(UUID.randomUUID().toString());
+            slot.setInstanceId(instanceIds.get());
             slot.setCardId(driveFileId);
             slot.setFaceDown(true);
             DriveCard dc = driveCardMap.get(driveFileId);
@@ -83,7 +89,7 @@ public class DeckLoader {
     /** The same cards as new instances (another seat playing the same deck: the bot's copy of its owner's). */
     public static List<CardSlot> freshCopy(List<CardSlot> slots) {
         List<CardSlot> copy = PreRoomActions.deepCopySlots(slots);
-        copy.forEach(s -> s.setInstanceId(UUID.randomUUID().toString()));
+        copy.forEach(s -> s.setInstanceId(instanceIds.get()));
         return copy;
     }
 
