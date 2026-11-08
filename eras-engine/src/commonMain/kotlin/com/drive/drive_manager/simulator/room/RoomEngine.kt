@@ -100,6 +100,13 @@ class RoomEngine(host: RoomHost) {
             return rival
         }
 
+        /** An error says who caused it (errors go only to them): the update, tagged with `actor` when it is an untagged error. */
+        @JvmStatic
+        fun blamed(update: GameStateUpdate?, actor: String?): GameStateUpdate? {
+            if (update != null && update.error != null && update.actorId == null) update.actorId = actor
+            return update
+        }
+
         /** A line of the history (an action by hand or of the room), with the card it was done to when there is one. */
         @JvmStatic
         fun recordLog(room: GameRoom, update: GameStateUpdate, action: GameAction?) {

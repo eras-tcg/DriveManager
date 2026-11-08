@@ -1,9 +1,9 @@
 package com.eras.engine.local
 
-import com.drive.drive_manager.simulator.actions.PreRoomActions
 import com.drive.drive_manager.simulator.engine.CardEffects
 import com.drive.drive_manager.simulator.platform.Platform
 import com.drive.drive_manager.simulator.room.CardSlot
+import com.drive.drive_manager.simulator.room.DeckChoice
 import com.drive.drive_manager.simulator.room.GameRoom
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonArray
@@ -84,37 +84,8 @@ class LocalDecks(decksJson: JsonObject?) {
             return slots
         }
 
-        /** The same cards as new instances (`DeckLoader.freshCopy`: the bot's copy of its owner's deck). */
-        fun freshCopy(slots: List<CardSlot>, nextId: () -> String): MutableList<CardSlot> {
-            val copy = PreRoomActions.deepCopySlots(slots)
-            copy.forEach { it.instanceId = nextId() }
-            return copy
-        }
-
-        /** Every copy of the card in the room takes its metadata again (`DeckLoader.refresh`). */
-        fun refresh(room: GameRoom, cardId: String, meta: JsonObject) {
-            for (player in room.players.values) {
-                for (zone in listOf(player.hand, player.deck, player.originalDeck, player.lifeStack, player.tributeZone, player.discardPile)) {
-                    zone.filter { cardId == it.cardId }.forEach { apply(it, cardId, meta) }
-                }
-                for (fs in player.field) {
-                    if (cardId == fs.cardId) apply(fs, cardId, meta)
-                    fs.materials!!.filter { cardId == it.cardId }.forEach { apply(it, cardId, meta) }
-                    fs.resources!!.filter { cardId == it.cardId }.forEach { apply(it, cardId, meta) }
-                }
-            }
-        }
-
-        /** The names of a deck's cards the engine does not run in full ("×2 Roto-G0, Sicario R3-D"), or null (`DeckLoader.unprogrammedIn`). */
-        fun unprogrammedIn(slots: List<CardSlot>): String? {
-            val names = LinkedHashMap<String, Int>()
-            for (s in slots) if (s.unprogrammed != null) {
-                val name = s.cardName ?: "?"
-                names[name] = (names[name] ?: 0) + 1
-            }
-            if (names.isEmpty()) return null
-            return names.entries.joinToString(", ") { (name, n) -> if (n > 1) "×$n $name" else name }
-        }
+        /** Every copy of the card in the room takes its metadata again (`DeckLoader.refresh`, the walk is [DeckChoice.refresh]). */
+        fun refresh(room: GameRoom, cardId: String, meta: JsonObject) = DeckChoice.refresh(room, cardId) { apply(it, cardId, meta) }
 
         /** drive_manager's `CardMeta.apply`: the slot of that card filled from its metadata's JSON. */
         fun apply(slot: CardSlot, cardId: String, meta: JsonObject) {

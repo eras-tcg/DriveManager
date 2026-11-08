@@ -159,6 +159,9 @@ class LocalMatchParityTest {
         ReflectionTestUtils.setField(controller, "roomService", service);
         int[] ids = {0};
         DeckLoader.instanceIds = () -> "c" + (++ids[0]);
+        // The test moves the bot itself (playBotNow after every action); the server's own wake-ups, which think a moment
+        // later on the bots' threads, would race with it, so their clock never runs anything
+        ReflectionTestUtils.setField(service.botRooms, "clock", org.mockito.Mockito.mock(java.util.concurrent.ScheduledExecutorService.class));
         // The server's side on a thread of its own (as the server's bot thinks on its own threads), the player's decisions on
         // another: what each keeps per thread (the bot's memory of verdicts) starts empty and is theirs alone
         ExecutorService serverThread = Executors.newSingleThreadExecutor();

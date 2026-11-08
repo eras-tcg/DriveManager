@@ -6,8 +6,10 @@ import com.drive.drive_manager.simulator.engine.GameEvent
 /**
  * Shallow copies (the same values; lists and maps shared) of what [StateMask] changes for one viewer, written
  * out field by field: what Spring's BeanUtils.copyProperties did, without reflection, so the engine can run in the
- * browser. Exactly as BeanUtils did, a card's copy takes `getLevel()` (the printed level plus the continuous
- * one) as its level, and keeps the continuous level too. `ShallowCopyTest` lists every field.
+ * browser. A card's copy takes the printed level (the field, [CardSlot.getPrintedLevel]) and the continuous one, so
+ * its `getLevel()` is the original's. (BeanUtils copied `getLevel()`, the printed level with the continuous one
+ * already added, and then the continuous level again: the rival saw that bonus twice on a face-up card with
+ * face-down materials or resources. Kept until it was fixed, after the migration.) `ShallowCopyTest` lists every field.
  */
 object ShallowCopy {
 
@@ -112,7 +114,7 @@ object ShallowCopy {
         c.starter = o.starter
         c.strengthModifier = o.strengthModifier
         c.cost = o.cost
-        c.setLevel(o.getLevel()) // as BeanUtils did: the level with the continuous one added (see the class)
+        c.setLevel(o.getPrintedLevel()) // getLevel() adds the continuous level, copied below
         c.colors = o.colors
         c.classes = o.classes
         c.specialCost = o.specialCost

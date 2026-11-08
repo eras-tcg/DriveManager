@@ -38,10 +38,10 @@ class CoreBoundaryTest {
             "engine/ServerCardSource.java"); // the card files offered to the core (CardSource)
     /** The core's files in other packages. */
     private static final List<String> FILES = List.of(
-            "room/ActionType.java", "room/CardLocator.java", "room/CardSlot.java", "room/FloatingEffect.java",
+            "room/ActionType.java", "room/CardLocator.java", "room/CardSlot.java", "room/DeckChoice.java", "room/FloatingEffect.java",
             "room/GameAction.java", "room/GameLogEntry.java", "room/GameRoom.java", "room/GameStateUpdate.java",
             "room/PlayerState.java", "room/RoomCopy.java", "room/RoomEngine.java", "room/RoomGuard.java",
-            "room/RoomHost.java", "room/RoomOptions.java", "room/RoomSetting.java", "room/RoomSetup.java",
+            "room/RoomHost.java", "room/RoomOptions.java", "room/RoomSeats.java", "room/RoomSetting.java", "room/RoomSetup.java",
             "room/ShallowCopy.java", "room/SimMessages.java", "room/SimulatorLimits.java", "room/StateMask.java",
             "room/Zone.java", "rank/RankRules.java", "replay/MatchSetup.java");
 
