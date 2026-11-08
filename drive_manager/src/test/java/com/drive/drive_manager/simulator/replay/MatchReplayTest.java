@@ -1,5 +1,6 @@
 package com.drive.drive_manager.simulator.replay;
 
+import com.drive.drive_manager.simulator.engine.GameRandom;
 import com.drive.drive_manager.simulator.bot.BotMatch;
 import com.drive.drive_manager.simulator.bot.BotPlayer;
 import com.drive.drive_manager.simulator.bot.HeuristicBot;
@@ -70,7 +71,7 @@ public class MatchReplayTest {
 
     private GameRoom newGame(String hostDeck, String guestDeck, long seed) {
         GameRoom room = service.createRoom("host");
-        room.setRandom(new java.util.Random(seed));
+        room.setRandom(new GameRandom(seed));
         service.applyAction(room.getRoomId(), "host", BotPlayer.action("JOIN_ROOM", Map.of("username", "Ana")), false);
         service.applyAction(room.getRoomId(), "guest", BotPlayer.action("JOIN_ROOM", Map.of("username", "Beto")), false);
         int[] ids = {0};

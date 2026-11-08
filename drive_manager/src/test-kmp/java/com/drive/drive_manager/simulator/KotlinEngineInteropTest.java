@@ -4,8 +4,7 @@ import com.eras.engine.CardOutline;
 import com.eras.engine.CardFileKt;
 import com.eras.engine.EffectOutline;
 import com.eras.engine.EngineApi;
-import com.eras.engine.GameRandom;
-import com.eras.engine.GameShuffle;
+import com.drive.drive_manager.simulator.engine.GameRandom;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
@@ -22,8 +21,8 @@ import java.util.stream.IntStream;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * Phase 0 of the Kotlin Multiplatform engine: the Kotlin artifact (eras-engine-jvm) used from DriveManager's Java,
- * on real data. Runs only with the kmp-engine profile (see pom.xml).
+ * The Kotlin Multiplatform engine's artifact (eras-engine-jvm) used from DriveManager's Java, on real data. Runs only
+ * with the kmp-engine profile (see pom.xml).
  */
 class KotlinEngineInteropTest {
 
@@ -34,7 +33,7 @@ class KotlinEngineInteropTest {
             List<Integer> today = new ArrayList<>(IntStream.range(0, 40).boxed().toList());
             Collections.shuffle(today, new Random(seed));
             List<Integer> kotlin = new ArrayList<>(IntStream.range(0, 40).boxed().toList());
-            GameShuffle.shuffleAs(kotlin, new GameRandom(seed));
+            GameRandom.shuffle(kotlin, new GameRandom(seed));
             assertThat(kotlin).as("seed %d", seed).isEqualTo(today);
         }
     }
@@ -46,7 +45,7 @@ class KotlinEngineInteropTest {
         GameRandom kotlin = new GameRandom(99);
         for (int i = 0; i < 1000; i++) {
             assertThat(kotlin.nextLong()).isEqualTo(today.nextLong());
-            assertThat(kotlin.nextIntBelow(2)).isEqualTo(today.nextInt(2));
+            assertThat(kotlin.nextInt(2)).isEqualTo(today.nextInt(2));
         }
     }
 

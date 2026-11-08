@@ -1,5 +1,6 @@
 package com.drive.drive_manager.simulator.bot;
 
+import com.drive.drive_manager.simulator.engine.GameRandom;
 import com.drive.drive_manager.simulator.actions.PreRoomActions;
 import com.drive.drive_manager.simulator.rank.RankRules;
 import com.drive.drive_manager.simulator.room.ActionType;
@@ -10,6 +11,7 @@ import com.drive.drive_manager.simulator.room.GameRoom;
 import com.drive.drive_manager.simulator.room.GameStateUpdate;
 import com.drive.drive_manager.simulator.room.PlayerState;
 import com.drive.drive_manager.simulator.room.RoomCopy;
+import com.drive.drive_manager.simulator.room.RoomEngine;
 import com.drive.drive_manager.simulator.room.RoomService;
 import java.util.ArrayList;
 import java.util.List;
@@ -28,9 +30,7 @@ import java.util.concurrent.TimeUnit;
 public final class BotRooms {
 
     /** The bot's seat in a room against it. */
-    public static final String BOT = "bot";
-    /** What the owner of a room against the bot does for it, with "actAs" = BOT: choosing its deck and starter. */
-    static final Set<ActionType> SETUP = java.util.EnumSet.of(ActionType.SET_DECK, ActionType.SET_STARTER);
+    public static final String BOT = BotSeat.BOT;
     /** Moves the bot makes in a row at most when played right away (tests). */
     private static final int MAX_MOVES_NOW = 5000;
 
@@ -139,7 +139,7 @@ public final class BotRooms {
 
     /** The owner sets up the bot's side (its deck or starter) with this action. */
     public static boolean forBot(GameRoom room, GameAction action) {
-        return room.isBot() && BOT.equals(action.getString("actAs")) && SETUP.contains(ActionType.of(action));
+        return BotSeat.forBot(room, action);
     }
 
     /** The bot plays the owner's deck until they choose another one for it (ranked: always the owner's deck). */
@@ -214,7 +214,7 @@ public final class BotRooms {
             synchronized (live) {
                 if (!mayMove(live)) return;
                 version = live.getVersion();
-                copy = RoomCopy.of(live, chance);
+                copy = RoomCopy.of(live, new GameRandom(chance.nextLong()));
             }
             GameAction action = bot.next(copy, seat);
             if (action == null) return;
@@ -303,7 +303,7 @@ public final class BotRooms {
 
     /** The seat the bot plays: its own in a room against it, the test rival's in a test room (Sala de pruebas) it plays. */
     static String seatOf(GameRoom room) {
-        return room.isEditor() ? RoomService.EDITOR_RIVAL : BOT;
+        return BotSeat.seatOf(room);
     }
 
     /** A move of the bot: in a test room only its owner acts, so the bot moves for the rival as the owner does ("actAs"). */
@@ -317,9 +317,7 @@ public final class BotRooms {
      */
     public static GameStateUpdate applyAs(RoomService engine, GameRoom room, String seat, GameAction action) {
         if (!room.isEditor() || seat.equals(room.getHostId())) return engine.applyAction(room.getRoomId(), seat, action, false);
-        Map<String, Object> payload = new java.util.LinkedHashMap<>(action.getPayload() == null ? Map.of() : action.getPayload());
-        payload.put("actAs", RoomService.EDITOR_RIVAL);
-        return engine.applyAction(room.getRoomId(), room.getHostId(), BotPlayer.action(action.getType(), payload), false);
+        return engine.applyAction(room.getRoomId(), room.getHostId(), RoomEngine.asRival(action), false);
     }
 
     /**

@@ -382,7 +382,7 @@ class St1IntegrationTest {
         CardSlot damon = onField(guest, slot("Damon"), FRONT);
         damon.setStrength(7);
         // Before ";" (materials and "elegir todos los enemigos") is its cost; after it, the reduction
-        EffectScript script = CardEffects.byId("hez:inicio-del-turno").orElseThrow();
+        EffectScript script = java.util.Objects.requireNonNull(CardEffects.byId("hez:inicio-del-turno"));
         assertThat(script.cost()).contains(Compose.targetAllEnemies());
         assertThat(script.steps()).doesNotContain(Compose.targetAllEnemies());
 

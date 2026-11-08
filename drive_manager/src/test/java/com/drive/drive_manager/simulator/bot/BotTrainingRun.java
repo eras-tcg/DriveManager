@@ -100,7 +100,7 @@ class BotTrainingRun {
         for (int gen = 1; gen <= plan.generations(); gen++) {
             final int g = gen;
             ValueModel candidate = ValueModel.train(data, plan.training(), line -> {});
-            candidate.save(dir.resolve("models/gen-" + gen + ".json"));
+            ValueModelFiles.save(candidate, dir.resolve("models/gen-" + gen + ".json"));
             log("gen " + gen + ": trained on " + data.size() + " samples, " + candidate.weights().training().get("valid"));
 
             ValueModel champ = champion;
@@ -112,7 +112,7 @@ class BotTrainingRun {
             if (promoted) {
                 champion = candidate;
                 championGen = gen;
-                candidate.save(dir.resolve("champion.json"));
+                ValueModelFiles.save(candidate, dir.resolve("champion.json"));
                 sincePromotion = 0;
             } else {
                 sincePromotion++;

@@ -4,6 +4,7 @@ import com.drive.drive_manager.simulator.actions.PreRoomActions;
 import com.drive.drive_manager.simulator.bot.BotPlayer;
 import com.drive.drive_manager.simulator.room.GameRoom;
 import com.drive.drive_manager.simulator.room.RoomService;
+import com.drive.drive_manager.simulator.json.SimulatorJson;
 import tools.jackson.databind.json.JsonMapper;
 import tools.jackson.databind.node.ObjectNode;
 
@@ -22,7 +23,7 @@ import java.util.function.Consumer;
  */
 public final class MatchReplay {
 
-    private static final JsonMapper JSON = JsonMapper.builder().build();
+    private static final JsonMapper JSON = SimulatorJson.configure(JsonMapper.builder()).build();
     /** What changes with time or the connection, not with the game: left out of the fingerprint. */
     private static final List<String> NOT_GAME = List.of("avatar", "connected", "disconnectedAt", "ready");
 

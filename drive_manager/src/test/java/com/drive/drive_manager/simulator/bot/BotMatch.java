@@ -1,5 +1,6 @@
 package com.drive.drive_manager.simulator.bot;
 
+import com.drive.drive_manager.simulator.engine.GameRandom;
 import com.drive.drive_manager.dto.Card;
 import com.drive.drive_manager.simulator.actions.PreRoomActions;
 import com.drive.drive_manager.simulator.engine.GameEvent;
@@ -89,7 +90,7 @@ public final class BotMatch {
             String p = pair.trim();
             if (p.startsWith("model=")) {
                 try {
-                    model = ValueModel.read(java.nio.file.Path.of(p.substring("model=".length())));
+                    model = ValueModelFiles.read(java.nio.file.Path.of(p.substring("model=".length())));
                 } catch (IOException e) {
                     throw new UncheckedIOException(e);
                 }
@@ -141,7 +142,7 @@ public final class BotMatch {
         GameRoom room = service.createRoom("host");
         if (seed != null) {
             // The game's chance, and each bot's own (the copies it tries moves on), all from the seed
-            room.setRandom(new java.util.Random(seed));
+            room.setRandom(new GameRandom(seed));
             hostBot.seed(seed * 31 + 1);
             guestBot.seed(seed * 31 + 2);
         }

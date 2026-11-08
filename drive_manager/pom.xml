@@ -29,6 +29,11 @@
 	<properties>
 		<java.version>21</java.version>
 		<testcontainers.version>1.19.8</testcontainers.version>
+		<!-- The game's core is Kotlin Multiplatform, built in ../eras-engine (Gradle) and used here as a JVM library -->
+		<kotlin.version>2.4.21</kotlin.version>
+		<!-- The kotlinx.serialization the engine is built with (eras-engine/build.gradle.kts), not Spring Boot's 1.9.0 -->
+		<kotlin-serialization.version>1.12.0</kotlin-serialization.version>
+		<eras-engine.version>0.1.0-SNAPSHOT</eras-engine.version>
 	</properties>
 
 	<dependencyManagement>
@@ -148,6 +153,21 @@
 			<version>${testcontainers.version}</version>
 			<scope>test</scope>
 		</dependency>
+		<dependency>
+			<groupId>org.jetbrains.kotlin</groupId>
+			<artifactId>kotlin-stdlib</artifactId>
+			<version>${kotlin.version}</version>
+		</dependency>
+		<!-- The game's core (rules, effects, bot, rooms' state) in common Kotlin, packages com.drive.drive_manager.simulator.*:
+		     build it first with `cd ../eras-engine && ./gradlew publishToMavenLocal` (the Dockerfile and CI do). -->
+		<dependency>
+			<groupId>com.eras</groupId>
+			<artifactId>eras-engine-jvm</artifactId>
+			<version>${eras-engine.version}</version>
+			<!-- With kotlinx-serialization-json: the engine reads the card files with it (CardReader, step C). Spring sees it
+			     too but uses Jackson for the server's types: Boot's STOMP converters (String, bytes, Jackson) replace Spring's
+			     defaults, and Spring's kotlinx HTTP converter only takes @Serializable classes (no response is one) -->
+		</dependency>
 	</dependencies>
 
 	<build>
@@ -159,20 +179,12 @@
 		</plugins>
 	</build>
 
-	<!-- Phase 0 of the Kotlin Multiplatform engine (eras-engine/): build it first with
-	     `cd ../eras-engine && ./gradlew publishToMavenLocal`, then `mvn -Pkmp-engine test -Dtest='Kotlin*'`.
-	     Off by default: the server's own build does not depend on it yet. -->
+	<!-- The engine's JVM artifact from Java on real data (src/test-kmp: GameRandom against java.util.Random, the card files
+	     read with kotlinx.serialization against Jackson): `mvn -Pkmp-engine test -Dtest='KotlinEngineInteropTest'`.
+	     The engine itself (with kotlinx-serialization-json) is a dependency of the main build; this profile adds those tests. -->
 	<profiles>
 		<profile>
 			<id>kmp-engine</id>
-			<dependencies>
-				<dependency>
-					<groupId>com.eras</groupId>
-					<artifactId>eras-engine-jvm</artifactId>
-					<version>0.1.0-SNAPSHOT</version>
-					<scope>test</scope>
-				</dependency>
-			</dependencies>
 			<build>
 				<plugins>
 					<plugin>

@@ -1,5 +1,6 @@
 package com.eras.engine
 
+import com.drive.drive_manager.simulator.engine.GameRandom
 import java.util.Collections
 import java.util.Random
 import kotlin.test.Test
@@ -18,7 +19,7 @@ class JavaRandomParityTest {
             repeat(1000) { i ->
                 when (i % 5) {
                     0 -> assertEquals(java.nextInt(), ours.nextInt())
-                    1 -> bounds[i % bounds.size].let { assertEquals(java.nextInt(it), ours.nextIntBelow(it)) }
+                    1 -> bounds[i % bounds.size].let { assertEquals(java.nextInt(it), ours.nextInt(it)) }
                     2 -> assertEquals(java.nextLong(), ours.nextLong())
                     3 -> assertEquals(java.nextBoolean(), ours.nextBoolean())
                     else -> assertEquals(java.nextDouble(), ours.nextDouble())
@@ -31,7 +32,7 @@ class JavaRandomParityTest {
     fun shuffleMatchesCollectionsShuffle() {
         for (seed in seeds) for (size in listOf(0, 1, 2, 5, 40, 60)) {
             val java = MutableList(size) { it }.also { Collections.shuffle(it, Random(seed)) }
-            val ours = MutableList(size) { it }.also { it.shuffleAs(GameRandom(seed)) }
+            val ours = MutableList(size) { it }.also { GameRandom.shuffle(it, GameRandom(seed)) }
             assertEquals(java, ours, "seed $seed, size $size")
         }
     }

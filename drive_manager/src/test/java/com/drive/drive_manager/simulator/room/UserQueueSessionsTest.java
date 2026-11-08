@@ -81,15 +81,15 @@ class UserQueueSessionsTest {
 
     @Test
     void sendingPerSessionReachesEveryTabInOrder() {
-        StateMask.toUser(template, registry, USER, QUEUE, "update 1");
-        StateMask.toUser(template, registry, USER, QUEUE, "update 2");
+        RoomMessages.toUser(template, registry, USER, QUEUE, "update 1");
+        RoomMessages.toUser(template, registry, USER, QUEUE, "update 2");
         assertEquals(Map.of("s1", List.of("update 1", "update 2"), "s2", List.of("update 1", "update 2")),
                 messagesBySession());
     }
 
     @Test
     void aUserWhoIsNotConnectedGetsNothing() {
-        StateMask.toUser(template, registry, "bob", QUEUE, "update");
+        RoomMessages.toUser(template, registry, "bob", QUEUE, "update");
         assertEquals(List.of(), messages());
     }
 

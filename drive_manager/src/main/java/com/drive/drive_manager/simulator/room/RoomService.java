@@ -3,7 +3,6 @@ package com.drive.drive_manager.simulator.room;
 import com.drive.drive_manager.service.ActivityTracker;
 import com.drive.drive_manager.service.AvatarService;
 import com.drive.drive_manager.service.PlaymatService;
-import com.drive.drive_manager.simulator.actions.ActionDispatcher;
 import com.drive.drive_manager.simulator.bot.BotRooms;
 import com.drive.drive_manager.simulator.engine.EffectEngine;
 import com.drive.drive_manager.simulator.mission.MissionHooks;
@@ -23,7 +22,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import static com.drive.drive_manager.simulator.actions.TurnActions.handleEnterEndPhase;
 
 /**
  * The simulator's rooms: the entry point of the controllers, the bots and the tests. Each action goes through the
@@ -31,7 +29,7 @@ import static com.drive.drive_manager.simulator.actions.TurnActions.handleEnterE
  * recorded. The rooms are kept by {@link RoomRegistry}; who is in them is {@link RoomMembership}'s.
  */
 @Service
-public class RoomService {
+public class RoomService implements RoomHost {
 
     /** The decks and the cards' metadata (none in tests, the bot's copies and replays: they never load a deck). */
     @Autowired(required = false) public DeckLoader decks;
@@ -44,7 +42,7 @@ public class RoomService {
 
     @Autowired(required = false)
     private SimpMessagingTemplate messagingTemplate;
-    /** Who is connected and from how many tabs: each tab gets the room on its own (StateMask.toUser). */
+    /** Who is connected and from how many tabs: each tab gets the room on its own (RoomMessages.toUser). */
     @Autowired(required = false)
     private SimpUserRegistry userRegistry;
     /** The players' icons and playmats, looked up when they join. */
@@ -55,7 +53,7 @@ public class RoomService {
     private ActivityTracker activityTracker;
 
     /** The rival of a test room: its owner plays it (actions with "actAs"). */
-    public static final String EDITOR_RIVAL = "editor-rival";
+    public static final String EDITOR_RIVAL = RoomEngine.EDITOR_RIVAL;
 
     private final RoomRegistry registry = new RoomRegistry();
     public final MatchRecorder recorder = new MatchRecorder();
@@ -64,7 +62,7 @@ public class RoomService {
     public final TestTimeline timeline = new TestTimeline(botRooms);
     private final ReplayRooms replays = new ReplayRooms();
     public final RoomMembership members = new RoomMembership(this, registry);
-    private final ActionDispatcher dispatcher = new ActionDispatcher(this);
+    private final RoomEngine engine = new RoomEngine(this);
 
     /** Every few seconds: closes rooms left empty and passes on the ownership of owners who left. */
     @Scheduled(fixedDelay = SimulatorLimits.SWEEP_INTERVAL_MS)
@@ -164,7 +162,7 @@ public class RoomService {
 
     /** Each player gets their own view of the room (StateMask): nothing hidden from them leaves the server. */
     public void broadcast(String roomId, GameStateUpdate update) {
-        StateMask.send(messagingTemplate, userRegistry, roomId, registry.get(roomId), update);
+        RoomMessages.send(messagingTemplate, userRegistry, roomId, registry.get(roomId), update);
     }
 
     /** An action of the server itself or of a test: the manual actions are allowed. */
@@ -189,46 +187,16 @@ public class RoomService {
         GameRoom room = registry.get(roomId);
         if (room == null) return GameStateUpdate.error(roomId, SimMessages.ROOM_GONE);
         if (room.isReplay()) return replays.act(this, room, userId, action);
-        ActionType type = ActionType.of(action);
+        RoomEngine.Applied who = engine.actor(room, userId, action);
+        if (who.update() != null) return who.update();
+        userId = who.actor();
 
-        if (room.isEditor()) {
-            if (!userId.equals(room.getHostId())) return GameStateUpdate.error(roomId, "Es una sala de pruebas: solo su dueño puede jugar en ella");
-            // The owner plays the rival's side too
-            if (EDITOR_RIVAL.equals(action.getString("actAs")) && (type == null || !type.ownerOnly())) userId = EDITOR_RIVAL;
-        }
-
-        if (BotRooms.forBot(room, action)) {
-            if (!userId.equals(room.getHostId())) return GameStateUpdate.error(roomId, "Solo el dueño de la sala elige el mazo del bot");
-            if (room.isRanked()) return GameStateUpdate.error(roomId, "En una partida ranked el bot juega con tu mismo mazo");
-            userId = BotRooms.BOT;
-        }
-
-        String refusal = RoomGuard.refusal(room, userId, action, manual);
-        if (refusal != null) return GameStateUpdate.error(roomId, refusal);
-
-        // What the action changes is counted for the players' missions and the activity log afterwards (see the end of this method)
+        // What the action changes is counted for the players' missions and the activity log afterwards
         MissionHooks.Before before = MissionHooks.Before.of(room);
         GameRoom.RoomStatus statusBefore = before.status();
 
-        // Closed game state (rule 7.2): while a chain or a choice is pending, only answering it (and leaving
-        // or conceding) is allowed. The board's manual actions wait until the effect is done.
-        if (room.isEngineBusy() && (type == null || !type.allowedWhileResolving())) {
-            return GameStateUpdate.error(roomId, "Hay un efecto resolviéndose: espera a que termine");
-        }
-
-        GameStateUpdate update = dispatcher.dispatch(type, room, userId, action);
-
-        // "termina tu turno" (Última Línea De Defensa): once its combat and effects are over, the turn ends
-        String current = room.getCurrentTurnUserId();
-        if (update != null && update.getError() == null && current != null && !room.isEngineBusy()
-                && room.getStatus() == GameRoom.RoomStatus.IN_PROGRESS && "MAIN".equals(room.getCurrentPhase())
-                && room.getUsedThisTurn().remove(EffectEngine.END_TURN_REQUESTED + current)) {
-            update = handleEnterEndPhase(room, current);
-        }
+        GameStateUpdate update = engine.apply(room, userId, action, manual);
         if (update != null && update.getError() == null) {
-            room.setVersion(room.getVersion() + 1);
-            recordLog(room, update, action);
-            if (!room.isHeadless()) update.setEventLog(new ArrayList<>(room.getEventLog()));
             if (hooks != null) hooks.count(room, before);
             recorder.after(room, statusBefore, userId, action, manual, history);
             timeline.after(room, statusBefore, action);
@@ -237,25 +205,57 @@ public class RoomService {
     }
 
     public void recordLog(GameRoom room, GameStateUpdate update) {
-        recordLog(room, update, null);
+        RoomEngine.recordLog(room, update, null);
     }
 
-    /** A line of the history for an action by hand (or of the room), with the card it was done to when there is one. */
-    private void recordLog(GameRoom room, GameStateUpdate update, GameAction action) {
-        if (update.getLogEntry() == null) return;
-        GameLogEntry entry = new GameLogEntry(System.currentTimeMillis(), update.getLogEntry());
-        if (action != null) {
-            entry.setKind("MANUAL");
-            String id = action.getString("instanceId");
-            CardSlot card = id == null ? null : EffectEngine.findInRoom(room, id);
-            if (card != null) {
-                entry.setSourceId(id);
-                entry.setSourceName(card.getCardName());
-                entry.setImageUrl(card.getImageUrl());
-            }
-        }
-        room.getEventLog().add(entry);
-        if (room.getEventLog().size() > SimulatorLimits.EVENT_LOG_MAX) room.getEventLog().remove(0);
+    // ------------------------------------------------------------------ RoomHost: what the rules ask of the server
+
+    @Override
+    public GameStateUpdate join(GameRoom room, String userId, GameAction action) {
+        return members.join(room, userId, action);
+    }
+
+    @Override
+    public GameStateUpdate leave(GameRoom room, String userId) {
+        return members.leave(room, userId);
+    }
+
+    @Override
+    public GameStateUpdate kick(GameRoom room, String userId, GameAction action) {
+        return members.kick(room, userId, action);
+    }
+
+    @Override
+    public GameStateUpdate close(GameRoom room, String userId) {
+        return members.close(room, userId);
+    }
+
+    @Override
+    public GameStateUpdate botSetting(ActionType type, GameRoom room, String userId, GameAction action) {
+        return switch (type) {
+            case SET_BOT_LEVEL -> botRooms.setLevel(room, userId, action);
+            case SET_EDITOR_BOT -> botRooms.setEditorBot(room, userId, action);
+            case SET_EDITOR_SELF_BOT -> botRooms.setEditorSelfBot(room, userId, action);
+            case SET_BOT_DELAY -> botRooms.setDelay(room, userId, action);
+            case SET_BOT_EDGE -> botRooms.setEdge(room, userId, action);
+            case SET_RANKED -> botRooms.setRanked(room, userId, action);
+            default -> throw new IllegalArgumentException("Not a bot setting: " + type);
+        };
+    }
+
+    @Override
+    public GameStateUpdate timeline(GameRoom room, String userId, GameAction action) {
+        return timeline.handle(room, userId, action);
+    }
+
+    @Override
+    public GameStateUpdate setDeck(GameRoom room, String userId, GameAction action) {
+        return RoomDecks.setDeck(this, room, userId, action);
+    }
+
+    @Override
+    public GameStateUpdate refreshCardMetadata(GameRoom room, String userId, GameAction action) {
+        return RoomDecks.refreshCardMetadata(this, room, userId, action);
     }
 
     // ------------------------------------------------------------------ Sessions
