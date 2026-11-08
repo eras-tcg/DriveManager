@@ -321,3 +321,54 @@ stayed identical.
 - Java bit masks: `a & b & (1 << i)` → `(a and b and (1 shl i))`, `x &= ~m` → `x = x and m.inv()`, `(long) a << 10` →
   `(a.toLong() shl 10)`; parenthesize (Kotlin's infix `shl` binds weaker than `+`). `++nodes[0] > MAX` works as is.
   `DoubleStream.sum()` (`cheapestGroup`) stays a stream, as batch 10 says.
+
+## Step A: JVM APIs removed
+
+Before the core moves to eras-engine (`commonMain`), every Kotlin file under `simulator/{engine,actions,bot,room}` plus
+`rank/RankRules.kt` and `replay/MatchSetup.kt` uses only common Kotlin, except for the seam in `simulator/platform`
+(`Platform.kt`), which step B turns into `expect`/`actual`. Nothing moved and nothing changed behaviour: the golden hashes,
+seeded bot games and per-class test counts are those of before (plus the helpers' own tests). Checked by copying those files into
+a scratch Kotlin Multiplatform project (`jvm()` + `js(IR)`, Kotlin 2.4.21) with a stub `platform` package: they compile for both,
+leaving only the references to Java classes of the server (`CardFiles`, `ValueModelFiles`, `RoomService`, `dto.DeckList` in
+`CardEffects`, `BotCatalog`, `RoomGuard`, `RoomSetup`) for step B to cut.
+
+| Java / JVM | Now | Why it is the same |
+|---|---|---|
+| `java.util.Random` | `GameRandom` (engine) | Port of the 48-bit LCG, `nextGaussian` with a port of `StrictMath.log`: bit-identical draws (`GameRandomTest`) |
+| `Pattern`, `String.split`, `Character.isWhitespace`, `String.format("%.nf")` | `Regex`, `JavaText.split/isWhitespace/isBlank/fixed` | Java's split rules (trailing empties, zero-width first match), its whitespace set, its decimal rounding (`JavaTextTest`) |
+| `List.of`, `List.copyOf`, `Set.of`, `Set.copyOf`/`toUnmodifiableSet`, `Map.of`, `Map.ofEntries`, `Collections.unmodifiableMap` | `frozenListOf`, `frozenListCopy`, `frozenSetOf`, `frozenSetCopy`, `frozenMapOf`, `frozenMapOfEntries`, `unmodifiableMapOf` (engine/Frozen.kt) | Same refusals (null → NPE, also on `contains`/`get(null)`; repeats → IAE; changes → UOE), equality, hash and `toString` (`FrozenTest`). Only `Set.of`/`Map.of`'s per-JVM pseudo-random order became the given order: nothing observable read it (it changed from run to run; the golden JSON sorts keys) |
+| `Map.getOrDefault`, `Map.merge`, `List.replaceAll` | `valueOr`, `mergeWith`, `replaceEach` (engine/JavaCollections.kt) | Java's semantics written out (a key with a null value is kept by `valueOr`; `merge` removes on a null result) |
+| `computeIfAbsent` (plain maps), `removeIf`, `Map.forEach { k, v -> }` | `getOrPut`, `removeAll { }`, `for ((k, v) in map)` | The values computed are never null; the predicates do not read the collection |
+| `Math.round(double)`, `DoubleStream.sum()`/`average()` | `JavaMath.round`, `JavaMath.sum`/`average` | `roundToLong` throws on NaN and JS rounds differently; the stream sums with Kahan compensation (`JavaMathTest`) |
+| `Math.min/max/abs/pow/exp/log/sqrt/floor` | `kotlin.math` | The JVM's `kotlin.math` calls `java.lang.Math` |
+| `Comparator.comparingInt/comparingDouble`, `thenComparing`, `Comparator.reverseOrder()` | `comparingInt`/`comparingDouble` (engine/JavaMath.kt), `then`, `reverseOrder()` | `Int`/`Double.compareTo` on primitives is `Integer.compare`/`Double.compare` |
+| `Optional<T>` (`CardEffects.byId`, `Zone.parse`, `ActionType.parse`, `PromptPurpose.parse`) | `T?` | `map(f).orElse(x)` → `?.f() ?: x` (a null from `f` falls to `x`, as `Optional.map`); `findFirst()` on a null element threw NPE: `!!` keeps it (`MatchSetup.username`) |
+| `Stream` (`CardLocator.cards`, `EffectEngine.cardsInRoom`), `stream().filter().toList()` | `Sequence`, `filter` (`frozenListCopy` where `Stream.toList()`'s unmodifiable list was kept) | Same lazy order |
+| `Predicate`, `Supplier`, `Consumer`, `ToDoubleBiFunction` | Kotlin function types; `fun interface` `TableScoring`, `LookaheadBot.Watcher`, `ValueModel.TrainingLog` for the ones Java passes lambdas to | Java lambdas still fit |
+| `Class<*>` keys (`Resolution` families, `Actions` handlers) | `KClass<*>` (`step::class`) | `KClass` equality is the `Class`'s |
+| `TreeSet`/`TreeMap` built and returned (`CardEffects.definitions`, `ruleEffects`), `TreeMap.toString` (`BotPlayer` keys) | collect, then `sorted()` into a `LinkedHashMap` / `joinToString(", ", "{", "}")` | `String.compareTo` is the TreeMap's order; same iteration and text |
+| `EnumSet` (`ActionType` flags, `BotSeat.SETUP`) | `setOf` | Only `contains` is used |
+| `Arrays.sort(double[])`, `Collections.reverse`, `array.clone()` | `DoubleArray.sort()`, `reverse()`, `copyOf()` | Same results (`clone` does not exist off the JVM) |
+| `@Volatile` (kotlin.jvm) | `@kotlin.concurrent.Volatile` | The JVM's is a typealias of it |
+
+What stays in `platform/Platform.kt` (the JVM `actual`s of step B), and why:
+
+- `Platform.randomSeed()` (`new Random().nextLong()`), `resourceText` (class-path resources: bot models and settings).
+- Clocks: `currentTimeMillis()` (log and event times), `nanoTime()` (the bot's time budgets).
+- `now()`/`Instant`, `seconds()`/`Duration` (typealiases of `java.time`): `GameRoom.createdAt/emptySince` and
+  `SimulatorLimits.EMPTY_ROOM_TTL`, read by the server's Java (`RoomRegistry`, `RoomMembership`), so their Java types stay.
+- `randomHexId()` (`UUID.randomUUID()` without dashes): room ids and editor dummy cards.
+- Threads: `LocalValue<T>` (`ThreadLocal`: the bot's per-thread sandboxes, `EffectEngine`'s looker/summoning context,
+  `MoveTrials.AUDIT`), `concurrentMap()` + `computeIfAbsentAtomic` (`ConcurrentHashMap.computeIfAbsent`: the bot's per-card
+  caches and `Usefulness.BY_CARD`, shared by bot threads; Kotlin's `getOrPut` is not atomic), `withLock` (`synchronized`),
+  `AtomicCounter` (`AtomicLong`, prints as its value), `AtomicFlag` (`AtomicBoolean`: `BotPlayer`'s wake claim).
+- `identityMap()` (`IdentityHashMap`: `RoomCopy`'s copied-object map, `MoveTrials.top`'s scores per move object; `GameAction`
+  has value equality, so identity matters), `emptySortedSetLike`/`emptySortedMapLike` (`RoomCopy` keeps a sorted
+  collection sorted).
+- `Transient` (typealias of `kotlin.jvm.Transient`): `GameRoom`'s headless/searchHope fields stay `transient` for Jackson.
+
+Notes for step B: `@JvmRecord`, `@JvmStatic`, `@JvmField`, `@JvmName`, `@JvmOverloads` and `@JvmSuppressWildcards` compile in
+common code when imported from `kotlin.jvm` (the scratch project injects those imports). `String.hashCode()` (the seed of
+`BlockSearch`) is Java's on every Kotlin target. `Double.toString()` and string templates of doubles differ on JS
+(`1.0` prints `1`): any text the core builds from a `Double` (debug traces, keys) is worth a look before the web must match the
+JVM's output.
