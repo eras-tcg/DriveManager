@@ -1,6 +1,7 @@
 package com.drive.drive_manager.simulator.mission;
 
 import com.drive.drive_manager.service.MissionRules;
+import com.drive.drive_manager.service.ProgressionRules;
 import com.drive.drive_manager.simulator.engine.GameEvent;
 import com.drive.drive_manager.simulator.room.CardSlot;
 import com.drive.drive_manager.simulator.room.GameRoom;
@@ -12,7 +13,7 @@ import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-/** What an online game's actions count for the players' missions. */
+/** What an online game's actions count for the players' missions (a game against the bot too; never the Sala de pruebas). */
 class MissionEventsTest {
 
     private GameRoom room;
@@ -115,6 +116,49 @@ class MissionEventsTest {
         assertThat(MissionEvents.of(room, GameRoom.RoomStatus.IN_PROGRESS, 0)).containsExactly(
                 new MissionEvents.Progress("alice", MissionRules.SUMMON, 1),
                 new MissionEvents.Progress("alice", MissionRules.SPECIAL_SUMMON, 1));
+    }
+
+    @Test
+    void aGameAgainstTheBotCountsForItsPlayerAsAGameAgainstAPlayerButNeverForTheBot() {
+        room.setBot(true);
+        room.getPlayers().remove("bob");
+        room.getPlayers().put("bot", player("bot"));
+        CardSlot own = new CardSlot();
+        own.setInstanceId("bots-own");
+        room.getPlayer("bot").getField().add(own);
+        event(1, GameEvent.NORMAL_SUMMON, "alice", null);
+        event(2, GameEvent.NORMAL_SUMMON, "bot", null);
+        event(3, GameEvent.LIFE_DAMAGE, "bot", Map.of("damage", 300, "attackerId", "x"));
+        event(4, GameEvent.LIFE_DAMAGE, "alice", Map.of("damage", 200, "attackerId", "bots-own"));
+        event(5, GameEvent.TURN_START, "bot", null);
+        event(6, GameEvent.TURN_START, "alice", null);
+        room.setStatus(GameRoom.RoomStatus.POST_GAME);
+        room.setWinnerId("alice");
+
+        assertThat(MissionEvents.of(room, GameRoom.RoomStatus.IN_PROGRESS, 0)).containsExactly(
+                new MissionEvents.Progress("alice", MissionRules.SUMMON, 1),
+                new MissionEvents.Progress("alice", MissionRules.DAMAGE, 300),
+                new MissionEvents.Progress("alice", MissionRules.GAME_PLAYED, 1),
+                new MissionEvents.Progress("alice", ProgressionRules.BOT_GAME_PLAYED, 1),
+                new MissionEvents.Progress("alice", MissionRules.GAME_WON, 1));
+        // The bot wins: the player's game counts, nothing for the bot
+        room.setWinnerId("bot");
+        assertThat(MissionEvents.of(room, GameRoom.RoomStatus.IN_PROGRESS, 6)).containsExactly(
+                new MissionEvents.Progress("alice", MissionRules.GAME_PLAYED, 1),
+                new MissionEvents.Progress("alice", ProgressionRules.BOT_GAME_PLAYED, 1));
+    }
+
+    @Test
+    void aTestRoomWithItsBotsCountsNothing() {
+        room.setEditor(true);
+        room.setEditorBot(true);
+        event(1, GameEvent.NORMAL_SUMMON, "alice", null);
+        event(2, GameEvent.TURN_START, "bob", null);
+        event(3, GameEvent.TURN_START, "alice", null);
+        room.setStatus(GameRoom.RoomStatus.POST_GAME);
+        room.setWinnerId("alice");
+
+        assertThat(MissionEvents.of(room, GameRoom.RoomStatus.IN_PROGRESS, 0)).isEmpty();
     }
 
     @Test

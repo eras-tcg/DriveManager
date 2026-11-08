@@ -19,6 +19,13 @@ public final class ProgressionRules {
     /** A deck created in the builder, and an icon uploaded: their steps ask for the act, not for what the account has. */
     public static final String DECK_SAVED = "DECK_SAVED";
     public static final String AVATAR_SET = "AVATAR_SET";
+    /**
+     * A game against the bot (Modo solo on the server, or offline and accepted) that counted as GAME_PLAYED: the games
+     * and wins count for the missions and the milestones whoever the rival was, but the "Tu primera partida" step asks
+     * for a game against another player ("Termina una partida online contra otro jugador"), so it counts GAME_PLAYED
+     * less these. Games against the bot counted nothing before this counter existed, so the difference is exact.
+     */
+    public static final String BOT_GAME_PLAYED = "BOT_GAME_PLAYED";
 
     /** Pages whose visit counts (the web reports them). */
     public static final String PAGE_HOW_TO_PLAY = "como-jugar";
@@ -56,7 +63,7 @@ public final class ProgressionRules {
             new Step("deck", 1, 150, f -> f.count(DECK_SAVED)),
             new Step("pack", 1, 100, f -> f.count(PACK_OPENED)),
             new Step("avatar", 1, 100, f -> f.count(AVATAR_SET)),
-            new Step("first-game", 1, 200, f -> f.count(MissionRules.GAME_PLAYED)),
+            new Step("first-game", 1, 200, ProgressionRules::gamesAgainstPlayers),
             new Step("first-win", 1, 300, f -> f.count(MissionRules.GAME_WON)),
             new Step(GRADUATE_STEP, 9, 500, f -> 0));
 
@@ -70,6 +77,11 @@ public final class ProgressionRules {
             new Milestone("packs", new int[]{10, 50, 100}, new int[]{250, 500, 1000}, f -> f.count(PACK_OPENED)));
 
     private ProgressionRules() {
+    }
+
+    /** The games played against other players (every game played less those against the bot). */
+    static int gamesAgainstPlayers(Facts f) {
+        return Math.max(0, f.count(MissionRules.GAME_PLAYED) - f.count(BOT_GAME_PLAYED));
     }
 
     public static Step step(String id) {
