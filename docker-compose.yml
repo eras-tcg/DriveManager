@@ -1,7 +1,9 @@
 services:
   drive-manager:
     build:
-      context: ./drive_manager
+      # The repository root: the image builds the game's engine (eras-engine) too
+      context: .
+      dockerfile: drive_manager/Dockerfile
     container_name: drive-manager-${ENVIRONMENT:-prod}
     ports:
       - "${DRIVE_MANAGER_PORT:-8081}:8081"

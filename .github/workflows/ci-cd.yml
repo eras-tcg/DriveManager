@@ -61,12 +61,18 @@ jobs:
           distribution: temurin
           java-version: "21"
           cache: maven
+      - uses: gradle/actions/setup-gradle@v4
+      # The server depends on the game's engine (com.eras:eras-engine-jvm), built from eras-engine/
+      - name: Build the engine into the local Maven repository
+        working-directory: eras-engine
+        run: ./gradlew --no-daemon publishToMavenLocal
       - name: Run tests (dummy config, throwaway MongoDB)
         working-directory: drive_manager
         run: mvn -B -ntp verify
 
-  # The Kotlin Multiplatform engine (eras-engine/, phase 0): its tests on the JVM and on Node, then used from
-  # DriveManager's Java (the kmp-engine profile). It does not gate the image yet: the server does not use it.
+  # The Kotlin Multiplatform engine (eras-engine/: the game's core in common Kotlin): its tests on the JVM and on Node,
+  # then its artifact against java.util.Random and Jackson from DriveManager's Java (the kmp-engine profile). The server's
+  # own build (test job, image) builds the engine first.
   engine:
     if: github.event_name != 'workflow_dispatch'
     runs-on: ubuntu-latest
@@ -107,7 +113,9 @@ jobs:
       - name: Build (and push on develop/main)
         uses: docker/build-push-action@v6
         with:
-          context: ./drive_manager
+          # The repository root: the image builds the game's engine (eras-engine) before the server
+          context: .
+          file: drive_manager/Dockerfile
           push: ${{ github.event_name == 'push' }}
           tags: ghcr.io/eras-tcg/drive-manager:${{ github.sha }}
           labels: org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}

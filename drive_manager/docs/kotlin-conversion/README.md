@@ -6,6 +6,10 @@ The engine's core (packages `engine`, `bot`, `actions`, and the files `CoreBound
 classes not converted yet). Once everything is Kotlin and free of JVM-only APIs it moves to `eras-engine`
 (commonMain). **Nothing may change for the players**: the same rules, the same JSON, the same replays.
 
+> **Done (step B, 2026-11-08):** the core now lives in `eras-engine/src/commonMain/kotlin` and drive_manager uses it as
+> a library (`com.eras:eras-engine-jvm`); drive_manager has no Kotlin sources and no `kotlin-maven-plugin` any more.
+> The batch notes below describe how the conversion was done; see "Step B" at the end for where things are now.
+
 ## Converting a file
 
 1. Write `src/main/kotlin/<same package path>/<Name>.kt` and `git rm` the `.java`.
@@ -372,3 +376,92 @@ common code when imported from `kotlin.jvm` (the scratch project injects those i
 `BlockSearch`) is Java's on every Kotlin target. `Double.toString()` and string templates of doubles differ on JS
 (`1.0` prints `1`): any text the core builds from a `Double` (debug traces, keys) is worth a look before the web must match the
 JVM's output.
+
+## Step B: the core in eras-engine
+
+The core is common Kotlin in **`eras-engine/src/commonMain/kotlin`**, with the **same packages**
+(`com.drive.drive_manager.simulator.{engine,actions,bot,room,platform}`, `rank/RankRules.kt`, `replay/MatchSetup.kt`), so
+the server's Java, the `@JacksonMixin` targets, the class names Mongo keeps and the JSON did not change. drive_manager
+depends on its JVM artifact (`com.eras:eras-engine-jvm:0.1.0-SNAPSHOT`, group/version in `eras-engine/gradle.properties`)
+in its main build. Behaviour is the one of step A: 652 simulator tests (0 failures, 18 skipped) with the same per-class
+counts, the golden hashes unchanged.
+
+What stays in drive_manager (Java): the card files' readers (`CardFiles`, `EffectJson`, `CardFilesCheck`: Jackson; step C
+replaces them with kotlinx.serialization in common), `ValueModelFiles`, `BotRooms`, the rooms' service and messages
+(`RoomService`, `RoomMessages`, `RoomDecks`, …), controllers, missions, ranks' and replays' server parts, `json/SimulatorJson`.
+The resources (`cards/`, `bot/`) stay in drive_manager's class path too.
+
+### The seams (the core names no server class)
+
+| Core (eras-engine) | Server (drive_manager) | Replaces |
+|---|---|---|
+| `engine/CardSource` (`fun interface`: `cards()`), `CardSources` (`install`, `cards()`) | `engine/ServerCardSource` → `CardFiles.load()` | `CardEffects` calling `CardFiles.load()` |
+| `bot/BotResourceSource` (`text(path, failure)`, `valueModel(path)`), `BotResourceSources` (`install`, `current()`, `NONE`) | `bot/ServerBotResourceSource`: class-path text, `ValueModelFiles.resource` | `BotCatalog` calling `ValueModelFiles` and `Platform.resourceText` |
+| `RoomGuard.usableDeck(privateDeck, deckOwner, room, userId)` | `RoomDecks` passes `DeckList.isPrivateDeck()`, `getUserId()` | `usableDeck(dto.DeckList, …)` |
+| `RoomEngine.EDITOR_RIVAL` | `RoomService.EDITOR_RIVAL` (an alias already) | `RoomService.EDITOR_RIVAL` in `RoomSetup`/`RoomGuard` |
+
+The server offers its two sources as `java.util.ServiceLoader` services
+(`src/main/resources/META-INF/services/com.drive.drive_manager.simulator.{engine.CardSource,bot.BotResourceSource}`), found by
+`Platform.discover` the first time the core needs them (when `CardEffects` / `BotCatalog` initialise), so every test and
+the server get them with no start-up code, exactly when they were read before. An `install(...)` before that first use
+wins over discovery (JavaScript, which has no service loader, and step C will install theirs that way). Without any
+source the core has no programmed cards and the bot plays with its defaults.
+
+### `platform/Platform.kt`: expect/actual
+
+`commonMain` declares `expect object Platform` (`randomSeed`, `discover`, `currentTimeMillis`, `nanoTime`, `now`,
+`seconds`, `randomHexId`, `concurrentMap`, `identityMap`, `emptySortedSetLike`, `emptySortedMapLike`),
+`computeIfAbsentAtomic`, `withLock` (`expect inline`), `expect class Instant`, `Duration`, `LocalValue<T>`,
+`AtomicCounter`, `AtomicFlag` and `expect annotation class Transient` (a typealias to the `@OptionalExpectation`
+`kotlin.jvm.Transient` is not allowed in common code).
+
+- `jvmMain` (`Platform.jvm.kt`): exactly the JVM implementation of step A (`java.time.Instant`/`Duration` and
+  `kotlin.jvm.Transient` as `actual typealias`, `ServiceLoader`, `ThreadLocal`, `ConcurrentHashMap.computeIfAbsent`,
+  `IdentityHashMap`, `TreeSet`/`TreeMap` copies, `synchronized`, `AtomicLong`, `AtomicBoolean`, `UUID`).
+- `jsMain` (`Platform.js.kt`): one thread. `Date.now()`, `performance.now()` (falls back to `Date.now()`),
+  `kotlin.random.Random.Default` (Math.random) for seeds and version-4-UUID-like hex ids, `HashMap` for the concurrent
+  map, an identity map on a JavaScript `Map`, no sorted copies (null), no-op `withLock`, plain holder/counter/flag, an
+  `Instant` of epoch millis and a `Duration` of seconds, no service discovery.
+- `PlatformTest` (commonTest) runs on the JVM and on Node.
+
+Class-path resources are no longer read by the core (`resourceText` went to `ServerBotResourceSource`).
+
+### Other changes
+
+- One `GameRandom`: the core's (`com.drive.drive_manager.simulator.engine.GameRandom`, with `nextGaussian`). eras-engine's
+  phase-0 `com.eras.engine.GameRandom`/`GameShuffle` is gone; `EngineApi`, `GameRandomTest`, `JavaRandomParityTest` and
+  `KotlinEngineInteropTest` use the core's (`nextInt(bound)`, `GameRandom.shuffle`).
+- eras-engine's JVM build keeps parameter names (`javaParameters`, as the kotlin-maven-plugin had them): Jackson puts a
+  constructor's parameters first, in their order (`CardSlot`'s JSON). `-Xexpect-actual-classes` silences the Beta warning.
+- `kotlin.jvm` annotations (`JvmStatic`, `JvmField`, `JvmName`, `JvmOverloads`, `JvmSuppressWildcards`, `JvmRecord`) are
+  imported explicitly in each moved file.
+- drive_manager's pom: the engine dependency excludes `kotlinx-serialization-json` (only the web facade `com.eras.engine`
+  uses it; on the server's class path Spring could pick it as another JSON converter). The `kmp-engine` profile adds it
+  back for `KotlinEngineInteropTest`.
+- `CoreBoundaryTest` reads the core's Kotlin from `../eras-engine/src/commonMain/kotlin`, same rules (the two new
+  server sources are listed with the server's files). `EngineShapeTest` only ever scanned drive_manager's `.java` files;
+  it is unchanged.
+- All the tests stayed in `drive_manager/src/test/java` and run against the engine's jar.
+
+### Building locally
+
+```bash
+cd eras-engine && ./gradlew build publishToMavenLocal   # core on the JVM and JS, tests on both, jar into ~/.m2
+cd ../drive_manager && mvn test                         # uses com.eras:eras-engine-jvm from ~/.m2
+mvn -Pkmp-engine test -Dtest='KotlinEngineInteropTest'  # the engine against java.util.Random and Jackson
+```
+
+After changing the core, publish it again before building drive_manager (Maven takes the jar from `~/.m2`, not the
+sources). In IntelliJ, open both builds (Gradle and Maven); the server's Maven project sees the engine as a jar.
+
+### Docker and CI
+
+- `drive_manager/Dockerfile` builds from the **repository root** (`docker build -f drive_manager/Dockerfile .`): stage
+  `engine` (eclipse-temurin:21-jdk, the Gradle wrapper, `./gradlew publishToMavenLocal`), stage `builder` (Maven, with
+  `com/eras` copied into its `~/.m2`, then `dependency:go-offline` and `package`), then the JRE image as before.
+  `.dockerignore` at the root keeps `.git`, build outputs (`build`, `target`, `.gradle`, `.kotlin`), `node_modules` and
+  `.env` files out of the context.
+- `docker-compose.yml` (root: `context: .`; drive_manager's: `context: ..`) both with `dockerfile: drive_manager/Dockerfile`.
+- `.github/workflows/ci-cd.yml`: the `test` job sets up Gradle and runs `./gradlew publishToMavenLocal` in `eras-engine`
+  before `mvn verify`; the `build` job's `docker/build-push-action` uses `context: .` and `file: drive_manager/Dockerfile`;
+  the `engine` job is unchanged (engine tests on the JVM and Node, publish, interop test).
