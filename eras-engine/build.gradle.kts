@@ -194,11 +194,14 @@ tasks.named<Test>("jvmTest") {
 // (EngineApi.installBotResources) and starter-decks.json (LocalMatch's "decks" for the starter decks)
 tasks.named<Copy>("jsBrowserProductionLibraryDistribution") {
     from(cardBundle, botResources, starterDecks)
+    // the Node distribution (run by `build`) writes the same folder: let the browser one, with the assets, go last
+    mustRunAfter("jsNodeProductionLibraryDistribution")
 }
 
 // `./gradlew jsSmoke`: plays a whole game with the npm package from Node, as eras-web's worker will (js-smoke/smoke.mjs)
 val jsSmoke by tasks.registering(Exec::class) {
     dependsOn("jsBrowserProductionLibraryDistribution", "kotlinNodeJsSetup")
+    mustRunAfter("jsNodeProductionLibraryDistribution")
     val dist = layout.buildDirectory.dir("dist/js/productionLibrary")
     inputs.dir(dist)
     inputs.file("js-smoke/smoke.mjs")
