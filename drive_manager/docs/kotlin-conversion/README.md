@@ -292,3 +292,32 @@ same saturating conversion), `sortWith` for `List.sort` (the same stable TimSort
   resource is not closed, as in Java). `String.split("\\R")` → `Pattern.compile("\\R").split(s)`.
 - **A `for` whose condition reads the room** (`for (step = 0; step < MAX && copy.getStatus() == …; step++)`) →
   `for (step in 0 until MAX) { if (!(cond)) break; … }`, or a `while` with `step++` at the end of the body when nothing `continue`s.
+
+## Lessons from batch 12 (`bot`: `BotPlayer`, `HeuristicBot`, `MoveTrials`, `CombatSearch`, `BotSettings`)
+
+With it the bot is Kotlin but for `BotRooms` and `ValueModelFiles` (the server's scheduler and Jackson). The seeded bot games
+stayed identical.
+
+- **A Java base class with `protected static` helpers** (`BotPlayer.choices/own/onField`, `HeuristicBot.summonX`): companion
+  `@JvmStatic protected fun`. Java sees `protected static` (so Java of the same package still calls them), Kotlin subclasses
+  reach them unqualified from instance code and qualified from their own companion (`HeuristicBot.summonX` in `LookaheadBot`'s).
+  A `protected static` that a Kotlin **non-subclass** of the package called through Java's package access (`BotPlayer.value` from
+  `StrengthCuts`, `HandRank`…) must become public: Kotlin's `protected` has no package access.
+- **Package-private instance methods a Java class calls** (`claimWake`, `releaseWake`, `pause` from `BotRooms`) → public `open fun`
+  (`internal` would mangle them). Keep `open` on every method Java could override (Java tests subclass `BotPlayer`: `SlowBot.next`).
+- **Package-private `final` fields read on every call** (`BotSettings.life`, `vStr`…) → `@JvmField internal val x: Double = values["x"]!!`
+  initialized from the constructor **parameter** (as Java read it, not the copied map). With `@JvmField` there is no getter, so a
+  property `life` sits next to a function `life()` without clashing.
+- **A Java `List<String>` answer built from nullable ids** (`Prompt.validIds: MutableList<String?>`): compute with `List<String?>` in the
+  helpers and cast once where the override returns (`return chosen as List<String>?`, `@Suppress("UNCHECKED_CAST")`).
+- **`Map.of(me, botA, rival, botB)` and `sides.get(seat)`**: Java's `Map.of` throws on a null key, at build and at `get`. Keep
+  `java.util.Map.of<String?, BotPlayer>(...)` and `sides[seat]`, so a missing seat throws where it threw.
+- **A private record compared by `List.remove`** (`CombatSearch.Unit` in `prey.remove(best)`): a `data class` keeps the value equality
+  (doubles by `Double.compare`, as a record's) and so which equal element goes. A nested class named `Unit` shadows `kotlin.Unit` in the
+  enclosing object: fine while nothing there writes `: Unit`.
+- **A local that shadows a function of the enclosing object, from a nested class** (`var best` in `Fight.attack` next to
+  `CombatSearch.best(...)`): qualify with the object's name; a member function of the same class (`counter` next to the property
+  `counter`) needs nothing.
+- Java bit masks: `a & b & (1 << i)` → `(a and b and (1 shl i))`, `x &= ~m` → `x = x and m.inv()`, `(long) a << 10` →
+  `(a.toLong() shl 10)`; parenthesize (Kotlin's infix `shl` binds weaker than `+`). `++nodes[0] > MAX` works as is.
+  `DoubleStream.sum()` (`cheapestGroup`) stays a stream, as batch 10 says.
