@@ -57,6 +57,20 @@ class ProgressionRulesTest {
     }
 
     @Test
+    void gamesAgainstTheBotCountForTheMilestonesButNotForTheFirstGameAgainstAPlayer() {
+        Set<String> claimed = Set.of("welcome", "structure", "how-to-play", "cards", "deck", "pack", "avatar");
+        var firstGame = ProgressionRules.step("first-game");
+        var onlyBot = new ProgressionRules.Facts(Map.of(MissionRules.GAME_PLAYED, 3, ProgressionRules.BOT_GAME_PLAYED, 3, MissionRules.GAME_WON, 2), Set.of(), false, 0);
+        assertThat(ProgressionRules.progress(firstGame, onlyBot, claimed)).isZero();
+        assertThat(ProgressionRules.refusal(firstGame, onlyBot, claimed)).isEqualTo("Esa misión todavía no está cumplida");
+        assertThat(ProgressionRules.milestones(onlyBot, Map.of("games", 1)).get(0).progress()).isEqualTo(3);
+        assertThat(ProgressionRules.progress(ProgressionRules.step("first-win"), onlyBot, Set.of())).isEqualTo(2);
+
+        var oneAgainstAPlayer = new ProgressionRules.Facts(Map.of(MissionRules.GAME_PLAYED, 4, ProgressionRules.BOT_GAME_PLAYED, 3), Set.of(), false, 0);
+        assertThat(ProgressionRules.refusal(firstGame, oneAgainstAPlayer, claimed)).isNull();
+    }
+
+    @Test
     void aMilestoneShowsItsNextTierAndStopsAtTheLast() {
         var facts = new ProgressionRules.Facts(Map.of(MissionRules.GAME_PLAYED, 12), Set.of(), false, 0);
         var games = ProgressionRules.milestone("games");

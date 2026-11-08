@@ -1,6 +1,7 @@
 package com.eras.engine.local
 
 import com.drive.drive_manager.simulator.platform.Clocks
+import com.drive.drive_manager.simulator.room.GameRoom
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonNull
 import kotlinx.serialization.json.JsonObject
@@ -47,6 +48,8 @@ class LocalMatch(config: String) {
     val userId: String
 
     private var failure: String? = null
+    /** How many times the room's game has reached the post-game (a rematch plays another game in the same room). */
+    private var ended = 0
 
     /** What went wrong in the last [send] or [step] (a body that could not be read, a failure inside the engine), or null. */
     fun lastError(): String? = failure
@@ -83,11 +86,19 @@ class LocalMatch(config: String) {
             return emptyArray()
         }
         return try {
-            clocks.run { room.send(parsed).map { UpdateJson.text(it) } }.toTypedArray()
+            counted { clocks.run { room.send(parsed).map { UpdateJson.text(it) } }.toTypedArray() }
         } catch (e: Throwable) {
             failure = "The engine failed on " + parsed.type + ": " + e
             emptyArray()
         }
+    }
+
+    /** Runs a step of the game, counting the post-games it reaches. */
+    private fun <T> counted(block: () -> T): T {
+        val before = room.room.status
+        val out = block()
+        if (before != GameRoom.RoomStatus.POST_GAME && room.room.status == GameRoom.RoomStatus.POST_GAME) ended++
+        return out
     }
 
     /**
@@ -96,7 +107,7 @@ class LocalMatch(config: String) {
      */
     fun step(): Array<String>? {
         return try {
-            clocks.run { room.botMove()?.map { UpdateJson.text(it) } }?.toTypedArray()
+            counted { clocks.run { room.botMove()?.map { UpdateJson.text(it) } }?.toTypedArray() }
         } catch (e: Throwable) {
             failure = "The bot failed: $e"
             null
@@ -116,6 +127,24 @@ class LocalMatch(config: String) {
     /** The room's status now ("WAITING", "MULLIGAN", "IN_PROGRESS", "POST_GAME", "FINISHED"…). */
     fun status(): String = room.room.status.name
 
+    /**
+     * The game as it stands, as JSON: `{"status", "gamesEnded", "winnerId", "endReason", "turns", "digest"}`. `gamesEnded`:
+     * how many times the room reached the post-game (a rematch plays another game in the room); `digest`: [MatchDigest],
+     * the sum of the game without the clock's times (the same game gives the same digest on the JVM and in the browser).
+     * What an offline game claims when it is sent to the server, which plays it again and compares.
+     */
+    fun result(): String {
+        val r = room.room
+        return JsonObject(linkedMapOf(
+            "status" to JsonPrimitive(r.status.name),
+            "gamesEnded" to JsonPrimitive(ended),
+            "winnerId" to (r.winnerId?.let { JsonPrimitive(it) } ?: JsonNull),
+            "endReason" to (r.endReason?.let { JsonPrimitive(it) } ?: JsonNull),
+            "turns" to JsonPrimitive(MatchDigest.turns(r)),
+            "digest" to JsonPrimitive(MatchDigest.of(r)),
+        )).toString()
+    }
+
     companion object {
         const val DEFAULT_ROOM = "local"
         const val DEFAULT_USER = "local-player"
@@ -129,4 +158,13 @@ class LocalMatch(config: String) {
 
         private fun string(o: JsonObject, key: String): String? = (o[key] as? JsonPrimitive)?.takeIf { it !is JsonNull }?.content
     }
+}
+
+/**
+ * The room a [LocalMatch] plays, for the JVM (drive_manager plays offline games again and counts them as the server
+ * counts its own games: missions, activity log). Not for the browser: the board only reads the messages.
+ */
+object LocalMatchRoom {
+    @kotlin.jvm.JvmStatic
+    fun of(match: LocalMatch): GameRoom = match.room.room
 }

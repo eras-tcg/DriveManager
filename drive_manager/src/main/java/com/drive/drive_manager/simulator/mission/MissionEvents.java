@@ -1,6 +1,8 @@
 package com.drive.drive_manager.simulator.mission;
 
 import com.drive.drive_manager.service.MissionRules;
+import com.drive.drive_manager.service.ProgressionRules;
+import com.drive.drive_manager.simulator.bot.BotSeat;
 import com.drive.drive_manager.simulator.engine.GameEvent;
 import com.drive.drive_manager.simulator.room.CardSlot;
 import com.drive.drive_manager.simulator.room.GameRoom;
@@ -13,8 +15,11 @@ import java.util.Map;
 /**
  * What an action in an online game counts for the players' missions: the summons and the damage to lives recorded
  * on the game's timeline since the action began (not what was done by hand from the board), and, when a game that was
- * really played just ended, one game played for each player and one won for the winner. A test room (solo mode)
- * counts nothing. Pure.
+ * really played just ended, one game played for each player and one won for the winner. A game against the bot
+ * (Modo solo on the server, and an offline game accepted by the server: OfflineGames) counts the same for its player
+ * (never for the bot's seat), its games also as {@link ProgressionRules#BOT_GAME_PLAYED} (the welcome step that asks
+ * for a game against another player leaves them out). A test room (Sala de pruebas: the editor room, with or without
+ * its bots, its manual actions and its timeline) and a replay count nothing. Pure.
  */
 public final class MissionEvents {
 
@@ -40,8 +45,8 @@ public final class MissionEvents {
     /** The progress made by an action that started with the room in `statusBefore` and its timeline at `seqBefore`. */
     public static List<Progress> of(GameRoom room, GameRoom.RoomStatus statusBefore, long seqBefore) {
         List<Progress> out = new ArrayList<>();
-        // Games against the bot count nothing, as test rooms: missions are won against players
-        if (room.isEditor() || room.isBot()) return out;
+        // The Sala de pruebas (its owner plays both sides, by hand or with bots) and a kept game watched again count nothing
+        if (room.isEditor() || room.isReplay()) return out;
         for (GameEvent e : room.getTimeline()) {
             if (e.getSeq() <= seqBefore || e.getPlayerId() == null || manual(e)) continue;
             switch (e.getType()) {
@@ -62,9 +67,14 @@ public final class MissionEvents {
         // Only a game that was in progress when the action began, and lasted, counts as played
         boolean ended = statusBefore == GameRoom.RoomStatus.IN_PROGRESS && room.getStatus() == GameRoom.RoomStatus.POST_GAME;
         if (ended && played(room)) {
-            room.getPlayers().keySet().forEach(id -> out.add(new Progress(id, MissionRules.GAME_PLAYED, 1)));
+            room.getPlayers().keySet().forEach(id -> {
+                out.add(new Progress(id, MissionRules.GAME_PLAYED, 1));
+                if (room.isBot()) out.add(new Progress(id, ProgressionRules.BOT_GAME_PLAYED, 1));
+            });
             if (room.getWinnerId() != null) out.add(new Progress(room.getWinnerId(), MissionRules.GAME_WON, 1));
         }
+        // The bot has no account: what it does counts for nobody (what is done to it counts for its rival)
+        if (room.isBot()) out.removeIf(p -> BotSeat.BOT.equals(p.userId()));
         return out;
     }
 

@@ -113,6 +113,43 @@ public class MatchHistory {
     private void write(MatchRecorder.Match match) throws IOException {
         ObjectId id = new ObjectId();
         MatchSetup setup = match.setup();
+        Document doc = document(match, id);
+        if (ranks != null && setup.ranked()) {
+            Document changes = new Document();
+            ranks.apply(match, id.toHexString()).forEach((userId, c) -> {
+                changes.put(userId, RankService.changeDocument(c, id.toHexString(), match.roomId()));
+                ranks.named(userId, setup.username(userId));
+            });
+            doc.append("rankChanges", changes);
+        }
+        mongo.insert(doc, MATCHES);
+        mongo.insert(new Document("_id", id).append("createdAt", new Date()).append("rulesVersion", rulesVersion)
+                .append("data", new Binary(gzip(write(setup, match.actions())))), LOGS);
+        for (MatchSetup.Seat s : setup.seats()) if (!BotRooms.BOT.equals(s.userId())) dropOldLogs(s.userId());
+    }
+
+    /**
+     * Keeps a game played offline against the bot (in the browser, then played again and accepted by the server:
+     * OfflineGames) as the history keeps the server's own games against the bot, flagged {@code offline} (with the
+     * offline game's id and the engine's build that played it), never ranked, and without a log to watch it again
+     * (the server has the player's actions, not the bot's). Written at once; returns its id.
+     */
+    public String saveOffline(MatchRecorder.Match match, int actions, String offlineId, String engineBuild) {
+        ObjectId id = new ObjectId();
+        Document doc = document(match, id)
+                .append("ranked", false)
+                .append("actions", actions)
+                .append("hasLog", false)
+                .append("offline", true)
+                .append("offlineId", offlineId)
+                .append("engineBuild", engineBuild);
+        mongo.insert(doc, MATCHES);
+        return id.toHexString();
+    }
+
+    /** What {@code matches} keeps of a game. */
+    private Document document(MatchRecorder.Match match, ObjectId id) {
+        MatchSetup setup = match.setup();
         List<Document> players = new ArrayList<>();
         for (MatchSetup.Seat s : setup.seats()) {
             players.add(new Document("userId", s.userId()).append("username", s.username()).append("deckId", s.deckId())
@@ -137,18 +174,7 @@ public class MatchHistory {
                 .append("fingerprint", match.fingerprint())
                 .append("hasLog", true)
                 .append("botLevel", match.botLevel());
-        if (ranks != null && setup.ranked()) {
-            Document changes = new Document();
-            ranks.apply(match, id.toHexString()).forEach((userId, c) -> {
-                changes.put(userId, RankService.changeDocument(c, id.toHexString(), match.roomId()));
-                ranks.named(userId, setup.username(userId));
-            });
-            doc.append("rankChanges", changes);
-        }
-        mongo.insert(doc, MATCHES);
-        mongo.insert(new Document("_id", id).append("createdAt", new Date()).append("rulesVersion", rulesVersion)
-                .append("data", new Binary(gzip(write(setup, match.actions())))), LOGS);
-        for (MatchSetup.Seat s : setup.seats()) if (!BotRooms.BOT.equals(s.userId())) dropOldLogs(s.userId());
+        return doc;
     }
 
     /**
