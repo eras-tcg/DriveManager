@@ -18,6 +18,7 @@ import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 import java.util.List;
+import java.util.stream.Stream;
 
 @Configuration
 @EnableWebSecurity
@@ -26,6 +27,10 @@ public class SecurityConfig {
 
     @Value("${cors.allowed-origins}")
     private List<String> allowedOrigins;
+
+    /** The Android app's WebView (Capacitor serves the page at https://localhost): always allowed, whatever the environment lists. */
+    @Value("${cors.app-origins:https://localhost}")
+    private List<String> appOrigins;
 
     private final JwtAuthFilter jwtAuthFilter;
 
@@ -57,8 +62,21 @@ public class SecurityConfig {
 
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
+        return corsSource(allowedOrigins, appOrigins);
+    }
+
+    /**
+     * /api/** for the configured origins plus the Android app's. The site's own pages are same-origin (the proxy's
+     * forwarded headers, server.forward-headers-strategy) and never need it. The app sends its session as a bearer
+     * token (no cookies), so allowing its origin lets nothing reach the API without one.
+     */
+    static CorsConfigurationSource corsSource(List<String> allowedOrigins, List<String> appOrigins) {
         CorsConfiguration config = new CorsConfiguration();
-        config.setAllowedOrigins(allowedOrigins);
+        config.setAllowedOrigins(Stream.concat(allowedOrigins.stream(), appOrigins.stream())
+                .map(String::trim)
+                .filter(origin -> !origin.isEmpty())
+                .distinct()
+                .toList());
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
         config.setAllowedHeaders(List.of("*"));
         config.setAllowCredentials(true);
