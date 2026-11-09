@@ -6,6 +6,7 @@ import com.drive.drive_manager.simulator.bot.BotSeat
 import com.drive.drive_manager.simulator.bot.RoomBots
 import com.drive.drive_manager.simulator.bot.Usefulness
 import com.drive.drive_manager.simulator.engine.GameRandom
+import com.drive.drive_manager.simulator.engine.LinkWatch
 import com.drive.drive_manager.simulator.platform.Clocks
 import com.drive.drive_manager.simulator.rank.RankRules
 import com.drive.drive_manager.simulator.room.ActionType
@@ -30,7 +31,11 @@ import com.drive.drive_manager.simulator.room.StateMask
  *   as the [RoomHost], the error tagged with who caused it) and what `RoomMessages.send` would send the player;
  * - [botMove]: one move of the bot ([RoomBots.move], as `BotRooms.move`) and what the player is sent of it;
  * - the hosts' answers: the player's icon and playmat from the match's configuration, the decks from [LocalDecks] instead
- *   of Mongo, the card instances numbered ("c1", "c2"…), a ranked game at a new player's strength, no test rooms.
+ *   of Mongo, the card instances numbered ("c1", "c2"…), a ranked game at a new player's strength.
+ *
+ * A test room (`editor`, "Sala de pruebas sin conexión"): the owner plays both sides, as the server's test room
+ * (`RoomOptions.TEST`); the bot plays the rival's side only when the owner asks for it (SET_EDITOR_BOT). Its timeline
+ * (`TestTimeline`) stays the server's.
  *
  * Nothing here is shared between rooms or threads: a [LocalMatch] owns one, and calls it from one thread.
  */
@@ -44,12 +49,18 @@ internal class LocalRoom(
     botLevel: String?,
     /** The seed of each new bot's own chance (the copies it thinks on). */
     private val botSeed: Long,
+    /** A test room: the owner plays both sides, no bot seated. */
+    editor: Boolean = false,
 ) : RoomHost, RoomSeats.Keeper, DeckChoice.Shelf, RoomBots.Roster {
 
-    /** RoomService.createRoom(owner, RoomOptions.BOT): RoomSetup.newRoom, then the bot seated. */
-    val room: GameRoom = RoomSetup.newRoom(userId, false, false)
+    /**
+     * RoomService.createRoom(owner, RoomOptions.BOT): RoomSetup.newRoom, then the bot seated; a test room
+     * (RoomOptions.TEST) comes with its rival, played by the owner.
+     */
+    val room: GameRoom = RoomSetup.newRoom(userId, editor, false)
     private val engine = RoomEngine(this)
-    private lateinit var bot: BotPlayer
+    /** The bot of the bot's seat (in a test room, of the rival's side, once asked for), or null. */
+    private var bot: BotPlayer? = null
     /** False once the room is closed (left or closed by its owner): every action is answered "La sala ya no existe". */
     var open = true
         private set
@@ -60,7 +71,7 @@ internal class LocalRoom(
         room.roomId = roomId
         room.random = GameRandom(seed)
         if (botLevel != null) room.botLevel = botLevel
-        RoomBots.seat(room, this)
+        if (!editor) RoomBots.seat(room, this)
     }
 
     // ------------------------------------------------------------------ The player's action
@@ -88,6 +99,38 @@ internal class LocalRoom(
         return listOf(if (update.error != null) update else StateMask.forViewer(update, userId, false))
     }
 
+    // ------------------------------------------------------------------ As JSON, link by link
+
+    /**
+     * [send], each message as the JSON text the board reads (written at once: an update refers to the room's live
+     * lists), with the room as its chain resolves before them (`LINK_STEP`, `LINK_RESOLVED`, as the server sends), so the board
+     * plays each link's effects when it resolves. Not while travelling in time (the test room's timeline).
+     */
+    fun sendTexts(action: GameAction): List<String> {
+        val out = ArrayList<String>()
+        val updates = if (ActionType.TIME_STEP.`is`(action) || ActionType.SET_PAUSED.`is`(action)) send(action)
+        else LinkWatch.during(room, { r, event -> chainStep(r, event, userId, out) }) { send(action) }
+        updates.mapTo(out) { UpdateJson.text(it) }
+        return out
+    }
+
+    /** [botMove] as JSON texts, link by link as [sendTexts]; null when the bot has nothing to do now. */
+    fun botMoveTexts(): List<String>? {
+        val player = bot
+        if (!open || player == null) return null
+        val seat = BotSeat.seatOf(room)
+        val out = ArrayList<String>()
+        val move = LinkWatch.during(room, { r, event -> chainStep(r, event, seat, out) }) {
+            RoomBots.move(room, player, seat, { applyAction(seat, it) }) { u -> toPlayer(u).mapTo(out) { UpdateJson.text(it) } }
+        }
+        return if (move == RoomBots.Move.NOTHING) null else out
+    }
+
+    /** What the player is sent of the room as its chain resolves, in the middle of `actor`'s action. */
+    private fun chainStep(r: GameRoom, event: String, actor: String?, out: MutableList<String>) {
+        toPlayer(GameStateUpdate.chainStep(r, event, actor)).mapTo(out) { UpdateJson.text(it) }
+    }
+
     // ------------------------------------------------------------------ The bot
 
     /**
@@ -95,14 +138,20 @@ internal class LocalRoom(
      * update, or the update of its conceding when the engine refused every move it tried).
      */
     fun botMove(): List<GameStateUpdate>? {
-        if (!open) return null
+        val player = bot
+        if (!open || player == null) return null
+        // Its seat: the bot's, or in a test room the rival's ([BotSeat.seatOf])
+        val seat = BotSeat.seatOf(room)
         val sent = ArrayList<GameStateUpdate>()
-        val move = RoomBots.move(room, bot, BOT, { applyAction(BOT, it) }) { sent.addAll(toPlayer(it)) }
+        val move = RoomBots.move(room, player, seat, { applyAction(seat, it) }) { sent.addAll(toPlayer(it)) }
         return if (move == RoomBots.Move.NOTHING) null else sent
     }
 
-    /** How long the server's bot waits before its next move (`BotRooms.wake`): the room's pace, else the bot's own. */
-    fun botPauseMs(): Long = room.botDelayMs?.toLong() ?: bot.pause(room, BOT)
+    /**
+     * How long the server's bot waits before its next move (`BotRooms.wake`): the room's pace, else the bot's own (a test
+     * room without its bot: the default pace, nothing moves anyway).
+     */
+    fun botPauseMs(): Long = room.botDelayMs?.toLong() ?: bot?.pause(room, BotSeat.seatOf(room)) ?: DEFAULT_PAUSE_MS
 
     // ------------------------------------------------------------------ RoomHost: the room session's answers
 
@@ -149,11 +198,18 @@ internal class LocalRoom(
         bot = BotCatalog.botAt(level).also { it.seed(botSeed) }
     }
 
+    /** Test room: the owner plays the rival's side by hand again. */
+    override fun dropBot(room: GameRoom) {
+        bot = null
+    }
+
     /** No ladder here: a ranked game is played at a new player's strength, and nothing is recorded. */
     override fun ownerStrength(room: GameRoom): Int = RankRules.START_MMR
 
     companion object {
         const val BOT = BotSeat.BOT
+        /** The pace asked of a test room with no bot (nothing moves; the worker only needs a number). */
+        const val DEFAULT_PAUSE_MS = 600L
     }
 }
 

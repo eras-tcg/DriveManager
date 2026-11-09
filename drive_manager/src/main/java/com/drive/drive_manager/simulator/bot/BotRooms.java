@@ -167,7 +167,7 @@ public final class BotRooms {
                     again = true;
                     return;
                 }
-                GameStateUpdate update = apply(live, seat, action);
+                GameStateUpdate update = service.linkByLink(live, seat, action, () -> apply(live, seat, action));
                 if (update == null || update.getError() == null) {
                     misses.remove(bot);
                     bot.played(live, action);
@@ -210,7 +210,7 @@ public final class BotRooms {
     }
 
     private boolean move(GameRoom room, BotPlayer bot, String seat) {
-        return RoomBots.move(room, bot, seat, a -> apply(room, seat, a), u -> broadcast(room, u)) == RoomBots.Move.MOVED;
+        return RoomBots.move(room, bot, seat, a -> service.linkByLink(room, seat, a, () -> apply(room, seat, a)), u -> broadcast(room, u)) == RoomBots.Move.MOVED;
     }
 
     private kotlin.Unit broadcast(GameRoom room, GameStateUpdate update) {

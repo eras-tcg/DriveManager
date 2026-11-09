@@ -36,7 +36,10 @@ class LocalMatchTest {
         TestFiles.dump("$name.txt", game.messages.joinToString("\n"))
         assertNull(game.match.lastError())
         assertEquals(GameRoom.RoomStatus.POST_GAME, game.status, "the game ends")
-        assertEquals(EXPECTED[name], game.digest, name)
+        // The game's own messages are what they always were; the links' updates come on top of them
+        assertEquals(EXPECTED[name], game.gameDigest, name)
+        println("$name: ${game.linkUpdates} link updates, digest with them ${game.digest}")
+        assertEquals(EXPECTED_WITH_LINKS[name], game.digest, name)
         // What an offline game claims: the same on both platforms, without the clock's times
         val result = game.match.result()
         println("$name result: $result")
@@ -113,6 +116,22 @@ class LocalMatchTest {
     }
 
     @Test
+    fun aTestRoomIsPlayedByItsOwnerOnBothSidesWithNoBot() {
+        TestCards.install()
+        val match = LocalMatch(LocalGames.config(11, ""","editor":true"""))
+        val join = match.send(LocalGames.body("JOIN_ROOM", mapOf("username" to "Ana"))).single()
+        assertTrue(join.contains("\"editor\":true") && join.contains("\"editor-rival\""), join)
+        match.send(LocalGames.body("SET_DECK", mapOf("deckId" to "deck-st1")))
+        // The owner chooses the rival's deck too (actAs), and confirms for both sides: the game starts
+        match.send(LocalGames.body("SET_DECK", mapOf("deckId" to "deck-st2", "actAs" to "editor-rival")))
+        val start = match.send(LocalGames.body("SET_READY", mapOf("ready" to true))).single()
+        assertTrue(start.contains("\"event\":\"START_GAME\""), start)
+        // No bot: nothing moves by itself
+        assertNull(match.step())
+        assertEquals(GameRoom.RoomStatus.MULLIGAN, match.room.room.status)
+    }
+
+    @Test
     fun doublesAreWrittenAsJavaWritesThem() {
         val cases = mapOf(
             50.0 to "50.0", 75.0 to "75.0", 12.5 to "12.5", 0.1 to "0.1", 0.001 to "0.001", 1.0E-4 to "1.0E-4",
@@ -130,6 +149,17 @@ class LocalMatchTest {
             "st2-st3-2-easy" to "{\"status\":\"POST_GAME\",\"gamesEnded\":1,\"winnerId\":\"local-player\",\"endReason\":\"lives\",\"turns\":17,\"digest\":\"2810ac77b1be5505\"}",
             "st4-st1-3-easy" to "{\"status\":\"POST_GAME\",\"gamesEnded\":1,\"winnerId\":\"local-player\",\"endReason\":\"lives\",\"turns\":12,\"digest\":\"07b16f261386427e\"}",
             "st3-st4-5-normal" to "{\"status\":\"POST_GAME\",\"gamesEnded\":1,\"winnerId\":\"bot\",\"endReason\":\"lives\",\"turns\":11,\"digest\":\"71b04a9fecf39937\"}",
+        )
+
+        /**
+         * Every message, the updates sent as the chain resolves included (LINK_STEP, LINK_RESOLVED; taken on the JVM, JavaScript
+         * must give the same). Without them the messages give [EXPECTED], as before those updates were sent.
+         */
+        val EXPECTED_WITH_LINKS = mapOf(
+            "st1-st1-1-easy" to "95fa6b64c238c11e",
+            "st2-st3-2-easy" to "7330852f4dbc6552",
+            "st4-st1-3-easy" to "cbe5413b73677e31",
+            "st3-st4-5-normal" to "7d344b975f10fa43",
         )
 
         /** Taken on the JVM; JavaScript must give the same. */
