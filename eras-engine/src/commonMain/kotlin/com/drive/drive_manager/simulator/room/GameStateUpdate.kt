@@ -115,16 +115,20 @@ class GameStateUpdate {
             return build(room, event, actorId)
         }
 
-        /** The update's event when a chain link has just resolved, mid-action ([linkResolved]). */
+        /** The update's event when a chain link has just resolved, mid-action ([chainStep]). */
         const val LINK_RESOLVED = "LINK_RESOLVED"
 
+        /** The update's event when a step of the link resolving has done something, mid-action ([chainStep]). */
+        const val LINK_STEP = "LINK_STEP"
+
         /**
-         * The room as a chain link just left it, in the middle of an action ([com.drive.drive_manager.simulator.engine.LinkWatch]):
-         * the board shows what that link did before the next one resolves. The engine's own state is not touched (no
-         * refresh of continuous effects mid-chain: the game must go on exactly as without it).
+         * The room as its resolving chain left it ([LINK_STEP], [LINK_RESOLVED]), in the middle of an action
+         * ([com.drive.drive_manager.simulator.engine.LinkWatch]): the board shows what was done before the rest. The
+         * engine's own state is not touched (no refresh of continuous effects mid-chain: the game must go on exactly as
+         * without it).
          */
         @JvmStatic
-        fun linkResolved(room: GameRoom, actorId: String?): GameStateUpdate = build(room, LINK_RESOLVED, actorId)
+        fun chainStep(room: GameRoom, event: String, actorId: String?): GameStateUpdate = build(room, event, actorId)
 
         private fun build(room: GameRoom, event: String?, actorId: String?): GameStateUpdate {
             val u = GameStateUpdate()

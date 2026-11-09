@@ -103,13 +103,13 @@ internal class LocalRoom(
 
     /**
      * [send], each message as the JSON text the board reads (written at once: an update refers to the room's live
-     * lists), with the room as each chain link left it before them (`LINK_RESOLVED`, as the server sends), so the board
+     * lists), with the room as its chain resolves before them (`LINK_STEP`, `LINK_RESOLVED`, as the server sends), so the board
      * plays each link's effects when it resolves. Not while travelling in time (the test room's timeline).
      */
     fun sendTexts(action: GameAction): List<String> {
         val out = ArrayList<String>()
         val updates = if (ActionType.TIME_STEP.`is`(action) || ActionType.SET_PAUSED.`is`(action)) send(action)
-        else LinkWatch.during(room, { r -> linkResolved(r, userId, out) }) { send(action) }
+        else LinkWatch.during(room, { r, event -> chainStep(r, event, userId, out) }) { send(action) }
         updates.mapTo(out) { UpdateJson.text(it) }
         return out
     }
@@ -120,15 +120,15 @@ internal class LocalRoom(
         if (!open || player == null) return null
         val seat = BotSeat.seatOf(room)
         val out = ArrayList<String>()
-        val move = LinkWatch.during(room, { r -> linkResolved(r, seat, out) }) {
+        val move = LinkWatch.during(room, { r, event -> chainStep(r, event, seat, out) }) {
             RoomBots.move(room, player, seat, { applyAction(seat, it) }) { u -> toPlayer(u).mapTo(out) { UpdateJson.text(it) } }
         }
         return if (move == RoomBots.Move.NOTHING) null else out
     }
 
-    /** What the player is sent of the room as a chain link just left it, in the middle of `actor`'s action. */
-    private fun linkResolved(r: GameRoom, actor: String?, out: MutableList<String>) {
-        toPlayer(GameStateUpdate.linkResolved(r, actor)).mapTo(out) { UpdateJson.text(it) }
+    /** What the player is sent of the room as its chain resolves, in the middle of `actor`'s action. */
+    private fun chainStep(r: GameRoom, event: String, actor: String?, out: MutableList<String>) {
+        toPlayer(GameStateUpdate.chainStep(r, event, actor)).mapTo(out) { UpdateJson.text(it) }
     }
 
     // ------------------------------------------------------------------ The bot

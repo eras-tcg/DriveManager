@@ -152,14 +152,14 @@ class LocalMatchTest {
         )
 
         /**
-         * Every message, the updates sent as each chain link resolves included (LINK_RESOLVED; taken on the JVM, JavaScript
+         * Every message, the updates sent as the chain resolves included (LINK_STEP, LINK_RESOLVED; taken on the JVM, JavaScript
          * must give the same). Without them the messages give [EXPECTED], as before those updates were sent.
          */
         val EXPECTED_WITH_LINKS = mapOf(
-            "st1-st1-1-easy" to "a09526064edbb2cb",
-            "st2-st3-2-easy" to "7d57eae2da1fd783",
-            "st4-st1-3-easy" to "9c643701a4554d5b",
-            "st3-st4-5-normal" to "65def9b7486375ba",
+            "st1-st1-1-easy" to "084cd5c2839460c6",
+            "st2-st3-2-easy" to "510856f9d538c36c",
+            "st4-st1-3-easy" to "6939bd1ba514406a",
+            "st3-st4-5-normal" to "9a39f59b5944a5b9",
         )
 
         /** Taken on the JVM; JavaScript must give the same. */

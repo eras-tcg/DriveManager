@@ -75,7 +75,7 @@ class LocalMatch(config: String) {
 
     /**
      * The player's action, the body the board publishes (`{"type": "…", "payload": {…}}`): the messages the server would
-     * send them for it, as JSON texts, in order: the room as each chain link left it (`LINK_RESOLVED`), then the action's
+     * send them for it, as JSON texts, in order: the room as its chain resolves (`LINK_STEP`, `LINK_RESOLVED`), then the action's
      * update (or none: a refused `SET_BOT_DELAY` sends its error, an accepted one nothing; an unreadable body nothing).
      * The bot does not move here: see [step].
      */

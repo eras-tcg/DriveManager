@@ -166,8 +166,8 @@ public class RoomService implements RoomHost {
      */
     public <T> T linkByLink(GameRoom room, String actorId, GameAction action, Supplier<T> block) {
         if (ActionType.TIME_STEP.is(action) || ActionType.SET_PAUSED.is(action)) return block.get();
-        return LinkWatch.during(room, r -> {
-            broadcast(r.getRoomId(), GameStateUpdate.linkResolved(r, actorId));
+        return LinkWatch.during(room, (r, event) -> {
+            broadcast(r.getRoomId(), GameStateUpdate.chainStep(r, event, actorId));
             return kotlin.Unit.INSTANCE;
         }, block::get);
     }

@@ -66,8 +66,12 @@ object Resolution {
             LinkWatch.resolved(room)
             return
         }
+        val seen = room.eventSeq
         val waiting = run(room, effect, steps[effect.stepIndex])
-        if (!waiting) effect.stepIndex = effect.stepIndex + 1
+        if (waiting) return
+        effect.stepIndex = effect.stepIndex + 1
+        // What this step did, shown before the next one ("…; si lo haces, …" in its order)
+        if (room.eventSeq != seen) LinkWatch.stepped(room)
     }
 
     /** Rule 6.2.3.1: a utility goes to the Descarte once its effect has resolved. */

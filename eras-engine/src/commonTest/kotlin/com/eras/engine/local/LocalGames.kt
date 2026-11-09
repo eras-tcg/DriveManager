@@ -31,7 +31,7 @@ object LocalGames {
         val gameDigest: String get() = GameFingerprint.digest(messages.filter { !it.contains(LINK) }.joinToString("\n"))
         /** How many updates were sent as chain links resolved. */
         val linkUpdates: Int get() = messages.count { it.contains(LINK) }
-        private val LINK = "\"event\":\"" + GameStateUpdate.LINK_RESOLVED + "\""
+        private val LINK = Regex("\"event\":\"(" + GameStateUpdate.LINK_RESOLVED + "|" + GameStateUpdate.LINK_STEP + ")\"")
     }
 
     /** The starter decks of the build (`starter-decks.json`): LocalMatch's "decks". */
