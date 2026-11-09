@@ -6,6 +6,7 @@ import com.drive.drive_manager.simulator.bot.BotSeat
 import com.drive.drive_manager.simulator.bot.RoomBots
 import com.drive.drive_manager.simulator.bot.Usefulness
 import com.drive.drive_manager.simulator.engine.GameRandom
+import com.drive.drive_manager.simulator.engine.LinkWatch
 import com.drive.drive_manager.simulator.platform.Clocks
 import com.drive.drive_manager.simulator.rank.RankRules
 import com.drive.drive_manager.simulator.room.ActionType
@@ -96,6 +97,38 @@ internal class LocalRoom(
     private fun toPlayer(update: GameStateUpdate?): List<GameStateUpdate> {
         if (update == null || userId !in StateMask.recipients(room, update)) return emptyList()
         return listOf(if (update.error != null) update else StateMask.forViewer(update, userId, false))
+    }
+
+    // ------------------------------------------------------------------ As JSON, link by link
+
+    /**
+     * [send], each message as the JSON text the board reads (written at once: an update refers to the room's live
+     * lists), with the room as each chain link left it before them (`LINK_RESOLVED`, as the server sends), so the board
+     * plays each link's effects when it resolves. Not while travelling in time (the test room's timeline).
+     */
+    fun sendTexts(action: GameAction): List<String> {
+        val out = ArrayList<String>()
+        val updates = if (ActionType.TIME_STEP.`is`(action) || ActionType.SET_PAUSED.`is`(action)) send(action)
+        else LinkWatch.during(room, { r -> linkResolved(r, userId, out) }) { send(action) }
+        updates.mapTo(out) { UpdateJson.text(it) }
+        return out
+    }
+
+    /** [botMove] as JSON texts, link by link as [sendTexts]; null when the bot has nothing to do now. */
+    fun botMoveTexts(): List<String>? {
+        val player = bot
+        if (!open || player == null) return null
+        val seat = BotSeat.seatOf(room)
+        val out = ArrayList<String>()
+        val move = LinkWatch.during(room, { r -> linkResolved(r, seat, out) }) {
+            RoomBots.move(room, player, seat, { applyAction(seat, it) }) { u -> toPlayer(u).mapTo(out) { UpdateJson.text(it) } }
+        }
+        return if (move == RoomBots.Move.NOTHING) null else out
+    }
+
+    /** What the player is sent of the room as a chain link just left it, in the middle of `actor`'s action. */
+    private fun linkResolved(r: GameRoom, actor: String?, out: MutableList<String>) {
+        toPlayer(GameStateUpdate.linkResolved(r, actor)).mapTo(out) { UpdateJson.text(it) }
     }
 
     // ------------------------------------------------------------------ The bot

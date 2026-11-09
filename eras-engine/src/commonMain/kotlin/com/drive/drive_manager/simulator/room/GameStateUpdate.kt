@@ -112,6 +112,21 @@ class GameStateUpdate {
         fun from(room: GameRoom, event: String?, actorId: String?): GameStateUpdate {
             // Continuous effects as they are now (manual moves in editor mode record no event)
             EffectEngine.refreshContinuous(room)
+            return build(room, event, actorId)
+        }
+
+        /** The update's event when a chain link has just resolved, mid-action ([linkResolved]). */
+        const val LINK_RESOLVED = "LINK_RESOLVED"
+
+        /**
+         * The room as a chain link just left it, in the middle of an action ([com.drive.drive_manager.simulator.engine.LinkWatch]):
+         * the board shows what that link did before the next one resolves. The engine's own state is not touched (no
+         * refresh of continuous effects mid-chain: the game must go on exactly as without it).
+         */
+        @JvmStatic
+        fun linkResolved(room: GameRoom, actorId: String?): GameStateUpdate = build(room, LINK_RESOLVED, actorId)
+
+        private fun build(room: GameRoom, event: String?, actorId: String?): GameStateUpdate {
             val u = GameStateUpdate()
             u.roomId            = room.roomId
             u.status            = room.status.name

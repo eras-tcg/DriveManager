@@ -36,7 +36,10 @@ class LocalMatchTest {
         TestFiles.dump("$name.txt", game.messages.joinToString("\n"))
         assertNull(game.match.lastError())
         assertEquals(GameRoom.RoomStatus.POST_GAME, game.status, "the game ends")
-        assertEquals(EXPECTED[name], game.digest, name)
+        // The game's own messages are what they always were; the links' updates come on top of them
+        assertEquals(EXPECTED[name], game.gameDigest, name)
+        println("$name: ${game.linkUpdates} link updates, digest with them ${game.digest}")
+        assertEquals(EXPECTED_WITH_LINKS[name], game.digest, name)
         // What an offline game claims: the same on both platforms, without the clock's times
         val result = game.match.result()
         println("$name result: $result")
@@ -146,6 +149,17 @@ class LocalMatchTest {
             "st2-st3-2-easy" to "{\"status\":\"POST_GAME\",\"gamesEnded\":1,\"winnerId\":\"local-player\",\"endReason\":\"lives\",\"turns\":17,\"digest\":\"2810ac77b1be5505\"}",
             "st4-st1-3-easy" to "{\"status\":\"POST_GAME\",\"gamesEnded\":1,\"winnerId\":\"local-player\",\"endReason\":\"lives\",\"turns\":12,\"digest\":\"07b16f261386427e\"}",
             "st3-st4-5-normal" to "{\"status\":\"POST_GAME\",\"gamesEnded\":1,\"winnerId\":\"bot\",\"endReason\":\"lives\",\"turns\":11,\"digest\":\"71b04a9fecf39937\"}",
+        )
+
+        /**
+         * Every message, the updates sent as each chain link resolves included (LINK_RESOLVED; taken on the JVM, JavaScript
+         * must give the same). Without them the messages give [EXPECTED], as before those updates were sent.
+         */
+        val EXPECTED_WITH_LINKS = mapOf(
+            "st1-st1-1-easy" to "a09526064edbb2cb",
+            "st2-st3-2-easy" to "7d57eae2da1fd783",
+            "st4-st1-3-easy" to "9c643701a4554d5b",
+            "st3-st4-5-normal" to "65def9b7486375ba",
         )
 
         /** Taken on the JVM; JavaScript must give the same. */

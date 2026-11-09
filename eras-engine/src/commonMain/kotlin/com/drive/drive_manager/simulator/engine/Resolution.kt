@@ -62,6 +62,8 @@ object Resolution {
                 "Se resuelve " + (if (effect.link > 0) "la Cadena " + effect.link + ": " else "") + effect.label + " de " + effect.sourceName)
             room.chain.removeAt(room.chain.size - 1)
             if (script.moment == EffectScript.Moment.ON_PLAY) utilityToDiscard(room, effect)
+            // The room as this link left it, for whoever shows each link's effects as it resolves
+            LinkWatch.resolved(room)
             return
         }
         val waiting = run(room, effect, steps[effect.stepIndex])

@@ -75,8 +75,9 @@ class LocalMatch(config: String) {
 
     /**
      * The player's action, the body the board publishes (`{"type": "…", "payload": {…}}`): the messages the server would
-     * send them for it, as JSON texts, in order (one, or none: a refused `SET_BOT_DELAY` sends its error, an accepted one
-     * nothing; an unreadable body nothing). The bot does not move here: see [step].
+     * send them for it, as JSON texts, in order: the room as each chain link left it (`LINK_RESOLVED`), then the action's
+     * update (or none: a refused `SET_BOT_DELAY` sends its error, an accepted one nothing; an unreadable body nothing).
+     * The bot does not move here: see [step].
      */
     fun send(action: String): Array<String> {
         failure = null
@@ -87,7 +88,7 @@ class LocalMatch(config: String) {
             return emptyArray()
         }
         return try {
-            counted { clocks.run { room.send(parsed).map { UpdateJson.text(it) } }.toTypedArray() }
+            counted { clocks.run { room.sendTexts(parsed) }.toTypedArray() }
         } catch (e: Throwable) {
             failure = "The engine failed on " + parsed.type + ": " + e
             emptyArray()
@@ -108,7 +109,7 @@ class LocalMatch(config: String) {
      */
     fun step(): Array<String>? {
         return try {
-            counted { clocks.run { room.botMove()?.map { UpdateJson.text(it) } }?.toTypedArray() }
+            counted { clocks.run { room.botMoveTexts() }?.toTypedArray() }
         } catch (e: Throwable) {
             failure = "The bot failed: $e"
             null

@@ -6,6 +6,7 @@ import com.drive.drive_manager.service.PlaymatService;
 import com.drive.drive_manager.simulator.bot.BotRooms;
 import com.drive.drive_manager.simulator.bot.RoomBots;
 import com.drive.drive_manager.simulator.engine.EffectEngine;
+import com.drive.drive_manager.simulator.engine.LinkWatch;
 import com.drive.drive_manager.simulator.mission.MissionHooks;
 import com.drive.drive_manager.simulator.rank.RankService;
 import com.drive.drive_manager.simulator.replay.MatchHistory;
@@ -22,6 +23,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Supplier;
 
 
 /**
@@ -152,9 +154,22 @@ public class RoomService implements RoomHost {
             else lock.getManualPlayers().remove(userId);
             if (admin) lock.getAdminPlayers().add(userId);
             else lock.getAdminPlayers().remove(userId);
-            broadcast(roomId, applyAction(roomId, userId, action, manual));
+            broadcast(roomId, linkByLink(lock, userId, action, () -> applyAction(roomId, userId, action, manual)));
         }
         botRooms.wake(roomId);
+    }
+
+    /**
+     * Runs `block` (an action of `actorId` on `room`, with the room held) sending the room, as each chain link leaves it
+     * ({@code LINK_RESOLVED}), before the action's own update: the board plays each link's effects when it resolves.
+     * Not while travelling in time (the test room's timeline plays moves again on the room).
+     */
+    public <T> T linkByLink(GameRoom room, String actorId, GameAction action, Supplier<T> block) {
+        if (ActionType.TIME_STEP.is(action) || ActionType.SET_PAUSED.is(action)) return block.get();
+        return LinkWatch.during(room, r -> {
+            broadcast(r.getRoomId(), GameStateUpdate.linkResolved(r, actorId));
+            return kotlin.Unit.INSTANCE;
+        }, block::get);
     }
 
     /** Each player gets their own view of the room (StateMask): nothing hidden from them leaves the server. */
