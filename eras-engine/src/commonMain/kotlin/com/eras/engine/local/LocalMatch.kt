@@ -22,10 +22,11 @@ import kotlin.js.JsExport
  *  "userId": "local-player", "avatar": null, "playmat": null, "roomId": "local", // the player's name: JOIN_ROOM's
  *  "time": null,                  // epoch millis written on every history line and event ("ts"); null: the clock's
  *  "botClock": "ticks",           // "ticks": the bot's time budgets counted in clock readings (the same game on any
- *  "tickNanos": 1000000}          //   machine); "system": real time, as the server's bot (a slower machine thinks less)
+ *  "tickNanos": 1000000,          //   machine); "system": real time, as the server's bot (a slower machine thinks less)
+ *  "editor": false}               // true: a test room ("Sala de pruebas sin conexión"), the owner plays both sides
  * ```
- * The room exists as soon as it is made, with the bot seated (as the server's `POST /api/simulator/rooms?bot=true`): the
- * board then sends `JOIN_ROOM` as it does online.
+ * The room exists as soon as it is made, with the bot seated (as the server's `POST /api/simulator/rooms?bot=true`; a
+ * test room with its rival instead, as `?editor=true`): the board then sends `JOIN_ROOM` as it does online.
  *
  * Threading: one thread (a Web Worker), no locks, nothing runs on its own. [send] applies one action of the player and
  * returns at once; the bot moves only when asked, one move per [step] (as the server's bot moves after a pause), until
@@ -68,14 +69,15 @@ class LocalMatch(config: String) {
         clocks = MatchClocks(string(c, "time")?.toLong(), botClock)
         room = clocks.run {
             LocalRoom(userId, string(c, "avatar"), string(c, "playmat"), roomId, seed,
-                LocalDecks(c["decks"] as? JsonObject), string(c, "botLevel"), botSeed(seed))
+                LocalDecks(c["decks"] as? JsonObject), string(c, "botLevel"), botSeed(seed), string(c, "editor") == "true")
         }
     }
 
     /**
      * The player's action, the body the board publishes (`{"type": "…", "payload": {…}}`): the messages the server would
-     * send them for it, as JSON texts, in order (one, or none: a refused `SET_BOT_DELAY` sends its error, an accepted one
-     * nothing; an unreadable body nothing). The bot does not move here: see [step].
+     * send them for it, as JSON texts, in order: the room as its chain resolves (`LINK_STEP`, `LINK_RESOLVED`), then the action's
+     * update (or none: a refused `SET_BOT_DELAY` sends its error, an accepted one nothing; an unreadable body nothing).
+     * The bot does not move here: see [step].
      */
     fun send(action: String): Array<String> {
         failure = null
@@ -86,7 +88,7 @@ class LocalMatch(config: String) {
             return emptyArray()
         }
         return try {
-            counted { clocks.run { room.send(parsed).map { UpdateJson.text(it) } }.toTypedArray() }
+            counted { clocks.run { room.sendTexts(parsed) }.toTypedArray() }
         } catch (e: Throwable) {
             failure = "The engine failed on " + parsed.type + ": " + e
             emptyArray()
@@ -107,7 +109,7 @@ class LocalMatch(config: String) {
      */
     fun step(): Array<String>? {
         return try {
-            counted { clocks.run { room.botMove()?.map { UpdateJson.text(it) } }?.toTypedArray() }
+            counted { clocks.run { room.botMoveTexts() }?.toTypedArray() }
         } catch (e: Throwable) {
             failure = "The bot failed: $e"
             null

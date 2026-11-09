@@ -6,6 +6,7 @@ import com.drive.drive_manager.simulator.TestFiles
 import com.drive.drive_manager.simulator.bot.HeuristicBot
 import com.drive.drive_manager.simulator.room.GameAction
 import com.drive.drive_manager.simulator.room.GameRoom
+import com.drive.drive_manager.simulator.room.GameStateUpdate
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.jsonObject
@@ -23,6 +24,14 @@ object LocalGames {
         val status: GameRoom.RoomStatus get() = match.room.room.status
         /** All the messages summed up (FNV-1a 64 over their UTF-8 text, separated by new lines). */
         val digest: String get() = GameFingerprint.digest(messages.joinToString("\n"))
+        /**
+         * The same without the updates sent as each chain link resolves (LINK_RESOLVED): the game's own messages, as
+         * they were before those were sent (the links' updates add to what the player sees; the game is the same).
+         */
+        val gameDigest: String get() = GameFingerprint.digest(messages.filter { !it.contains(LINK) }.joinToString("\n"))
+        /** How many updates were sent as chain links resolved. */
+        val linkUpdates: Int get() = messages.count { it.contains(LINK) }
+        private val LINK = Regex("\"event\":\"(" + GameStateUpdate.LINK_RESOLVED + "|" + GameStateUpdate.LINK_STEP + ")\"")
     }
 
     /** The starter decks of the build (`starter-decks.json`): LocalMatch's "decks". */

@@ -54,7 +54,11 @@ object Resolution {
     @JvmStatic
     fun stepTop(room: GameRoom) {
         val effect = room.chain[room.chain.size - 1]
-        if (effect.resolutionId == null) effect.resolutionId = room.nextId("res")
+        if (effect.resolutionId == null) {
+            // What was just done (a choice answered) is shown before this link starts
+            LinkWatch.starting(room)
+            effect.resolutionId = room.nextId("res")
+        }
         val script = script(effect)
         val steps = script.steps!!
         if (effect.stepIndex >= steps.size) {
@@ -62,10 +66,16 @@ object Resolution {
                 "Se resuelve " + (if (effect.link > 0) "la Cadena " + effect.link + ": " else "") + effect.label + " de " + effect.sourceName)
             room.chain.removeAt(room.chain.size - 1)
             if (script.moment == EffectScript.Moment.ON_PLAY) utilityToDiscard(room, effect)
+            // The room as this link left it, for whoever shows each link's effects as it resolves
+            LinkWatch.resolved(room)
             return
         }
+        val seen = room.eventSeq
         val waiting = run(room, effect, steps[effect.stepIndex])
-        if (!waiting) effect.stepIndex = effect.stepIndex + 1
+        if (waiting) return
+        effect.stepIndex = effect.stepIndex + 1
+        // What this step did, shown before the next one ("…; si lo haces, …" in its order)
+        if (room.eventSeq != seen) LinkWatch.stepped(room)
     }
 
     /** Rule 6.2.3.1: a utility goes to the Descarte once its effect has resolved. */
