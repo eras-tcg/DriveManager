@@ -113,6 +113,22 @@ class LocalMatchTest {
     }
 
     @Test
+    fun aTestRoomIsPlayedByItsOwnerOnBothSidesWithNoBot() {
+        TestCards.install()
+        val match = LocalMatch(LocalGames.config(11, ""","editor":true"""))
+        val join = match.send(LocalGames.body("JOIN_ROOM", mapOf("username" to "Ana"))).single()
+        assertTrue(join.contains("\"editor\":true") && join.contains("\"editor-rival\""), join)
+        match.send(LocalGames.body("SET_DECK", mapOf("deckId" to "deck-st1")))
+        // The owner chooses the rival's deck too (actAs), and confirms for both sides: the game starts
+        match.send(LocalGames.body("SET_DECK", mapOf("deckId" to "deck-st2", "actAs" to "editor-rival")))
+        val start = match.send(LocalGames.body("SET_READY", mapOf("ready" to true))).single()
+        assertTrue(start.contains("\"event\":\"START_GAME\""), start)
+        // No bot: nothing moves by itself
+        assertNull(match.step())
+        assertEquals(GameRoom.RoomStatus.MULLIGAN, match.room.room.status)
+    }
+
+    @Test
     fun doublesAreWrittenAsJavaWritesThem() {
         val cases = mapOf(
             50.0 to "50.0", 75.0 to "75.0", 12.5 to "12.5", 0.1 to "0.1", 0.001 to "0.001", 1.0E-4 to "1.0E-4",
