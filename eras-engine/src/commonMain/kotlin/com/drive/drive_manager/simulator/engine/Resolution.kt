@@ -54,7 +54,11 @@ object Resolution {
     @JvmStatic
     fun stepTop(room: GameRoom) {
         val effect = room.chain[room.chain.size - 1]
-        if (effect.resolutionId == null) effect.resolutionId = room.nextId("res")
+        if (effect.resolutionId == null) {
+            // What was just done (a choice answered) is shown before this link starts
+            LinkWatch.starting(room)
+            effect.resolutionId = room.nextId("res")
+        }
         val script = script(effect)
         val steps = script.steps!!
         if (effect.stepIndex >= steps.size) {
