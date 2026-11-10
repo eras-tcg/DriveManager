@@ -259,7 +259,8 @@ object Answers {
             val req = requirement(card)
             val all: MutableList<CardSlot> = ArrayList(others)
             all.add(summoner)
-            if (req!!.sum && !addsUpTo(all, req.level)) {
+            if (!req!!.sum && others.size < req.extra) return "Elige al menos " + req.extra + (if (req.extra == 1) " aliado más" else " aliados más")
+            if (req.sum && !addsUpTo(all, req.level)) {
                 val total = all.sumOf { it.getLevel()!! }
                 return "Los niveles suman " + total + ": deben sumar exactamente " + req.level
             }

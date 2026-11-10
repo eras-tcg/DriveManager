@@ -615,6 +615,8 @@ class E12CardsTest extends CardBatchSupport {
         Prompt offer = room.getPrompt();
         assertThat(offer.isDistinctLevels()).isTrue();
         assertThat(offer.isExactOrNone()).isTrue();
+        // "esta carta más 2 [retador]": the board asks for Estoque first
+        assertThat(offer.getRequiredIds()).containsExactly("es");
         assertThat(Answers.answer(room, "host", offer.getId(), List.of("es", "r2"), List.of())).isNotNull();
         answer(offer, "es", "r2", "r3");
         drain();
@@ -872,5 +874,46 @@ class E12CardsTest extends CardBatchSupport {
         assertThat(guest.getField()).doesNotContain(enemy);
         // Paid 1 (3 left, the opponent's counter says 3): "tu oponente gana tantas gemas como su contador de gemas diga"
         assertThat(EffectEngine.gemsOf(room, "host")).isZero();
+    }
+
+    private CardSlot ritualCard(String id, String name, int level, int specialCost, String requirement) {
+        CardSlot c = withClasses(card(id, name, 3, level, "P"), "espectro");
+        c.setSpecialSummonKind("ritual");
+        c.setSpecialCost(specialCost);
+        c.setRequirement(requirement);
+        host.getHand().add(c);
+        return c;
+    }
+
+    @Test
+    void augurioFlorecienteIsRitualSummonedOnALevelThreeToo() {
+        CardSlot augurio = ritualCard("au", "Augurio Floreciente", 3, 2, "criatura nivel 2 o 3.");
+        onField(host, withClasses(card("s3", "Nivel Tres", 3, 3, "P"), "espectro"));
+        assertThat(Rituals.ritualByPlayer(room, "host", "au", "s3")).isNull();
+        assertThat(host.getField()).contains(augurio);
+    }
+
+    @Test
+    void apostolDeLaRuinaNeedsALevelFourAndOneOrMoreAlliesMore() {
+        CardSlot apostol = ritualCard("ap", "Apostol De La Ruina", 5, 2, "criatura nivel 4 + 1 o más aliados.");
+        CardSlot four = onField(host, withClasses(card("s4", "Nivel Cuatro", 4, 4, "P"), "espectro"));
+        // Alone, the level 4 does not meet it
+        assertThat(Rituals.canRitual(room, "host", apostol)).isFalse();
+        onField(host, withClasses(card("o1", "Otro", 1, 1, "P"), "espectro"));
+        assertThat(Rituals.ritualByPlayer(room, "host", "ap", "s4")).isNull();
+        assertThat(room.getPrompt().getMin()).isEqualTo(1);
+        answer("o1");
+        assertThat(host.getField()).contains(apostol);
+        assertThat(host.getTributeZone()).extracting(CardSlot::getInstanceId).contains("s4", "o1");
+        assertThat(four).isNotNull();
+    }
+
+    @Test
+    void geoVigilanteReactivatesWithReactivar() {
+        CardSlot geo = onField(host, structure("gv", "Geo Vigilante", 1, "B"), BACK);
+        geo.setKeywords(new java.util.ArrayList<>(List.of("Reactivar")));
+        geo.setTapped(true);
+        TurnRules.turnStarted(room, "guest");
+        assertThat(geo.isTapped()).isFalse();
     }
 }

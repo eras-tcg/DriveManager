@@ -445,6 +445,8 @@ object CombatRules {
         room.prompt!!.max = 3
         room.prompt!!.exactOrNone = true
         room.prompt!!.distinctLevels = true
+        // "esta carta más 2 [retador]": one of these (Estoque) is among the 3; the board asks for it before the others
+        room.prompt!!.requiredIds = valid.filter { CardEffects.tributesInsteadOfDamage(it) }.map { it.instanceId!! }
         room.prompt!!.subjectId = context
     }
 

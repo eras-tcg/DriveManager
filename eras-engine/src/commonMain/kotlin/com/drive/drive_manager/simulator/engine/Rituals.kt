@@ -66,6 +66,15 @@ object Rituals {
             if (!materials.contains(summoner)) return name(summoner) + " no comparte tipo ni color con " + name(card)
             if (!req.sum) {
                 if (!req.fits(summoner)) return missing
+                // "+ 1 o más aliados": the others sacrificed with it are chosen next
+                if (req.extra > 0) {
+                    val others = materials.filter { c -> c !== summoner }
+                    if (others.size < req.extra) return missing
+                    ritualPrompt(room, player, card, summoner, others, "Elige los demás aliados que se sacrifican junto a " + name(summoner)
+                            + ": " + req.extra + " o más.", others.size)
+                    room.prompt!!.min = req.extra
+                    return null
+                }
                 handRitual(room, player, card, summoner, frozenListOf())
                 return null
             }
@@ -106,7 +115,7 @@ object Rituals {
         if (player == null || req == null || card!!.specialCost == null || !"ritual".equals(card.specialSummonKind, ignoreCase = true)) return false
         if (!canPay(room, userId, ritualCost(room, userId, card))) return false
         val materials = ritualMaterials(player, card)
-        return if (req.sum) sumsExactly(materials, req.level) else materials.any { req.fits(it) }
+        return if (req.sum) sumsExactly(materials, req.level) else materials.any { s -> req.fits(s) && materials.count { it !== s } >= req.extra }
     }
 
     @JvmStatic
@@ -152,10 +161,16 @@ object Rituals {
      * A Ritual's Requerimiento: "criatura nivel N [o mayor] [de fuerza M o menos]" or "criaturas que [en nivel] sumen N".
      */
     @JvmRecord
-    data class Requirement(val sum: Boolean, val level: Int, val atLeast: Boolean, val maxStrength: Int?) {
+    data class Requirement(
+        val sum: Boolean, val level: Int, val atLeast: Boolean, val maxStrength: Int?,
+        /** "criatura nivel 2 o 3": the highest level the summoner may be (`level` without a range). */
+        val maxLevel: Int = level,
+        /** "criatura nivel 4 + 1 o más aliados": how many other allies are sacrificed with the summoner, at least. */
+        val extra: Int = 0,
+    ) {
         /** The creature alone meets a single-creature Requerimiento. */
         fun fits(c: CardSlot?): Boolean {
-            val levelMet = levels(c).any { l -> if (atLeast) l >= this.level else l == this.level }
+            val levelMet = levels(c).any { l -> if (atLeast) l >= this.level else l >= this.level && l <= this.maxLevel }
             return levelMet && (maxStrength == null || strength(c) <= maxStrength)
         }
     }
@@ -169,7 +184,10 @@ object Rituals {
         val level = (m.groups[1]?.value ?: m.groupValues[2]).toInt()
         val atLeast = Platform.regex("nivel\\s*\\d+\\s*o\\s*mayor").containsMatchIn(text)
         val strength = Platform.regex("fuerza\\s*(\\d+)\\s*o\\s*menos").find(text)
-        return Requirement(text.contains("sum"), level, atLeast, if (strength != null) strength.groupValues[1].toInt() else null)
+        val range = Platform.regex("nivel\\s*\\d+\\s*o\\s*(\\d+)").find(text)
+        val extra = Platform.regex("\\+\\s*(\\d+)\\s*o\\s*m[aá]s\\s*aliados?").find(text)
+        return Requirement(text.contains("sum"), level, atLeast, if (strength != null) strength.groupValues[1].toInt() else null,
+                range?.groupValues?.get(1)?.toInt() ?: level, extra?.groupValues?.get(1)?.toInt() ?: 0)
     }
 
     /** Creatures that can be the summoner of a level-sum Ritual: the rest of the field can complete the sum exactly. */
@@ -253,11 +271,11 @@ object Rituals {
         val materials = ritualMaterials(player, target)
         if (ritual.selfSummoner()) {
             val self = find(materials, effect.sourceInstanceId) ?: return false
-            if (!req.sum) return req.fits(self)
+            if (!req.sum) return req.fits(self) && materials.count { it !== self } >= req.extra
             // The summoner is one of them: the others make up the rest
             return levels(self).any { l -> l <= req.level && sumsExactly(materials.filter { c -> c !== self }, req.level - l) }
         }
-        if (!req.sum) return materials.any { req.fits(it) }
+        if (!req.sum) return materials.any { s -> req.fits(s) && materials.count { it !== s } >= req.extra }
         return sumsExactly(materials, req.level)
     }
 
