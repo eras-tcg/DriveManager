@@ -125,6 +125,9 @@ class RulesWindowsTest {
         // An ally destroyed afterwards does trigger it
         field(host, creature("ally", "Aliado", 1, 1), BACK);
         Removals.sacrificeByPlayer(room, "host", "ally");
+        // "puedes reactivar esta carta": optional
+        assertThat(room.getPrompt().getPurpose()).isEqualTo("OPTIONAL");
+        Answers.answer(room, "host", room.getPrompt().getId(), List.of("zha"), List.of());
         assertThat(zhauz.isTapped()).isFalse();
     }
 

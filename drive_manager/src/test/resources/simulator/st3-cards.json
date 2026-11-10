@@ -780,10 +780,10 @@
     "ussageLimit": "once per turn",
     "effectBlocks": [
      {
-      "activationCondition": "Si algún aliado es destruido",
+      "activationCondition": "si algún aliado es destruido",
       "cost": "",
-      "resolution": "reactiva esta carta.",
-      "plainEffect": "Si algún aliado es destruido: reactiva esta carta."
+      "resolution": "puedes reactivar esta carta.",
+      "plainEffect": "Si algún aliado es destruido: puedes reactivar esta carta."
      }
     ],
     "kind": "disparado",

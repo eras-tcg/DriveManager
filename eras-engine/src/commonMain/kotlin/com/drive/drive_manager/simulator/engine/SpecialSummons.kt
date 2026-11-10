@@ -81,7 +81,7 @@ object SpecialSummons {
                         - CostModifiers.available(room, player, CostModifiers.Event.SPECIAL_SUMMON, req.kind, card, null)))
             return "No tienes gemas suficientes: tienes " + gemsOf(room, userId) + " y el coste especial es " + card.specialCost
         if (askTap(room, player, card, req.kind, summonerId)) return null
-        if ("promotion" == req.kind && !alliesAddUp(player, req)) return "Para el Ascenso tus aliados deben sumar " + req.alliesSum + " o más en nivel"
+        if ("promotion" == req.kind && !alliesAddUp(player, req)) return "Para el Ascenso tus aliados deben sumar " + req.alliesSum + " o más en " + (if (req.alliesSumByCost) "coste" else "nivel")
         if (!enoughCreatures(player, card)) return "Para invocar a " + name(card) + " debes controlar al menos " + creaturesNeeded(card) + " criaturas"
         val missing = "Tus criaturas no cumplen el Requerimiento de " + name(card) + ": " + card.requirement!!.trim { it <= ' ' }
         if (req.declaredSummoner()) {
