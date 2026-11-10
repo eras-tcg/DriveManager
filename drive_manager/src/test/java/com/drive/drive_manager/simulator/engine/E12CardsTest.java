@@ -702,9 +702,12 @@ class E12CardsTest extends CardBatchSupport {
     void arcoLeonDoradoStopsAnEnemyOfTheChosenLevelFromBlocking() {
         CardSlot enemy = onField(guest, card("e", "Enemigo", 2, 2, "R"));
         CardSlot arco = withClasses(card("ar", "Arco de los Leones Dorados", 2, 2, "R"), "retador");
-        summonByEffectToFront(arco);
-        // "Sube esta carta a tu línea frontal. Luego: elige 1 aliado y 1 enemigo…": the only ally is chosen by itself
-        accept(arco);
+        summon(arco);
+        // "Puedes subir esta carta a tu línea frontal. Si lo haces: elige 1 aliado y 1 enemigo de nivel igual o menor…"
+        untilOffered(arco);
+        answer("ar");
+        assertThat(EffectEngine.inFrontLine(arco)).isTrue();
+        answer("ar");
         answer("e");
         assertThat(EffectEngine.keywords(enemy)).contains(EffectEngine.NO_BLOCK);
         assertThat(CombatRules.blockers(guest)).doesNotContain(enemy);
@@ -750,7 +753,7 @@ class E12CardsTest extends CardBatchSupport {
     }
 
     @Test
-    void comandanteAtAttackSummonsUpToTwoRetadoresThatReturnToTheHand() {
+    void comandanteAtAttackSummonsUpToTwoRetadoresThatStay() {
         CardSlot comandante = onField(host, withClasses(card("cl", "Comandante De Los Leones Dorados", 0, 4, "R"), "retador"));
         CardSlot retador = inHand("rt", "Retador", 2, 2, "R", "retador");
         CardSlot other = inHand("r2", "Otro Retador", 2, 2, "R", "retador");
@@ -763,7 +766,8 @@ class E12CardsTest extends CardBatchSupport {
         drain();
         TurnRules.turnEnding(room, "host");
         drain();
-        assertThat(host.getHand()).contains(retador, other);
+        // They no longer go back to the hand at the end of the turn (2026-11-10)
+        assertThat(host.getField()).contains(retador, other);
     }
 
     @Test

@@ -68,9 +68,8 @@
     {
       "id" : "arco-leon-dorado:en-invocacion",
       "moment" : "ON_SUMMON",
-      "mandatory" : true,
       "label" : "En Invocación",
-      "text" : "Sube esta carta a tu línea frontal. Luego: elige 1 aliado y 1 enemigo de nivel igual o menor; dicho enemigo no puede bloquear hasta el final del turno.",
+      "text" : "Puedes subir esta carta a tu línea frontal. Si lo haces: elige 1 aliado y 1 enemigo de nivel igual o menor; el enemigo no puede bloquear hasta el final del turno.",
       "steps" : [
         {
           "type" : "Do",
@@ -93,6 +92,10 @@
             },
             "to" : "frontLine"
           }
+        },
+        {
+          "type" : "IfDone",
+          "covers" : 3
         },
         {
           "type" : "Do",

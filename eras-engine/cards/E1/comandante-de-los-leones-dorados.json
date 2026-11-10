@@ -66,7 +66,7 @@
       "moment" : "ON_ATTACK",
       "mandatory" : true,
       "label" : "Al Atacar",
-      "text" : "Invoca hasta 2 [retadores] de tu mano reduciendo sus costes en 2. Súbelos a tu mano al final de tu turno.",
+      "text" : "Invoca hasta 2 [retadores] de tu mano reduciendo sus costes en 2.",
       "steps" : [
         {
           "type" : "Do",
@@ -95,49 +95,6 @@
               "type" : "Fixed",
               "value" : 2
             }
-          }
-        },
-        {
-          "type" : "IfDone",
-          "covers" : 1
-        },
-        {
-          "type" : "Do",
-          "action" : {
-            "type" : "AtEndOfTurn",
-            "effect" : "comandante-leones-dorados:final-del-turno"
-          }
-        }
-      ],
-      "sourceZone" : "field",
-      "limit" : "NONE"
-    },
-    {
-      "id" : "comandante-leones-dorados:final-del-turno",
-      "moment" : "DELAYED",
-      "mandatory" : true,
-      "label" : "Al final del turno",
-      "text" : "Sube a tu mano los [retadores] invocados.",
-      "steps" : [
-        {
-          "type" : "Do",
-          "action" : {
-            "type" : "Move",
-            "cards" : {
-              "zones" : "saved:summonedAll",
-              "owner" : "YOU",
-              "filter" : {},
-              "min" : {
-                "type" : "Fixed"
-              },
-              "max" : {
-                "type" : "Fixed",
-                "value" : 2147483647
-              },
-              "self" : "ANY",
-              "mode" : "ALL"
-            },
-            "to" : "hand"
           }
         }
       ],
