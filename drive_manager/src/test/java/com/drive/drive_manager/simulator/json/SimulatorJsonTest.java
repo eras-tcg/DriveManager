@@ -30,12 +30,12 @@ class SimulatorJsonTest {
     /** Per game: the JSON of the room and of each update after every action, and the fingerprints, summed up. */
     /** Per game: what each player is sent of every update (StateMask.forViewer, as a player and as an editor), summed up. */
     private static final Map<String, String> VIEWS = Map.of(
-            "st1-st2-11", "572b595e244378956e82ebdb814def70",
-            "st3-st4-12", "95e04d9d4c16f7a1b9150e5721519548");
+            "st1-st2-11", "81cafdac8199a10c45bf05af6aa88fe7",
+            "st3-st4-12", "735b8091fd325ae1d088f14585d6abae");
 
     private static final Map<String, String> GOLDEN = Map.of(
-            "st1-st2-11", "d9a32513b98f4053a565ac61e0e8fde7",
-            "st3-st4-12", "afa863069a684d959afaccbb3ccb1c96");
+            "st1-st2-11", "36a07024c9277109c8d7178ce9f7b265",
+            "st3-st4-12", "f3a0202002e661bd36548fa25ded4b1a");
 
     @Test
     void sendsAndSumsUpAsBefore() throws Exception {

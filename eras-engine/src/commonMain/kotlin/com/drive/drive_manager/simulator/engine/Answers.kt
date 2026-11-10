@@ -346,6 +346,18 @@ object Answers {
             advance(room)
             return ""
         }
+        if (PromptPurpose.ASCEND_GAIN.`is`(purpose)) {
+            // Mandatory: whatever the answer, the Ascenso goes on (the gain applies as it happens)
+            room.prompt = null
+            val card = specialSource(player, prompt.subjectId)
+            val summoner = find(player.field, prompt.summonerId)
+            if (card != null && summoner != null) {
+                handSpecial(room, player, card, specialRequirement(card)!!, summoner, frozenListOf(),
+                        if (find(player.hand, card.instanceId) != null) "hand" else "tributeZone")
+            }
+            advance(room)
+            return ""
+        }
         if (PromptPurpose.ASCEND_ATTACK.`is`(purpose)) {
             room.prompt = null
             val card = specialSource(player, prompt.subjectId)

@@ -303,6 +303,7 @@ class RoomCopy private constructor(
         c.effectText = o.effectText
         c.maxLevelSum = o.maxLevelSum
         c.exactOrNone = o.exactOrNone
+        c.distinctLevels = o.distinctLevels
         c.requiredIds = list(o.requiredIds)
         c.topOrBottom = o.topOrBottom
         return c

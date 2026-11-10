@@ -589,6 +589,8 @@ class E12CardsTest extends CardBatchSupport {
         host.getDeck().add(0, withClasses(card("r2", "Retador 1b", 1, 1, "R"), "retador"));
         summon(withClasses(card("es", "Estoque De Los Guerreros Jurados", 1, 1, "R"), "retador"));
         Prompt take = room.getPrompt();
+        // The board locks a level already chosen
+        assertThat(take.isDistinctLevels()).isTrue();
         assertThat(Answers.answer(room, "host", take.getId(), List.of("r1", "r2"), List.of())).contains("distinto nivel");
         answer(take, "r1");
         assertThat(host.getHand()).extracting(CardSlot::getInstanceId).containsExactly("r1");
@@ -611,6 +613,8 @@ class E12CardsTest extends CardBatchSupport {
         assertThat(CombatRules.attackByPlayer(room, "guest", "at", null)).isNull();
         for (int i = 0; i < 6 && room.getPrompt() != null && !room.getPrompt().getValidIds().contains("es"); i++) answer(room.getPrompt());
         Prompt offer = room.getPrompt();
+        assertThat(offer.isDistinctLevels()).isTrue();
+        assertThat(offer.isExactOrNone()).isTrue();
         assertThat(Answers.answer(room, "host", offer.getId(), List.of("es", "r2"), List.of())).isNotNull();
         answer(offer, "es", "r2", "r3");
         drain();
@@ -649,6 +653,7 @@ class E12CardsTest extends CardBatchSupport {
         inHand("r2", "Retador Dos", 2, 2, "R", "retador");
         inHand("r3", "Retador Tres", 3, 3, "R", "retador");
         assertThat(Chain.activateByPlayer(room, "host", "ma", null)).isNull();
+        assertThat(room.getPrompt().isDistinctLevels()).isTrue();
         answer("r2", "r3");
         assertThat(host.getField()).contains(mago);
         assertThat(host.getHand()).extracting(CardSlot::getInstanceId).contains("r2", "r3");
@@ -668,6 +673,20 @@ class E12CardsTest extends CardBatchSupport {
     }
 
     @Test
+    void guerreroForjadoCannotBeAscendedWhileAnotherAllyIsLevelOne() {
+        onField(host, card("s1", "Uno", 1, 1, "R"));
+        CardSlot other = onField(host, card("s2", "Otro Uno", 1, 1, "R"));
+        CardSlot forjado = card("gf", "Guerrero Forjado", 2, 5, "R");
+        forjado.setSpecialSummonKind("promotion");
+        forjado.setSpecialCost(1);
+        forjado.setRequirement("criatura nivel 1, mientras no controlas otros aliados nivel 1.");
+        host.getHand().add(forjado);
+        assertThat(SpecialSummons.specialByPlayer(room, "host", "gf", "s1")).isNotNull();
+        host.getField().remove(other);
+        assertThat(SpecialSummons.specialByPlayer(room, "host", "gf", "s1")).isNull();
+    }
+
+    @Test
     void guardiaDelMuroTributesAnotherAllyToReactivateAtTheEndOfTheTurn() {
         CardSlot guardia = onField(host, card("gm", "Guardia Del Muro", 2, 2, "R"));
         guardia.setTapped(true);
@@ -684,8 +703,8 @@ class E12CardsTest extends CardBatchSupport {
         CardSlot enemy = onField(guest, card("e", "Enemigo", 2, 2, "R"));
         CardSlot arco = withClasses(card("ar", "Arco León Dorado", 2, 2, "R"), "retador");
         summonByEffectToFront(arco);
+        // "Sube esta carta a tu línea frontal. Luego: elige 1 aliado y 1 enemigo…": the only ally is chosen by itself
         accept(arco);
-        answer("ar");
         answer("e");
         assertThat(EffectEngine.keywords(enemy)).contains(EffectEngine.NO_BLOCK);
         assertThat(CombatRules.blockers(guest)).doesNotContain(enemy);
@@ -700,6 +719,8 @@ class E12CardsTest extends CardBatchSupport {
         ascended.setRequirement("criatura nivel 3.");
         host.getHand().add(ascended);
         assertThat(SpecialSummons.specialByPlayer(room, "host", "as", "ed")).isNull();
+        // A mandatory Reacción shown to be activated before the Ascenso
+        assertThat(room.getPrompt().getPurpose()).isEqualTo(PromptPurpose.ASCEND_GAIN.id());
         drain();
         assertThat(EffectEngine.keywords(ascended)).contains("Furia 2");
         assertThat(espada).isNotNull();
@@ -721,7 +742,9 @@ class E12CardsTest extends CardBatchSupport {
         CardSlot retador = inHand("rt", "Retador", 2, 2, "R", "retador");
         CardSlot comandante = withClasses(card("cl", "Comandante De Los Leones Dorados", 0, 4, "R"), "retador");
         summon(comandante);
-        // Both "En Invocación" trigger: the mandatory one first
+        // "puedes tributar todos tus otros aliados" (optional since 2026-11-10)
+        untilOffered(comandante);
+        answer("cl");
         drain();
         assertThat(EffectEngine.strength(comandante)).isEqualTo(3 + 4);
         assertThat(host.getTributeZone()).extracting(CardSlot::getInstanceId).contains("o1", "o2");
@@ -838,10 +861,12 @@ class E12CardsTest extends CardBatchSupport {
         room.setFirstTurn(false);
         CardSlot enemy = onField(guest, card("e", "Enemigo", 1, 1, "R"));
         enemy.getTurnKeywords().add(EffectEngine.IMMUNE);
-        int theirs = EffectEngine.gemsOf(room, "guest");
+        room.setSharedCounter(4);
+        if (EffectEngine.gemsOf(room, "host") < 0) room.setSharedCounter(-4);
         play(utility("ed", "Ejecución Despiadada", 1, "W"));
         answer("e");
         assertThat(guest.getField()).doesNotContain(enemy);
-        assertThat(EffectEngine.gemsOf(room, "guest")).isGreaterThanOrEqualTo(theirs);
+        // Paid 1 (3 left, the opponent's counter says 3): "tu oponente gana tantas gemas como su contador de gemas diga"
+        assertThat(EffectEngine.gemsOf(room, "host")).isZero();
     }
 }

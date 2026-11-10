@@ -222,6 +222,7 @@ object UpdateJson {
         "cardLabels" to map(p.cardLabels),
         "cards" to list(p.cards),
         "chosenLabel" to str(p.chosenLabel),
+        "distinctLevels" to bool(p.distinctLevels),
         "effectId" to str(p.effectId),
         "effectText" to str(p.effectText),
         "effects" to list(p.effects),
