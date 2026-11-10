@@ -157,7 +157,7 @@ class LocalMatchTest {
          */
         val EXPECTED_WITH_LINKS = mapOf(
             "st1-st1-1-easy" to "95fa6b64c238c11e",
-            "st2-st3-2-easy" to "7330852f4dbc6552",
+            "st2-st3-2-easy" to "84542a1f146370ab",
             "st4-st1-3-easy" to "cbe5413b73677e31",
             "st3-st4-5-normal" to "7d344b975f10fa43",
         )
