@@ -1118,9 +1118,10 @@ internal object CardModelReader {
     }
 
     private fun readEffectStepRevealFromHand(o: JsonObject, at: String): com.drive.drive_manager.simulator.engine.EffectStep.RevealFromHand {
-        J.fields(o, at, "EffectStep.RevealFromHand", setOf("filters"), true)
+        J.fields(o, at, "EffectStep.RevealFromHand", setOf("filters", "withAllyOfLevel"), true)
         return com.drive.drive_manager.simulator.engine.EffectStep.RevealFromHand(
             filters = J.list(o, "filters", at) { e, p -> cardFilter(e, p) },
+            withAllyOfLevel = J.bool(o, "withAllyOfLevel", at),
         )
     }
 

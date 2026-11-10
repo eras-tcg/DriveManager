@@ -93,7 +93,8 @@
               ],
               "maxLevel" : 3
             }
-          ]
+          ],
+          "withAllyOfLevel" : true
         },
         {
           "type" : "IfDone",

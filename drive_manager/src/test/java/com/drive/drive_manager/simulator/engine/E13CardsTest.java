@@ -515,11 +515,14 @@ class E13CardsTest extends CardBatchSupport {
         CardSlot ally = onField(host, card("a2", "Aliado Dos", 2, 2, "R"));
         ally.setTapped(true);
         inHand("r2", "Retador Dos", 2, 2, "R", "retador");
+        // No ally of level 1: revealing it would leave the other half of the cost undone
+        inHand("r1", "Retador Uno", 1, 1, "R", "retador");
         CardSlot summoned = onField(host, card("sx", "Invocada", 3, 3, "R"));
         EffectEngine.record(room, GameEvent.SPECIAL_SUMMON, "host", summoned, "hand", "field", null, java.util.Map.of("summonType", "promotion"), "x");
         Chain.advance(room);
         // "sube esta carta a tu mano. Si lo haces: puedes revelar 1 [retador] nivel 3 o menor … y elegir 1 aliado del mismo nivel; reactívalo"
         answer("ga");
+        assertThat(room.getPrompt().getValidIds()).containsExactly("r2");
         answer("r2");
         answer("a2");
         assertThat(host.getHand()).contains(guerrero);
