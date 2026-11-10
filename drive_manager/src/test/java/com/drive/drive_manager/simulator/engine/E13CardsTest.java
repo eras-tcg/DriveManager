@@ -510,6 +510,26 @@ class E13CardsTest extends CardBatchSupport {
     }
 
     @Test
+    void guerreroDelAlmaThenRevealsARetadorToReactivateAnAllyOfItsLevel() {
+        CardSlot guerrero = onField(host, withClasses(card("ga", "Guerrero Del Alma Imbatible", 2, 1, "R"), "retador"));
+        CardSlot ally = onField(host, card("a2", "Aliado Dos", 2, 2, "R"));
+        ally.setTapped(true);
+        inHand("r2", "Retador Dos", 2, 2, "R", "retador");
+        // No ally of level 1: revealing it would leave the other half of the cost undone
+        inHand("r1", "Retador Uno", 1, 1, "R", "retador");
+        CardSlot summoned = onField(host, card("sx", "Invocada", 3, 3, "R"));
+        EffectEngine.record(room, GameEvent.SPECIAL_SUMMON, "host", summoned, "hand", "field", null, java.util.Map.of("summonType", "promotion"), "x");
+        Chain.advance(room);
+        // "sube esta carta a tu mano. Si lo haces: puedes revelar 1 [retador] nivel 3 o menor … y elegir 1 aliado del mismo nivel; reactívalo"
+        answer("ga");
+        assertThat(room.getPrompt().getValidIds()).containsExactly("r2");
+        answer("r2");
+        answer("a2");
+        assertThat(host.getHand()).contains(guerrero);
+        assertThat(ally.isTapped()).isFalse();
+    }
+
+    @Test
     void caballeroVersatilTakesARedCardWhenExhaustedInCombat() {
         CardSlot versatil = onField(host, withClasses(card("cv", "Caballero Versátil", 1, 1, "R"), "armada"));
         host.getTributeZone().add(card("rd", "Roja", 1, 1, "R"));
@@ -538,7 +558,7 @@ class E13CardsTest extends CardBatchSupport {
     @Test
     void caballeroLeonDoradoTributesAnotherAllyForAGem() {
         onField(host, card("o2", "Otro", 2, 2, "R"));
-        CardSlot leon = withClasses(card("cl", "Caballero León Dorado", 2, 2, "R"), "caballero", "retador");
+        CardSlot leon = withClasses(card("cl", "Caballero de los Leones Dorados", 2, 2, "R"), "caballero", "retador");
         int before = gems();
         summon(leon);
         accept(leon);
@@ -606,7 +626,7 @@ class E13CardsTest extends CardBatchSupport {
     @Test
     void investiduraReturnsAnAllyToSummonADifferentLeonDoradoOfItsLevelOrLess() {
         onField(host, card("al", "Aliado", 2, 2, "R"));
-        CardSlot leon = inHand("ld", "Arco León Dorado", 2, 2, "R", "retador");
+        CardSlot leon = inHand("ld", "Arco de los Leones Dorados", 2, 2, "R", "retador");
         play(utility("iv", "Investidura De Los Leones Dorados", 0, "R"));
         answer("al");
         answer("ld");

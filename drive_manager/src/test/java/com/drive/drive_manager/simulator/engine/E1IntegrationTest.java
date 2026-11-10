@@ -404,6 +404,9 @@ class E1IntegrationTest {
         CombatRules.attackByPlayer(room, "host", "imp", null);
         Answers.answer(room, "host", room.getPrompt().getId(), List.of("imp"), List.of());
         Prompt first = room.getPrompt();
+        // The board confirms exactly 10 or none
+        assertThat(first.isExactOrNone()).isTrue();
+        assertThat(first.getMax()).isEqualTo(10);
         assertThat(Answers.answer(room, "host", first.getId(), first.getValidIds().subList(0, 3), List.of())).contains("exactamente 10");
         Answers.answer(room, "host", first.getId(), first.getValidIds().subList(0, 10), List.of());
         Prompt second = room.getPrompt();

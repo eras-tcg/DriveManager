@@ -1,41 +1,50 @@
 {
   "name" : "martillo frontal",
-  "effects" : [ {
-    "id" : "martillo-frontal:al-final-del-ataque",
-    "moment" : "ON_ATTACK_END",
-    "label" : "Al Final Del Ataque",
-    "text" : "Una vez por turno: puedes invocar 1 [guerrero] o [retador] nivel 1 de tu mano reduciendo su coste en 2.",
-    "steps" : [ {
-      "type" : "Do",
-      "action" : {
-        "type" : "Summon",
-        "cards" : {
-          "zones" : "hand",
-          "owner" : "YOU",
-          "filter" : {
-            "classes" : [ "guerrero", "retador" ],
-            "cardType" : "creature",
-            "level" : 1
-          },
-          "min" : {
-            "type" : "Fixed",
-            "value" : 1
-          },
-          "max" : {
-            "type" : "Fixed",
-            "value" : 1
-          },
-          "self" : "ANY",
-          "mode" : "CHOOSE"
-        },
-        "reduce" : {
-          "type" : "Fixed",
-          "value" : 2
-        },
-        "required" : true
-      }
-    } ],
-    "sourceZone" : "field",
-    "limit" : "ONCE_PER_TURN"
-  } ]
+  "effects" : [
+    {
+      "id" : "martillo-frontal:al-final-del-ataque",
+      "moment" : "ON_ATTACK_END",
+      "label" : "Al Final Del Ataque",
+      "text" : "(1) Puedes invocar 1 criatura Roja o [retador] nivel 1 de tu mano reduciendo su coste en 2.",
+      "steps" : [
+        {
+          "type" : "Do",
+          "action" : {
+            "type" : "Summon",
+            "cards" : {
+              "zones" : "hand",
+              "owner" : "YOU",
+              "filter" : {
+                "colors" : [
+                  "R"
+                ],
+                "classes" : [
+                  "retador"
+                ],
+                "cardType" : "creature",
+                "level" : 1
+              },
+              "min" : {
+                "type" : "Fixed",
+                "value" : 1
+              },
+              "max" : {
+                "type" : "Fixed",
+                "value" : 1
+              },
+              "self" : "ANY",
+              "mode" : "CHOOSE"
+            },
+            "reduce" : {
+              "type" : "Fixed",
+              "value" : 2
+            },
+            "required" : true
+          }
+        }
+      ],
+      "sourceZone" : "field",
+      "limit" : "ONCE_PER_TURN_BETWEEN_COPIES"
+    }
+  ]
 }

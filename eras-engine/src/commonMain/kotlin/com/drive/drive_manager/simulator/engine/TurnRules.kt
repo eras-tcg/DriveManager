@@ -44,7 +44,9 @@ object TurnRules {
         // Reactivar: "al inicio del turno: reactiva esta carta" (any turn)
         for (p in room.players.values) {
             for (c in p.field) {
-                if (reactivable(c) && keywordLevel(c, "Reactivar") != null) {
+                // A structure with Reactivar too (Geo Vigilante), not only a creature
+                val exhausted = reactivable(c) || ("creature" != c.cardType && c.tapped)
+                if (exhausted && keywordLevel(c, "Reactivar") != null) {
                     c.tapped = false
                     record(room, GameEvent.UNTAP, p.userId, c, null, null, null, frozenMapOf<String, Any?>("keyword", "Reactivar"),
                             name(c) + " se reactiva (Reactivar)")

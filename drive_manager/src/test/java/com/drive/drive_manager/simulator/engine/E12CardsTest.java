@@ -615,6 +615,8 @@ class E12CardsTest extends CardBatchSupport {
         Prompt offer = room.getPrompt();
         assertThat(offer.isDistinctLevels()).isTrue();
         assertThat(offer.isExactOrNone()).isTrue();
+        // "esta carta más 2 [retador]": the board asks for Estoque first
+        assertThat(offer.getRequiredIds()).containsExactly("es");
         assertThat(Answers.answer(room, "host", offer.getId(), List.of("es", "r2"), List.of())).isNotNull();
         answer(offer, "es", "r2", "r3");
         drain();
@@ -701,10 +703,13 @@ class E12CardsTest extends CardBatchSupport {
     @Test
     void arcoLeonDoradoStopsAnEnemyOfTheChosenLevelFromBlocking() {
         CardSlot enemy = onField(guest, card("e", "Enemigo", 2, 2, "R"));
-        CardSlot arco = withClasses(card("ar", "Arco León Dorado", 2, 2, "R"), "retador");
-        summonByEffectToFront(arco);
-        // "Sube esta carta a tu línea frontal. Luego: elige 1 aliado y 1 enemigo…": the only ally is chosen by itself
-        accept(arco);
+        CardSlot arco = withClasses(card("ar", "Arco de los Leones Dorados", 2, 2, "R"), "retador");
+        summon(arco);
+        // "Puedes subir esta carta a tu línea frontal. Si lo haces: elige 1 aliado y 1 enemigo de nivel igual o menor…"
+        untilOffered(arco);
+        answer("ar");
+        assertThat(EffectEngine.inFrontLine(arco)).isTrue();
+        answer("ar");
         answer("e");
         assertThat(EffectEngine.keywords(enemy)).contains(EffectEngine.NO_BLOCK);
         assertThat(CombatRules.blockers(guest)).doesNotContain(enemy);
@@ -742,9 +747,7 @@ class E12CardsTest extends CardBatchSupport {
         CardSlot retador = inHand("rt", "Retador", 2, 2, "R", "retador");
         CardSlot comandante = withClasses(card("cl", "Comandante De Los Leones Dorados", 0, 4, "R"), "retador");
         summon(comandante);
-        // "puedes tributar todos tus otros aliados" (optional since 2026-11-10)
-        untilOffered(comandante);
-        answer("cl");
+        // "tributa todos tus otros aliados" (mandatory again since 2026-11-10)
         drain();
         assertThat(EffectEngine.strength(comandante)).isEqualTo(3 + 4);
         assertThat(host.getTributeZone()).extracting(CardSlot::getInstanceId).contains("o1", "o2");
@@ -752,18 +755,21 @@ class E12CardsTest extends CardBatchSupport {
     }
 
     @Test
-    void comandanteAtAttackSummonsARetadorThatReturnsToTheHand() {
+    void comandanteAtAttackSummonsUpToTwoRetadoresThatStay() {
         CardSlot comandante = onField(host, withClasses(card("cl", "Comandante De Los Leones Dorados", 0, 4, "R"), "retador"));
         CardSlot retador = inHand("rt", "Retador", 2, 2, "R", "retador");
+        CardSlot other = inHand("r2", "Otro Retador", 2, 2, "R", "retador");
         assertThat(CombatRules.attackByPlayer(room, "host", "cl", null)).isNull();
-        untilOffered(comandante);
-        answer("cl");
-        answer("rt");
-        assertThat(host.getField()).contains(retador);
+        // Mandatory: straight to "invoca hasta 2 [retadores] de tu mano reduciendo sus costes en 2"
+        untilOffered(retador);
+        assertThat(room.getPrompt().getMax()).isEqualTo(2);
+        answer("rt", "r2");
+        assertThat(host.getField()).contains(retador, other);
         drain();
         TurnRules.turnEnding(room, "host");
         drain();
-        assertThat(host.getHand()).contains(retador);
+        // They no longer go back to the hand at the end of the turn (2026-11-10)
+        assertThat(host.getField()).contains(retador, other);
     }
 
     @Test
@@ -868,5 +874,46 @@ class E12CardsTest extends CardBatchSupport {
         assertThat(guest.getField()).doesNotContain(enemy);
         // Paid 1 (3 left, the opponent's counter says 3): "tu oponente gana tantas gemas como su contador de gemas diga"
         assertThat(EffectEngine.gemsOf(room, "host")).isZero();
+    }
+
+    private CardSlot ritualCard(String id, String name, int level, int specialCost, String requirement) {
+        CardSlot c = withClasses(card(id, name, 3, level, "P"), "espectro");
+        c.setSpecialSummonKind("ritual");
+        c.setSpecialCost(specialCost);
+        c.setRequirement(requirement);
+        host.getHand().add(c);
+        return c;
+    }
+
+    @Test
+    void augurioFlorecienteIsRitualSummonedOnALevelThreeToo() {
+        CardSlot augurio = ritualCard("au", "Augurio Floreciente", 3, 2, "criatura nivel 2 o 3.");
+        onField(host, withClasses(card("s3", "Nivel Tres", 3, 3, "P"), "espectro"));
+        assertThat(Rituals.ritualByPlayer(room, "host", "au", "s3")).isNull();
+        assertThat(host.getField()).contains(augurio);
+    }
+
+    @Test
+    void apostolDeLaRuinaNeedsALevelFourAndOneOrMoreAlliesMore() {
+        CardSlot apostol = ritualCard("ap", "Apostol De La Ruina", 5, 2, "criatura nivel 4 + 1 o más aliados.");
+        CardSlot four = onField(host, withClasses(card("s4", "Nivel Cuatro", 4, 4, "P"), "espectro"));
+        // Alone, the level 4 does not meet it
+        assertThat(Rituals.canRitual(room, "host", apostol)).isFalse();
+        onField(host, withClasses(card("o1", "Otro", 1, 1, "P"), "espectro"));
+        assertThat(Rituals.ritualByPlayer(room, "host", "ap", "s4")).isNull();
+        assertThat(room.getPrompt().getMin()).isEqualTo(1);
+        answer("o1");
+        assertThat(host.getField()).contains(apostol);
+        assertThat(host.getTributeZone()).extracting(CardSlot::getInstanceId).contains("s4", "o1");
+        assertThat(four).isNotNull();
+    }
+
+    @Test
+    void geoVigilanteReactivatesWithReactivar() {
+        CardSlot geo = onField(host, structure("gv", "Geo Vigilante", 1, "B"), BACK);
+        geo.setKeywords(new java.util.ArrayList<>(List.of("Reactivar")));
+        geo.setTapped(true);
+        TurnRules.turnStarted(room, "guest");
+        assertThat(geo.isTapped()).isFalse();
     }
 }

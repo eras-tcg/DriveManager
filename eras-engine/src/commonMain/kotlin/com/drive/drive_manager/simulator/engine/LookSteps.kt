@@ -30,10 +30,15 @@ object LookSteps {
         @Suppress("UNUSED_VARIABLE")
         val onField = find(player.field, effect.sourceInstanceId)
         return when (step) {
-            is RevealFromHand -> assignable(player.hand.filter { c -> c.instanceId!! != effect.sourceInstanceId },
+            is RevealFromHand -> assignable(player.hand.filter { c -> c.instanceId!! != effect.sourceInstanceId && withAlly(player, step, c) },
                 step.filters)
             else -> true
         }
+    }
+
+    /** "… y elegir 1 aliado del mismo nivel": the card revealed must have the level of an ally (when the step asks for it). */
+    private fun withAlly(player: PlayerState, step: RevealFromHand, card: CardSlot): Boolean {
+        return !step.withAllyOfLevel || EffectEngine.allies(player).any { a -> a.getLevel() != null && a.getLevel() == card.getLevel() }
     }
 
     @JvmStatic
@@ -76,7 +81,7 @@ object LookSteps {
             }
             is RevealFromHand -> {
                 val valid = player.hand.filter { c -> c.instanceId!! != effect.sourceInstanceId
-                        && step.filters!!.any { f -> f.matches(c) } }
+                        && step.filters!!.any { f -> f.matches(c) } && withAlly(player, step, c) }
                 if (!assignable(valid, step.filters)) return false
                 pick(room, effect, "Revela de tu mano: " + step.filters!!.joinToString(" y ") { f -> "1 " + f.describe() } + ".",
                         "Revelar", player.hand, ids(valid), step.filters!!.size)
@@ -142,6 +147,7 @@ object LookSteps {
                 val cards = picks.map { id -> find(player.hand, id) }
                 if (cards.contains(null)) return "Esa carta ya no está en tu mano"
                 if (!assignable(cards, step.filters)) return "Revela " + step.filters!!.joinToString(" y ") { f -> "1 " + f.describe() }
+                if (!cards.all { withAlly(player, step, it!!) }) return "Revela una carta del nivel de alguno de tus aliados"
                 effect.lastDone = true
                 effect.lastTributed = ArrayList(picks)
                 log(room, player.username + " revela " + cards.joinToString(", ") { name(it) } + " (" + effect.sourceName + ")", null)
