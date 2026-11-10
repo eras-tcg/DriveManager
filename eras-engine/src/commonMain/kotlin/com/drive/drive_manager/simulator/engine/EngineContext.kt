@@ -25,6 +25,8 @@ internal class EngineContext(private val room: GameRoom, private val effect: Pen
     constructor(room: GameRoom, effect: PendingEffect) : this(room, effect, BooleanArray(1))
 
     companion object {
+        /** The memory of every creature an effect summoned (one effect may summon several). */
+        const val SUMMONED_ALL = "summonedAll"
         /** The materials chosen for a special summon. */
         const val SPECIAL_MATERIALS = "specialMaterials"
         /** The creature and the summoner of a special summon: fields the rules read while it is chosen. */
@@ -122,7 +124,9 @@ internal class EngineContext(private val room: GameRoom, private val effect: Pen
     }
 
     override fun atEndOfTurn(script: String?) {
-        val subject = effect.summonedId ?: (effect.subjectId ?: "")
+        // Several creatures summoned: all of them, comma separated (the rest of the effect acts on "saved:summonedAll")
+        val all = effect.saved[SUMMONED_ALL]
+        val subject = if (all != null && all.size > 1) all.joinToString(",") else effect.summonedId ?: (effect.subjectId ?: "")
         room.usedThisTurn.add(StepHelpers.DELAYED + player()!!.userId + "|" + effect.sourceInstanceId + "|" + script + "|" + subject)
         EffectEngine.log(room, effect.sourceName + ": al final del turno se resolverá el resto de su efecto", null)
     }
@@ -525,6 +529,8 @@ internal class EngineContext(private val room: GameRoom, private val effect: Pen
         val from = detach(card!!) ?: return
         Summons.summonByEffect(room, effect, player(), card, from, reduce, toFront)
         effect.summonedId = card.instanceId
+        // Every creature this effect summoned ("invoca hasta 2 …. Súbelos a tu mano al final de tu turno")
+        effect.saved.getOrPut(SUMMONED_ALL) { ArrayList() }.add(card.instanceId)
     }
 
     override fun play(card: CardSlot?, reduce: Int) {

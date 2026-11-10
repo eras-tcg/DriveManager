@@ -156,8 +156,10 @@ object Chain {
                 if (script == null || source == null) continue
                 val e = pending(room, script, p[0], source, event.seq)
                 if (!p[3].isEmpty()) {
-                    e.subjectId = p[3]
-                    e.summonedId = p[3]
+                    val ids = p[3].split(",")
+                    e.subjectId = ids[0]
+                    e.summonedId = ids[0]
+                    e.saved[EngineContext.SUMMONED_ALL] = ArrayList<String?>(ids)
                 }
                 result.add(e)
             }

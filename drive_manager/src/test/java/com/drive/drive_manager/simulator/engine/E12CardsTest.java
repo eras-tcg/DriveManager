@@ -742,9 +742,7 @@ class E12CardsTest extends CardBatchSupport {
         CardSlot retador = inHand("rt", "Retador", 2, 2, "R", "retador");
         CardSlot comandante = withClasses(card("cl", "Comandante De Los Leones Dorados", 0, 4, "R"), "retador");
         summon(comandante);
-        // "puedes tributar todos tus otros aliados" (optional since 2026-11-10)
-        untilOffered(comandante);
-        answer("cl");
+        // "tributa todos tus otros aliados" (mandatory again since 2026-11-10)
         drain();
         assertThat(EffectEngine.strength(comandante)).isEqualTo(3 + 4);
         assertThat(host.getTributeZone()).extracting(CardSlot::getInstanceId).contains("o1", "o2");
@@ -752,18 +750,20 @@ class E12CardsTest extends CardBatchSupport {
     }
 
     @Test
-    void comandanteAtAttackSummonsARetadorThatReturnsToTheHand() {
+    void comandanteAtAttackSummonsUpToTwoRetadoresThatReturnToTheHand() {
         CardSlot comandante = onField(host, withClasses(card("cl", "Comandante De Los Leones Dorados", 0, 4, "R"), "retador"));
         CardSlot retador = inHand("rt", "Retador", 2, 2, "R", "retador");
+        CardSlot other = inHand("r2", "Otro Retador", 2, 2, "R", "retador");
         assertThat(CombatRules.attackByPlayer(room, "host", "cl", null)).isNull();
-        untilOffered(comandante);
-        answer("cl");
-        answer("rt");
-        assertThat(host.getField()).contains(retador);
+        // Mandatory: straight to "invoca hasta 2 [retadores] de tu mano reduciendo sus costes en 2"
+        untilOffered(retador);
+        assertThat(room.getPrompt().getMax()).isEqualTo(2);
+        answer("rt", "r2");
+        assertThat(host.getField()).contains(retador, other);
         drain();
         TurnRules.turnEnding(room, "host");
         drain();
-        assertThat(host.getHand()).contains(retador);
+        assertThat(host.getHand()).contains(retador, other);
     }
 
     @Test
