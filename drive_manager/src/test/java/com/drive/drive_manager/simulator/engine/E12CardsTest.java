@@ -141,6 +141,23 @@ class E12CardsTest extends CardBatchSupport {
     }
 
     @Test
+    void geoVigilanteReactivatesAtTheStartOfTheOpponentsTurn() {
+        CardSlot geo = onField(host, structure("gv", "Geo Vigilante", 1, "B"), BACK);
+        geo.setKeywords(new java.util.ArrayList<>(List.of("Reactivar")));
+        geo.setTapped(true);
+        TurnRules.turnStarted(room, "guest");
+        assertThat(geo.isTapped()).isFalse();
+    }
+
+    @Test
+    void aStructureWithoutReactivarStaysExhaustedInTheOpponentsTurn() {
+        CardSlot other = onField(host, structure("es", "Estructura", 1, "B"), BACK);
+        other.setTapped(true);
+        TurnRules.turnStarted(room, "guest");
+        assertThat(other.isTapped()).isTrue();
+    }
+
+    @Test
     void geoVigilanteExhaustsToLowerTheCostOfABlueLevelThreeWhenItIsNeeded() {
         CardSlot geo = onField(host, structure("gv", "Geo Vigilante", 1, "B"), BACK);
         room.setSharedCounter(-2);
@@ -844,4 +861,5 @@ class E12CardsTest extends CardBatchSupport {
         assertThat(guest.getField()).doesNotContain(enemy);
         assertThat(EffectEngine.gemsOf(room, "guest")).isGreaterThanOrEqualTo(theirs);
     }
+
 }

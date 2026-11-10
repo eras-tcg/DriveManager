@@ -41,10 +41,10 @@ object TurnRules {
     fun turnStarted(room: GameRoom, playerId: String?) {
         val player = room.getPlayer(playerId) ?: return
         record(room, GameEvent.TURN_START, playerId, null, null, null, null, null, "Inicio del turno de " + player.username)
-        // Reactivar: "al inicio del turno: reactiva esta carta" (any turn)
+        // Reactivar: "al inicio del turno: reactiva esta carta" (any turn), on any card that has it (Geo Vigilante is a structure)
         for (p in room.players.values) {
             for (c in p.field) {
-                if (reactivable(c) && keywordLevel(c, "Reactivar") != null) {
+                if (c.tapped && c.noUntap != 1 && keywordLevel(c, "Reactivar") != null) {
                     c.tapped = false
                     record(room, GameEvent.UNTAP, p.userId, c, null, null, null, frozenMapOf<String, Any?>("keyword", "Reactivar"),
                             name(c) + " se reactiva (Reactivar)")
