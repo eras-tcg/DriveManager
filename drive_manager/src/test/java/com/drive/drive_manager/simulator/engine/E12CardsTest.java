@@ -701,7 +701,7 @@ class E12CardsTest extends CardBatchSupport {
     @Test
     void arcoLeonDoradoStopsAnEnemyOfTheChosenLevelFromBlocking() {
         CardSlot enemy = onField(guest, card("e", "Enemigo", 2, 2, "R"));
-        CardSlot arco = withClasses(card("ar", "Arco León Dorado", 2, 2, "R"), "retador");
+        CardSlot arco = withClasses(card("ar", "Arco de los Leones Dorados", 2, 2, "R"), "retador");
         summonByEffectToFront(arco);
         // "Sube esta carta a tu línea frontal. Luego: elige 1 aliado y 1 enemigo…": the only ally is chosen by itself
         accept(arco);
