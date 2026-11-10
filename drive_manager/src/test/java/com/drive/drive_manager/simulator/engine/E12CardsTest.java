@@ -913,6 +913,9 @@ class E12CardsTest extends CardBatchSupport {
         CardSlot geo = onField(host, structure("gv", "Geo Vigilante", 1, "B"), BACK);
         geo.setKeywords(new java.util.ArrayList<>(List.of("Reactivar")));
         geo.setTapped(true);
+        // "al inicio del turno oponente": not at the start of its own player's turn (designer ruling 2026-11-10)
+        TurnRules.turnStarted(room, "host");
+        assertThat(geo.isTapped()).isTrue();
         TurnRules.turnStarted(room, "guest");
         assertThat(geo.isTapped()).isFalse();
     }
