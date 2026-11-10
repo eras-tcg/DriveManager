@@ -59,6 +59,8 @@ object SpecialRequirements {
         val kind: String?, val level: Int, val alliesSum: Int, val materialLevel: Int, val levelSum: Int, val atLeast: Boolean, val maxLevel: Int,
         val materialCount: Int, val materialZones: List<String>?, val noSummoner: Boolean, val alternative: SpecialRequirement?,
         val alone: Boolean, val strongest: Boolean, val summonerZones: List<String>?, val moreMaterials: Boolean,
+        /** Ascenso: `alliesSum` counts the allies' costs ("suman al menos 5 en coste"), not their levels. */
+        val alliesSumByCost: Boolean = false,
     ) {
         /** `moreMaterials`: "N o más criaturas" as materials. */
         constructor(
@@ -77,7 +79,7 @@ object SpecialRequirements {
 
         fun withAlternative(other: SpecialRequirement?): SpecialRequirement {
             return SpecialRequirement(kind, level, alliesSum, materialLevel, levelSum, atLeast, maxLevel, materialCount, materialZones,
-                    noSummoner, other, alone, strongest, summonerZones, moreMaterials)
+                    noSummoner, other, alone, strongest, summonerZones, moreMaterials, alliesSumByCost)
         }
 
         /** The summoner is declared from the hand or the Tributos (not the field). */
@@ -156,8 +158,10 @@ object SpecialRequirements {
         if (level == null) return null
         val summonerLevel = level.groupValues[1].toInt()
         val maxLevel = if (level.groups[2]?.value != null) level.groupValues[2].toInt() else summonerLevel
-        val sum = Platform.regex("suman\\s*(\\d+)").find(text)
+        // "suman 5", "suman al menos 5 en coste", "suman 5 o más en nivel"
+        val sum = Platform.regex("suman\\s*(?:al\\s+menos\\s+)?(\\d+)(?:\\s*o\\s+m[aá]s)?(?:\\s*en\\s+(nivel|coste))?").find(text)
         val alliesSum = if ("promotion" == kind && sum != null) sum.groupValues[1].toInt() else 0
+        val alliesSumByCost = alliesSum > 0 && sum!!.groups[2]?.value == "coste"
         var materialLevel = summonerLevel
         var levelSum = 0
         var materialCount = 0
@@ -176,7 +180,7 @@ object SpecialRequirements {
         val alone = Platform.regex("no\\s+control\\w*\\s+otras\\s+criaturas").containsMatchIn(text)
         val strongest = Platform.regex("fuerza\\s+igual\\s+o\\s+mayor\\s+que\\s+la\\s+de\\s+cualquier\\s+otro\\s+aliado").containsMatchIn(text)
         return SpecialRequirement(kind, summonerLevel, alliesSum, materialLevel, levelSum, atLeast, maxLevel, materialCount, zones, false, null,
-                alone, strongest)
+                alone, strongest, null, false, alliesSumByCost)
     }
 
     /** "en campo o mano", "en tu mano o tributos", "en el campo"; when it says none, the Tributos or the field. */
@@ -358,10 +362,12 @@ object SpecialRequirements {
         return cards.filter { c -> "creature" == c.cardType && canSpecial(room, userId, c) }.map { it.instanceId } as MutableList<String>
     }
 
-    /** Ascenso: "mientras tus aliados suman N o más en nivel". */
+    /** Ascenso: "mientras tus aliados suman N o más en nivel" (or "en coste": their printed costs). */
     @JvmStatic
     fun alliesAddUp(player: PlayerState, req: SpecialRequirement): Boolean {
-        return allies(player).sumOf { c -> if (c.getLevel() == null) 0 else c.getLevel()!! } >= req.alliesSum
+        val total = if (req.alliesSumByCost) allies(player).sumOf { c -> c.cost ?: 0 }
+        else allies(player).sumOf { c -> if (c.getLevel() == null) 0 else c.getLevel()!! }
+        return total >= req.alliesSum
     }
 
     /**

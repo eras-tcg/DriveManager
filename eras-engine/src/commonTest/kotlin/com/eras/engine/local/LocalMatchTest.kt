@@ -146,7 +146,7 @@ class LocalMatchTest {
         /** LocalMatch.result() at the end of each game: taken on the JVM; JavaScript must give the same. */
         val EXPECTED_RESULT = mapOf(
             "st1-st1-1-easy" to "{\"status\":\"POST_GAME\",\"gamesEnded\":1,\"winnerId\":\"local-player\",\"endReason\":\"lives\",\"turns\":16,\"digest\":\"ee7a64e2429505ee\"}",
-            "st2-st3-2-easy" to "{\"status\":\"POST_GAME\",\"gamesEnded\":1,\"winnerId\":\"local-player\",\"endReason\":\"lives\",\"turns\":17,\"digest\":\"2810ac77b1be5505\"}",
+            "st2-st3-2-easy" to "{\"status\":\"POST_GAME\",\"gamesEnded\":1,\"winnerId\":\"local-player\",\"endReason\":\"lives\",\"turns\":15,\"digest\":\"a3aad28383e4273f\"}",
             "st4-st1-3-easy" to "{\"status\":\"POST_GAME\",\"gamesEnded\":1,\"winnerId\":\"local-player\",\"endReason\":\"lives\",\"turns\":12,\"digest\":\"07b16f261386427e\"}",
             "st3-st4-5-normal" to "{\"status\":\"POST_GAME\",\"gamesEnded\":1,\"winnerId\":\"bot\",\"endReason\":\"lives\",\"turns\":11,\"digest\":\"71b04a9fecf39937\"}",
         )
@@ -165,7 +165,7 @@ class LocalMatchTest {
         /** Taken on the JVM; JavaScript must give the same. */
         val EXPECTED = mapOf(
             "st1-st1-1-easy" to "7d9b9d3e9ad86f43",
-            "st2-st3-2-easy" to "c6cf9697f7b23973",
+            "st2-st3-2-easy" to "9f4b80f85aecf55b",
             "st4-st1-3-easy" to "23f5e9cc0fd10912",
             "st3-st4-5-normal" to "f384af0206de9418",
         )

@@ -31,11 +31,11 @@ class SimulatorJsonTest {
     /** Per game: what each player is sent of every update (StateMask.forViewer, as a player and as an editor), summed up. */
     private static final Map<String, String> VIEWS = Map.of(
             "st1-st2-11", "572b595e244378956e82ebdb814def70",
-            "st3-st4-12", "6c5d4cd60d9695fa033b9739891ed180");
+            "st3-st4-12", "95e04d9d4c16f7a1b9150e5721519548");
 
     private static final Map<String, String> GOLDEN = Map.of(
             "st1-st2-11", "d9a32513b98f4053a565ac61e0e8fde7",
-            "st3-st4-12", "ec2f8ff3b507081889c772357d32e141");
+            "st3-st4-12", "afa863069a684d959afaccbb3ccb1c96");
 
     @Test
     void sendsAndSumsUpAsBefore() throws Exception {

@@ -255,14 +255,19 @@ object Chain {
         return null
     }
 
+    /**
+     * The key an effect's use is counted under. One printed effect written as several scripts (one per way it can start:
+     * "si algún aliado es invocado por efecto o si es tu turno") names them "<id>" and "<id>#<variant>": they share one limit.
+     */
     @JvmStatic
     fun usageKey(e: PendingEffect, script: EffectScript): String {
         if (script.limit == Limit.DEFINITIVE) return e.controllerId + "|" + DEFINITIVE_USED
         if (script.limit == Limit.ONE_EFFECT_OF_NAME_PER_TURN) return e.controllerId + "|name:" + e.sourceName!!.lowercase()
+        val id = script.id?.substringBefore('#')
         return if (script.limit == Limit.ONCE_PER_TURN_BETWEEN_COPIES)
-            e.controllerId + "|" + script.id
+            e.controllerId + "|" + id
         // "Una vez por turno" belongs to this card while it stays on the field (rule 11.8: back on the field it is a new card)
-        else e.controllerId + "|" + e.sourceInstanceId + "@" + e.sourceFieldSeq + "|" + script.id
+        else e.controllerId + "|" + e.sourceInstanceId + "@" + e.sourceFieldSeq + "|" + id
     }
 
     @JvmStatic

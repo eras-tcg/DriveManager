@@ -555,7 +555,7 @@ class E12CardsTest extends CardBatchSupport {
         host.getTributeZone().add(one);
         CardSlot asedio = utility("as", "Asedio Del Inframundo", 1, "P");
         play(asedio);
-        answer("as");
+        // "invoca en tu línea frontal 1 criatura Violeta o [espectro] nivel 1 de tus tributos": not optional
         answer("o1");
         assertThat(host.getField()).contains(one);
         assertThat(host.getTributeZone()).contains(asedio);
@@ -744,15 +744,15 @@ class E12CardsTest extends CardBatchSupport {
     }
 
     @Test
-    void mensajeDeUnCompaneroDrawsTwoThenOnlyOneOfItsEffectsPerTurn() {
+    void mensajeDeUnCompaneroDrawsTwoAndItsTributosEffectHasItsOwnLimit() {
         inHand("rt", "Retador", 1, 1, "R", "retador");
         CardSlot mensaje = utility("mc", "Mensaje De Un Compañero", 0, "R");
         play(mensaje);
         answer("rt");
         assertThat(host.getTributeZone()).contains(mensaje);
         assertThat(host.getHand()).hasSize(2);
-        // From the Tributos on its controller's turn: already used one of its effects this turn
-        assertThat(Chain.activatable(room, "host")).noneMatch(a -> "mc".equals(a.instanceId()));
+        // Each effect is "una vez por turno entre copias" on its own (2026-11-10): the En Tributos one is still there
+        assertThat(Chain.activatable(room, "host")).anyMatch(a -> "mc".equals(a.instanceId()));
     }
 
     @Test
