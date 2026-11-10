@@ -70,6 +70,7 @@ object LookSteps {
                 prompt.max = min(step.max, valid.size)
                 prompt.reorderRest = true
                 prompt.chosenLabel = "A tu mano"
+                prompt.distinctLevels = true
                 room.prompt = prompt
                 return true
             }
@@ -79,6 +80,9 @@ object LookSteps {
                 if (!assignable(valid, step.filters)) return false
                 pick(room, effect, "Revela de tu mano: " + step.filters!!.joinToString(" y ") { f -> "1 " + f.describe() } + ".",
                         "Revelar", player.hand, ids(valid), step.filters!!.size)
+                // "un [retador] nivel 2 y uno nivel 3": each filter its own level, so no two of the same level
+                val levels = step.filters!!.map { f -> f.level }
+                if (levels.none { it == null } && levels.toSet().size == levels.size) room.prompt!!.distinctLevels = true
                 return true
             }
             is RevealOpponentHandSendOneToBottom -> {

@@ -4,9 +4,8 @@
     {
       "id" : "comandante-leones-dorados:en-invocacion",
       "moment" : "ON_SUMMON",
-      "mandatory" : true,
       "label" : "En Invocación",
-      "text" : "Tributa todos tus otros aliados. Por cada aliado tributado por este efecto: esta carta gana fuerza 2 hasta el final del turno.",
+      "text" : "Puedes tributar todos tus otros aliados. Por cada aliado tributado por este efecto: esta carta gana fuerza 2 hasta el final del turno.",
       "steps" : [
         {
           "type" : "Do",

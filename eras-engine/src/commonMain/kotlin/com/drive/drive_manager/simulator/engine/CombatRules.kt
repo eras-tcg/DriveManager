@@ -443,6 +443,8 @@ object CombatRules {
             "Tributar", valid, defender.hand)
         room.prompt!!.min = 0
         room.prompt!!.max = 3
+        room.prompt!!.exactOrNone = true
+        room.prompt!!.distinctLevels = true
         room.prompt!!.subjectId = context
     }
 

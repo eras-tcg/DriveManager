@@ -4,6 +4,7 @@ import kotlin.jvm.JvmStatic
 import com.drive.drive_manager.simulator.bot.BotSeat
 import com.drive.drive_manager.simulator.engine.frozenSetOf
 import com.drive.drive_manager.simulator.engine.GameEvent
+import com.drive.drive_manager.simulator.engine.PromptPurpose
 import com.drive.drive_manager.simulator.engine.Prompt
 
 /**
@@ -36,10 +37,13 @@ object StateMask {
         val choosing = GameRoom.RoomStatus.MULLIGAN.name == update.status
                 && (update.mulliganReady == null || !update.mulliganReady!!.contains(viewerId))
         val ownShown = if (choosing) MULLIGAN_CARDS else 0
+        // A life lost by direct damage that its owner may Reforzar with or play (it waits in their hand): it was revealed,
+        // so the rival sees it too while its owner decides
+        val revealed = update.prompt?.takeIf { p -> PromptPurpose.REINFORCE.`is`(p.purpose) || PromptPurpose.LIFE_PLAY.`is`(p.purpose) }?.subjectId
         val players: MutableMap<String, PlayerState> = LinkedHashMap()
         byId.forEach { (id, player) ->
             val mine = id == viewerId
-            players[id] = mask(player, mine, manual, if (mine) ownShown else 0, hidden)
+            players[id] = mask(player, mine, manual, if (mine) ownShown else 0, hidden, revealed)
         }
         view.players = players
 
@@ -77,10 +81,13 @@ object StateMask {
     const val MULLIGAN_CARDS = 5
 
     /** `shown`: how many cards on top of the deck keep their face (the owner's, in the mulligan). */
-    private fun mask(player: PlayerState, mine: Boolean, manual: Boolean, shown: Int, hidden: MutableSet<String?>): PlayerState {
+    private fun mask(player: PlayerState, mine: Boolean, manual: Boolean, shown: Int, hidden: MutableSet<String?>, revealed: String?): PlayerState {
         val masked = ShallowCopy.of(player)
         val ownHidden = mine && manual
-        masked.hand = if (mine) player.hand else backs(player.hand, hidden)
+        masked.hand = if (mine) player.hand
+        else player.hand.mapTo(ArrayList(player.hand.size)) { c ->
+            if (revealed != null && c.instanceId == revealed && !c.faceDown) withMaskedAttachments(c, hidden) else back(c, hidden)
+        }
         masked.deck = if (ownHidden) player.deck else deckBacks(player, shown, hidden)
         masked.originalDeck = if (mine) player.originalDeck else starterOnly(player)
         masked.lifeStack = if (ownHidden) player.lifeStack else faceDownBacks(player.lifeStack, hidden)
@@ -162,6 +169,8 @@ object StateMask {
         shown.sourceName = prompt.sourceName
         shown.sourceImageUrl = prompt.sourceImageUrl
         shown.title = prompt.title
+        // The revealed life its owner decides on (Reforzar, play it): the rival's board shows it waiting too
+        if (PromptPurpose.REINFORCE.`is`(prompt.purpose) || PromptPurpose.LIFE_PLAY.`is`(prompt.purpose)) shown.subjectId = prompt.subjectId
         return shown
     }
 

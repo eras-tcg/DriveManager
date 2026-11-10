@@ -61,6 +61,8 @@ object SpecialRequirements {
         val alone: Boolean, val strongest: Boolean, val summonerZones: List<String>?, val moreMaterials: Boolean,
         /** Ascenso: `alliesSum` counts the allies' costs ("suman al menos 5 en coste"), not their levels. */
         val alliesSumByCost: Boolean = false,
+        /** "mientras no controlas otros aliados nivel N": N (0 without it); the summoner may be of that level. */
+        val aloneAtLevel: Int = 0,
     ) {
         /** `moreMaterials`: "N o más criaturas" as materials. */
         constructor(
@@ -79,7 +81,7 @@ object SpecialRequirements {
 
         fun withAlternative(other: SpecialRequirement?): SpecialRequirement {
             return SpecialRequirement(kind, level, alliesSum, materialLevel, levelSum, atLeast, maxLevel, materialCount, materialZones,
-                    noSummoner, other, alone, strongest, summonerZones, moreMaterials, alliesSumByCost)
+                    noSummoner, other, alone, strongest, summonerZones, moreMaterials, alliesSumByCost, aloneAtLevel)
         }
 
         /** The summoner is declared from the hand or the Tributos (not the field). */
@@ -178,9 +180,11 @@ object SpecialRequirements {
         }
         val atLeast = Platform.regex("ni[ev]*l\\s*\\d+\\s*o\\s*mayor").containsMatchIn(text)
         val alone = Platform.regex("no\\s+control\\w*\\s+otras\\s+criaturas").containsMatchIn(text)
+        val aloneAt = Platform.regex("no\\s+control\\w*\\s+otros\\s+aliados\\s+ni[ev]*l\\s*(\\d+)").find(text)
+        val aloneAtLevel = aloneAt?.groupValues?.get(1)?.toInt() ?: 0
         val strongest = Platform.regex("fuerza\\s+igual\\s+o\\s+mayor\\s+que\\s+la\\s+de\\s+cualquier\\s+otro\\s+aliado").containsMatchIn(text)
         return SpecialRequirement(kind, summonerLevel, alliesSum, materialLevel, levelSum, atLeast, maxLevel, materialCount, zones, false, null,
-                alone, strongest, null, false, alliesSumByCost)
+                alone, strongest, null, false, alliesSumByCost, aloneAtLevel)
     }
 
     /** "en campo o mano", "en tu mano o tributos", "en el campo"; when it says none, the Tributos or the field. */
@@ -231,6 +235,8 @@ object SpecialRequirements {
                     "creature" == c.cardType && c.getLevel() != null && shares(c, card) && optionFor(req, c) != null
                             // "mientras no controles otras criaturas"
                             && (!req!!.alone || creatures.all { o -> o === c })
+                            // "mientras no controlas otros aliados nivel 1"
+                            && (req.aloneAtLevel == 0 || creatures.none { o -> o !== c && o.getLevel() == req.aloneAtLevel })
                             // "con fuerza igual o mayor que la de cualquier otro aliado"
                             && (!req.strongest || creatures.all { o -> o === c || strength(o) <= strength(c) })
                 }
