@@ -113,14 +113,27 @@ open class LookaheadBot(settings: BotSettings, model: ValueModel?) : HeuristicBo
     override fun mainMove(room: GameRoom, me: String?): GameAction? {
         val at = moment(room, "main")
         if (at == decidedAt) return decided as GameAction?
-        val heuristic = super.mainMove(room, me)
+        // attackFloor: an attack that is a gift to some block of the rival is no candidate (AttackFloor), the heuristic's included
+        val floor = AttackFloor.of(sandbox, room, me, settings)
+        // defenceFloor: nor one that leaves it dead on the table (DefenceFloor); a win found by the engine is held to neither
+        val guard = DefenceFloor.on(settings)
+        val own = super.mainMove(room, me)
+        val heuristic = if ((floor == null || floor.passes(own)) && (!guard || DefenceFloor.allows(room, me, own))) own else null
         val candidates: MutableList<GameAction> = ArrayList()
         candidates.add(heuristic ?: endTurn())
-        for (move in mainMoves(room, me)) if (!isRefused(move) && !same(move, candidates[0]) && (!on("hUseful") || Usefulness.playDoesSomething(room, me, move, settings))) candidates.add(move)
+        for (move in mainMoves(room, me)) if (!isRefused(move) && !same(move, candidates[0]) && (floor == null || floor.passes(move)) && (!guard || DefenceFloor.allows(room, me, move)) && (!on("hUseful") || Usefulness.playDoesSomething(room, me, move, settings))) candidates.add(move)
         if (heuristic != null) candidates.add(endTurn())
         if (on("hUsefulEnd")) candidates.removeAll { m -> !Usefulness.playPaysOff(room, me, m, settings) } // a utility that leaves the turn no better
         candidates.addAll(1, SequenceSearch.best(sandbox, room, me, candidates, settings)); plan.offer(room, me, candidates, settings)
-        val best = remember(at, plan.next(sandbox, room, me, best(room, me, candidates), settings)) as GameAction?
+        if (floor != null) candidates.removeAll { c -> !floor.admits(c) }
+        if (guard) candidates.removeAll { c -> c.payload!![AttackFloor.LETHAL] != true && !DefenceFloor.allows(room, me, SequenceSearch.first(c)) }
+        if (candidates.isEmpty()) candidates.add(endTurn())
+        val chosen = best(room, me, candidates)
+        var move = plan.next(sandbox, room, me, chosen, settings)
+        // attackFirst may bring forward an attack of the chosen sequence: not one the floor rejects (the sequence's own order then)
+        if ((floor != null && !floor.passes(move)) || (guard && chosen != null && chosen.payload!![AttackFloor.LETHAL] != true && !DefenceFloor.allows(room, me, move)))
+            move = plan.next(sandbox, room, me, chosen, settings.with("attackFirst=0"))
+        val best = remember(at, move) as GameAction?
         if (candidates.any { a -> ActionType.RITUAL_SUMMON.`is`(a) }) {
             specialChances++
             if (best != null && ActionType.RITUAL_SUMMON.`is`(best)) specials++
@@ -159,6 +172,12 @@ open class LookaheadBot(settings: BotSettings, model: ValueModel?) : HeuristicBo
                 val order: List<String?> = if (HandRank.on(settings)) HandRank.weakestFirst(room, self!!, choices, settings) else choices.sortedWith(comparingDouble { id: String? -> tributeOrder(cardIn(prompt, id)) })
                 for (k in max(1, prompt.min)..min(prompt.max, order.size)) options.add(ArrayList(order.subList(0, k)))
             }
+        }
+        // defenceFloor: a move up that leaves it dead on the table is no option while another does not
+        if (DefenceFloor.on(settings) && PromptPurpose.ADVANCE.`is`(prompt.purpose)) {
+            val kept = DefenceFloor.advance(room, me, options)
+            options.retainAll(kept.toSet())
+            if (options.size == 1) { val only = options.first().filterNotNull(); remember(at, only); return counted(self, prompt, choices, only) }
         }
         if (options.size <= 1) return counted(self, prompt, choices, heuristic)
         val candidates: MutableList<GameAction> = ArrayList()

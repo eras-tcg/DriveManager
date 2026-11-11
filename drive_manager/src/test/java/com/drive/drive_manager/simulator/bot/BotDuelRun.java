@@ -47,7 +47,12 @@ class BotDuelRun {
                     // index stops working once they are full; the printed one is looked up again instead
                     Object[] lastEvent = {null}, lastLine = {null};
                     String[] host = {aHosts ? "A" : "B"}, guest = {aHosts ? "B" : "A"};
-                    BotMatch.Result r = BotMatch.playSeededWatching(d[0], d[1], new LookaheadBot(aHosts ? a : b), new LookaheadBot(aHosts ? b : a), seed, room -> {
+                    LookaheadBot hostBot = new LookaheadBot(aHosts ? a : b), guestBot = new LookaheadBot(aHosts ? b : a);
+                    // bot.duel.log: every decision A looked ahead for (what it chose, among how many, the score it expected and the table's now)
+                    if (Boolean.getBoolean("bot.duel.log")) (aHosts ? hostBot : guestBot).watch(x -> sb.append("      > A decide ").append(x.type())
+                            .append(' ').append(x.card()).append(x.target() == null ? "" : " → " + x.target()).append(" (opción ").append(x.index()).append(" de ")
+                            .append(x.candidates()).append(", espera ").append(Math.round(x.expected() * 10) / 10.0).append(", ahora ").append(Math.round(x.now() * 10) / 10.0).append(")\n"));
+                    BotMatch.Result r = BotMatch.playSeededWatching(d[0], d[1], hostBot, guestBot, seed, room -> {
                         List<GameEvent> tl = room.getTimeline();
                         List<GameEvent> turn = after(tl, lastEvent);
                         if (turn.isEmpty()) return;

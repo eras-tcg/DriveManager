@@ -148,6 +148,9 @@ internal object Usefulness {
     /** A play from the hand: PLAY_CARD of a utility. Other moves always do something. */
     @JvmStatic
     fun playDoesSomething(room: GameRoom, me: String?, play: GameAction, rules: BotSettings): Boolean {
+        // A slow effect activated: judged the same, against not activating it. The card stays where it is, so how it
+        // stands itself (exhausted to pay) does not count as a change; what it gives up counts as material
+        if (ActionType.ACTIVATE_EFFECT.`is`(play)) return doesSomething(room, me, play, null, frozenSetOf(play.getString("instanceId")), rules)
         if (!ActionType.PLAY_CARD.`is`(play)) return true
         val id = play.getString("instanceId")
         val card = if (room.getPlayer(me) == null) null else room.getPlayer(me)!!.hand.firstOrNull { c -> c.instanceId!! == id }
@@ -217,15 +220,23 @@ internal object Usefulness {
     private fun judge(room: GameRoom, me: String?, move: GameAction, without: GameAction?, moving: Set<String?>, rules: BotSettings): Boolean {
         val yes = outcome(room, me, move, moving, rules) ?: return true
         val no = if (without == null) outcome(room, me, null, moving, rules) else outcome(room, me, without, moving, rules)
-        val something = yes != no
+        // An advantage, not a change (the user's call, 2026-11-11): the table must differ from the one without the move,
+        // and the bot must not hold less material by it. Paying a cost is a change too; when that is all that happened
+        // (a card tributed for an effect that found nothing, a creature sent to attack into a block that destroys it)
+        // the move is refused. One that changes the table at no loss (a search, a keyword, a reduction) goes on to the tries
+        // Nor may it empty its own deck (the user's game, 2026-11-11: st1-st2 s13095): only the draw at the start of the
+        // turn loses, so the last cards are not a cost to pay. The heuristic paid them (Ddraig and Wyfreik tribute three
+        // from the top to attack), so in the tries the rival ran out of deck by itself and the bot counted on a win
+        // that the real rival never gave it
+        val something = no == null || (yes.table != no.table && yes.material >= no.material - 1e-9 && !(yes.deck == 0 && no.deck > 0))
         ASKED.incrementAndGet()
         if (!something) NOTHING.incrementAndGet()
-        else if (diffs != null && diffs!!.size < 8 && no != null && ActionType.RESOLVE_PROMPT.`is`(move)) diffs!!.add(move.type + " " + firstDiff(no, yes))
+        else if (diffs != null && diffs!!.size < 8 && no != null && ActionType.RESOLVE_PROMPT.`is`(move)) diffs!!.add(move.type + " " + firstDiff(no.table, yes.table))
         return something
     }
 
     /** The table once the move is played and what it opens answered (null: refused, or the game ended). */
-    private fun outcome(room: GameRoom, me: String?, move: GameAction?, moving: Set<String?>, rules: BotSettings): String? {
+    private fun outcome(room: GameRoom, me: String?, move: GameAction?, moving: Set<String?>, rules: BotSettings): Outcome? {
         val sandbox = SANDBOX.get()
         val copy = sandbox.fork(room, me, GameRandom(1))
         try {
@@ -243,10 +254,29 @@ internal object Usefulness {
             val paid = copy.timeline.subList(events, copy.timeline.size)
                     .filter { e -> GameEvent.PLAY == e.type && e.data != null && e.data!!["cost"] is Number }
                     .sumOf { e -> (e.data!!["cost"] as Number).toInt() }
-            return table(copy, moving) + "|gems " + (EffectEngine.gemsOf(copy, me) + paid)
+            val gems = EffectEngine.gemsOf(copy, me) + paid
+            return Outcome(table(copy, moving) + "|gems " + gems, material(copy, me, moving, rules) + gems * rules.hand, copy.getPlayer(me)?.deck?.size ?: 0)
         } finally {
             sandbox.drop(copy)
         }
+    }
+
+    /** A table as it stands (to tell whether anything changed) and what it holds for the bot (to tell whether it lost by it). */
+    private class Outcome(val table: String, val material: Double, val deck: Int)
+
+    /**
+     * The bot's material minus the rival's: each side's lives, cards in the hand (but the ones that may move: spending
+     * the card played is not a loss of its effect) and creatures on the field by their worth. A reduced enemy is worth
+     * less, a creature of its own lost is its worth lost.
+     */
+    private fun material(copy: GameRoom, me: String?, moving: Set<String?>, w: BotSettings): Double {
+        var v = 0.0
+        for (p in copy.players.values) {
+            var side = p.lifeStack.size * w.life + p.hand.count { c -> !moving.contains(c.instanceId) } * w.hand
+            for (c in p.field) if ("creature" == c.cardType) side += CardWorth.of(c, w)
+            v += if (p.userId == me) side else -side
+        }
+        return v
     }
 
     private fun firstDiff(a: String, b: String): String {
@@ -272,7 +302,9 @@ internal object Usefulness {
         return sb.append(room.fieldGrants as Any?).toString()
     }
 
-    private val PLACE: Regex = Platform.regex("\\b[xy]=[^,)]*, ?")
+    // Where it is drawn and when it entered the field (the order of the events: it differs between two copies whenever
+    // one of them recorded more events before, though the table is the same) are not how a card stands
+    private val PLACE: Regex = Platform.regex("\\b(?:[xy]|fieldSeq)=[^,)]*, ?")
 
     private fun card(c: CardSlot): String {
         return PLACE.replace(c.toString(), "") + ":" + EffectEngine.strength(c)

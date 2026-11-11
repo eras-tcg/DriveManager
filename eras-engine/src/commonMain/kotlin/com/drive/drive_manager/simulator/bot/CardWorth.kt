@@ -31,6 +31,7 @@ internal object CardWorth {
         if (card == null) return 0.0
         var v: Double = if (card.cost == null) 2.0 else card.cost!!.toDouble()
         if ("creature" == card.cardType) {
+            v *= w.get("vCost")
             val strength = EffectEngine.strength(card)
             v += strength * w.vStr + strength * strength * w.vStrSq
             v += EffectEngine.keywords(card).size * w.vKeyword

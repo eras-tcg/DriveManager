@@ -143,12 +143,19 @@ class LocalMatchTest {
     }
 
     companion object {
+        /**
+         * 2026-11-11, the three maps below. The games against the easy bot play as before (their results here did not
+         * change): only their messages did, the list of bots sent with the room's state before the game (botChoices) has
+         * one more model, "guiado-previo". The game against the normal bot plays otherwise (15 turns, not 11): its check
+         * of utilities (hUseful, Usefulness) no longer takes the order of the events (fieldSeq) for a change of the
+         * table, asks that the bot loses no material by the play, and judges slow effects and answers in a chain too.
+         */
         /** LocalMatch.result() at the end of each game: taken on the JVM; JavaScript must give the same. */
         val EXPECTED_RESULT = mapOf(
             "st1-st1-1-easy" to "{\"status\":\"POST_GAME\",\"gamesEnded\":1,\"winnerId\":\"local-player\",\"endReason\":\"lives\",\"turns\":16,\"digest\":\"ee7a64e2429505ee\"}",
             "st2-st3-2-easy" to "{\"status\":\"POST_GAME\",\"gamesEnded\":1,\"winnerId\":\"local-player\",\"endReason\":\"lives\",\"turns\":15,\"digest\":\"a3aad28383e4273f\"}",
             "st4-st1-3-easy" to "{\"status\":\"POST_GAME\",\"gamesEnded\":1,\"winnerId\":\"local-player\",\"endReason\":\"lives\",\"turns\":12,\"digest\":\"07b16f261386427e\"}",
-            "st3-st4-5-normal" to "{\"status\":\"POST_GAME\",\"gamesEnded\":1,\"winnerId\":\"bot\",\"endReason\":\"lives\",\"turns\":11,\"digest\":\"71b04a9fecf39937\"}",
+            "st3-st4-5-normal" to "{\"status\":\"POST_GAME\",\"gamesEnded\":1,\"winnerId\":\"bot\",\"endReason\":\"lives\",\"turns\":15,\"digest\":\"87673b89854a3663\"}",
         )
 
         /**
@@ -156,18 +163,18 @@ class LocalMatchTest {
          * must give the same). Without them the messages give [EXPECTED], as before those updates were sent.
          */
         val EXPECTED_WITH_LINKS = mapOf(
-            "st1-st1-1-easy" to "a027c365571fc804",
-            "st2-st3-2-easy" to "2eab7bec3b4c4219",
-            "st4-st1-3-easy" to "df23b0c376bbd7ef",
-            "st3-st4-5-normal" to "982393af7f01a68d",
+            "st1-st1-1-easy" to "cfc8e16b6bedffab",
+            "st2-st3-2-easy" to "75570c36f4883cf8",
+            "st4-st1-3-easy" to "a9676e98ceca414a",
+            "st3-st4-5-normal" to "da788146023f9d4f",
         )
 
         /** Taken on the JVM; JavaScript must give the same. */
         val EXPECTED = mapOf(
-            "st1-st1-1-easy" to "039afdca87f9b55c",
-            "st2-st3-2-easy" to "23691fb6da691b5d",
-            "st4-st1-3-easy" to "4944eacb661c0a47",
-            "st3-st4-5-normal" to "3fcdbf846201308e",
+            "st1-st1-1-easy" to "2f7604e66c76a38b",
+            "st2-st3-2-easy" to "92930e54abe4f5e4",
+            "st4-st1-3-easy" to "a7966901b5bae3ec",
+            "st3-st4-5-normal" to "baa88a1c04e72d2f",
         )
     }
 }
