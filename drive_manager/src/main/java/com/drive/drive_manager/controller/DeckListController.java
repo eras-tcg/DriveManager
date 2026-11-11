@@ -1,6 +1,8 @@
 package com.drive.drive_manager.controller;
 
+import com.drive.drive_manager.dto.DeckBox;
 import com.drive.drive_manager.dto.DeckList;
+import com.drive.drive_manager.repository.DeckBoxRepository;
 import com.drive.drive_manager.repository.DeckListRepository;
 import com.drive.drive_manager.service.ActivityLogService;
 import com.drive.drive_manager.service.ProgressionRules;
@@ -30,11 +32,17 @@ public class DeckListController {
     private final DeckListRepository repo;
     private final ProgressionService progression;
     private final ActivityLogService activity;
+    private final DeckBoxRepository deckBoxes;
 
-    public DeckListController(DeckListRepository repo, ProgressionService progression, ActivityLogService activity) {
+    /** Longest deck name accepted on create, or on an edit that changes the name (older, longer names are kept). */
+    public static final int MAX_NAME_LENGTH = 30;
+
+    public DeckListController(DeckListRepository repo, ProgressionService progression, ActivityLogService activity,
+                              DeckBoxRepository deckBoxes) {
         this.repo = repo;
         this.progression = progression;
         this.activity = activity;
+        this.deckBoxes = deckBoxes;
     }
 
     @GetMapping
@@ -65,7 +73,7 @@ public class DeckListController {
     @PreAuthorize("hasAuthority('manage_decks')")
     @PostMapping
     public ResponseEntity<Object> create(@RequestBody DeckList body, Authentication auth) {
-        String err = validate(body);
+        String err = validate(body, null);
         if (err != null) return ResponseEntity.badRequest().body(Map.of("error", err));
 
         String callerId = auth.getName();
@@ -97,7 +105,7 @@ public class DeckListController {
             return ResponseEntity.status(403).body(Map.of("error", "Cannot edit another user's deck"));
         }
 
-        String err = validate(body);
+        String err = validate(body, existing.get().getDeckName());
         if (err != null) return ResponseEntity.badRequest().body(Map.of("error", err));
 
         body.setId(id);
@@ -119,6 +127,10 @@ public class DeckListController {
         }
 
         repo.deleteById(id);
+        // The deck leaves every deckbox that held it
+        List<DeckBox> holders = deckBoxes.findByDeckIds(id);
+        holders.forEach(box -> box.getDeckIds().removeIf(id::equals));
+        if (!holders.isEmpty()) deckBoxes.saveAll(holders);
         activity.record(callerId, ActivityLogService.DECK_DELETE, deckDetail(existing.get()));
         return ResponseEntity.noContent().build();
     }
@@ -137,9 +149,13 @@ public class DeckListController {
         return auth.getName();
     }
 
-    private String validate(DeckList body) {
+    private String validate(DeckList body, String previousName) {
         if (body.getCards() == null || body.getCards().isEmpty()) {
             return "cards list must not be empty";
+        }
+        String name = body.getDeckName();
+        if (name != null && name.length() > MAX_NAME_LENGTH && !name.equals(previousName)) {
+            return "El nombre del mazo admite hasta " + MAX_NAME_LENGTH + " caracteres";
         }
         // deckImage is now a URL — no card-code membership check needed
         return null;
