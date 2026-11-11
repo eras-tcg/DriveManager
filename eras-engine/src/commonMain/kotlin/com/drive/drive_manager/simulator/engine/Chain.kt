@@ -60,7 +60,7 @@ object Chain {
                 if (!Resolution.run(room, top, script(top).cost!![top.costIndex])) top.costIndex = top.costIndex + 1
             } else if (chain.isEmpty() && !room.pendingEvents.isEmpty()) {
                 queueTriggers(room)
-            } else if (!resolving && !room.triggerQueue.isEmpty()) {
+            } else if (!resolving && !room.triggerQueue.isEmpty() && !waitsForPhase(room, room.triggerQueue[0])) {
                 activateNext(room)
             } else if (!chain.isEmpty()) {
                 if (offerPriority(room)) return
@@ -73,6 +73,18 @@ object Chain {
                 return
             }
         }
+    }
+
+    /**
+     * Rule 8 (start and end of the turn are phases, not one moment): their triggered effects are activated one at a time,
+     * each resolved in full (its chain, the combat it starts: "esa fase se detiene hasta que el combate termine") before
+     * the next one is offered (Ballesta Montada, Apostol De La Ruina).
+     */
+    @JvmStatic
+    fun waitsForPhase(room: GameRoom, next: PendingEffect): Boolean {
+        if (room.chain.isEmpty() && room.combat == null && room.pendingAscension == null) return false
+        val event = room.timeline.lastOrNull { it.seq == next.triggerSeq } ?: return false
+        return GameEvent.TURN_END == event.type || GameEvent.TURN_START == event.type
     }
 
     @JvmStatic

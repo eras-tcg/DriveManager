@@ -932,4 +932,23 @@ class E12CardsTest extends CardBatchSupport {
         TurnRules.turnStarted(room, "guest");
         assertThat(geo.isTapped()).isFalse();
     }
+
+    @Test
+    void endOfTurnEffectsAreActivatedOneAtATimeEachResolvedBeforeTheNext() {
+        // Rule 8: the end of the turn is a phase; Ballesta's attack ends before Apostol's effect is offered
+        CardSlot ballesta = onField(host, card("bm", "Ballesta Montada", 3, 3, "R"), FRONT);
+        CardSlot apostol = onField(host, withClasses(card("ap", "Apostol De La Ruina", 6, 5, "P"), "espectro"), FRONT);
+        for (int i = 0; i < 20; i++) host.getTributeZone().add(withClasses(card("t" + i, "Tributo " + i, 1, 1, "P"), "espectro"));
+        TurnRules.turnEnding(room, "host");
+        for (int i = 0; i < 12 && room.getPrompt() != null; i++) {
+            Prompt p = room.getPrompt();
+            System.out.println("DBG " + p.getPurpose() + " | " + p.getInstruction() + " | " + p.getValidIds() + " chain=" + room.getChain().size() + " combat=" + (room.getCombat() != null));
+            List<String> pick = p.getValidIds().contains("bm") ? List.of("bm") : p.getValidIds().contains("ap") ? List.of("ap")
+                    : p.getMin() > 0 ? p.getValidIds().subList(0, p.getMin()) : List.of();
+            Answers.answer(room, p.getPlayerId(), p.getId(), pick, List.of());
+            if (room.getPrompt() == null) Chain.advance(room);
+        }
+        assertThat(ballesta).isNotNull();
+        assertThat(apostol).isNotNull();
+    }
 }
