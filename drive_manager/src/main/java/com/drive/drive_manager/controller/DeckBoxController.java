@@ -13,14 +13,15 @@ import java.time.Instant;
 import java.util.*;
 
 /**
- * The signed-in user's deckboxes: labels that group and order their own decks (a deck may be in several).
+ * The signed-in user's deckboxes: boxes that hold and order their own decks. Like a real deckbox, a deck is in one
+ * deckbox at most; the rest are loose.
  *
  * GET    /api/drive/deckboxes                — mine, in order
  * POST   /api/drive/deckboxes                — create {name, color}; goes last
  * PUT    /api/drive/deckboxes/{id}           — rename / recolor {name?, color?}
  * DELETE /api/drive/deckboxes/{id}           — delete (its decks stay)
  * PUT    /api/drive/deckboxes/order          — reorder: body is every deckbox id, in the new order
- * PUT    /api/drive/deckboxes/deck/{deckId}  — which of my deckboxes hold one of my decks: body is deckbox ids
+ * PUT    /api/drive/deckboxes/deck/{deckId}  — put one of my decks in a deckbox, {boxId}, or take it out, {boxId: null}
  *
  * Writes require manage_decks, like decks. Everything is scoped to the caller: another user's deckbox is a 404.
  */
@@ -44,9 +45,26 @@ public class DeckBoxController {
     /** Body of POST and PUT /{id}. */
     public record DeckBoxRequest(String name, String color) {}
 
+    /** Body of PUT /deck/{deckId}: the deckbox to put the deck in, or null to take it out. */
+    public record MoveDeckRequest(String boxId) {}
+
     @GetMapping
     public ResponseEntity<List<DeckBox>> mine(Authentication auth) {
-        return ResponseEntity.ok(repo.findByUserIdOrderByOrderAsc(auth.getName()));
+        List<DeckBox> mine = repo.findByUserIdOrderByOrderAsc(auth.getName());
+        // A deck saved in several deckboxes (before a deck could be in one only) stays in the first
+        Set<String> seen = new HashSet<>();
+        List<DeckBox> changed = new ArrayList<>();
+        for (DeckBox box : mine) {
+            if (box.getDeckIds() == null) box.setDeckIds(new ArrayList<>());
+            List<String> kept = new ArrayList<>();
+            for (String deckId : box.getDeckIds()) if (seen.add(deckId)) kept.add(deckId);
+            if (kept.size() != box.getDeckIds().size()) {
+                box.setDeckIds(kept);
+                changed.add(box);
+            }
+        }
+        if (!changed.isEmpty()) repo.saveAll(changed);
+        return ResponseEntity.ok(mine);
     }
 
     @PreAuthorize("hasAuthority('manage_decks')")
@@ -122,26 +140,28 @@ public class DeckBoxController {
 
     @PreAuthorize("hasAuthority('manage_decks')")
     @PutMapping("/deck/{deckId}")
-    public ResponseEntity<Object> setDeckBoxes(@PathVariable String deckId,
-                                               @RequestBody List<String> boxIds,
-                                               Authentication auth) {
+    public ResponseEntity<Object> moveDeck(@PathVariable String deckId,
+                                           @RequestBody MoveDeckRequest body,
+                                           Authentication auth) {
         String userId = auth.getName();
         Optional<DeckList> deck = decks.findById(deckId);
         if (deck.isEmpty() || !userId.equals(deck.get().getUserId())) {
             return ResponseEntity.status(404).body(Map.of("error", "Solo puedes guardar tus propios mazos"));
         }
+        String target = body == null ? null : body.boxId();
         List<DeckBox> mine = repo.findByUserIdOrderByOrderAsc(userId);
-        Set<String> wanted = new HashSet<>(boxIds == null ? List.of() : boxIds);
-        Set<String> mineIds = new HashSet<>();
-        mine.forEach(box -> mineIds.add(box.getId()));
-        if (!mineIds.containsAll(wanted)) return bad("Deckbox desconocida");
+        if (target != null && mine.stream().noneMatch(box -> box.getId().equals(target))) {
+            return bad("Deckbox desconocida");
+        }
 
+        // Out of every other deckbox, into the target (last in it)
         List<DeckBox> changed = new ArrayList<>();
         for (DeckBox box : mine) {
             List<String> ids = box.getDeckIds() == null ? new ArrayList<>() : new ArrayList<>(box.getDeckIds());
             boolean has = ids.contains(deckId);
-            if (wanted.contains(box.getId()) && !has) ids.add(deckId);
-            else if (!wanted.contains(box.getId()) && has) ids.removeIf(deckId::equals);
+            boolean wanted = box.getId().equals(target);
+            if (wanted && !has) ids.add(deckId);
+            else if (!wanted && has) ids.removeIf(deckId::equals);
             else continue;
             box.setDeckIds(ids);
             changed.add(box);

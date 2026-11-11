@@ -1,6 +1,7 @@
 package com.drive.drive_manager.controller;
 
 import com.drive.drive_manager.controller.DeckBoxController.DeckBoxRequest;
+import com.drive.drive_manager.controller.DeckBoxController.MoveDeckRequest;
 import com.drive.drive_manager.dto.DeckBox;
 import com.drive.drive_manager.dto.DeckList;
 import com.drive.drive_manager.repository.DeckBoxRepository;
@@ -118,23 +119,40 @@ class DeckBoxControllerTest {
     }
 
     @Test
-    void setsWhichDeckboxesHoldADeck() {
+    void aDeckIsInOneDeckboxAtMost() {
         DeckBox a = create("alice", "A", null);
         DeckBox b = create("alice", "B", null);
         DeckBox bobs = create("bob", "B", null);
 
-        controller.setDeckBoxes("d-alice", List.of(a.getId(), b.getId()), user("alice"));
+        controller.moveDeck("d-alice", new MoveDeckRequest(a.getId()), user("alice"));
         assertThat(a.getDeckIds()).containsExactly("d-alice");
-        assertThat(b.getDeckIds()).containsExactly("d-alice");
 
-        controller.setDeckBoxes("d-alice", List.of(b.getId()), user("alice"));
+        // Moving it to another deckbox takes it out of the first
+        controller.moveDeck("d-alice", new MoveDeckRequest(b.getId()), user("alice"));
         assertThat(a.getDeckIds()).isEmpty();
         assertThat(b.getDeckIds()).containsExactly("d-alice");
 
+        // Out of every deckbox
+        controller.moveDeck("d-alice", new MoveDeckRequest(null), user("alice"));
+        assertThat(b.getDeckIds()).isEmpty();
+
         // Only my decks, only into my deckboxes
-        assertThat(status(controller.setDeckBoxes("d-bob", List.of(a.getId()), user("alice")))).isEqualTo(404);
-        assertThat(status(controller.setDeckBoxes("d-alice", List.of(bobs.getId()), user("alice")))).isEqualTo(400);
+        assertThat(status(controller.moveDeck("d-bob", new MoveDeckRequest(a.getId()), user("alice")))).isEqualTo(404);
+        assertThat(status(controller.moveDeck("d-alice", new MoveDeckRequest(bobs.getId()), user("alice")))).isEqualTo(400);
         assertThat(bobs.getDeckIds()).isEmpty();
+    }
+
+    @Test
+    void aDeckSavedInSeveralDeckboxesStaysInTheFirst() {
+        DeckBox a = create("alice", "A", null);
+        DeckBox b = create("alice", "B", null);
+        a.getDeckIds().add("d-alice");
+        b.getDeckIds().add("d-alice");
+
+        controller.mine(user("alice"));
+
+        assertThat(a.getDeckIds()).containsExactly("d-alice");
+        assertThat(b.getDeckIds()).isEmpty();
     }
 
     private DeckBox create(String user, String name, String color) {
