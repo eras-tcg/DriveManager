@@ -1,5 +1,5 @@
 {
-  "name" : "sar 2",
+  "name" : "sar-2",
   "effects" : [ {
     "id" : "sar-2:al-atacar",
     "moment" : "ON_ATTACK",

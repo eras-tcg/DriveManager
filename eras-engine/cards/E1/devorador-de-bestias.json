@@ -1,5 +1,5 @@
 {
-  "name" : "devorador de bestias",
+  "name" : "devorador de cazadores",
   "effects" : [ {
     "id" : "devorador-de-bestias:en-invocacion",
     "moment" : "ON_SUMMON",
@@ -18,7 +18,7 @@
             "colors" : [ "P" ],
             "cardType" : "creature",
             "level" : 3,
-            "notName" : "Devorador De Bestias"
+            "notName" : "Devorador De Cazadores"
           },
           "min" : {
             "type" : "Fixed",

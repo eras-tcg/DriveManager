@@ -1,5 +1,5 @@
 {
-  "name" : "caballeria frontal",
+  "name" : "caballería frontal",
   "effects" : [ {
     "id" : "caballeria-frontal:en-invocacion",
     "moment" : "ON_SUMMON",

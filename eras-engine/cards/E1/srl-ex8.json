@@ -1,5 +1,5 @@
 {
-  "name" : "srl ex8",
+  "name" : "srl-ex8",
   "effects" : [ {
     "id" : "srl-ex8:en-destruccion",
     "moment" : "ON_DESTROY",

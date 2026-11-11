@@ -431,9 +431,11 @@ class E2CardsTest extends CardBatchSupport {
 
     @Test
     void deriduragonE2AddsAResource() {
+        // E1 and E2 print the same card: one script, which asks first ("puedes añadir")
         CardSlot weak = inHand("wk", "Débil", 1, 1, "G");
         CardSlot der = withClasses(card("dr", "Deriduragón", 2, 2, "G"), "dragón");
         summon(der);
+        answer("dr");
         answer("wk");
         assertThat(der.getResources()).contains(weak);
     }

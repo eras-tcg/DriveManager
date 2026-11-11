@@ -68,6 +68,18 @@ public class RoomRestController {
         return ResponseEntity.ok(roomService.unprogrammedCards());
     }
 
+    @Autowired
+    private CardNameCheck cardNameCheck;
+
+    /**
+     * Card names that do not match between the metadata and the programmed cards: metadata names to write as printed (they play,
+     * found by accents and hyphens aside) and card files no metadata card names (the engine never plays them).
+     */
+    @GetMapping("/card-names")
+    public ResponseEntity<CardNameCheck.Report> cardNames() {
+        return ResponseEntity.ok(cardNameCheck.check());
+    }
+
     @GetMapping("/rooms/{id}")
     public ResponseEntity<Map<String, Object>> getRoom(@PathVariable String id) {
         GameRoom room = roomService.getRoom(id);
