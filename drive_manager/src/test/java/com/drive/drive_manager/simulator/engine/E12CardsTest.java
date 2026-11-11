@@ -662,6 +662,19 @@ class E12CardsTest extends CardBatchSupport {
     }
 
     @Test
+    void magoArmadoIsActivatableWithALevelTwoAllyAndRetadoresTwoAndThree() {
+        room.setFirstTurn(false);
+        onField(host, withClasses(card("al", "Aliado Dos", 2, 2, "R"), "retador"));
+        CardSlot mago = inHand("ma", "Mago Armado Del Ocaso", 2, 1, "R", "retador");
+        inHand("r2", "Retador Dos", 2, 2, "R", "retador");
+        inHand("r3", "Retador Tres", 3, 3, "R", "retador");
+        onField(guest, card("g1", "Rival", 2, 2, "R"));
+        assertThat(Chain.activatable(room, "host")).anyMatch(a -> "ma".equals(a.instanceId()));
+        assertThat(Chain.activateByPlayer(room, "host", "ma", null)).isNull();
+        assertThat(mago).isNotNull();
+    }
+
+    @Test
     void guerreroForjadoTributedWithNegativeGemsMakesAnActiveAllyAttack() {
         room.setSharedCounter(1);
         CardSlot forjado = card("gf", "Guerrero Forjado", 2, 2, "R");

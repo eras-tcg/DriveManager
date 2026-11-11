@@ -70,7 +70,12 @@ public class DeckLoader {
         Map<String, DriveCard> driveCardMap = driveCards.findAllById(fileIds).stream()
                 .collect(Collectors.toMap(DriveCard::getId, dc -> dc));
         Set<String> editions = driveCardMap.values().stream().map(DriveCard::getEdition).filter(Objects::nonNull).collect(Collectors.toSet());
-        Map<String, Card> cardMeta = cards.findByEditionIn(new ArrayList<>(editions)).stream()
+        List<Card> editionCards = cards.findByEditionIn(new ArrayList<>(editions));
+        // By the printed code, as the web joins them (edition, number, sub-edition, color): an image whose name is not the
+        // metadata's (a card renamed, a file named otherwise) still gets it; by name only when the code finds nothing
+        Map<String, Card> byKey = editionCards.stream().filter(c -> c.getCardNumber() != null)
+                .collect(Collectors.toMap(DeckLoader::keyOf, c -> c, (a, b) -> a));
+        Map<String, Card> cardMeta = editionCards.stream().filter(c -> c.getCardName() != null)
                 .collect(Collectors.toMap(c -> c.getCardName().toLowerCase() + ":" + c.getEdition(), c -> c, (a, b) -> a));
         return new ArrayList<>(fileIds.stream().map(driveFileId -> {
             CardSlot slot = new CardSlot();
@@ -80,11 +85,10 @@ public class DeckLoader {
             DriveCard dc = driveCardMap.get(driveFileId);
             if (dc != null) {
                 slot.setImageUrl(dc.imageUrl(baseUrl));
-                if (dc.getName() != null) {
-                    slot.setCardName(dc.getName());
-                    Card card = dc.getEdition() == null ? null : cardMeta.get(dc.getName().toLowerCase() + ":" + dc.getEdition());
-                    if (card != null) CardMeta.apply(slot, driveFileId, card);
-                }
+                if (dc.getName() != null) slot.setCardName(dc.getName());
+                Card card = dc.getEdition() == null ? null : byKey.get(keyOf(dc));
+                if (card == null && dc.getName() != null && dc.getEdition() != null) card = cardMeta.get(dc.getName().toLowerCase() + ":" + dc.getEdition());
+                if (card != null) CardMeta.apply(slot, driveFileId, card);
             }
             return slot;
         }).toList());
@@ -95,12 +99,24 @@ public class DeckLoader {
         return DeckChoice.freshCopy(slots, DeckLoader::newInstanceId);
     }
 
-    /** A card's metadata as it is now, by its drive file id; null when it is not found. */
+    /** A card's metadata as it is now, by its drive file id (by its printed code, else by name); null when it is not found. */
     public Card metadataOf(String cardId) {
         DriveCard dc = driveCards.findById(cardId).orElse(null);
-        if (dc == null || dc.getName() == null) return null;
+        if (dc == null || dc.getEdition() == null) return null;
+        Card byCode = cards.findByEdition(dc.getEdition()).stream().filter(c -> c.getCardNumber() != null && keyOf(c).equals(keyOf(dc)))
+                .findFirst().orElse(null);
+        if (byCode != null || dc.getName() == null) return byCode;
         List<Card> matches = cards.findByCardNameIgnoreCaseAndEdition(dc.getName(), dc.getEdition());
         return matches.isEmpty() ? null : matches.get(0);
+    }
+
+    /** The printed code that joins an image and its metadata: edition | number | sub-edition | color. */
+    static String keyOf(Card c) {
+        return c.getEdition() + "|" + c.getCardNumber() + "|" + (c.getSubEdition() == null ? "" : c.getSubEdition()) + "|" + c.getColorIdentity();
+    }
+
+    static String keyOf(DriveCard d) {
+        return d.getEdition() + "|" + d.getNumber() + "|" + (d.getSubEdition() == null ? "" : d.getSubEdition()) + "|" + d.getColorIdentity();
     }
 
     /** Every copy of the card in the room takes its metadata again. */
