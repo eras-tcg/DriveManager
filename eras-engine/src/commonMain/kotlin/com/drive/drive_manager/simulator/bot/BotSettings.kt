@@ -74,8 +74,6 @@ class BotSettings private constructor(values: Map<String, Double>, bias: Map<Str
     @JvmField internal val sField: Double = values["sField"]!!
     @JvmField internal val vLanes: Double = values["vLanes"]!!
     @JvmField internal val hCopies: Double = values["hCopies"]!!
-    @JvmField internal val hDead: Double = values["hDead"]!!
-    @JvmField internal val hDeadSpecial: Double = values["hDeadSpecial"]!!
     @JvmField internal val eContinuous: Double = values["eContinuous"]!!
     @JvmField internal val eActivated: Double = values["eActivated"]!!
     @JvmField internal val eEvent: Double = values["eEvent"]!!
@@ -237,7 +235,6 @@ class BotSettings private constructor(values: Map<String, Double>, bias: Map<Str
             d.put("riskAlive", 0.0)
             d.put("lifeCurveExp", 0.0)
             d.put("hPreyGuard", 0.0)
-            d.put("innerRival", 0.0)
             d.put("hCombat", 0.0)
             d.put("combatCounter", 1.0)
             d.put("combatPerk", 2.0)
@@ -249,18 +246,36 @@ class BotSettings private constructor(values: Map<String, Double>, bias: Map<Str
             d.put("riskCuts", 0.0)
             d.put("lethalLives", 0.0)
             d.put("winFlat", 0.0)
+            d.put("winSeen", 0.0)
+            // attackFloor: see AttackFloor; floorSlack: the material an attack may lose in its worst case
+            d.put("attackFloor", 0.0)
+            d.put("floorSlack", 1.0)
+            // defenceFloor: see DefenceFloor
+            d.put("defenceFloor", 0.0)
             // HandRank; TableScore (lifeMine, overExtend); SequenceSearch (cascade, seqPass); LeafPlay
             d.put("zHand", 0.0)
             d.put("zTribute", 0.0)
             d.put("zDiscard", 0.0)
             d.put("gems", 0.0)
             d.put("aggression", 1.0)
+            // vCost: how much a creature's cost counts in its worth (1: as first written). Cost, strength and level are one
+            // size in the cards (correlations 0.96-0.97 over ST1-ST4), so the worth by strength alone (vCost=0, vLevel=0,
+            // vLevelSq=0; vStr its scale, vStrSq its curve) says the same with two numbers: the model "valor" tries it
+            d.put("vCost", 1.0)
             d.put("vStr", 0.6)
             d.put("vKeyword", 0.5)
             d.put("vLevel", 0.3)
             d.put("vAttached", 0.5)
             d.put("vStrSq", 0.0)
             d.put("vTop", 0.0)
+            // vOpen k (2026-11-11): a creature no active creature of the rival's Línea frontal stops is worth k of itself
+            // more. In place of vTop and vLanes, that say the same twice (a creature stronger than all of the rival's is
+            // stronger than its blockers) and by the body, not by what it is: with both, a strength 1 against a bare
+            // table added 7 and was worth 1.2, so the table asked for one more body whatever it was, and a special
+            // summon, that leaves as many bodies as it found, gained nothing of it
+            d.put("vOpen", 0.0)
+            // vBody: see TableScore.side
+            d.put("vBody", 0.0)
             // Sequences of own moves (SequenceSearch): off at seqDepth 0
             d.put("seqDepth", 0.0)
             d.put("seqKeep", 4.0)
@@ -272,7 +287,7 @@ class BotSettings private constructor(values: Map<String, Double>, bias: Map<Str
             d.put("innerFinal", 0.0)
             d.put("firstTries", 1.0)
             d.put("rankCands", 0.0)
-            for (k in frozenListOf("uHand", "uCopies", "uTribute", "uDamp", "sHand", "sField", "vLanes", "hCopies", "hDead", "hDeadSpecial")) d.put(k, 0.0)
+            for (k in frozenListOf("uHand", "uCopies", "uTribute", "uDamp", "sHand", "sField", "vLanes", "hCopies")) d.put(k, 0.0)
             // Gems paid below 0 go to the rival for their turn (shared Contador): minus gemDebt per gem below 0 when its turn ends
             d.put("gemDebt", 0.0)
             for (e in frozenListOf("eContinuous", "eActivated", "eEvent", "eSummon", "ePlay", "eAttack", "eDestroy", "eInherited")) d.put(e, 0.0)
@@ -295,12 +310,12 @@ class BotSettings private constructor(values: Map<String, Double>, bias: Map<Str
             d.put("hUsefulEnd", 0.0)
             d.put("hBlockBest", 0.0)
             d.put("lifeExp", 0.0)
-            d.put("hStructFirst", 0.0)
-            d.put("rollTriggers", 0.0)
             // hUseful: see Usefulness;
             // On: what goes from the hand to the Tributos is a creature first, utilities and structures last; off (the
             // default): the least valuable card. A stopgap until the table's value sees what the hand and the Tributos hold
             d.put("hTributeCreatures", 0.0)
+            // hFreeMaterial: see HeuristicBot.pick
+            d.put("hFreeMaterial", 0.0)
             return d
         }
 

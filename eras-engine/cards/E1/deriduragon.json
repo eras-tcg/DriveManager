@@ -1,5 +1,5 @@
 {
-  "name" : "deriduragon",
+  "name" : "deriduragón",
   "effects" : [ {
     "id" : "deriduragon:en-invocacion",
     "moment" : "ON_SUMMON",
@@ -29,7 +29,7 @@
       }
     }, {
       "type" : "MayDo",
-      "question" : "¿Añades 1 criatura de fuerza 5 o menor de tu mano o tributos como recurso de Deriduragon?",
+      "question" : "¿Añades 1 criatura de fuerza 5 o menor de tu mano o tributos como recurso de Deriduragón?",
       "covers" : 1
     }, {
       "type" : "Do",
@@ -64,7 +64,7 @@
     "type" : "Replacement",
     "id" : "deriduragon:hereda-todos-los-turnos",
     "label" : "Todos Los Turnos",
-    "text" : "Heredado de Deriduragon: cuando esta carta fuera a ser removida por el oponente, puede tributar los recursos de esta carta.",
+    "text" : "Heredado de Deriduragón: cuando esta carta fuera a ser removida por el oponente, puedes tributar los recursos de esta carta.",
     "byOpponentOnly" : true,
     "limit" : "NONE",
     "cost" : "RESOURCES_TO_TRIBUTES_BEFORE",

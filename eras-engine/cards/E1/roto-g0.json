@@ -1,10 +1,10 @@
 {
-  "name" : "roto g0",
+  "name" : "roto-g0",
   "effects" : [ {
     "id" : "roto-g0:en-invocacion",
     "moment" : "ON_SUMMON",
     "label" : "En Invocación",
-    "text" : "Puedes tributar hasta 3 materiales de esta carta. Luego: la misma cantidad de veces elige un enemigo; reduce en 2 la fuerza del enemigo elegido.",
+    "text" : "Puedes tributar hasta 3 materiales de esta carta y elegir hasta 3 veces un enemigo; reduce en 2 la fuerza del enemigo elegido.",
     "steps" : [ {
       "type" : "Do",
       "action" : {

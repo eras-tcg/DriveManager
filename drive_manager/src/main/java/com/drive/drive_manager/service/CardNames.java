@@ -6,6 +6,7 @@ import com.drive.drive_manager.repository.CardRepository;
 import com.drive.drive_manager.repository.DriveCardRepository;
 import org.springframework.stereotype.Service;
 
+import com.drive.drive_manager.simulator.engine.CardKeys;
 import java.util.List;
 import java.util.Objects;
 
@@ -59,13 +60,12 @@ public class CardNames {
                 && (meta.getColorIdentity() == null || color == null || meta.getColorIdentity().equalsIgnoreCase(color));
     }
 
-    /** "Roto-G0" and "Roto G0": the same name once hyphens and spaces are alike. */
+    /**
+     * "Roto-G0" and "Roto G0", "Deriduragón" and "Deriduragon": the same name once hyphens, spaces and accents are alike, as the
+     * engine finds a card (CardKeys). Drive's file names have no real hyphens and are often typed without accents.
+     */
     static boolean sameButHyphens(String a, String b) {
-        return plain(a).equals(plain(b));
-    }
-
-    private static String plain(String s) {
-        return s.replaceAll("[-\\s]+", " ").trim().toLowerCase(java.util.Locale.ROOT);
+        return CardKeys.key(a).equals(CardKeys.key(b));
     }
 
     private static String blankToNull(String s) {

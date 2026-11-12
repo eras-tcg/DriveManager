@@ -1,5 +1,5 @@
 {
-  "name" : "sars 2",
+  "name" : "sars-2",
   "effects" : [ {
     "id" : "sars-2:en-invocacion",
     "moment" : "ON_SUMMON",

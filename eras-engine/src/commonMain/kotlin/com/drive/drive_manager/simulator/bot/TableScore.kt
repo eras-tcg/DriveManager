@@ -27,6 +27,12 @@ internal object TableScore {
         if (room.status != GameRoom.RoomStatus.IN_PROGRESS && room.winnerId != null) {
             return if (me!! == room.winnerId) WIN else -WIN
         }
+        return table(room, me, w)
+    }
+
+    /** The table by the weights alone, whether the game on it is over or not (see [seen]). */
+    @JvmStatic
+    fun table(room: GameRoom, me: String?, w: BotSettings): Double {
         val mine = room.getPlayer(me)
         val theirs = room.getPlayer(room.getOpponentId(me))
         var s = side(room, mine, w) - w.aggression * side(room, theirs, w) + w.gems * EffectEngine.gemsOf(room, me)
@@ -39,7 +45,8 @@ internal object TableScore {
         if (clock > 0 && theirs != null && theirs.deck.isEmpty()) s += clock * WIN
         if (w.vTop != 0.0) s += w.vTop * (dominant(mine, theirs) - w.aggression * dominant(theirs, mine))
         if (w.vLanes != 0.0) s += w.vLanes * (lanes(mine, theirs) - w.aggression * lanes(theirs, mine))
-        if (mine != null && (w.hDead != 0.0 || w.hDeadSpecial != 0.0)) s -= dead(room, me, mine, w)
+        val vo = w.get("vOpen")
+        if (vo != 0.0) s += vo * (open(mine, theirs, w) - w.aggression * open(theirs, mine, w))
         // lifeMine c: its own lives counted from the last one, the k-th worth life * c^k, so with many lives a hit costs it
         // little and attacking (leaving no blocker home) pays; the rival's lives keep their full worth
         val c = w.get("lifeMine")
@@ -50,6 +57,19 @@ internal object TableScore {
         val foe = w.get("lifeFoe")
         if (theirs != null && foe > 0 && foe < 1) s -= w.aggression * w.life * (curve(foe, theirs.lifeStack.size) - theirs.lifeStack.size)
         return s
+    }
+
+    /**
+     * winSeen (the user's game, 2026-11-11: st1-st2 s13095, it expected 10000 in its last four decisions and lost): a
+     * game that ends in a try after the turn on the table has passed was won or lost against a rival played by the
+     * heuristic with a hand dealt by chance, in one of two tries: it is no fact, and worth [WIN] it decides the move
+     * alone, over everything the table's score tells apart. It is worth the table it ended on and winSeen lives more
+     * (or less). What ends within the turn on the table, or by a win the engine found ([LethalSearch]), keeps [WIN].
+     */
+    @JvmStatic
+    fun seen(room: GameRoom, me: String?, w: BotSettings): Double {
+        val bonus = w.get("winSeen") * w.life
+        return table(room, me, w) + (if (me == room.winnerId) bonus else -bonus)
     }
 
     /** The worth of n lives counted from the last one, in lives: 1 + c + c² + … (n terms). */
@@ -91,22 +111,16 @@ internal object TableScore {
         return p.field.count { c -> "creature" == c.cardType && EffectEngine.strength(c) > wall }
     }
 
-    /**
-     * Creatures stuck in the hand: hDead for each one the player cannot summon normally soon (no normal cost, or more
-     * than its Marcador will give next turn), and hDeadSpecial more when it cannot be summoned specially either now.
-     */
+    /** vOpen: the worth of the player's creatures in an open lane (see [lanes]), each by what it is ([CardWorth]). */
     @JvmStatic
-    fun dead(room: GameRoom, me: String?, p: PlayerState, w: BotSettings): Double {
-        val next = min(5, p.resourceCount + 1)
-        var s = 0.0
-        for (c in p.hand) {
-            if ("creature" != c.cardType) continue
-            val normal = c.cost != null && c.cost!! <= next
-            if (normal) continue
-            s += w.hDead
-            if (w.hDeadSpecial != 0.0 && !com.drive.drive_manager.simulator.engine.SpecialRequirements.canSpecial(room, me, c)) s += w.hDeadSpecial
-        }
-        return s
+    fun open(p: PlayerState?, other: PlayerState?, w: BotSettings): Double {
+        if (p == null) return 0.0
+        val wall = if (other == null) -1 else other.field
+                .filter { c -> "creature" == c.cardType && EffectEngine.inFrontLine(c) && !c.tapped }
+                .maxOfOrNull { c -> EffectEngine.strength(c) } ?: -1
+        var v = 0.0
+        for (c in p.field) if ("creature" == c.cardType && EffectEngine.strength(c) > wall) v += CardWorth.of(c, w)
+        return v
     }
 
     /** The player's creatures stronger than every creature of the other: no block stops them and they win any clash. */
@@ -133,12 +147,17 @@ internal object TableScore {
 
     @JvmStatic
     fun hand(room: GameRoom?, p: PlayerState, w: BotSettings): Double {
+        return hand(room, p, w, null)
+    }
+
+    @JvmStatic
+    fun hand(room: GameRoom?, p: PlayerState, w: BotSettings, levels: IntArray?): Double {
         val d = w.get("handDecay")
         val h = w.get("hWait")
         val rank = HandRank.on(w)
         val n = p.hand.size
         if (!(d > 0 && d < 1) && !(h > 0 && h < 1) && !rank) return n.toDouble()
-        val each = if (rank) HandRank.quality(room, p, w) else DoubleArray(n)
+        val each = if (rank) HandRank.quality(room, p, w, levels) else DoubleArray(n)
         for (i in 0 until n) each[i] = (if (rank) each[i] else 1.0) * (if (h > 0 && h < 1) h.pow(waitOf(p.hand[i], p).toDouble()) else 1.0)
         each.sort()
         var sum = 0.0
@@ -174,16 +193,23 @@ internal object TableScore {
     @JvmStatic
     fun side(room: GameRoom?, p: PlayerState?, w: BotSettings): Double {
         if (p == null) return 0.0
-        var s = p.lifeStack.size * w.life + w.hand * hand(room, p, w)
+        // zHandPlay k (2026-11-11): a card in the hand is worth k of what it is on the table, less while it cannot be
+        // played (rPlay per step of Playability: now, its next turn, later; the one the hand's ranking counts by). With cards at about 1 and bodies at
+        // 8 to 36, every play was a gain of its own and a special summon, that takes a body for the new one, could not
+        // pay for it with the card it draws: the table said "one more body" whatever it cost. The levels, by the rules
+        // (a special summon counts), are found once for the hand's ranking too
+        val zp = w.get("zHandPlay")
+        val levels: IntArray? = if (room != null && (zp != 0.0 || (HandRank.on(w) && w.get("rPlay") < 1))) HandRank.playLevels(room, p) else null
+        var s = p.lifeStack.size * w.life + w.hand * hand(room, p, w, levels)
         // handLow: the last cards are scarce (the user's game, 2026-11-04: it emptied its hand for little): minus handLow
         // per card short of handFloor in the hand, so giving up the last ones costs more than one card's worth
         val low = w.get("handLow")
         if (low != 0.0) s -= low * max(0.0, w.get("handFloor") - p.hand.size)
         if (w.zHand != 0.0) for (c in p.hand) s += w.zHand * CardWorth.of(c, w)
-        // zHandPlay: the hand's quality, each card's worth while it can be played soon (hPickWait per turn of waiting):
-        // a search that brings a good card it can play is worth more than any card
-        val zp = w.get("zHandPlay")
-        if (zp != 0.0) for (c in p.hand) s += zp * CardWorth.of(c, w) * (w.get("hPickWait")).pow(waitOf(c, p).toDouble())
+        if (zp != 0.0) for (i in p.hand.indices) {
+            val c = p.hand[i]
+            s += zp * CardWorth.of(c, w) * (w.get("rPlay")).pow((if (levels != null) levels[i] else waitOf(c, p)).toDouble())
+        }
         if (w.uHand != 0.0 || w.uCopies != 0.0 || w.sHand != 0.0) {
             // A utility is worth holding once: each further copy of it in the hand is worth uCopies less
             val held: MutableSet<String> = HashSet()
@@ -221,7 +247,11 @@ internal object TableScore {
                 s += if ("structure" == c.cardType) worth * w.structure + w.sField else worth * w.support
                 continue
             }
-            s += worth
+            // vBody (the user's game, 2026-11-11: st1-st2 s13095, five enemies in front, 5 lives, 2 gems left and Mihel and
+            // Flureteus kept in the hand): whatever its size a creature on the table stops one attack and makes one, and
+            // its worth by strength does not say so (a strength 1 is worth 1.2 there and 1.5 as a card in the hand, so
+            // summoning it gained nothing). vBody for each one, of both sides
+            s += worth + w.get("vBody")
             // vLevelSq (the user's call, 2026-11-05): a creature's level is what was put into it (an Evolución, a Ritual, its
             // stacked effects): a level 1 is little, a level 2 something, a level 4 a lot, so clearing them beats a hit far
             // from the win (Carmesí killing a Dracoventus before the lives); its square, for both sides
