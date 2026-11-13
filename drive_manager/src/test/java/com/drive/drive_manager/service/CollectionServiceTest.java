@@ -39,6 +39,15 @@ class CollectionServiceTest {
     }
 
     @Test
+    void cardsInTestingAreNeverLackingFromTheCollection() {
+        TestCards testCards = mock(TestCards.class);
+        when(testCards.imageIds()).thenReturn(Set.of("t1"));
+        collections.setTestCards(testCards);
+        // Nothing owned: only the two copies of the released card are lacking
+        assertThat(collections.missing("alice", java.util.List.of("t1", "t1", "t1", "c1", "c1"))).isEqualTo(2);
+    }
+
+    @Test
     void craftingMoreThanOneRequestHoldsIsRefusedBeforeTouchingTheCollection() {
         // 71582789 * 30 used to wrap to a negative cost, which passed the guard and added fragments
         assertThatThrownBy(() -> collections.craft("alice", "c1", 71_582_789))
