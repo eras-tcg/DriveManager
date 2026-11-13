@@ -5,6 +5,8 @@ import com.drive.drive_manager.dto.CardRefData;
 import com.drive.drive_manager.dto.Effect;
 import com.drive.drive_manager.repository.CardRefDataRepository;
 import com.drive.drive_manager.service.CardService;
+import com.drive.drive_manager.service.TestCards;
+import org.springframework.security.core.Authentication;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -50,8 +52,8 @@ public class CardController {
      * GET /api/cards/{id}
      */
     @GetMapping("/{id}")
-    public ResponseEntity<Card> getCardById(@PathVariable String id) {
-        Optional<Card> card = cardService.getCardById(id);
+    public ResponseEntity<Card> getCardById(@PathVariable String id, Authentication auth) {
+        Optional<Card> card = cardService.getCardById(id).filter(c -> !TestCards.hidden(c.getEdition(), auth));
         return card.map(ResponseEntity::ok)
                 .orElseGet(() -> ResponseEntity.notFound().build());
     }
@@ -61,8 +63,8 @@ public class CardController {
      * GET /api/cards
      */
     @GetMapping
-    public ResponseEntity<List<Card>> getAllCards() {
-        List<Card> cards = cardService.getAllCards();
+    public ResponseEntity<List<Card>> getAllCards(Authentication auth) {
+        List<Card> cards = visible(cardService.getAllCards(), auth);
         return ResponseEntity.ok(cards);
     }
 
@@ -98,8 +100,8 @@ public class CardController {
      * GET /api/cards/search/name?cardName=...
      */
     @GetMapping("/search/name")
-    public ResponseEntity<List<Card>> findCardsByName(@RequestParam String cardName) {
-        List<Card> cards = cardService.findCardsByName(cardName);
+    public ResponseEntity<List<Card>> findCardsByName(@RequestParam String cardName, Authentication auth) {
+        List<Card> cards = visible(cardService.findCardsByName(cardName), auth);
         return ResponseEntity.ok(cards);
     }
 
@@ -108,8 +110,8 @@ public class CardController {
      * GET /api/cards/search/type?cardType=...
      */
     @GetMapping("/search/type")
-    public ResponseEntity<List<Card>> findCardsByType(@RequestParam String cardType) {
-        List<Card> cards = cardService.findCardsByType(cardType);
+    public ResponseEntity<List<Card>> findCardsByType(@RequestParam String cardType, Authentication auth) {
+        List<Card> cards = visible(cardService.findCardsByType(cardType), auth);
         return ResponseEntity.ok(cards);
     }
 
@@ -118,8 +120,8 @@ public class CardController {
      * GET /api/cards/search/edition?edition=...
      */
     @GetMapping("/search/edition")
-    public ResponseEntity<List<Card>> findCardsByEdition(@RequestParam String edition) {
-        List<Card> cards = cardService.findCardsByEdition(edition);
+    public ResponseEntity<List<Card>> findCardsByEdition(@RequestParam String edition, Authentication auth) {
+        List<Card> cards = visible(cardService.findCardsByEdition(edition), auth);
         return ResponseEntity.ok(cards);
     }
 
@@ -128,8 +130,8 @@ public class CardController {
      * GET /api/cards/search/regulation?regulation=...
      */
     @GetMapping("/search/regulation")
-    public ResponseEntity<List<Card>> findCardsByRegulation(@RequestParam String regulation) {
-        List<Card> cards = cardService.findCardsByRegulation(regulation);
+    public ResponseEntity<List<Card>> findCardsByRegulation(@RequestParam String regulation, Authentication auth) {
+        List<Card> cards = visible(cardService.findCardsByRegulation(regulation), auth);
         return ResponseEntity.ok(cards);
     }
 
@@ -138,8 +140,8 @@ public class CardController {
      * GET /api/cards/search/class?cardClass=...
      */
     @GetMapping("/search/class")
-    public ResponseEntity<List<Card>> findCardsByClass(@RequestParam String cardClass) {
-        List<Card> cards = cardService.findCardsByClass(cardClass);
+    public ResponseEntity<List<Card>> findCardsByClass(@RequestParam String cardClass, Authentication auth) {
+        List<Card> cards = visible(cardService.findCardsByClass(cardClass), auth);
         return ResponseEntity.ok(cards);
     }
 
@@ -148,8 +150,8 @@ public class CardController {
      * GET /api/cards/search/starter
      */
     @GetMapping("/search/starter")
-    public ResponseEntity<List<Card>> findStarterCards() {
-        List<Card> cards = cardService.findStarterCards();
+    public ResponseEntity<List<Card>> findStarterCards(Authentication auth) {
+        List<Card> cards = visible(cardService.findStarterCards(), auth);
         return ResponseEntity.ok(cards);
     }
 
@@ -163,9 +165,10 @@ public class CardController {
             @RequestParam(required = false) String edition,
             @RequestParam(required = false) String cardType,
             @RequestParam(required = false) String cardClass,
-            @RequestParam(required = false) Boolean starter) {
+            @RequestParam(required = false) Boolean starter,
+            Authentication auth) {
 
-        List<Card> result = cardService.getAllCards().stream()
+        List<Card> result = visible(cardService.getAllCards(), auth).stream()
                 .filter(c -> edition   == null || edition.equalsIgnoreCase(c.getEdition()))
                 .filter(c -> cardType  == null || cardType.equalsIgnoreCase(c.getCardType()))
                 .filter(c -> cardClass == null || (c.getCardClasses() != null && c.getCardClasses().stream().anyMatch(cardClass::equalsIgnoreCase)))
@@ -293,8 +296,10 @@ public class CardController {
      */
     @GetMapping("/ref/{field}/check")
     public ResponseEntity<Map<String, Object>> checkRefUsage(@PathVariable String field,
-                                                              @RequestParam String value) {
-        List<Map<String, Object>> cards = cardService.findCardsUsingRefValue(field, value);
+                                                              @RequestParam String value,
+                                                              Authentication auth) {
+        List<Map<String, Object>> cards = cardService.findCardsUsingRefValue(field, value).stream()
+                .filter(c -> !TestCards.hidden(c.get("edition") == null ? null : c.get("edition").toString(), auth)).toList();
         return ResponseEntity.ok(Map.of("count", cards.size(), "cards", cards));
     }
 
@@ -353,6 +358,11 @@ public class CardController {
         else                               ref.getInstanceKinds().put(instance.trim(), kind.trim());
         refRepo.save(ref);
         return ResponseEntity.ok(ref);
+    }
+
+    /** The cards the player may see (cards in testing only with {@link TestCards#PERMISSION}). */
+    private static List<Card> visible(List<Card> cards, Authentication auth) {
+        return TestCards.canSee(auth) ? cards : cards.stream().filter(c -> !TestCards.isTestEdition(c.getEdition())).toList();
     }
 
     private CardRefData getOrCreateRef() {

@@ -6,6 +6,7 @@ import com.drive.drive_manager.dto.DriveCard;
 import com.drive.drive_manager.repository.CardRepository;
 import com.drive.drive_manager.repository.DeckListRepository;
 import com.drive.drive_manager.repository.DriveCardRepository;
+import com.drive.drive_manager.service.TestCards;
 import com.drive.drive_manager.simulator.engine.CardEffects;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
@@ -92,6 +93,12 @@ public class DeckLoader {
             }
             return slot;
         }).toList());
+    }
+
+    /** Whether the deck has cards in testing (a testing edition, {@link TestCards}). */
+    public boolean hasTestCards(DeckList deck) {
+        if (deck.getCards() == null || deck.getCards().isEmpty()) return false;
+        return driveCards.findAllById(deck.getCards()).stream().anyMatch(dc -> TestCards.isTestEdition(dc.getEdition()));
     }
 
     /** The same cards as new instances (another seat playing the same deck: the bot's copy of its owner's). */

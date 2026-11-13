@@ -4,6 +4,8 @@ import com.drive.drive_manager.dto.EditionMetadata;
 import com.drive.drive_manager.repository.EditionMetadataRepository;
 import com.drive.drive_manager.service.DriveClientFactory;
 import com.drive.drive_manager.service.R2Service;
+import com.drive.drive_manager.service.TestCards;
+import org.springframework.security.core.Authentication;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -46,13 +48,15 @@ public class EditionMetadataController {
     }
 
     @GetMapping
-    public ResponseEntity<List<EditionMetadata>> listAll() {
-        return ResponseEntity.ok(repo.findAll());
+    public ResponseEntity<List<EditionMetadata>> listAll(Authentication auth) {
+        boolean testCards = TestCards.canSee(auth);
+        return ResponseEntity.ok(repo.findAll().stream().filter(e -> testCards || !TestCards.isTestEdition(e.getEditionId())).toList());
     }
 
     @GetMapping("/{editionId}")
-    public ResponseEntity<EditionMetadata> getOne(@PathVariable String editionId) {
+    public ResponseEntity<EditionMetadata> getOne(@PathVariable String editionId, Authentication auth) {
         return repo.findById(editionId)
+                .filter(e -> !TestCards.hidden(e.getEditionId(), auth))
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }
