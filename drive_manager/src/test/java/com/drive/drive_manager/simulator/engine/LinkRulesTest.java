@@ -359,4 +359,25 @@ class LinkRulesTest extends CardBatchSupport {
         assertThat(order(host)).containsExactly("a", "c", "x");
         assertThat(host.getFormations()).containsExactly(List.of("a", "c"));
     }
+
+    @Test
+    void aCreatureWaitingToChooseItsPlaceNeverCutsTheLinkEffectsOfAFormation() {
+        CardSlot a = onField(host, linked("a", "A", 3, BOTH));
+        CardSlot b = onField(host, linked("b", "B", 2, BOTH));
+        CardSlot c = onField(host, linked("c", "C", 2, BOTH), BACK);
+        a.setX(10.0);
+        b.setX(30.0);
+        c.setX(20.0);
+        settle();
+        assertThat(join("b", "a")).isNull();
+        EffectEngine.refreshContinuous(room);
+        assertThat(b.getFormationGrants()).isNotEmpty();
+        // C goes up between A and B (Mano a Mano, an advance…): while its sheet is open the formation stays whole
+        TurnRules.offerAdvance(room, "host", true);
+        answer("c");
+        assertThat(room.getPrompt().getPurpose()).isEqualTo(PromptPurpose.FORMATION_ENTRY.id());
+        assertThat(order(host)).containsExactly("a", "b", "c");
+        assertThat(b.getFormationGrants()).isNotEmpty();
+        assertThat(a.getFormationGrants()).isNotEmpty();
+    }
 }

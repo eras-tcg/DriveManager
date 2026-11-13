@@ -113,8 +113,9 @@ object Formations {
     @JvmStatic
     fun refresh(room: GameRoom) {
         for (p in room.players.values) {
+            noteEntries(room, p, ordered(p))
+            // Noting an entry may have moved it out from between two members: the row as it is now
             val order = ordered(p)
-            noteEntries(room, p, order)
             if (!p.formations.isEmpty()) dropLeavers(room, p)
             for (c in p.field) {
                 val grants = if (inFrontLine(c) && "creature" == c.cardType) grantsOf(room, p, order, c) else null
@@ -138,7 +139,11 @@ object Formations {
         if (seen.size == ids.size && seen.containsAll(ids)) return
         // Only where Enlace is played: a creature with arrows on that line, or a formation
         val relevant = !p.formations.isEmpty() || order.any { !it.arrows.isNullOrEmpty() }
-        if (relevant) for (id in ids) if (!seen.contains(id) && !p.formationEntries.contains(id)) p.formationEntries.add(id)
+        if (relevant) for (id in ids) if (!seen.contains(id) && !p.formationEntries.contains(id)) {
+            p.formationEntries.add(id)
+            // While it waits to choose its place it never splits a formation (that would cut its link effects): at the end
+            order.firstOrNull { it.instanceId == id }?.let { keepWhole(p, it) }
+        }
         val now = ArrayList(ids)
         for (id in seen) if (!now.contains(id) && inTransit(room, id)) now.add(id)
         p.frontSeen = now
