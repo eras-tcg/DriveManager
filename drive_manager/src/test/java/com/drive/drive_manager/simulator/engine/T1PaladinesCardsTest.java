@@ -65,7 +65,7 @@ class T1PaladinesCardsTest extends CardBatchSupport {
     // ------------------------------------------------------------------ R01 Peón de las Armaduras Marfil
 
     @Test
-    void peonTakesUpToTwoWhiteEnlaceOrPaladinCardsAndTheRestStaysOnTopInItsOrder() {
+    void peonTakesUpToTwoWhiteEnlaceOrPaladinCardsAndSendsTheRestToTheBottom() {
         CardSlot linkCard = card("e1", "Enlazada", 1, 1, "R");
         linkCard.setEnlace(true);
         host.getDeck().addAll(0, List.of(card("w1", "Blanca", 1, 1, "W"), card("r1", "Roja", 1, 1, "R"), linkCard,
@@ -78,7 +78,8 @@ class T1PaladinesCardsTest extends CardBatchSupport {
         answer("h1", "h2");
         assertThat(ids(host.getHand())).contains("w1", "p1").doesNotContain("h1", "h2");
         assertThat(ids(host.getTributeZone())).containsExactlyInAnyOrder("h1", "h2");
-        assertThat(ids(host.getDeck().subList(0, 3))).containsExactly("r1", "e1", "r2");
+        List<CardSlot> deck = host.getDeck();
+        assertThat(ids(deck.subList(deck.size() - 3, deck.size()))).containsExactlyInAnyOrder("r1", "e1", "r2");
     }
 
     @Test
