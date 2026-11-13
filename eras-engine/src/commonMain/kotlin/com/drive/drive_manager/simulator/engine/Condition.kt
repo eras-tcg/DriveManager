@@ -766,8 +766,7 @@ sealed interface Condition {
             return GameEvent.DESTROY == event.type || GameEvent.SACRIFICE == event.type
         }
 
-        private fun ownerOf(event: GameEvent): String? {
-            return if (event.data == null) null else event.data!!["ownerId"] as String?
-        }
+        /** The owner of the event's card, when the event says it ([EffectEngine.ownerOf]). */
+        private fun ownerOf(event: GameEvent): String? = EffectEngine.ownerOf(event)
     }
 }

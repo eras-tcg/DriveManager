@@ -183,16 +183,14 @@ object Answers {
     /** Direct damage of `damage` to oneself by an effect (Biok's payment): the top life, as direct damage does. */
     @JvmStatic
     fun selfDamage(room: GameRoom, player: PlayerState, by: CardSlot, damage: Int) {
-        val life = player.lifeStack.removeAt(0)
-        life.faceDown = false
-        val tribute = "creature" == life.cardType && (life.strength == null || CardEffects.lifeStrength(room, player.userId, life) <= damage)
-        (if (tribute) player.tributeZone else player.hand).add(life)
-        record(room, GameEvent.LIFE_DAMAGE, player.userId, life, "lifeStack", if (tribute) "tributeZone" else "hand", null,
-            frozenMapOf<String, Any?>("damage", damage, "attackerId", by.instanceId, "defenderId", player.userId),
-            player.username + " se inflige " + damage + " de daño (" + name(by) + "): pierde la vida " + name(life) +
-                    (if (tribute) ", que va a sus tributos" else ", que va a su mano"))
+        EffectEngine.loseTopLife(room, player, damage, player.userId, null, by.instanceId,
+            player.username + " se inflige " + damage + " de daño (" + name(by) + "): ")
         if (player.lifeStack.isEmpty()) loseByLives(room, player)
     }
+
+    /** The choices of a replacement of a removal ("en su lugar"), answered by [answerRemoval]. */
+    private val REMOVAL_REPLACEMENTS = listOf(PromptPurpose.REPLACE, PromptPurpose.REPLACE_HAND, PromptPurpose.REPLACE_MATERIALS,
+        PromptPurpose.REPLACE_GUARD, PromptPurpose.REPLACE_RESOURCES, PromptPurpose.REPLACE_LIFE)
 
     @JvmStatic
     fun answerRules(room: GameRoom, prompt: Prompt, player: PlayerState, picks: List<String>): String? {
@@ -229,8 +227,7 @@ object Answers {
             }
             return ""
         }
-        if (PromptPurpose.REPLACE.`is`(purpose) || PromptPurpose.REPLACE_HAND.`is`(purpose) || PromptPurpose.REPLACE_MATERIALS.`is`(purpose) ||
-            PromptPurpose.REPLACE_GUARD.`is`(purpose) || PromptPurpose.REPLACE_RESOURCES.`is`(purpose) || PromptPurpose.REPLACE_LIFE.`is`(purpose)) {
+        if (REMOVAL_REPLACEMENTS.any { it.`is`(purpose) }) {
             val error = answerRemoval(room, prompt, player, picks)
             if (error != null) return error
             advance(room)
@@ -525,12 +522,7 @@ object Answers {
         if (PromptPurpose.OPTIONAL.`is`(purpose)) {
             room.prompt = null
             val queue = room.triggerQueue
-            val head = rank(queue[0], room.currentTurnUserId)
-            val group: MutableList<PendingEffect> = ArrayList()
-            for (e in queue) {
-                if (rank(e, room.currentTurnUserId) != head) break
-                group.add(e)
-            }
+            val group = Chain.headGroup(room)
             if (picks.isEmpty()) {
                 // No more: the rest of this player's optional effects are not activated
                 for (e in group) {

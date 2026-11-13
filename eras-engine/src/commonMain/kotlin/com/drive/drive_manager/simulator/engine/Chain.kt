@@ -294,6 +294,19 @@ object Chain {
         return (if (mandatory) 0 else 2) + (if (mine) 0 else 1)
     }
 
+    /** The effects at the head of the trigger queue with the same [rank] as the first one (one group of rule 11.7.0.5), in order. */
+    @JvmStatic
+    fun headGroup(room: GameRoom): MutableList<PendingEffect> {
+        val queue = room.triggerQueue
+        val head = rank(queue[0], room.currentTurnUserId)
+        val group: MutableList<PendingEffect> = ArrayList()
+        for (e in queue) {
+            if (rank(e, room.currentTurnUserId) != head) break
+            group.add(e)
+        }
+        return group
+    }
+
     /** Mandatory effects go straight into the chain; optional ones ask their controller first. */
     @JvmStatic
     fun activateNext(room: GameRoom) {
@@ -307,12 +320,7 @@ object Chain {
         // Rule 11.7.0.5: the active player's mandatory effects, the opponent's mandatory effects, then the
         // active player's optional ones and the opponent's, all into the same chain
         val active = room.currentTurnUserId
-        val head = rank(effect, active)
-        val group: MutableList<PendingEffect> = ArrayList()
-        for (e in room.triggerQueue) {
-            if (rank(e, active) != head) break
-            group.add(e)
-        }
+        val group = headGroup(room)
         if (script.mandatory && !effect.ordered) {
             // Several mandatory effects (also several of one card, like its inherited ones): their controller
             // chains them one at a time (all of them are chained)
