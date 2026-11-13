@@ -453,7 +453,7 @@ object SpecialRequirements {
         return zones
                 .filter { c ->
                     c !== find(player.field, effect.sourceInstanceId)
-                            // "invoca especialmente" (kind "any"): by the method the creature has, other than Ritual (its own rules)
+                            // "invoca especialmente" (kind "any"): by the method the creature has; Ritual ones are added by SpecialProcedure (Rituals)
                             && (if ("any" == special.kind) c.specialSummonKind != null && !"ritual".equals(c.specialSummonKind, ignoreCase = true)
                             else special.kind!!.equals(c.specialSummonKind, ignoreCase = true)) && c.specialCost != null
                             && filter.matches(c)

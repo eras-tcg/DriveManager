@@ -351,11 +351,15 @@ class T1AngelesCardsTest extends CardBatchSupport {
     }
 
     @Test
-    void samaelWithoutMaterialsIsNotOfferedAtTheEndOfTheTurn() {
+    void samaelWithoutMaterialsStillPlacesAnAngel() {
+        // "tributar todos los materiales" with none is an empty action: the cost counts as paid (designer, 2026-11-13)
         CardSlot samael = onField(host, fallen("sa", "Samael el Fuego de la Destrucción", 6, 4));
-        host.getTributeZone().add(angel("a3", "Ángel Tres", 3, 3));
+        CardSlot three = angel("a3", "Ángel Tres", 3, 3);
+        host.getTributeZone().add(three);
         endOfHostTurn();
-        assertThat(offered(samael)).isFalse();
+        accept(samael);
+        answer("a3");
+        assertThat(host.getField()).contains(three);
     }
 
     @Test
@@ -528,5 +532,140 @@ class T1AngelesCardsTest extends CardBatchSupport {
         drain();
         assertThat(host.getField()).contains(fallenEvo);
         assertThat(host.getDeck()).contains(voluntad);
+    }
+
+    // ------------------------------------------------------------------ Designer answers 2026-11-13
+
+    @Test
+    void serafinReachesTheEnemyRetaguardiaFromItsOwnRetaguardia() {
+        CardSlot back = onField(guest, card("eb", "Atrás", 1, 1, "R"), BACK);
+        CardSlot serafin = onField(host, withClasses(card("sf", "Serafín Ignoto el Fuego del Caos", null, 5, "W"), "ángel", "ángel caído"), BACK);
+        EffectEngine.record(room, GameEvent.SPECIAL_SUMMON, "host", serafin, "hand", "field", null, Map.of("summonType", "ritual"), "ritual");
+        Chain.advance(room);
+        answer("eb");
+        assertThat(guest.getDiscardPile()).contains(back);
+    }
+
+    @Test
+    void kristiaCanChooseItselfAndATypeHeldTwiceCountsOnce() {
+        CardSlot kristia = withClasses(card("kr", "Kristia la Falsa Oradora", 1, 1, "W"), "ángel", "ángel caído");
+        summon(kristia);
+        accept(kristia);
+        answer("kr");
+        assertThat(ClassChanges.classes(kristia)).containsExactly("ángel caído");
+        CardSlot twice = withClasses(card("tw", "Doble", 1, 1, "W"), "ángel", "Ángel");
+        assertThat(ClassChanges.classes(twice)).hasSize(1);
+    }
+
+    @Test
+    void anInvocaEspecialmenteIsNotASummonByEffectForCatedral() {
+        // "invoca especialmente" only enables the special summon: it is not an invocation by effect (designer, 2026-11-13)
+        CardSlot catedral = onField(host, structure("ca", "Catedral de la Luz Divina", 1, "W"), BACK);
+        CardSlot hermes = onField(host, angel("he", "Hermes el Notario Mensajero", 2, 2));
+        hermes.getMaterials().add(card("m", "Material", 1, 1, "W"));
+        CardSlot evo = special(angel("ev", "Evolución Blanca", 3, 2), "evolution", 1, "criatura nivel 1.");
+        host.getTributeZone().add(evo);
+        summon(angel("pe", "Peón", 1, 1));
+        accept(hermes);
+        answer("m");
+        answer("ev");
+        answer("pe");
+        assertThat(host.getField()).contains(evo);
+        assertThat(offered(catedral)).isFalse();
+    }
+
+    @Test
+    void decepcionsSummonIsNotASummonByEffectForCatedral() {
+        CardSlot catedral = onField(host, structure("ca", "Catedral de la Luz Divina", 1, "W"), BACK);
+        onField(host, angel("al", "Ángel Dos", 2, 2));
+        CardSlot fallenTwo = special(withClasses(card("f2", "Caído Dos", 2, 2, "W"), "ángel", "ángel caído"), "materialization", 1, "criatura nivel 1.");
+        host.getTributeZone().add(fallenTwo);
+        play(utility("de", "Decepción del Nombre Perdido", 1, "W"));
+        drain2("al", "f2");
+        assertThat(host.getField()).contains(fallenTwo);
+        assertThat(offered(catedral)).isFalse();
+    }
+
+    @Test
+    void nekiasRitualSacrificesTwoCreaturesOfLevelTwoOrLess() {
+        CardSlot two = onField(host, angel("a2", "Ángel Dos", 2, 2));
+        CardSlot one = onField(host, angel("a1", "Ángel Uno", 1, 1));
+        onField(host, angel("a3", "Ángel Tres", 3, 3));
+        CardSlot nekias = special(withClasses(card("nk", "Nekias la Inocente", 2, 2, "W"), "ángel", "ángel caído"), "ritual", 0, "2 criaturas nivel 2 o menor.");
+        host.getHand().add(nekias);
+        assertThat(Rituals.ritualByPlayer(room, "host", "nk", null)).isNull();
+        assertThat(room.getPrompt().getValidIds()).containsExactlyInAnyOrder("a2", "a1");
+        answer("a2");
+        assertThat(room.getPrompt().getValidIds()).containsExactly("a1");
+        answer("a1");
+        assertThat(host.getField()).contains(nekias);
+        assertThat(host.getTributeZone()).contains(two, one);
+    }
+
+    @Test
+    void serafinsRitualNeedsAnAngelAndAFallenAngelOfLevelFour() {
+        CardSlot serafin = special(withClasses(card("sf", "Serafín Ignoto el Fuego del Caos", null, 5, "W"), "ángel", "ángel caído"), "ritual", 3,
+                "2 criaturas nivel 4 en juego, una [ángel] y otra [ángel caído].");
+        host.getHand().add(serafin);
+        onField(host, angel("a4", "Ángel Cuatro", 6, 4));
+        onField(host, angel("b4", "Otro Ángel Cuatro", 6, 4));
+        assertThat(Rituals.ritualByPlayer(room, "host", "sf", null)).isNotNull();
+        CardSlot fallenFour = onField(host, fallen("f4", "Caído Cuatro", 6, 4));
+        assertThat(Rituals.ritualByPlayer(room, "host", "sf", null)).isNull();
+        answer("a4");
+        assertThat(room.getPrompt().getValidIds()).containsExactly("f4");
+        answer("f4");
+        assertThat(host.getField()).contains(serafin);
+        assertThat(host.getTributeZone()).contains(fallenFour);
+    }
+
+    private CardSlot lilithInRitual() {
+        return special(withClasses(card("li", "Lilith las Alas del Susurro", 3, 3, "W"), "ángel caído"), "ritual", 2,
+                "criatura nivel 2 + 1 criatura [ángel] nivel 2 o menor.");
+    }
+
+    @Test
+    void lilithOnYourTurnNeedsAnAngelOfYoursAndNoEnemyIsOffered() {
+        CardSlot lilith = lilithInRitual();
+        host.getHand().add(lilith);
+        onField(host, card("su", "Invocador", 2, 2, "W"));
+        onField(guest, card("e2", "Enemigo Dos", 2, 2, "R"));
+        assertThat(Rituals.ritualByPlayer(room, "host", "li", null)).isNotNull();
+        CardSlot angelOne = onField(host, angel("a1", "Ángel Uno", 1, 1));
+        assertThat(Rituals.ritualByPlayer(room, "host", "li", null)).isNull();
+        answer("su");
+        assertThat(room.getPrompt().getValidIds()).containsExactly("a1");
+        answer("a1");
+        assertThat(host.getField()).contains(lilith);
+        assertThat(host.getTributeZone()).contains(angelOne);
+    }
+
+    @Test
+    void lilithOnTheOpponentsTurnUsesAnEnemyOfTheirFrontLineAsTheAngel() {
+        room.setCurrentTurnUserId("guest");
+        room.setSharedCounter(0);
+        CardSlot lilith = lilithInRitual();
+        CardSlot voluntad = utility("vo", "Voluntad del Fuego Ignoto", 1, "W");
+        host.getDiscardPile().add(voluntad);
+        for (int i = 0; i < 4; i++) host.getTributeZone().add(card("t" + i, "Tributo " + i, 1, 1, "R"));
+        host.getTributeZone().add(lilith);
+        CardSlot summoner = onField(host, card("su", "Invocador", 2, 2, "W"));
+        CardSlot enemy = onField(guest, card("e2", "Enemigo Dos", 2, 2, "R"));
+        onField(guest, card("e3", "Enemigo Tres", 3, 3, "R"));
+        onField(guest, card("eb", "Enemigo Atrás", 1, 1, "R"), BACK);
+        // An ally of the host is summoned by effect on the opponent's turn: Voluntad lets Lilith be summoned by Ritual
+        CardSlot newcomer = onField(host, card("nw", "Recién Llegado", 1, 1, "W"), BACK);
+        EffectEngine.record(room, GameEvent.EFFECT_SUMMON, "host", newcomer, "hand", "field", null, null, "invocado por efecto");
+        Chain.advance(room);
+        accept(voluntad);
+        answer("vo", "t0", "t1", "t2", "t3");
+        answer("li");
+        answer("su");
+        assertThat(room.getPrompt().getValidIds()).containsExactly("e2");
+        answer("e2");
+        drain();
+        assertThat(host.getField()).contains(lilith).doesNotContain(summoner);
+        assertThat(guest.getTributeZone()).contains(enemy);
+        assertThat(host.getTributeZone()).contains(summoner);
     }
 }

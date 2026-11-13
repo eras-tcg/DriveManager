@@ -78,8 +78,7 @@
               "owner" : "YOU",
               "filter" : {},
               "min" : {
-                "type" : "Fixed",
-                "value" : 1
+                "type" : "Fixed"
               },
               "max" : {
                 "type" : "Fixed",

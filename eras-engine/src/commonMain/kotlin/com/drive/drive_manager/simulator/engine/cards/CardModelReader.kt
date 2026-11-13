@@ -17,7 +17,7 @@ internal object CardModelReader {
         "CardEffects.Replacement" to listOf("Replacement"),
         "Condition" to listOf("All", "AllyDealtDirectDamage", "Always", "Any", "ByEffect", "Compare", "Destroyed", "EntersFrontLine", "GameIs", "Happened", "Immediately", "Not", "NothingElsePlayedThisTurn", "Summoned", "SummonedWithoutMaterial", "Targeted", "ThisClashes", "ThisIs", "ThisTributed", "YouReducedStrength"),
         "EffectStep" to listOf("ActivateSubjectSummonEffect", "ActivateTributedSummonEffect", "AddResourceToHigherAlly", "AlliesGain", "AllySpecialSummonsSameLevel", "AttachLowerFromTributes", "AttachSelfAsResourceToAlly", "AttachSubjectToHigherAlly", "AttachSubjectToSummoned", "BounceChosen", "ChangeClass", "ChooseEnemiesLevelSum", "ChooseOpponentTribute", "ChooseWeakestEnemy", "DeclareBlockSelf", "DestroyFaceUpLife", "DestroyTopLife", "Do", "EachPlayerDiscards", "EachPlayerKeepsOneInFrontLine", "EachPlayerLowersMarker", "EndYourTurn", "ExtraCombatHitThenEndTurn", "ExtraHit", "GainGemsPerOwnSacrificed", "GrantEffect", "GroupUp", "HandsToBottomDrawOpponentLives", "IfChosenGone", "IfCondition", "IfDone", "IfNotDone", "IfPossible", "IfSaved", "IfTributed", "KeepOnField", "LivesFaceDown", "MaterialOfExhaustedAllyToBack", "MaterializeSelfOnTriggerAlly", "MayDo", "NoUntapChosen", "OpponentGainsGemsAsCounter", "OpponentMovesOneToFront", "PickAllyUpToSacrificedLevel", "PickAllyWithHigherAlly", "PickAllyWithMaterials", "PlaceChosenTributeAndSelf", "PlaceFromHandUntilTurnEnd", "ReduceOpponentLivesBy", "ReduceRepeatedly", "ReturnAllyOfSummonedLevel", "ReturnSubjectAtAttackEnd", "RevealFromHand", "RevealOpponentHandSendOneToBottom", "SacrificeAlly", "SkipBlockStep", "SpecialSelfDeclaredSummoner", "SubjectFromTrigger", "SubjectIsThisCard", "SummonFreeLevelSum", "SummonLikeSubject", "TakeFromLookedDistinctLevels", "TakeFromLookedEachRestToBottom", "TakeFromLookedLikeSubject", "TributeAlliesLevelSum", "TributeAllyMaterial", "TributeAllyMaterialWhere", "TributeAllyResources", "TributesToDeckBottomForKeyword"),
-        "Reaction" to listOf("AllyGuard", "AllyRemovalSummon", "AttacksBeforeAscended", "CostModifier", "DamageReplacement", "GainBeforeAscended", "Replacement", "SwapsBlocker", "TributesInsteadOfDamage"),
+        "Reaction" to listOf("AllyGuard", "AllyRemovalSummon", "AttacksBeforeAscended", "CostModifier", "DamageReplacement", "EnemyAsTypeForRequirement", "GainBeforeAscended", "Replacement", "SwapsBlocker", "TributesInsteadOfDamage"),
     )
 
     fun action(e: JsonElement, at: String): com.drive.drive_manager.simulator.engine.effects.model.Action {
@@ -205,6 +205,7 @@ internal object CardModelReader {
             "AttacksBeforeAscended" -> readReactionAttacksBeforeAscended(o, at)
             "CostModifier" -> readCostModifiersCostModifier(o, at)
             "DamageReplacement" -> readCardEffectsDamageReplacement(o, at)
+            "EnemyAsTypeForRequirement" -> readReactionEnemyAsTypeForRequirement(o, at)
             "GainBeforeAscended" -> readReactionGainBeforeAscended(o, at)
             "Replacement" -> readCardEffectsReplacement(o, at)
             "SwapsBlocker" -> readReactionSwapsBlocker(o, at)
@@ -1270,6 +1271,14 @@ internal object CardModelReader {
     private fun readReactionAttacksBeforeAscended(o: JsonObject, at: String): com.drive.drive_manager.simulator.engine.Reaction.AttacksBeforeAscended {
         J.fields(o, at, "Reaction.AttacksBeforeAscended", emptySet(), true)
         return com.drive.drive_manager.simulator.engine.Reaction.AttacksBeforeAscended
+    }
+
+    private fun readReactionEnemyAsTypeForRequirement(o: JsonObject, at: String): com.drive.drive_manager.simulator.engine.Reaction.EnemyAsTypeForRequirement {
+        J.fields(o, at, "Reaction.EnemyAsTypeForRequirement", setOf("asType", "opponentTurn"), true)
+        return com.drive.drive_manager.simulator.engine.Reaction.EnemyAsTypeForRequirement(
+            asType = J.str(o, "asType", at),
+            opponentTurn = J.bool(o, "opponentTurn", at),
+        )
     }
 
     private fun readReactionGainBeforeAscended(o: JsonObject, at: String): com.drive.drive_manager.simulator.engine.Reaction.GainBeforeAscended {

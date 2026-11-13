@@ -60,6 +60,7 @@ object Rituals {
         if (!canPay(room, userId, cost)) return "No tienes gemas suficientes: tienes " + gemsOf(room, userId) + " y el coste especial es " + cost
         val materials = ritualMaterials(player, card)
         val missing = "Tus criaturas no cumplen el Requerimiento de " + name(card) + ": " + card.requirement!!.trim { it <= ' ' }
+        if (req.parts.isNotEmpty()) return partsByPlayer(room, player, card, req.parts, summonerId, missing)
 
         if (summonerId != null) {
             val summoner = find(player.field, summonerId) ?: return "El invocador debe ser una criatura de tu campo"
@@ -102,6 +103,24 @@ object Rituals {
         return null
     }
 
+    /** A Ritual whose Requerimiento names each creature (RitualParts): the summoner first, then the others, all at once. */
+    private fun partsByPlayer(room: GameRoom, player: PlayerState, card: CardSlot, parts: List<RitualParts.Part>, summonerId: String?, missing: String): String? {
+        val summoners = RitualParts.summoners(room, player, card, parts)
+        if (summonerId == null) {
+            if (summoners.isEmpty()) return missing
+            ritualPrompt(room, player, card, null, summoners, RitualParts.summonerInstruction(parts, card), 1)
+            room.prompt!!.chosenLabel = "Invocador"
+            return null
+        }
+        val summoner = find(player.field, summonerId) ?: return "El invocador debe ser una criatura de tu campo"
+        if (!summoners.contains(summoner)) return missing
+        val others = RitualParts.others(room, player, card, parts, summoner)
+        ritualPrompt(room, player, card, summoner, others, RitualParts.instruction(parts, summoner), parts.size - 1)
+        room.prompt!!.min = parts.size - 1
+        for (o in others) if (!room.prompt!!.cards.contains(o)) room.prompt!!.cards.add(o)
+        return null
+    }
+
     /** Whether the card can be summoned by Ritual from the hand now, for the board's legal actions. */
     @JvmStatic
     fun canRitual(room: GameRoom, userId: String?, card: CardSlot?): Boolean {
@@ -114,6 +133,7 @@ object Rituals {
         val req = requirement(card)
         if (player == null || req == null || card!!.specialCost == null || !"ritual".equals(card.specialSummonKind, ignoreCase = true)) return false
         if (!canPay(room, userId, ritualCost(room, userId, card))) return false
+        if (req.parts.isNotEmpty()) return RitualParts.summoners(room, player, card, req.parts).isNotEmpty()
         val materials = ritualMaterials(player, card)
         return if (req.sum) sumsExactly(materials, req.level) else materials.any { s -> req.fits(s) && materials.count { it !== s } >= req.extra }
     }
@@ -167,6 +187,8 @@ object Rituals {
         val maxLevel: Int = level,
         /** "criatura nivel 4 + 1 o más aliados": how many other allies are sacrificed with the summoner, at least. */
         val extra: Int = 0,
+        /** Each creature used, the summoner among them ("criatura nivel 2 + 1 criatura [ángel] nivel 2 o menor"): RitualParts; empty otherwise. */
+        val parts: List<RitualParts.Part> = frozenListOf(),
     ) {
         /** The creature alone meets a single-creature Requerimiento. */
         fun fits(c: CardSlot?): Boolean {
@@ -179,6 +201,8 @@ object Rituals {
     fun requirement(card: CardSlot?): Requirement? {
         if (card!!.requirement == null) return null
         val text = card.requirement!!.lowercase()
+        val parts = RitualParts.parse(text.trim { it <= ' ' })
+        if (parts != null) return Requirement(false, parts[0].level, false, null, parts[0].level, parts.size - 1, parts)
         val m = Platform.regex("nivel\\s*(\\d+)|sumen\\s*(\\d+)").find(text)
         if (m == null) return null
         val level = (m.groups[1]?.value ?: m.groupValues[2]).toInt()
@@ -268,6 +292,10 @@ object Rituals {
         if (req == null || target.specialCost == null) return false
         if (!canPay(room, player.userId, max(0, target.specialCost!! - ritual.reduce
                         - CostModifiers.available(room, player, CostModifiers.Event.SPECIAL_SUMMON, "ritual", target, null)))) return false
+        if (req.parts.isNotEmpty()) {
+            val summoners = RitualParts.summoners(room, player, target, req.parts)
+            return if (ritual.selfSummoner()) find(summoners, effect.sourceInstanceId) != null else summoners.isNotEmpty()
+        }
         val materials = ritualMaterials(player, target)
         if (ritual.selfSummoner()) {
             val self = find(materials, effect.sourceInstanceId) ?: return false

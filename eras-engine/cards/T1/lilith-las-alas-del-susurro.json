@@ -41,5 +41,12 @@
       "sourceZone" : "field",
       "limit" : "NONE"
     }
+  ],
+  "reactions" : [
+    {
+      "type" : "EnemyAsTypeForRequirement",
+      "asType" : "ángel",
+      "opponentTurn" : true
+    }
   ]
 }

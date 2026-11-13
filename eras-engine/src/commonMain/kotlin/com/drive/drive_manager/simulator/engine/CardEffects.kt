@@ -172,6 +172,7 @@ object CardEffects {
                 if (r is Reaction.SwapsBlocker) rules.add("cambia al bloqueador declarado por otro aliado")
                 if (r is Reaction.AttacksBeforeAscended) rules.add("declara ataque antes de ser ascendida")
                 if (r is Reaction.GainBeforeAscended) rules.add("gana " + r.keyword + " antes de ser ascendida")
+                if (r is Reaction.EnemyAsTypeForRequirement) rules.add("puede usar un enemigo como [" + r.asType + "] para su Requerimiento")
                 if (r is AllyRemovalSummon) rules.add("se invoca especialmente en lugar de que un aliado sea removido")
                 if (r is AllyGuard) rules.add("evita que sus aliados sean removidos por efecto oponente")
                 if (r is Reaction.TributesInsteadOfDamage) rules.add("se tributa con 2 [retador] en lugar de recibir daño")
@@ -482,6 +483,12 @@ object CardEffects {
     fun gainBeforeAscended(card: CardSlot): String? {
         val gain = reaction<Reaction.GainBeforeAscended>(card)
         return gain?.keyword
+    }
+
+    /** "puedes utilizar un enemigo considerándolo [tipo] para el requerimiento" (RitualParts). */
+    @JvmStatic
+    fun enemyAsTypeForRequirement(card: CardSlot): Reaction.EnemyAsTypeForRequirement? {
+        return reaction<Reaction.EnemyAsTypeForRequirement>(card)
     }
 
     /** "cuando un aliado sea declarado bloqueador: en su lugar, puedes reactivarlo y elegir otro aliado …" (CombatRules.offerBlockerSwap). */

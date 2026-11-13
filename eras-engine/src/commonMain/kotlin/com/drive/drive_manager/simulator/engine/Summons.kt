@@ -371,7 +371,11 @@ object Summons {
     ) {
         inheritFromSummoner(room, target, summoner)
         destroy(room, summoner, player, true, CAUSE_RITUAL, player.userId, null, effect)
-        for (other in others) destroy(room, other, player, true, CAUSE_RITUAL, player.userId, null, effect)
+        // An enemy used for it (RitualParts) is sacrificed too, and goes to its owner's Tributos
+        for (other in others) {
+            val owner = if (player.field.contains(other)) player else room.getPlayer(room.getOpponentId(player.userId)) ?: player
+            destroy(room, other, owner, true, CAUSE_RITUAL, player.userId, null, effect)
+        }
         player.field.add(target)
         record(room, GameEvent.SPECIAL_SUMMON, player.userId, target, fromZone, "field", effect,
                 frozenMapOf<String, Any?>("summonType", "ritual", "cost", cost, "used", 1 + others.size), logText)

@@ -250,7 +250,9 @@ object Answers {
                 return ""
             }
             val used: MutableList<CardSlot?> = ArrayList()
-            for (id in picks) used.add(find(player.field, id))
+            // An enemy can be used too ("puedes utilizar un enemigo considerándolo [tipo]": RitualParts)
+            val opponent = room.getPlayer(room.getOpponentId(userId))
+            for (id in picks) used.add(find(player.field, id) ?: if (opponent == null) null else find(opponent.field, id))
             val summoner = if (prompt.summonerId != null) find(player.field, prompt.summonerId) else used[0]
             if (summoner == null || used.contains(null)) return "Esa criatura ya no está en el campo"
             val others: MutableList<CardSlot> = ArrayList()
@@ -259,7 +261,8 @@ object Answers {
             val req = requirement(card)
             val all: MutableList<CardSlot> = ArrayList(others)
             all.add(summoner)
-            if (!req!!.sum && others.size < req.extra) return "Elige al menos " + req.extra + (if (req.extra == 1) " aliado más" else " aliados más")
+            if (req!!.parts.isNotEmpty()) RitualParts.check(room, player, card, req.parts, summoner, others)?.let { return it }
+            else if (!req.sum && others.size < req.extra) return "Elige al menos " + req.extra + (if (req.extra == 1) " aliado más" else " aliados más")
             if (req.sum && !addsUpTo(all, req.level)) {
                 val total = all.sumOf { it.getLevel()!! }
                 return "Los niveles suman " + total + ": deben sumar exactamente " + req.level

@@ -19,10 +19,10 @@ object ClassChanges {
     @JvmStatic
     fun isChange(f: FloatingEffect): Boolean = f.keyword != null && f.keyword.startsWith(MARK)
 
-    /** The card's types now: its printed ones, with the changes it has. */
+    /** The card's types now: its printed ones, with the changes it has. The same type twice counts once (designer, Kristia). */
     @JvmStatic
     fun classes(card: CardSlot): List<String> {
-        val own: List<String> = card.classes ?: frozenListOf()
+        val own: List<String> = distinct(card.classes ?: frozenListOf())
         val changes = card.floating?.filter { isChange(it) } ?: return own
         if (changes.isEmpty()) return own
         val now = ArrayList(own)
@@ -32,6 +32,12 @@ object ClassChanges {
             if (now.removeAll { it.equals(parts[0], ignoreCase = true) } && now.none { it.equals(parts[1], ignoreCase = true) }) now.add(parts[1])
         }
         return now
+    }
+
+    private fun distinct(types: List<String>): List<String> {
+        val seen = ArrayList<String>()
+        for (t in types) if (seen.none { it.equals(t, ignoreCase = true) }) seen.add(t)
+        return if (seen.size == types.size) types else seen
     }
 
     /** The card stops being `from` and is `to` until the end of the turn. Nothing when it is not `from` now. */

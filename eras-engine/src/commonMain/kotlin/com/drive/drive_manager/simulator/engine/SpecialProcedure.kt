@@ -48,17 +48,30 @@ object SpecialProcedure {
         }
     }
 
-    private fun ritual(special: Selector.Special): Boolean {
-        return SpecialRule.RITUAL == special.rule!!.kind
+    /**
+     * The summon goes by Ritual: the rule says so, or "invoca especialmente" (kind any) and the creature chosen is summoned by Ritual (designer
+     * 2026-11-13: it only enables that creature's own special summon, whatever its method).
+     */
+    private fun ritual(room: GameRoom, effect: PendingEffect, special: Selector.Special): Boolean {
+        val kind = special.rule!!.kind
+        if (SpecialRule.RITUAL == kind) return true
+        if ("any" != kind) return false
+        val target = target(room, effect, resolve(room, effect, special.rule))
+        return target != null && SpecialRule.RITUAL.equals(target.specialSummonKind, ignoreCase = true)
     }
+
+    private fun asRitual(rule: SpecialRule): SpecialRule = SpecialRule(SpecialRule.RITUAL, rule.zone, rule.reduce, rule.summoner, rule.filter)
 
     @JvmStatic
     fun options(room: GameRoom, effect: PendingEffect, special: Selector.Special?): List<CardSlot> {
         val rule = resolve(room, effect, special!!.rule)
         val player = room.getPlayer(effect.controllerId)
-        if (ritual(special)) return ritualOptions(room, effect, rule, special.stage, player)
+        if (ritual(room, effect, special)) return ritualOptions(room, effect, rule, special.stage, player)
         if (special.stage == Selector.Stage.CARD) {
-            return if (effect.ritualTargetId != null) frozenListOf() else SpecialRequirements.specialTargets(room, effect, rule)
+            if (effect.ritualTargetId != null) return frozenListOf()
+            val targets = SpecialRequirements.specialTargets(room, effect, rule)
+            // "invoca especialmente": the creatures summoned by Ritual too
+            return if ("any" == rule.kind) targets + Rituals.ritualTargets(room, effect, asRitual(rule)) else targets
         }
         val target = target(room, effect, rule) ?: return frozenListOf()
         val req = SpecialRequirements.specialRequirement(target)
@@ -78,6 +91,10 @@ object SpecialProcedure {
         val req = Rituals.requirement(target)
         val materials = Rituals.ritualMaterials(player!!, target)
         val summoner = summoner(room, effect, rule)
+        if (req != null && req.parts.isNotEmpty()) {
+            if (stage == Selector.Stage.SUMMONER) return if (summoner != null) frozenListOf() else RitualParts.summoners(room, player, target, req.parts)
+            return if (summoner == null) frozenListOf() else RitualParts.others(room, player, target, req.parts, summoner)
+        }
         if (stage == Selector.Stage.SUMMONER) {
             // Rule 9.2.0.13: the summoner is declared first; it must meet part of the Requerimiento
             if (summoner != null) return frozenListOf()
@@ -95,7 +112,10 @@ object SpecialProcedure {
     @JvmStatic
     fun shown(room: GameRoom, effect: PendingEffect, special: Selector.Special?): List<CardSlot> {
         val player = room.getPlayer(effect.controllerId)
-        if (ritual(special!!) && special.stage != Selector.Stage.CARD) return player!!.field
+        if (ritual(room, effect, special!!) && special.stage != Selector.Stage.CARD) {
+            val target = target(room, effect, resolve(room, effect, special.rule))
+            return if (target == null) player!!.field else player!!.field + RitualParts.enemies(room, player, target)
+        }
         return when (special.stage!!) {
             Selector.Stage.CARD -> SpecialRequirements.specialZones(player, special.rule!!)
             Selector.Stage.SUMMONER -> player!!.field
@@ -110,11 +130,13 @@ object SpecialProcedure {
     /** {min, max, most levels they may add up to (0: no limit)} of the choice. */
     @JvmStatic
     fun bounds(room: GameRoom, effect: PendingEffect, special: Selector.Special?, available: Int): IntArray {
-        if (ritual(special!!)) {
+        if (ritual(room, effect, special!!)) {
             if (special.stage != Selector.Stage.MATERIAL) return intArrayOf(1, 1, 0)
             val rule = resolve(room, effect, special.rule)
             val target = target(room, effect, rule)
             val player = room.getPlayer(effect.controllerId)
+            val parts = Rituals.requirement(target)?.parts ?: frozenListOf()
+            if (parts.isNotEmpty()) return intArrayOf(parts.size - 1, parts.size - 1, 0)
             return intArrayOf(1, available, remaining(player, target, Rituals.requirement(target), summoner(room, effect, rule)))
         }
         return when (special.stage!!) {
@@ -130,7 +152,7 @@ object SpecialProcedure {
     @JvmStatic
     fun instruction(room: GameRoom, effect: PendingEffect, special: Selector.Special?): String {
         val rule = resolve(room, effect, special!!.rule)
-        if (ritual(special)) return ritualInstruction(room, effect, rule, special.stage)
+        if (ritual(room, effect, special)) return ritualInstruction(room, effect, rule, special.stage)
         if (special.stage == Selector.Stage.CARD) {
             return ("Puedes elegir 1 criatura de tu " + SpecialRequirements.zonesName(rule) + " para invocarla por " + SpecialRequirements.kindName(rule.kind)
                     + (if (rule.reduce > 0) " reduciendo su coste especial en " + rule.reduce else "") + ", o ninguna.")
@@ -149,6 +171,11 @@ object SpecialProcedure {
         }
         val target = target(room, effect, rule)
         val req = Rituals.requirement(target)
+        if (req != null && req.parts.isNotEmpty()) {
+            val summoner = summoner(room, effect, rule)
+            return if (stage == Selector.Stage.SUMMONER || summoner == null) RitualParts.summonerInstruction(req.parts, target!!)
+            else RitualParts.instruction(req.parts, summoner)
+        }
         if (stage == Selector.Stage.SUMMONER) {
             return ("Elige el invocador" + (if (req!!.sum) "" else ": 1 criatura nivel " + req.level + (if (req.atLeast) " o mayor" else ""))
                     + ". Se sacrifica y " + EffectEngine.name(target) + " ocupa su lugar y hereda su estado.")
@@ -165,9 +192,14 @@ object SpecialProcedure {
         val rule = resolve(room, effect, special.rule)
         val target = target(room, effect, rule)
         val summoner = summoner(room, effect, rule)
-        if (ritual(special)) {
-            val total = summoner!!.getLevel()!! + picks!!.map { id -> EngineContext(room, effect).find(id) }.sumOf { it!!.getLevel()!! }
+        if (ritual(room, effect, special)) {
             val req = Rituals.requirement(target)
+            if (req != null && req.parts.isNotEmpty()) {
+                val player = room.getPlayer(effect.controllerId)!!
+                val others = picks!!.mapNotNull { id -> EngineContext(room, effect).find(id) }
+                return RitualParts.check(room, player, target!!, req.parts, summoner!!, others)
+            }
+            val total = summoner!!.getLevel()!! + picks!!.map { id -> EngineContext(room, effect).find(id) }.sumOf { it!!.getLevel()!! }
             return if (req!!.sum && total != req.level) "Los niveles suman " + total + ": deben sumar exactamente " + req.level else null
         }
         val materials = picks!!.map { id -> EngineContext(room, effect).find(id) }
@@ -191,8 +223,8 @@ object SpecialProcedure {
             if (material != null) materials.add(material)
         }
         effect.saved.remove(EngineContext.SPECIAL_MATERIALS)
-        if (SpecialRule.RITUAL == rule.kind) {
-            Summons.performRitual(room, effect, player!!, target, rule, summoner, materials)
+        if (SpecialRule.RITUAL == rule.kind || ("any" == rule.kind && SpecialRule.RITUAL.equals(target.specialSummonKind, ignoreCase = true))) {
+            Summons.performRitual(room, effect, player!!, target, asRitual(rule), summoner, materials)
             effect.ritualSummonerId = null
             return
         }

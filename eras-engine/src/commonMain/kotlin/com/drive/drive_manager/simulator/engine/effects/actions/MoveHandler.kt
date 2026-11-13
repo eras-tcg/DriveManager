@@ -25,6 +25,8 @@ class MoveHandler : ActionHandler<Move> {
         // Its cards depend on the ally chosen by an action before it, which has not been chosen yet
         if (selector.waitsFor(Memory.SUBJECT) && ctx.saved(Memory.SUBJECT).isEmpty()) return true
         if (selector.zones!! == "looked" || selector.fromMemory()) return true
+        // "tributa todos los materiales de esta carta" with none: an empty action, still done (designer, Samael): a cost paid
+        if (selector.mode() == Selector.Mode.ALL && ctx.amount(selector.min) <= 0 && selector.self() != Selector.Self.REQUIRE) return true
         val found = candidates(ctx, action)
         if (selector.self() == Selector.Self.REQUIRE && found.none { ctx.isSelf(it) }) return false
         return found.size >= max(1, ctx.amount(selector.min))

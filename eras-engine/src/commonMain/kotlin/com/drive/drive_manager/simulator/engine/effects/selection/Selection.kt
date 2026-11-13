@@ -148,7 +148,8 @@ object Selection {
                 continue
             }
             // Rule 4.0.6.2: effects reach only the enemies of the Línea frontal, and only from yours
-            if (enemy && ctx.inRetaguardia()) continue
+            // ("afecta la Retaguardia enemiga y la Línea frontal" reaches them from the Retaguardia too: designer, Serafín)
+            if (enemy && ctx.inRetaguardia() && !anyLine) continue
             for (card in whose!!.field) {
                 val front = ctx.inFrontLine(card)
                 if (allies && !ctx.isCreature(card)) continue
