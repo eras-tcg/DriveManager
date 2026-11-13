@@ -92,7 +92,9 @@ class LinkRulesTest extends CardBatchSupport {
         assertThat(join("y1", "x")).isNull();
         assertThat(join("y2", "y1")).isNull();
         assertThat(join("y3", "y2")).isNull();
-        assertThat(Formations.joinOptions(room, "host")).doesNotContainKey("w").containsEntry("z", List.of("y3"));
+        // W (level 1) cannot join the formation of 4 (it would need a level 5); Z can
+        assertThat(Formations.joinOptions(room, "host").getOrDefault("w", List.of())).doesNotContain("x", "y1", "y2", "y3");
+        assertThat(Formations.joinOptions(room, "host").get("z")).contains("y3");
         assertThat(join("w", "x")).isNotNull();
         assertThat(join("z", "y3")).isNull();
         assertThat(host.getFormations()).containsExactly(List.of("x", "y1", "y2", "y3", "z"));
@@ -339,5 +341,22 @@ class LinkRulesTest extends CardBatchSupport {
         assertThat(update.getFormationJoins()).isNull();
         assertThat(update.getPlayers().get("host").getFormations()).containsExactly(List.of("a", "b"));
         assertThat(room.getTimeline()).anyMatch(ev -> GameEvent.FORMATION.equals(ev.getType()) && "b".equals(ev.getCardInstanceId()));
+    }
+
+    @Test
+    void inTheMainPhaseACreatureLinksWithOneThatIsNotBesideItTakingItsPlace() {
+        onField(host, linked("a", "A", 3, BOTH));
+        onField(host, card("x", "Suelta", 1, 1, "R"));
+        onField(host, linked("c", "C", 1, BOTH));
+        settle();
+        assertThat(order(host)).containsExactly("a", "x", "c");
+        assertThat(Formations.joinOptions(room, "host").get("c")).contains("a");
+        // Without a target: the FORMATION_ENTRY sheet, only with the places where it links
+        assertThat(Formations.joinByPlayer(room, "host", "c", null)).isNull();
+        assertThat(room.getPrompt().getPurpose()).isEqualTo(PromptPurpose.FORMATION_ENTRY.id());
+        assertThat(room.getPrompt().getValidIds()).allMatch(o -> o.split(":").length == 3).contains("pos:1:a");
+        answer("pos:1:a");
+        assertThat(order(host)).containsExactly("a", "c", "x");
+        assertThat(host.getFormations()).containsExactly(List.of("a", "c"));
     }
 }

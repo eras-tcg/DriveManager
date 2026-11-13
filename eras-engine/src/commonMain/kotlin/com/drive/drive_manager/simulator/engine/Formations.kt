@@ -244,6 +244,15 @@ object Formations {
             if (splits(player, card)) placeAt(player, card, ordered(player).size)
             return
         }
+        room.prompt = entryPrompt(room, player, card, options)
+    }
+
+    /** The links a creature of the Línea frontal could make from where it stands now: "pos:i:id" anywhere in the row. */
+    @JvmStatic
+    fun linkOptions(player: PlayerState, card: CardSlot): List<String> = entryOptions(player, card).filter { it.count { ch -> ch == ':' } == 2 }
+
+    /** FORMATION_ENTRY: the position and link of `card` among `options`; none keeps it where it is. */
+    private fun entryPrompt(room: GameRoom, player: PlayerState, card: CardSlot, options: List<String>): Prompt {
         val p = Prompt()
         p.id = room.nextId("prompt")
         p.kind = Prompt.Kind.PICK
@@ -263,7 +272,7 @@ object Formations {
         val others = ordered(player).filter { it !== card }
         for (o in options) labels[o] = optionText(player, others, o)
         p.cardLabels = labels
-        room.prompt = p
+        return p
     }
 
     private fun optionText(player: PlayerState, others: List<CardSlot>, option: String): String {
@@ -311,14 +320,12 @@ object Formations {
         val player = room.getPlayer(userId) ?: return out
         if (room.status != GameRoom.RoomStatus.IN_PROGRESS || userId != room.currentTurnUserId || "MAIN" != room.currentPhase
             || room.isEngineBusy()) return out
-        val order = ordered(player)
-        for ((i, c) in order.withIndex()) {
+        // Any creature of the Línea frontal in no formation, with whatever it could link with anywhere in the row (designer,
+        // 2026-11-13: in the main phase it need not stand next to it; it takes the place it links at)
+        for (c in ordered(player)) {
             if (formationOf(player, c.instanceId) != null) continue
-            val targets = ArrayList<String>()
-            for (n in listOfNotNull(order.getOrNull(i - 1), order.getOrNull(i + 1))) {
-                if (canAdmit(order, formationOf(player, n.instanceId) ?: listOf(n.instanceId!!), c)) targets.add(n.instanceId!!)
-            }
-            if (!targets.isEmpty()) out[c.instanceId!!] = targets
+            val targets = linkOptions(player, c).map { it.substringAfterLast(':') }.distinct()
+            if (!targets.isEmpty()) out[c.instanceId!!] = ArrayList(targets)
         }
         return out
     }
@@ -331,10 +338,20 @@ object Formations {
         if ("MAIN" != room.currentPhase) return "Solo puedes enlazar criaturas en tu fase principal"
         if (room.isEngineBusy()) return if (room.combat != null) "Hay un combate en curso" else "Hay un efecto resolviéndose"
         val player = room.getPlayer(userId) ?: return "No estás en la partida"
-        val options = joinOptions(room, userId)[instanceId]
-        if (options == null || !options.contains(targetId)) return "Esas criaturas no pueden enlazarse ahora"
+        val options = joinOptions(room, userId)[instanceId] ?: return "Esa criatura no puede enlazarse ahora"
         val card = player.field.first { it.instanceId == instanceId }
+        if (targetId == null) {
+            // Its place and its link, chosen in the FORMATION_ENTRY sheet (none: it stays where it is)
+            room.prompt = entryPrompt(room, player, card, linkOptions(player, card))
+            return null
+        }
+        if (!options.contains(targetId)) return "Esas criaturas no pueden enlazarse ahora"
         val with = player.field.first { it.instanceId == targetId }
+        // Where it stands when it can link from there; else (not beside it) the first place where that link is possible
+        val here = ordered(player).indexOf(card)
+        val links = linkOptions(player, card).filter { it.endsWith(":$targetId") }
+        val option = links.firstOrNull { it == "pos:$here:$targetId" } ?: links.firstOrNull() ?: return "Esas criaturas no pueden enlazarse ahora"
+        if (option != "pos:$here:$targetId") placeAt(player, card, option.split(":")[1].toInt())
         join(room, player, card, with)
         Chain.advance(room)
         return null
