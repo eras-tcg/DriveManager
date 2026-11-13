@@ -19,15 +19,13 @@ import com.drive.drive_manager.simulator.room.GameRoom
 import com.drive.drive_manager.simulator.room.PlayerState
 
 /** "Si …", "puedes …" and who the next steps act on: what steers the rest of the effect. Each step: whether it can be done, carrying it out, and applying the player's choice. */
-object FlowSteps {
+object FlowSteps : StepFamily {
 
-    @JvmStatic
-    fun possibleStep(room: GameRoom, effect: PendingEffect, step: EffectStep): Boolean {
+    override fun possibleStep(room: GameRoom, effect: PendingEffect, step: EffectStep): Boolean {
         return true
     }
 
-    @JvmStatic
-    fun runStep(room: GameRoom, effect: PendingEffect, step: EffectStep): Boolean {
+    override fun runStep(room: GameRoom, effect: PendingEffect, step: EffectStep): Boolean {
         val player = room.getPlayer(effect.controllerId)!!
         val userId = player.userId
 
@@ -128,10 +126,9 @@ object FlowSteps {
         }
     }
 
-    @JvmStatic
-    fun applyStep(
+    override fun applyStep(
         room: GameRoom, effect: PendingEffect, step: EffectStep, player: PlayerState, picks: List<String>,
-        order: List<String>?, repeat: BooleanArray?,
+        order: List<String>?, repeat: BooleanArray,
     ): String? {
         val userId = player.userId
         when (step) {

@@ -40,10 +40,9 @@ import com.drive.drive_manager.simulator.room.GameRoom
 import com.drive.drive_manager.simulator.room.PlayerState
 
 /** Attacks, blocks, and what acts on chosen enemies. Each step: whether it can be done, carrying it out, and applying the player's choice. */
-object CombatSteps {
+object CombatSteps : StepFamily {
 
-    @JvmStatic
-    fun possibleStep(room: GameRoom, effect: PendingEffect, step: EffectStep): Boolean {
+    override fun possibleStep(room: GameRoom, effect: PendingEffect, step: EffectStep): Boolean {
         val player = room.getPlayer(effect.controllerId)!!
         @Suppress("UNUSED_VARIABLE")
         val onField = find(player.field, effect.sourceInstanceId)
@@ -60,8 +59,7 @@ object CombatSteps {
         }
     }
 
-    @JvmStatic
-    fun runStep(room: GameRoom, effect: PendingEffect, step: EffectStep): Boolean {
+    override fun runStep(room: GameRoom, effect: PendingEffect, step: EffectStep): Boolean {
         val player = room.getPlayer(effect.controllerId)!!
         val userId = player.userId
 
@@ -221,8 +219,7 @@ object CombatSteps {
         }
     }
 
-    @JvmStatic
-    fun applyStep(
+    override fun applyStep(
         room: GameRoom, effect: PendingEffect, step: EffectStep, player: PlayerState, picks: List<String>,
         order: List<String>?, repeat: BooleanArray,
     ): String? {

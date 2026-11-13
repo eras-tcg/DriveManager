@@ -22,10 +22,9 @@ import com.drive.drive_manager.simulator.room.GameRoom
 import com.drive.drive_manager.simulator.room.PlayerState
 
 /** Taking from the cards looked at, and revealing. Each step: whether it can be done, carrying it out, and applying the player's choice. */
-object LookSteps {
+object LookSteps : StepFamily {
 
-    @JvmStatic
-    fun possibleStep(room: GameRoom, effect: PendingEffect, step: EffectStep): Boolean {
+    override fun possibleStep(room: GameRoom, effect: PendingEffect, step: EffectStep): Boolean {
         val player = room.getPlayer(effect.controllerId)!!
         @Suppress("UNUSED_VARIABLE")
         val onField = find(player.field, effect.sourceInstanceId)
@@ -41,8 +40,7 @@ object LookSteps {
         return !step.withAllyOfLevel || EffectEngine.allies(player).any { a -> a.getLevel() != null && a.getLevel() == card.getLevel() }
     }
 
-    @JvmStatic
-    fun runStep(room: GameRoom, effect: PendingEffect, step: EffectStep): Boolean {
+    override fun runStep(room: GameRoom, effect: PendingEffect, step: EffectStep): Boolean {
         val player = room.getPlayer(effect.controllerId)!!
         val userId = player.userId
 
@@ -116,10 +114,9 @@ object LookSteps {
         }
     }
 
-    @JvmStatic
-    fun applyStep(
+    override fun applyStep(
         room: GameRoom, effect: PendingEffect, step: EffectStep, player: PlayerState, picks: List<String>,
-        order: List<String>?, repeat: BooleanArray?,
+        order: List<String>?, repeat: BooleanArray,
     ): String? {
         val userId = player.userId
         when (step) {

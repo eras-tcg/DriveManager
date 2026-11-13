@@ -33,10 +33,9 @@ import com.drive.drive_manager.simulator.room.PlayerState
 import com.drive.drive_manager.simulator.room.Zone
 
 /** Summons a basic action does not cover. Each step: whether it can be done, carrying it out, and applying the player's choice. */
-object SummonSteps {
+object SummonSteps : StepFamily {
 
-    @JvmStatic
-    fun possibleStep(room: GameRoom, effect: PendingEffect, step: EffectStep): Boolean {
+    override fun possibleStep(room: GameRoom, effect: PendingEffect, step: EffectStep): Boolean {
         val player = room.getPlayer(effect.controllerId)!!
         val onField = find(player.field, effect.sourceInstanceId)
         return when (step) {
@@ -56,8 +55,7 @@ object SummonSteps {
         }
     }
 
-    @JvmStatic
-    fun runStep(room: GameRoom, effect: PendingEffect, step: EffectStep): Boolean {
+    override fun runStep(room: GameRoom, effect: PendingEffect, step: EffectStep): Boolean {
         val player = room.getPlayer(effect.controllerId)!!
         val userId = player.userId
 
@@ -159,8 +157,7 @@ object SummonSteps {
         }
     }
 
-    @JvmStatic
-    fun applyStep(
+    override fun applyStep(
         room: GameRoom, effect: PendingEffect, step: EffectStep, player: PlayerState, picks: List<String>,
         order: List<String>?, repeat: BooleanArray,
     ): String? {

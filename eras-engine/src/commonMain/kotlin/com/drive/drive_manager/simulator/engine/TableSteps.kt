@@ -28,13 +28,12 @@ import com.drive.drive_manager.simulator.room.GameRoom
 import com.drive.drive_manager.simulator.room.PlayerState
 
 /** Both players, lives and gems, and the Línea frontal's positions. Each step: whether it can be done, carrying it out, and applying the player's choice. */
-object TableSteps {
+object TableSteps : StepFamily {
 
     /** What [SwapInFormation] saves: the two allies that swap ("ambos aliados"). */
     const val SWAPPED = "swapped"
 
-    @JvmStatic
-    fun possibleStep(room: GameRoom, effect: PendingEffect, step: EffectStep): Boolean {
+    override fun possibleStep(room: GameRoom, effect: PendingEffect, step: EffectStep): Boolean {
         val player = room.getPlayer(effect.controllerId)!!
         val onField = find(player.field, effect.sourceInstanceId)
         return when (step) {
@@ -48,8 +47,7 @@ object TableSteps {
         }
     }
 
-    @JvmStatic
-    fun runStep(room: GameRoom, effect: PendingEffect, step: EffectStep): Boolean {
+    override fun runStep(room: GameRoom, effect: PendingEffect, step: EffectStep): Boolean {
         val player = room.getPlayer(effect.controllerId)!!
         val userId = player.userId
 
@@ -215,8 +213,7 @@ object TableSteps {
         }
     }
 
-    @JvmStatic
-    fun applyStep(
+    override fun applyStep(
         room: GameRoom, effect: PendingEffect, step: EffectStep, player: PlayerState, picks: List<String>,
         order: List<String>?, repeat: BooleanArray,
     ): String? {
