@@ -26,8 +26,6 @@ object LookSteps : StepFamily {
 
     override fun possibleStep(room: GameRoom, effect: PendingEffect, step: EffectStep): Boolean {
         val player = room.getPlayer(effect.controllerId)!!
-        @Suppress("UNUSED_VARIABLE")
-        val onField = find(player.field, effect.sourceInstanceId)
         return when (step) {
             is RevealFromHand -> assignable(player.hand.filter { c -> c.instanceId!! != effect.sourceInstanceId && withAlly(player, step, c) },
                 step.filters)
