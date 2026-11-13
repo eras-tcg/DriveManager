@@ -1,6 +1,7 @@
 package com.drive.drive_manager.simulator.engine
 
 import kotlin.jvm.JvmStatic
+import kotlin.jvm.JvmOverloads
 import kotlin.jvm.JvmRecord
 import com.drive.drive_manager.simulator.engine.CombatRules.combatStep
 import com.drive.drive_manager.simulator.engine.EffectEngine.DEFINITIVE_USED
@@ -262,7 +263,7 @@ object Chain {
     }
 
     private fun whyNot(room: GameRoom, userId: String?, card: CardSlot, script: EffectScript, played: GameEvent): String? {
-        val e = candidate(script, userId, card, played.seq)
+        val e = candidate(script, userId, card, played.seq, room)
         if (limitReached(room, e, script)) return limitText(room, e, script)
         if (script.condition != null && !script.condition.test(room, played, card, userId)) return "no se cumple la condición de su efecto"
         for (step in script.cost!!) if (!possible(room, e, step)) return "no puedes pagar el coste de su efecto"
@@ -508,14 +509,15 @@ object Chain {
 
     @JvmStatic
     fun pending(room: GameRoom, script: EffectScript, controllerId: String?, source: CardSlot, triggerSeq: Long): PendingEffect {
-        val e = candidate(script, controllerId, source, triggerSeq)
+        val e = candidate(script, controllerId, source, triggerSeq, room)
         e.id = room.nextId("eff")
         return e
     }
 
     /** An effect that could be activated, still without an id. */
     @JvmStatic
-    fun candidate(script: EffectScript, controllerId: String?, source: CardSlot, triggerSeq: Long): PendingEffect {
+    @JvmOverloads
+    fun candidate(script: EffectScript, controllerId: String?, source: CardSlot, triggerSeq: Long, room: GameRoom? = null): PendingEffect {
         val e = PendingEffect()
         e.scriptId = script.id
         e.controllerId = controllerId
@@ -530,6 +532,8 @@ object Chain {
         if (link != null) {
             val grant = Formations.grants(source.formationGrants).firstOrNull { g -> script.id!!.endsWith(Formations.VIA + g.sourceId + "@" + g.since) }
             e.inheritedFromName = grant?.sourceName ?: link
+            // Its picture, while the member that gives it is still in the room
+            e.inheritedFromImage = if (room != null && grant != null) EffectEngine.findInRoom(room, grant.sourceId)?.imageUrl else null
         }
         val from = CardEffects.inheritedFrom(script.id)
         if (from != null) {
@@ -585,7 +589,7 @@ object Chain {
                     if (script.moment != EffectScript.Moment.RESPONSE || script.sourceZone != zone) continue
                     if (script.allyTurn && playerId != room.currentTurnUserId) continue
                     if (script.condition != null && (activation == null || !script.condition.test(room, activation, card, playerId))) continue
-                    val e = candidate(script, playerId, card, activation?.seq ?: room.eventSeq)
+                    val e = candidate(script, playerId, card, activation?.seq ?: room.eventSeq, room)
                     if (limitReached(room, e, script)) continue
                     if (canActivate(room, e, script)) result.add(e)
                 }
@@ -621,7 +625,7 @@ object Chain {
                     if (script.moment != EffectScript.Moment.ACTIVATED || script.sourceZone != zone) continue
                     if (script.allyTurn && userId != room.currentTurnUserId) continue
                     if (script.condition != null && !script.condition.test(room, null, card, userId)) continue
-                    val e = candidate(script, userId, card, room.eventSeq)
+                    val e = candidate(script, userId, card, room.eventSeq, room)
                     if (limitReached(room, e, script)) continue
                     if (canActivate(room, e, script)) result.add(e)
                 }

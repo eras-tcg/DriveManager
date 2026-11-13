@@ -170,6 +170,19 @@ class LinkRulesTest extends CardBatchSupport {
         assertThat(big.isTapped()).as("el enlace restablecido se refresca").isFalse();
     }
 
+    @Test
+    void aGrantedEffectShowsThePictureOfTheMemberThatGivesIt() {
+        CardSlot nefilia = onField(host, linked("ne", "Nefilia la Paladín Arcanista", 2, BOTH));
+        nefilia.setImageUrl("https://img/nefilia.jpg");
+        CardSlot big = onField(host, linked("g", "Grande", 4, BOTH));
+        settle();
+        assertThat(join("g", "ne")).isNull();
+        EffectScript granted = CardEffects.of(big).stream().filter(sc -> sc.id() != null && sc.id().contains(Formations.VIA)).findFirst().orElseThrow();
+        PendingEffect e = Chain.candidate(granted, "host", big, 0, room);
+        assertThat(e.getInheritedFromName()).isEqualTo("Nefilia la Paladín Arcanista");
+        assertThat(e.getInheritedFromImage()).isEqualTo("https://img/nefilia.jpg");
+    }
+
     // ------------------------------------------------------------------ Leaving, the start of the turn, Ascenso
 
     @Test
