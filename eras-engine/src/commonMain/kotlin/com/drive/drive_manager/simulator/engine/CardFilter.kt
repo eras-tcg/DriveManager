@@ -211,7 +211,8 @@ data class CardFilter(
         val asCreature = EffectEngine.creatureForEffects(card)
         if (cardType != null && cardType != card.cardType && !("creature" == cardType && asCreature != null)) return false
         val cardColors: List<String> = card.colors ?: frozenListOf()
-        val cardClasses: List<String> = card.classes ?: frozenListOf()
+        // Its types now ("cambia el tipo … hasta el final del turno": ClassChanges)
+        val cardClasses: List<String> = ClassChanges.classes(card)
         val colorMatch = colorList.any { cardColors.contains(it) }
         val classMatch = classList.any { c -> cardClasses.any { cc -> cc.equals(c, ignoreCase = true) } }
         if (colorAndClass) {
@@ -238,7 +239,7 @@ data class CardFilter(
         if (!anyOfList.isEmpty() && anyOfList.none { f -> f.matches(card) }) return false
         if (mentions != null) {
             val t = mentions.lowercase()
-            val ofType = card.classes!!.any { c -> c.equals(t, ignoreCase = true) }
+            val ofType = cardClasses.any { c -> c.equals(t, ignoreCase = true) }
             val inName = card.cardName != null && card.cardName!!.lowercase().contains(t)
             if (!ofType && !inName && (card.mentions == null || !card.mentions!!.contains(t))) return false
         }

@@ -118,6 +118,8 @@ object Removals {
         // Its Recursos leave with it, but what they gave it "En Destrucción" still triggers (rule 11.4.0.3)
         reactionsBeforeRemoval(room, owner, card, byId)
         val inherited = card.resources!!.mapNotNull { it.cardName }
+        // So do the abilities it gained between «» (GrantEffect), lost as it leaves the field
+        val granted = GrantedEffects.markersOf(card)
         val materials: List<CardSlot> = ArrayList(card.materials!!)
         val hadMaterials = !materials.isEmpty()
         // "si algún aliado fue destruido por el oponente el turno anterior"
@@ -143,6 +145,7 @@ object Removals {
         if (byCard == null && effect != null) byCard = effect.sourceInstanceId
         if (byCard != null) data["byCard"] = byCard
         if (!inherited.isEmpty()) data["inherited"] = inherited
+        if (!granted.isEmpty()) data["granted"] = granted
         if (hadMaterials) data["hadMaterials"] = true
         if (combat != null && card.instanceId == combat.attackerId) data["asAttacker"] = true
         val removed = record(room, if (sacrifice) GameEvent.SACRIFICE else GameEvent.DESTROY, byId, card, "field", toZone, effect, data, text)

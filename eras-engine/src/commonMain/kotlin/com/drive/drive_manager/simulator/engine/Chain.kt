@@ -140,6 +140,10 @@ object Chain {
                 if (moment == EffectScript.Moment.ON_DESTROY && event.data != null && names is List<*>) {
                     for (n in names) scripts.addAll(CardEffects.inheritedOf(n as String?))
                 }
+                val granted = event.data?.get("granted")
+                if (moment == EffectScript.Moment.ON_DESTROY && granted is List<*>) {
+                    for (m in granted) GrantedEffects.byMarker(m as String)?.let { scripts.add(it) }
+                }
                 for (script in scripts) {
                     if (script.moment == moment) addIfTriggers(room, result, script, event, source, controllerId)
                 }

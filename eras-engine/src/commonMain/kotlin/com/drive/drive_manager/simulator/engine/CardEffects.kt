@@ -263,6 +263,8 @@ object CardEffects {
         }
         for (keyword in EffectEngine.keywords(card)) {
             var script = KEYWORDS[keyword.lowercase()]
+            // An ability gained between «» (GrantEffect)
+            if (script == null) script = GrantedEffects.byMarker(keyword)
             // Agrupar N: up to N allies
             val groupUp = AGRUPAR.matchEntire(keyword.lowercase())
             if (script == null && groupUp != null) script = agrupar(groupUp.groupValues[1].toInt())
@@ -277,6 +279,7 @@ object CardEffects {
         for (scripts in BY_NAME.values) for (s in scripts) if (s.id == id) return s
         for (scripts in INHERITED.values) for (s in scripts) if (s.id == id) return s
         for (s in KEYWORDS.values) if (s.id == id) return s
+        GrantedEffects.byId(id)?.let { return it }
         return if (id.startsWith("kw:agrupar-")) agrupar(id.substring("kw:agrupar-".length).toInt()) else null
     }
 
@@ -513,6 +516,8 @@ object CardEffects {
         check(other == null || other == name) { "La misma carta en dos archivos: \"$other\" y \"$name\"" }
         if (!d.effects().isEmpty()) BY_NAME[name!!] = d.effects()
         if (!d.inherited().isEmpty()) INHERITED[name!!] = d.inherited()
+        GrantedEffects.register(d.effects())
+        GrantedEffects.register(d.inherited())
         if (!d.continuous().isEmpty()) CONTINUOUS[name!!] = d.continuous()
         if (d.traits != null) TRAITS[name!!] = d.traits
         val others: MutableList<Reaction> = ArrayList()

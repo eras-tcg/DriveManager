@@ -1,0 +1,115 @@
+{
+  "name" : "raziel el ojo de la luz y la oscuridad",
+  "effects" : [
+    {
+      "id" : "raziel:en-invocacion",
+      "moment" : "ON_SUMMON",
+      "label" : "En Invocación",
+      "text" : "Puedes tributar 1 carta de tu mano para invocar 1 criatura de los materiales de esta carta reduciendo su coste en 1.",
+      "steps" : [
+        {
+          "type" : "IfPossible"
+        },
+        {
+          "type" : "Do",
+          "action" : {
+            "type" : "Move",
+            "cards" : {
+              "zones" : "hand",
+              "owner" : "YOU",
+              "filter" : {},
+              "min" : {
+                "type" : "Fixed",
+                "value" : 1
+              },
+              "max" : {
+                "type" : "Fixed",
+                "value" : 1
+              },
+              "self" : "ANY",
+              "mode" : "CHOOSE"
+            },
+            "to" : "tributeZone"
+          }
+        },
+        {
+          "type" : "Do",
+          "action" : {
+            "type" : "Summon",
+            "cards" : {
+              "zones" : "materials",
+              "owner" : "YOU",
+              "filter" : {
+                "cardType" : "creature"
+              },
+              "min" : {
+                "type" : "Fixed",
+                "value" : 1
+              },
+              "max" : {
+                "type" : "Fixed",
+                "value" : 1
+              },
+              "self" : "ANY",
+              "mode" : "CHOOSE"
+            },
+            "reduce" : {
+              "type" : "Fixed",
+              "value" : 1
+            },
+            "required" : true
+          }
+        }
+      ],
+      "sourceZone" : "field",
+      "limit" : "NONE"
+    },
+    {
+      "id" : "raziel:turno-aliado",
+      "moment" : "ACTIVATED",
+      "label" : "Turno Aliado",
+      "text" : "Una vez por turno: puedes sacrificar 1 aliado para colocar 1 [ángel] nivel 2 de tu mano en tu Retaguardia agotado.",
+      "steps" : [
+        {
+          "type" : "IfPossible"
+        },
+        {
+          "type" : "SacrificeAlly"
+        },
+        {
+          "type" : "Do",
+          "action" : {
+            "type" : "Move",
+            "cards" : {
+              "zones" : "hand",
+              "owner" : "YOU",
+              "filter" : {
+                "classes" : [
+                  "ángel"
+                ],
+                "cardType" : "creature",
+                "level" : 2
+              },
+              "min" : {
+                "type" : "Fixed",
+                "value" : 1
+              },
+              "max" : {
+                "type" : "Fixed",
+                "value" : 1
+              },
+              "self" : "ANY",
+              "mode" : "CHOOSE"
+            },
+            "to" : "backLine",
+            "required" : true,
+            "exhausted" : true
+          }
+        }
+      ],
+      "sourceZone" : "field",
+      "allyTurn" : true,
+      "limit" : "ONCE_PER_TURN"
+    }
+  ]
+}

@@ -1,0 +1,133 @@
+{
+  "name" : "shilpher el protector",
+  "effects" : [
+    {
+      "id" : "shilpher:en-mano",
+      "moment" : "ON_EVENT",
+      "label" : "En Mano",
+      "text" : "Una vez por turno entre copias, al entrar al paso de bloqueo: puedes invocar esta carta en tu Línea frontal reduciendo en 1 su coste.",
+      "steps" : [
+        {
+          "type" : "Do",
+          "action" : {
+            "type" : "Summon",
+            "cards" : {
+              "zones" : "hand",
+              "owner" : "YOU",
+              "filter" : {},
+              "min" : {
+                "type" : "Fixed",
+                "value" : 1
+              },
+              "max" : {
+                "type" : "Fixed",
+                "value" : 1
+              },
+              "self" : "ANY",
+              "mode" : "SELF"
+            },
+            "reduce" : {
+              "type" : "Fixed",
+              "value" : 1
+            },
+            "toFront" : true,
+            "required" : true
+          }
+        }
+      ],
+      "condition" : {
+        "type" : "Happened",
+        "eventType" : "COMBAT_STEP",
+        "actor" : "ANY",
+        "owner" : "ANY",
+        "data" : [
+          "step=BLOCK",
+          "moment=ENTER"
+        ]
+      },
+      "sourceZone" : "hand",
+      "limit" : "ONCE_PER_TURN_BETWEEN_COPIES"
+    },
+    {
+      "id" : "shilpher:en-invocacion",
+      "moment" : "ON_SUMMON",
+      "mandatory" : true,
+      "label" : "En Invocación",
+      "text" : "Otro aliado gana hasta el final del turno: «En Destrucción puedes invocar 1 [ángel] de tu mano reduciendo su coste en 1».",
+      "steps" : [
+        {
+          "type" : "Do",
+          "action" : {
+            "type" : "Select",
+            "selector" : {
+              "zones" : "allies",
+              "owner" : "YOU",
+              "filter" : {
+                "cardType" : "creature"
+              },
+              "min" : {
+                "type" : "Fixed",
+                "value" : 1
+              },
+              "max" : {
+                "type" : "Fixed",
+                "value" : 1
+              },
+              "self" : "EXCLUDE",
+              "mode" : "CHOOSE"
+            },
+            "saveAs" : "subject",
+            "label" : "Gana",
+            "endsIfNone" : true
+          }
+        },
+        {
+          "type" : "GrantEffect",
+          "effect" : {
+            "id" : "shilpher:otorgada-en-destruccion",
+            "moment" : "ON_DESTROY",
+            "label" : "En Destrucción",
+            "text" : "En Destrucción puedes invocar 1 [ángel] de tu mano reduciendo su coste en 1",
+            "steps" : [
+              {
+                "type" : "Do",
+                "action" : {
+                  "type" : "Summon",
+                  "cards" : {
+                    "zones" : "hand",
+                    "owner" : "YOU",
+                    "filter" : {
+                      "classes" : [
+                        "ángel"
+                      ],
+                      "cardType" : "creature"
+                    },
+                    "min" : {
+                      "type" : "Fixed",
+                      "value" : 1
+                    },
+                    "max" : {
+                      "type" : "Fixed",
+                      "value" : 1
+                    },
+                    "self" : "ANY",
+                    "mode" : "CHOOSE"
+                  },
+                  "reduce" : {
+                    "type" : "Fixed",
+                    "value" : 1
+                  },
+                  "required" : true
+                }
+              }
+            ],
+            "sourceZone" : "field",
+            "limit" : "NONE"
+          }
+        }
+      ],
+      "sourceZone" : "field",
+      "limit" : "NONE"
+    }
+  ]
+}

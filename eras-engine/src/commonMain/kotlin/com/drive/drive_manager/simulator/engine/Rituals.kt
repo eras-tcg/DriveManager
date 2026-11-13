@@ -252,7 +252,7 @@ object Rituals {
     @JvmStatic
     fun shares(used: CardSlot, summoned: CardSlot): Boolean {
         val color = used.colors!!.any(summoned.colors!!::contains)
-        val type = used.classes!!.any { t -> summoned.classes!!.any { t.equals(it, ignoreCase = true) } }
+        val type = ClassChanges.classes(used).any { t -> ClassChanges.classes(summoned).any { t.equals(it, ignoreCase = true) } }
         return color || type
     }
 

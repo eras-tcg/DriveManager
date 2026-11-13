@@ -82,6 +82,29 @@ object SummonSteps {
                 if (req.levelSum > 0) room.prompt!!.maxLevelSum = req.levelSum
                 return true
             }
+            is AllySpecialSummonsSameLevel -> {
+                if (effect.ritualSummonerId == null) {
+                    val valid = sameLevelSummoners(player, step)
+                    if (valid.isEmpty()) {
+                        log(room, "Ningún aliado puede invocar especialmente con " + effect.sourceName, null)
+                        return false
+                    }
+                    pick(room, effect, "Elige el aliado " + step.ally!!.describe() + " que invoca especialmente 1 criatura " + step.filter!!.describe()
+                            + " de su mismo nivel de tus " + zoneName(step.zone) + ", ignorando el requerimiento y el coste especial.", "Invocador",
+                            player.field, ids(valid), 1)
+                    return true
+                }
+                val summoner = find(player.field, effect.ritualSummonerId)
+                val valid = if (summoner == null) frozenListOf() else sameLevelCreatures(player, step, summoner)
+                if (valid.isEmpty()) {
+                    effect.ritualSummonerId = null
+                    return false
+                }
+                pick(room, effect, "Elige la criatura " + step.filter!!.describe() + " nivel " + summoner!!.getLevel() + " de tus " + zoneName(step.zone)
+                        + " que " + name(summoner) + " invoca especialmente, por su método, ignorando el requerimiento y el coste especial.", "Invocar",
+                        zone(player, step.zone), ids(valid), 1)
+                return true
+            }
             is MaterializeSelfOnTriggerAlly -> {
                 val trigger = triggerEvent(room, effect)
                 val by = if (trigger == null || trigger.data == null) null else trigger.data!!["byCard"]
@@ -174,6 +197,21 @@ object SummonSteps {
                 effect.summonedId = self.instanceId
                 effect.lastDone = true
             }
+            is AllySpecialSummonsSameLevel -> {
+                if (effect.ritualSummonerId == null) {
+                    if (picks.isEmpty() || find(sameLevelSummoners(player, step), picks[0]) == null) return "Ese aliado no puede ser el invocador"
+                    effect.ritualSummonerId = picks[0]
+                    repeat[0] = true
+                    return null
+                }
+                val summoner = find(player.field, effect.ritualSummonerId)
+                val card = if (summoner == null || picks.isEmpty()) null else find(sameLevelCreatures(player, step, summoner), picks[0])
+                effect.ritualSummonerId = null
+                if (card == null) return "Ya no puedes invocar esa criatura"
+                summonIgnoringRequirement(room, effect, player, card, summoner!!, step.zone!!)
+                effect.summonedId = card.instanceId
+                effect.lastDone = true
+            }
             is ChooseOpponentTribute -> {
                 val opponent = room.getPlayer(room.getOpponentId(userId))
                 if (opponent == null || find(opponent.tributeZone, picks[0]) == null) return "Esa carta ya no está en los tributos de tu rival"
@@ -203,5 +241,39 @@ object SummonSteps {
             }
         }
         return null
+    }
+
+    /** The allies that can be the summoner: of the filter, with some creature of the zone of their level that has a special method. */
+    @JvmStatic
+    fun sameLevelSummoners(player: PlayerState, step: AllySpecialSummonsSameLevel): List<CardSlot> {
+        return player.field.filter { a -> "creature" == a.cardType && step.ally!!.matches(a) && !sameLevelCreatures(player, step, a).isEmpty() }
+    }
+
+    /** The creatures of the zone that ally can summon: of the filter, of its level, with a special method of their own. */
+    @JvmStatic
+    fun sameLevelCreatures(player: PlayerState, step: AllySpecialSummonsSameLevel, summoner: CardSlot): List<CardSlot> {
+        val level = summoner.getLevel() ?: return frozenListOf()
+        return zone(player, step.zone).filter { c ->
+            "creature" == c.cardType && c.specialSummonKind != null && step.filter!!.matches(c) && EffectEngine.hasLevel(c, level)
+        }
+    }
+
+    /**
+     * The special summon by the creature's own method, with that summoner, ignoring the Requerimiento and the special cost (designer,
+     * Ángeles 3): a Ritual sacrifices the summoner; Materialización makes it a material; Evolución a Recurso; Ascenso tributes it.
+     */
+    @JvmStatic
+    fun summonIgnoringRequirement(room: GameRoom, effect: PendingEffect, player: PlayerState, card: CardSlot, summoner: CardSlot, from: String) {
+        val kind = card.specialSummonKind!!.lowercase()
+        if ("ritual" == kind) {
+            zone(player, from).remove(card)
+            Summons.ritualSummon(room, player, card, from, 0, summoner, frozenListOf(), effect,
+                    player.username + " invoca por Ritual " + name(card) + " de sus " + zoneName(from) + " usando " + name(summoner)
+                            + ", ignorando el requerimiento y el coste especial (" + effect.sourceName + ")")
+            return
+        }
+        val level = summoner.getLevel() ?: 0
+        val req = SpecialRequirement(kind, level, 0, 0, 0, true, 0, 0, frozenListOf(), false, null, false, false)
+        specialSummon(room, player, card, req, summoner, frozenListOf(), from, card.specialCost ?: 0, effect)
     }
 }

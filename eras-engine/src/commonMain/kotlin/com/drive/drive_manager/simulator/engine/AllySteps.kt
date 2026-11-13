@@ -250,6 +250,17 @@ object AllySteps {
                 pick(room, effect, "Tributa 1 material de 1 de tus aliados.", "Tributar", valid, ids(valid), 1)
                 return true
             }
+            is ChangeClass -> {
+                val ally = subject(room, effect) ?: return false
+                effect.lastDone = ClassChanges.change(room, effect, ally, step.from!!, step.to!!)
+                return false
+            }
+            is GrantEffect -> {
+                val ally = subject(room, effect) ?: return false
+                GrantedEffects.grant(room, effect, ally, step.effect!!)
+                effect.lastDone = true
+                return false
+            }
             else -> throw IllegalStateException("Paso de otra familia: $step")
         }
     }

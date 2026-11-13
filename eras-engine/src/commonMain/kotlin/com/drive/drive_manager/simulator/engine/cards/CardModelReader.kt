@@ -16,7 +16,7 @@ internal object CardModelReader {
         "Amount" to listOf("EnemiesInFrontLine", "Fixed", "Gems", "HandOver", "IfThen", "InZone", "InZones", "LastCount", "LevelsOnField", "Lives", "LivesBehind", "OnBothFields", "OnField", "OpponentLevels", "Scaled", "SignedGems", "SourceStrength", "SubjectLevel", "Times", "TriggerSourceLevel", "UsedToSummon"),
         "CardEffects.Replacement" to listOf("Replacement"),
         "Condition" to listOf("All", "AllyDealtDirectDamage", "Always", "Any", "ByEffect", "Compare", "Destroyed", "EntersFrontLine", "GameIs", "Happened", "Immediately", "Not", "NothingElsePlayedThisTurn", "Summoned", "SummonedWithoutMaterial", "Targeted", "ThisClashes", "ThisIs", "ThisTributed", "YouReducedStrength"),
-        "EffectStep" to listOf("ActivateSubjectSummonEffect", "ActivateTributedSummonEffect", "AddResourceToHigherAlly", "AlliesGain", "AttachLowerFromTributes", "AttachSelfAsResourceToAlly", "AttachSubjectToHigherAlly", "AttachSubjectToSummoned", "BounceChosen", "ChooseEnemiesLevelSum", "ChooseOpponentTribute", "ChooseWeakestEnemy", "DeclareBlockSelf", "DestroyFaceUpLife", "DestroyTopLife", "Do", "EachPlayerDiscards", "EachPlayerKeepsOneInFrontLine", "EachPlayerLowersMarker", "EndYourTurn", "ExtraCombatHitThenEndTurn", "ExtraHit", "GainGemsPerOwnSacrificed", "GroupUp", "HandsToBottomDrawOpponentLives", "IfChosenGone", "IfCondition", "IfDone", "IfNotDone", "IfPossible", "IfSaved", "IfTributed", "KeepOnField", "LivesFaceDown", "MaterialOfExhaustedAllyToBack", "MaterializeSelfOnTriggerAlly", "MayDo", "NoUntapChosen", "OpponentGainsGemsAsCounter", "OpponentMovesOneToFront", "PickAllyUpToSacrificedLevel", "PickAllyWithHigherAlly", "PickAllyWithMaterials", "PlaceChosenTributeAndSelf", "PlaceFromHandUntilTurnEnd", "ReduceOpponentLivesBy", "ReduceRepeatedly", "ReturnAllyOfSummonedLevel", "ReturnSubjectAtAttackEnd", "RevealFromHand", "RevealOpponentHandSendOneToBottom", "SacrificeAlly", "SkipBlockStep", "SpecialSelfDeclaredSummoner", "SubjectFromTrigger", "SubjectIsThisCard", "SummonFreeLevelSum", "SummonLikeSubject", "TakeFromLookedDistinctLevels", "TakeFromLookedEachRestToBottom", "TakeFromLookedLikeSubject", "TributeAlliesLevelSum", "TributeAllyMaterial", "TributeAllyMaterialWhere", "TributeAllyResources", "TributesToDeckBottomForKeyword"),
+        "EffectStep" to listOf("ActivateSubjectSummonEffect", "ActivateTributedSummonEffect", "AddResourceToHigherAlly", "AlliesGain", "AllySpecialSummonsSameLevel", "AttachLowerFromTributes", "AttachSelfAsResourceToAlly", "AttachSubjectToHigherAlly", "AttachSubjectToSummoned", "BounceChosen", "ChangeClass", "ChooseEnemiesLevelSum", "ChooseOpponentTribute", "ChooseWeakestEnemy", "DeclareBlockSelf", "DestroyFaceUpLife", "DestroyTopLife", "Do", "EachPlayerDiscards", "EachPlayerKeepsOneInFrontLine", "EachPlayerLowersMarker", "EndYourTurn", "ExtraCombatHitThenEndTurn", "ExtraHit", "GainGemsPerOwnSacrificed", "GrantEffect", "GroupUp", "HandsToBottomDrawOpponentLives", "IfChosenGone", "IfCondition", "IfDone", "IfNotDone", "IfPossible", "IfSaved", "IfTributed", "KeepOnField", "LivesFaceDown", "MaterialOfExhaustedAllyToBack", "MaterializeSelfOnTriggerAlly", "MayDo", "NoUntapChosen", "OpponentGainsGemsAsCounter", "OpponentMovesOneToFront", "PickAllyUpToSacrificedLevel", "PickAllyWithHigherAlly", "PickAllyWithMaterials", "PlaceChosenTributeAndSelf", "PlaceFromHandUntilTurnEnd", "ReduceOpponentLivesBy", "ReduceRepeatedly", "ReturnAllyOfSummonedLevel", "ReturnSubjectAtAttackEnd", "RevealFromHand", "RevealOpponentHandSendOneToBottom", "SacrificeAlly", "SkipBlockStep", "SpecialSelfDeclaredSummoner", "SubjectFromTrigger", "SubjectIsThisCard", "SummonFreeLevelSum", "SummonLikeSubject", "TakeFromLookedDistinctLevels", "TakeFromLookedEachRestToBottom", "TakeFromLookedLikeSubject", "TributeAlliesLevelSum", "TributeAllyMaterial", "TributeAllyMaterialWhere", "TributeAllyResources", "TributesToDeckBottomForKeyword"),
         "Reaction" to listOf("AllyGuard", "AllyRemovalSummon", "AttacksBeforeAscended", "CostModifier", "DamageReplacement", "GainBeforeAscended", "Replacement", "SwapsBlocker", "TributesInsteadOfDamage"),
     )
 
@@ -128,11 +128,13 @@ internal object CardModelReader {
             "ActivateTributedSummonEffect" -> readEffectStepActivateTributedSummonEffect(o, at)
             "AddResourceToHigherAlly" -> readEffectStepAddResourceToHigherAlly(o, at)
             "AlliesGain" -> readEffectStepAlliesGain(o, at)
+            "AllySpecialSummonsSameLevel" -> readEffectStepAllySpecialSummonsSameLevel(o, at)
             "AttachLowerFromTributes" -> readEffectStepAttachLowerFromTributes(o, at)
             "AttachSelfAsResourceToAlly" -> readEffectStepAttachSelfAsResourceToAlly(o, at)
             "AttachSubjectToHigherAlly" -> readEffectStepAttachSubjectToHigherAlly(o, at)
             "AttachSubjectToSummoned" -> readEffectStepAttachSubjectToSummoned(o, at)
             "BounceChosen" -> readEffectStepBounceChosen(o, at)
+            "ChangeClass" -> readEffectStepChangeClass(o, at)
             "ChooseEnemiesLevelSum" -> readEffectStepChooseEnemiesLevelSum(o, at)
             "ChooseOpponentTribute" -> readEffectStepChooseOpponentTribute(o, at)
             "ChooseWeakestEnemy" -> readEffectStepChooseWeakestEnemy(o, at)
@@ -147,6 +149,7 @@ internal object CardModelReader {
             "ExtraCombatHitThenEndTurn" -> readEffectStepExtraCombatHitThenEndTurn(o, at)
             "ExtraHit" -> readEffectStepExtraHit(o, at)
             "GainGemsPerOwnSacrificed" -> readEffectStepGainGemsPerOwnSacrificed(o, at)
+            "GrantEffect" -> readEffectStepGrantEffect(o, at)
             "GroupUp" -> readEffectStepGroupUp(o, at)
             "HandsToBottomDrawOpponentLives" -> readEffectStepHandsToBottomDrawOpponentLives(o, at)
             "IfChosenGone" -> readEffectStepIfChosenGone(o, at)
@@ -837,6 +840,15 @@ internal object CardModelReader {
         )
     }
 
+    private fun readEffectStepAllySpecialSummonsSameLevel(o: JsonObject, at: String): com.drive.drive_manager.simulator.engine.EffectStep.AllySpecialSummonsSameLevel {
+        J.fields(o, at, "EffectStep.AllySpecialSummonsSameLevel", setOf("ally", "zone", "filter"), true)
+        return com.drive.drive_manager.simulator.engine.EffectStep.AllySpecialSummonsSameLevel(
+            ally = J.value(o, "ally", at, ::cardFilter),
+            zone = J.str(o, "zone", at),
+            filter = J.value(o, "filter", at, ::cardFilter),
+        )
+    }
+
     private fun readEffectStepAttachLowerFromTributes(o: JsonObject, at: String): com.drive.drive_manager.simulator.engine.EffectStep.AttachLowerFromTributes {
         J.fields(o, at, "EffectStep.AttachLowerFromTributes", setOf("filter"), true)
         return com.drive.drive_manager.simulator.engine.EffectStep.AttachLowerFromTributes(
@@ -862,6 +874,14 @@ internal object CardModelReader {
     private fun readEffectStepBounceChosen(o: JsonObject, at: String): com.drive.drive_manager.simulator.engine.EffectStep.BounceChosen {
         J.fields(o, at, "EffectStep.BounceChosen", emptySet(), true)
         return com.drive.drive_manager.simulator.engine.EffectStep.BounceChosen
+    }
+
+    private fun readEffectStepChangeClass(o: JsonObject, at: String): com.drive.drive_manager.simulator.engine.EffectStep.ChangeClass {
+        J.fields(o, at, "EffectStep.ChangeClass", setOf("from", "to"), true)
+        return com.drive.drive_manager.simulator.engine.EffectStep.ChangeClass(
+            from = J.str(o, "from", at),
+            to = J.str(o, "to", at),
+        )
     }
 
     private fun readEffectStepChooseEnemiesLevelSum(o: JsonObject, at: String): com.drive.drive_manager.simulator.engine.EffectStep.ChooseEnemiesLevelSum {
@@ -944,6 +964,13 @@ internal object CardModelReader {
     private fun readEffectStepGainGemsPerOwnSacrificed(o: JsonObject, at: String): com.drive.drive_manager.simulator.engine.EffectStep.GainGemsPerOwnSacrificed {
         J.fields(o, at, "EffectStep.GainGemsPerOwnSacrificed", emptySet(), true)
         return com.drive.drive_manager.simulator.engine.EffectStep.GainGemsPerOwnSacrificed
+    }
+
+    private fun readEffectStepGrantEffect(o: JsonObject, at: String): com.drive.drive_manager.simulator.engine.EffectStep.GrantEffect {
+        J.fields(o, at, "EffectStep.GrantEffect", setOf("effect"), true)
+        return com.drive.drive_manager.simulator.engine.EffectStep.GrantEffect(
+            effect = J.value(o, "effect", at, ::effectScript),
+        )
     }
 
     private fun readEffectStepGroupUp(o: JsonObject, at: String): com.drive.drive_manager.simulator.engine.EffectStep.GroupUp {
