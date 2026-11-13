@@ -51,7 +51,7 @@ class LanguageCatalogExportTest {
         StringBuilder s = new StringBuilder("## " + title + " (" + records.size() + ")\n\n| Nombre | Campos | Cartas | Ejemplo |\n|---|---|---|---|\n");
         for (Class<?> record : records) {
             Set<String> cards = users.getOrDefault(record.getSimpleName(), Set.of());
-            String fields = Arrays.stream(record.getRecordComponents()).map(RecordComponent::getName).collect(Collectors.joining(", "));
+            String fields = record.getRecordComponents() == null ? "" : Arrays.stream(record.getRecordComponents()).map(RecordComponent::getName).collect(Collectors.joining(", "));
             s.append("| `").append(record.getSimpleName()).append("` | ").append(fields).append(" | ").append(cards.size()).append(" | ")
                     .append(cards.stream().findFirst().orElse("")).append(" |\n");
         }
@@ -59,7 +59,8 @@ class LanguageCatalogExportTest {
     }
 
     private static void collect(Class<?> type, List<Class<?>> into) {
-        if (type.isRecord()) {
+        // A record, or a Kotlin data object (a word with no fields): a word of the language
+        if (type.isRecord() || (!type.isInterface() && !java.lang.reflect.Modifier.isAbstract(type.getModifiers()))) {
             into.add(type);
             return;
         }
