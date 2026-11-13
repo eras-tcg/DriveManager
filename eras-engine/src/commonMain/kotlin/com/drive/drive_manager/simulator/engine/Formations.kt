@@ -220,6 +220,12 @@ object Formations {
         return left != null && left === formationOf(player, order.getOrNull(at + 1)?.instanceId) && !left.contains(card.instanceId)
     }
 
+    /** A card placed by hand on the Línea frontal cannot stand between two members of a formation it is not in: it goes to the end. */
+    @JvmStatic
+    fun keepWhole(player: PlayerState, card: CardSlot) {
+        if (inFrontLine(card) && splits(player, card)) placeAt(player, card, ordered(player).size)
+    }
+
     @JvmStatic
     fun hasEntries(room: GameRoom): Boolean = room.players.values.any { !it.formationEntries.isEmpty() }
 

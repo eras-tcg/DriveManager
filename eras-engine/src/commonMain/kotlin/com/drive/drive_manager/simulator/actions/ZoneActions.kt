@@ -101,6 +101,13 @@ object ZoneActions {
             to.add(card)
         }
 
+        // Enlace: a creature put on the Línea frontal by hand chooses its position and link now, not at the next action
+        if (Zone.FIELD.`is`(toZone) && room.status == GameRoom.RoomStatus.IN_PROGRESS) {
+            com.drive.drive_manager.simulator.engine.Formations.keepWhole(player, card)
+            com.drive.drive_manager.simulator.engine.EffectEngine.refreshContinuous(room)
+            if (room.prompt == null && room.chain.isEmpty() && com.drive.drive_manager.simulator.engine.Formations.hasEntries(room))
+                com.drive.drive_manager.simulator.engine.Chain.advance(room)
+        }
         val update = GameStateUpdate.from(room, ActionType.MOVE_CARD, userId)
         update.logEntry = buildMoveLogEntry(room, player, card, fromZone, toZone, toPosition, wasPublic)
         return update

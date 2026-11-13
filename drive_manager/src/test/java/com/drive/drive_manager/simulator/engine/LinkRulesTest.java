@@ -248,6 +248,38 @@ class LinkRulesTest extends CardBatchSupport {
     }
 
     @Test
+    void aCreatureMovedByHandToTheFrontLineIsAskedAtOnceNotAtTheNextAction() {
+        onField(host, linked("a", "A", 2, BOTH));
+        onField(host, linked("e", "Entra", 3, BOTH), BACK);
+        settle();
+        com.drive.drive_manager.simulator.room.GameAction move = new com.drive.drive_manager.simulator.room.GameAction();
+        move.setType("MOVE_CARD");
+        move.setPayload(new java.util.HashMap<>(Map.of("instanceId", "e", "fromZone", "field", "toZone", "field", "x", 70.0, "y", 25.0)));
+        com.drive.drive_manager.simulator.actions.ZoneActions.handleMove(room, "host", move);
+        assertThat(room.getPrompt()).isNotNull();
+        assertThat(room.getPrompt().getPurpose()).isEqualTo(PromptPurpose.FORMATION_ENTRY.id());
+        assertThat(room.getPrompt().getSubjectId()).isEqualTo("e");
+    }
+
+    @Test
+    void aCreatureMovedByHandBetweenTwoMembersGoesToTheEndOfTheRow() {
+        onField(host, linked("a", "A", 2, BOTH));
+        onField(host, linked("b", "B", 2, BOTH));
+        CardSlot c = onField(host, card("c", "Suelta", 1, 1, "R"));
+        settle();
+        assertThat(join("b", "a")).isNull();
+        Formations.placeAt(host, c, 2);
+        settle();
+        com.drive.drive_manager.simulator.room.GameAction move = new com.drive.drive_manager.simulator.room.GameAction();
+        move.setType("MOVE_CARD");
+        double between = (Formations.ordered(host).get(0).getX() + Formations.ordered(host).get(1).getX()) / 2;
+        move.setPayload(new java.util.HashMap<>(Map.of("instanceId", "c", "fromZone", "field", "toZone", "field", "x", between, "y", 25.0)));
+        com.drive.drive_manager.simulator.actions.ZoneActions.handleMove(room, "host", move);
+        assertThat(order(host).get(2)).isEqualTo("c");
+        assertThat(host.getFormations()).hasSize(1);
+    }
+
+    @Test
     void aCreatureCannotStayBetweenTwoMembersOfAFormationItDoesNotJoin() {
         CardSlot a = onField(host, linked("a", "A", 3, BOTH));
         CardSlot b = onField(host, linked("b", "B", 1, BOTH));
