@@ -380,4 +380,20 @@ class LinkRulesTest extends CardBatchSupport {
         assertThat(b.getFormationGrants()).isNotEmpty();
         assertThat(a.getFormationGrants()).isNotEmpty();
     }
+
+    @Test
+    void theLinkIsChosenAsSoonAsItEntersBeforeTheEffectsItsEntranceTriggers() {
+        onField(host, linked("a", "A", 2, BOTH));
+        settle();
+        // Peón (En Invocación: look at 5…) summoned by an effect into the Línea frontal next to A
+        summonByEffectToFront(linked("pe", "Peón de las Armaduras Marfil", 1, BOTH));
+        assertThat(room.getPrompt()).isNotNull();
+        assertThat(room.getPrompt().getPurpose()).isEqualTo(PromptPurpose.FORMATION_ENTRY.id());
+        assertThat(room.getPrompt().getSubjectId()).isEqualTo("pe");
+        answer(room.getPrompt().getValidIds().stream().filter(o -> o.endsWith(":a")).findFirst().orElseThrow());
+        assertThat(host.getFormations()).containsExactly(List.of("a", "pe"));
+        // Then its own En Invocación goes on
+        assertThat(room.getPrompt()).isNotNull();
+        assertThat(room.getPrompt().getPurpose()).isNotEqualTo(PromptPurpose.FORMATION_ENTRY.id());
+    }
 }

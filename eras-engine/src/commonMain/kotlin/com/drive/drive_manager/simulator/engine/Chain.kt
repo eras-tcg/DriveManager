@@ -51,6 +51,12 @@ object Chain {
                 promptRemoval(room)
                 continue
             }
+            // Enlace: a creature that entered the Línea frontal takes its place and may link at once, before any effect
+            // its entrance triggers (designer, 2026-11-13)
+            if (Formations.hasEntries(room)) {
+                Formations.offerEntry(room)
+                continue
+            }
             val chain = room.chain
             // Rules 7.2.0.4 and 11.6.0.4: once a chain is closed and resolving nothing can be added to it; what
             // triggers meanwhile waits until the whole chain has resolved and then forms a new chain
@@ -66,9 +72,6 @@ object Chain {
             } else if (!chain.isEmpty()) {
                 if (offerPriority(room)) return
                 stepTop(room)
-            } else if (Formations.hasEntries(room)) {
-                // Enlace: a creature that entered the Línea frontal takes its position and may link, once nothing else is pending
-                Formations.offerEntry(room)
             } else if (room.pendingAscension != null) {
                 completeAscension(room)
             } else if (room.combat != null) {
