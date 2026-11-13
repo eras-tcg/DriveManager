@@ -261,6 +261,7 @@ object Removals {
                 CardEffects.ReplacementCost.ALLY_SPECIAL_SUMMON, CardEffects.ReplacementCost.GUARD_MATERIAL_AND_SACRIFICE,
                 CardEffects.ReplacementCost.RESOURCE_TO_BACK_WITH_OTHERS -> false
                 CardEffects.ReplacementCost.RESOURCE_TRIBUTED_ANOTHER_TO_HAND -> card.resources!!.size >= 2
+                CardEffects.ReplacementCost.ALLY_TO_LIFE_FACE_DOWN -> owner.field.any { c -> c !== card && "creature" == c.cardType }
             }
             if (payable) options.add(ReplacementOption(r.id + "@" + card.instanceId, card, r, r.label, r.text))
         }
@@ -418,6 +419,21 @@ object Removals {
             destroy(room, sacrificed, player, true, CAUSE_EFFECT, player.userId, guard.instanceId, null)
             return null
         }
+        if (PromptPurpose.REPLACE_LIFE.`is`(prompt.purpose)) {
+            // "en su lugar, puedes colocar 1 aliado al tope de tus vidas bocabajo": that ally goes there, the card stays
+            val ally = (if (picks.isEmpty()) null else find(player.field, picks[0]))
+            if (ally == null || ally === card || "creature" != ally.cardType) return "Elige 1 aliado"
+            room.prompt = null
+            room.pendingRemovals.removeAt(0)
+            removeFromField(player, ally)
+            ally.faceDown = true
+            player.lifeStack.add(0, ally)
+            record(room, GameEvent.SEND, player.userId, ally, "field", "lifeStack", null, null,
+                player.username + " coloca " + name(ally) + " al tope de sus vidas bocabajo: " + (if (card == null) "la carta" else name(card))
+                        + " no es " + (if (pending.destroy) "destruida" else "removida"))
+            if (card != null) destroyIfStillNoStrength(room, pending, player, card)
+            return null
+        }
         if (PromptPurpose.REPLACE_HAND.`is`(prompt.purpose)) {
             // Caballero Leal: the hand card tributed instead
             val paid = (if (picks.isEmpty()) null else find(player.hand, picks[0])) ?: return "Elige 1 carta de tu mano"
@@ -527,6 +543,16 @@ object Removals {
                     "Coloca hasta 2 de estas criaturas en tu retaguardia; luego " + name(card) + " es destruida.", "A la retaguardia", valid, card.materials)
                 room.prompt!!.min = 1
                 room.prompt!!.max = min(2, valid.size)
+                return null
+            }
+            CardEffects.ReplacementCost.ALLY_TO_LIFE_FACE_DOWN -> {
+                // The ally is chosen next; the removal stays pending until then
+                val allies = player.field.filter { c -> c !== card && "creature" == c.cardType }
+                rulesPrompt(room, player.userId, PromptPurpose.REPLACE_LIFE.id(), name(card) + " · " + r.label,
+                    "Coloca 1 aliado al tope de tus vidas bocabajo: " + name(card) + " no es " + (if (pending.destroy) "destruida." else "removida."),
+                    "A tus vidas", allies, allies)
+                room.prompt!!.min = 1
+                room.prompt!!.subjectId = card.instanceId
                 return null
             }
             CardEffects.ReplacementCost.TRIBUTE_ONE_FROM_HAND -> {

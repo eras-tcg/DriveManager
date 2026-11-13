@@ -89,6 +89,15 @@ object RulesActions {
         return GameStateUpdate.from(room, ActionType.ACTIVATE_EFFECT, userId)
     }
 
+    /** Enlace: a creature of the Línea frontal links with the one next to it (its formation, or a new one with it). */
+    @JvmStatic
+    fun handleFormationJoin(room: GameRoom, userId: String?, action: GameAction): GameStateUpdate {
+        val error = com.drive.drive_manager.simulator.engine.Formations.joinByPlayer(room, userId, action.getString("instanceId"),
+            action.getString("targetId"))
+        if (error != null) return GameStateUpdate.error(room.roomId, error)
+        return GameStateUpdate.from(room, ActionType.FORMATION_JOIN, userId)
+    }
+
     /**
      * A creature dropped onto the field from a non-hand zone only becomes an
      * "effect summon" once the player answers the draw/no-draw prompt (see

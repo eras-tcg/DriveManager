@@ -108,7 +108,10 @@ class LocalDecks(decksJson: JsonObject?) {
             val allKeywords = ArrayList(slot.keywords!!)
             allKeywords.addAll(slot.inheritKeywords!!)
             slot.unprogrammed = CardEffects.pending(string(meta, "cardName"), list(meta, "effects").size,
-                list(meta, "inheritEffects").size, allKeywords)
+                list(meta, "inheritEffects").size, list(meta, "formationEffects").size + list(meta, "formationKeywordEffects").size, allKeywords)
+            // Enlace: its printed arrows and its category
+            slot.arrows = strings(meta, "arrows")
+            slot.enlace = bool(meta, "enlace")
             slot.mentions = mentionedTypes(meta)
             val colors = ArrayList<String>()
             string(meta, "colorIdentity")?.let { colors.add(it) }
@@ -123,7 +126,7 @@ class LocalDecks(decksJson: JsonObject?) {
         /** `CardMeta.mentionedTypes`: the [tipos] written in its effects and inherited effects. */
         private fun mentionedTypes(meta: JsonObject): MutableList<String> {
             val found = ArrayList<String>()
-            for (effect in list(meta, "effects") + list(meta, "inheritEffects")) {
+            for (effect in list(meta, "effects") + list(meta, "inheritEffects") + list(meta, "formationEffects")) {
                 for (block in list(effect as JsonObject, "effectBlocks")) {
                     for (key in listOf("activationCondition", "cost", "resolution")) {
                         val text = string(block as JsonObject, key) ?: continue

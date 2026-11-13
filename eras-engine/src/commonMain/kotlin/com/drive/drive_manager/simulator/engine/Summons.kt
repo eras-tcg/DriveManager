@@ -281,6 +281,8 @@ object Summons {
      */
     @JvmStatic
     fun inheritFromSummoner(room: GameRoom, target: CardSlot, summoner: CardSlot?) {
+        // Enlace: its position and its formation too (designer, 2026-11-13)
+        Formations.inherit(room, target, summoner!!)
         target.faceDown = false
         target.x = summoner!!.x
         target.y = summoner.y

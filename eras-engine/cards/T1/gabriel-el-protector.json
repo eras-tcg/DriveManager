@@ -1,0 +1,26 @@
+{
+  "name" : "gabriel el protector",
+  "formation" : {
+    "continuous" : [
+      {
+        "label" : "Todos Los Turnos",
+        "text" : "Esta carta Verde o [paladín] no puede ser removida por efectos oponentes.",
+        "condition" : {
+          "type" : "ThisMatches",
+          "filter" : {
+            "colors" : [
+              "G"
+            ],
+            "classes" : [
+              "paladín"
+            ]
+          }
+        },
+        "keywords" : [
+          "Irremovible por efectos oponentes"
+        ],
+        "zone" : "field"
+      }
+    ]
+  }
+}

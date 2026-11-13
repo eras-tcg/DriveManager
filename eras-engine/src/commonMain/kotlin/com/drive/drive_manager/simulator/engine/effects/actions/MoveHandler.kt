@@ -48,7 +48,7 @@ class MoveHandler : ActionHandler<Move> {
         if (action.rest != null && !ctx.looked().isEmpty()) {
             val min = min(ctx.amount(selector.min), max)
             ctx.ask(instruction(ctx, action, min, max), action.label ?: label(action.to), ctx.looked(), valid, min, max)
-            ctx.asksOrder(Move.DECK_TOP == action.rest)
+            if (Move.DECK_TOP_KEPT != action.rest) ctx.asksOrder(Move.DECK_TOP == action.rest)
             return true
         }
         if (max <= 0) {
@@ -78,7 +78,8 @@ class MoveHandler : ActionHandler<Move> {
         }
         if (action.cards!!.self() == Selector.Self.REQUIRE && !picked.isEmpty() && picked.none { ctx.isSelf(it) }) return "Debes incluir esta carta"
         move(ctx, action, picked)
-        if (action.rest != null) ctx.lookedRestTo(action.rest, answer.order)
+        if (Move.DECK_TOP_KEPT == action.rest) ctx.lookedRestTo(Move.DECK_TOP, null)
+        else if (action.rest != null) ctx.lookedRestTo(action.rest, answer.order)
         return null
     }
 
@@ -119,6 +120,7 @@ class MoveHandler : ActionHandler<Move> {
         if (action.to!!.startsWith("materials:") || action.to.startsWith("resources:")) {
             return "Añade " + cards + " como " + (if (action.to.startsWith("materials:")) "material." else "recurso.")
         }
+        if (Move.DECK_TOP_KEPT == action.rest) return instructionOf(action, cards, random) + " El resto vuelve al tope de tu mazo en su orden."
         if (action.rest != null) {
             val rest = if (Move.DECK_TOP == action.rest) " Ordena el resto: vuelve al tope de tu mazo (la de la izquierda queda arriba)."
                     else " Ordena el resto: irá al fondo de tu mazo en ese orden."

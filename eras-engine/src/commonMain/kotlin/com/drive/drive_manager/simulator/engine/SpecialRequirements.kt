@@ -63,6 +63,9 @@ object SpecialRequirements {
         val alliesSumByCost: Boolean = false,
         /** "mientras no controlas otros aliados nivel N": N (0 without it); the summoner may be of that level. */
         val aloneAtLevel: Int = 0,
+        /** Enlace: "criatura nivel N en una formación de [al menos] K criaturas": K (0 without it), and whether it is "al menos". */
+        val formationSize: Int = 0,
+        val formationAtLeast: Boolean = false,
     ) {
         /** `moreMaterials`: "N o más criaturas" as materials. */
         constructor(
@@ -81,7 +84,7 @@ object SpecialRequirements {
 
         fun withAlternative(other: SpecialRequirement?): SpecialRequirement {
             return SpecialRequirement(kind, level, alliesSum, materialLevel, levelSum, atLeast, maxLevel, materialCount, materialZones,
-                    noSummoner, other, alone, strongest, summonerZones, moreMaterials, alliesSumByCost, aloneAtLevel)
+                    noSummoner, other, alone, strongest, summonerZones, moreMaterials, alliesSumByCost, aloneAtLevel, formationSize, formationAtLeast)
         }
 
         /** The summoner is declared from the hand or the Tributos (not the field). */
@@ -183,8 +186,11 @@ object SpecialRequirements {
         val aloneAt = Platform.regex("no\\s+control\\w*\\s+otros\\s+aliados\\s+ni[ev]*l\\s*(\\d+)").find(text)
         val aloneAtLevel = aloneAt?.groupValues?.get(1)?.toInt() ?: 0
         val strongest = Platform.regex("fuerza\\s+igual\\s+o\\s+mayor\\s+que\\s+la\\s+de\\s+cualquier\\s+otro\\s+aliado").containsMatchIn(text)
+        // Enlace: "en una formación de 3 criaturas", "en una formación de al menos 3 criaturas"
+        val formation = Platform.regex("en\\s+una\\s+formaci[oó]n\\s+de\\s+(al\\s+menos\\s+)?(\\d+)\\s+criaturas").find(text)
         return SpecialRequirement(kind, summonerLevel, alliesSum, materialLevel, levelSum, atLeast, maxLevel, materialCount, zones, false, null,
-                alone, strongest, null, false, alliesSumByCost, aloneAtLevel)
+                alone, strongest, null, false, alliesSumByCost, aloneAtLevel, formation?.groupValues?.get(2)?.toInt() ?: 0,
+                formation != null && formation.groups[1]?.value != null)
     }
 
     /** "en campo o mano", "en tu mano o tributos", "en el campo"; when it says none, the Tributos or the field. */
@@ -239,7 +245,17 @@ object SpecialRequirements {
                             && (req.aloneAtLevel == 0 || creatures.none { o -> o !== c && o.getLevel() == req.aloneAtLevel })
                             // "con fuerza igual o mayor que la de cualquier otro aliado"
                             && (!req.strongest || creatures.all { o -> o === c || strength(o) <= strength(c) })
+                            // Enlace: "en una formación de [al menos] K criaturas"
+                            && inFormationAsAsked(player, c, optionFor(req, c)!!)
                 }
+    }
+
+    /** Enlace: the summoner is in a formation of the size its Requerimiento asks ("de 3 criaturas", "de al menos 3 criaturas"). */
+    @JvmStatic
+    fun inFormationAsAsked(player: PlayerState, summoner: CardSlot, req: SpecialRequirement): Boolean {
+        if (req.formationSize <= 0) return true
+        val size = Formations.sizeOf(player, summoner)
+        return if (req.formationAtLeast) size >= req.formationSize else size == req.formationSize
     }
 
     /**

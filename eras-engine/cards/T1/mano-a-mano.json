@@ -1,0 +1,141 @@
+{
+  "name" : "mano a mano",
+  "effects" : [
+    {
+      "id" : "mano-a-mano:en-juego",
+      "moment" : "ON_PLAY",
+      "mandatory" : true,
+      "label" : "En Juego",
+      "text" : "Mueve 1 aliado [paladín] de tu retaguardia a tu línea frontal. Luego: tributa esta carta.",
+      "steps" : [
+        {
+          "type" : "Do",
+          "action" : {
+            "type" : "Move",
+            "cards" : {
+              "zones" : "backLine",
+              "owner" : "YOU",
+              "filter" : {
+                "cardType" : "creature",
+                "classes" : [
+                  "paladín"
+                ]
+              },
+              "min" : {
+                "type" : "Fixed",
+                "value" : 1
+              },
+              "max" : {
+                "type" : "Fixed",
+                "value" : 1
+              },
+              "self" : "ANY",
+              "mode" : "CHOOSE"
+            },
+            "to" : "frontLine"
+          }
+        },
+        {
+          "type" : "Do",
+          "action" : {
+            "type" : "Move",
+            "cards" : {
+              "zones" : "field",
+              "owner" : "YOU",
+              "filter" : {},
+              "min" : {
+                "type" : "Fixed",
+                "value" : 1
+              },
+              "max" : {
+                "type" : "Fixed",
+                "value" : 1
+              },
+              "self" : "ANY",
+              "mode" : "SELF"
+            },
+            "to" : "tributeZone"
+          }
+        }
+      ],
+      "sourceZone" : "field",
+      "limit" : "NONE"
+    },
+    {
+      "id" : "mano-a-mano:en-tributos",
+      "moment" : "ON_EVENT",
+      "label" : "En Tributos",
+      "text" : "Al entrar al paso de bloqueo: puedes descartar esta carta; cambia de posición dos aliados en la misma formación. Si lo haces: ambos aliados ganan fuerza 3 hasta el final del combate.",
+      "cost" : [
+        {
+          "type" : "Do",
+          "action" : {
+            "type" : "Move",
+            "cards" : {
+              "zones" : "tributeZone",
+              "owner" : "YOU",
+              "filter" : {},
+              "min" : {
+                "type" : "Fixed",
+                "value" : 1
+              },
+              "max" : {
+                "type" : "Fixed",
+                "value" : 1
+              },
+              "self" : "ANY",
+              "mode" : "SELF"
+            },
+            "to" : "discardPile"
+          }
+        }
+      ],
+      "steps" : [
+        {
+          "type" : "SwapInFormation"
+        },
+        {
+          "type" : "IfDone",
+          "covers" : 1
+        },
+        {
+          "type" : "Do",
+          "action" : {
+            "type" : "Modify",
+            "cards" : {
+              "zones" : "saved:swapped",
+              "owner" : "YOU",
+              "filter" : {},
+              "min" : {
+                "type" : "Fixed"
+              },
+              "max" : {
+                "type" : "Fixed",
+                "value" : 2147483647
+              },
+              "self" : "ANY",
+              "mode" : "ALL"
+            },
+            "strength" : {
+              "type" : "Fixed",
+              "value" : 3
+            },
+            "until" : "ATTACK"
+          }
+        }
+      ],
+      "condition" : {
+        "type" : "Happened",
+        "eventType" : "COMBAT_STEP",
+        "actor" : "ANY",
+        "owner" : "ANY",
+        "data" : [
+          "step=BLOCK",
+          "moment=ENTER"
+        ]
+      },
+      "sourceZone" : "tributeZone",
+      "limit" : "NONE"
+    }
+  ]
+}

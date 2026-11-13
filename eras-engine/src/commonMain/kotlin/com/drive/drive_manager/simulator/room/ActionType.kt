@@ -20,6 +20,8 @@ enum class ActionType(vararg flags: Flag) {
     PLAY_CARD(RULES),
     RITUAL_SUMMON(RULES),
     ACTIVATE_EFFECT(RULES),
+    /** Enlace, in the player's own main phase: {instanceId, targetId}, the creature links with the one next to it (formationJoins). */
+    FORMATION_JOIN(RULES),
     JOIN_ROOM(RULES, OWNER_ONLY, WHILE_RESOLVING, NOT_A_STEP, REPLAY),
     DRAW_CARD,
     MOVE_CARD,

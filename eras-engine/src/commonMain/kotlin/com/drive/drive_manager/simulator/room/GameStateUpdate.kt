@@ -97,6 +97,12 @@ class GameStateUpdate {
     var legalActions: MutableMap<String, MutableMap<String, MutableList<String>>>? = null
     /** The enemies each attacker can attack, by player id and then by attacker. */
     var attackTargets: MutableMap<String, MutableMap<String, MutableList<String>>>? = null
+    /**
+     * Enlace, in the player's own main phase with nothing pending: by player id and then by a creature of their Línea frontal that is in
+     * no formation, the creatures next to it it can link with now (FORMATION_JOIN): one of a formation (it joins that formation) or another
+     * without one (they form a new one). Null when there are none (Formations.joinOptions).
+     */
+    var formationJoins: MutableMap<String, MutableMap<String, MutableList<String>>>? = null
     /** Who won the game that just ended, and why ("lives", "surrender"). */
     var winnerId: String? = null
     var endReason: String? = null
@@ -194,6 +200,12 @@ class GameStateUpdate {
                 legalActions[id] = LegalActions.of(room, id)
                 attackTargets[id] = LegalActions.attackTargets(room, id)
             }
+            val joins = LinkedHashMap<String, MutableMap<String, MutableList<String>>>()
+            for (id in room.players.keys) {
+                val options = com.drive.drive_manager.simulator.engine.Formations.joinOptions(room, id)
+                if (!options.isEmpty()) joins[id] = options
+            }
+            u.formationJoins    = if (joins.isEmpty()) null else joins
             // Unmodifiable, as Stream.toList() made it
             val structures = frozenListCopy(room.players.keys.filter { id -> Summons.structurePlayed(room, id) })
             u.structurePlayed   = if (structures.isEmpty()) null else structures
@@ -271,6 +283,7 @@ class GameStateUpdate {
         if (specialSummonable != other.specialSummonable) return false
         if (unplayable != other.unplayable) return false
         if (legalActions != other.legalActions) return false
+        if (formationJoins != other.formationJoins) return false
         if (attackTargets != other.attackTargets) return false
         if (winnerId != other.winnerId) return false
         if (endReason != other.endReason) return false
@@ -364,6 +377,7 @@ class GameStateUpdate {
         result = result * PRIME + (h_unplayable?.hashCode() ?: 43)
         val h_legalActions: Any? = legalActions
         result = result * PRIME + (h_legalActions?.hashCode() ?: 43)
+        result = result * PRIME + (formationJoins?.hashCode() ?: 43)
         val h_attackTargets: Any? = attackTargets
         result = result * PRIME + (h_attackTargets?.hashCode() ?: 43)
         val h_winnerId: Any? = winnerId
@@ -374,5 +388,5 @@ class GameStateUpdate {
     }
 
     override fun toString(): String =
-        "GameStateUpdate(roomId=${roomId}, status=${status}, players=${players}, hostId=${hostId}, editor=${editor}, bot=${bot}, ranked=${ranked}, replay=${replay}, queued=${queued}, editorBot=${editorBot}, editorSelfBot=${editorSelfBot}, selfBotLevel=${selfBotLevel}, botDelayMs=${botDelayMs}, botEdge=${botEdge}, paused=${paused}, timelineAt=${timelineAt}, timelineSize=${timelineSize}, botLevel=${botLevel}, botChoices=${botChoices}, mulliganReady=${mulliganReady}, firstChoice=${firstChoice}, currentTurnUserId=${currentTurnUserId}, currentPhase=${currentPhase}, event=${event}, actorId=${actorId}, error=${error}, sharedCounter=${sharedCounter}, postGameChoices=${postGameChoices}, subjectUserId=${subjectUserId}, targetedInstanceId=${targetedInstanceId}, targetingSourceInstanceId=${targetingSourceInstanceId}, revealedCardImageUrl=${revealedCardImageUrl}, revealedCardName=${revealedCardName}, logEntry=${logEntry}, eventLog=${eventLog}, timeline=${timeline}, chain=${chain}, prompt=${prompt}, combat=${combat}, firstPlayerId=${firstPlayerId}, starterAdvantageUserId=${starterAdvantageUserId}, activatable=${activatable}, structurePlayed=${structurePlayed}, specialSummonable=${specialSummonable}, unplayable=${unplayable}, legalActions=${legalActions}, attackTargets=${attackTargets}, winnerId=${winnerId}, endReason=${endReason})"
+        "GameStateUpdate(roomId=${roomId}, status=${status}, players=${players}, hostId=${hostId}, editor=${editor}, bot=${bot}, ranked=${ranked}, replay=${replay}, queued=${queued}, editorBot=${editorBot}, editorSelfBot=${editorSelfBot}, selfBotLevel=${selfBotLevel}, botDelayMs=${botDelayMs}, botEdge=${botEdge}, paused=${paused}, timelineAt=${timelineAt}, timelineSize=${timelineSize}, botLevel=${botLevel}, botChoices=${botChoices}, mulliganReady=${mulliganReady}, firstChoice=${firstChoice}, currentTurnUserId=${currentTurnUserId}, currentPhase=${currentPhase}, event=${event}, actorId=${actorId}, error=${error}, sharedCounter=${sharedCounter}, postGameChoices=${postGameChoices}, subjectUserId=${subjectUserId}, targetedInstanceId=${targetedInstanceId}, targetingSourceInstanceId=${targetingSourceInstanceId}, revealedCardImageUrl=${revealedCardImageUrl}, revealedCardName=${revealedCardName}, logEntry=${logEntry}, eventLog=${eventLog}, timeline=${timeline}, chain=${chain}, prompt=${prompt}, combat=${combat}, firstPlayerId=${firstPlayerId}, starterAdvantageUserId=${starterAdvantageUserId}, activatable=${activatable}, structurePlayed=${structurePlayed}, specialSummonable=${specialSummonable}, unplayable=${unplayable}, legalActions=${legalActions}, attackTargets=${attackTargets}, formationJoins=${formationJoins}, winnerId=${winnerId}, endReason=${endReason})"
 }

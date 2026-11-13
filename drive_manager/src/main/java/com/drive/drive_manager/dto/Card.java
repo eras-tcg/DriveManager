@@ -43,6 +43,14 @@ public class Card {
     private String requirement;
     private String rarity;
     private List<String> colors;
+    /** Enlace: the arrows printed on it ("left", "right"); null or empty for a card without them. */
+    private List<String> arrows;
+    /** "Criatura Enlace": a creature of that category (its cardType stays "creature"). */
+    private Boolean enlace;
+    /** Enlace: its link effect ("Efecto de enlace"), what it gives the members of its formation it points to. */
+    private List<Effect> formationEffects;
+    /** Enlace: the abilities its link effect gives ("Perforante"). */
+    private List<CardKeywordEffect> formationKeywordEffects;
     /**
      * The card's alternative arts, empty for most cards: a copy pulled from a pack may come out with one of them (each
      * by its own odds or the shop's, ShopOdds.alt). Only pictures of the same card, never cards of their own: they

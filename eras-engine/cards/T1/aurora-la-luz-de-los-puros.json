@@ -1,0 +1,78 @@
+{
+  "name" : "aurora la luz de los puros",
+  "effects" : [
+    {
+      "id" : "aurora:en-invocacion",
+      "moment" : "ON_SUMMON",
+      "label" : "En Invocación",
+      "text" : "Puedes tributar 1 aliado. Si lo haces: coloca 1 carta de tu mano al tope de tus vidas.",
+      "steps" : [
+        {
+          "type" : "Do",
+          "action" : {
+            "type" : "Move",
+            "cards" : {
+              "zones" : "field",
+              "owner" : "YOU",
+              "filter" : {
+                "cardType" : "creature"
+              },
+              "min" : {
+                "type" : "Fixed",
+                "value" : 1
+              },
+              "max" : {
+                "type" : "Fixed",
+                "value" : 1
+              },
+              "self" : "EXCLUDE",
+              "mode" : "CHOOSE"
+            },
+            "to" : "tributeZone"
+          }
+        },
+        {
+          "type" : "IfDone",
+          "covers" : 1
+        },
+        {
+          "type" : "Do",
+          "action" : {
+            "type" : "Move",
+            "cards" : {
+              "zones" : "hand",
+              "owner" : "YOU",
+              "filter" : {},
+              "min" : {
+                "type" : "Fixed",
+                "value" : 1
+              },
+              "max" : {
+                "type" : "Fixed",
+                "value" : 1
+              },
+              "self" : "ANY",
+              "mode" : "CHOOSE"
+            },
+            "to" : "lifeTop",
+            "faceDown" : true
+          }
+        }
+      ],
+      "sourceZone" : "field",
+      "limit" : "NONE"
+    }
+  ],
+  "formation" : {
+    "reactions" : [
+      {
+        "type" : "Replacement",
+        "id" : "aurora:enlace",
+        "label" : "Todos Los Turnos",
+        "text" : "Cuando esta carta fuera a ser removida: en su lugar, puedes colocar 1 aliado al tope de tus vidas bocabajo.",
+        "limit" : "NONE",
+        "cost" : "ALLY_TO_LIFE_FACE_DOWN"
+      }
+    ]
+  }
+}

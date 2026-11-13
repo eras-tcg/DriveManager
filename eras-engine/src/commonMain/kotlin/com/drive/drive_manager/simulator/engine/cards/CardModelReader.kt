@@ -15,8 +15,8 @@ internal object CardModelReader {
         "Action" to listOf("AtEndOfTurn", "Attack", "Damage", "Destroy", "Draw", "Gems", "Look", "Modify", "Move", "Play", "Select", "Sequence", "SetTapped", "Summon", "SummonSpecial"),
         "Amount" to listOf("EnemiesInFrontLine", "Fixed", "Gems", "HandOver", "IfThen", "InZone", "InZones", "LastCount", "LevelsOnField", "Lives", "LivesBehind", "OnBothFields", "OnField", "OpponentLevels", "Scaled", "SignedGems", "SourceStrength", "SubjectLevel", "Times", "TriggerSourceLevel", "UsedToSummon"),
         "CardEffects.Replacement" to listOf("Replacement"),
-        "Condition" to listOf("All", "AllyDealtDirectDamage", "Always", "Any", "ByEffect", "Compare", "Destroyed", "EntersFrontLine", "GameIs", "Happened", "Immediately", "Not", "NothingElsePlayedThisTurn", "Summoned", "SummonedWithoutMaterial", "Targeted", "ThisClashes", "ThisIs", "ThisTributed", "YouReducedStrength"),
-        "EffectStep" to listOf("ActivateSubjectSummonEffect", "ActivateTributedSummonEffect", "AddResourceToHigherAlly", "AlliesGain", "AllySpecialSummonsSameLevel", "AttachLowerFromTributes", "AttachSelfAsResourceToAlly", "AttachSubjectToHigherAlly", "AttachSubjectToSummoned", "BounceChosen", "ChangeClass", "ChooseEnemiesLevelSum", "ChooseOpponentTribute", "ChooseWeakestEnemy", "DeclareBlockSelf", "DestroyFaceUpLife", "DestroyTopLife", "Do", "EachPlayerDiscards", "EachPlayerKeepsOneInFrontLine", "EachPlayerLowersMarker", "EndYourTurn", "ExtraCombatHitThenEndTurn", "ExtraHit", "GainGemsPerOwnSacrificed", "GrantEffect", "GroupUp", "HandsToBottomDrawOpponentLives", "IfChosenGone", "IfCondition", "IfDone", "IfNotDone", "IfPossible", "IfSaved", "IfTributed", "KeepOnField", "LivesFaceDown", "MaterialOfExhaustedAllyToBack", "MaterializeSelfOnTriggerAlly", "MayDo", "NoUntapChosen", "OpponentGainsGemsAsCounter", "OpponentMovesOneToFront", "PickAllyUpToSacrificedLevel", "PickAllyWithHigherAlly", "PickAllyWithMaterials", "PlaceChosenTributeAndSelf", "PlaceFromHandUntilTurnEnd", "ReduceOpponentLivesBy", "ReduceRepeatedly", "ReturnAllyOfSummonedLevel", "ReturnSubjectAtAttackEnd", "RevealFromHand", "RevealOpponentHandSendOneToBottom", "SacrificeAlly", "SkipBlockStep", "SpecialSelfDeclaredSummoner", "SubjectFromTrigger", "SubjectIsThisCard", "SummonFreeLevelSum", "SummonLikeSubject", "TakeFromLookedDistinctLevels", "TakeFromLookedEachRestToBottom", "TakeFromLookedLikeSubject", "TributeAlliesLevelSum", "TributeAllyMaterial", "TributeAllyMaterialWhere", "TributeAllyResources", "TributesToDeckBottomForKeyword"),
+        "Condition" to listOf("All", "AllyDealtDirectDamage", "Always", "Any", "ByEffect", "Compare", "Destroyed", "EntersFrontLine", "GameIs", "Happened", "Immediately", "Not", "NothingElsePlayedThisTurn", "Summoned", "SummonedWithoutMaterial", "Targeted", "ThisClashes", "ThisIs", "ThisMatches", "ThisTributed", "YouReducedStrength"),
+        "EffectStep" to listOf("ActivateSubjectSummonEffect", "ActivateTributedSummonEffect", "AddResourceToHigherAlly", "AlliesGain", "AllySpecialSummonsSameLevel", "AttachLowerFromTributes", "AttachSelfAsResourceToAlly", "AttachSubjectToHigherAlly", "AttachSubjectToSummoned", "BounceChosen", "ChangeClass", "ChooseEnemiesLevelSum", "ChooseOpponentTribute", "ChooseWeakestEnemy", "DeclareBlockSelf", "DestroyFaceUpLife", "DestroyTopLife", "Do", "EachPlayerDiscards", "EachPlayerKeepsOneInFrontLine", "EachPlayerLowersMarker", "EndYourTurn", "ExtraCombatHitThenEndTurn", "ExtraHit", "GainGemsPerOwnSacrificed", "GrantEffect", "GroupUp", "HandsToBottomDrawOpponentLives", "IfChosenGone", "IfCondition", "IfDone", "IfNotDone", "IfPossible", "IfSaved", "IfTributed", "KeepOnField", "LivesFaceDown", "MaterialOfExhaustedAllyToBack", "MaterializeSelfOnTriggerAlly", "MayDo", "NoUntapChosen", "OpponentGainsGemsAsCounter", "OpponentMovesOneToFront", "PickAllyUpToSacrificedLevel", "PickAllyWithHigherAlly", "PickAllyWithMaterials", "PlaceChosenTributeAndSelf", "PlaceFromHandUntilTurnEnd", "ReduceOpponentLivesBy", "ReduceRepeatedly", "ReturnAllyOfSummonedLevel", "ReturnSubjectAtAttackEnd", "RevealFromHand", "RevealOpponentHandSendOneToBottom", "SacrificeAlly", "SkipBlockStep", "SpecialSelfDeclaredSummoner", "SubjectFromTrigger", "SubjectIsThisCard", "SummonFreeLevelSum", "SummonLikeSubject", "SwapInFormation", "TakeFromLookedDistinctLevels", "TakeFromLookedEachRestToBottom", "TakeFromLookedLikeSubject", "TributeAlliesLevelSum", "TributeAllyMaterial", "TributeAllyMaterialWhere", "TributeAllyResources", "TributesToDeckBottomForKeyword"),
         "Reaction" to listOf("AllyGuard", "AllyRemovalSummon", "AttacksBeforeAscended", "CostModifier", "DamageReplacement", "EnemyAsTypeForRequirement", "GainBeforeAscended", "Replacement", "SwapsBlocker", "TributesInsteadOfDamage"),
     )
 
@@ -111,6 +111,7 @@ internal object CardModelReader {
             "Targeted" -> readConditionTargeted(o, at)
             "ThisClashes" -> readConditionThisClashes(o, at)
             "ThisIs" -> readConditionThisIs(o, at)
+            "ThisMatches" -> readConditionThisMatches(o, at)
             "ThisTributed" -> readConditionThisTributed(o, at)
             "YouReducedStrength" -> readConditionYouReducedStrength(o, at)
             else -> J.unknownType(at, id, "Condition", TYPES.getValue("Condition"))
@@ -185,6 +186,7 @@ internal object CardModelReader {
             "SubjectIsThisCard" -> readEffectStepSubjectIsThisCard(o, at)
             "SummonFreeLevelSum" -> readEffectStepSummonFreeLevelSum(o, at)
             "SummonLikeSubject" -> readEffectStepSummonLikeSubject(o, at)
+            "SwapInFormation" -> readEffectStepSwapInFormation(o, at)
             "TakeFromLookedDistinctLevels" -> readEffectStepTakeFromLookedDistinctLevels(o, at)
             "TakeFromLookedEachRestToBottom" -> readEffectStepTakeFromLookedEachRestToBottom(o, at)
             "TakeFromLookedLikeSubject" -> readEffectStepTakeFromLookedLikeSubject(o, at)
@@ -196,6 +198,8 @@ internal object CardModelReader {
             else -> J.unknownType(at, id, "EffectStep", TYPES.getValue("EffectStep"))
         }
     }
+
+    fun formationEffects(e: JsonElement, at: String): com.drive.drive_manager.simulator.engine.FormationEffects = readFormationEffects(J.objectOf(e, at, "FormationEffects"), at)
 
     fun reaction(e: JsonElement, at: String): com.drive.drive_manager.simulator.engine.Reaction {
         val o = J.objectOf(e, at, "Reaction")
@@ -482,7 +486,7 @@ internal object CardModelReader {
     }
 
     private fun readCardDefinition(o: JsonObject, at: String): com.drive.drive_manager.simulator.engine.CardDefinition {
-        J.fields(o, at, "CardDefinition", setOf("name", "effects", "inherited", "continuous", "reactions", "inheritedReactions", "traits"), false)
+        J.fields(o, at, "CardDefinition", setOf("name", "effects", "inherited", "continuous", "reactions", "inheritedReactions", "traits", "formation"), false)
         return com.drive.drive_manager.simulator.engine.CardDefinition(
             name = J.str(o, "name", at),
             effects = J.list(o, "effects", at) { e, p -> effectScript(e, p) },
@@ -491,6 +495,7 @@ internal object CardModelReader {
             reactions = J.list(o, "reactions", at) { e, p -> reaction(e, p) },
             inheritedReactions = J.list(o, "inheritedReactions", at) { e, p -> reaction(e, p) },
             traits = J.value(o, "traits", at, ::cardTraits),
+            formation = J.value(o, "formation", at, ::formationEffects),
         )
     }
 
@@ -521,7 +526,7 @@ internal object CardModelReader {
     }
 
     private fun readCardEffectsContinuous(o: JsonObject, at: String): com.drive.drive_manager.simulator.engine.CardEffects.Continuous {
-        J.fields(o, at, "CardEffects.Continuous", setOf("label", "text", "allyTurn", "condition", "strength", "keywords", "bonus", "zone", "levelBonus", "targets", "enemies"), false)
+        J.fields(o, at, "CardEffects.Continuous", setOf("label", "text", "allyTurn", "condition", "strength", "keywords", "bonus", "zone", "levelBonus", "targets", "enemies", "formationNeighbours"), false)
         return com.drive.drive_manager.simulator.engine.CardEffects.Continuous(
             label = J.str(o, "label", at),
             text = J.str(o, "text", at),
@@ -534,6 +539,7 @@ internal object CardModelReader {
             levelBonus = J.value(o, "levelBonus", at, ::amount),
             targets = J.value(o, "targets", at, ::cardFilter),
             enemies = J.bool(o, "enemies", at),
+            formationNeighbours = J.bool(o, "formationNeighbours", at),
         )
     }
 
@@ -568,7 +574,7 @@ internal object CardModelReader {
     }
 
     private fun readCardFilter(o: JsonObject, at: String): com.drive.drive_manager.simulator.engine.CardFilter {
-        J.fields(o, at, "CardFilter", setOf("colors", "classes", "cardType", "level", "maxLevel", "maxStrength", "activeOnly", "exhaustedOnly", "minLevel", "minStrength", "maxCost", "name", "notName", "starterOnly", "colorAndClass", "notColors", "nameContains", "minCost", "cardTypes", "anyOf", "mentions", "backOnly"), false)
+        J.fields(o, at, "CardFilter", setOf("colors", "classes", "cardType", "level", "maxLevel", "maxStrength", "activeOnly", "exhaustedOnly", "minLevel", "minStrength", "maxCost", "name", "notName", "starterOnly", "colorAndClass", "notColors", "nameContains", "minCost", "cardTypes", "anyOf", "mentions", "backOnly", "enlace"), false)
         return com.drive.drive_manager.simulator.engine.CardFilter(
             colors = J.list(o, "colors", at) { e, p -> J.stringElement(e, p) },
             classes = J.list(o, "classes", at) { e, p -> J.stringElement(e, p) },
@@ -592,6 +598,7 @@ internal object CardModelReader {
             anyOf = J.list(o, "anyOf", at) { e, p -> cardFilter(e, p) },
             mentions = J.str(o, "mentions", at),
             backOnly = J.bool(o, "backOnly", at),
+            enlace = J.bool(o, "enlace", at),
         )
     }
 
@@ -750,6 +757,13 @@ internal object CardModelReader {
         J.fields(o, at, "Condition.ThisIs", setOf("state"), true)
         return com.drive.drive_manager.simulator.engine.Condition.ThisIs(
             state = J.enum(o, "state", at, com.drive.drive_manager.simulator.engine.Condition.CardState.entries, "Condition.CardState"),
+        )
+    }
+
+    private fun readConditionThisMatches(o: JsonObject, at: String): com.drive.drive_manager.simulator.engine.Condition.ThisMatches {
+        J.fields(o, at, "Condition.ThisMatches", setOf("filter"), true)
+        return com.drive.drive_manager.simulator.engine.Condition.ThisMatches(
+            filter = J.value(o, "filter", at, ::cardFilter),
         )
     }
 
@@ -1207,6 +1221,13 @@ internal object CardModelReader {
         )
     }
 
+    private fun readEffectStepSwapInFormation(o: JsonObject, at: String): com.drive.drive_manager.simulator.engine.EffectStep.SwapInFormation {
+        J.fields(o, at, "EffectStep.SwapInFormation", setOf("withSelf"), true)
+        return com.drive.drive_manager.simulator.engine.EffectStep.SwapInFormation(
+            withSelf = J.bool(o, "withSelf", at),
+        )
+    }
+
     private fun readEffectStepTakeFromLookedDistinctLevels(o: JsonObject, at: String): com.drive.drive_manager.simulator.engine.EffectStep.TakeFromLookedDistinctLevels {
         J.fields(o, at, "EffectStep.TakeFromLookedDistinctLevels", setOf("max", "filter"), true)
         return com.drive.drive_manager.simulator.engine.EffectStep.TakeFromLookedDistinctLevels(
@@ -1265,6 +1286,15 @@ internal object CardModelReader {
             count = J.int(o, "count", at),
             filter = J.value(o, "filter", at, ::cardFilter),
             keyword = J.str(o, "keyword", at),
+        )
+    }
+
+    private fun readFormationEffects(o: JsonObject, at: String): com.drive.drive_manager.simulator.engine.FormationEffects {
+        J.fields(o, at, "FormationEffects", setOf("effects", "continuous", "reactions"), false)
+        return com.drive.drive_manager.simulator.engine.FormationEffects(
+            effects = J.list(o, "effects", at) { e, p -> effectScript(e, p) },
+            continuous = J.list(o, "continuous", at) { e, p -> cardEffectsContinuous(e, p) },
+            reactions = J.list(o, "reactions", at) { e, p -> reaction(e, p) },
         )
     }
 

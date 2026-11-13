@@ -37,6 +37,15 @@ class PlayerState(userId: String?, username: String?) {
     var tributeZone: MutableList<CardSlot> = ArrayList()
     var discardPile: MutableList<CardSlot> = ArrayList()
     var field: MutableList<CardSlot> = ArrayList()
+    /**
+     * Enlace: the player's formations, each the instance ids of its members (public; their order on the Línea frontal is the cards'
+     * `x`). A creature is in one at most; one of fewer than 2 members is none (Formations).
+     */
+    var formations: MutableList<MutableList<String>> = ArrayList()
+    /** The ids of the creatures of their Línea frontal at the last check (null: not taken yet): those not there before just entered. */
+    var frontSeen: MutableList<String>? = null
+    /** Creatures that entered the Línea frontal and wait for their chance to take a position and join a formation. */
+    var formationEntries: MutableList<String> = ArrayList()
 
     // --- What Lombok's @Data generated ---
 
@@ -64,6 +73,7 @@ class PlayerState(userId: String?, username: String?) {
         if (tributeZone != other.tributeZone) return false
         if (discardPile != other.discardPile) return false
         if (field != other.field) return false
+        if (formations != other.formations) return false
         return true
     }
 
@@ -107,9 +117,10 @@ class PlayerState(userId: String?, username: String?) {
         result = result * PRIME + (h_discardPile?.hashCode() ?: 43)
         val h_field: Any? = field
         result = result * PRIME + (h_field?.hashCode() ?: 43)
+        result = result * PRIME + formations.hashCode()
         return result
     }
 
     override fun toString(): String =
-        "PlayerState(userId=${userId}, username=${username}, avatar=${avatar}, playmat=${playmat}, connected=${connected}, disconnectedAt=${disconnectedAt}, deckId=${deckId}, deckName=${deckName}, starterCardId=${starterCardId}, ready=${ready}, skipOptional=${skipOptional}, resourceCount=${resourceCount}, turnsStarted=${turnsStarted}, hand=${hand}, deck=${deck}, originalDeck=${originalDeck}, lifeStack=${lifeStack}, tributeZone=${tributeZone}, discardPile=${discardPile}, field=${field})"
+        "PlayerState(userId=${userId}, username=${username}, avatar=${avatar}, playmat=${playmat}, connected=${connected}, disconnectedAt=${disconnectedAt}, deckId=${deckId}, deckName=${deckName}, starterCardId=${starterCardId}, ready=${ready}, skipOptional=${skipOptional}, resourceCount=${resourceCount}, turnsStarted=${turnsStarted}, hand=${hand}, deck=${deck}, originalDeck=${originalDeck}, lifeStack=${lifeStack}, tributeZone=${tributeZone}, discardPile=${discardPile}, field=${field}, formations=${formations})"
 }

@@ -351,8 +351,11 @@ internal class EngineContext(private val room: GameRoom, private val effect: Pen
         val userId = player()!!.userId
         room.sharedCounter = EffectEngine.clamp(room.sharedCounter + count * EffectEngine.direction(room, userId))
         EffectEngine.record(room, GameEvent.GAIN_GEMS, userId, null, null, null, effect, frozenMapOf<String, Any?>("count", count),
-            player()!!.username + " gana " + EffectEngine.gemsText(count) + " (" + effect.sourceName + ")")
+            player()!!.username + (if (count < 0) " paga " + EffectEngine.gemsText(-count) else " gana " + EffectEngine.gemsText(count))
+                    + " (" + effect.sourceName + ")")
     }
+
+    override fun canPayGems(count: Int): Boolean = EffectEngine.canPay(room, player()!!.userId, count)
 
     override fun damage(amount: Int) {
         StepHelpers.damageByEffect(room, effect, player(), amount)

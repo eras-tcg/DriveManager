@@ -62,6 +62,9 @@ interface EffectContext {
 
     fun gainGems(count: Int)
 
+    /** The effect's controller can pay that many gems now ("pagar N gemas": [gainGems] of a negative count). */
+    fun canPayGems(count: Int): Boolean
+
     fun damage(amount: Int)
 
     fun look(count: Int)

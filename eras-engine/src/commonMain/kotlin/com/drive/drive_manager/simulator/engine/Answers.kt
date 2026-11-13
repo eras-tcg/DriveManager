@@ -101,6 +101,14 @@ object Answers {
             return null
         }
 
+        // Enlace: the position of a creature that entered the Línea frontal, and its formation
+        if (PromptPurpose.FORMATION_ENTRY.`is`(prompt.purpose)) {
+            room.prompt = null
+            Formations.answerEntry(room, player, prompt, picks)
+            advance(room)
+            return null
+        }
+
         val other = answerRules(room, prompt, player, picks)
         if (other != null) return if (other.isEmpty()) null else other
 
@@ -222,7 +230,7 @@ object Answers {
             return ""
         }
         if (PromptPurpose.REPLACE.`is`(purpose) || PromptPurpose.REPLACE_HAND.`is`(purpose) || PromptPurpose.REPLACE_MATERIALS.`is`(purpose) ||
-            PromptPurpose.REPLACE_GUARD.`is`(purpose) || PromptPurpose.REPLACE_RESOURCES.`is`(purpose)) {
+            PromptPurpose.REPLACE_GUARD.`is`(purpose) || PromptPurpose.REPLACE_RESOURCES.`is`(purpose) || PromptPurpose.REPLACE_LIFE.`is`(purpose)) {
             val error = answerRemoval(room, prompt, player, picks)
             if (error != null) return error
             advance(room)

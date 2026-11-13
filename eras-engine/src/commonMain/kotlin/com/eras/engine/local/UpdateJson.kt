@@ -28,7 +28,8 @@ import kotlinx.serialization.json.JsonUnquotedLiteral
  * names every property (`CardSlot`, `GameEvent`, the records) come first, in that constructor's order (and `PlayerState`'s
  * `userId`, `username`), then the getters that are not fields (`printedLevel`). What the mix-ins leave out is left out:
  * `PlayerState.disconnectedAt`, `CardSlot.altArtUrls`, `PendingEffect`'s working state (`repeatsDone`, `looked`,
- * `ordered`, `confirmed`, `lastDone`, `lastCount`, `lastTributed`, `keepOnField`, `passed`, `priorityDone`). Nulls are
+ * `ordered`, `confirmed`, `lastDone`, `lastCount`, `lastTributed`, `keepOnField`, `passed`, `priorityDone`), and the Enlace ones
+ * when empty (`formations`, `arrows`, `enlace`, `formationGrants`, `formationJoins`; `frontSeen` and `formationEntries` always). Nulls are
  * written (Jackson's default), maps in their own iteration order, doubles as Java writes them ([Platform.doubleText]).
  *
  * drive_manager's `LocalMatchParityTest` checks every property list against Jackson's and every message of whole games
@@ -62,6 +63,7 @@ object UpdateJson {
         "eventLog" to list(u.eventLog),
         "firstChoice" to str(u.firstChoice),
         "firstPlayerId" to str(u.firstPlayerId),
+        nonEmpty("formationJoins", u.formationJoins),
         "hostId" to str(u.hostId),
         "legalActions" to map(u.legalActions),
         "logEntry" to str(u.logEntry),
@@ -102,6 +104,7 @@ object UpdateJson {
         "deckName" to str(p.deckName),
         "discardPile" to list(p.discardPile),
         "field" to list(p.field),
+        nonEmpty("formations", p.formations),
         "hand" to list(p.hand),
         "lifeStack" to list(p.lifeStack),
         "originalDeck" to list(p.originalDeck),
@@ -155,6 +158,9 @@ object UpdateJson {
         "mentions" to list(c.mentions),
         "finish" to str(c.finish),
         "alt" to bool(c.alt),
+        nonEmpty("arrows", c.arrows),
+        if (c.enlace) "enlace" to bool(true) else null,
+        nonEmpty("formationGrants", c.formationGrants),
         "printedLevel" to num(c.getPrintedLevel()),
     )
 
@@ -333,7 +339,15 @@ object UpdateJson {
         else -> throw IllegalArgumentException("No JSON for a " + v::class.simpleName)
     }
 
-    private fun obj(vararg properties: Pair<String, JsonElement>): JsonObject = JsonObject(linkedMapOf(*properties))
+    private fun obj(vararg properties: Pair<String, JsonElement>?): JsonObject = JsonObject(linkedMapOf(*properties.filterNotNull().toTypedArray()))
+
+    /** A property Jackson leaves out when it is empty (the mix-ins' NON_DEFAULT / NON_EMPTY: the Enlace ones), else as any other. */
+    private fun nonEmpty(name: String, items: Any?): Pair<String, JsonElement>? = when (items) {
+        null -> null
+        is Collection<*> -> if (items.isEmpty()) null else name to list(items)
+        is Map<*, *> -> if (items.isEmpty()) null else name to map(items)
+        else -> name to value(items)
+    }
 
     private fun str(s: String?): JsonElement = if (s == null) JsonNull else JsonPrimitive(s)
 

@@ -91,6 +91,16 @@ class CardSlot() {
     var alt: Boolean = false
     /** The card's alternative arts (from its metadata), art id → URL: what a copy with one shows. Kept on the server. */
     var altArtUrls: MutableMap<String, String>? = HashMap()
+    /** Enlace: the arrows printed on it ("left", "right"), from its metadata; empty for a card without them. */
+    var arrows: MutableList<String>? = ArrayList()
+    /** "Criatura Enlace": a creature of that category (a creature for everything else). */
+    @get:JvmName("isEnlace")
+    var enlace: Boolean = false
+    /**
+     * The link effects it receives now (Formations.refresh): one entry per member of its formation that points to it while active,
+     * "sourceInstanceId|since|sourceName" (`since`: the event the relation began at, so a broken and restored one is a new one).
+     */
+    var formationGrants: MutableList<String>? = ArrayList()
 
     /** All the fields, in their order (Lombok's @AllArgsConstructor; Jackson lists their properties first, in this order). */
     constructor(
@@ -135,6 +145,10 @@ class CardSlot() {
         finish: String?,
         alt: Boolean,
         altArtUrls: MutableMap<String, String>?,
+        arrows: MutableList<String>?,
+        // Left out of the JSON when false (a kept game without Enlace, or one from before it): absent reads as false
+        enlace: Boolean?,
+        formationGrants: MutableList<String>?,
     ) : this() {
         this.instanceId = instanceId
         this.cardId = cardId
@@ -177,6 +191,9 @@ class CardSlot() {
         this.finish = finish
         this.alt = alt
         this.altArtUrls = altArtUrls
+        this.arrows = arrows
+        this.enlace = enlace == true
+        this.formationGrants = formationGrants
     }
 
     // --- What Lombok's @Data generated ---
@@ -226,6 +243,9 @@ class CardSlot() {
         if (mentions != other.mentions) return false
         if (finish != other.finish) return false
         if (altArtUrls != other.altArtUrls) return false
+        if (arrows != other.arrows) return false
+        if (enlace != other.enlace) return false
+        if (formationGrants != other.formationGrants) return false
         return true
     }
 
@@ -304,9 +324,12 @@ class CardSlot() {
         result = result * PRIME + (h_finish?.hashCode() ?: 43)
         val h_altArtUrls: Any? = altArtUrls
         result = result * PRIME + (h_altArtUrls?.hashCode() ?: 43)
+        result = result * PRIME + (arrows?.hashCode() ?: 43)
+        result = result * PRIME + (if (enlace) 79 else 97)
+        result = result * PRIME + (formationGrants?.hashCode() ?: 43)
         return result
     }
 
     override fun toString(): String =
-        "CardSlot(instanceId=${instanceId}, cardId=${cardId}, imageUrl=${imageUrl}, faceDown=${faceDown}, tapped=${tapped}, x=${x}, y=${y}, cardName=${cardName}, cardType=${cardType}, strength=${strength}, specialSummonKind=${specialSummonKind}, starter=${starter}, strengthModifier=${strengthModifier}, cost=${cost}, level=${getLevel()}, colors=${colors}, classes=${classes}, specialCost=${specialCost}, requirement=${requirement}, keywords=${keywords}, inheritKeywords=${inheritKeywords}, turnKeywords=${turnKeywords}, laterKeywords=${laterKeywords}, untilNextAttack=${untilNextAttack}, fieldSeq=${fieldSeq}, turnStrength=${turnStrength}, laterStrength=${laterStrength}, continuousStrength=${continuousStrength}, continuousLevel=${continuousLevel}, returnAtTurnEnd=${returnAtTurnEnd}, continuousKeywords=${continuousKeywords}, floating=${floating}, noUntap=${noUntap}, noStartUntap=${noStartUntap}, materials=${materials}, resources=${resources}, unprogrammed=${unprogrammed}, mentions=${mentions}, finish=${finish}, alt=${alt}, altArtUrls=${altArtUrls})"
+        "CardSlot(instanceId=${instanceId}, cardId=${cardId}, imageUrl=${imageUrl}, faceDown=${faceDown}, tapped=${tapped}, x=${x}, y=${y}, cardName=${cardName}, cardType=${cardType}, strength=${strength}, specialSummonKind=${specialSummonKind}, starter=${starter}, strengthModifier=${strengthModifier}, cost=${cost}, level=${getLevel()}, colors=${colors}, classes=${classes}, specialCost=${specialCost}, requirement=${requirement}, keywords=${keywords}, inheritKeywords=${inheritKeywords}, turnKeywords=${turnKeywords}, laterKeywords=${laterKeywords}, untilNextAttack=${untilNextAttack}, fieldSeq=${fieldSeq}, turnStrength=${turnStrength}, laterStrength=${laterStrength}, continuousStrength=${continuousStrength}, continuousLevel=${continuousLevel}, returnAtTurnEnd=${returnAtTurnEnd}, continuousKeywords=${continuousKeywords}, floating=${floating}, noUntap=${noUntap}, noStartUntap=${noStartUntap}, materials=${materials}, resources=${resources}, unprogrammed=${unprogrammed}, mentions=${mentions}, finish=${finish}, alt=${alt}, altArtUrls=${altArtUrls}, arrows=${arrows}, enlace=${enlace}, formationGrants=${formationGrants})"
 }

@@ -150,6 +150,8 @@ open class LookaheadBot(settings: BotSettings, model: ValueModel?) : HeuristicBo
         // hUseful: the heuristic said no to an optional effect of its own because it would do nothing
         if (on("hUseful") && optionalEffect(prompt) && heuristic != null && heuristic.isEmpty()) return heuristic
         if (on("hUsefulEnd") && optionalEffect(prompt) && prompt.min == 0 && heuristic != null && !heuristic.isEmpty() && !Usefulness.yesPaysOff(room, me, prompt, heuristic, settings)) return frozenListOf()
+        // Enlace: it does not link (as the heuristic)
+        if (PromptPurpose.FORMATION_ENTRY.`is`(prompt.purpose)) return frozenListOf()
         val options: MutableSet<List<String?>> = LinkedHashSet(); if (heuristic != null) options.add(heuristic)
         val choices: List<String?> = choices(prompt)
         val self = room.getPlayer(me)

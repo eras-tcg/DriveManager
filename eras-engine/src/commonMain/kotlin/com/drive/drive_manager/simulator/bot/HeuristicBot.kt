@@ -199,6 +199,8 @@ open class HeuristicBot(rules: BotSettings) : BotPlayer() {
             PromptPurpose.PRIORITY -> respond(room, me, prompt)
             PromptPurpose.ORDER -> take(choices, max(1, prompt.min))
             PromptPurpose.RITUAL -> ritual(self, prompt, choices)
+            // Enlace: it does not link (the creature stays where it entered)
+            PromptPurpose.FORMATION_ENTRY -> frozenListOf()
             else -> pick(room, self, rival, prompt, choices)
         }
         @Suppress("UNCHECKED_CAST")

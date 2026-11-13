@@ -1,0 +1,130 @@
+{
+  "name" : "nefilia la paladín arcanista",
+  "effects" : [
+    {
+      "id" : "nefilia:en-invocacion",
+      "moment" : "ON_SUMMON",
+      "label" : "En Invocación por efecto",
+      "text" : "Celeridad: puede subir a tu línea frontal.",
+      "steps" : [
+        {
+          "type" : "Do",
+          "action" : {
+            "type" : "Move",
+            "cards" : {
+              "zones" : "backLine",
+              "owner" : "YOU",
+              "filter" : {},
+              "min" : {
+                "type" : "Fixed",
+                "value" : 1
+              },
+              "max" : {
+                "type" : "Fixed",
+                "value" : 1
+              },
+              "self" : "ANY",
+              "mode" : "SELF"
+            },
+            "to" : "frontLine"
+          }
+        }
+      ],
+      "condition" : {
+        "type" : "All",
+        "all" : [
+          {
+            "type" : "Summoned",
+            "side" : "ANY",
+            "how" : "effect"
+          },
+          {
+            "type" : "Not",
+            "condition" : {
+              "type" : "ThisIs",
+              "state" : "IN_FRONT_LINE"
+            }
+          }
+        ]
+      },
+      "sourceZone" : "field",
+      "limit" : "NONE"
+    }
+  ],
+  "formation" : {
+    "effects" : [
+      {
+        "id" : "nefilia:enlace",
+        "moment" : "ON_EVENT",
+        "mandatory" : true,
+        "label" : "Todos Los Turnos",
+        "text" : "Una vez por turno: si esta carta nivel 4 o mayor es agotada: reactívala.",
+        "steps" : [
+          {
+            "type" : "Do",
+            "action" : {
+              "type" : "SetTapped",
+              "cards" : {
+                "zones" : "field",
+                "owner" : "YOU",
+                "filter" : {},
+                "min" : {
+                  "type" : "Fixed",
+                  "value" : 1
+                },
+                "max" : {
+                  "type" : "Fixed",
+                  "value" : 1
+                },
+                "self" : "ANY",
+                "mode" : "SELF"
+              }
+            }
+          }
+        ],
+        "condition" : {
+          "type" : "All",
+          "all" : [
+            {
+              "type" : "Any",
+              "any" : [
+                {
+                  "type" : "Happened",
+                  "eventType" : "TAP",
+                  "actor" : "ANY",
+                  "owner" : "ANY",
+                  "thisCard" : true
+                },
+                {
+                  "type" : "Happened",
+                  "eventType" : "BLOCK",
+                  "actor" : "ANY",
+                  "owner" : "ANY",
+                  "thisCard" : true
+                },
+                {
+                  "type" : "Happened",
+                  "eventType" : "ATTACK_DECLARED",
+                  "actor" : "ANY",
+                  "owner" : "ANY",
+                  "thisCard" : true,
+                  "data" : [
+                    "exhausted=true"
+                  ]
+                }
+              ]
+            },
+            {
+              "type" : "ThisMatches",
+              "filter" : {
+                "minLevel" : 4
+              }
+            }
+          ]
+        },
+        "sourceZone" : "field",
+        "limit" : "ONCE_PER_TURN"
+      }
+    ]
+  }
+}

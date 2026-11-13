@@ -1,0 +1,170 @@
+{
+  "name" : "judeu la joven promesa",
+  "effects" : [
+    {
+      "id" : "judeu:en-tributos",
+      "moment" : "ACTIVATED",
+      "label" : "Turno Aliado En Tributos",
+      "text" : "Una vez por turno entre copias: puedes descartar 5 de tus tributos; coloca esta carta en tu línea frontal.",
+      "cost" : [
+        {
+          "type" : "Do",
+          "action" : {
+            "type" : "Move",
+            "cards" : {
+              "zones" : "tributeZone",
+              "owner" : "YOU",
+              "filter" : {},
+              "min" : {
+                "type" : "Fixed",
+                "value" : 5
+              },
+              "max" : {
+                "type" : "Fixed",
+                "value" : 5
+              },
+              "self" : "EXCLUDE",
+              "mode" : "CHOOSE"
+            },
+            "to" : "discardPile"
+          }
+        }
+      ],
+      "steps" : [
+        {
+          "type" : "Do",
+          "action" : {
+            "type" : "Move",
+            "cards" : {
+              "zones" : "tributeZone",
+              "owner" : "YOU",
+              "filter" : {},
+              "min" : {
+                "type" : "Fixed",
+                "value" : 1
+              },
+              "max" : {
+                "type" : "Fixed",
+                "value" : 1
+              },
+              "self" : "ANY",
+              "mode" : "SELF"
+            },
+            "to" : "frontLine"
+          }
+        }
+      ],
+      "sourceZone" : "tributeZone",
+      "allyTurn" : true,
+      "limit" : "ONCE_PER_TURN_BETWEEN_COPIES"
+    },
+    {
+      "id" : "judeu:en-invocacion",
+      "moment" : "ON_SUMMON",
+      "label" : "En Invocación",
+      "text" : "Puedes tributar 1 carta de tu mano; toma 1 [paladín] de tus tributos o descarte.",
+      "cost" : [
+        {
+          "type" : "Do",
+          "action" : {
+            "type" : "Move",
+            "cards" : {
+              "zones" : "hand",
+              "owner" : "YOU",
+              "filter" : {},
+              "min" : {
+                "type" : "Fixed",
+                "value" : 1
+              },
+              "max" : {
+                "type" : "Fixed",
+                "value" : 1
+              },
+              "self" : "EXCLUDE",
+              "mode" : "CHOOSE"
+            },
+            "to" : "tributeZone"
+          }
+        }
+      ],
+      "steps" : [
+        {
+          "type" : "Do",
+          "action" : {
+            "type" : "Move",
+            "cards" : {
+              "zones" : "tributeZone,discardPile",
+              "owner" : "YOU",
+              "filter" : {
+                "cardType" : "creature",
+                "classes" : [
+                  "paladín"
+                ]
+              },
+              "min" : {
+                "type" : "Fixed",
+                "value" : 1
+              },
+              "max" : {
+                "type" : "Fixed",
+                "value" : 1
+              },
+              "self" : "ANY",
+              "mode" : "CHOOSE"
+            },
+            "to" : "hand"
+          }
+        }
+      ],
+      "sourceZone" : "field",
+      "limit" : "NONE"
+    }
+  ],
+  "formation" : {
+    "effects" : [
+      {
+        "id" : "judeu:enlace",
+        "moment" : "ON_ATTACK",
+        "mandatory" : true,
+        "label" : "Al Atacar",
+        "text" : "Roba 2 cartas. Luego: tributa 2 cartas de tu mano.",
+        "steps" : [
+          {
+            "type" : "Do",
+            "action" : {
+              "type" : "Draw",
+              "count" : {
+                "type" : "Fixed",
+                "value" : 2
+              }
+            }
+          },
+          {
+            "type" : "Do",
+            "action" : {
+              "type" : "Move",
+              "cards" : {
+                "zones" : "hand",
+                "owner" : "YOU",
+                "filter" : {},
+                "min" : {
+                  "type" : "Fixed",
+                  "value" : 2
+                },
+                "max" : {
+                  "type" : "Fixed",
+                  "value" : 2
+                },
+                "self" : "EXCLUDE",
+                "mode" : "CHOOSE"
+              },
+              "to" : "tributeZone"
+            }
+          }
+        ],
+        "sourceZone" : "field",
+        "limit" : "NONE"
+      }
+    ]
+  }
+}

@@ -18,12 +18,13 @@ import com.drive.drive_manager.simulator.engine.CardEffects.Continuous
  * @param reactions             what it does before an event ("cuando … fuera a …")
  * @param inheritedReactions    the reactions it gives as a Recurso
  * @param traits                what it changes in the rules themselves; null: nothing
+ * @param formation             Enlace: its link effect ("Efecto de enlace"), what it gives the members of its formation it points to; null: none
  */
 @JvmRecord
 data class CardDefinition(
     val name: String?, private val effects: List<EffectScript>?, private val inherited: List<EffectScript>?,
     private val continuous: List<Continuous>?, private val reactions: List<Reaction>?, private val inheritedReactions: List<Reaction>?,
-    val traits: CardTraits?,
+    val traits: CardTraits?, val formation: FormationEffects? = null,
 ) {
 
     fun effects(): List<EffectScript> = if (effects == null) frozenListOf() else frozenListCopy(effects)
@@ -41,13 +42,14 @@ data class CardDefinition(
         if (this === other) return true
         if (other !is CardDefinition) return false
         return name == other.name && effects() == other.effects() && inherited() == other.inherited() && continuous() == other.continuous() &&
-                reactions() == other.reactions() && inheritedReactions() == other.inheritedReactions() && traits == other.traits
+                reactions() == other.reactions() && inheritedReactions() == other.inheritedReactions() && traits == other.traits &&
+                formation == other.formation
     }
 
     /** As a record's: `31 * h + hash(component)` over the components, in order. */
     override fun hashCode(): Int {
         var result = 0
-        for (c in arrayOf<Any?>(name, effects(), inherited(), continuous(), reactions(), inheritedReactions(), traits)) {
+        for (c in arrayOf<Any?>(name, effects(), inherited(), continuous(), reactions(), inheritedReactions(), traits, formation)) {
             result = 31 * result + (c?.hashCode() ?: 0)
         }
         return result
@@ -55,6 +57,37 @@ data class CardDefinition(
 
     override fun toString(): String {
         return "CardDefinition[name=$name, effects=${effects()}, inherited=${inherited()}, continuous=${continuous()}, " +
-                "reactions=${reactions()}, inheritedReactions=${inheritedReactions()}, traits=$traits]"
+                "reactions=${reactions()}, inheritedReactions=${inheritedReactions()}, traits=$traits, formation=$formation]"
     }
+}
+
+/**
+ * Enlace: a card's link effect ("Efecto de enlace"). Its active card gives it to the members of its formation it points to, which run it as
+ * their own ("esta carta" is the receiver): triggered or activated effects, continuous ones (`targets` with `formationNeighbours`: the
+ * receiver's members next to it), and reactions (replacements). The lists are read as [CardDefinition]'s: empty when absent.
+ */
+@JvmRecord
+data class FormationEffects(
+    private val effects: List<EffectScript>?, private val continuous: List<Continuous>?, private val reactions: List<Reaction>?,
+) {
+
+    fun effects(): List<EffectScript> = if (effects == null) frozenListOf() else frozenListCopy(effects)
+
+    fun continuous(): List<Continuous> = if (continuous == null) frozenListOf() else frozenListCopy(continuous)
+
+    fun reactions(): List<Reaction> = if (reactions == null) frozenListOf() else frozenListCopy(reactions)
+
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (other !is FormationEffects) return false
+        return effects() == other.effects() && continuous() == other.continuous() && reactions() == other.reactions()
+    }
+
+    override fun hashCode(): Int {
+        var result = 0
+        for (c in arrayOf<Any?>(effects(), continuous(), reactions())) result = 31 * result + (c?.hashCode() ?: 0)
+        return result
+    }
+
+    override fun toString(): String = "FormationEffects[effects=${effects()}, continuous=${continuous()}, reactions=${reactions()}]"
 }

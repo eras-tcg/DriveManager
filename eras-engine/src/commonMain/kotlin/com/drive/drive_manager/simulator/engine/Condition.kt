@@ -355,6 +355,14 @@ sealed interface Condition {
         }
     }
 
+    /** "esta carta Verde o [paladín] …": the card is of that kind now (a state: no event needed). */
+    @JvmRecord
+    data class ThisMatches(val filter: CardFilter?) : Condition {
+        override fun test(room: GameRoom, event: GameEvent?, source: CardSlot?, controller: String?): Boolean {
+            return source != null && filter!!.matches(source)
+        }
+    }
+
     /** "si aún no has jugado ni invocado otra carta este turno". */
     data object NothingElsePlayedThisTurn : Condition {
         override fun test(room: GameRoom, event: GameEvent?, source: CardSlot?, controller: String?): Boolean {

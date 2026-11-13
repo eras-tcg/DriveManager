@@ -27,8 +27,11 @@ import com.drive.drive_manager.simulator.room.CardSlot
 import com.drive.drive_manager.simulator.room.GameRoom
 import com.drive.drive_manager.simulator.room.PlayerState
 
-/** Both players, lives and gems. Each step: whether it can be done, carrying it out, and applying the player's choice. */
+/** Both players, lives and gems, and the Línea frontal's positions. Each step: whether it can be done, carrying it out, and applying the player's choice. */
 object TableSteps {
+
+    /** What [SwapInFormation] saves: the two allies that swap ("ambos aliados"). */
+    const val SWAPPED = "swapped"
 
     @JvmStatic
     fun possibleStep(room: GameRoom, effect: PendingEffect, step: EffectStep): Boolean {
@@ -39,6 +42,8 @@ object TableSteps {
                 val opponent = room.getPlayer(room.getOpponentId(effect.controllerId))
                 opponent != null && opponent.lifeStack.any { l -> !l.faceDown }
             }
+            is SwapInFormation -> if (step.withSelf) onField != null && Formations.sizeOf(player, onField) >= 2
+                else player.formations.any { it.size >= 2 }
             else -> true
         }
     }
@@ -180,6 +185,23 @@ object TableSteps {
                 }
                 return false
             }
+            is SwapInFormation -> {
+                val chosen = effect.saved[SWAPPED]
+                val first = if (step.withSelf) find(player.field, effect.sourceInstanceId)
+                    else if (chosen == null || chosen.isEmpty()) null else find(player.field, chosen[0])
+                val members = Formations.members(player)
+                if (first == null) {
+                    if (step.withSelf || members.isEmpty()) return false
+                    pick(room, effect, "Elige el primero de los 2 aliados de una misma formación que intercambian sus posiciones.", "Intercambiar",
+                        Formations.ordered(player), ids(members), 1)
+                    return true
+                }
+                val valid = members.filter { Formations.sameFormation(player, first, it) }
+                if (valid.isEmpty()) return false
+                pick(room, effect, "Elige el aliado de la formación de " + name(first) + " que intercambia su posición con " + name(first) + ".",
+                    "Intercambiar", Formations.ordered(player), ids(valid), 1)
+                return true
+            }
             is DestroyFaceUpLife -> {
                 val opponent = room.getPlayer(room.getOpponentId(userId))
                 val valid = if (opponent == null) frozenListOf() else opponent.lifeStack.filter { l -> !l.faceDown }
@@ -200,6 +222,23 @@ object TableSteps {
     ): String? {
         val userId = player.userId
         when (step) {
+            is SwapInFormation -> {
+                val picked = find(player.field, picks[0]) ?: return "Ese aliado ya no está en el campo"
+                val chosen = effect.saved.getOrPut(SWAPPED) { ArrayList() }
+                val first = if (step.withSelf) find(player.field, effect.sourceInstanceId) else chosen.firstOrNull()?.let { find(player.field, it) }
+                if (first == null) {
+                    chosen.clear()
+                    chosen.add(picked.instanceId)
+                    repeat[0] = true
+                    return null
+                }
+                if (!Formations.sameFormation(player, first, picked)) return "Deben estar en la misma formación"
+                chosen.clear()
+                chosen.add(first.instanceId)
+                chosen.add(picked.instanceId)
+                Formations.swap(room, effect, player, first, picked)
+                effect.lastDone = true
+            }
             is EachPlayerKeepsOneInFrontLine -> {
                 if (find(player.field, picks[0]) == null) return "Ese aliado ya no está en el campo"
                 effect.targetIds.add(picks[0])

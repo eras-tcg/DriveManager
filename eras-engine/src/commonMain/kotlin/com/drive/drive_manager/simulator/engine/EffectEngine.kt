@@ -160,6 +160,13 @@ object EffectEngine {
         }
         e.fromZone = from
         e.toZone = to
+        // Enlace: a card that leaves the field takes the link effects it had with the event (an effect it was given still sees what
+        // happened to it, "si esta carta es ascendida"), and has none any more
+        if (card != null && !card.formationGrants.isNullOrEmpty() && room.players.values.none { p -> p.field.any { it === card } }) {
+            data = if (data == null) Platform.hashMap() else Platform.hashMap(data)
+            data["formation"] = ArrayList(card.formationGrants!!)
+            card.formationGrants = ArrayList()
+        }
         if (effect != null) {
             e.effectId = effect.id
             e.resolutionId = effect.resolutionId
@@ -322,6 +329,8 @@ object EffectEngine {
      */
     @JvmStatic
     fun refreshContinuous(room: GameRoom) {
+        // Enlace first: the link effects each creature receives now (their continuous ones are read below)
+        Formations.refresh(room)
         for (p in room.players.values) {
             // What cards give their allies ("todos los aliados [armada] ganan fuerza 1")
             val fromAllies = HashMap<String?, Int>()
@@ -329,7 +338,9 @@ object EffectEngine {
                 if (source.faceDown) continue
                 for (c in CardEffects.continuousOf(source)) {
                     if (c.targets == null || c.enemies || !c.holds(room, source, p.userId!!)) continue
-                    for (ally in p.field) if (c.targets.matches(ally)) fromAllies.mergeWith(ally.instanceId, c.strength) { a, b -> a + b }
+                    // "los aliados [paladín] adyacentes en la formación": only the members next to it
+                    val pool = if (c.formationNeighbours) Formations.adjacentMembers(p, source) else p.field
+                    for (ally in pool) if (c.targets.matches(ally)) fromAllies.mergeWith(ally.instanceId, c.strength) { a, b -> a + b }
                 }
             }
             for (card in p.field) {

@@ -65,6 +65,9 @@ object Chain {
             } else if (!chain.isEmpty()) {
                 if (offerPriority(room)) return
                 stepTop(room)
+            } else if (Formations.hasEntries(room)) {
+                // Enlace: a creature that entered the Línea frontal takes its position and may link, once nothing else is pending
+                Formations.offerEntry(room)
             } else if (room.pendingAscension != null) {
                 completeAscension(room)
             } else if (room.combat != null) {
@@ -144,6 +147,8 @@ object Chain {
                 if (moment == EffectScript.Moment.ON_DESTROY && granted is List<*>) {
                     for (m in granted) GrantedEffects.byMarker(m as String)?.let { scripts.add(it) }
                 }
+                // The link effects it had as it left the field (Enlace)
+                if (moment == EffectScript.Moment.ON_DESTROY) scripts.addAll(CardEffects.formationScripts(event.data?.get("formation") as? List<*>))
                 for (script in scripts) {
                     if (script.moment == moment) addIfTriggers(room, result, script, event, source, controllerId)
                 }
@@ -172,7 +177,10 @@ object Chain {
         for (p in room.players.values) {
             for (zone in frozenListOf("field", "hand", "tributeZone", "discardPile")) {
                 for (card in ArrayList(EffectEngine.zone(p, zone))) {
-                    for (script in CardEffects.of(card)) {
+                    // The link effects the card had as it left the field still see that event ("si esta carta es ascendida")
+                    val left = if (event.cardInstanceId == card.instanceId && !Zone.FIELD.`is`(zone))
+                        CardEffects.formationScripts(event.data?.get("formation") as? List<*>) else frozenListOf()
+                    for (script in if (left.isEmpty()) CardEffects.of(card) else CardEffects.of(card) + left) {
                         if (script.moment != EffectScript.Moment.ON_EVENT || script.sourceZone != zone) continue
                         if (script.allyTurn && p.userId != room.currentTurnUserId) continue
                         // A card on the field cannot react to an event that happened before it got there
@@ -269,7 +277,9 @@ object Chain {
     fun usageKey(e: PendingEffect, script: EffectScript): String {
         if (script.limit == Limit.DEFINITIVE) return e.controllerId + "|" + DEFINITIVE_USED
         if (script.limit == Limit.ONE_EFFECT_OF_NAME_PER_TURN) return e.controllerId + "|name:" + e.sourceName!!.lowercase()
-        val id = script.id?.substringBefore('#')
+        // A link effect given by a member of its formation (Enlace) counts by that grant: "<id>~via:<source>@<since>"
+        val via = script.id?.substringAfter(Formations.VIA, "") ?: ""
+        val id = script.id?.substringBefore(Formations.VIA)?.substringBefore('#') + (if (via.isEmpty()) "" else Formations.VIA + via)
         return if (script.limit == Limit.ONCE_PER_TURN_BETWEEN_COPIES)
             e.controllerId + "|" + id
         // "Una vez por turno" belongs to this card while it stays on the field (rule 11.8: back on the field it is a new card)
@@ -515,6 +525,12 @@ object Chain {
         e.label = script.label
         e.text = script.text
         e.triggerSeq = triggerSeq
+        // A link effect: the member of its formation that gives it, shown on the card as an inherited one is
+        val link = CardEffects.formationFrom(script.id)
+        if (link != null) {
+            val grant = Formations.grants(source.formationGrants).firstOrNull { g -> script.id!!.endsWith(Formations.VIA + g.sourceId + "@" + g.since) }
+            e.inheritedFromName = grant?.sourceName ?: link
+        }
         val from = CardEffects.inheritedFrom(script.id)
         if (from != null) {
             val resource = source.resources!!.firstOrNull { r -> from.equals(r.cardName, ignoreCase = true) }

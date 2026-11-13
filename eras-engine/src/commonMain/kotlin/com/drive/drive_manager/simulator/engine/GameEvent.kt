@@ -126,6 +126,10 @@ class GameEvent {
         const val STRENGTH_REDUCED = "STRENGTH_REDUCED"
         const val MOVE = "MOVE"
         const val GAIN_GEMS = "GAIN_GEMS"
+        /** Enlace: a creature joins a formation, or two form one. data: with (the creature it linked with). */
+        const val FORMATION = "FORMATION"
+        /** Enlace: two creatures of the Línea frontal swap positions (an effect). data: with (the other one). */
+        const val POSITION_SWAP = "POSITION_SWAP"
         /** Data key: true on an event done by hand from the board, outside the engine's checks. */
         const val MANUAL = "manual"
     }

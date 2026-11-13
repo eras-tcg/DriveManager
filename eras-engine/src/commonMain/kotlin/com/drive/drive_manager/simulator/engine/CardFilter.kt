@@ -28,6 +28,7 @@ import com.drive.drive_manager.simulator.room.CardSlot
  * @param cardTypes     "utilidad o estructura": one of these types (with `cardType`, both must hold)
  * @param mentions      "con [tipo] en su texto": of that type, with it in its name, or written in its effects or inherited effects
  * @param backOnly      "en tu retaguardia" (not in the Línea frontal)
+ * @param enlace        "Enlace": a "Criatura Enlace" (a category of creature, designer 2026-11-13)
  * @param anyOf         alternatives that cannot be written as one filter ("1 utilidad Violeta o [brujería]"): it matches when this
  *                      filter and one of them do
  */
@@ -37,7 +38,7 @@ data class CardFilter(
     val maxStrength: Int?, val activeOnly: Boolean, val exhaustedOnly: Boolean, val minLevel: Int?, val minStrength: Int?, val maxCost: Int?,
     val name: String?, val notName: String?, val starterOnly: Boolean, val colorAndClass: Boolean, private val notColors: List<String>?,
     val nameContains: String?, val minCost: Int?, private val cardTypes: List<String>?, private val anyOf: List<CardFilter>?,
-    val mentions: String?, val backOnly: Boolean,
+    val mentions: String?, val backOnly: Boolean, val enlace: Boolean = false,
 ) {
 
     constructor(
@@ -72,138 +73,138 @@ data class CardFilter(
 
     fun withColors(vararg colors: String): CardFilter {
         return CardFilter(frozenListOf(*colors), classList, cardType, level, maxLevel, maxStrength, activeOnly, exhaustedOnly, minLevel, minStrength,
-            maxCost, name, notName, starterOnly, colorAndClass, notColorList, nameContains, minCost, cardTypeList, anyOfList, mentions, backOnly)
+            maxCost, name, notName, starterOnly, colorAndClass, notColorList, nameContains, minCost, cardTypeList, anyOfList, mentions, backOnly, enlace)
     }
 
     fun withClasses(vararg classes: String): CardFilter {
         return CardFilter(colorList, frozenListOf(*classes), cardType, level, maxLevel, maxStrength, activeOnly, exhaustedOnly, minLevel, minStrength,
-            maxCost, name, notName, starterOnly, colorAndClass, notColorList, nameContains, minCost, cardTypeList, anyOfList, mentions, backOnly)
+            maxCost, name, notName, starterOnly, colorAndClass, notColorList, nameContains, minCost, cardTypeList, anyOfList, mentions, backOnly, enlace)
     }
 
     fun withLevel(level: Int): CardFilter {
         return CardFilter(colorList, classList, cardType, level, maxLevel, maxStrength, activeOnly, exhaustedOnly, minLevel, minStrength,
-            maxCost, name, notName, starterOnly, colorAndClass, notColorList, nameContains, minCost, cardTypeList, anyOfList, mentions, backOnly)
+            maxCost, name, notName, starterOnly, colorAndClass, notColorList, nameContains, minCost, cardTypeList, anyOfList, mentions, backOnly, enlace)
     }
 
     fun withMaxLevel(maxLevel: Int): CardFilter {
         return CardFilter(colorList, classList, cardType, level, maxLevel, maxStrength, activeOnly, exhaustedOnly, minLevel, minStrength,
-            maxCost, name, notName, starterOnly, colorAndClass, notColorList, nameContains, minCost, cardTypeList, anyOfList, mentions, backOnly)
+            maxCost, name, notName, starterOnly, colorAndClass, notColorList, nameContains, minCost, cardTypeList, anyOfList, mentions, backOnly, enlace)
     }
 
     /** "nivel N o mayor". */
     fun withMinLevel(minLevel: Int): CardFilter {
         return CardFilter(colorList, classList, cardType, level, maxLevel, maxStrength, activeOnly, exhaustedOnly, minLevel, minStrength,
-            maxCost, name, notName, starterOnly, colorAndClass, notColorList, nameContains, minCost, cardTypeList, anyOfList, mentions, backOnly)
+            maxCost, name, notName, starterOnly, colorAndClass, notColorList, nameContains, minCost, cardTypeList, anyOfList, mentions, backOnly, enlace)
     }
 
     /** "de fuerza N o menos" (its current strength). */
     fun withMaxStrength(maxStrength: Int): CardFilter {
         return CardFilter(colorList, classList, cardType, level, maxLevel, maxStrength, activeOnly, exhaustedOnly, minLevel, minStrength,
-            maxCost, name, notName, starterOnly, colorAndClass, notColorList, nameContains, minCost, cardTypeList, anyOfList, mentions, backOnly)
+            maxCost, name, notName, starterOnly, colorAndClass, notColorList, nameContains, minCost, cardTypeList, anyOfList, mentions, backOnly, enlace)
     }
 
     /** "de fuerza N o más" (its current strength). */
     fun withMinStrength(minStrength: Int): CardFilter {
         return CardFilter(colorList, classList, cardType, level, maxLevel, maxStrength, activeOnly, exhaustedOnly, minLevel, minStrength,
-            maxCost, name, notName, starterOnly, colorAndClass, notColorList, nameContains, minCost, cardTypeList, anyOfList, mentions, backOnly)
+            maxCost, name, notName, starterOnly, colorAndClass, notColorList, nameContains, minCost, cardTypeList, anyOfList, mentions, backOnly, enlace)
     }
 
     /** "de coste N o menos". */
     fun withMaxCost(maxCost: Int): CardFilter {
         return CardFilter(colorList, classList, cardType, level, maxLevel, maxStrength, activeOnly, exhaustedOnly, minLevel, minStrength,
-            maxCost, name, notName, starterOnly, colorAndClass, notColorList, nameContains, minCost, cardTypeList, anyOfList, mentions, backOnly)
+            maxCost, name, notName, starterOnly, colorAndClass, notColorList, nameContains, minCost, cardTypeList, anyOfList, mentions, backOnly, enlace)
     }
 
     /** "activo": not exhausted. */
     /** Only creatures, on top of what it asks. */
     fun asCreature(): CardFilter {
         return CardFilter(colorList, classList, "creature", level, maxLevel, maxStrength, activeOnly, exhaustedOnly, minLevel, minStrength,
-            maxCost, name, notName, starterOnly, colorAndClass, notColorList, nameContains, minCost, cardTypeList, anyOfList, mentions, backOnly)
+            maxCost, name, notName, starterOnly, colorAndClass, notColorList, nameContains, minCost, cardTypeList, anyOfList, mentions, backOnly, enlace)
     }
 
     /** Only structures, on top of what it asks. */
     fun asStructure(): CardFilter {
         return CardFilter(colorList, classList, "structure", level, maxLevel, maxStrength, activeOnly, exhaustedOnly, minLevel, minStrength,
-            maxCost, name, notName, starterOnly, colorAndClass, notColorList, nameContains, minCost, cardTypeList, anyOfList, mentions, backOnly)
+            maxCost, name, notName, starterOnly, colorAndClass, notColorList, nameContains, minCost, cardTypeList, anyOfList, mentions, backOnly, enlace)
     }
 
     fun active(): CardFilter {
         return CardFilter(colorList, classList, cardType, level, maxLevel, maxStrength, true, exhaustedOnly, minLevel, minStrength,
-            maxCost, name, notName, starterOnly, colorAndClass, notColorList, nameContains, minCost, cardTypeList, anyOfList, mentions, backOnly)
+            maxCost, name, notName, starterOnly, colorAndClass, notColorList, nameContains, minCost, cardTypeList, anyOfList, mentions, backOnly, enlace)
     }
 
     /** "agotado". */
     fun exhausted(): CardFilter {
         return CardFilter(colorList, classList, cardType, level, maxLevel, maxStrength, activeOnly, true, minLevel, minStrength,
-            maxCost, name, notName, starterOnly, colorAndClass, notColorList, nameContains, minCost, cardTypeList, anyOfList, mentions, backOnly)
+            maxCost, name, notName, starterOnly, colorAndClass, notColorList, nameContains, minCost, cardTypeList, anyOfList, mentions, backOnly, enlace)
     }
 
     /** "llamada X" (by its name). */
     fun named(name: String?): CardFilter {
         return CardFilter(colorList, classList, cardType, level, maxLevel, maxStrength, activeOnly, exhaustedOnly, minLevel, minStrength,
-            maxCost, name, notName, starterOnly, colorAndClass, notColorList, nameContains, minCost, cardTypeList, anyOfList, mentions, backOnly)
+            maxCost, name, notName, starterOnly, colorAndClass, notColorList, nameContains, minCost, cardTypeList, anyOfList, mentions, backOnly, enlace)
     }
 
     /** "que no sea X". */
     fun notNamed(notName: String?): CardFilter {
         return CardFilter(colorList, classList, cardType, level, maxLevel, maxStrength, activeOnly, exhaustedOnly, minLevel, minStrength,
-            maxCost, name, notName, starterOnly, colorAndClass, notColorList, nameContains, minCost, cardTypeList, anyOfList, mentions, backOnly)
+            maxCost, name, notName, starterOnly, colorAndClass, notColorList, nameContains, minCost, cardTypeList, anyOfList, mentions, backOnly, enlace)
     }
 
     /** "Iniciador". */
     fun starter(): CardFilter {
         return CardFilter(colorList, classList, cardType, level, maxLevel, maxStrength, activeOnly, exhaustedOnly, minLevel, minStrength,
-            maxCost, name, notName, true, colorAndClass, notColorList, nameContains, minCost, cardTypeList, anyOfList, mentions, backOnly)
+            maxCost, name, notName, true, colorAndClass, notColorList, nameContains, minCost, cardTypeList, anyOfList, mentions, backOnly, enlace)
     }
 
     /** "Violeta [bestia]": the color and one of the classes (not either). */
     fun colorAndClass(color: String, vararg classes: String): CardFilter {
         return CardFilter(frozenListOf(color), frozenListOf(*classes), cardType, level, maxLevel, maxStrength, activeOnly, exhaustedOnly, minLevel,
-            minStrength, maxCost, name, notName, starterOnly, true, notColorList, nameContains, minCost, cardTypeList, anyOfList, mentions, backOnly)
+            minStrength, maxCost, name, notName, starterOnly, true, notColorList, nameContains, minCost, cardTypeList, anyOfList, mentions, backOnly, enlace)
     }
 
     /** "no-blanca": none of these colors. */
     fun notColors(vararg notColors: String): CardFilter {
         return CardFilter(colorList, classList, cardType, level, maxLevel, maxStrength, activeOnly, exhaustedOnly, minLevel, minStrength,
-            maxCost, name, notName, starterOnly, colorAndClass, frozenListOf(*notColors), nameContains, minCost, cardTypeList, anyOfList, mentions, backOnly)
+            maxCost, name, notName, starterOnly, colorAndClass, frozenListOf(*notColors), nameContains, minCost, cardTypeList, anyOfList, mentions, backOnly, enlace)
     }
 
     /** "con "X" en su nombre". */
     fun nameContains(text: String?): CardFilter {
         return CardFilter(colorList, classList, cardType, level, maxLevel, maxStrength, activeOnly, exhaustedOnly, minLevel, minStrength,
-            maxCost, name, notName, starterOnly, colorAndClass, notColorList, text, minCost, cardTypeList, anyOfList, mentions, backOnly)
+            maxCost, name, notName, starterOnly, colorAndClass, notColorList, text, minCost, cardTypeList, anyOfList, mentions, backOnly, enlace)
     }
 
     /** "de coste N o mayor". */
     fun withMinCost(minCost: Int): CardFilter {
         return CardFilter(colorList, classList, cardType, level, maxLevel, maxStrength, activeOnly, exhaustedOnly, minLevel, minStrength,
-            maxCost, name, notName, starterOnly, colorAndClass, notColorList, nameContains, minCost, cardTypeList, anyOfList, mentions, backOnly)
+            maxCost, name, notName, starterOnly, colorAndClass, notColorList, nameContains, minCost, cardTypeList, anyOfList, mentions, backOnly, enlace)
     }
 
     /** "utilidad", "estructura", "utilidad o estructura" ("creature", "utility", "structure"). */
     fun ofTypes(vararg types: String): CardFilter {
         return CardFilter(colorList, classList, cardType, level, maxLevel, maxStrength, activeOnly, exhaustedOnly, minLevel, minStrength,
-            maxCost, name, notName, starterOnly, colorAndClass, notColorList, nameContains, minCost, frozenListOf(*types), anyOfList, mentions, backOnly)
+            maxCost, name, notName, starterOnly, colorAndClass, notColorList, nameContains, minCost, frozenListOf(*types), anyOfList, mentions, backOnly, enlace)
     }
 
     /** One of these, besides everything this filter asks ("1 utilidad Violeta o [brujería]"). */
     fun orAnyOf(vararg alternatives: CardFilter): CardFilter {
         return CardFilter(colorList, classList, cardType, level, maxLevel, maxStrength, activeOnly, exhaustedOnly, minLevel, minStrength,
             maxCost, name, notName, starterOnly, colorAndClass, notColorList, nameContains, minCost, cardTypeList, frozenListOf(*alternatives), mentions,
-            backOnly)
+            backOnly, enlace)
     }
 
     /** "1 estructura": any card of those types. */
     /** "con [tipo] en su texto". */
     fun mentioning(type: String?): CardFilter {
         return CardFilter(colorList, classList, cardType, level, maxLevel, maxStrength, activeOnly, exhaustedOnly, minLevel, minStrength,
-            maxCost, name, notName, starterOnly, colorAndClass, notColorList, nameContains, minCost, cardTypeList, anyOfList, type, backOnly)
+            maxCost, name, notName, starterOnly, colorAndClass, notColorList, nameContains, minCost, cardTypeList, anyOfList, type, backOnly, enlace)
     }
 
     /** "en tu retaguardia". */
     fun inBack(): CardFilter {
         return CardFilter(colorList, classList, cardType, level, maxLevel, maxStrength, activeOnly, exhaustedOnly, minLevel, minStrength,
-            maxCost, name, notName, starterOnly, colorAndClass, notColorList, nameContains, minCost, cardTypeList, anyOfList, mentions, true)
+            maxCost, name, notName, starterOnly, colorAndClass, notColorList, nameContains, minCost, cardTypeList, anyOfList, mentions, true, enlace)
     }
 
     fun matches(card: CardSlot): Boolean {
@@ -244,6 +245,7 @@ data class CardFilter(
             if (!ofType && !inName && (card.mentions == null || !card.mentions!!.contains(t))) return false
         }
         if (backOnly && EffectEngine.inFrontLine(card)) return false
+        if (enlace && !card.enlace) return false
         return !starterOnly || card.starter
     }
 
@@ -275,6 +277,7 @@ data class CardFilter(
         if (!anyOfList.isEmpty()) text += " " + anyOfList.map { it.describe() }.joinToString(" o ")
         if (mentions != null) text += " con [$mentions] en su texto"
         if (backOnly) text += " en tu retaguardia"
+        if (enlace) text += " Enlace"
         return text.trim { it <= ' ' }
     }
 
@@ -288,14 +291,14 @@ data class CardFilter(
                 maxCost == other.maxCost && name == other.name && notName == other.notName && starterOnly == other.starterOnly &&
                 colorAndClass == other.colorAndClass && notColorList == other.notColorList && nameContains == other.nameContains &&
                 minCost == other.minCost && cardTypeList == other.cardTypeList && anyOfList == other.anyOfList && mentions == other.mentions &&
-                backOnly == other.backOnly
+                backOnly == other.backOnly && enlace == other.enlace
     }
 
     /** As a record's: `31 * h + hash(component)` over the components, in order. */
     override fun hashCode(): Int {
         var result = 0
         for (c in arrayOf<Any?>(colorList, classList, cardType, level, maxLevel, maxStrength, activeOnly, exhaustedOnly, minLevel, minStrength,
-            maxCost, name, notName, starterOnly, colorAndClass, notColorList, nameContains, minCost, cardTypeList, anyOfList, mentions, backOnly)) {
+            maxCost, name, notName, starterOnly, colorAndClass, notColorList, nameContains, minCost, cardTypeList, anyOfList, mentions, backOnly, enlace)) {
             result = 31 * result + (c?.hashCode() ?: 0)
         }
         return result
@@ -306,7 +309,7 @@ data class CardFilter(
                 "maxStrength=$maxStrength, activeOnly=$activeOnly, exhaustedOnly=$exhaustedOnly, minLevel=$minLevel, " +
                 "minStrength=$minStrength, maxCost=$maxCost, name=$name, notName=$notName, starterOnly=$starterOnly, " +
                 "colorAndClass=$colorAndClass, notColors=$notColorList, nameContains=$nameContains, minCost=$minCost, " +
-                "cardTypes=$cardTypeList, anyOf=$anyOfList, mentions=$mentions, backOnly=$backOnly]"
+                "cardTypes=$cardTypeList, anyOf=$anyOfList, mentions=$mentions, backOnly=$backOnly, enlace=$enlace]"
     }
 
     companion object {

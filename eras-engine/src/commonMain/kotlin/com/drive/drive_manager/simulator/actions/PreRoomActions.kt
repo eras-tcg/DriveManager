@@ -257,6 +257,8 @@ object PreRoomActions {
             c.finish = s.finish
             c.alt = s.alt
             c.altArtUrls = if (s.altArtUrls == null) HashMap() else HashMap(s.altArtUrls!!)
+            c.arrows = if (s.arrows == null) ArrayList() else ArrayList(s.arrows!!)
+            c.enlace = s.enlace
             c.faceDown = true
             c
         }

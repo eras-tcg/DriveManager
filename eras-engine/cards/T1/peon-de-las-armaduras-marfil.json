@@ -1,0 +1,97 @@
+{
+  "name" : "peón de las armaduras marfil",
+  "effects" : [
+    {
+      "id" : "peon-armaduras-marfil:en-invocacion",
+      "moment" : "ON_SUMMON",
+      "mandatory" : true,
+      "label" : "En Invocación",
+      "text" : "Mira las primeras 5 cartas de tu mazo, de ellas toma hasta 2 cartas Blancas, Enlace o [paladín]. Luego: tributa 2 cartas de tu mano.",
+      "steps" : [
+        {
+          "type" : "Do",
+          "action" : {
+            "type" : "Look",
+            "count" : {
+              "type" : "Fixed",
+              "value" : 5
+            }
+          }
+        },
+        {
+          "type" : "Do",
+          "action" : {
+            "type" : "Move",
+            "cards" : {
+              "zones" : "looked",
+              "owner" : "YOU",
+              "filter" : {
+                "anyOf" : [
+                  {
+                    "colors" : [
+                      "W"
+                    ]
+                  },
+                  {
+                    "enlace" : true
+                  },
+                  {
+                    "classes" : [
+                      "paladín"
+                    ]
+                  }
+                ]
+              },
+              "min" : {
+                "type" : "Fixed"
+              },
+              "max" : {
+                "type" : "Fixed",
+                "value" : 2
+              },
+              "self" : "ANY",
+              "mode" : "CHOOSE"
+            },
+            "to" : "hand",
+            "rest" : "deckTopKept"
+          }
+        },
+        {
+          "type" : "Do",
+          "action" : {
+            "type" : "Move",
+            "cards" : {
+              "zones" : "hand",
+              "owner" : "YOU",
+              "filter" : {},
+              "min" : {
+                "type" : "Fixed",
+                "value" : 2
+              },
+              "max" : {
+                "type" : "Fixed",
+                "value" : 2
+              },
+              "self" : "EXCLUDE",
+              "mode" : "CHOOSE"
+            },
+            "to" : "tributeZone"
+          }
+        }
+      ],
+      "sourceZone" : "field",
+      "limit" : "NONE"
+    }
+  ],
+  "formation" : {
+    "continuous" : [
+      {
+        "label" : "Turno Aliado",
+        "text" : "Esta carta gana fuerza 3.",
+        "allyTurn" : true,
+        "strength" : 3,
+        "zone" : "field"
+      }
+    ]
+  }
+}

@@ -142,6 +142,8 @@ sealed interface Action {
             const val DISCARD = "discardPile"
             const val DECK_TOP = "deckTop"
             const val DECK_BOTTOM = "deckBottom"
+            /** Looked cards not picked: back on top of the deck in the order they had, not asked ("se mantienen en el mazo"). */
+            const val DECK_TOP_KEPT = "deckTopKept"
             const val DECK_TOP_OR_BOTTOM = "deckTopOrBottom"
             const val HAND = "hand"
         }

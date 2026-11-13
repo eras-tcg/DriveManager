@@ -353,4 +353,14 @@ sealed interface EffectStep {
      */
     @JvmRecord
     data class AllySpecialSummonsSameLevel(val ally: CardFilter?, val zone: String?, val filter: CardFilter?) : EffectStep
+
+    // ------------------------------------------------------------------ Cards in testing T1, Paladines (Enlace, 2026-11-13)
+
+    /**
+     * "intercambia de posición esta carta con otro aliado en la misma formación" (`withSelf`) and "cambia de posición dos aliados en la
+     * misma formación": the two swap their places in the Línea frontal, their formations as they were (Formations.swap). The two are saved
+     * as "swapped" ("ambos aliados ganan …"); `lastDone` when they were swapped.
+     */
+    @JvmRecord
+    data class SwapInFormation(val withSelf: Boolean) : NeedsTarget
 }

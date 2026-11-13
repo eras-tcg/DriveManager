@@ -1,0 +1,102 @@
+{
+  "name" : "escuadra de lanzas aereas",
+  "effects" : [
+    {
+      "id" : "escuadra-lanzas-aereas:en-mano",
+      "moment" : "ACTIVATED",
+      "label" : "Turno Aliado En Mano",
+      "text" : "Puedes subir 1 aliado activo a tu mano y pagar 1 gema para colocar esta carta en tu línea frontal.",
+      "cost" : [
+        {
+          "type" : "Do",
+          "action" : {
+            "type" : "Move",
+            "cards" : {
+              "zones" : "field",
+              "owner" : "YOU",
+              "filter" : {
+                "cardType" : "creature",
+                "activeOnly" : true
+              },
+              "min" : {
+                "type" : "Fixed",
+                "value" : 1
+              },
+              "max" : {
+                "type" : "Fixed",
+                "value" : 1
+              },
+              "self" : "ANY",
+              "mode" : "CHOOSE"
+            },
+            "to" : "hand"
+          }
+        },
+        {
+          "type" : "Do",
+          "action" : {
+            "type" : "Gems",
+            "count" : {
+              "type" : "Fixed",
+              "value" : -1
+            }
+          }
+        }
+      ],
+      "steps" : [
+        {
+          "type" : "Do",
+          "action" : {
+            "type" : "Move",
+            "cards" : {
+              "zones" : "hand",
+              "owner" : "YOU",
+              "filter" : {},
+              "min" : {
+                "type" : "Fixed",
+                "value" : 1
+              },
+              "max" : {
+                "type" : "Fixed",
+                "value" : 1
+              },
+              "self" : "ANY",
+              "mode" : "SELF"
+            },
+            "to" : "frontLine"
+          }
+        }
+      ],
+      "sourceZone" : "hand",
+      "allyTurn" : true,
+      "limit" : "NONE"
+    },
+    {
+      "id" : "escuadra-lanzas-aereas:intercambio",
+      "moment" : "ACTIVATED",
+      "label" : "Turno Aliado",
+      "text" : "Una vez por turno: puedes intercambiar de posición esta carta con otro aliado en la misma formación.",
+      "steps" : [
+        {
+          "type" : "SwapInFormation",
+          "withSelf" : true
+        }
+      ],
+      "sourceZone" : "field",
+      "allyTurn" : true,
+      "limit" : "ONCE_PER_TURN"
+    }
+  ],
+  "formation" : {
+    "continuous" : [
+      {
+        "label" : "Perforante",
+        "text" : "Perforante (al final del enfrentamiento, si el bloqueador fue destruido: entra al paso de daño directo.)",
+        "keywords" : [
+          "Perforante"
+        ],
+        "zone" : "field"
+      }
+    ]
+  }
+}
