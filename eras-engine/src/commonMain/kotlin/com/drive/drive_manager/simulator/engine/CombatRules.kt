@@ -308,16 +308,10 @@ object CombatRules {
                 return false
             }
             c.hitsLeft = c.hitsLeft!! - 1
-            val life = defender.lifeStack.removeAt(0)
-            val revealedNow = life.faceDown
-            life.faceDown = false
+            val revealedNow = defender.lifeStack[0].faceDown
+            val (life, tribute) = EffectEngine.loseTopLife(room, defender, damage, owner.userId, null, attacker.instanceId,
+                name(attacker) + " inflige " + damage + " de daño directo: " + defender.username + " ")
             val creature = "creature" == life.cardType
-            val tribute = creature && (life.strength == null || CardEffects.lifeStrength(room, defender.userId, life) <= damage)
-            (if (tribute) defender.tributeZone else defender.hand).add(life)
-            record(room, GameEvent.LIFE_DAMAGE, owner.userId, life, "lifeStack", if (tribute) "tributeZone" else "hand", null,
-                frozenMapOf<String, Any?>("damage", damage, "attackerId", attacker.instanceId, "defenderId", defender.userId),
-                name(attacker) + " inflige " + damage + " de daño directo: " + defender.username + " pierde la vida " +
-                        name(life) + (if (tribute) ", que va a sus tributos" else ", que va a su mano"))
             if (creature && !tribute && revealedNow) {
                 lifePrompt(room, defender, life, PromptPurpose.REINFORCE.id(), "Reforzar", name(life) +
                         " tiene más fuerza que el daño y va a tu mano. ¿Refuerzas con ella? Se coloca bocarriba al fondo de tu pila de vidas.", "Reforzar")

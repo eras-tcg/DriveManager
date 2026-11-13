@@ -203,6 +203,28 @@ object EffectEngine {
         if (loser != null) endGame(room, loser, "deck", loser.username + " no puede robar al inicio de su turno: pierde la partida")
     }
 
+    /** A life lost to direct damage, and whether it went to the Tributos (else to the hand). */
+    data class LifeLost(val life: CardSlot, val tribute: Boolean)
+
+    /**
+     * Direct damage takes the defender's top life: face up, to their Tributos when it is a creature with that strength or less
+     * (its strength as a life, [CardEffects.lifeStrength]), else to their hand; recorded as LIFE_DAMAGE by `actorId`, its history
+     * line `message` followed by "pierde la vida X, que va a …". Losing the game for an empty life stack is the caller's.
+     */
+    @JvmStatic
+    fun loseTopLife(
+        room: GameRoom, defender: PlayerState, damage: Int, actorId: String?, effect: PendingEffect?, attackerId: String?, message: String,
+    ): LifeLost {
+        val life = defender.lifeStack.removeAt(0)
+        life.faceDown = false
+        val tribute = "creature" == life.cardType && (life.strength == null || CardEffects.lifeStrength(room, defender.userId, life) <= damage)
+        (if (tribute) defender.tributeZone else defender.hand).add(life)
+        record(room, GameEvent.LIFE_DAMAGE, actorId, life, "lifeStack", if (tribute) "tributeZone" else "hand", effect,
+            frozenMapOf<String, Any?>("damage", damage, "attackerId", attackerId, "defenderId", defender.userId),
+            message + "pierde la vida " + name(life) + (if (tribute) ", que va a sus tributos" else ", que va a su mano"))
+        return LifeLost(life, tribute)
+    }
+
     @JvmStatic
     fun loseByLives(room: GameRoom, loser: PlayerState?) {
         endGame(room, loser!!, "lives", loser.username + " se quedó sin vidas: pierde la partida")
