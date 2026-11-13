@@ -61,6 +61,10 @@ data class CardFilter(
     private val cardTypeList: List<String> get() = cardTypes ?: frozenListOf()
     private val anyOfList: List<CardFilter> get() = anyOf ?: frozenListOf()
 
+    /** A copy with the lists as read (empty when absent), as every builder below starts from. */
+    private fun normalized(): CardFilter =
+        copy(colors = colorList, classes = classList, notColors = notColorList, cardTypes = cardTypeList, anyOf = anyOfList)
+
     fun colors(): List<String> = if (colors == null) frozenListOf() else frozenListCopy(colors)
 
     fun classes(): List<String> = if (classes == null) frozenListOf() else frozenListCopy(classes)
@@ -72,139 +76,115 @@ data class CardFilter(
     fun anyOf(): List<CardFilter> = if (anyOf == null) frozenListOf() else frozenListCopy(anyOf)
 
     fun withColors(vararg colors: String): CardFilter {
-        return CardFilter(frozenListOf(*colors), classList, cardType, level, maxLevel, maxStrength, activeOnly, exhaustedOnly, minLevel, minStrength,
-            maxCost, name, notName, starterOnly, colorAndClass, notColorList, nameContains, minCost, cardTypeList, anyOfList, mentions, backOnly, enlace)
+        return normalized().copy(colors = frozenListOf(*colors))
     }
 
     fun withClasses(vararg classes: String): CardFilter {
-        return CardFilter(colorList, frozenListOf(*classes), cardType, level, maxLevel, maxStrength, activeOnly, exhaustedOnly, minLevel, minStrength,
-            maxCost, name, notName, starterOnly, colorAndClass, notColorList, nameContains, minCost, cardTypeList, anyOfList, mentions, backOnly, enlace)
+        return normalized().copy(classes = frozenListOf(*classes))
     }
 
     fun withLevel(level: Int): CardFilter {
-        return CardFilter(colorList, classList, cardType, level, maxLevel, maxStrength, activeOnly, exhaustedOnly, minLevel, minStrength,
-            maxCost, name, notName, starterOnly, colorAndClass, notColorList, nameContains, minCost, cardTypeList, anyOfList, mentions, backOnly, enlace)
+        return normalized().copy(level = level)
     }
 
     fun withMaxLevel(maxLevel: Int): CardFilter {
-        return CardFilter(colorList, classList, cardType, level, maxLevel, maxStrength, activeOnly, exhaustedOnly, minLevel, minStrength,
-            maxCost, name, notName, starterOnly, colorAndClass, notColorList, nameContains, minCost, cardTypeList, anyOfList, mentions, backOnly, enlace)
+        return normalized().copy(maxLevel = maxLevel)
     }
 
     /** "nivel N o mayor". */
     fun withMinLevel(minLevel: Int): CardFilter {
-        return CardFilter(colorList, classList, cardType, level, maxLevel, maxStrength, activeOnly, exhaustedOnly, minLevel, minStrength,
-            maxCost, name, notName, starterOnly, colorAndClass, notColorList, nameContains, minCost, cardTypeList, anyOfList, mentions, backOnly, enlace)
+        return normalized().copy(minLevel = minLevel)
     }
 
     /** "de fuerza N o menos" (its current strength). */
     fun withMaxStrength(maxStrength: Int): CardFilter {
-        return CardFilter(colorList, classList, cardType, level, maxLevel, maxStrength, activeOnly, exhaustedOnly, minLevel, minStrength,
-            maxCost, name, notName, starterOnly, colorAndClass, notColorList, nameContains, minCost, cardTypeList, anyOfList, mentions, backOnly, enlace)
+        return normalized().copy(maxStrength = maxStrength)
     }
 
     /** "de fuerza N o más" (its current strength). */
     fun withMinStrength(minStrength: Int): CardFilter {
-        return CardFilter(colorList, classList, cardType, level, maxLevel, maxStrength, activeOnly, exhaustedOnly, minLevel, minStrength,
-            maxCost, name, notName, starterOnly, colorAndClass, notColorList, nameContains, minCost, cardTypeList, anyOfList, mentions, backOnly, enlace)
+        return normalized().copy(minStrength = minStrength)
     }
 
     /** "de coste N o menos". */
     fun withMaxCost(maxCost: Int): CardFilter {
-        return CardFilter(colorList, classList, cardType, level, maxLevel, maxStrength, activeOnly, exhaustedOnly, minLevel, minStrength,
-            maxCost, name, notName, starterOnly, colorAndClass, notColorList, nameContains, minCost, cardTypeList, anyOfList, mentions, backOnly, enlace)
+        return normalized().copy(maxCost = maxCost)
     }
 
     /** "activo": not exhausted. */
     /** Only creatures, on top of what it asks. */
     fun asCreature(): CardFilter {
-        return CardFilter(colorList, classList, "creature", level, maxLevel, maxStrength, activeOnly, exhaustedOnly, minLevel, minStrength,
-            maxCost, name, notName, starterOnly, colorAndClass, notColorList, nameContains, minCost, cardTypeList, anyOfList, mentions, backOnly, enlace)
+        return normalized().copy(cardType = "creature")
     }
 
     /** Only structures, on top of what it asks. */
     fun asStructure(): CardFilter {
-        return CardFilter(colorList, classList, "structure", level, maxLevel, maxStrength, activeOnly, exhaustedOnly, minLevel, minStrength,
-            maxCost, name, notName, starterOnly, colorAndClass, notColorList, nameContains, minCost, cardTypeList, anyOfList, mentions, backOnly, enlace)
+        return normalized().copy(cardType = "structure")
     }
 
     fun active(): CardFilter {
-        return CardFilter(colorList, classList, cardType, level, maxLevel, maxStrength, true, exhaustedOnly, minLevel, minStrength,
-            maxCost, name, notName, starterOnly, colorAndClass, notColorList, nameContains, minCost, cardTypeList, anyOfList, mentions, backOnly, enlace)
+        return normalized().copy(activeOnly = true)
     }
 
     /** "agotado". */
     fun exhausted(): CardFilter {
-        return CardFilter(colorList, classList, cardType, level, maxLevel, maxStrength, activeOnly, true, minLevel, minStrength,
-            maxCost, name, notName, starterOnly, colorAndClass, notColorList, nameContains, minCost, cardTypeList, anyOfList, mentions, backOnly, enlace)
+        return normalized().copy(exhaustedOnly = true)
     }
 
     /** "llamada X" (by its name). */
     fun named(name: String?): CardFilter {
-        return CardFilter(colorList, classList, cardType, level, maxLevel, maxStrength, activeOnly, exhaustedOnly, minLevel, minStrength,
-            maxCost, name, notName, starterOnly, colorAndClass, notColorList, nameContains, minCost, cardTypeList, anyOfList, mentions, backOnly, enlace)
+        return normalized().copy(name = name)
     }
 
     /** "que no sea X". */
     fun notNamed(notName: String?): CardFilter {
-        return CardFilter(colorList, classList, cardType, level, maxLevel, maxStrength, activeOnly, exhaustedOnly, minLevel, minStrength,
-            maxCost, name, notName, starterOnly, colorAndClass, notColorList, nameContains, minCost, cardTypeList, anyOfList, mentions, backOnly, enlace)
+        return normalized().copy(notName = notName)
     }
 
     /** "Iniciador". */
     fun starter(): CardFilter {
-        return CardFilter(colorList, classList, cardType, level, maxLevel, maxStrength, activeOnly, exhaustedOnly, minLevel, minStrength,
-            maxCost, name, notName, true, colorAndClass, notColorList, nameContains, minCost, cardTypeList, anyOfList, mentions, backOnly, enlace)
+        return normalized().copy(starterOnly = true)
     }
 
     /** "Violeta [bestia]": the color and one of the classes (not either). */
     fun colorAndClass(color: String, vararg classes: String): CardFilter {
-        return CardFilter(frozenListOf(color), frozenListOf(*classes), cardType, level, maxLevel, maxStrength, activeOnly, exhaustedOnly, minLevel,
-            minStrength, maxCost, name, notName, starterOnly, true, notColorList, nameContains, minCost, cardTypeList, anyOfList, mentions, backOnly, enlace)
+        return normalized().copy(colors = frozenListOf(color), classes = frozenListOf(*classes), colorAndClass = true)
     }
 
     /** "no-blanca": none of these colors. */
     fun notColors(vararg notColors: String): CardFilter {
-        return CardFilter(colorList, classList, cardType, level, maxLevel, maxStrength, activeOnly, exhaustedOnly, minLevel, minStrength,
-            maxCost, name, notName, starterOnly, colorAndClass, frozenListOf(*notColors), nameContains, minCost, cardTypeList, anyOfList, mentions, backOnly, enlace)
+        return normalized().copy(notColors = frozenListOf(*notColors))
     }
 
     /** "con "X" en su nombre". */
     fun nameContains(text: String?): CardFilter {
-        return CardFilter(colorList, classList, cardType, level, maxLevel, maxStrength, activeOnly, exhaustedOnly, minLevel, minStrength,
-            maxCost, name, notName, starterOnly, colorAndClass, notColorList, text, minCost, cardTypeList, anyOfList, mentions, backOnly, enlace)
+        return normalized().copy(nameContains = text)
     }
 
     /** "de coste N o mayor". */
     fun withMinCost(minCost: Int): CardFilter {
-        return CardFilter(colorList, classList, cardType, level, maxLevel, maxStrength, activeOnly, exhaustedOnly, minLevel, minStrength,
-            maxCost, name, notName, starterOnly, colorAndClass, notColorList, nameContains, minCost, cardTypeList, anyOfList, mentions, backOnly, enlace)
+        return normalized().copy(minCost = minCost)
     }
 
     /** "utilidad", "estructura", "utilidad o estructura" ("creature", "utility", "structure"). */
     fun ofTypes(vararg types: String): CardFilter {
-        return CardFilter(colorList, classList, cardType, level, maxLevel, maxStrength, activeOnly, exhaustedOnly, minLevel, minStrength,
-            maxCost, name, notName, starterOnly, colorAndClass, notColorList, nameContains, minCost, frozenListOf(*types), anyOfList, mentions, backOnly, enlace)
+        return normalized().copy(cardTypes = frozenListOf(*types))
     }
 
     /** One of these, besides everything this filter asks ("1 utilidad Violeta o [brujería]"). */
     fun orAnyOf(vararg alternatives: CardFilter): CardFilter {
-        return CardFilter(colorList, classList, cardType, level, maxLevel, maxStrength, activeOnly, exhaustedOnly, minLevel, minStrength,
-            maxCost, name, notName, starterOnly, colorAndClass, notColorList, nameContains, minCost, cardTypeList, frozenListOf(*alternatives), mentions,
-            backOnly, enlace)
+        return normalized().copy(anyOf = frozenListOf(*alternatives))
     }
 
     /** "1 estructura": any card of those types. */
     /** "con [tipo] en su texto". */
     fun mentioning(type: String?): CardFilter {
-        return CardFilter(colorList, classList, cardType, level, maxLevel, maxStrength, activeOnly, exhaustedOnly, minLevel, minStrength,
-            maxCost, name, notName, starterOnly, colorAndClass, notColorList, nameContains, minCost, cardTypeList, anyOfList, type, backOnly, enlace)
+        return normalized().copy(mentions = type)
     }
 
     /** "en tu retaguardia". */
     fun inBack(): CardFilter {
-        return CardFilter(colorList, classList, cardType, level, maxLevel, maxStrength, activeOnly, exhaustedOnly, minLevel, minStrength,
-            maxCost, name, notName, starterOnly, colorAndClass, notColorList, nameContains, minCost, cardTypeList, anyOfList, mentions, true, enlace)
+        return normalized().copy(backOnly = true)
     }
 
     fun matches(card: CardSlot): Boolean {
