@@ -436,6 +436,27 @@ class E12CardsTest extends CardBatchSupport {
     }
 
     @Test
+    void trampaVegetalChoosesWhichOfTheEnemiesThatEnteredTogetherToExhaust() {
+        CardSlot trampa = utility("tv", "Trampa Vegetal", 1, "G");
+        play(trampa);
+        room.setCurrentTurnUserId("guest");
+        CardSlot first = onField(guest, card("e1", "Enemigo Uno", 1, 1, "R"), BACK);
+        CardSlot second = onField(guest, card("e2", "Enemigo Dos", 1, 1, "R"), BACK);
+        first.setY(25.0);
+        second.setY(25.0);
+        EffectEngine.record(room, GameEvent.MOVE, "guest", first, null, "frontLine", null, null, "sube");
+        EffectEngine.record(room, GameEvent.MOVE, "guest", second, null, "frontLine", null, null, "sube");
+        Chain.advance(room);
+        // A lone mandatory effect may ask to be confirmed first
+        for (int i = 0; i < 3 && room.getPrompt() != null && !room.getPrompt().getValidIds().contains("e2"); i++) answer(room.getPrompt().getValidIds().get(0));
+        assertThat(room.getPrompt().getValidIds()).containsExactlyInAnyOrder("e1", "e2");
+        answer("e2");
+        assertThat(second.isTapped()).isTrue();
+        assertThat(first.isTapped()).isFalse();
+        assertThat(host.getDiscardPile()).contains(trampa);
+    }
+
+    @Test
     void trampaVegetalReturnsToTheHandAtTheEndOfTheOpponentsTurn() {
         CardSlot trampa = onField(host, utility("tv", "Trampa Vegetal", 1, "G"), BACK);
         room.setCurrentTurnUserId("guest");
