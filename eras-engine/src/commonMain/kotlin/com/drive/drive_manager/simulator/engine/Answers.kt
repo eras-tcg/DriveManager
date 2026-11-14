@@ -75,7 +75,9 @@ object Answers {
         if (prompt.playerId != userId) return "Esta elección le corresponde al otro jugador"
         val picks: List<String> = chosen ?: frozenListOf()
         if (HashSet(picks).size != picks.size) return "Elegiste la misma carta dos veces"
-        if (picks.size < prompt.min || picks.size > prompt.max) {
+        // A special summon or a Ritual is always given up with nothing chosen ("No invocar"), whatever its materials need
+        val givenUp = picks.isEmpty() && (PromptPurpose.SPECIAL.`is`(prompt.purpose) || PromptPurpose.RITUAL.`is`(prompt.purpose))
+        if (!givenUp && (picks.size < prompt.min || picks.size > prompt.max)) {
             return if (prompt.min == prompt.max)
                 "Debes elegir " + prompt.min + " " + plural(prompt.min, "carta", "cartas")
             else "Puedes elegir hasta " + prompt.max + " " + plural(prompt.max, "carta", "cartas")

@@ -48,7 +48,7 @@ object LookSteps : StepFamily {
                 SearchHope.apply(room, effect, player, { c -> step.filters!!.any { f -> f.matches(c) } }, step.filters!!.size)
                 val valid = effect.looked.filter { c -> step.filters!!.any { f -> f.matches(c) } }.map { it.instanceId }
                 val prompt = prompt(room, effect, Prompt.Kind.TAKE_REVEALED_REST_BOTTOM, "Toma " +
-                        step.filters!!.joinToString(" y ") { f -> "hasta 1 " + f.describe() } + " para tu mano. Ordena el resto: irá al fondo de tu mazo.")
+                        step.filters!!.joinToString(" y ") { f -> "hasta 1 " + f.describe() } + " para tu mano.")
                 prompt.cards = ArrayList(effect.looked)
                 prompt.validIds = ArrayList(valid)
                 prompt.min = 0
@@ -64,7 +64,7 @@ object LookSteps : StepFamily {
                 SearchHope.apply(room, effect, player, { c -> filter.matches(c) }, step.max)
                 val valid = effect.looked.filter { c -> filter.matches(c) }.map { it.instanceId }
                 val prompt = prompt(room, effect, Prompt.Kind.TAKE_REVEALED_REST_BOTTOM,
-                        "Toma hasta " + step.max + " cartas " + step.filter!!.describe() + " con distinto nivel para tu mano. Ordena el resto: irá al fondo de tu mazo.")
+                        "Toma hasta " + step.max + " cartas " + step.filter!!.describe() + " con distinto nivel para tu mano.")
                 prompt.cards = ArrayList(effect.looked)
                 prompt.validIds = ArrayList(valid)
                 prompt.min = 0

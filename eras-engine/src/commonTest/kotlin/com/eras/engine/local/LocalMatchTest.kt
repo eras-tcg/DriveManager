@@ -152,7 +152,7 @@ class LocalMatchTest {
          */
         /** LocalMatch.result() at the end of each game: taken on the JVM; JavaScript must give the same. */
         val EXPECTED_RESULT = mapOf(
-            "st1-st1-1-easy" to "{\"status\":\"POST_GAME\",\"gamesEnded\":1,\"winnerId\":\"local-player\",\"endReason\":\"lives\",\"turns\":16,\"digest\":\"ee7a64e2429505ee\"}",
+            "st1-st1-1-easy" to "{\"status\":\"POST_GAME\",\"gamesEnded\":1,\"winnerId\":\"bot\",\"endReason\":\"lives\",\"turns\":15,\"digest\":\"891ec4217426e287\"}",
             "st2-st3-2-easy" to "{\"status\":\"POST_GAME\",\"gamesEnded\":1,\"winnerId\":\"local-player\",\"endReason\":\"lives\",\"turns\":15,\"digest\":\"a3aad28383e4273f\"}",
             "st4-st1-3-easy" to "{\"status\":\"POST_GAME\",\"gamesEnded\":1,\"winnerId\":\"local-player\",\"endReason\":\"lives\",\"turns\":12,\"digest\":\"07b16f261386427e\"}",
             "st3-st4-5-normal" to "{\"status\":\"POST_GAME\",\"gamesEnded\":1,\"winnerId\":\"bot\",\"endReason\":\"lives\",\"turns\":15,\"digest\":\"87673b89854a3663\"}",
@@ -163,18 +163,18 @@ class LocalMatchTest {
          * must give the same). Without them the messages give [EXPECTED], as before those updates were sent.
          */
         val EXPECTED_WITH_LINKS = mapOf(
-            "st1-st1-1-easy" to "cfc8e16b6bedffab",
+            "st1-st1-1-easy" to "982cd820693c80ef",
             "st2-st3-2-easy" to "75570c36f4883cf8",
-            "st4-st1-3-easy" to "a9676e98ceca414a",
-            "st3-st4-5-normal" to "da788146023f9d4f",
+            "st4-st1-3-easy" to "0ede7ad462322a6b",
+            "st3-st4-5-normal" to "8deec6804f5aefc6",
         )
 
         /** Taken on the JVM; JavaScript must give the same. */
         val EXPECTED = mapOf(
-            "st1-st1-1-easy" to "2f7604e66c76a38b",
+            "st1-st1-1-easy" to "d6264bd288aef190",
             "st2-st3-2-easy" to "92930e54abe4f5e4",
-            "st4-st1-3-easy" to "a7966901b5bae3ec",
-            "st3-st4-5-normal" to "baa88a1c04e72d2f",
+            "st4-st1-3-easy" to "5c9787ad2eef7b2b",
+            "st3-st4-5-normal" to "b6cdca61e750983a",
         )
     }
 }

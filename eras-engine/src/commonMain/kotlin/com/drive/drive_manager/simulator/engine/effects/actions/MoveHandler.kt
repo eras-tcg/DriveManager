@@ -114,18 +114,16 @@ class MoveHandler : ActionHandler<Move> {
     private fun instruction(ctx: EffectContext, action: Move, min: Int, max: Int): String {
         val what = (if (min < max) "hasta " else "") + max + " " + (if (max == 1) "carta" else "cartas")
         val filter = action.cards!!.filter().describe()
-        var cards = what + (if (filter.all { JavaText.isWhitespace(it) }) "" else " $filter") + " de " + ctx.describeZones(action.cards.zones)
+        // The cards looked at are the ones on the sheet: no "de …" for them
+        val from = if (action.cards.zones == "looked") "" else " de " + ctx.describeZones(action.cards.zones)
+        var cards = what + (if (filter.all { JavaText.isWhitespace(it) }) "" else " $filter") + from
         if (action.cards.self() == Selector.Self.REQUIRE) cards += ", incluida esta carta"
         val random = if (action.random) " en orden aleatorio" else ""
         if (action.to!!.startsWith("materials:") || action.to.startsWith("resources:")) {
             return "Añade " + cards + " como " + (if (action.to.startsWith("materials:")) "material." else "recurso.")
         }
         if (Move.DECK_TOP_KEPT == action.rest) return instructionOf(action, cards, random) + " El resto vuelve al tope de tu mazo en su orden."
-        if (action.rest != null) {
-            val rest = if (Move.DECK_TOP == action.rest) " Ordena el resto: vuelve al tope de tu mazo (la de la izquierda queda arriba)."
-                    else " Ordena el resto: irá al fondo de tu mazo en ese orden."
-            return instructionOf(action, cards, random) + rest
-        }
+        // The rest, when the player orders it, is asked on its own sheet afterwards: this one says only what is done now
         return instructionOf(action, cards, random)
     }
 
