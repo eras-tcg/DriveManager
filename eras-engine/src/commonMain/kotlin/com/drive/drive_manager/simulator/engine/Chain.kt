@@ -18,6 +18,7 @@ import com.drive.drive_manager.simulator.engine.EffectEngine.rulesPrompt
 import com.drive.drive_manager.simulator.engine.EffectEngine.script
 import com.drive.drive_manager.simulator.engine.EffectEngine.zone
 import com.drive.drive_manager.simulator.engine.EffectScript.Limit
+import com.drive.drive_manager.simulator.engine.effects.model.Memory
 import com.drive.drive_manager.simulator.engine.EffectStep.*
 import com.drive.drive_manager.simulator.engine.Removals.leaveField
 import com.drive.drive_manager.simulator.engine.Removals.promptRemoval
@@ -88,6 +89,8 @@ object Chain {
         room.pendingEvents.clear()
         val triggered: MutableList<PendingEffect> = ArrayList()
         val seen: MutableMap<String, Int> = HashMap()
+        // Of each "si …" effect, the cards of every event that matched it in this window
+        val eventCards: MutableMap<String, MutableList<String?>> = HashMap()
         for (event in events) {
             val now: MutableMap<String, Int> = HashMap()
             for (e in triggersOf(room, event)) {
@@ -99,6 +102,17 @@ object Chain {
                     seen[key] = n
                     triggered.add(e)
                 }
+                val cards = eventCards.getOrPut(key) { ArrayList() }
+                if (event.cardInstanceId != null && !cards.contains(event.cardInstanceId)) cards.add(event.cardInstanceId)
+            }
+        }
+        // Bound to its first event, whose card may be gone while the others are still there: when several cards matched,
+        // "reducirla", "dicho enemigo" is chosen among those still on the field (Memory.EVENT_CARDS)
+        for (e in triggered) {
+            val cards = eventCards[e.sourceInstanceId + "|" + e.scriptId]
+            // Only for the effects that ask for it ("IfSaved eventCards"): the others keep their memory as it was
+            if (cards != null && cards.size > 1 && script(e).steps?.any { it is IfSaved && it.name == Memory.EVENT_CARDS } == true) {
+                e.saved[Memory.EVENT_CARDS] = cards.filterTo(ArrayList()) { id -> room.players.values.any { p -> find(p.field, id) != null } }
             }
         }
         // Rule 11.7.0.5: mandatory of the active player, mandatory of the opponent, optional of the active

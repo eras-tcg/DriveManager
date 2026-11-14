@@ -471,6 +471,9 @@ internal class EngineContext(private val room: GameRoom, private val effect: Pen
     }
 
     override fun eventCardOnField(): CardSlot? {
+        // Triggered by several cards at once: the one chosen among them
+        val chosen = effect.saved[Memory.EVENT_CARD]
+        if (!chosen.isNullOrEmpty()) return find(chosen[0])
         val trigger = EffectEngine.triggerEvent(room, effect)
         return if (trigger == null) null else find(trigger.cardInstanceId)
     }
