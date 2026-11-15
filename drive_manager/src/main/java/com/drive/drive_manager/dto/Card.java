@@ -60,6 +60,8 @@ public class Card {
     /** Its illustration alone (CardArtService): the CardArtStore key and media type; null without one. */
     private String artKey;
     private String artType;
+    /** The finished card drawn by the editor from this document and its art (a cache, made again on every save). */
+    private String renderKey;
     /**
      * The card's alternative arts, empty for most cards: a copy pulled from a pack may come out with one of them (each
      * by its own odds or the shop's, ShopOdds.alt). Only pictures of the same card, never cards of their own: they

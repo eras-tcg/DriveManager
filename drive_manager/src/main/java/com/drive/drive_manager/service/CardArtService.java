@@ -47,6 +47,28 @@ public class CardArtService {
         });
     }
 
+    /** Stores the finished card drawn by the editor (a cache of the document and its art) and drops the one before. */
+    public Optional<Card> setRender(String cardId, byte[] bytes) {
+        String type = mediaType(bytes);
+        if (type == null) throw new IllegalArgumentException("El archivo no es una imagen JPG, PNG o WebP");
+        if (bytes.length > MAX_BYTES) throw new IllegalArgumentException("La imagen pesa más de 25 MB");
+        return cards.findById(cardId).map(card -> {
+            String old = card.getRenderKey();
+            String key = "card-render/" + cardId + "/" + Instant.now().toEpochMilli() + "." + type.substring(6);
+            store.put(key, bytes, type);
+            card.setRenderKey(key);
+            Card saved = cards.save(card);
+            if (old != null) store.delete(old);
+            return saved;
+        });
+    }
+
+    public Optional<Art> getRender(String cardId) {
+        return cards.findById(cardId)
+                .filter(c -> c.getRenderKey() != null)
+                .map(c -> new Art(store.get(c.getRenderKey()), "image/" + c.getRenderKey().substring(c.getRenderKey().lastIndexOf('.') + 1)));
+    }
+
     public Optional<Card> remove(String cardId) {
         return cards.findById(cardId).map(card -> {
             if (card.getArtKey() != null) store.delete(card.getArtKey());

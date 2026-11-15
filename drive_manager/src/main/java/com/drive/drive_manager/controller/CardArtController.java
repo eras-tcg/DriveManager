@@ -25,6 +25,8 @@ import java.util.function.Supplier;
  * PUT    /api/cards/{id}/art — the art as the body (JPG, PNG or WebP, kept as it came): answers the card
  * GET    /api/cards/{id}/art — the art's file
  * DELETE /api/cards/{id}/art — the card loses its art: answers the card
+ * PUT    /api/cards/{id}/render — the finished card drawn by the editor (a cache): answers the card
+ * GET    /api/cards/{id}/render — that image
  */
 @RestController
 @RequestMapping("/api/cards")
@@ -50,6 +52,23 @@ public class CardArtController {
                 .map(a -> ResponseEntity.ok()
                         .contentType(MediaType.parseMediaType(a.type()))
                         .cacheControl(CacheControl.noStore())
+                        .body(a.bytes()))
+                .orElse(ResponseEntity.notFound().build());
+    }
+
+    @PutMapping(value = "/{id}/render", consumes = {"image/jpeg", "image/png", "image/webp", "application/octet-stream"})
+    public ResponseEntity<Object> setRender(@PathVariable String id, @RequestBody byte[] image) {
+        if (image == null || image.length == 0) return ResponseEntity.badRequest().body(Map.of("message", "Falta la imagen"));
+        return apply(() -> art.setRender(id, image));
+    }
+
+    @GetMapping("/{id}/render")
+    public ResponseEntity<byte[]> render(@PathVariable String id) {
+        // The key changes with every render: the address asks for it (?v=key), so it can be kept
+        return art.getRender(id)
+                .map(a -> ResponseEntity.ok()
+                        .contentType(MediaType.parseMediaType(a.type().replace("jpg", "jpeg")))
+                        .cacheControl(CacheControl.maxAge(java.time.Duration.ofDays(365)).cachePrivate())
                         .body(a.bytes()))
                 .orElse(ResponseEntity.notFound().build());
     }

@@ -65,4 +65,17 @@ class CardArtServiceTest {
         assertThat(CardArtService.mediaType(webp)).isEqualTo("image/webp");
         assertThat(CardArtService.mediaType(new byte[3])).isNull();
     }
+
+    @Test
+    void theRenderedCardIsKeptApartFromTheArt() {
+        byte[] jpg = {(byte) 0xFF, (byte) 0xD8, (byte) 0xFF, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+        service.setRender("m1", jpg);
+        String first = card.getRenderKey();
+        assertThat(first).matches("card-render/m1/[0-9]+[.]jpeg");
+        assertThat(card.getArtKey()).isNull();
+        service.setRender("m1", jpg);
+        verify(store).delete(first);
+        when(store.get(card.getRenderKey())).thenReturn(jpg);
+        assertThat(service.getRender("m1")).get().extracting(CardArtService.Art::type).isEqualTo("image/jpeg");
+    }
 }
