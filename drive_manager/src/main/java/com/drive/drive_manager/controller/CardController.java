@@ -84,6 +84,8 @@ public class CardController {
                     .orElseGet(() -> ResponseEntity.notFound().build());
         } catch (CardService.CodeTaken e) {
             return ResponseEntity.status(HttpStatus.CONFLICT).body(java.util.Map.of("message", e.getMessage()));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(java.util.Map.of("message", e.getMessage()));
         }
     }
 

@@ -138,6 +138,10 @@ public class CardService {
             if (cardDetails.getDesign() != null) {
                 card.setDesign(cardDetails.getDesign());
             }
+            if (cardDetails.getDeckCopies() != null) {
+                if (cardDetails.getDeckCopies() < 0) throw new IllegalArgumentException("Las copias no pueden ser negativas");
+                card.setDeckCopies(cardDetails.getDeckCopies());
+            }
             checkCode(card, id);
 
             Card saved = cardRepository.save(card);

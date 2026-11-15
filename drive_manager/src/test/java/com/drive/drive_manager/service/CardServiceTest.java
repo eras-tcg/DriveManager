@@ -71,4 +71,16 @@ class CardServiceTest {
         // A save without design (the metadata page) leaves it
         assertThat(service.updateCard("m1", new Card()).orElseThrow().getDesign()).containsEntry("frameStyle", "full");
     }
+
+    @Test
+    void aStructureCardKeepsHowManyCopiesTheDeckBrings() {
+        Card change = new Card();
+        change.setDeckCopies(3);
+        assertThat(service.updateCard("m1", change).orElseThrow().getDeckCopies()).isEqualTo(3);
+        // Another save without it leaves it
+        assertThat(service.updateCard("m1", new Card()).orElseThrow().getDeckCopies()).isEqualTo(3);
+        Card wrong = new Card();
+        wrong.setDeckCopies(-1);
+        assertThatThrownBy(() -> service.updateCard("m1", wrong)).isInstanceOf(IllegalArgumentException.class);
+    }
 }

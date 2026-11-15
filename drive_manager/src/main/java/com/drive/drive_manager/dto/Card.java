@@ -62,6 +62,8 @@ public class Card {
     private String artType;
     /** The finished card drawn by the editor from this document and its art (a cache, made again on every save). */
     private String renderKey;
+    /** In a structure deck (ST…): how many copies of this card the deck brings; null where it does not apply. */
+    private Integer deckCopies;
     /**
      * The card's alternative arts, empty for most cards: a copy pulled from a pack may come out with one of them (each
      * by its own odds or the shop's, ShopOdds.alt). Only pictures of the same card, never cards of their own: they
