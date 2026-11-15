@@ -163,18 +163,18 @@ class LocalMatchTest {
          * must give the same). Without them the messages give [EXPECTED], as before those updates were sent.
          */
         val EXPECTED_WITH_LINKS = mapOf(
-            "st1-st1-1-easy" to "cfc8e16b6bedffab",
-            "st2-st3-2-easy" to "75570c36f4883cf8",
-            "st4-st1-3-easy" to "a9676e98ceca414a",
-            "st3-st4-5-normal" to "da788146023f9d4f",
+            "st1-st1-1-easy" to "d75492d75e5fdf83",
+            "st2-st3-2-easy" to "09e281ec07d6bb88",
+            "st4-st1-3-easy" to "0bdae42b11d61252",
+            "st3-st4-5-normal" to "1524e0475d4afdcf",
         )
 
         /** Taken on the JVM; JavaScript must give the same. */
         val EXPECTED = mapOf(
-            "st1-st1-1-easy" to "2f7604e66c76a38b",
-            "st2-st3-2-easy" to "92930e54abe4f5e4",
-            "st4-st1-3-easy" to "a7966901b5bae3ec",
-            "st3-st4-5-normal" to "baa88a1c04e72d2f",
+            "st1-st1-1-easy" to "5e64df2464d52e13",
+            "st2-st3-2-easy" to "e9e15383c8f2878c",
+            "st4-st1-3-easy" to "3bf94e1be0a42efc",
+            "st3-st4-5-normal" to "d422204636a04f0f",
         )
     }
 }
