@@ -42,9 +42,12 @@ public class CardController {
      */
     @PreAuthorize("hasAuthority('manage_cards')")
     @PostMapping
-    public ResponseEntity<Card> createCard(@RequestBody Card card) {
-        Card createdCard = cardService.createCard(card);
-        return ResponseEntity.status(HttpStatus.CREATED).body(createdCard);
+    public ResponseEntity<Object> createCard(@RequestBody Card card) {
+        try {
+            return ResponseEntity.status(HttpStatus.CREATED).body(cardService.createCard(card));
+        } catch (CardService.CodeTaken e) {
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(java.util.Map.of("message", e.getMessage()));
+        }
     }
 
     /**
@@ -74,10 +77,14 @@ public class CardController {
      */
     @PreAuthorize("hasAuthority('manage_cards')")
     @PutMapping("/{id}")
-    public ResponseEntity<Card> updateCard(@PathVariable String id, @RequestBody Card cardDetails) {
-        Optional<Card> updatedCard = cardService.updateCard(id, cardDetails);
-        return updatedCard.map(ResponseEntity::ok)
-                .orElseGet(() -> ResponseEntity.notFound().build());
+    public ResponseEntity<Object> updateCard(@PathVariable String id, @RequestBody Card cardDetails) {
+        try {
+            Optional<Card> updatedCard = cardService.updateCard(id, cardDetails);
+            return updatedCard.<ResponseEntity<Object>>map(ResponseEntity::ok)
+                    .orElseGet(() -> ResponseEntity.notFound().build());
+        } catch (CardService.CodeTaken e) {
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(java.util.Map.of("message", e.getMessage()));
+        }
     }
 
     /**

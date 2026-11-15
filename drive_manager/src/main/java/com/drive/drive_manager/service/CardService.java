@@ -27,6 +27,10 @@ public class CardService {
      * Create a new card.
      */
     public Card createCard(Card card) {
+        // Its art is set through CardArtService only
+        card.setArtKey(null);
+        card.setArtType(null);
+        checkCode(card, null);
         Card saved = cardRepository.save(card);
         // Its image takes the printed name (the file name has no real hyphens)
         cardNames.syncImages(saved);
@@ -115,12 +119,63 @@ public class CardService {
             if (cardDetails.getColors() != null) {
                 card.setColors(cardDetails.getColors());
             }
+            if (cardDetails.getSubEdition() != null) {
+                card.setSubEdition(cardDetails.getSubEdition().isBlank() ? null : cardDetails.getSubEdition());
+            }
+            if (cardDetails.getEnlace() != null) {
+                card.setEnlace(cardDetails.getEnlace());
+            }
+            if (cardDetails.getArrows() != null) {
+                card.setArrows(cardDetails.getArrows());
+            }
+            if (cardDetails.getFormationEffects() != null) {
+                card.setFormationEffects(cardDetails.getFormationEffects());
+            }
+            if (cardDetails.getFormationKeywordEffects() != null) {
+                card.setFormationKeywordEffects(cardDetails.getFormationKeywordEffects());
+            }
+            if (cardDetails.getDesign() != null) {
+                card.setDesign(cardDetails.getDesign());
+            }
+            checkCode(card, id);
 
             Card saved = cardRepository.save(card);
             cardNames.syncImages(saved);
             return Optional.of(saved);
         }
         return Optional.empty();
+    }
+
+    /** A code (edition, sub-edition, color and number) used by another card. */
+    public static class CodeTaken extends RuntimeException {
+        public CodeTaken(String message) {
+            super(message);
+        }
+    }
+
+    /** Refuses a code another card has (cards without number are not checked). */
+    void checkCode(Card card, String selfId) {
+        if (card.getEdition() == null || card.getCardNumber() == null || card.getColorIdentity() == null) return;
+        boolean taken = cardRepository.findByEdition(card.getEdition()).stream()
+                .anyMatch(c -> sameCode(c, card) && !c.getId().equals(selfId));
+        if (taken) throw new CodeTaken("Ya existe una carta con el código " + code(card));
+    }
+
+    /** "E1-R03", "E1.1-P01": how a code is shown. */
+    static String code(Card c) {
+        String sub = blank(c.getSubEdition()) ? "" : "." + c.getSubEdition();
+        return c.getEdition() + sub + "-" + c.getColorIdentity().toUpperCase() + String.format("%02d", c.getCardNumber());
+    }
+
+    static boolean sameCode(Card a, Card b) {
+        return java.util.Objects.equals(a.getEdition(), b.getEdition())
+                && java.util.Objects.equals(blank(a.getSubEdition()) ? null : a.getSubEdition(), blank(b.getSubEdition()) ? null : b.getSubEdition())
+                && a.getColorIdentity() != null && a.getColorIdentity().equalsIgnoreCase(b.getColorIdentity())
+                && java.util.Objects.equals(a.getCardNumber(), b.getCardNumber());
+    }
+
+    private static boolean blank(String s) {
+        return s == null || s.isBlank();
     }
 
     /**

@@ -8,6 +8,7 @@ import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.util.List;
+import java.util.Map;
 
 /**
  * Card entity for MongoDB collection 'cards'.
@@ -51,6 +52,14 @@ public class Card {
     private List<Effect> formationEffects;
     /** Enlace: the abilities its link effect gives ("Perforante"). */
     private List<CardKeywordEffect> formationKeywordEffects;
+    /**
+     * How the card editor draws it: frame (standard, semi or full art), gold border, inherit frame, cost/strength left
+     * out and the art's framing; kept as the editor sends it. Null for cards made before the editor.
+     */
+    private Map<String, Object> design;
+    /** Its illustration alone (CardArtService): the CardArtStore key and media type; null without one. */
+    private String artKey;
+    private String artType;
     /**
      * The card's alternative arts, empty for most cards: a copy pulled from a pack may come out with one of them (each
      * by its own odds or the shop's, ShopOdds.alt). Only pictures of the same card, never cards of their own: they

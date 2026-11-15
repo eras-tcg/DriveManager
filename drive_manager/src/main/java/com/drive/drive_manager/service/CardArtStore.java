@@ -10,17 +10,17 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 
 /**
- * Where the card editor's art files are kept: R2, under the key as given ({@code card-art/…}), or a local folder when
- * {@code card-drafts.art-dir} is set (local development, where R2 is not configured). The site never reads them from
- * R2 directly: they are served by the drafts' API to whoever manages cards.
+ * Where the cards' illustrations are kept: R2, under the key as given ({@code card-art/…}), or a local folder when
+ * {@code card-art.dir} is set (local development, where R2 is not configured). The site never reads them from
+ * R2 directly: they are served by the cards' API (CardArtController).
  */
 @Component
-public class DraftArtStore {
+public class CardArtStore {
 
     private final R2Service r2;
     private final Path dir;
 
-    public DraftArtStore(R2Service r2, @Value("${card-drafts.art-dir:}") String dir) {
+    public CardArtStore(R2Service r2, @Value("${card-art.dir:}") String dir) {
         this.r2 = r2;
         this.dir = dir == null || dir.isBlank() ? null : Path.of(dir);
     }
