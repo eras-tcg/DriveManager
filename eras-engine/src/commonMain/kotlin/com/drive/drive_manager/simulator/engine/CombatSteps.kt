@@ -151,10 +151,12 @@ object CombatSteps {
                 val f = step.filter!!
                 val valid = player.tributeZone.filter { f.matches(it) }
                 if (valid.size < step.count) return false
-                pick(room, effect, "Puedes descartar " + step.count + " tributos " + step.filter.describe() + " para que " + effect.sourceName + " gane "
-                        + step.keyword + " 1 hasta el final del ataque (tantas veces como quieras). Elige ninguno para terminar.", "Descartar",
+                pick(room, effect, "Puedes enviar " + step.count + " tributos " + step.filter.describe() + " al fondo de tu mazo para que " + effect.sourceName + " gane "
+                        + step.keyword + " 1 hasta el final del ataque (tantas veces como quieras). Elige ninguno para terminar.", "Al fondo del mazo",
                     player.tributeZone, ids(valid), step.count)
                 room.prompt!!.min = 0
+                // Exactly that many or none: the board confirms nothing in between
+                room.prompt!!.exactOrNone = true
                 return true
             }
             is ExtraCombatHitThenEndTurn -> {

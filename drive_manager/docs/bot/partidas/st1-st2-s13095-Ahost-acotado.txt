@@ -1,0 +1,447 @@
+A = turns=2,samples=2,maxCandidates=24,sameDeals=1,halving=1,hMullCost=1,hMullKeep=0,hEvenTrade=1.1445,sField=5,seqDepth=3,seqKeep=4,seqTriggers=0,gemDebt=5,vStrSq=0.109,uTribute=2,uDamp=0.5,hUseful=1,budgetMs=2000,seqRollout=1,seqShare=0.5,innerCands=3,innerMs=15,innerFinal=2,guard=0.1,exposed=0.1,firstTries=2,rankCands=1,hRank=1,lifeExp=1,lifeMine=0.85,cascade=1,seqPass=1,leafPlay=0.5,overExtendPow=3,overExtendUnc=0.1,attackFirst=1,overExtendRival=1,planKeep=4,hNoDebt=1,hAttackPick=1,hChumpLives=1,gems=1,frontRisk=1,advanceMore=1,lifeFoe=0.9,riskLives=2,riskAlive=1,lifeCurveExp=1,hPreyGuard=1,hCombat=1,riskSum=2,vResource=1.5,lethalLives=3,vLevelSq=0,hReduce=1,riskCuts=0.5,winFlat=1,attackFloor=1,vCost=0,vStr=1.09,vLevel=0,zHandPlay=0.5,vOpen=0.5,structure=0,defenceFloor=1,hFreeMaterial=1,vBody=4,winSeen=2
+B = turns=2,samples=2,maxCandidates=24,sameDeals=1,halving=1,hMullCost=1,hMullKeep=0,hEvenTrade=1.1445,sHand=1,sField=4,seqDepth=3,seqKeep=4,seqTriggers=0,gemDebt=2,vStrSq=0.03,vTop=3,uTribute=2,uDamp=0.5,hUseful=1,budgetMs=2000,seqRollout=1,seqShare=0.5,innerCands=3,innerMs=15,innerFinal=2,vLanes=4,guard=0.1,exposed=0.1,firstTries=2,rankCands=1,handDecay=0.85,hRank=1,lifeExp=1,lifeMine=0.85,cascade=1,seqPass=1,leafPlay=0.5,overExtendPow=3,overExtendUnc=0.1,handLow=3,attackFirst=1,overExtendRival=1,planKeep=4,hNoDebt=1,hAttackPick=1,hChumpLives=1,sUse=3,gems=1,frontRisk=1,advanceMore=1,lifeFoe=0.9,riskLives=2,riskAlive=1,lifeCurveExp=1,hPreyGuard=1,hCombat=1,deckClock=0.5,riskSum=2,vResource=1.5,lethalLives=3,vLevelSq=0.5,hReduce=1,riskCuts=0.5,winFlat=1
+Gana A (lives, 11 turnos)
+
+      > A decide SEQUENCE null (opción 1 de 7, espera -12.4, ahora -10.5)
+— turno (B(st2) empieza; A(st1) cerró con 0 gemas; timeline 3, evento 3) | A(st1): vidas 6, mano 5, gemas -1, mazo 40, mesa [], mano {Paso Interdimensional 1, Sahiel 3, Mihel 1, Galafendrax El Transmutador 8, Flureteus 1}  B(st2): vidas 6, mano 7, gemas 1, mazo 37, mesa [], mano {Galveta 2, Wyphound 1, Dragón Volcánico 8, Volcán De Dragones 1, Flamagón 1, Duregón 1, Flambreik 2}  
+  A(st1) juega Portal Al Mundo Espiritual
+      · Ana juega Portal Al Mundo Espiritual pagando 1 gema
+      · Final del turno de Ana
+      · Inicio del turno de Beto
+      > A decide RESOLVE_PROMPT Reforzar (opción 1 de 2, espera -24.8, ahora 1.8)
+— turno (A(st1) empieza; B(st2) cerró con 0 gemas; timeline 43, evento 43) | A(st1): vidas 5, mano 7, gemas 2, mazo 39, mesa [], mano {Paso Interdimensional 1, Sahiel 3, Mihel 1, Galafendrax El Transmutador 8, Flureteus 1, Falanx 6, Arc-xioma 2}  B(st2): vidas 6, mano 5, gemas -2, mazo 30, mesa [Galveta 5*^], mano {Llamarada 6, Fadrake 3, Llamarada 6, Dírumy 1, Wyphound 1}  
+  B(st2) invoca Duregón
+  B(st2) tributa Fadrake
+  B(st2) tributa Wyverno De Pantano
+  B(st2) tributa Llamarada
+  B(st2) tributa Flambreik
+  B(st2) juega Volcán De Dragones
+  B(st2) invoca especial Galveta
+  B(st2) tributa Wyphound
+  B(st2) tributa Dragón Volcánico
+  B(st2) tributa Saildreik
+  B(st2) ataca con Galveta
+  B(st2) tributa Flamagón
+  B(st2) quita una vida: Falanx → hand (daño 5)
+      · Beto invocó Duregón pagando 0 gemas (ventaja del iniciador)
+      · Cadena 1: se activa el efecto En Invocación de Duregón
+      · Beto tributa 3 cartas del tope de su mazo (Duregón): Fadrake, Wyverno De Pantano y Llamarada
+      · Beto añade a su mano 1 carta (Duregón): Llamarada
+      · Se resuelve la Cadena 1: En Invocación de Duregón
+      · Cadena 1: se activa el efecto En Tributos de Wyverno De Pantano
+      · Beto tributa 1 carta (Wyverno De Pantano): Flambreik
+      · Beto añade a su mano 1 carta (Wyverno De Pantano): Fadrake
+      · Se resuelve la Cadena 1: En Tributos de Wyverno De Pantano
+      · Beto juega Volcán De Dragones pagando 1 gema
+      · Beto invoca por Evolución a Galveta usando Duregón y pagando 1 gema
+      · Galveta sube a la línea frontal tras su invocación especial
+      · Beto roba 1 carta por la invocación
+      · Cadena 1: se activa el efecto En Invocación de Galveta
+      · Cadena 2: se activa el efecto Turno Aliado de Volcán De Dragones
+      · Beto agota a Volcán De Dragones (Volcán De Dragones)
+      · Beto gana 1 gema (Volcán De Dragones)
+      · Beto roba 1 carta (Volcán De Dragones)
+      · Beto tributa 1 carta (Volcán De Dragones): Wyphound
+      · Se resuelve la Cadena 2: Turno Aliado de Volcán De Dragones
+      · Beto coloca al tope de su mazo 1 carta (Galveta)
+      · Beto tributa 2 cartas del tope de su mazo (Galveta): Dragón Volcánico y Saildreik
+      · Se resuelve la Cadena 1: En Invocación de Galveta
+      · Beto agota a Galveta y ataca a Ana
+      · Cadena 1: se activa el efecto Al Atacar de Galveta
+      · Beto roba 1 carta (Galveta)
+      · Beto tributa 1 carta (Galveta): Flamagón
+      · Se resuelve la Cadena 1: Al Atacar de Galveta
+      · Paso de bloqueo
+      · Paso de daño directo
+      · Galveta inflige 5 de daño directo: Ana pierde la vida Falanx, que va a su mano
+      · Termina el combate
+      · Final del turno de Beto
+      · Inicio del turno de Ana
+      > A decide NORMAL_SUMMON Arc-xioma (opción 0 de 17, espera -22.5, ahora -2.8)
+      > A decide END_TURN null (opción 0 de 5, espera -25.6, ahora 3.2)
+      > A decide RESOLVE_PROMPT Final de turno · Línea frontal (opción 1 de 2, espera -25.6, ahora 3.2)
+— turno (B(st2) empieza; A(st1) cerró con 0 gemas; timeline 46, evento 46) | A(st1): vidas 5, mano 6, gemas -2, mazo 39, mesa [Arc-xioma 4], mano {Paso Interdimensional 1, Sahiel 3, Mihel 1, Galafendrax El Transmutador 8, Flureteus 1, Falanx 6}  B(st2): vidas 6, mano 6, gemas 2, mazo 29, mesa [Galveta 5^], mano {Llamarada 6, Fadrake 3, Llamarada 6, Dírumy 1, Wyphound 1, Dragón Delta 2}  
+  A(st1) invoca Arc-xioma
+      · Ana invocó Arc-xioma pagando 2 gemas
+      · Arc-xioma: En Invocación no puede activarse (no se puede pagar su coste o no hay objetivos válidos)
+      · Final del turno de Ana
+      · Inicio del turno de Beto
+      > A decide RESOLVE_PROMPT Reforzar (opción 1 de 2, espera 8.5, ahora -28.4)
+      > A decide RESOLVE_PROMPT Reforzar (opción 1 de 2, espera -21.5, ahora -4.7)
+— turno (A(st1) empieza; B(st2) cerró con -1 gemas; timeline 85, evento 85) | A(st1): vidas 3, mano 9, gemas 4, mazo 38, mesa [Arc-xioma 4], mano {Paso Interdimensional 1, Sahiel 3, Mihel 1, Galafendrax El Transmutador 8, Flureteus 1, Falanx 6, Sahiel 3, Galafendrax El Transmutador 8, Flarix 2}  B(st2): vidas 6, mano 6, gemas -4, mazo 24, mesa [Dragón Delta 6*^, Fadrake 8*^], mano {Llamarada 6, Llamarada 6, Wyphound 1, Ddraig 3, Wyfreik 2, Dragón Delta 2}  
+  B(st2) invoca Dírumy
+  B(st2) invoca especial Dragón Delta
+  B(st2) tributa Saildreik
+  B(st2) ataca con Dragón Delta
+  B(st2) quita una vida: Sahiel → hand (daño 6)
+  B(st2) ataca con Galveta
+  B(st2) tributa Dragón Carmesí
+  B(st2) quita una vida: Galafendrax El Transmutador → hand (daño 5)
+  B(st2) invoca especial Fadrake
+      · Beto invocó Dírumy pagando 1 gema
+      · Cadena 1: se activa el efecto En Invocación de Dírumy
+      · Beto mira las primeras 4 cartas de su mazo (Dírumy)
+      · Beto añade a su mano 1 carta (Dírumy): Ddraig
+      · Beto envía al fondo de su mazo 3 cartas
+      · Se resuelve la Cadena 1: En Invocación de Dírumy
+      · Beto invoca por Evolución a Dragón Delta usando Dírumy y pagando 1 gema
+      · Dragón Delta sube a la línea frontal tras su invocación especial
+      · Beto roba 1 carta por la invocación
+      · Cadena 1: se activa el efecto Turno Aliado de Volcán De Dragones
+      · Beto agota a Volcán De Dragones (Volcán De Dragones)
+      · Beto gana 1 gema (Volcán De Dragones)
+      · Beto roba 1 carta (Volcán De Dragones)
+      · Beto tributa 1 carta (Volcán De Dragones): Saildreik
+      · Se resuelve la Cadena 1: Turno Aliado de Volcán De Dragones
+      · Beto agota a Dragón Delta y ataca a Ana
+      · Beto no activa el efecto Al Atacar de Dragón Delta
+      · Paso de bloqueo
+      · Paso de daño directo
+      · Dragón Delta inflige 6 de daño directo: Ana pierde la vida Sahiel, que va a su mano
+      · Termina el combate
+      · Beto agota a Galveta y ataca a Ana
+      · Cadena 1: se activa el efecto Al Atacar de Galveta
+      · Beto roba 1 carta (Galveta)
+      · Beto tributa 1 carta (Galveta): Dragón Carmesí
+      · Se resuelve la Cadena 1: Al Atacar de Galveta
+      · Paso de bloqueo
+      · Paso de daño directo
+      · Galveta inflige 5 de daño directo: Ana pierde la vida Galafendrax El Transmutador, que va a su mano
+      · Termina el combate
+      · Beto invoca por Evolución a Fadrake usando Galveta y pagando 2 gemas
+      · Beto roba 1 carta por la invocación
+      · Volcán De Dragones: Turno Aliado no puede activarse (no se puede pagar su coste o no hay objetivos válidos)
+      · Final del turno de Beto
+      · Inicio del turno de Ana
+      > A decide SEQUENCE null (opción 1 de 20, espera -8.1, ahora -16.3)
+      > A decide SEQUENCE null (opción 0 de 20, espera 11.8, ahora -17.4)
+      > A decide SEQUENCE null (opción 3 de 19, espera -14.6, ahora -9.9)
+      > A decide RESOLVE_PROMPT Sahiel · Materialización (opción 0 de 2, espera -37.9, ahora -9.9)
+      > A decide RESOLVE_PROMPT Sahiel · Línea frontal (opción 0 de 2, espera 23.3, ahora -15.6)
+      > A decide RESOLVE_PROMPT Encadenar efectos (opción 0 de 3, espera -16.6, ahora 1.5)
+      > A decide RESOLVE_PROMPT Sahiel (opción 0 de 2, espera 27.8, ahora 1.5)
+      > A decide SEQUENCE null (opción 0 de 20, espera 1.8, ahora 6.2)
+      > A decide END_TURN null (opción 0 de 13, espera -3.5, ahora 19.9)
+— turno (B(st2) empieza; A(st1) cerró con 0 gemas; timeline 116, evento 116) | A(st1): vidas 4, mano 8, gemas -3, mazo 36, mesa [Sahiel 9^], mano {Paso Interdimensional 1, Sahiel 3, Mihel 1, Galafendrax El Transmutador 8, Flureteus 1, Falanx 6, Galafendrax El Transmutador 8, Flarix 2}  B(st2): vidas 6, mano 7, gemas 3, mazo 23, mesa [Dragón Delta 6^], mano {Llamarada 6, Llamarada 6, Wyphound 1, Ddraig 3, Wyfreik 2, Dragón Delta 2, Flambreik 2}  
+  A(st1) ataca con Arc-xioma
+  A(st1) quita una vida: Saildreik → hand (daño 4)
+  A(st1) invoca Flarix
+  A(st1) invoca especial Sahiel
+  A(st1) tributa Arc-xioma
+  A(st1) tributa Flarix
+  A(st1) ataca con Sahiel a Fadrake
+  A(st1) destruye Fadrake
+      · Ana sube a la línea frontal: Arc-xioma
+      · Ana agota a Arc-xioma y ataca a Beto
+      · Paso de bloqueo
+      · Paso de daño directo
+      · Arc-xioma inflige 4 de daño directo: Beto pierde la vida Saildreik, que va a su mano
+      · Beto refuerza con Saildreik: va bocarriba al fondo de su pila de vidas
+      · Termina el combate
+      · Ana invocó Flarix pagando 2 gemas
+      · Flarix: En Invocación no puede activarse (no se puede pagar su coste o no hay objetivos válidos)
+      · Ana invoca por Materialización a Sahiel usando Flarix y Arc-xioma y pagando 2 gemas
+      · Sahiel sube a la línea frontal tras su invocación especial
+      · Ana roba 1 carta por la invocación
+      · Cadena 1: se activa el efecto En Invocación de Sahiel
+      · Ana tributa 2 cartas (Sahiel): Arc-xioma y Flarix
+      · Ana coloca al tope de sus vidas 1 carta del tope de su mazo (Sahiel)
+      · Se resuelve la Cadena 1: En Invocación de Sahiel
+      · Ana agota a Sahiel y ataca a Fadrake
+      · Paso de bloqueo
+      · Paso de enfrentamiento
+      · Enfrentamiento: Sahiel (9) contra Fadrake (8)
+      · Ana destruye Fadrake de Beto en el enfrentamiento
+      · Termina el combate
+      · Final del turno de Ana
+      · Inicio del turno de Beto
+      · Sahiel se reactiva (Reactivar)
+— turno (A(st1) empieza; B(st2) cerró con 0 gemas; timeline 140, evento 140) | A(st1): vidas 4, mano 9, gemas 4, mazo 35, mesa [Sahiel 9^], mano {Paso Interdimensional 1, Sahiel 3, Mihel 1, Galafendrax El Transmutador 8, Flureteus 1, Falanx 6, Galafendrax El Transmutador 8, Flarix 2, Portal Al Mundo Espiritual 1}  B(st2): vidas 6, mano 6, gemas -4, mazo 22, mesa [Ddraig 8^, Wyverno De Pantano 7^], mano {Llamarada 6, Llamarada 6, Wyphound 1, Wyfreik 2, Dragón Delta 2, Wyfreik 2}  
+  B(st2) invoca especial Ddraig
+  B(st2) tributa Dragón Carmesí
+  B(st2) tributa Galveta
+  B(st2) tributa Flamagón
+  B(st2) tributa Dragón Volcánico
+  B(st2) invoca Flambreik
+  B(st2) invoca especial Wyverno De Pantano
+      · Beto invoca por Evolución a Ddraig usando Dragón Delta y pagando 2 gemas
+      · Beto roba 1 carta por la invocación
+      · Cadena 1: se activa el efecto En Invocación de Ddraig
+      · Cadena 2: se activa el efecto Turno Aliado de Volcán De Dragones
+      · Beto agota a Volcán De Dragones (Volcán De Dragones)
+      · Beto gana 1 gema (Volcán De Dragones)
+      · Beto roba 1 carta (Volcán De Dragones)
+      · Beto tributa 1 carta (Volcán De Dragones): Dragón Carmesí
+      · Se resuelve la Cadena 2: Turno Aliado de Volcán De Dragones
+      · Beto tributa 3 cartas del tope de su mazo (Ddraig): Galveta, Flamagón y Dragón Volcánico
+      · Se resuelve la Cadena 1: En Invocación de Ddraig
+      · Beto invocó Flambreik pagando 2 gemas
+      · Beto envía 5 tributos al fondo de su mazo: Flambreik reduce en 1 el coste especial: Dragón Volcánico, Dragón Carmesí, Dragón Carmesí, Dragón Volcánico y Saildreik
+      · Beto invoca por Evolución a Wyverno De Pantano usando Flambreik y pagando 0 gemas
+      · Wyverno De Pantano sube a la línea frontal tras su invocación especial
+      · Beto roba 1 carta por la invocación
+      · Volcán De Dragones: Turno Aliado no puede activarse (no se puede pagar su coste o no hay objetivos válidos)
+      · Final del turno de Beto
+      · Inicio del turno de Ana
+      > A decide SEQUENCE null (opción 1 de 20, espera -3.6, ahora 17.7)
+      > A decide SEQUENCE null (opción 10 de 21, espera -19.8, ahora 21.6)
+      > A decide RESOLVE_PROMPT Sahiel · Materialización (opción 0 de 2, espera -46.2, ahora 21.6)
+      > A decide RESOLVE_PROMPT Sahiel · Línea frontal (opción 1 de 2, espera -15.0, ahora 33.1)
+      > A decide RESOLVE_PROMPT Encadenar efectos (opción 0 de 3, espera -18.4, ahora 34.9)
+      > A decide RESOLVE_PROMPT Sahiel (opción 0 de 2, espera -33.9, ahora 34.9)
+      > A decide SEQUENCE null (opción 6 de 20, espera -27.8, ahora 38.6)
+      > A decide SEQUENCE null (opción 6 de 18, espera -18.5, ahora 26.7)
+      > A decide RESOLVE_PROMPT Falanx · Materialización (opción 1 de 2, espera -30.2, ahora 26.7)
+      > A decide RESOLVE_PROMPT Falanx · Línea frontal (opción 0 de 2, espera -43.2, ahora -2.1)
+      > A decide END_TURN null (opción 0 de 17, espera -32.6, ahora 24.3)
+— turno (B(st2) empieza; A(st1) cerró con -1 gemas; timeline 161, evento 161) | A(st1): vidas 5, mano 8, gemas -5, mazo 32, mesa [Falanx 12^], mano {Paso Interdimensional 1, Mihel 1, Galafendrax El Transmutador 8, Flureteus 1, Galafendrax El Transmutador 8, Portal Al Mundo Espiritual 1, Composición Adimensional 1, Mathaus 4}  B(st2): vidas 5, mano 7, gemas 5, mazo 21, mesa [Ddraig 8^, Wyverno De Pantano 7^], mano {Llamarada 6, Llamarada 6, Wyphound 1, Wyfreik 2, Dragón Delta 2, Wyfreik 2, Volcán De Dragones 1}  
+  A(st1) invoca Flarix
+  A(st1) invoca especial Sahiel
+  A(st1) tributa Arc-xioma
+  A(st1) tributa Flarix
+  A(st1) ataca con Sahiel
+  A(st1) quita una vida: Wyfreik → tributeZone (daño 9)
+  A(st1) invoca especial Falanx
+      · Ana invocó Flarix pagando 2 gemas
+      · Flarix: En Invocación no puede activarse (no se puede pagar su coste o no hay objetivos válidos)
+      · Ana invoca por Materialización a Sahiel usando Flarix y Arc-xioma y pagando 2 gemas
+      · Ana roba 1 carta por la invocación
+      · Cadena 1: se activa el efecto En Invocación de Sahiel
+      · Ana tributa 2 cartas (Sahiel): Arc-xioma y Flarix
+      · Ana coloca al tope de sus vidas 1 carta del tope de su mazo (Sahiel)
+      · Se resuelve la Cadena 1: En Invocación de Sahiel
+      · Ana agota a Sahiel y ataca a Beto
+      · Paso de bloqueo
+      · Paso de daño directo
+      · Sahiel inflige 9 de daño directo: Beto pierde la vida Wyfreik, que va a sus tributos
+      · Termina el combate
+      · Ana invoca por Materialización a Falanx usando Sahiel y Sahiel y pagando 1 gema
+      · Falanx sube a la línea frontal tras su invocación especial
+      · Ana roba 1 carta por la invocación
+      · Final del turno de Ana
+      · Inicio del turno de Beto
+— turno (A(st1) empieza; B(st2) cerró con 0 gemas; timeline 188, evento 188) | A(st1): vidas 5, mano 9, gemas 5, mazo 31, mesa [Falanx 12^], mano {Paso Interdimensional 1, Mihel 1, Galafendrax El Transmutador 8, Flureteus 1, Galafendrax El Transmutador 8, Portal Al Mundo Espiritual 1, Composición Adimensional 1, Mathaus 4, Bertalum 3}  B(st2): vidas 5, mano 4, gemas -5, mazo 15, mesa [Ddraig 8^, Wyverno De Pantano 7^, Fadrake 8^, Wyfreik 5^], mano {Llamarada 6, Llamarada 6, Flambreik 2, Dragón Volcánico 8}  
+  B(st2) juega Volcán De Dragones
+  B(st2) invoca Wyphound
+  B(st2) tributa Dracoventus
+  B(st2) tributa Wyphound
+  B(st2) invoca especial Dragón Delta
+  B(st2) tributa Flamagón
+  B(st2) tributa Wyfreik
+  B(st2) invoca especial Fadrake
+  B(st2) invoca Wyfreik
+      · Beto juega Volcán De Dragones pagando 1 gema
+      · Beto invocó Wyphound pagando 1 gema
+      · Cadena 1: se activa el efecto En Invocación de Wyphound
+      · Beto tributa 2 cartas del tope de su mazo (Wyphound): Dracoventus y Wyphound
+      · Se resuelve la Cadena 1: En Invocación de Wyphound
+      · Beto invoca por Evolución a Dragón Delta usando Wyphound y pagando 1 gema
+      · Dragón Delta sube a la línea frontal tras su invocación especial
+      · Beto roba 1 carta por la invocación
+      · Cadena 1: se activa el efecto Turno Aliado de Volcán De Dragones
+      · Cadena 2: se activa el efecto Turno Aliado de Volcán De Dragones
+      · Beto agota a Volcán De Dragones (Volcán De Dragones)
+      · Beto gana 1 gema (Volcán De Dragones)
+      · Beto roba 1 carta (Volcán De Dragones)
+      · Beto tributa 1 carta (Volcán De Dragones): Flamagón
+      · Se resuelve la Cadena 2: Turno Aliado de Volcán De Dragones
+      · Beto agota a Volcán De Dragones (Volcán De Dragones)
+      · Beto gana 1 gema (Volcán De Dragones)
+      · Beto roba 1 carta (Volcán De Dragones)
+      · Beto tributa 1 carta (Volcán De Dragones): Wyfreik
+      · Se resuelve la Cadena 1: Turno Aliado de Volcán De Dragones
+      · Beto invoca por Evolución a Fadrake usando Dragón Delta y pagando 2 gemas
+      · Beto roba 1 carta por la invocación
+      · Volcán De Dragones: Turno Aliado no puede activarse (no se puede pagar su coste o no hay objetivos válidos)
+      · Volcán De Dragones: Turno Aliado no puede activarse (no se puede pagar su coste o no hay objetivos válidos)
+      · Beto invocó Wyfreik pagando 2 gemas
+      · Final del turno de Beto
+      · Beto sube a la línea frontal: Wyfreik
+      · Inicio del turno de Ana
+      > A decide NORMAL_SUMMON Flureteus (opción 16 de 22, espera -25.6, ahora 0.4)
+      > A decide RESOLVE_PROMPT Efecto obligatorio (opción 0 de 2, espera -2.9, ahora 3.4)
+      > A decide RESOLVE_PROMPT Flureteus (opción 7 de 8, espera 36.1, ahora 3.4)
+      > A decide RESOLVE_PROMPT Flureteus (opción 0 de 2, espera 15.8, ahora 29.9)
+      > A decide SEQUENCE null (opción 10 de 23, espera 29.6, ahora -1.4)
+      > A decide RESOLVE_PROMPT Efecto obligatorio (opción 0 de 2, espera 10.5, ahora 2.3)
+      > A decide RESOLVE_PROMPT Mihel (opción 0 de 2, espera 14.0, ahora 17.3)
+      > A decide SEQUENCE null (opción 0 de 23, espera 39.1, ahora 2.3)
+      > A decide RESOLVE_PROMPT Efecto obligatorio (opción 0 de 2, espera -5.0, ahora -12.6)
+      > A decide RESOLVE_PROMPT Galafendrax El Transmutador (opción 2 de 3, espera 27.5, ahora -12.6)
+      > A decide SEQUENCE null (opción 0 de 23, espera 37.7, ahora 35.0)
+      > A decide SEQUENCE null (opción 12 de 20, espera 50.3, ahora 37.0)
+      > A decide RESOLVE_PROMPT Encadenar efectos (opción 1 de 3, espera 28.8, ahora 5.3)
+      > A decide SEQUENCE null (opción 12 de 20, espera 6.7, ahora 10.3)
+      > A decide RESOLVE_PROMPT Efecto obligatorio (opción 0 de 2, espera 34.4, ahora 6.3)
+      > A decide RESOLVE_PROMPT Encadenar efectos (opción 0 de 5, espera -3.8, ahora 20.7)
+      > A decide RESOLVE_PROMPT Encadenar efectos (opción 0 de 3, espera 4.7, ahora 20.7)
+      > A decide RESOLVE_PROMPT Portal Al Mundo Espiritual (opción 0 de 4, espera 15.2, ahora 20.7)
+      > A decide RESOLVE_PROMPT Flureteus (opción 1 de 3, espera 44.9, ahora 24.3)
+      > A decide RESOLVE_PROMPT Flureteus (opción 3 de 4, espera 3.8, ahora 36.0)
+      > A decide RESOLVE_PROMPT Encadenar efectos (opción 0 de 3, espera -21.6, ahora 31.3)
+      > A decide RESOLVE_PROMPT Arc-xioma (opción 1 de 4, espera 25.4, ahora 30.8)
+      > A decide RESOLVE_PROMPT Encadenar efectos (opción 1 de 3, espera -0.5, ahora 38.6)
+      > A decide SEQUENCE null (opción 2 de 23, espera 27.8, ahora 38.6)
+      > A decide SEQUENCE null (opción 6 de 20, espera 21.3, ahora 19.6)
+      > A decide RESOLVE_PROMPT Efecto obligatorio (opción 0 de 2, espera -17.9, ahora 21.2)
+      > A decide RESOLVE_PROMPT Jhav (opción 0 de 5, espera 18.2, ahora 21.2)
+      > A decide RESOLVE_PROMPT Jhav (opción 0 de 8, espera 32.4, ahora 35.7)
+      > A decide END_TURN null (opción 0 de 17, espera 19.2, ahora 34.4)
+— turno (B(st2) empieza; A(st1) cerró con -1 gemas; timeline 270, evento 270) | A(st1): vidas 5, mano 7, gemas -6, mazo 24, mesa [Mihel 2^, Falanx 12*^, Hez 10^, Arc-xioma 4^, Jhav 2^], mano {Portal Al Mundo Espiritual 1, Composición Adimensional 1, Mathaus 4, Bertalum 3, Hez 6, Paso Interdimensional 1, Galafendrax El Transmutador 8}  B(st2): vidas 2, mano 6, gemas 6, mazo 14, mesa [Ddraig 8^, Wyverno De Pantano 7^, Fadrake 8^, Wyfreik 5^], mano {Llamarada 6, Llamarada 6, Flambreik 2, Dragón Volcánico 8, Llamarada 6, Dracoventus 5}  
+  A(st1) invoca Flureteus
+  A(st1) tributa Galafendrax El Transmutador
+  A(st1) tributa Falanx
+  A(st1) invoca Mihel
+  A(st1) tributa Hez
+  A(st1) tributa Arc-xioma
+  A(st1) invoca especial Galafendrax El Transmutador
+  A(st1) ataca con Galafendrax El Transmutador
+  A(st1) quita una vida: Dragón Delta → tributeZone (daño 13)
+  A(st1) ataca con Falanx
+  A(st1) quita una vida: Llamarada → hand (daño 12)
+  A(st1) juega Paso Interdimensional
+  A(st1) invoca por efecto Hez
+  A(st1) invoca por efecto Arc-xioma
+  A(st1) tributa Flureteus
+  A(st1) ataca con Hez
+  A(st1) quita una vida: Wyverno De Pantano → tributeZone (daño 10)
+  A(st1) invoca Jhav
+  A(st1) tributa Composición Adimensional
+      · Ana invocó Flureteus pagando 1 gema
+      · Cadena 1: se activa el efecto En Invocación de Flureteus
+      · Ana mira las primeras 5 cartas de su mazo (Flureteus)
+      · Ana añade a su mano 2 cartas (Flureteus): Hez y Falanx
+      · Ana envía al fondo de su mazo 3 cartas
+      · Ana tributa 2 cartas (Flureteus): Galafendrax El Transmutador y Falanx
+      · Se resuelve la Cadena 1: En Invocación de Flureteus
+      · Ana invocó Mihel pagando 1 gema
+      · Cadena 1: se activa el efecto En Invocación de Mihel
+      · Ana roba 2 cartas (Mihel)
+      · Ana tributa 2 cartas (Mihel): Hez y Arc-xioma
+      · Se resuelve la Cadena 1: En Invocación de Mihel
+      · Ana invoca por Materialización a Galafendrax El Transmutador usando Falanx y Falanx y pagando 3 gemas
+      · Ana roba 1 carta por la invocación
+      · Cadena 1: se activa el efecto En Invocación de Galafendrax El Transmutador
+      · Ana coloca en su línea frontal 1 carta (Galafendrax El Transmutador): Falanx
+      · Ana mueve 3 cartas (Galafendrax El Transmutador): Falanx, Sahiel y Sahiel
+      · Se resuelve la Cadena 1: En Invocación de Galafendrax El Transmutador
+      · Ana agota a Galafendrax El Transmutador y ataca a Beto
+      · Paso de bloqueo
+      · Paso de daño directo
+      · Galafendrax El Transmutador inflige 13 de daño directo: Beto pierde la vida Dragón Delta, que va a sus tributos
+      · Termina el combate
+      · Ana agota a Falanx y ataca a Beto
+      · Ana no activa el efecto Todos Los Turnos de Falanx
+      · Paso de bloqueo
+      · Paso de daño directo
+      · Falanx inflige 12 de daño directo: Beto pierde la vida Llamarada, que va a su mano
+      · Termina el combate
+      · Ana juega Paso Interdimensional pagando 1 gema
+      · Cadena 1: se activa el efecto En Juego de Paso Interdimensional
+      · Ana elige como objetivo a Galafendrax El Transmutador (Paso Interdimensional)
+      · Ana invoca Hez de sus tributos pagando 0 gemas (Paso Interdimensional)
+      · Ana roba 1 carta por la invocación
+      · Ana añade Galafendrax El Transmutador como materiales de Hez
+      · Se resuelve la Cadena 1: En Juego de Paso Interdimensional
+      · Paso Interdimensional va al descarte tras resolverse
+      · Cadena 1: se activa el efecto Turno Aliado de Flureteus
+      · Cadena 2: se activa el efecto Todos Los Turnos de Portal Al Mundo Espiritual
+      · Ana agota a Portal Al Mundo Espiritual (Portal Al Mundo Espiritual)
+      · Ana añade Flarix como material de Hez (Portal Al Mundo Espiritual)
+      · Ana gana 1 gema (Portal Al Mundo Espiritual)
+      · Se resuelve la Cadena 2: Todos Los Turnos de Portal Al Mundo Espiritual
+      · Ana invoca Arc-xioma de sus tributos pagando 0 gemas (Flureteus)
+      · Ana roba 1 carta por la invocación
+      · Ana mueve 1 carta (Flureteus): Flureteus
+      · Se resuelve la Cadena 1: Turno Aliado de Flureteus
+      · Portal Al Mundo Espiritual: Todos Los Turnos no puede activarse (no se puede pagar su coste o no hay objetivos válidos)
+      · Cadena 1: se activa el efecto En Invocación de Arc-xioma
+      · Ana tributa 1 carta (Arc-xioma): Flureteus
+      · Ana elige como objetivo a Ddraig (Arc-xioma)
+      · Ddraig pierde 3 de fuerza (Arc-xioma): queda en 5
+      · Se resuelve la Cadena 1: En Invocación de Arc-xioma
+      · Ana no activa el efecto Todos Los Turnos de Mihel
+      · Ana agota a Hez y ataca a Beto
+      · Paso de bloqueo
+      · Paso de daño directo
+      · Hez inflige 10 de daño directo: Beto pierde la vida Wyverno De Pantano, que va a sus tributos
+      · Termina el combate
+      · Ana invocó Jhav pagando 1 gema
+      · Cadena 1: se activa el efecto En Invocación de Jhav
+      · Ana añade a su mano 1 carta (Jhav): Galafendrax El Transmutador
+      · Ana tributa 1 carta (Jhav): Composición Adimensional
+      · Se resuelve la Cadena 1: En Invocación de Jhav
+      · Final del turno de Ana
+      · Ana sube a la línea frontal: Mihel, Jhav
+      · Inicio del turno de Beto
+      · Hez se reactiva (Reactivar)
+      > A decide RESOLVE_PROMPT Encadenar efectos (opción 0 de 3, espera 2.1, ahora 37.8)
+      > A decide RESOLVE_PROMPT Hez (opción 0 de 2, espera 39.6, ahora 37.8)
+      > A decide RESOLVE_PROMPT Encadenar efectos (opción 2 de 5, espera 55.0, ahora 72.8)
+      > A decide RESOLVE_PROMPT Encadenar efectos (opción 1 de 3, espera 70.7, ahora 72.8)
+      > A decide RESOLVE_PROMPT Mihel (opción 0 de 4, espera 52.1, ahora 72.8)
+      > A decide RESOLVE_PROMPT Encadenar efectos (opción 0 de 3, espera 88.2, ahora 70.4)
+      > A decide RESOLVE_PROMPT Encadenar efectos (opción 1 de 5, espera 32.6, ahora 81.2)
+      > A decide RESOLVE_PROMPT Fadrake ataca (opción 1 de 3, espera 38.9, ahora 71.8)
+— turno (A(st1) empieza; B(st2) cerró con 0 gemas; timeline 312, evento 312) | A(st1): vidas 5, mano 8, gemas 5, mazo 24, mesa [Falanx 12^, Hez 10^, Jhav 2^], mano {Portal Al Mundo Espiritual 1, Composición Adimensional 1, Mathaus 4, Bertalum 3, Hez 6, Paso Interdimensional 1, Galafendrax El Transmutador 8, Composición Adimensional 1}  B(st2): vidas 2, mano 5, gemas -5, mazo 15, mesa [Wyverno De Pantano 7^, Wyfreik 5^, Dracoventus 11], mano {Llamarada 6, Llamarada 6, Flambreik 2, Dragón Volcánico 8, Llamarada 6}  
+  A(st1) tributa Flarix
+  A(st1) tributa Galafendrax El Transmutador
+  A(st1) destruye Ddraig
+  B(st2) ataca con Fadrake a Falanx
+  B(st2) destruye Arc-xioma
+  A(st1) bloquea con Hez
+  A(st1) destruye Fadrake
+  B(st2) invoca Dracoventus
+      · Cadena 1: se activa el efecto Todos Los Turnos de Hez
+      · Ana tributa 2 cartas (Hez): Flarix y Galafendrax El Transmutador
+      · Ana elige como objetivo a Ddraig, Wyverno De Pantano, Fadrake, Wyfreik (Hez)
+      · Ddraig pierde 4 de fuerza (Hez): queda en 4
+      · Wyverno De Pantano pierde 4 de fuerza (Hez): queda en 3
+      · Fadrake pierde 4 de fuerza (Hez): queda en 4
+      · Wyfreik pierde 4 de fuerza (Hez): queda en 1
+      · Se resuelve la Cadena 1: Todos Los Turnos de Hez
+      · Cadena 1: se activa el efecto Todos Los Turnos de Mihel
+      · Ana no activa el efecto En Tributos de Arc-xioma
+      · Ana mueve 1 carta (Mihel): Mihel
+      · Ddraig pierde 2 de fuerza (Mihel): queda en 2
+      · Se resuelve la Cadena 1: Todos Los Turnos de Mihel
+      · Cadena 1: se activa el efecto En Tributos de Arc-xioma
+      · Ana mueve 1 carta (Arc-xioma): Arc-xioma
+      · Ddraig pierde 2 de fuerza (Arc-xioma): queda en 0
+      · Ana destruye Ddraig de Beto (Arc-xioma)
+      · Se resuelve la Cadena 1: En Tributos de Arc-xioma
+      · Ana no activa el efecto En Tributos de Flarix
+      · Ana no activa el efecto En Tributos de Flarix
+      · Beto agota a Fadrake y ataca a Falanx
+      · Cadena 1: se activa el efecto Al Atacar de Fadrake
+      · Beto elige como objetivo a Arc-xioma (Fadrake)
+      · Cadena 2: se activa el efecto Al Atacar de Fadrake
+      · Beto elige como objetivo a Arc-xioma (Fadrake)
+      · Cadena 3: se activa el efecto Al Atacar de Fadrake
+      · Beto coloca al tope de su mazo 1 carta (Fadrake): Flambreik
+      · Se resuelve la Cadena 3: Al Atacar de Fadrake
+      · Beto destruye Arc-xioma de Ana (Fadrake)
+      · Se resuelve la Cadena 2: Al Atacar de Fadrake
+      · Se resuelve la Cadena 1: Al Atacar de Fadrake
+      · Paso de bloqueo
+      · Hez bloquea el ataque
+      · Paso de enfrentamiento
+      · Enfrentamiento: Fadrake (4) contra Hez (10)
+      · Ana destruye Fadrake de Beto en el enfrentamiento
+      · El combate termina: el atacante dejó el campo
+      · Beto invocó Dracoventus pagando 5 gemas
+      · Final del turno de Beto
+      · Inicio del turno de Ana
+      · Hez: Todos Los Turnos no puede activarse (no se puede pagar su coste o no hay objetivos válidos)
+      > A decide SEQUENCE null (opción 1 de 25, espera 10000.0, ahora 75.3)
+      > A decide RESOLVE_PROMPT Encadenar efectos (opción 1 de 3, espera 3350.4, ahora 58.4)
+      > A decide SEQUENCE null (opción 2 de 25, espera 10000.0, ahora 62.4)
+      > A decide SEQUENCE null (opción 1 de 22, espera 10000.0, ahora 74.7)
+      > A decide SEQUENCE null (opción 0 de 23, espera 10000.0, ahora 69.2)
+      > A decide SEQUENCE null (opción 0 de 22, espera 10000.0, ahora 69.6)
+      > A decide RESOLVE_PROMPT Efecto obligatorio (opción 0 de 2, espera 10000.0, ahora 68.2)
+      > A decide RESOLVE_PROMPT Composición Adimensional (opción 7 de 10, espera 10000.0, ahora 68.2)
+      > A decide RITUAL_SUMMON Galafendrax El Transmutador (opción 0 de 21, espera 10000.0, ahora 59.9)
+      > A decide RESOLVE_PROMPT Efecto obligatorio (opción 0 de 2, espera 10000.0, ahora 48.6)
+      > A decide RESOLVE_PROMPT Galafendrax El Transmutador (opción 0 de 4, espera 10000.0, ahora 48.6)
+      > A decide ATTACK Falanx (opción 0 de 20, espera 10000.0, ahora 113.2)

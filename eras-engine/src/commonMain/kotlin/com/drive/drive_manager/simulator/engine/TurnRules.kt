@@ -41,10 +41,14 @@ object TurnRules {
     fun turnStarted(room: GameRoom, playerId: String?) {
         val player = room.getPlayer(playerId) ?: return
         record(room, GameEvent.TURN_START, playerId, null, null, null, null, null, "Inicio del turno de " + player.username)
-        // Reactivar: "al inicio del turno: reactiva esta carta" (any turn)
+        // Reactivar: "al inicio del turno oponente: reactiva esta carta" (the cards of the player whose turn it is not;
+        // designer ruling 2026-11-10)
         for (p in room.players.values) {
+            if (p.userId == playerId) continue
             for (c in p.field) {
-                if (reactivable(c) && keywordLevel(c, "Reactivar") != null) {
+                // A structure with Reactivar too (Geo Vigilante), not only a creature
+                val exhausted = reactivable(c) || ("creature" != c.cardType && c.tapped)
+                if (exhausted && keywordLevel(c, "Reactivar") != null) {
                     c.tapped = false
                     record(room, GameEvent.UNTAP, p.userId, c, null, null, null, frozenMapOf<String, Any?>("keyword", "Reactivar"),
                             name(c) + " se reactiva (Reactivar)")

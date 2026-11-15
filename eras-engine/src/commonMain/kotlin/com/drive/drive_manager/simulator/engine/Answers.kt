@@ -259,7 +259,8 @@ object Answers {
             val req = requirement(card)
             val all: MutableList<CardSlot> = ArrayList(others)
             all.add(summoner)
-            if (req!!.sum && !addsUpTo(all, req.level)) {
+            if (!req!!.sum && others.size < req.extra) return "Elige al menos " + req.extra + (if (req.extra == 1) " aliado más" else " aliados más")
+            if (req.sum && !addsUpTo(all, req.level)) {
                 val total = all.sumOf { it.getLevel()!! }
                 return "Los niveles suman " + total + ": deben sumar exactamente " + req.level
             }
@@ -342,6 +343,18 @@ object Answers {
                 card.tapped = true
                 record(room, GameEvent.MOVE, userId, card, null, "frontLine", null, frozenMapOf<String, Any?>("reason", "Asalto"),
                     name(card) + " entra agotada en la línea frontal (Asalto)")
+            }
+            advance(room)
+            return ""
+        }
+        if (PromptPurpose.ASCEND_GAIN.`is`(purpose)) {
+            // Mandatory: whatever the answer, the Ascenso goes on (the gain applies as it happens)
+            room.prompt = null
+            val card = specialSource(player, prompt.subjectId)
+            val summoner = find(player.field, prompt.summonerId)
+            if (card != null && summoner != null) {
+                handSpecial(room, player, card, specialRequirement(card)!!, summoner, frozenListOf(),
+                        if (find(player.hand, card.instanceId) != null) "hand" else "tributeZone")
             }
             advance(room)
             return ""

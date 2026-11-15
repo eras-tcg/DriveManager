@@ -4,7 +4,7 @@
     "id" : "alabarda-ala-blanca:en-invocacion",
     "moment" : "ON_SUMMON",
     "label" : "En Invocación",
-    "text" : "Por efecto: puedes invocar 1 criatura Roja nivel 3 o menor de tu mano reduciendo su coste en 3. Si lo haces: mueve esta carta a tu línea frontal.",
+    "text" : "Por efecto: puedes invocar 1 criatura Roja nivel 3 o menor que no sea una copia de esta carta, de tu mano reduciendo su coste en 3. Si lo haces: mueve esta carta a tu línea frontal.",
     "steps" : [ {
       "type" : "Do",
       "action" : {
@@ -15,7 +15,8 @@
           "filter" : {
             "colors" : [ "R" ],
             "cardType" : "creature",
-            "maxLevel" : 3
+            "maxLevel" : 3,
+            "notName" : "Alabarda De Ala Blanca"
           },
           "min" : {
             "type" : "Fixed",

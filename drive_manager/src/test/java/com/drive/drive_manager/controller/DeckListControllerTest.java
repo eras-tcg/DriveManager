@@ -1,6 +1,8 @@
 package com.drive.drive_manager.controller;
 
+import com.drive.drive_manager.dto.DeckBox;
 import com.drive.drive_manager.dto.DeckList;
+import com.drive.drive_manager.repository.DeckBoxRepository;
 import com.drive.drive_manager.repository.DeckListRepository;
 import com.drive.drive_manager.service.ActivityLogService;
 import com.drive.drive_manager.service.ProgressionRules;
@@ -32,12 +34,14 @@ class DeckListControllerTest {
 
     private DeckListRepository repo;
     private ProgressionService progression;
+    private DeckBoxRepository deckBoxes;
     private DeckListController controller;
 
     @BeforeEach
     void setUp() {
         repo = mock(DeckListRepository.class);
         progression = mock(ProgressionService.class);
+        deckBoxes = mock(DeckBoxRepository.class);
         when(repo.save(any(DeckList.class))).thenAnswer(call -> call.getArgument(0));
         when(repo.findAll()).thenReturn(List.of(alicePublic, alicePrivate, bobPublic));
         when(repo.findPublicDecks()).thenReturn(List.of(alicePublic, bobPublic));
@@ -91,8 +95,41 @@ class DeckListControllerTest {
         verify(progression, never()).record(anyString(), anyString(), anyInt());
     }
 
+    @Test
+    void aNewDeckNameHasAtMost30Characters() {
+        DeckList body = deck(null, null, false);
+        body.setDeckName("x".repeat(30));
+        assertThat(controller().create(body, user("alice")).getStatusCode().value()).isEqualTo(200);
+        body.setDeckName("x".repeat(31));
+        assertThat(controller().create(body, user("alice")).getStatusCode().value()).isEqualTo(400);
+    }
+
+    @Test
+    void anOlderLongNameCanBeKeptButNotChangedToAnotherLongOne() {
+        alicePublic.setDeckName("y".repeat(60));
+        DeckList body = deck("d1", "alice", false);
+        body.setDeckName("y".repeat(60));
+        assertThat(controller().update("d1", body, user("alice")).getStatusCode().value()).isEqualTo(200);
+        body.setDeckName("z".repeat(60));
+        assertThat(controller().update("d1", body, user("alice")).getStatusCode().value()).isEqualTo(400);
+    }
+
+    @Test
+    void deletingADeckTakesItOutOfItsDeckboxes() {
+        DeckBox box = new DeckBox();
+        box.setId("b1");
+        box.setUserId("alice");
+        box.setDeckIds(new java.util.ArrayList<>(List.of("d1", "d9")));
+        when(deckBoxes.findByDeckIds("d1")).thenReturn(List.of(box));
+
+        controller().delete("d1", user("alice"));
+
+        assertThat(box.getDeckIds()).containsExactly("d9");
+        verify(deckBoxes).saveAll(List.of(box));
+    }
+
     private DeckListController controller() {
-        if (controller == null) controller = new DeckListController(repo, progression, mock(ActivityLogService.class));
+        if (controller == null) controller = new DeckListController(repo, progression, mock(ActivityLogService.class), deckBoxes);
         return controller;
     }
 

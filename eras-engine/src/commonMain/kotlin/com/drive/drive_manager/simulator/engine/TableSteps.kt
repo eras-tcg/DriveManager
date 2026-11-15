@@ -1,6 +1,7 @@
 package com.drive.drive_manager.simulator.engine
 
 import kotlin.jvm.JvmStatic
+import kotlin.math.abs
 import kotlin.math.max
 import kotlin.math.min
 import com.drive.drive_manager.simulator.engine.EffectEngine.CAUSE_EFFECT
@@ -122,7 +123,8 @@ object TableSteps {
             is OpponentGainsGemsAsCounter -> {
                 val opponentId = room.getOpponentId(userId)
                 val opponent = room.getPlayer(opponentId)
-                val gems = if (opponent == null) 0 else max(0, gemsOf(room, opponentId))
+                // "tantas gemas como su contador de gemas diga": the number the marker shows on its side, whatever its sign
+                val gems = if (opponent == null) 0 else abs(gemsOf(room, opponentId))
                 if (gems > 0) {
                     room.sharedCounter = clamp(room.sharedCounter + gems * direction(room, opponentId))
                     record(room, GameEvent.GAIN_GEMS, opponentId, null, null, null, effect, frozenMapOf<String, Any?>("count", gems),

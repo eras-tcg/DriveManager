@@ -85,11 +85,6 @@ open class HeuristicBot(rules: BotSettings) : BotPlayer() {
         val hold = self!!.hand.size <= JavaMath.round(rules.get("hHold"))
         val hand: MutableList<CardSlot> = ArrayList(self.hand)
         hand.sortWith(comparingDouble { c: CardSlot -> value(c) }.reversed())
-        // hStructFirst: structures before the Rituals and summons (their effects pay off on the invocations that follow)
-        if (on("hStructFirst")) for (card in hand) {
-            if ("structure" == card.cardType && legalOf.valueOr(card.instanceId, frozenListOf()).contains("play"))
-                fromHand.add(action(ActionType.PLAY_CARD, frozenMapOf<String, Any?>("instanceId", card.instanceId, "x", summonX(self), "y", 75.0)))
-        }
         for (id in legal.keys) {
             if (legal[id]!!.contains("ritual")) fromHand.add(action(ActionType.RITUAL_SUMMON, frozenMapOf<String, Any?>("instanceId", id)))
         }
@@ -114,6 +109,8 @@ open class HeuristicBot(rules: BotSettings) : BotPlayer() {
             if (!e.value.contains("activate") || activated.contains(e.key)) continue
             val move = action(ActionType.ACTIVATE_EFFECT, frozenMapOf<String, Any?>("instanceId", e.key))
             if (isRefused(move)) continue
+            // hUseful: a slow effect that would change nothing, or only cost it, is not activated
+            if (on("hUseful") && !Usefulness.playDoesSomething(room, me, move, rules)) continue
             return move
         }
         return null
@@ -239,6 +236,11 @@ open class HeuristicBot(rules: BotSettings) : BotPlayer() {
         val rivals = !chain.isEmpty() && me!! != chain[chain.size - 1].controllerId
         val choices = choices(prompt)
         if (!on("hRespond") || !rivals || choices.isEmpty()) return if (prompt.min == 0) frozenListOf() else null
+        // hUseful: it responds with the first effect that does something (a utility with nothing to do stays in the hand)
+        if (on("hUseful") && prompt.min == 0) {
+            val useful = choices.firstOrNull { id -> Usefulness.yesDoesSomething(room, me, prompt, frozenListOf(id), rules) }
+            return if (useful == null) frozenListOf() else frozenListOf(useful)
+        }
         return frozenListOf(choices[0])
     }
 
@@ -328,8 +330,23 @@ open class HeuristicBot(rules: BotSettings) : BotPlayer() {
                 return if (target == null) frozenListOf() else frozenListOf(target.instanceId)
             }
         }
+        // hFreeMaterial (the user's call, 2026-11-11): the materials of a special summon are spent, and where they come
+        // from is what they cost: one from the Tributos costs nothing, one from the hand a card, one from the field a
+        // body (an attacker and a blocker). The rule took the most valuable ones whatever their zone, so a summon that
+        // could be paid from the Tributos ate two creatures of the field and left one. Now: the Tributos first, then the
+        // hand, then the field, the least valuable first in each
+        if (on("hFreeMaterial") && self != null && PromptPurpose.SPECIAL.`is`(prompt.purpose) && prompt.summonerId != null && prompt.min == prompt.max) {
+            ranked.sortWith(comparingDouble { id: String? -> materialZone(self, id) * OTHERS_GROUP + value(card(prompt, id)) })
+            return take(ranked, prompt.min)
+        }
         ranked.sortWith(byValue.reversed())
         return take(ranked, prompt.max)
+    }
+
+    /** Where a material comes from, the cheapest to spend first: the Tributos (0), the hand (1), the field (2). */
+    private fun materialZone(self: PlayerState, id: String?): Int {
+        if (self.tributeZone.any { c -> c.instanceId == id }) return 0
+        return if (self.field.any { c -> c.instanceId == id }) 2 else 1
     }
 
     /**

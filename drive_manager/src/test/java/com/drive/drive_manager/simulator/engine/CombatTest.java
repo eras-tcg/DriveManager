@@ -254,10 +254,13 @@ class CombatTest {
         assertThat(sacrifice.getChosenLabel()).isEqualTo("Sacrificar");
         Answers.answer(room, "host", sacrifice.getId(), List.of("ally"), List.of());
         Answers.answer(room, "host", room.getPrompt().getId(), List.of("l3"), List.of());
+        // "Turno Aliado: si algún aliado es destruido: puedes reactivar esta carta" (optional since 2026-11-10)
+        Prompt reactivate = room.getPrompt();
+        assertThat(reactivate.getPurpose()).isEqualTo("OPTIONAL");
+        Answers.answer(room, "host", reactivate.getId(), List.of("zhz"), List.of());
 
         assertThat(host.getTributeZone()).extracting(CardSlot::getInstanceId).containsExactly("ally");
         assertThat(guest.getDiscardPile()).extracting(CardSlot::getInstanceId).containsExactly("l3");
-        // "Turno Aliado: si algún aliado es destruido, reactiva esta carta"
         assertThat(zhauz.isTapped()).isFalse();
         assertThat(guest.getLifeStack()).hasSize(2);
         assertThat(room.isEngineBusy()).isFalse();

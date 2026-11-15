@@ -24,6 +24,12 @@ object CardEffects {
     @Suppress("unused")
     private const val TODOS = "Todos Los Turnos"
 
+    /**
+     * A card's name as its file has it (lower case), by [key]: the metadata and the image name the same card with or without the
+     * printed accents and hyphens ("SAR 2", "SAR-2"), and every printing of a card is the same card (owner's rule, 2026-11-11).
+     */
+    private val NAME_BY_KEY: MutableMap<String, String> = HashMap()
+
     private val BY_NAME: MutableMap<String, List<EffectScript>> = HashMap()
     /** Inherited effects ("heredables"): what a card gives the creature it is a Recurso of (rule 11.4.0.3). */
     private val INHERITED: MutableMap<String, List<EffectScript>> = HashMap()
@@ -46,10 +52,28 @@ object CardEffects {
         BY_NAME[name] = frozenListOf(*scripts)
     }
 
+    /** What identifies a card by its name: [CardKeys.key]. */
+    @JvmStatic
+    fun key(name: String?): String = CardKeys.key(name)
+
+    /**
+     * The programmed card a name stands for: the name its file has (lower case) when one has the same [key], else the name in lower
+     * case. Every lookup by name goes through here.
+     */
+    @JvmStatic
+    fun nameOf(cardName: String?): String {
+        val plain = cardName?.trim { it <= ' ' }?.lowercase() ?: ""
+        return NAME_BY_KEY[key(plain)] ?: plain
+    }
+
+    /** The names of the card files (lower case). */
+    @JvmStatic
+    fun programmedNames(): Set<String> = frozenSetCopy(NAME_BY_KEY.values)
+
     @JvmStatic
     fun of(cardName: String?): List<EffectScript> {
         if (cardName == null) return frozenListOf()
-        return BY_NAME.valueOr(cardName.trim { it <= ' ' }.lowercase(), frozenListOf())
+        return BY_NAME.valueOr(nameOf(cardName), frozenListOf())
     }
 
     /**
@@ -173,7 +197,7 @@ object CardEffects {
      */
     @JvmStatic
     fun pending(cardName: String?, own: Int, inherited: Int, keywords: List<String>): String? {
-        val name = cardName?.trim { it <= ' ' }?.lowercase() ?: ""
+        val name = nameOf(cardName)
         val ownDone = BY_NAME.valueOr(name, frozenListOf()).size + CONTINUOUS.valueOr(name, frozenListOf()).size +
                 CostModifiers.of(name).size + REPLACEMENTS.valueOr(name, frozenListOf()).size +
                 ruleEffects().valueOr(name, frozenListOf()).size
@@ -190,7 +214,7 @@ object CardEffects {
     /** What a card gives the creature it is a Recurso of. */
     @JvmStatic
     fun inheritedOf(name: String?): List<EffectScript> {
-        return if (name == null) frozenListOf() else INHERITED.valueOr(name.trim { it <= ' ' }.lowercase(), frozenListOf())
+        return if (name == null) frozenListOf() else INHERITED.valueOr(nameOf(name), frozenListOf())
     }
 
     /** A creature's strength while it is a life: its own and what its continuous effects of the lives give it. */
@@ -227,7 +251,7 @@ object CardEffects {
     @JvmStatic
     fun continuousOf(card: CardSlot): List<Continuous> {
         if (card.cardName == null) return frozenListOf()
-        return CONTINUOUS.valueOr(card.cardName!!.trim { it <= ' ' }.lowercase(), frozenListOf())
+        return CONTINUOUS.valueOr(nameOf(card.cardName), frozenListOf())
     }
 
     /** The card's own effects, those its Recursos give it and those of the keywords the engine runs. */
@@ -235,7 +259,7 @@ object CardEffects {
     fun of(card: CardSlot): List<EffectScript> {
         val all: MutableList<EffectScript> = ArrayList(of(card.cardName))
         for (resource in card.resources!!) {
-            if (resource.cardName != null) all.addAll(INHERITED.valueOr(resource.cardName!!.trim { it <= ' ' }.lowercase(), frozenListOf()))
+            if (resource.cardName != null) all.addAll(INHERITED.valueOr(nameOf(resource.cardName), frozenListOf()))
         }
         for (keyword in EffectEngine.keywords(card)) {
             var script = KEYWORDS[keyword.lowercase()]
@@ -337,13 +361,13 @@ object CardEffects {
     /** The card's reaction of that kind, or null. */
     private inline fun <reified T : Reaction> reaction(card: CardSlot): T? {
         if (card.cardName == null) return null
-        return REACTIONS.valueOr(card.cardName!!.trim { it <= ' ' }.lowercase(), frozenListOf())
+        return REACTIONS.valueOr(nameOf(card.cardName), frozenListOf())
             .firstOrNull { it is T } as T?
     }
 
     private fun traits(card: CardSlot): CardTraits {
         return if (card.cardName == null) CardTraits.NONE
-        else TRAITS.valueOr(card.cardName!!.trim { it <= ' ' }.lowercase(), CardTraits.NONE)
+        else TRAITS.valueOr(nameOf(card.cardName), CardTraits.NONE)
     }
 
     @JvmRecord
@@ -418,10 +442,10 @@ object CardEffects {
     @JvmStatic
     fun replacementsOf(card: CardSlot): List<Replacement> {
         val all: MutableList<Replacement> = ArrayList()
-        if (card.cardName != null) all.addAll(REPLACEMENTS.valueOr(card.cardName!!.trim { it <= ' ' }.lowercase(), frozenListOf()))
+        if (card.cardName != null) all.addAll(REPLACEMENTS.valueOr(nameOf(card.cardName), frozenListOf()))
         for (resource in card.resources!!) {
             if (resource.cardName != null)
-                all.addAll(INHERITED_REPLACEMENTS.valueOr(resource.cardName!!.trim { it <= ' ' }.lowercase(), frozenListOf()))
+                all.addAll(INHERITED_REPLACEMENTS.valueOr(nameOf(resource.cardName), frozenListOf()))
         }
         return all
     }
@@ -431,7 +455,7 @@ object CardEffects {
     fun replacementGiver(card: CardSlot, replacement: Replacement?): CardSlot? {
         for (resource in card.resources!!) {
             if (resource.cardName != null &&
-                INHERITED_REPLACEMENTS.valueOr(resource.cardName!!.trim { it <= ' ' }.lowercase(), frozenListOf()).contains(replacement)) return resource
+                INHERITED_REPLACEMENTS.valueOr(nameOf(resource.cardName), frozenListOf()).contains(replacement)) return resource
         }
         return null
     }
@@ -477,14 +501,16 @@ object CardEffects {
     @JvmStatic
     fun isNamed(card: CardSlot, name: String?): Boolean {
         if (card.cardName == null || name == null) return false
-        val own = card.cardName!!.trim { it <= ' ' }.lowercase()
-        val wanted = name.trim { it <= ' ' }.lowercase()
-        return own == wanted || wanted == traits(card).alias
+        val wanted = key(name)
+        val alias = traits(card).alias
+        return key(card.cardName) == wanted || (alias != null && key(alias) == wanted)
     }
 
     /** What the files say of a card, to the registries. */
     private fun install(d: CardDefinition) {
         val name = d.name
+        val other = NAME_BY_KEY.put(key(name), name!!)
+        check(other == null || other == name) { "La misma carta en dos archivos: \"$other\" y \"$name\"" }
         if (!d.effects().isEmpty()) BY_NAME[name!!] = d.effects()
         if (!d.inherited().isEmpty()) INHERITED[name!!] = d.inherited()
         if (!d.continuous().isEmpty()) CONTINUOUS[name!!] = d.continuous()

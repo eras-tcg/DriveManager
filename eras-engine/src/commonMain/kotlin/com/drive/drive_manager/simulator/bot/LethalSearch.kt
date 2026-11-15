@@ -39,7 +39,7 @@ internal object LethalSearch {
         val line = dfs(sandbox, room, me, sides, ArrayList(), seed, nodes, deadline) ?: return null
         var wins = 1
         for (k in 0 until 2) if (LethalSearch.wins(sandbox, room, me, sides, line, sandbox.deal())) wins++
-        return if (wins >= 2) SequenceSearch.of(line) else null
+        return if (wins >= 2) BotPlayer.action(SequenceSearch.SEQUENCE, frozenMapOf<String, Any?>("moves", line, AttackFloor.LETHAL, true)) else null
     }
 
     private fun dfs(sandbox: Sandbox, room: GameRoom, me: String, sides: Map<String?, BotPlayer>,

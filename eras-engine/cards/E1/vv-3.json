@@ -1,5 +1,5 @@
 {
-  "name" : "vv 3",
+  "name" : "vv-3",
   "effects" : [ {
     "id" : "vv-3:en-invocacion",
     "moment" : "ON_SUMMON",

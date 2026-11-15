@@ -10,7 +10,7 @@
    "caballero",
    "armada"
   ],
-  "edition": "ST4",
+  "edition": "ST8",
   "colorIdentity": "R",
   "cardNumber": 2,
   "regulation": "A",
@@ -38,7 +38,7 @@
   "cardClasses": [
    "caballero"
   ],
-  "edition": "ST4",
+  "edition": "ST8",
   "colorIdentity": "R",
   "cardNumber": 9,
   "regulation": "A",
@@ -80,7 +80,7 @@
   "cardClasses": [
    "caballero"
   ],
-  "edition": "ST4",
+  "edition": "ST8",
   "colorIdentity": "R",
   "cardNumber": 15,
   "regulation": "A",
@@ -138,7 +138,7 @@
   "cardClasses": [
    "caballero"
   ],
-  "edition": "ST4",
+  "edition": "ST8",
   "colorIdentity": "R",
   "cardNumber": 4,
   "regulation": "A",
@@ -197,7 +197,7 @@
   "cardClasses": [
    "caballero"
   ],
-  "edition": "ST4",
+  "edition": "ST8",
   "colorIdentity": "R",
   "cardNumber": 8,
   "regulation": "A",
@@ -237,7 +237,7 @@
   "level": 2,
   "starter": false,
   "cardClasses": [],
-  "edition": "ST4",
+  "edition": "ST8",
   "colorIdentity": "R",
   "cardNumber": 16,
   "regulation": "A",
@@ -284,7 +284,7 @@
    "caballero",
    "mercenario"
   ],
-  "edition": "ST4",
+  "edition": "ST8",
   "colorIdentity": "R",
   "cardNumber": 1,
   "regulation": "A",
@@ -345,7 +345,7 @@
   "cardClasses": [
    "caballero"
   ],
-  "edition": "ST4",
+  "edition": "ST8",
   "colorIdentity": "R",
   "cardNumber": 14,
   "regulation": "A",
@@ -392,7 +392,7 @@
   "level": 4,
   "starter": false,
   "cardClasses": [],
-  "edition": "ST4",
+  "edition": "ST8",
   "colorIdentity": "R",
   "cardNumber": 18,
   "regulation": "A",
@@ -454,7 +454,7 @@
   "cardClasses": [
    "caballero"
   ],
-  "edition": "ST4",
+  "edition": "ST8",
   "colorIdentity": "R",
   "cardNumber": 6,
   "regulation": "A",
@@ -493,7 +493,7 @@
   "level": 1,
   "starter": false,
   "cardClasses": [],
-  "edition": "ST4",
+  "edition": "ST8",
   "colorIdentity": "R",
   "cardNumber": 17,
   "regulation": "A",
@@ -547,7 +547,7 @@
   "cardClasses": [
    "caballero"
   ],
-  "edition": "ST4",
+  "edition": "ST8",
   "colorIdentity": "R",
   "cardNumber": 3,
   "regulation": "A",
@@ -589,7 +589,7 @@
    "caballero",
    "retador"
   ],
-  "edition": "ST4",
+  "edition": "ST8",
   "colorIdentity": "R",
   "cardNumber": 10,
   "regulation": "A",
@@ -633,7 +633,7 @@
    "caballero",
    "armada"
   ],
-  "edition": "ST4",
+  "edition": "ST8",
   "colorIdentity": "R",
   "cardNumber": 5,
   "regulation": "A",
@@ -675,7 +675,7 @@
   "cardClasses": [
    "caballero"
   ],
-  "edition": "ST4",
+  "edition": "ST8",
   "colorIdentity": "R",
   "cardNumber": 11,
   "regulation": "A",
@@ -718,7 +718,7 @@
    "caballero",
    "retador"
   ],
-  "edition": "ST4",
+  "edition": "ST8",
   "colorIdentity": "R",
   "cardNumber": 7,
   "regulation": "A",
@@ -750,7 +750,7 @@
    "caballero",
    "armada"
   ],
-  "edition": "ST4",
+  "edition": "ST8",
   "colorIdentity": "R",
   "cardNumber": 12,
   "regulation": "A",
@@ -797,7 +797,7 @@
   "cardClasses": [
    "caballero"
   ],
-  "edition": "ST4",
+  "edition": "ST8",
   "colorIdentity": "R",
   "cardNumber": 13,
   "regulation": "A",

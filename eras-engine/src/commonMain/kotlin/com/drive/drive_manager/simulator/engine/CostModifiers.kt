@@ -156,7 +156,7 @@ object CostModifiers {
 
     private fun of(card: CardSlot?): List<CostModifier> {
         if (card == null || card.cardName == null) return frozenListOf()
-        return BY_NAME.valueOr(card.cardName!!.trim { it <= ' ' }.lowercase(), frozenListOf())
+        return BY_NAME.valueOr(CardEffects.nameOf(card.cardName), frozenListOf())
     }
 
     /**

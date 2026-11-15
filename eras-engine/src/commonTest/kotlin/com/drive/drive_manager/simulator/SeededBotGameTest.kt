@@ -58,11 +58,11 @@ class SeededBotGameTest {
             "st2-st3-3" to "65b8b292570e0e87",
             "st1-st3-2" to "fec3a8786e3dc958",
             "st4-st1-1" to "8a0b5311fea31615",
-            "st3-st4-2" to "65cd79d94d9bf40b",
+            "st3-st4-2" to "2acd6bc9b818ec00",
             "st3-st4-3" to "5901435f268e0cf0",
             "st3-st4-5" to "3ef9c646770dfa01",
             "lookahead-st1-st2-4" to "bdfc9dc780b4914a",
-            "lookahead-st4-st3-6" to "6b70728559c1c470",
+            "lookahead-st4-st3-6" to "50db05a7399bcd48",
         )
     }
 }

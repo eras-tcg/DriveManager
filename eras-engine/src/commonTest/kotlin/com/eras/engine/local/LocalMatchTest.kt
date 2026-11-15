@@ -143,12 +143,19 @@ class LocalMatchTest {
     }
 
     companion object {
+        /**
+         * 2026-11-11, the three maps below. The games against the easy bot play as before (their results here did not
+         * change): only their messages did, the list of bots sent with the room's state before the game (botChoices) has
+         * one more model, "guiado-previo". The game against the normal bot plays otherwise (15 turns, not 11): its check
+         * of utilities (hUseful, Usefulness) no longer takes the order of the events (fieldSeq) for a change of the
+         * table, asks that the bot loses no material by the play, and judges slow effects and answers in a chain too.
+         */
         /** LocalMatch.result() at the end of each game: taken on the JVM; JavaScript must give the same. */
         val EXPECTED_RESULT = mapOf(
             "st1-st1-1-easy" to "{\"status\":\"POST_GAME\",\"gamesEnded\":1,\"winnerId\":\"local-player\",\"endReason\":\"lives\",\"turns\":16,\"digest\":\"ee7a64e2429505ee\"}",
-            "st2-st3-2-easy" to "{\"status\":\"POST_GAME\",\"gamesEnded\":1,\"winnerId\":\"local-player\",\"endReason\":\"lives\",\"turns\":17,\"digest\":\"2810ac77b1be5505\"}",
+            "st2-st3-2-easy" to "{\"status\":\"POST_GAME\",\"gamesEnded\":1,\"winnerId\":\"local-player\",\"endReason\":\"lives\",\"turns\":15,\"digest\":\"a3aad28383e4273f\"}",
             "st4-st1-3-easy" to "{\"status\":\"POST_GAME\",\"gamesEnded\":1,\"winnerId\":\"local-player\",\"endReason\":\"lives\",\"turns\":12,\"digest\":\"07b16f261386427e\"}",
-            "st3-st4-5-normal" to "{\"status\":\"POST_GAME\",\"gamesEnded\":1,\"winnerId\":\"bot\",\"endReason\":\"lives\",\"turns\":11,\"digest\":\"71b04a9fecf39937\"}",
+            "st3-st4-5-normal" to "{\"status\":\"POST_GAME\",\"gamesEnded\":1,\"winnerId\":\"bot\",\"endReason\":\"lives\",\"turns\":15,\"digest\":\"87673b89854a3663\"}",
         )
 
         /**
@@ -156,18 +163,18 @@ class LocalMatchTest {
          * must give the same). Without them the messages give [EXPECTED], as before those updates were sent.
          */
         val EXPECTED_WITH_LINKS = mapOf(
-            "st1-st1-1-easy" to "95fa6b64c238c11e",
-            "st2-st3-2-easy" to "7330852f4dbc6552",
-            "st4-st1-3-easy" to "cbe5413b73677e31",
-            "st3-st4-5-normal" to "7d344b975f10fa43",
+            "st1-st1-1-easy" to "d75492d75e5fdf83",
+            "st2-st3-2-easy" to "09e281ec07d6bb88",
+            "st4-st1-3-easy" to "0bdae42b11d61252",
+            "st3-st4-5-normal" to "1524e0475d4afdcf",
         )
 
         /** Taken on the JVM; JavaScript must give the same. */
         val EXPECTED = mapOf(
-            "st1-st1-1-easy" to "7d9b9d3e9ad86f43",
-            "st2-st3-2-easy" to "c6cf9697f7b23973",
-            "st4-st1-3-easy" to "23f5e9cc0fd10912",
-            "st3-st4-5-normal" to "f384af0206de9418",
+            "st1-st1-1-easy" to "5e64df2464d52e13",
+            "st2-st3-2-easy" to "e9e15383c8f2878c",
+            "st4-st1-3-easy" to "3bf94e1be0a42efc",
+            "st3-st4-5-normal" to "d422204636a04f0f",
         )
     }
 }

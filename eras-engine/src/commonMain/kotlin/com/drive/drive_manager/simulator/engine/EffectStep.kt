@@ -226,9 +226,12 @@ sealed interface EffectStep {
     @JvmRecord
     data class TakeFromLookedDistinctLevels(val max: Int, val filter: CardFilter?) : EffectStep
 
-    /** "revela 1 [filtro] y 1 [filtro] de tu mano": one different card for each filter (a cost); the cards stay in the hand. */
+    /**
+     * "revela 1 [filtro] y 1 [filtro] de tu mano": one different card for each filter (a cost); the cards stay in the hand.
+     * `withAllyOfLevel`: "… y elegir 1 aliado del mismo nivel" in the same cost: only a card whose level an ally has.
+     */
     @JvmRecord
-    data class RevealFromHand(val filters: List<CardFilter>?) : NeedsTarget
+    data class RevealFromHand(val filters: List<CardFilter>?, val withAllyOfLevel: Boolean = false) : NeedsTarget
 
     /** "coloca bocabajo una de tus vidas bocarriba" (`all`: every one of them, "Luego: baraja tus vidas" with `shuffle`). */
     @JvmRecord

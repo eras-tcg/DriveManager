@@ -4,7 +4,7 @@
     "id" : "caballero-leal:en-mano",
     "moment" : "ON_EVENT",
     "label" : "Turno Aliado / En Mano",
-    "text" : "Si algún aliado es invocado por efecto y no controlas copias de esta carta: puedes invocar esta carta reduciendo su coste en 1.",
+    "text" : "(1) Si algún aliado es invocado por efecto y no controlas copias de esta carta: puedes invocar esta carta reduciendo su coste en 1.",
     "steps" : [ {
       "type" : "Do",
       "action" : {
@@ -45,7 +45,7 @@
     },
     "sourceZone" : "hand",
     "allyTurn" : true,
-    "limit" : "NONE"
+    "limit" : "ONCE_PER_TURN_BETWEEN_COPIES"
   } ],
   "reactions" : [ {
     "type" : "Replacement",

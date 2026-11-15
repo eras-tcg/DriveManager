@@ -53,7 +53,7 @@ class RoomCopyTest {
                     + "subjectId ritualTargetId ritualSummonerId summonedId looked ordered confirmed lastDone lastCount lastTributed "
                     + "keepOnField passed priorityDone",
             Prompt.class, "id kind playerId effectId purpose sourceName sourceImageUrl title instruction chosenLabel cards validIds "
-                    + "min max reorderRest restToTop subjectId summonerId cardLabels effects effectText maxLevelSum exactOrNone "
+                    + "min max reorderRest restToTop subjectId summonerId cardLabels effects effectText maxLevelSum exactOrNone distinctLevels "
                     + "requiredIds topOrBottom",
             Combat.class, "attackerId attackerOwnerId defenderId targetId blockerId step phase byEffect provokeAsked blockAsked "
                     + "hitsLeft untilEndOfAttack enemyDestroyed skipBlock damageReplaceAsked damageTributeAskedAt");

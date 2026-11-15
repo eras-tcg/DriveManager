@@ -64,6 +64,9 @@ class Prompt {
     /** Exactly `max` cards or none ("puedes enviar 5 de tus tributos…"): the board does not confirm a number in between. */
     @get:JvmName("isExactOrNone")
     var exactOrNone: Boolean = false
+    /** The cards chosen must all be of different levels ("con distinto nivel"): the board locks a level already chosen. */
+    @get:JvmName("isDistinctLevels")
+    var distinctLevels: Boolean = false
     /** Cards that must be among those chosen ("incluida esta carta"). */
     var requiredIds: List<String>? = null
     /**
@@ -92,6 +95,7 @@ class Prompt {
         if (reorderRest != other.reorderRest) return false
         if (restToTop != other.restToTop) return false
         if (exactOrNone != other.exactOrNone) return false
+        if (distinctLevels != other.distinctLevels) return false
         if (topOrBottom != other.topOrBottom) return false
         if (maxLevelSum != other.maxLevelSum) return false
         if (id != other.id) return false
@@ -125,6 +129,7 @@ class Prompt {
         result = result * PRIME + (if (reorderRest) 79 else 97)
         result = result * PRIME + (if (restToTop) 79 else 97)
         result = result * PRIME + (if (exactOrNone) 79 else 97)
+        result = result * PRIME + (if (distinctLevels) 79 else 97)
         result = result * PRIME + (if (topOrBottom) 79 else 97)
         result = result * PRIME + (maxLevelSum?.hashCode() ?: 43)
         result = result * PRIME + (id?.hashCode() ?: 43)
@@ -149,5 +154,5 @@ class Prompt {
     }
 
     override fun toString(): String =
-        "Prompt(id=${id}, kind=${kind}, playerId=${playerId}, effectId=${effectId}, purpose=${purpose}, sourceName=${sourceName}, sourceImageUrl=${sourceImageUrl}, title=${title}, instruction=${instruction}, chosenLabel=${chosenLabel}, cards=${cards}, validIds=${validIds}, min=${min}, max=${max}, reorderRest=${reorderRest}, restToTop=${restToTop}, subjectId=${subjectId}, summonerId=${summonerId}, cardLabels=${cardLabels}, effects=${effects}, effectText=${effectText}, maxLevelSum=${maxLevelSum}, exactOrNone=${exactOrNone}, requiredIds=${requiredIds}, topOrBottom=${topOrBottom})"
+        "Prompt(id=${id}, kind=${kind}, playerId=${playerId}, effectId=${effectId}, purpose=${purpose}, sourceName=${sourceName}, sourceImageUrl=${sourceImageUrl}, title=${title}, instruction=${instruction}, chosenLabel=${chosenLabel}, cards=${cards}, validIds=${validIds}, min=${min}, max=${max}, reorderRest=${reorderRest}, restToTop=${restToTop}, subjectId=${subjectId}, summonerId=${summonerId}, cardLabels=${cardLabels}, effects=${effects}, effectText=${effectText}, maxLevelSum=${maxLevelSum}, exactOrNone=${exactOrNone}, distinctLevels=${distinctLevels}, requiredIds=${requiredIds}, topOrBottom=${topOrBottom})"
 }

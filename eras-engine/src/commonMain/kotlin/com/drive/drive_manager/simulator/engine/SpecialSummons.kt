@@ -81,7 +81,7 @@ object SpecialSummons {
                         - CostModifiers.available(room, player, CostModifiers.Event.SPECIAL_SUMMON, req.kind, card, null)))
             return "No tienes gemas suficientes: tienes " + gemsOf(room, userId) + " y el coste especial es " + card.specialCost
         if (askTap(room, player, card, req.kind, summonerId)) return null
-        if ("promotion" == req.kind && !alliesAddUp(player, req)) return "Para el Ascenso tus aliados deben sumar " + req.alliesSum + " o más en nivel"
+        if ("promotion" == req.kind && !alliesAddUp(player, req)) return "Para el Ascenso tus aliados deben sumar " + req.alliesSum + " o más en " + (if (req.alliesSumByCost) "coste" else "nivel")
         if (!enoughCreatures(player, card)) return "Para invocar a " + name(card) + " debes controlar al menos " + creaturesNeeded(card) + " criaturas"
         val missing = "Tus criaturas no cumplen el Requerimiento de " + name(card) + ": " + card.requirement!!.trim { it <= ' ' }
         if (req.declaredSummoner()) {
@@ -187,6 +187,19 @@ object SpecialSummons {
             room.prompt!!.summonerId = summoner.instanceId
             return
         }
+        // "Turno Aliado: cuando esta carta fuera a ser ascendida: esta carta gana Furia 2" (Espada De Los Leones Dorados): a mandatory
+        // Reacción-Acción, shown to be activated as the mandatory effects are; it applies in specialSummon
+        val gain = if ("promotion" == req.kind && summoner != null) CardEffects.gainBeforeAscended(summoner) else null
+        if (gain != null && player.userId == room.currentTurnUserId && room.pendingAscension == null
+                && room.usedThisTurn.add(ASCEND_GAIN_ASKED + card.instanceId)) {
+            rulesPrompt(room, player.userId, PromptPurpose.ASCEND_GAIN.id(), name(summoner!!) + " va a ser ascendida",
+                    "Cuando esta carta fuera a ser ascendida: esta carta gana " + gain + " hasta el final del turno.", "Activar",
+                    frozenListOf(summoner), frozenListOf(summoner))
+            room.prompt!!.kind = Prompt.Kind.CONFIRM
+            room.prompt!!.subjectId = card.instanceId
+            room.prompt!!.summonerId = summoner.instanceId
+            return
+        }
         // A cost modifier that asks for its payment (Flambreik's tributes) is asked before the summon (a Reacción applies
         // before its event); only when no materials are being chosen
         var use = CostModifiers.choice(room, player, CostModifiers.Event.SPECIAL_SUMMON, req.kind, card, summoner)
@@ -215,6 +228,9 @@ object SpecialSummons {
 
     /** The materials chosen before a payment the player is asked for (Biok): card id | material ids. */
     const val DISCOUNT_MATERIALS = "discount-materials|"
+
+    /** A card whose summoner's "cuando fuera a ser ascendida" was already shown this turn (card id). */
+    const val ASCEND_GAIN_ASKED = "ascend-gain|"
 
     @JvmStatic
     fun specialSummon(

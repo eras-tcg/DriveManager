@@ -5,7 +5,7 @@
       "id" : "guerrero-forjado:tributada",
       "moment" : "ON_EVENT",
       "label" : "En Tributos",
-      "text" : "Si esta carta es tributada desde el campo y tienes menos de 0 gemas: puedes elegir 1 aliado activo; este declara ataque.",
+      "text" : "Si esta carta es tributada desde el campo y tienes menos de 0 gemas: puedes elegir 1 aliado activo; este declara ataque sin agotarse.",
       "cost" : [
         {
           "type" : "Do",

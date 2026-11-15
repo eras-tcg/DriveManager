@@ -10,7 +10,7 @@
   "cardClasses": [
    "bestia"
   ],
-  "edition": "ST3",
+  "edition": "ST7",
   "subEdition": null,
   "colorIdentity": "P",
   "cardNumber": 5,
@@ -56,7 +56,7 @@
   "cardClasses": [
    "bestia"
   ],
-  "edition": "ST3",
+  "edition": "ST7",
   "subEdition": null,
   "colorIdentity": "P",
   "cardNumber": 10,
@@ -105,7 +105,7 @@
   "level": 1,
   "starter": false,
   "cardClasses": [],
-  "edition": "ST3",
+  "edition": "ST7",
   "subEdition": null,
   "colorIdentity": "P",
   "cardNumber": 17,
@@ -168,7 +168,7 @@
   "cardClasses": [
    "bestia"
   ],
-  "edition": "ST3",
+  "edition": "ST7",
   "subEdition": null,
   "colorIdentity": "P",
   "cardNumber": 15,
@@ -223,7 +223,7 @@
   "cardClasses": [
    "bestia"
   ],
-  "edition": "ST3",
+  "edition": "ST7",
   "subEdition": null,
   "colorIdentity": "P",
   "cardNumber": 2,
@@ -276,7 +276,7 @@
   "cardClasses": [
    "bestia"
   ],
-  "edition": "ST3",
+  "edition": "ST7",
   "subEdition": null,
   "colorIdentity": "P",
   "cardNumber": 6,
@@ -329,7 +329,7 @@
   "cardClasses": [
    "bestia"
   ],
-  "edition": "ST3",
+  "edition": "ST7",
   "subEdition": null,
   "colorIdentity": "P",
   "cardNumber": 14,
@@ -380,7 +380,7 @@
   "cardClasses": [
    "bestia"
   ],
-  "edition": "ST3",
+  "edition": "ST7",
   "subEdition": null,
   "colorIdentity": "P",
   "cardNumber": 1,
@@ -455,7 +455,7 @@
   "level": 3,
   "starter": false,
   "cardClasses": [],
-  "edition": "ST3",
+  "edition": "ST7",
   "subEdition": null,
   "colorIdentity": "P",
   "cardNumber": 18,
@@ -518,7 +518,7 @@
   "cardClasses": [
    "bestia"
   ],
-  "edition": "ST3",
+  "edition": "ST7",
   "subEdition": null,
   "colorIdentity": "P",
   "cardNumber": 12,
@@ -564,7 +564,7 @@
   "cardClasses": [
    "bestia"
   ],
-  "edition": "ST3",
+  "edition": "ST7",
   "subEdition": null,
   "colorIdentity": "P",
   "cardNumber": 4,
@@ -597,7 +597,7 @@
   "cardClasses": [
    "bestia"
   ],
-  "edition": "ST3",
+  "edition": "ST7",
   "subEdition": null,
   "colorIdentity": "P",
   "cardNumber": 9,
@@ -643,7 +643,7 @@
   "cardClasses": [
    "bestia"
   ],
-  "edition": "ST3",
+  "edition": "ST7",
   "subEdition": null,
   "colorIdentity": "P",
   "cardNumber": 3,
@@ -694,7 +694,7 @@
   "cardClasses": [
    "bestia"
   ],
-  "edition": "ST3",
+  "edition": "ST7",
   "subEdition": null,
   "colorIdentity": "P",
   "cardNumber": 11,
@@ -752,7 +752,7 @@
   "cardClasses": [
    "bestia"
   ],
-  "edition": "ST3",
+  "edition": "ST7",
   "subEdition": null,
   "colorIdentity": "P",
   "cardNumber": 13,
@@ -780,10 +780,10 @@
     "ussageLimit": "once per turn",
     "effectBlocks": [
      {
-      "activationCondition": "Si algún aliado es destruido",
+      "activationCondition": "si algún aliado es destruido",
       "cost": "",
-      "resolution": "reactiva esta carta.",
-      "plainEffect": "Si algún aliado es destruido: reactiva esta carta."
+      "resolution": "puedes reactivar esta carta.",
+      "plainEffect": "Si algún aliado es destruido: puedes reactivar esta carta."
      }
     ],
     "kind": "disparado",
@@ -813,7 +813,7 @@
   "level": 2,
   "starter": false,
   "cardClasses": [],
-  "edition": "ST3",
+  "edition": "ST7",
   "subEdition": null,
   "colorIdentity": "P",
   "cardNumber": 16,
@@ -867,7 +867,7 @@
   "cardClasses": [
    "bestia"
   ],
-  "edition": "ST3",
+  "edition": "ST7",
   "subEdition": null,
   "colorIdentity": "P",
   "cardNumber": 7,
@@ -913,7 +913,7 @@
   "cardClasses": [
    "bestia"
   ],
-  "edition": "ST3",
+  "edition": "ST7",
   "subEdition": null,
   "colorIdentity": "P",
   "cardNumber": 8,

@@ -1,5 +1,5 @@
 {
-  "name" : "exo 91",
+  "name" : "exo-91",
   "effects" : [ {
     "id" : "exo-91:en-invocacion",
     "moment" : "ON_SUMMON",

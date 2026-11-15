@@ -29,6 +29,8 @@ enum class PromptPurpose {
     REPLACE_MATERIALS,
     BLOCK_SWAP,
     ASCEND_ATTACK,
+    /** "cuando esta carta fuera a ser ascendida: esta carta gana Furia 2" (Espada De Los Leones Dorados): shown to activate it. */
+    ASCEND_GAIN,
     ASSAULT,
     DAMAGE_REPLACE,
     /** The materials of a special summon made instead of an ally's removal (EXO-91, SARS-2). */

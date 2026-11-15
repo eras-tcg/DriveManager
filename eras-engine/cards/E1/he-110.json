@@ -1,5 +1,5 @@
 {
-  "name" : "he 110",
+  "name" : "he-110",
   "effects" : [ {
     "id" : "he-110:todos-los-turnos",
     "moment" : "ON_EVENT",

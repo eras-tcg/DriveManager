@@ -14,7 +14,6 @@ import com.drive.drive_manager.simulator.engine.frozenListOf
 import com.drive.drive_manager.simulator.engine.frozenMapOf
 import com.drive.drive_manager.simulator.engine.JavaText
 import com.drive.drive_manager.simulator.engine.EffectEngine
-import com.drive.drive_manager.simulator.engine.GameEvent
 import com.drive.drive_manager.simulator.room.CardSlot
 import com.drive.drive_manager.simulator.room.GameAction
 import com.drive.drive_manager.simulator.room.GameRoom
@@ -154,11 +153,8 @@ internal class MoveTrials(
             // Both sides of the copy play by the bot's own rules
             val sides: Map<String?, BotPlayer> = frozenMapOf<String?, BotPlayer>(me, HeuristicBot(settings), copy.getOpponentId(me), HeuristicBot(settings))
             // innerCands: the rest of its own turn decided by a small look-ahead (a few candidates, one try each, to the
-            // end of the turn) instead of the heuristic; the rival's turn too with innerRival
+            // end of the turn) instead of the heuristic
             val thinker: BotPlayer? = if (!deep || settings.get("innerCands") < 1) null else inner(deal)
-            // innerRival (the user's call, 2026-11-05): the rival's own turn in the try decided by the same small look-ahead
-            // as its own (innerCands, in the finalists' tries): the rival it expects is no longer the plain heuristic
-            val rivalThinker: BotPlayer? = if (thinker == null || settings.get("innerRival") < 0.5) null else inner(deal)
             // A sequence's moves one after the other, what each opens answered before the next
             val moves = SequenceSearch.moves(move)
             // The fewest gems it had during its own turn: below 0 they went to the rival for their turn (gemDebt)
@@ -193,8 +189,7 @@ internal class MoveTrials(
                     if (++passed >= settings.turns()) break
                 }
                 val seat = if (copy.prompt != null) copy.prompt!!.playerId else copy.currentTurnUserId
-                val side: BotPlayer? = if (thinker != null && passed == 0 && me!! == seat) thinker
-                    else if (rivalThinker != null && passed == 1 && me!! != seat && seat!! == copy.currentTurnUserId) rivalThinker else sides[seat]
+                val side: BotPlayer? = if (thinker != null && passed == 0 && me!! == seat) thinker else sides[seat]
                 val next = side?.next(copy, seat) ?: break
                 val before = EffectEngine.gemsOf(copy, me)
                 val theirs = me!! == seat && me != copy.currentTurnUserId
@@ -207,18 +202,12 @@ internal class MoveTrials(
             // winFlat (duel st1-st2 s13395, 2026-11-06): a game won or lost in the try is worth that alone, without what the
             // try added (structures used, the plan's bonus): else winning later, after more moves (a deck emptied, three
             // Volcanes used), outscored the win at hand
-            if (settings.get("winFlat") >= 0.5 && copy.status != GameRoom.RoomStatus.IN_PROGRESS && copy.winnerId != null) return score.applyAsDouble(copy, me)
-            val debt: Double = ((if (fewest == Int.MAX_VALUE) 0 else max(0, -fewest)) + (if (settings.get("overExtendRival") >= 0.5) paidInTheirs else 0)).toDouble()
-            // rollTriggers: per effect of its own activated in the rest of its turn (searches, draws, summons by effect:
-            // what a combo earns and the table at the end of the try barely shows)
-            var fired = 0.0
-            if (settings.get("rollTriggers") != 0.0) {
-                for (i in start until copy.timeline.size) {
-                    val e = copy.timeline[i]
-                    if (GameEvent.TURN_END == e.type) break
-                    if (GameEvent.EFFECT_ACTIVATED == e.type && me!! == e.playerId) fired++
-                }
+            if (settings.get("winFlat") >= 0.5 && copy.status != GameRoom.RoomStatus.IN_PROGRESS && copy.winnerId != null) {
+                // winSeen: past the turn on the table it is a game seen in a try, not a fact (TableScore.seen)
+                val fact = passed == 0 || move.payload!![AttackFloor.LETHAL] == true
+                return if (fact || settings.get("winSeen") <= 0) score.applyAsDouble(copy, me) else TableScore.seen(copy, me, settings)
             }
+            val debt: Double = ((if (fewest == Int.MAX_VALUE) 0 else max(0, -fewest)) + (if (settings.get("overExtendRival") >= 0.5) paidInTheirs else 0)).toDouble()
             val lives = if (settings.get("lifeExp") >= 0.5) LifeHits.correction(copy, me, start, settings) else 0.0
             // sUse: what its structures yielded in the try (StructureUse)
             val used = if (settings.get("sUse") != 0.0) settings.get("sUse") * StructureUse.count(copy, me, start) else 0.0
@@ -227,7 +216,7 @@ internal class MoveTrials(
             val b = move.payload!!["bonus"]
             val kept = if (b is Number) b.toDouble() else 0.0
             val exposed = RemovalRisk.charge(atRisk, copy.getPlayer(me), settings)
-            return score.applyAsDouble(copy, me) - TableScore.overExtend(debt, rivalHand, settings) + settings.get("rollTriggers") * fired + lives + leaf + kept + used - exposed
+            return score.applyAsDouble(copy, me) - TableScore.overExtend(debt, rivalHand, settings) + lives + leaf + kept + used - exposed
         } finally {
             sandbox.drop(copy)
         }

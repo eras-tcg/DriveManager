@@ -1,5 +1,5 @@
 {
-  "name" : "unidad h3 r0",
+  "name" : "unidad h3-r0",
   "effects" : [ {
     "id" : "unidad-h3-r0:en-invocacion",
     "moment" : "ON_SUMMON",

@@ -60,7 +60,7 @@ class OfflineGamesTest {
     private static final String ALICE = "alice";
     private static final Instant NOW = Instant.parse("2026-11-08T15:00:00Z");
     private static final Map<String, JsonNode> STARTERS = OfflineDecks.readStarters();
-    /** One recorded game of Alice's (ST1 against the easy bot), shared by the tests: recording it takes seconds. */
+    /** One recorded game of Alice's (ST5, the old ST1, against the easy bot), shared by the tests: recording it takes seconds. */
     private static OfflineRecorder.Recorded recorded;
 
     private final Store store = new Store();
@@ -87,7 +87,7 @@ class OfflineGamesTest {
         when(history.saveOffline(any(), anyInt(), anyString(), any())).thenReturn("match-1");
         // The catalog has the starter decks' cards (drive cards "d-<metadata id>") and Alice owns them all
         List<Card> metas = starterCards();
-        for (String edition : List.of("ST1", "ST2", "ST3", "ST4")) {
+        for (String edition : List.of("ST5", "ST6", "ST7", "ST8")) {
             when(driveCards.findByEdition(edition)).thenReturn(drives(metas.stream().filter(m -> edition.equals(m.getEdition())).toList()));
         }
         Map<String, Map<String, Integer>> owned = new HashMap<>();
@@ -415,7 +415,7 @@ class OfflineGamesTest {
         assertThat(store.verdicts.values()).noneMatch(v -> OfflineGames.ACCEPTED.equals(v.status()) && !v.gameId().startsWith("earlier-"));
     }
 
-    /** The starter decks' cards (ST1–ST4), as the server's card metadata. */
+    /** The starter decks' cards (ST5–ST8, once ST1–ST4), as the server's card metadata. */
     private static List<Card> starterCards() {
         List<Card> out = new ArrayList<>();
         for (String deck : List.of("st1", "st2", "st3", "st4")) {

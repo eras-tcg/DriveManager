@@ -46,6 +46,18 @@ class CardNamesTest {
     }
 
     @Test
+    void theMetadataKeepsTheAccentsTheFileNameLacks() {
+        // Drive's files are often named without accents ("E1-G10-Deriduragon.jpg")
+        when(cards.findByEdition("E1")).thenReturn(List.of(meta("Deriduragón", "E1", 10, null, "G")));
+        assertThat(names.nameFor("E1", 10, null, "G", "Deriduragon")).isEqualTo("Deriduragón");
+
+        DriveCard image = image("a", "Deriduragon", "E1", 10, null, "G");
+        when(images.findByEditionAndNumber("E1", 10)).thenReturn(List.of(image));
+        assertThat(names.syncImages(meta("Deriduragón", "E1", 10, null, "G"))).isEqualTo(1);
+        assertThat(image.getName()).isEqualTo("Deriduragón");
+    }
+
+    @Test
     void metadataOfAnotherCardDoesNotRenameTheImage() {
         when(cards.findByEdition("E2")).thenReturn(List.of(meta("Damon", "E2", 2, null, "P")));
         assertThat(names.nameFor("E2", 2, null, "P", "Bruja Mensajera")).isEqualTo("Bruja Mensajera");

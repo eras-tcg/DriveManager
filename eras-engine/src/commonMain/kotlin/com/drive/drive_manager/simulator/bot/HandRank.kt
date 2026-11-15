@@ -33,6 +33,12 @@ internal object HandRank {
     /** Each card's worth to keep, by its index in the hand. */
     @JvmStatic
     fun quality(room: GameRoom?, p: PlayerState, w: BotSettings): DoubleArray {
+        return quality(room, p, w, null)
+    }
+
+    /** The same, with each card's playability already found ([playLevels]), by its index in the hand. */
+    @JvmStatic
+    fun quality(room: GameRoom?, p: PlayerState, w: BotSettings, known: IntArray?): DoubleArray {
         val hand = p.hand
         val n = hand.size
         val rCopy = w.get("rCopy")
@@ -47,7 +53,7 @@ internal object HandRank {
             val j = copies.mergeWith(key, 1) { a, b -> a + b }!! - 1
             var play = 1.0
             if (room != null && rPlay < 1) {
-                val level = levels.getOrPut(key) { Playability.level(room, p.userId, c) }
+                val level = if (known != null) known[i] else levels.getOrPut(key) { Playability.level(room, p.userId, c) }
                 play = rPlay.pow(level.toDouble())
             }
             q[i] = rCopy.pow(j.toDouble()) * play
@@ -63,6 +69,16 @@ internal object HandRank {
             for (k in 0 until same.size) q[same[k]] *= rType.pow(k.toDouble())
         }
         return q
+    }
+
+    /** When each card of the hand can be played by the rules (Playability: 0 now, 1 at its next turn, 2 later), by its index; copies share it. */
+    @JvmStatic
+    fun playLevels(room: GameRoom, p: PlayerState): IntArray {
+        val byName: MutableMap<String, Int> = HashMap()
+        return IntArray(p.hand.size) { i ->
+            val c = p.hand[i]
+            byName.getOrPut(if (c.cardName == null) "#$i" else BotSettings.cardKey(c.cardName)) { Playability.level(room, p.userId, c) }
+        }
     }
 
     /** The cards chosen among (ids in the hand), the least worth keeping first; ties by the card's size. */

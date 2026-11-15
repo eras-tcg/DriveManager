@@ -12,7 +12,7 @@ class CardFilesTest {
     @Test
     void everyFileIsAValidCard() {
         List<CardDefinition> cards = CardFiles.load();
-        assertThat(cards).hasSizeGreaterThanOrEqualTo(358);
+        assertThat(cards).hasSizeGreaterThanOrEqualTo(356);
         assertThat(cards).extracting(CardDefinition::name).doesNotHaveDuplicates();
     }
 

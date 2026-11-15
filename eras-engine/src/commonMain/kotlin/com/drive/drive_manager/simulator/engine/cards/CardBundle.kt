@@ -1,5 +1,6 @@
 package com.drive.drive_manager.simulator.engine.cards
 
+import com.drive.drive_manager.simulator.engine.CardKeys
 import kotlin.jvm.JvmStatic
 import com.drive.drive_manager.simulator.engine.CardDefinition
 import com.drive.drive_manager.simulator.engine.CardSource
@@ -60,7 +61,7 @@ object CardBundle {
     @JvmStatic
     fun read(files: List<File>): List<CardDefinition> {
         val cards = ArrayList<CardDefinition>()
-        val names = HashSet<String?>()
+        val names = HashSet<String>()
         val ids = HashSet<String?>()
         for (file in files) {
             val card = try {
@@ -68,7 +69,8 @@ object CardBundle {
             } catch (e: IllegalArgumentException) {
                 throw IllegalStateException(file.name + ": " + e.message, e)
             }
-            if (!names.add(card.name)) throw IllegalStateException("Carta en dos archivos: " + card.name)
+            // The same card under a name written otherwise ("roto g0" / "roto-g0") is still the same card twice
+            if (!names.add(CardKeys.key(card.name))) throw IllegalStateException("Carta en dos archivos: " + card.name)
             for (script in card.effects()) if (!ids.add(script.id)) throw IllegalStateException("Efecto repetido: " + script.id)
             for (script in card.inherited()) if (!ids.add(script.id)) throw IllegalStateException("Efecto repetido: " + script.id)
             cards.add(card)

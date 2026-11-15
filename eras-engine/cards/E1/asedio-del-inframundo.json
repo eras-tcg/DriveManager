@@ -1,131 +1,144 @@
 {
   "name" : "asedio del inframundo",
-  "effects" : [ {
-    "id" : "asedio-del-inframundo:en-juego",
-    "moment" : "ON_PLAY",
-    "mandatory" : true,
-    "label" : "En Juego",
-    "text" : "Puedes invocar 1 criatura nivel 1 de tus tributos reduciendo en 2 su coste. Luego: tributa esta carta.",
-    "steps" : [ {
-      "type" : "MayDo",
-      "question" : "¿Invocas 1 criatura nivel 1 de tus tributos reduciendo en 2 su coste?",
-      "covers" : 1
-    }, {
-      "type" : "Do",
-      "action" : {
-        "type" : "Summon",
-        "cards" : {
-          "zones" : "tributeZone",
-          "owner" : "YOU",
-          "filter" : {
-            "cardType" : "creature",
-            "level" : 1
-          },
-          "min" : {
-            "type" : "Fixed",
-            "value" : 1
-          },
-          "max" : {
-            "type" : "Fixed",
-            "value" : 1
-          },
-          "self" : "ANY",
-          "mode" : "CHOOSE"
+  "effects" : [
+    {
+      "id" : "asedio-del-inframundo:en-juego",
+      "moment" : "ON_PLAY",
+      "mandatory" : true,
+      "label" : "En Juego",
+      "text" : "Invoca en tu línea frontal 1 criatura Violeta o [espectro] nivel 1 de tus tributos reduciendo su coste en 2. Luego: tributa esta carta.",
+      "steps" : [
+        {
+          "type" : "Do",
+          "action" : {
+            "type" : "Summon",
+            "cards" : {
+              "zones" : "tributeZone",
+              "owner" : "YOU",
+              "filter" : {
+                "colors" : [
+                  "P"
+                ],
+                "classes" : [
+                  "espectro"
+                ],
+                "cardType" : "creature",
+                "level" : 1
+              },
+              "min" : {
+                "type" : "Fixed",
+                "value" : 1
+              },
+              "max" : {
+                "type" : "Fixed",
+                "value" : 1
+              },
+              "self" : "ANY",
+              "mode" : "CHOOSE"
+            },
+            "reduce" : {
+              "type" : "Fixed",
+              "value" : 2
+            },
+            "required" : true,
+            "toFront" : true
+          }
         },
-        "reduce" : {
-          "type" : "Fixed",
-          "value" : 2
-        },
-        "required" : true
-      }
-    }, {
-      "type" : "Do",
-      "action" : {
-        "type" : "Move",
-        "cards" : {
-          "zones" : "field",
-          "owner" : "YOU",
-          "filter" : { },
-          "min" : {
-            "type" : "Fixed",
-            "value" : 1
-          },
-          "max" : {
-            "type" : "Fixed",
-            "value" : 1
-          },
-          "self" : "ANY",
-          "mode" : "SELF"
-        },
-        "to" : "tributeZone"
-      }
-    } ],
-    "sourceZone" : "field",
-    "limit" : "NONE"
-  }, {
-    "id" : "asedio-del-inframundo:en-mano",
-    "moment" : "ON_EVENT",
-    "label" : "En Mano",
-    "text" : "(1) Si algún aliado es enviado al descarte: tribútalo; juega esta carta sin pagar su coste.",
-    "cost" : [ {
-      "type" : "Do",
-      "action" : {
-        "type" : "Move",
-        "cards" : {
-          "zones" : "event",
-          "owner" : "YOU",
-          "filter" : { },
-          "min" : {
-            "type" : "Fixed",
-            "value" : 1
-          },
-          "max" : {
-            "type" : "Fixed",
-            "value" : 1
-          },
-          "self" : "ANY",
-          "mode" : "ALL"
-        },
-        "to" : "tributeZone"
-      }
-    } ],
-    "steps" : [ {
-      "type" : "Do",
-      "action" : {
-        "type" : "Play",
-        "cards" : {
-          "zones" : "hand",
-          "owner" : "YOU",
-          "filter" : { },
-          "min" : {
-            "type" : "Fixed",
-            "value" : 1
-          },
-          "max" : {
-            "type" : "Fixed",
-            "value" : 1
-          },
-          "self" : "ANY",
-          "mode" : "SELF"
-        },
-        "reduce" : {
-          "type" : "Fixed",
-          "value" : 1000
-        },
-        "required" : true
-      }
-    } ],
-    "condition" : {
-      "type" : "Happened",
-      "actor" : "ANY",
-      "owner" : "YOU",
-      "filter" : {
-        "cardType" : "creature"
-      },
-      "from" : "field",
-      "to" : "discardPile"
+        {
+          "type" : "Do",
+          "action" : {
+            "type" : "Move",
+            "cards" : {
+              "zones" : "field",
+              "owner" : "YOU",
+              "filter" : {},
+              "min" : {
+                "type" : "Fixed",
+                "value" : 1
+              },
+              "max" : {
+                "type" : "Fixed",
+                "value" : 1
+              },
+              "self" : "ANY",
+              "mode" : "SELF"
+            },
+            "to" : "tributeZone"
+          }
+        }
+      ],
+      "sourceZone" : "field",
+      "limit" : "NONE"
     },
-    "sourceZone" : "hand",
-    "limit" : "ONCE_PER_TURN_BETWEEN_COPIES"
-  } ]
+    {
+      "id" : "asedio-del-inframundo:en-mano",
+      "moment" : "ON_EVENT",
+      "label" : "En Mano",
+      "text" : "(1) Si algún aliado es enviado al descarte: puedes tributarlo; juega esta carta sin pagar su coste.",
+      "cost" : [
+        {
+          "type" : "Do",
+          "action" : {
+            "type" : "Move",
+            "cards" : {
+              "zones" : "event",
+              "owner" : "YOU",
+              "filter" : {},
+              "min" : {
+                "type" : "Fixed",
+                "value" : 1
+              },
+              "max" : {
+                "type" : "Fixed",
+                "value" : 1
+              },
+              "self" : "ANY",
+              "mode" : "ALL"
+            },
+            "to" : "tributeZone"
+          }
+        }
+      ],
+      "steps" : [
+        {
+          "type" : "Do",
+          "action" : {
+            "type" : "Play",
+            "cards" : {
+              "zones" : "hand",
+              "owner" : "YOU",
+              "filter" : {},
+              "min" : {
+                "type" : "Fixed",
+                "value" : 1
+              },
+              "max" : {
+                "type" : "Fixed",
+                "value" : 1
+              },
+              "self" : "ANY",
+              "mode" : "SELF"
+            },
+            "reduce" : {
+              "type" : "Fixed",
+              "value" : 1000
+            },
+            "required" : true
+          }
+        }
+      ],
+      "condition" : {
+        "type" : "Happened",
+        "actor" : "ANY",
+        "owner" : "YOU",
+        "filter" : {
+          "cardType" : "creature"
+        },
+        "from" : "field",
+        "to" : "discardPile"
+      },
+      "sourceZone" : "hand",
+      "limit" : "ONCE_PER_TURN_BETWEEN_COPIES"
+    }
+  ]
 }
