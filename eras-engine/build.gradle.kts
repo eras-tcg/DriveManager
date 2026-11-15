@@ -74,11 +74,14 @@ val botResources by tasks.registering {
 }
 
 /**
- * The starter decks (ST1–ST4: each card's metadata, as drive_manager's tests seat them) as LocalMatch's decks, by deck id:
- * {"format": "eras-starter-decks/1", "decks": {"deck-st1": {"deckName": "ST1", "metadata": [<the cards' metadata>]}, ...}}
+ * The starter decks (the structure decks ST5–ST8, once ST1–ST4: each card's metadata, as drive_manager's tests seat
+ * them) as LocalMatch's decks, by deck id:
+ * {"format": "eras-starter-decks/1", "decks": {"deck-st1": {"deckName": "ST5", "metadata": [<the cards' metadata>]}, ...}}
+ * The deck ids and test files keep their first names (offline games already recorded name their decks by id).
  */
 val starterDecks by tasks.registering {
     val names = listOf("st1", "st2", "st3", "st4")
+    val deckNames = mapOf("st1" to "ST5", "st2" to "ST6", "st3" to "ST7", "st4" to "ST8")
     val sources = names.map { serverTestResources.resolve("simulator/$it-cards.json") }
     val output = layout.buildDirectory.file("generated/browserAssets/starter-decks.json")
     inputs.files(sources).withPathSensitivity(PathSensitivity.RELATIVE)
@@ -87,7 +90,7 @@ val starterDecks by tasks.registering {
         val out = StringBuilder("{\"format\":\"eras-starter-decks/1\",\"decks\":{")
         names.forEachIndexed { i, name ->
             if (i > 0) out.append(',')
-            out.append(jsonString("deck-$name")).append(":{\"deckName\":").append(jsonString(name.uppercase()))
+            out.append(jsonString("deck-$name")).append(":{\"deckName\":").append(jsonString(deckNames.getValue(name)))
                 .append(",\"metadata\":").append(sources[i].readText(Charsets.UTF_8).trim()).append('}')
         }
         out.append("}}\n")
