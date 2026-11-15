@@ -91,7 +91,14 @@ public class EditionMetadataController {
             repo.findById(body.getEditionId())
                     .ifPresent(existing -> body.setEditionImage(existing.getEditionImage()));
         }
+        repo.findById(body.getEditionId()).ifPresent(existing -> keepSlots(body, existing));
         return ResponseEntity.ok(repo.save(body));
+    }
+
+    /** A save that does not send the slots (the shop's form) keeps the ones the edition has. */
+    static void keepSlots(EditionMetadata body, EditionMetadata existing) {
+        if (body.getColors() == null) body.setColors(existing.getColors());
+        if (body.getCardsPerColor() == null) body.setCardsPerColor(existing.getCardsPerColor());
     }
 
     @PreAuthorize("hasAuthority('manage_editions')")

@@ -34,6 +34,13 @@ public class EditionMetadata {
     @Field("release_date")
     private String releaseDate;
 
+    /** Its slots: the colors it has and how many cards each (ST2: ["G"] × 18 → G01–G18); null before slots existed. */
+    @Field("colors")
+    private List<String> colors;
+
+    @Field("cards_per_color")
+    private Integer cardsPerColor;
+
     // ── Booster simulation config ──────────────────────────────────────────────
 
     @Field("pack_types")
