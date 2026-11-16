@@ -37,5 +37,19 @@
       "sourceZone" : "field",
       "limit" : "DEFINITIVE"
     }
-  ]
+  ],
+  "requirement" : {
+    "ritual": {
+      "parts": [
+        {
+          "level": 4,
+          "type": "ángel"
+        },
+        {
+          "level": 4,
+          "type": "ángel caído"
+        }
+      ]
+    }
+  }
 }

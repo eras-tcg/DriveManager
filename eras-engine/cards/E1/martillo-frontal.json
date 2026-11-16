@@ -46,5 +46,11 @@
       "sourceZone" : "field",
       "limit" : "ONCE_PER_TURN_BETWEEN_COPIES"
     }
-  ]
+  ],
+  "requirement" : {
+    "summoner": {
+      "level": 1
+    },
+    "strongest": true
+  }
 }

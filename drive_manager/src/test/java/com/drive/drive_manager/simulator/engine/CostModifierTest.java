@@ -40,6 +40,7 @@ class CostModifierTest {
         evolved.setSpecialSummonKind("evolution");
         evolved.setSpecialCost(2);
         evolved.setRequirement("criatura nivel 1.");
+        Req.program(evolved);
         host.getHand().add(evolved);
 
         // 1 gem and a cost of 2: only with Flambreik's reduction
@@ -70,6 +71,7 @@ class CostModifierTest {
         evolved.setSpecialSummonKind("evolution");
         evolved.setSpecialCost(2);
         evolved.setRequirement("criatura nivel 1.");
+        Req.program(evolved);
         host.getHand().add(evolved);
         assertThat(SpecialSummons.specialByPlayer(room, "host", "evo", "fl")).isNull();
         Prompt pay = room.getPrompt();
@@ -94,6 +96,7 @@ class CostModifierTest {
         evolved.setSpecialSummonKind("evolution");
         evolved.setSpecialCost(2);
         evolved.setRequirement("criatura nivel 1.");
+        Req.program(evolved);
         host.getHand().add(evolved);
 
         assertThat(CostModifiers.available(room, host, CostModifiers.Event.SPECIAL_SUMMON, "evolution", evolved,
@@ -114,6 +117,7 @@ class CostModifierTest {
         evolved.setSpecialSummonKind("evolution");
         evolved.setSpecialCost(2);
         evolved.setRequirement("criatura nivel 1.");
+        Req.program(evolved);
         host.getTributeZone().add(evolved);
 
         assertThat(CostModifiers.available(room, host, CostModifiers.Event.SPECIAL_SUMMON, "evolution", evolved,
@@ -133,6 +137,7 @@ class CostModifierTest {
         evolved.setSpecialSummonKind("evolution");
         evolved.setSpecialCost(2);
         evolved.setRequirement("criatura nivel 1.");
+        Req.program(evolved);
 
         assertThat(CostModifiers.available(room, host, CostModifiers.Event.SPECIAL_SUMMON, "evolution", evolved, duregon)).isEqualTo(1);
         room.setCurrentTurnUserId("guest");
@@ -158,12 +163,14 @@ class CostModifierTest {
         // Level 2: only Galveta can be the summoner, and without Duregón's discount it cannot be paid. It used to be
         // offered anyway, and choosing Galveta was refused ("no tienes gemas suficientes"), again and again
         evolved.setRequirement("criatura nivel 2.");
+        Req.program(evolved);
         assertThat(SpecialRequirements.canSpecial(room, "host", evolved)).isFalse();
         assertThat(SpecialSummons.specialByPlayer(room, "host", "evo", null)).contains("gemas suficientes");
         assertThat(room.getPrompt()).isNull();
 
         // Level 1: Duregón can be the summoner, and with its discount it is paid; it is the only one offered
         evolved.setRequirement("criatura nivel 1.");
+        Req.program(evolved);
         assertThat(SpecialRequirements.canSpecial(room, "host", evolved)).isTrue();
         assertThat(SpecialSummons.specialByPlayer(room, "host", "evo", null)).isNull();
         assertThat(room.getPrompt().getValidIds()).containsExactly("dur");

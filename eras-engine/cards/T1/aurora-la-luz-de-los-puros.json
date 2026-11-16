@@ -74,5 +74,10 @@
         "cost" : "ALLY_TO_LIFE_FACE_DOWN"
       }
     ]
+  },
+  "requirement" : {
+    "summoner": {
+      "level": 2
+    }
   }
 }

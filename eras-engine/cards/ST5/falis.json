@@ -37,5 +37,18 @@
     },
     "sourceZone" : "tributeZone",
     "limit" : "ONCE_PER_TURN_BETWEEN_COPIES"
-  } ]
+  } ],
+  "requirement" : {
+    "summoner": {
+      "level": 2
+    },
+    "materials": {
+      "count": 1,
+      "level": 2,
+      "zones": [
+        "field",
+        "tributeZone"
+      ]
+    }
+  }
 }

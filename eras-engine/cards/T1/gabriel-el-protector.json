@@ -22,5 +22,11 @@
         "zone" : "field"
       }
     ]
+  },
+  "requirement" : {
+    "summoner": {
+      "level": 3
+    },
+    "formationSize": 3
   }
 }

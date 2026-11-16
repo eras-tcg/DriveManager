@@ -3,10 +3,10 @@ package com.drive.drive_manager.simulator.engine
 import kotlin.jvm.JvmRecord
 
 /**
- * A special summon's Requerimiento programmed by hand in the card file (its `requirement` section), as the effects are. When a card has it,
- * the engine uses it and not the printed text, in the four ways (Evolución, Ascenso, Materialización: [SpecialRequirements.specialRequirement];
- * Ritual: [Rituals.requirement]); without it the text is read as before. The printed text stays for showing. Vault:
- * `11 Simulador/Requerimientos de invocación especial`.
+ * A special summon's Requerimiento, programmed by hand in the card file (its `requirement` section), as the effects are. It is the only
+ * source, in the four ways (Evolución, Ascenso, Materialización: [SpecialRequirements.specialRequirement]; Ritual: [Rituals.requirement]):
+ * the printed text is only shown, never read. A card with a special summon method and no section cannot be special summoned and counts as
+ * not programmed ([CardEffects.pending]). Vault: `11 Simulador/Requerimientos de invocación especial`.
  *
  * Evolución, Ascenso and Materialización use [summoner], [materials] and the rest; a Ritual uses [ritual].
  *
@@ -76,8 +76,11 @@ data class MaterialSpec(
  * @param maxStrength "de fuerza N o menos"; null: any
  * @param extra       "+ N o más aliados": other allies sacrificed with it, at least
  * @param eachMaxLevel "criaturas nivel N o menor que sumen …": the highest level of each creature used; null: any
+ * @param parts       each creature used, the summoner among them ("criatura nivel 2 + 1 criatura [ángel] nivel 2 o menor"): one
+ *                    [RitualParts.Part] each (level, "o menor", class); null or empty: the fields above
  */
 @JvmRecord
 data class RitualSpec(
     val sum: Boolean, val level: Int, val maxLevel: Int?, val atLeast: Boolean, val maxStrength: Int?, val extra: Int, val eachMaxLevel: Int? = null,
+    val parts: List<RitualParts.Part>? = null,
 )

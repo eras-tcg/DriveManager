@@ -111,5 +111,11 @@
     },
     "sourceZone" : "tributeZone",
     "limit" : "NONE"
-  } ]
+  } ],
+  "requirement" : {
+    "summoner": {
+      "level": 2,
+      "maxLevel": 3
+    }
+  }
 }

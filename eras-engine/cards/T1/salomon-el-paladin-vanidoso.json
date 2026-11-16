@@ -86,5 +86,12 @@
         "formationNeighbours" : true
       }
     ]
+  },
+  "requirement" : {
+    "summoner": {
+      "level": 4
+    },
+    "formationSize": 3,
+    "formationAtLeast": true
   }
 }

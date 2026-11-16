@@ -119,5 +119,10 @@
       "maxStrength" : 3
     },
     "enemies" : true
-  } ]
+  } ],
+  "requirement" : {
+    "summoner": {
+      "level": 3
+    }
+  }
 }

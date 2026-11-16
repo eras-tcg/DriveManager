@@ -27,9 +27,7 @@ import com.drive.drive_manager.simulator.engine.SpecialRequirements.SpecialRequi
 import com.drive.drive_manager.simulator.engine.SpecialRequirements.affordableWith
 import com.drive.drive_manager.simulator.engine.SpecialRequirements.alliesAddUp
 import com.drive.drive_manager.simulator.engine.SpecialRequirements.checkMaterials
-import com.drive.drive_manager.simulator.engine.SpecialRequirements.creaturesNeeded
 import com.drive.drive_manager.simulator.engine.SpecialRequirements.declaredSummoners
-import com.drive.drive_manager.simulator.engine.SpecialRequirements.enoughCreatures
 import com.drive.drive_manager.simulator.engine.SpecialRequirements.fieldPiecesDiscount
 import com.drive.drive_manager.simulator.engine.SpecialRequirements.findDeclared
 import com.drive.drive_manager.simulator.engine.SpecialRequirements.levelText
@@ -76,14 +74,16 @@ object SpecialSummons {
         player!!
         val fromZone = if (find(player.hand, card.instanceId) != null) "hand" else "tributeZone"
         val req = specialRequirement(card)
-        if (req == null || card.specialCost == null) return name(card) + " no tiene una invocación especial que el motor conozca"
+        if (req == null || card.specialCost == null) {
+            return if (card.specialSummonKind != null && card.specialCost != null) name(card) + " no tiene su Requerimiento de invocación especial programado"
+            else name(card) + " no tiene una invocación especial que el motor conozca"
+        }
         val kind = kindName(req.kind)
         if (!canPay(room, userId, card.specialCost!! - possibleFieldPiecesDiscount(player, card)
                         - CostModifiers.available(room, player, CostModifiers.Event.SPECIAL_SUMMON, req.kind, card, null)))
             return "No tienes gemas suficientes: tienes " + gemsOf(room, userId) + " y el coste especial es " + card.specialCost
         if (askTap(room, player, card, req.kind, summonerId)) return null
         if ("promotion" == req.kind && !alliesAddUp(player, req)) return "Para el Ascenso tus aliados deben sumar " + req.alliesSum + " o más en " + (if (req.alliesSumByCost) "coste" else "nivel")
-        if (!enoughCreatures(player, card)) return "Para invocar a " + name(card) + " debes controlar al menos " + creaturesNeeded(card) + " criaturas"
         if (!SpecialRequirements.conditionMet(room, player, card, req)) return "Para invocar a " + name(card) + " debes " +
                 (req.conditionText ?: "cumplir su Requerimiento: " + (card.requirement ?: "").trim { it <= ' ' })
         val missing = "Tus criaturas no cumplen el Requerimiento de " + name(card) + ": " + (card.requirement ?: "").trim { it <= ' ' }

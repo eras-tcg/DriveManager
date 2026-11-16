@@ -99,5 +99,11 @@
       "sourceZone" : "hand",
       "limit" : "ONCE_PER_TURN_BETWEEN_COPIES"
     }
-  ]
+  ],
+  "requirement" : {
+    "summoner": {
+      "level": 2
+    },
+    "alone": true
+  }
 }

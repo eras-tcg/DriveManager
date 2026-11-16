@@ -25,18 +25,21 @@ class MaterializationRequirementTest {
     }
 
     @Test
-    void withoutASummonerTwoCreaturesOfTheHandOrTributesBecomeItsMaterials() {
-        // SAR-2: "2 criaturas nivel 1 en tu mano o tributos"
-        CardSlot sar = blue(materialization(card("sar", "SAR 2", 2, 2, "B"), 2, "2 criaturas nivel 1 en tu mano o tributos."));
+    void aSummonerDeclaredFromTheHandAndAMaterialOfTheHandOrTributes() {
+        // SAR 2 (its card file): "criatura nivel 1 en mano + 1 criatura nivel 1 en tu mano o tributos"
+        CardSlot sar = blue(materialization(card("sar", "SAR 2", 2, 2, "B"), 2, "criatura nivel 1 en mano + 1 criatura nivel 1 en tu mano o tributos."));
         CardSlot fromHand = blue(card("h1", "En mano", 1, 1, "B"));
         CardSlot fromTributes = blue(card("t1", "En tributos", 1, 1, "B"));
         host.getHand().addAll(List.of(sar, fromHand));
         host.getTributeZone().add(fromTributes);
         assertThat(SpecialRequirements.canSpecial(room, "host", sar)).isTrue();
         assertThat(SpecialSummons.specialByPlayer(room, "host", "sar", null)).isNull();
+        // The summoner is declared from the hand, then the material
+        assertThat(room.getPrompt().getValidIds()).containsExactly("h1");
+        answer(room.getPrompt(), "h1");
         Prompt materials = room.getPrompt();
-        assertThat(materials.getValidIds()).containsExactlyInAnyOrder("h1", "t1");
-        answer(materials, "h1", "t1");
+        assertThat(materials.getValidIds()).containsExactly("t1");
+        answer(materials, "t1");
         answerRest();
         assertThat(host.getField()).contains(sar);
         assertThat(sar.getMaterials()).containsExactlyInAnyOrder(fromHand, fromTributes);
@@ -79,8 +82,8 @@ class MaterializationRequirementTest {
         CardSlot level4 = onField(host, blue(card("s4", "Nivel 4", 4, 4, "B")));
         host.getHand().addAll(List.of(unidad, blue(card("m3", "Material 3", 3, 3, "B"))));
         assertThat(SpecialRequirements.specialSummoners(host, unidad, SpecialRequirements.specialRequirement(unidad))).contains(level4);
-        // Proto Vigilante H2: "(criatura nivel 3) o (criatura nivel 2 + material nivel 2 en tu mano o campo)"
-        CardSlot proto = blue(materialization(card("pv", "Proto Vigilante H2", 2, 2, "B"), 1,
+        // A card with two ways: "(criatura nivel 3) o (criatura nivel 2 + material nivel 2 en tu mano o campo)"
+        CardSlot proto = blue(materialization(card("pv", "Proto De Dos Vías", 2, 2, "B"), 1,
                 "(criatura nivel 3) o (criatura nivel 2 + material nivel 2 en tu mano o campo)."));
         CardSlot level3 = onField(host, blue(card("s3", "Nivel 3", 3, 3, "B")));
         host.getHand().add(proto);
@@ -96,6 +99,7 @@ class MaterializationRequirementTest {
         card.setSpecialSummonKind("materialization");
         card.setSpecialCost(cost);
         card.setRequirement(requirement);
+        Req.program(card);
         return card;
     }
 

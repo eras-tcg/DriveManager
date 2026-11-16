@@ -200,5 +200,10 @@
     "resourceFilter" : {
       "classes" : [ "hydra" ]
     }
-  } ]
+  } ],
+  "requirement" : {
+    "summoner": {
+      "level": 3
+    }
+  }
 }

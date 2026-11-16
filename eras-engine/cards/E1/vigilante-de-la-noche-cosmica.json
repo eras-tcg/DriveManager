@@ -61,5 +61,18 @@
     },
     "strength" : 6,
     "zone" : "lifeStack"
-  } ]
+  } ],
+  "requirement" : {
+    "summoner": {
+      "level": 2
+    },
+    "materials": {
+      "count": 1,
+      "level": 2,
+      "zones": [
+        "field",
+        "tributeZone"
+      ]
+    }
+  }
 }

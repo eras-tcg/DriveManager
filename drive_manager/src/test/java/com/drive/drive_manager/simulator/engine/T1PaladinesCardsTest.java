@@ -59,6 +59,7 @@ class T1PaladinesCardsTest extends CardBatchSupport {
         c.setSpecialSummonKind("promotion");
         c.setSpecialCost(specialCost);
         c.setRequirement(requirement);
+        Req.program(c);
         return c;
     }
 

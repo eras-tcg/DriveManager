@@ -1,6 +1,5 @@
 package com.drive.drive_manager.simulator.engine
 
-import com.drive.drive_manager.simulator.platform.Platform
 import kotlin.jvm.JvmRecord
 import kotlin.jvm.JvmStatic
 import com.drive.drive_manager.simulator.room.CardSlot
@@ -28,27 +27,6 @@ object RitualParts {
         }
 
         fun describe(): String = "criatura" + (if (type == null) "" else " [$type]") + " nivel " + level + (if (orLess) " o menor" else "")
-    }
-
-    private val PLUS = Platform.regex("^criatura\\s+nivel\\s*(\\d+)\\s*\\+\\s*(\\d+)\\s*criaturas?\\s*(?:\\[([^\\]]+)\\]\\s*)?nivel\\s*(\\d+)(\\s*o\\s*menor)?")
-    private val MANY = Platform.regex(
-        "^(\\d+)\\s*criaturas\\s*nivel\\s*(\\d+)(\\s*o\\s*menor)?(?:\\s*en\\s*juego)?(?:\\s*,\\s*una\\s*\\[([^\\]]+)\\]\\s*y\\s*otra\\s*\\[([^\\]]+)\\])?")
-
-    /** The parts of such a Requerimiento (lower case), or null when it is not one. */
-    @JvmStatic
-    fun parse(text: String): List<Part>? {
-        val plus = PLUS.find(text)
-        if (plus != null) {
-            val parts = ArrayList(frozenListOf(Part(plus.groupValues[1].toInt(), false, null)))
-            val other = Part(plus.groupValues[4].toInt(), plus.groups[5] != null, plus.groups[3]?.value)
-            repeat(plus.groupValues[2].toInt()) { parts.add(other) }
-            return parts
-        }
-        val many = MANY.find(text) ?: return null
-        val count = many.groupValues[1].toInt()
-        if (count < 2) return null
-        val types: List<String?> = arrayListOf(many.groups[4]?.value, many.groups[5]?.value)
-        return (0 until count).map { i -> Part(many.groupValues[2].toInt(), many.groups[3] != null, if (types[0] == null || i > 1) null else types[i]) }
     }
 
     /** The enemies that can fill a part for this Ritual now (Lilith), and the type they count as; empty without such a reaction. */

@@ -140,6 +140,7 @@ class ST2CardsTest extends CardBatchSupport {
         evo.setSpecialSummonKind("evolution");
         evo.setSpecialCost(specialCost);
         evo.setRequirement("criatura nivel 1.");
+        Req.program(evo);
         host.getHand().add(evo);
         return evo;
     }

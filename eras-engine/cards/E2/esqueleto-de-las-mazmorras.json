@@ -128,5 +128,11 @@
       "sourceZone" : "field",
       "limit" : "NONE"
     }
-  ]
+  ],
+  "requirement" : {
+    "ritual": {
+      "sum": true,
+      "level": 2
+    }
+  }
 }

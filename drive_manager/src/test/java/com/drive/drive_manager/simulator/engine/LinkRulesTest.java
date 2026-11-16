@@ -232,6 +232,7 @@ class LinkRulesTest extends CardBatchSupport {
         promoted.setSpecialSummonKind("promotion");
         promoted.setSpecialCost(0);
         promoted.setRequirement("Ascenso: criatura nivel 2.");
+        Req.program(promoted);
         host.getHand().add(promoted);
         assertThat(SpecialSummons.specialByPlayer(room, "host", "asc", "a")).isNull();
         assertThat(host.getField()).contains(promoted).doesNotContain(a);

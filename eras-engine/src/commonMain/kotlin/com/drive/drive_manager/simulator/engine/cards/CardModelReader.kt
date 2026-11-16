@@ -577,7 +577,7 @@ internal object CardModelReader {
     }
 
     private fun readCardFilter(o: JsonObject, at: String): com.drive.drive_manager.simulator.engine.CardFilter {
-        J.fields(o, at, "CardFilter", setOf("colors", "classes", "cardType", "level", "maxLevel", "maxStrength", "activeOnly", "exhaustedOnly", "minLevel", "minStrength", "maxCost", "name", "notName", "starterOnly", "colorAndClass", "notColors", "nameContains", "minCost", "cardTypes", "anyOf", "mentions", "backOnly", "enlace", "frontOnly"), false)
+        J.fields(o, at, "CardFilter", setOf("colors", "classes", "cardType", "level", "maxLevel", "maxStrength", "activeOnly", "exhaustedOnly", "minLevel", "minStrength", "maxCost", "name", "notName", "starterOnly", "colorAndClass", "notColors", "nameContains", "minCost", "cardTypes", "anyOf", "mentions", "backOnly", "enlace", "frontOnly", "noResources"), false)
         return com.drive.drive_manager.simulator.engine.CardFilter(
             colors = J.list(o, "colors", at) { e, p -> J.stringElement(e, p) },
             classes = J.list(o, "classes", at) { e, p -> J.stringElement(e, p) },
@@ -603,6 +603,7 @@ internal object CardModelReader {
             backOnly = J.bool(o, "backOnly", at),
             enlace = J.bool(o, "enlace", at),
             frontOnly = J.bool(o, "frontOnly", at),
+            noResources = J.bool(o, "noResources", at),
         )
     }
 
@@ -1364,8 +1365,17 @@ internal object CardModelReader {
         )
     }
 
+    private fun readRitualPartsPart(o: JsonObject, at: String): com.drive.drive_manager.simulator.engine.RitualParts.Part {
+        J.fields(o, at, "RitualParts.Part", setOf("level", "orLess", "type"), false)
+        return com.drive.drive_manager.simulator.engine.RitualParts.Part(
+            level = J.int(o, "level", at),
+            orLess = J.bool(o, "orLess", at),
+            type = J.str(o, "type", at),
+        )
+    }
+
     private fun readRitualSpec(o: JsonObject, at: String): com.drive.drive_manager.simulator.engine.RitualSpec {
-        J.fields(o, at, "RitualSpec", setOf("sum", "level", "maxLevel", "atLeast", "maxStrength", "extra", "eachMaxLevel"), false)
+        J.fields(o, at, "RitualSpec", setOf("sum", "level", "maxLevel", "atLeast", "maxStrength", "extra", "eachMaxLevel", "parts"), false)
         return com.drive.drive_manager.simulator.engine.RitualSpec(
             sum = J.bool(o, "sum", at),
             level = J.int(o, "level", at),
@@ -1374,6 +1384,7 @@ internal object CardModelReader {
             maxStrength = J.intOrNull(o, "maxStrength", at),
             extra = J.int(o, "extra", at),
             eachMaxLevel = J.intOrNull(o, "eachMaxLevel", at),
+            parts = J.list(o, "parts", at) { e, p -> ritualPartsPart(e, p) },
         )
     }
 
@@ -1442,6 +1453,8 @@ internal object CardModelReader {
     }
 
     fun requirementSpec(e: JsonElement, at: String): com.drive.drive_manager.simulator.engine.RequirementSpec = readRequirementSpec(J.objectOf(e, at, "RequirementSpec"), at)
+
+    fun ritualPartsPart(e: JsonElement, at: String): com.drive.drive_manager.simulator.engine.RitualParts.Part = readRitualPartsPart(J.objectOf(e, at, "RitualParts.Part"), at)
 
     fun ritualSpec(e: JsonElement, at: String): com.drive.drive_manager.simulator.engine.RitualSpec = readRitualSpec(J.objectOf(e, at, "RitualSpec"), at)
 

@@ -114,5 +114,19 @@
       "sourceZone" : "field",
       "limit" : "NONE"
     }
-  ]
+  ],
+  "requirement" : {
+    "ritual": {
+      "parts": [
+        {
+          "level": 2,
+          "orLess": true
+        },
+        {
+          "level": 2,
+          "orLess": true
+        }
+      ]
+    }
+  }
 }

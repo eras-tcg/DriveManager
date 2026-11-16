@@ -67,5 +67,10 @@
     },
     "reduce" : 1,
     "limit" : "NONE"
-  } ]
+  } ],
+  "requirement" : {
+    "summoner": {
+      "level": 1
+    }
+  }
 }

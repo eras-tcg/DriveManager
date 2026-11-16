@@ -114,6 +114,7 @@ class E13CardsTest extends CardBatchSupport {
         evo.setSpecialSummonKind("evolution");
         evo.setSpecialCost(1);
         evo.setRequirement("criatura nivel 3.");
+        Req.program(evo);
         host.getHand().add(evo);
         CardSlot freud = withClasses(card("fr", "Freud", 3, 3, "B"), "necrómata");
         int before = gems();
@@ -204,6 +205,7 @@ class E13CardsTest extends CardBatchSupport {
         evo.setSpecialSummonKind("evolution");
         evo.setSpecialCost(1);
         evo.setRequirement("criatura nivel 1.");
+        Req.program(evo);
         host.getHand().add(evo);
         assertThat(CombatRules.attackByPlayer(room, "host", "ho", null)).isNull();
         untilOffered(holder);
@@ -219,6 +221,7 @@ class E13CardsTest extends CardBatchSupport {
         evo.setSpecialSummonKind("evolution");
         evo.setSpecialCost(1);
         evo.setRequirement("criatura nivel 1.");
+        Req.program(evo);
         host.getHand().add(evo);
         veleaf.setY(25.0);
         EffectEngine.record(room, GameEvent.MOVE, "host", veleaf, null, "frontLine", null, null, "sube");
@@ -262,6 +265,7 @@ class E13CardsTest extends CardBatchSupport {
         evo.setSpecialSummonKind("evolution");
         evo.setSpecialCost(2);
         evo.setRequirement("criatura nivel 2.");
+        Req.program(evo);
         host.getHand().add(evo);
         int before = gems();
         assertThat(SpecialSummons.specialByPlayer(room, "host", "ev", "cy")).isNull();
@@ -300,6 +304,7 @@ class E13CardsTest extends CardBatchSupport {
         tharnok.setSpecialSummonKind("evolution");
         tharnok.setSpecialCost(3);
         tharnok.setRequirement("criatura nivel 3.");
+        Req.program(tharnok);
         host.getHand().add(tharnok);
         onField(host, card("su", "Invocador", 3, 3, "G"));
         int before = gems();
@@ -333,6 +338,7 @@ class E13CardsTest extends CardBatchSupport {
         evo.setSpecialSummonKind("evolution");
         evo.setSpecialCost(2);
         evo.setRequirement("criatura nivel 2.");
+        Req.program(evo);
         host.getHand().add(evo);
         int before = gems();
         play(utility("me", "Mensaje De Los Espiritus Protectores", 1, "G"));
@@ -489,6 +495,7 @@ class E13CardsTest extends CardBatchSupport {
         ascended.setSpecialSummonKind("promotion");
         ascended.setSpecialCost(1);
         ascended.setRequirement("criatura nivel 1.");
+        Req.program(ascended);
         host.getHand().add(ascended);
         CardSlot pl = inHand("pl", "Infantería De Primera Línea", 2, 2, "R", "armada");
         inHand("x", "Pago", 1, 1, "R");

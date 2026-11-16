@@ -76,5 +76,18 @@
     },
     "keywords" : [ "Inmune 4" ],
     "zone" : "field"
-  } ]
+  } ],
+  "requirement" : {
+    "summoner": {
+      "level": 3
+    },
+    "materials": {
+      "count": 1,
+      "level": 3,
+      "zones": [
+        "hand",
+        "tributeZone"
+      ]
+    }
+  }
 }

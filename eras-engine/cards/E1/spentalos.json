@@ -40,5 +40,13 @@
     } ],
     "sourceZone" : "field",
     "limit" : "NONE"
-  } ]
+  } ],
+  "requirement" : {
+    "summoner": {
+      "level": 1
+    },
+    "materials": {
+      "level": 1
+    }
+  }
 }

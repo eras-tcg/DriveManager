@@ -60,5 +60,10 @@
     } ],
     "sourceZone" : "field",
     "limit" : "ONCE_PER_TURN_BETWEEN_COPIES"
-  } ]
+  } ],
+  "requirement" : {
+    "ritual": {
+      "level": 1
+    }
+  }
 }

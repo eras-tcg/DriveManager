@@ -78,5 +78,14 @@
     "sourceZone" : "field",
     "allyTurn" : true,
     "limit" : "ONCE_PER_TURN"
-  } ]
+  } ],
+  "requirement" : {
+    "summoner": {
+      "level": 3
+    },
+    "materials": {
+      "count": 1,
+      "level": 3
+    }
+  }
 }

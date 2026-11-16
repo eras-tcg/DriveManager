@@ -114,5 +114,11 @@
         ]
       }
     }
-  ]
+  ],
+  "requirement" : {
+    "summoner": {
+      "level": 3,
+      "maxLevel": 4
+    }
+  }
 }

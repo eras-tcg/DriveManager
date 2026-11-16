@@ -207,5 +207,17 @@
       "sourceZone" : "field",
       "limit" : "ONCE_PER_TURN"
     }
-  ]
+  ],
+  "requirement" : {
+    "summoner": {
+      "level": 1
+    },
+    "materials": {
+      "level": 1,
+      "zones": [
+        "field",
+        "tributeZone"
+      ]
+    }
+  }
 }

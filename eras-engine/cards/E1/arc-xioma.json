@@ -158,5 +158,14 @@
     },
     "sourceZone" : "tributeZone",
     "limit" : "NONE"
-  } ]
+  } ],
+  "requirement" : {
+    "summoner": {
+      "level": 1
+    },
+    "materials": {
+      "count": 1,
+      "level": 1
+    }
+  }
 }

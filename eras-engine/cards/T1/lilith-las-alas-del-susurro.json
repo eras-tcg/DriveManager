@@ -48,5 +48,19 @@
       "asType" : "ángel",
       "opponentTurn" : true
     }
-  ]
+  ],
+  "requirement" : {
+    "ritual": {
+      "parts": [
+        {
+          "level": 2
+        },
+        {
+          "level": 2,
+          "orLess": true,
+          "type": "ángel"
+        }
+      ]
+    }
+  }
 }

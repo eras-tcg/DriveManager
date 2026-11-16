@@ -108,6 +108,7 @@ class DestructionTest {
         krokler.setSpecialSummonKind("ritual");
         krokler.setSpecialCost(1);
         krokler.setRequirement("Criatura nivel 1.");
+        Req.program(krokler);
         host.getHand().add(krokler);
         onField(host, card("sum", "Invocador", 1, 1, "P"), 20.0);
         onField(guest, card("ec", "Carnhaus", 1, 1, "P"), 20.0);
@@ -130,6 +131,7 @@ class DestructionTest {
         krokler.setSpecialSummonKind("ritual");
         krokler.setSpecialCost(1);
         krokler.setRequirement("Criatura nivel 1.");
+        Req.program(krokler);
         host.getHand().add(krokler);
         onField(host, card("sum", "Invocador", 1, 1, "P"), 20.0);
         CardSlot enemy = onField(guest, card("ec", "Carnhaus", 1, 1, "P"), 20.0);

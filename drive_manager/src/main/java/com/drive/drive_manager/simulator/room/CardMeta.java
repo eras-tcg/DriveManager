@@ -36,7 +36,8 @@ public final class CardMeta {
                 meta.getEffects() == null ? 0 : meta.getEffects().size(),
                 meta.getInheritEffects() == null ? 0 : meta.getInheritEffects().size(),
                 (meta.getFormationEffects() == null ? 0 : meta.getFormationEffects().size())
-                        + (meta.getFormationKeywordEffects() == null ? 0 : meta.getFormationKeywordEffects().size()), allKeywords));
+                        + (meta.getFormationKeywordEffects() == null ? 0 : meta.getFormationKeywordEffects().size()), allKeywords,
+                meta.getSpecialSummonKind()));
         // Enlace: its printed arrows and its category
         slot.setArrows(meta.getArrows() != null ? new ArrayList<>(meta.getArrows()) : new ArrayList<>());
         slot.setEnlace(Boolean.TRUE.equals(meta.getEnlace()));

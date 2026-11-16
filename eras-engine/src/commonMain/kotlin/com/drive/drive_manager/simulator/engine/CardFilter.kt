@@ -29,6 +29,7 @@ import com.drive.drive_manager.simulator.room.CardSlot
  * @param mentions      "con [tipo] en su texto": of that type, with it in its name, or written in its effects or inherited effects
  * @param backOnly      "en tu retaguardia" (not in the Línea frontal)
  * @param frontOnly     "en tu línea frontal" (not in the Retaguardia)
+ * @param noResources   "sin recursos": it has no Recursos
  * @param enlace        "Enlace": a "Criatura Enlace" (a category of creature, designer 2026-11-13)
  * @param anyOf         alternatives that cannot be written as one filter ("1 utilidad Violeta o [brujería]"): it matches when this
  *                      filter and one of them do
@@ -40,6 +41,7 @@ data class CardFilter(
     val name: String?, val notName: String?, val starterOnly: Boolean, val colorAndClass: Boolean, private val notColors: List<String>?,
     val nameContains: String?, val minCost: Int?, private val cardTypes: List<String>?, private val anyOf: List<CardFilter>?,
     val mentions: String?, val backOnly: Boolean, val enlace: Boolean = false, val frontOnly: Boolean = false,
+    val noResources: Boolean = false,
 ) {
 
     constructor(
@@ -227,6 +229,7 @@ data class CardFilter(
         }
         if (backOnly && EffectEngine.inFrontLine(card)) return false
         if (frontOnly && !EffectEngine.inFrontLine(card)) return false
+        if (noResources && !card.resources.isNullOrEmpty()) return false
         if (enlace && !card.enlace) return false
         return !starterOnly || card.starter
     }
@@ -260,6 +263,7 @@ data class CardFilter(
         if (mentions != null) text += " con [$mentions] en su texto"
         if (backOnly) text += " en tu retaguardia"
         if (frontOnly) text += " en tu línea frontal"
+        if (noResources) text += " sin recursos"
         if (enlace) text += " Enlace"
         return text.trim { it <= ' ' }
     }
@@ -274,7 +278,8 @@ data class CardFilter(
                 maxCost == other.maxCost && name == other.name && notName == other.notName && starterOnly == other.starterOnly &&
                 colorAndClass == other.colorAndClass && notColorList == other.notColorList && nameContains == other.nameContains &&
                 minCost == other.minCost && cardTypeList == other.cardTypeList && anyOfList == other.anyOfList && mentions == other.mentions &&
-                backOnly == other.backOnly && enlace == other.enlace && frontOnly == other.frontOnly
+                backOnly == other.backOnly && enlace == other.enlace && frontOnly == other.frontOnly &&
+                noResources == other.noResources
     }
 
     /** As a record's: `31 * h + hash(component)` over the components, in order. */
@@ -286,6 +291,7 @@ data class CardFilter(
         }
         // Only when set, so the filters written before it keep their hash
         if (frontOnly) result = 31 * result + true.hashCode()
+        if (noResources) result = 31 * result + 1
         return result
     }
 
@@ -295,7 +301,7 @@ data class CardFilter(
                 "minStrength=$minStrength, maxCost=$maxCost, name=$name, notName=$notName, starterOnly=$starterOnly, " +
                 "colorAndClass=$colorAndClass, notColors=$notColorList, nameContains=$nameContains, minCost=$minCost, " +
                 "cardTypes=$cardTypeList, anyOf=$anyOfList, mentions=$mentions, backOnly=$backOnly, enlace=$enlace" +
-                (if (frontOnly) ", frontOnly=true]" else "]")
+                (if (frontOnly) ", frontOnly=true" else "") + (if (noResources) ", noResources=true]" else "]")
     }
 
     companion object {

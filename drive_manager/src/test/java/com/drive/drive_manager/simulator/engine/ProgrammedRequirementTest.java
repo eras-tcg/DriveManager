@@ -39,11 +39,55 @@ class ProgrammedRequirementTest extends CardBatchSupport {
     }
 
     @Test
-    void aCardWithoutTheSectionStillReadsItsText() {
+    void aCardWithoutTheSectionIsNeverSummonedFromItsText() {
+        // The text alone is never read: without its section the card cannot be special summoned, and counts as not programmed
         CardSlot plain = ascenso("pl", "Ascendido Sin Archivo", 1, "criatura nivel 1.");
         onField(host, card("s1", "Nivel 1", 1, 1, "R"), FRONT);
         assertThat(CardEffects.requirementOf(plain)).isNull();
-        assertThat(SpecialRequirements.canSpecial(room, "host", plain)).isTrue();
+        assertThat(SpecialRequirements.canSpecial(room, "host", plain)).isFalse();
+        assertThat(SpecialSummons.specialByPlayer(room, "host", "pl", "s1")).contains("Requerimiento").contains("programado");
+        assertThat(CardEffects.pending("Ascendido Sin Archivo", 0, 0, 0, List.of(), "promotion")).contains("Requerimiento de invocación especial");
+        assertThat(CardEffects.pending("Caballero De Apoyo", 0, 0, 0, List.of(), "promotion")).isNull();
+    }
+
+    @Test
+    void criaDeDragonRunicoEvolvesOnlyFromACreatureWithoutResources() {
+        CardSlot cria = withClasses(special(card("cr", "Cría De Dragón Rúnico", 2, 2, "G"), "evolution", 1, "criatura nivel 1 sin recursos."), "dragón");
+        host.getHand().add(cria);
+        CardSlot l1 = onField(host, withClasses(card("l1", "Nivel 1", 1, 1, "G"), "dragón"), FRONT);
+        l1.getResources().add(card("rs", "Recurso", 1, 1, "G"));
+        assertThat(SpecialRequirements.canSpecial(room, "host", cria)).isFalse();
+        l1.getResources().clear();
+        assertThat(SpecialRequirements.canSpecial(room, "host", cria)).isTrue();
+    }
+
+    @Test
+    void falanxStillTakesAlliesAddingUpToSixWithTheSummoner() {
+        CardSlot falanx = withClasses(special(card("fx", "Falanx", 5, 5, "B"), "materialization", 2,
+                "aliados que sumen 6 en nivel, incluido el invocar nivel 3 o mayor."), "ente");
+        host.getHand().add(falanx);
+        onField(host, withClasses(card("s3", "Tres", 3, 3, "B"), "ente"), FRONT);
+        onField(host, withClasses(card("a2", "Dos", 2, 2, "B"), "ente"), BACK);
+        assertThat(SpecialRequirements.canSpecial(room, "host", falanx)).isFalse();
+        onField(host, withClasses(card("a1", "Uno", 1, 1, "B"), "ente"), BACK);
+        assertThat(SpecialRequirements.canSpecial(room, "host", falanx)).isTrue();
+    }
+
+    // ------------------------------------------------------------------ Open doubts (designer): no section until answered
+
+    @Test
+    void theCardsWaitingForTheDesignerHaveNoRequirementAndCannotBeSpecialSummoned() {
+        for (String name : List.of("Fausto", "Samael el Fuego de la Destrucción", "Uriel el Fuego de la Esperanza", "Apostol De La Infamia")) {
+            CardSlot c = card("x", name, 3, 3, "B");
+            assertThat(CardEffects.requirementOf(c)).as(name).isNull();
+        }
+        CardSlot fausto = withClasses(special(card("fa", "Fausto", 4, 3, "B"), "materialization", 2, "2 [cinerianos] nivel 2 o menor."),
+                "cineriano");
+        host.getHand().add(fausto);
+        onField(host, withClasses(card("c1", "Cineriano 1", 1, 1, "B"), "cineriano"), FRONT);
+        host.getTributeZone().add(withClasses(card("c2", "Cineriano 2", 2, 2, "B"), "cineriano"));
+        assertThat(SpecialRequirements.canSpecial(room, "host", fausto)).isFalse();
+        assertThat(CardEffects.pending("Fausto", 0, 0, 0, List.of(), "materialization")).contains("Requerimiento de invocación especial");
     }
 
     // ------------------------------------------------------------------ Ascenso: "mientras controlas N o más …"

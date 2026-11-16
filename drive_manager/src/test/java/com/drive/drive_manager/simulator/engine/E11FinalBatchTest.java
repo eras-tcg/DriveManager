@@ -214,6 +214,7 @@ class E11FinalBatchTest {
         evolved.setSpecialSummonKind("evolution");
         evolved.setSpecialCost(1);
         evolved.setRequirement("criatura nivel 2.");
+        Req.program(evolved);
         host.getHand().add(evolved);
         assertThat(SpecialSummons.specialByPlayer(room, "host", "ev", "wr")).isNull();
         answer(room.getPrompt(), "tr");
@@ -232,6 +233,7 @@ class E11FinalBatchTest {
         ascended.setSpecialSummonKind("promotion");
         ascended.setSpecialCost(1);
         ascended.setRequirement("criatura nivel 4.");
+        Req.program(ascended);
         host.getHand().add(ascended);
         int gems = EffectEngine.gemsOf(room, "host");
         assertThat(SpecialSummons.specialByPlayer(room, "host", "as", "pc")).isNull();

@@ -36,11 +36,7 @@ object SpecialRequirements {
     // ------------------------------------------------------------------ Evolución, Ascenso, Materialización (rule 9)
 
     /**
-     * What a non-Ritual special summon needs: the summoner's level, for Ascenso the level the allies must add up
-     * to, for Materialización the level of the other material (from the Tributos or the field).
-     */
-    /**
-     * A special summon's Requerimiento as printed.
+     * What a non-Ritual special summon needs, as its card file programs it ([RequirementSpec], [fromSpec]).
      *
      * @param level         the summoner's level (the lowest, with `maxLevel`: "criatura nivel 3 o 4")
      * @param maxLevel      the highest summoner level
@@ -152,19 +148,9 @@ object SpecialRequirements {
     fun specialRequirement(card: CardSlot?): SpecialRequirement? {
         val kind = if (card!!.specialSummonKind == null) "" else card.specialSummonKind!!.lowercase()
         if (!frozenListOf("evolution", "promotion", "materialization").contains(kind)) return null
-        // Programmed by hand in the card file: it, not the text
-        val programmed = CardEffects.requirementOf(card)
-        if (programmed != null && programmed.ritual == null) return fromSpec(kind, programmed)
-        if (card.requirement == null) return null
-        val text = card.requirement!!.lowercase().trim { it <= ' ' }
-        // "(criatura nivel 3) o (criatura nivel 2 + material nivel 2 en tu mano o campo)"
-        val either = Platform.regex("^\\((.*)\\)\\s*o\\s*\\((.*)\\)\\.?$").find(text)
-        if (either != null) {
-            val first = parseRequirement(kind, either.groupValues[1])
-            val second = parseRequirement(kind, either.groupValues[2])
-            return if (first == null) second else first.withAlternative(second)
-        }
-        return parseRequirement(kind, text)
+        // Always programmed in the card file (its `requirement` section); the printed text is only shown. Without it: not programmed
+        val programmed = CardEffects.requirementOf(card) ?: return null
+        return if (programmed.ritual == null) fromSpec(kind, programmed) else null
     }
 
     /** A Requerimiento programmed by hand ([RequirementSpec]) as the engine checks it. */
@@ -178,7 +164,7 @@ object SpecialRequirements {
         val level = if (s == null) ANY_LEVEL else if (s.orLess) 1 else s.level
         val maxLevel = if (s == null) ANY_LEVEL else if (s.orLess) s.level else s.maxLevel ?: s.level
         return SpecialRequirement(kind, level, spec.alliesSum, m?.level ?: ANY_LEVEL, m?.levelSum ?: 0, s?.atLeast ?: false, maxLevel,
-                m?.count ?: 0, m?.zones ?: frozenListOf("tributeZone", "field"), noSummoner,
+                m?.count ?: 0, m?.zones?.takeIf { it.isNotEmpty() } ?: frozenListOf("tributeZone", "field"), noSummoner,
                 spec.alternative?.let { fromSpec(kind, it) }, spec.alone, spec.strongest, declared, m?.more ?: false, spec.alliesSumByCost,
                 spec.aloneAtLevel, spec.formationSize, spec.formationAtLeast, s?.filter, m?.filter, m?.orLess ?: false, spec.condition,
                 spec.conditionText)
@@ -188,88 +174,6 @@ object SpecialRequirements {
     @JvmStatic
     fun conditionMet(room: GameRoom, player: PlayerState, card: CardSlot, req: SpecialRequirement): Boolean {
         return req.condition == null || req.condition.test(room, null, card, player.userId)
-    }
-
-    @JvmStatic
-    fun parseRequirement(kind: String?, text: String): SpecialRequirement? {
-        val zones = materialZones(text)
-        val materialization = "materialization" == kind
-        // "criatura nivel 3 en mano + 2 criaturas nivel 3 en tu mano o tributos": the summoner is declared from where it says (not
-        // the field) and enters with the others as its materials (Roto-G0)
-        // "criatura nivel 3 en mano o campo (invocador) + 1 o más criaturas nivel 3 en mano o campo" (Prototipo XTRM-1N3)
-        val declared = Platform.regex("^(?:invocador|criatura)\\s+ni\\w*\\s*(\\d+)\\s+(en\\s+[^+]*)\\+\\s*(\\d+)(\\s*o\\s*m[aá]s)?\\s*criaturas?\\s*ni\\w*\\s*(\\d+)(.*)$")
-                .find(text)
-        if (materialization && declared != null) {
-            val summonerZones = materialZones(declared.groupValues[2])
-            val rest = if (declared.groupValues[6].all { JavaText.isWhitespace(it) }) summonerZones else materialZones(declared.groupValues[6])
-            val level = declared.groupValues[1].toInt()
-            return SpecialRequirement(kind, level, 0, declared.groupValues[5].toInt(), 0, false, level, declared.groupValues[3].toInt(),
-                    rest, true, null, false, false, summonerZones, declared.groups[4]?.value != null)
-        }
-        // "2 criaturas en mano" (Unidad de Seguridad A-5H): one is the summoner declared from there, the rest its materials, of any level
-        val anyLevel = Platform.regex("^(\\d+)\\s*criaturas\\s+(en\\s+[^+]*?)\\.?$").find(text)
-        if (materialization && anyLevel != null) {
-            val from = materialZones(anyLevel.groupValues[2])
-            return SpecialRequirement(kind, ANY_LEVEL, 0, ANY_LEVEL, 0, false, ANY_LEVEL, anyLevel.groupValues[1].toInt() - 1, from, true, null,
-                    false, false, from)
-        }
-        // "2 criaturas nivel 1 en tu mano o tributos": no summoner
-        val many = Platform.regex("(\\d+)\\s*criaturas\\s*ni\\w*\\s*(\\d+)").find(text)
-        if (materialization && !text.contains("+") && many != null) {
-            return SpecialRequirement(kind, 0, 0, many.groupValues[2].toInt(), 0, false, 0, many.groupValues[1].toInt(), zones, true, null,
-                    false, false)
-        }
-        val level = Platform.regex("ni[ev]*l\\s*(\\d+)(?:\\s*o\\s*(\\d+))?").find(text)
-        if (level == null) return null
-        val summonerLevel = level.groupValues[1].toInt()
-        val maxLevel = if (level.groups[2]?.value != null) level.groupValues[2].toInt() else summonerLevel
-        // "suman 5", "suman al menos 5 en coste", "suman 5 o más en nivel"
-        val sum = Platform.regex("suman\\s*(?:al\\s+menos\\s+)?(\\d+)(?:\\s*o\\s+m[aá]s)?(?:\\s*en\\s+(nivel|coste))?").find(text)
-        val alliesSum = if ("promotion" == kind && sum != null) sum.groupValues[1].toInt() else 0
-        val alliesSumByCost = alliesSum > 0 && sum!!.groups[2]?.value == "coste"
-        var materialLevel = summonerLevel
-        var levelSum = 0
-        var materialCount = 0
-        if (materialization) {
-            // "+ material nivel 2" (also with a misprint: "material novel 4", "material nivel en tributos")
-            val material = Platform.regex("\\+\\s*material\\s*\\w*\\s*(\\d+)?").find(text)
-            if (material != null) {
-                materialCount = 1
-                if (material.groups[1]?.value != null) materialLevel = material.groupValues[1].toInt()
-            }
-            // "aliados que sumen 6 en nivel, incluido el invocador nivel 3 o mayor"
-            val allies = Platform.regex("sumen\\s*(\\d+)").find(text)
-            if (allies != null) levelSum = allies.groupValues[1].toInt()
-        }
-        val atLeast = Platform.regex("ni[ev]*l\\s*\\d+\\s*o\\s*mayor").containsMatchIn(text)
-        val alone = Platform.regex("no\\s+control\\w*\\s+otras\\s+criaturas").containsMatchIn(text)
-        val aloneAt = Platform.regex("no\\s+control\\w*\\s+otros\\s+aliados\\s+ni[ev]*l\\s*(\\d+)").find(text)
-        val aloneAtLevel = aloneAt?.groupValues?.get(1)?.toInt() ?: 0
-        val strongest = Platform.regex("fuerza\\s+igual\\s+o\\s+mayor\\s+que\\s+la\\s+de\\s+cualquier\\s+otro\\s+aliado").containsMatchIn(text)
-        // Enlace: "en una formación de 3 criaturas", "en una formación de al menos 3 criaturas"
-        val formation = Platform.regex("en\\s+una\\s+formaci[oó]n\\s+de\\s+(al\\s+menos\\s+)?(\\d+)\\s+criaturas").find(text)
-        return SpecialRequirement(kind, summonerLevel, alliesSum, materialLevel, levelSum, atLeast, maxLevel, materialCount, zones, false, null,
-                alone, strongest, null, false, alliesSumByCost, aloneAtLevel, formation?.groupValues?.get(2)?.toInt() ?: 0,
-                formation != null && formation.groups[1]?.value != null)
-    }
-
-    /** "en campo o mano", "en tu mano o tributos", "en el campo"; when it says none, the Tributos or the field. */
-    @JvmStatic
-    fun materialZones(text: String): List<String> {
-        val m = Platform.regex("(?:en|de)\\s+(?:tu\\s+|tus\\s+|el\\s+)?(campo|mano|tributos|descarte)(?:\\s*o\\s+(?:tu\\s+|tus\\s+|el\\s+)?(campo|mano|tributos|descarte))?")
-                .find(text)
-        if (m == null) return frozenListOf("tributeZone", "field")
-        val zones: MutableList<String> = ArrayList()
-        for (g in 1..2) {
-            val group = m.groups[g]?.value ?: continue
-            zones.add(when (group) {
-                "campo" -> "field"
-                "mano" -> "hand"
-                "descarte" -> "discardPile"
-                else -> "tributeZone"
-            })
-        }
-        return zones
     }
 
     /** The way of the Requerimiento that summoner meets (the printed one or its alternative), or null. */
@@ -453,23 +357,6 @@ object SpecialRequirements {
         return total >= req.alliesSum
     }
 
-    /**
-     * "mientras controlas al menos N criaturas" in a Requerimiento (Explorador Temerario: "criatura nivel 1, mientras
-     * controlas al menos 2 criaturas"): how many creatures you must control, the summoner among them; 0 without it.
-     */
-    @JvmStatic
-    fun creaturesNeeded(card: CardSlot): Int {
-        // A Requerimiento programmed by hand says it with its condition
-        if (card.requirement == null || CardEffects.requirementOf(card) != null) return 0
-        val m = Platform.regex("controlas\\s+al\\s+menos\\s+(\\d+)\\s+criaturas?").find(card.requirement!!.lowercase())
-        return if (m != null) m.groupValues[1].toInt() else 0
-    }
-
-    @JvmStatic
-    fun enoughCreatures(player: PlayerState, card: CardSlot): Boolean {
-        return player.field.count { c -> "creature" == c.cardType }.toLong() >= creaturesNeeded(card)
-    }
-
     /** Whether the card can be summoned now by its special summon (any kind), for the board's legal actions. */
     @JvmStatic
     fun canSpecial(room: GameRoom, userId: String?, card: CardSlot?): Boolean {
@@ -484,7 +371,6 @@ object SpecialRequirements {
         if (player == null || req == null || card.specialCost == null) return false
         if (!canPay(room, userId, card.specialCost!! - CostModifiers.available(room, player, CostModifiers.Event.SPECIAL_SUMMON, req.kind, card, null))) return false
         if ("promotion" == req.kind && !alliesAddUp(player, req)) return false
-        if (!enoughCreatures(player, card)) return false
         if (!conditionMet(room, player, card, req)) return false
         if (req.declaredSummoner()) return !declaredSummoners(player, card, req).isEmpty()
         if (req.noSummoner) return specialMaterials(player, card, req, null).size >= req.materialCount
@@ -541,7 +427,6 @@ object SpecialRequirements {
                         if (req == null || !canPay(room, player.userId, max(0, c.specialCost!! - special.reduce
                                         - CostModifiers.available(room, player, CostModifiers.Event.SPECIAL_SUMMON, req.kind, c, null)))) return@summoningAs false
                         if ("promotion" == req.kind && !alliesAddUp(player, req)) return@summoningAs false
-                        if (!enoughCreatures(player, c)) return@summoningAs false
                         if (!conditionMet(room, player, c, req)) return@summoningAs false
                         specialSummoners(player, c, req).any { s ->
                             summonerAllowed(special, s, effect)

@@ -32,5 +32,11 @@
     } ],
     "sourceZone" : "field",
     "limit" : "NONE"
-  } ]
+  } ],
+  "requirement" : {
+    "summoner": {
+      "level": 1
+    },
+    "alliesSum": 2
+  }
 }

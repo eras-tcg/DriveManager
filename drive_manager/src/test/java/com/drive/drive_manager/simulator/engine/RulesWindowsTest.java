@@ -313,6 +313,7 @@ class RulesWindowsTest {
         c.setSpecialSummonKind(kind);
         c.setSpecialCost(cost);
         c.setRequirement(requirement);
+        Req.program(c);
         return c;
     }
 
@@ -629,6 +630,7 @@ class RulesWindowsTest {
         c.setSpecialSummonKind("ritual");
         c.setSpecialCost(specialCost);
         c.setRequirement(requirement);
+        Req.program(c);
         return c;
     }
 

@@ -152,7 +152,9 @@ public class DeckLoader {
             keywords.addAll(CardMeta.keywordNames(meta.getInheritKeywordEffects()));
             String missing = CardEffects.pending(meta.getCardName(),
                     meta.getEffects() == null ? 0 : meta.getEffects().size(),
-                    meta.getInheritEffects() == null ? 0 : meta.getInheritEffects().size(), keywords);
+                    meta.getInheritEffects() == null ? 0 : meta.getInheritEffects().size(),
+                    0, keywords,
+                    meta.getSpecialSummonKind());
             if (missing != null) pending.put(meta.getId(), missing);
         }
         unprogrammed = java.util.Collections.unmodifiableMap(pending);

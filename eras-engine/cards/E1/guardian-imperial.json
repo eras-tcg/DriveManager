@@ -113,5 +113,11 @@
       "allyTurn" : true,
       "limit" : "NONE"
     }
-  ]
+  ],
+  "requirement" : {
+    "summoner": {
+      "level": 3
+    },
+    "strongest": true
+  }
 }

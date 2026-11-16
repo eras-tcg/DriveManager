@@ -211,5 +211,18 @@
     },
     "sourceZone" : "field",
     "limit" : "ONCE_PER_TURN"
-  } ]
+  } ],
+  "requirement" : {
+    "summoner": {
+      "level": 3
+    },
+    "materials": {
+      "count": 1,
+      "level": 3,
+      "levelSum": 6,
+      "zones": [
+        "discardPile"
+      ]
+    }
+  }
 }

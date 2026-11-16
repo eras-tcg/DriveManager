@@ -212,7 +212,15 @@ object CardEffects {
 
     /** With `formation`: its link effects in the metadata ("Efecto de enlace" and the abilities it gives), counted as the inherited ones. */
     @JvmStatic
-    fun pending(cardName: String?, own: Int, inherited: Int, formation: Int, keywords: List<String>): String? {
+    fun pending(cardName: String?, own: Int, inherited: Int, formation: Int, keywords: List<String>): String? =
+        pending(cardName, own, inherited, formation, keywords, null)
+
+    /**
+     * With `specialKind`: the card's special summon method in the metadata; its Requerimiento must be programmed in the card file (it is
+     * never read from the text), else it counts as not programmed.
+     */
+    @JvmStatic
+    fun pending(cardName: String?, own: Int, inherited: Int, formation: Int, keywords: List<String>, specialKind: String?): String? {
         val name = nameOf(cardName)
         val ownDone = BY_NAME.valueOr(name, frozenListOf()).size + CONTINUOUS.valueOr(name, frozenListOf()).size +
                 CostModifiers.of(name).size + REPLACEMENTS.valueOr(name, frozenListOf()).size +
@@ -227,6 +235,7 @@ object CardEffects {
         val manual = keywords.map { k -> k.replace(TRAILING_NUMBER, "").trim { it <= ' ' } }
             .filter { k -> !k.isEmpty() && !ENGINE_KEYWORDS.contains(k) }.distinct()
         if (!manual.isEmpty()) pending.add(manual.joinToString(", "))
+        if (!specialKind.isNullOrBlank() && !REQUIREMENTS.containsKey(name)) pending.add("Requerimiento de invocación especial")
         return if (pending.isEmpty()) null else pending.joinToString("; ")
     }
 

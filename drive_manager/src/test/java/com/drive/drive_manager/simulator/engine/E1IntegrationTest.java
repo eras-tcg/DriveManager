@@ -147,6 +147,7 @@ class E1IntegrationTest {
         evolved.setSpecialSummonKind("evolution");
         evolved.setSpecialCost(2);
         evolved.setRequirement("criatura nivel 1.");
+        Req.program(evolved);
         host.getHand().add(evolved);
 
         // 1 gem and a cost of 2: the structure pays the other one
@@ -173,6 +174,7 @@ class E1IntegrationTest {
         evolved.setSpecialSummonKind("evolution");
         evolved.setSpecialCost(2);
         evolved.setRequirement("criatura nivel 1.");
+        Req.program(evolved);
         host.getHand().add(evolved);
         assertThat(SpecialSummons.specialByPlayer(room, "host", "evo", "base")).isNull();
         assertThat(Answers.answer(room, "host", room.getPrompt().getId(), List.of(), List.of())).isNull();

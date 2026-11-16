@@ -101,5 +101,11 @@
     },
     "sourceZone" : "field",
     "limit" : "ONCE_PER_TURN"
-  } ]
+  } ],
+  "requirement" : {
+    "ritual": {
+      "sum": true,
+      "level": 2
+    }
+  }
 }
