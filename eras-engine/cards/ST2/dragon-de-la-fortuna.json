@@ -1,0 +1,159 @@
+{
+  "name": "dragón de la fortuna",
+  "effects": [
+    {
+      "id": "dragon-de-la-fortuna:turno-aliado",
+      "moment": "ACTIVATED",
+      "label": "Turno Aliado",
+      "text": "Puedes enviar 5 de tus tributos Verdes al fondo de tu mazo para que esta carta invoque por Evolución una criatura de tu mano reduciendo su coste especial en 1.",
+      "steps": [
+        {
+          "type": "IfPossible"
+        },
+        {
+          "type": "Do",
+          "action": {
+            "type": "Move",
+            "cards": {
+              "zones": "tributeZone",
+              "owner": "YOU",
+              "filter": {
+                "colors": [
+                  "G"
+                ]
+              },
+              "min": {
+                "type": "Fixed",
+                "value": 5
+              },
+              "max": {
+                "type": "Fixed",
+                "value": 5
+              },
+              "self": "ANY",
+              "mode": "CHOOSE"
+            },
+            "to": "deckBottom",
+            "required": true
+          }
+        },
+        {
+          "type": "Do",
+          "action": {
+            "type": "Sequence",
+            "actions": [
+              {
+                "type": "Select",
+                "selector": {
+                  "zones": "hand",
+                  "owner": "YOU",
+                  "filter": {},
+                  "min": {
+                    "type": "Fixed"
+                  },
+                  "max": {
+                    "type": "Fixed",
+                    "value": 1
+                  },
+                  "self": "ANY",
+                  "mode": "CHOOSE",
+                  "special": {
+                    "rule": {
+                      "kind": "evolution",
+                      "zone": "hand",
+                      "reduce": 1,
+                      "summoner": "self",
+                      "filter": {
+                        "cardType": "creature"
+                      }
+                    },
+                    "stage": "CARD"
+                  }
+                },
+                "saveAs": "specialCard",
+                "label": "Invocar"
+              },
+              {
+                "type": "Select",
+                "selector": {
+                  "zones": "hand",
+                  "owner": "YOU",
+                  "filter": {},
+                  "min": {
+                    "type": "Fixed"
+                  },
+                  "max": {
+                    "type": "Fixed",
+                    "value": 1
+                  },
+                  "self": "ANY",
+                  "mode": "CHOOSE",
+                  "special": {
+                    "rule": {
+                      "kind": "evolution",
+                      "zone": "hand",
+                      "reduce": 1,
+                      "summoner": "self",
+                      "filter": {
+                        "cardType": "creature"
+                      }
+                    },
+                    "stage": "SUMMONER"
+                  }
+                },
+                "saveAs": "specialSummoner",
+                "label": "Invocador"
+              },
+              {
+                "type": "Select",
+                "selector": {
+                  "zones": "hand",
+                  "owner": "YOU",
+                  "filter": {},
+                  "min": {
+                    "type": "Fixed"
+                  },
+                  "max": {
+                    "type": "Fixed",
+                    "value": 1
+                  },
+                  "self": "ANY",
+                  "mode": "CHOOSE",
+                  "special": {
+                    "rule": {
+                      "kind": "evolution",
+                      "zone": "hand",
+                      "reduce": 1,
+                      "summoner": "self",
+                      "filter": {
+                        "cardType": "creature"
+                      }
+                    },
+                    "stage": "MATERIAL"
+                  }
+                },
+                "saveAs": "specialMaterials",
+                "label": "Material"
+              },
+              {
+                "type": "SummonSpecial",
+                "rule": {
+                  "kind": "evolution",
+                  "zone": "hand",
+                  "reduce": 1,
+                  "summoner": "self",
+                  "filter": {
+                    "cardType": "creature"
+                  }
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "sourceZone": "field",
+      "allyTurn": true,
+      "limit": "NONE"
+    }
+  ]
+}

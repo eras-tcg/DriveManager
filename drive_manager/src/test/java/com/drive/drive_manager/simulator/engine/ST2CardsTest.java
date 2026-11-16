@@ -135,7 +135,78 @@ class ST2CardsTest extends CardBatchSupport {
         assertThat(p == null || !p.getValidIds().contains("ct")).isTrue();
     }
 
+    private CardSlot evolutionInHand(int specialCost) {
+        CardSlot evo = green("ev", "Evolución Verde", 2, 2, 7);
+        evo.setSpecialSummonKind("evolution");
+        evo.setSpecialCost(specialCost);
+        evo.setRequirement("criatura nivel 1.");
+        host.getHand().add(evo);
+        return evo;
+    }
+
+    @Test
+    void dragonDeLaFortunaSendsFiveGreenTributesToTheBottomAndEvolvesForOneLess() {
+        CardSlot fortuna = onField(host, green("df", "Dragón de la Fortuna", 1, 1, 2), FRONT);
+        for (int i = 0; i < 5; i++) host.getTributeZone().add(card("t" + i, "Verde " + i, 1, 1, "G"));
+        host.getTributeZone().add(card("rt", "Roja", 1, 1, "R"));
+        CardSlot evo = evolutionInHand(1);
+        int before = gems();
+        assertThat(Chain.activateByPlayer(room, "host", "df", "dragon-de-la-fortuna:turno-aliado")).isNull();
+        Prompt send = room.getPrompt();
+        assertThat(send.getValidIds()).doesNotContain("rt");
+        answer(send, "t0", "t1", "t2", "t3", "t4");
+        answer("ev");
+        assertThat(host.getField()).contains(evo);
+        assertThat(evo.getResources()).contains(fortuna);
+        assertThat(host.getTributeZone()).extracting(CardSlot::getInstanceId).containsExactly("rt");
+        assertThat(host.getDeck().subList(host.getDeck().size() - 5, host.getDeck().size()))
+                .extracting(CardSlot::getInstanceId).containsExactlyInAnyOrder("t0", "t1", "t2", "t3", "t4");
+        // Special cost 1, minus 1
+        assertThat(gems()).isEqualTo(before);
+    }
+
+    @Test
+    void dragonDeLaFortunaCannotBeActivatedWithFewerThanFiveGreenTributes() {
+        onField(host, green("df", "Dragón de la Fortuna", 1, 1, 2), FRONT);
+        for (int i = 0; i < 4; i++) host.getTributeZone().add(card("t" + i, "Verde " + i, 1, 1, "G"));
+        host.getTributeZone().add(card("rt", "Roja", 1, 1, "R"));
+        evolutionInHand(1);
+        assertThat(Chain.activateByPlayer(room, "host", "df", "dragon-de-la-fortuna:turno-aliado")).isNotNull();
+        assertThat(host.getTributeZone()).hasSize(5);
+    }
+
     // ------------------------------------------------------------------ Utilidades
+
+    @Test
+    void eclosionTakesOneGreenOfFiveStaysExhaustedAndLaterGoesToTheDiscardToSummonAGreen() {
+        room.setFirstTurn(false);
+        host.getDeck().addAll(0, List.of(card("g1", "Verde 1", 1, 1, "G"), card("r1", "Roja 1", 1, 1, "R"), card("g2", "Verde 2", 1, 1, "G"),
+                card("r2", "Roja 2", 1, 1, "R"), card("r3", "Roja 3", 1, 1, "R")));
+        int hand = host.getHand().size();
+        CardSlot eclosion = utility("ec", "Eclosión", 1, "G");
+        play(eclosion);
+        Prompt take = room.getPrompt();
+        assertThat(take.getValidIds()).containsExactlyInAnyOrder("g1", "g2");
+        assertThat(take.getMax()).isEqualTo(1);
+        answer(take, "g1");
+        assertThat(host.getHand()).hasSize(hand + 1);
+        assertThat(host.getField()).contains(eclosion);
+        assertThat(eclosion.isTapped()).isTrue();
+        assertThat(EffectEngine.inFrontLine(eclosion)).isFalse();
+        assertThat(room.getChain()).isEmpty();
+
+        // Exhausted it cannot be sent; active, it goes to the discard and summons the Green for 1 less
+        assertThat(Chain.activateByPlayer(room, "host", "ec", "eclosion:turno-aliado")).isNotNull();
+        eclosion.setTapped(false);
+        CardSlot green = host.getHand().stream().filter(c -> "g1".equals(c.getInstanceId())).findFirst().orElseThrow();
+        green.setCost(2);
+        int before = gems();
+        assertThat(Chain.activateByPlayer(room, "host", "ec", "eclosion:turno-aliado")).isNull();
+        answer("g1");
+        assertThat(host.getField()).contains(green);
+        assertThat(host.getDiscardPile()).contains(eclosion);
+        assertThat(gems()).isEqualTo(before - 1);
+    }
 
     @Test
     void lanzamientoDeAguijonGivesAGreenAllyPerforanteUntilTheEndOfTheTurn() {
