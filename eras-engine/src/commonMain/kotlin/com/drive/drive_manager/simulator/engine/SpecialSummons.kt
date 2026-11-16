@@ -213,6 +213,9 @@ object SpecialSummons {
         // before its event); only when no materials are being chosen
         var use = CostModifiers.choice(room, player, CostModifiers.Event.SPECIAL_SUMMON, req.kind, card, summoner)
         if (use != null && !materials.isEmpty() && use.modifier.payment!!.kind != CostModifiers.PaymentKind.SELF_DAMAGE) use = null
+        // "Opcionales en Auto": a reducer is not asked once the cost is already 0
+        if (use != null && use.modifier.reduceNow(room, player.userId) > 0 && CostModifiers.autoStops(room, player, CostModifiers.Event.SPECIAL_SUMMON,
+                req.kind, card, summoner, max(0, card.specialCost!! - fieldPiecesDiscount(player, card, summoner, materials)))) use = null
         if (use != null) {
             room.usedThisTurn.removeAll { k -> k.startsWith(DISCOUNT_MATERIALS + card.instanceId + "|") }
             if (!materials.isEmpty()) room.usedThisTurn.add(DISCOUNT_MATERIALS + card.instanceId + "|" + ids(materials).joinToString(","))

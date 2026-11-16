@@ -191,13 +191,20 @@ object TurnActions {
         return update
     }
 
-    /** Turns the offer of the player's optional triggered effects off or on (in a test room, of both sides). */
+    /**
+     * The player's optional effects: On (offered), Auto (`auto`: offered, with cost reducers and lone "En Juego" ones
+     * handled on their own) or Off (`value`: not offered). In a test room, of both sides.
+     */
     @JvmStatic
     fun handleSetSkipOptional(room: GameRoom, userId: String?, action: GameAction): GameStateUpdate {
         val player = room.getPlayer(userId) ?: return GameStateUpdate.notInRoom(room)
         val skip = action.getBoolean("value", false)
-        if (room.editor) room.players.values.forEach { p -> p.skipOptional = skip }
-        else player.skipOptional = skip
+        val auto = !skip && action.getBoolean("auto", false)
+        val players = if (room.editor) room.players.values.toList() else listOf(player)
+        players.forEach { p ->
+            p.skipOptional = skip
+            p.autoOptional = auto
+        }
         // Not in the history: neither player is told; the effects let go look like ones the player chose not to activate
         return GameStateUpdate.from(room, ActionType.SET_SKIP_OPTIONAL, userId)
     }

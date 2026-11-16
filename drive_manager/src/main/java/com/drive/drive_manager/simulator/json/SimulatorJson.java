@@ -48,11 +48,13 @@ public final class SimulatorJson {
 
     /**
      * A player: when they lost the connection (the server's to know), and the Enlace bookkeeping of what entered the Línea frontal.
-     * Their formations only when they have some (a game without Enlace sends what it always sent).
+     * Their formations only when they have some (a game without Enlace sends what it always sent), and "Opcionales en Auto"
+     * only when it is on.
      */
     @JacksonMixin(PlayerState.class)
     abstract static class PlayerStateJson {
         @JsonIgnore Object disconnectedAt;
+        @JsonInclude(JsonInclude.Include.NON_DEFAULT) Object autoOptional;
         @JsonIgnore Object frontSeen;
         @JsonIgnore Object formationEntries;
         @JsonInclude(JsonInclude.Include.NON_DEFAULT) Object formations;

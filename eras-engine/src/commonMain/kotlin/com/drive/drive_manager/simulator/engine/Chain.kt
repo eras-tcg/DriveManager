@@ -342,7 +342,10 @@ object Chain {
             // Several mandatory effects (also several of one card, like its inherited ones): their controller
             // chains them one at a time (all of them are chained)
             // A lone one too (when the room asks for it): its controller sees what triggered and chains it
-            if (group.size > 1 || room.confirmMandatory) {
+            // "Opcionales en Auto": the "En Juego" of a card just played, with nothing else waiting, goes in without asking
+            val alone = group.size == 1 && room.triggerQueue.size == 1 && script.moment == EffectScript.Moment.ON_PLAY &&
+                    room.getPlayer(effect.controllerId)?.autoOptional == true
+            if (group.size > 1 || (room.confirmMandatory && !alone)) {
                 val sources = sources(room, group)
                 val instruction = if (group.size > 1)
                     "Estos efectos son obligatorios: se encadenan todos. Elige cuál entra ahora como Cadena " +

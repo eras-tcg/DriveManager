@@ -104,7 +104,7 @@ object Summons {
                 cost = max(0, cost - lower)
             }
         }
-        val tap = CostModifiers.unansweredTap(room, player, CostModifiers.Event.SUMMON, null, card)
+        val tap = CostModifiers.unansweredTap(room, player, CostModifiers.Event.SUMMON, null, card, cost)
         if (tap != null) {
             rulesPrompt(room, userId, PromptPurpose.COST_TAP.id(), name(tap.holder) + " · " + tap.modifier.label,
                     "¿Agotas " + name(tap.holder) + " para reducir en " + tap.modifier.reduceNow(room, userId) + " el coste de " + name(card) + "?",
@@ -264,7 +264,10 @@ object Summons {
      */
     @JvmStatic
     fun askTap(room: GameRoom, player: PlayerState, card: CardSlot, kind: String?, summonerId: String?): Boolean {
-        val use = CostModifiers.unansweredTap(room, player, CostModifiers.Event.SPECIAL_SUMMON, kind, card) ?: return false
+        // Its special cost as printed (the starter's advantage of a Ritual off): the discounts of the pieces it uses are not known yet
+        val cost = if (card.specialCost == null) null
+            else card.specialCost!! - (if ("ritual" == kind && starterAdvantage(room, player.userId, card, card.specialCost)) 1 else 0)
+        val use = CostModifiers.unansweredTap(room, player, CostModifiers.Event.SPECIAL_SUMMON, kind, card, cost) ?: return false
         rulesPrompt(room, player.userId, PromptPurpose.COST_TAP.id(), name(use.holder) + " · " + use.modifier.label,
                 "¿Agotas " + name(use.holder) + " para reducir en " + use.modifier.reduceNow(room, player.userId) + " el coste especial de " + name(card) + "?",
                 "Agotar", frozenListOf(use.holder), frozenListOf(use.holder))

@@ -227,6 +227,13 @@ object CostModifiers {
      */
     @JvmStatic
     fun unansweredTap(room: GameRoom, player: PlayerState?, event: Event?, kind: String?, card: CardSlot?): Use? {
+        return unansweredTap(room, player, event, kind, card, null)
+    }
+
+    /** `cost`: the cost before the modifiers, so that "Opcionales en Auto" stops asking once it is 0 (null: asked anyway). */
+    @JvmStatic
+    fun unansweredTap(room: GameRoom, player: PlayerState?, event: Event?, kind: String?, card: CardSlot?, cost: Int?): Use? {
+        if (cost != null && autoStops(room, player, event, kind, card, null, cost)) return null
         // Designer ruling 2026-10-31: a cost can be reduced when it is already 0 (it stays 0), so it is asked anyway
         return applicable(room, player, event, kind, card, null).firstOrNull { u ->
             u.modifier.payment!!.kind == PaymentKind.TAP_SELF
@@ -270,6 +277,20 @@ object CostModifiers {
         if (card != null) room.usedThisTurn.removeAll { k -> k.startsWith("cost-tap") && k.endsWith("|" + card.instanceId) }
         // A cost does not go below 0
         return min(reduced, max(0, cost))
+    }
+
+    /**
+     * "Opcionales en Auto" (the player's choice): the cost reducers stop being asked once the cost, with the reductions already
+     * decided (the free ones and the exhaustions accepted), is 0. With On, they are asked even then (designer ruling 2026-10-31).
+     */
+    @JvmStatic
+    fun autoStops(room: GameRoom, player: PlayerState?, event: Event?, kind: String?, card: CardSlot?, summoner: CardSlot?, cost: Int): Boolean {
+        if (player == null || card == null || !player.autoOptional || player.skipOptional) return false
+        val decided = applicable(room, player, event, kind, card, summoner).filter { u ->
+            val k = u.modifier.payment!!.kind
+            k == PaymentKind.NONE || (k == PaymentKind.TAP_SELF && room.usedThisTurn.contains(tapKey(u.holder, card, true)))
+        }.sumOf { u -> u.modifier.reduceNow(room, player.userId) }
+        return cost - decided <= 0
     }
 
     /** The first one that asks the player for its payment (Flambreik's tributes), or null. */

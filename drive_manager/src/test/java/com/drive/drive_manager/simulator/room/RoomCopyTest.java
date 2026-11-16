@@ -41,7 +41,7 @@ class RoomCopyTest {
                     + "postGameChoices eventLog timeline eventSeq chain prompt triggerQueue pendingEvents idSeq pendingRemovals "
                     + "pendingAscension removalDecided combat fieldGrants usedThisTurn firstPlayerId firstTurn starterAdvantageUserId "
                     + "endTurnPending startPhasePending winnerId endReason random headless searchHope startSetup",
-            PlayerState.class, "userId username avatar playmat connected disconnectedAt deckId deckName starterCardId ready skipOptional "
+            PlayerState.class, "userId username avatar playmat connected disconnectedAt deckId deckName starterCardId ready skipOptional autoOptional "
                     + "resourceCount turnsStarted hand deck originalDeck lifeStack tributeZone discardPile field formations frontSeen formationEntries",
             CardSlot.class, "instanceId cardId imageUrl faceDown tapped x y cardName cardType strength specialSummonKind starter "
                     + "strengthModifier cost level colors classes specialCost requirement keywords inheritKeywords turnKeywords "

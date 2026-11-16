@@ -85,6 +85,7 @@ object ShallowCopy {
         c.starterCardId = o.starterCardId
         c.ready = o.ready
         c.skipOptional = o.skipOptional
+        c.autoOptional = o.autoOptional
         c.resourceCount = o.resourceCount
         c.turnsStarted = o.turnsStarted
         c.hand = o.hand

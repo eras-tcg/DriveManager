@@ -98,6 +98,8 @@ object UpdateJson {
         "userId" to str(p.userId),
         "username" to str(p.username),
         "avatar" to str(p.avatar),
+        // Only when it is on (the server's NON_DEFAULT): the messages of a player without it are what they always were
+        if (p.autoOptional) "autoOptional" to bool(true) else null,
         "connected" to bool(p.connected),
         "deck" to list(p.deck),
         "deckId" to str(p.deckId),
