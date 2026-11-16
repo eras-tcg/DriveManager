@@ -1,10 +1,14 @@
 package com.drive.drive_manager.service;
 
 import com.drive.drive_manager.dto.Card;
+import com.drive.drive_manager.dto.DriveCard;
 import com.drive.drive_manager.repository.CardRepository;
+import com.drive.drive_manager.repository.DriveCardRepository;
+import org.mockito.ArgumentCaptor;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -21,6 +25,7 @@ import static org.mockito.Mockito.when;
 class CardArtServiceTest {
 
     private CardArtStore store;
+    private DriveCardRepository images;
     private CardArtService service;
     private Card card;
 
@@ -28,7 +33,8 @@ class CardArtServiceTest {
     void setUp() {
         CardRepository cards = mock(CardRepository.class);
         store = mock(CardArtStore.class);
-        service = new CardArtService(cards, store);
+        images = mock(DriveCardRepository.class);
+        service = new CardArtService(cards, store, images);
         card = new Card();
         card.setId("m1");
         when(cards.findById("m1")).thenReturn(Optional.of(card));
@@ -77,5 +83,22 @@ class CardArtServiceTest {
         verify(store).delete(first);
         when(store.get(card.getRenderKey())).thenReturn(jpg);
         assertThat(service.getRender("m1")).get().extracting(CardArtService.Art::type).isEqualTo("image/jpeg");
+    }
+
+    @Test
+    void aRenderedCardJoinsTheCatalogAsAnImageRecordOfItsOwn() {
+        card.setCardName("Bea");
+        card.setEdition("ST2");
+        card.setColorIdentity("G");
+        card.setCardNumber(1);
+        service.setRender("m1", new byte[]{(byte) 0xFF, (byte) 0xD8, (byte) 0xFF, 0, 0, 0, 0, 0, 0, 0, 0, 0});
+        ArgumentCaptor<DriveCard> saved = ArgumentCaptor.forClass(DriveCard.class);
+        verify(images).save(saved.capture());
+        DriveCard image = saved.getValue();
+        assertThat(image.getId()).isEqualTo("web-m1");
+        assertThat(image.fromWeb()).isTrue();
+        assertThat(List.of(image.getName(), image.getEdition(), image.getColorIdentity(), image.getNumber())).containsExactly("Bea", "ST2", "G", 1);
+        // Its image is the editor's finished card, served by the cards' API
+        assertThat(image.imageUrl("https://cdn.example")).startsWith("/api/cards/m1/render?v=");
     }
 }

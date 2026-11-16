@@ -67,11 +67,13 @@ class DriveCatchUpServiceTest {
         when(cards.findAll()).thenReturn(List.of(
                 card("same", "E1-B01-Jhav.jpg", "E1", null, "B", 1, "Jhav corregido"),
                 card("moved", "E1_1-P04-Cofre-Mímico.jpg", "E1", null, "P", 4, "Cofre Mímico"),
-                card("gone", "E1-B03-Viejo.jpg", "E1", null, "B", 3, "Viejo")));
+                card("gone", "E1-B03-Viejo.jpg", "E1", null, "B", 3, "Viejo"),
+                web("web-m1", "ST2", "G", 1, "Bea")));
 
         SyncReport done = runAndWait();
 
         assertThat(done.getMode()).isEqualTo("full");
+        // A card made in the site's editor is not in Drive, and is not deleted for that
         // A name corrected in drive_cards is not a change; another section, a new file and a missing one are
         assertThat(done.getItems()).extracting(SyncReport.Item::fileId, SyncReport.Item::action)
                 .containsExactlyInAnyOrder(org.assertj.core.groups.Tuple.tuple("moved", "upsert"),
@@ -109,5 +111,9 @@ class DriveCatchUpServiceTest {
 
     private static DriveCard card(String id, String file, String edition, String sub, String color, int number, String name) {
         return new DriveCard(id, file, name, number, color, edition, sub, Instant.now());
+    }
+
+    private static DriveCard web(String id, String edition, String color, int number, String name) {
+        return new DriveCard(id, null, name, number, color, edition, null, Instant.now(), DriveCard.WEB);
     }
 }

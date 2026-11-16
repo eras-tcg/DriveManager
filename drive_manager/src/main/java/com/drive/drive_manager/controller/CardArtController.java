@@ -30,7 +30,6 @@ import java.util.function.Supplier;
  */
 @RestController
 @RequestMapping("/api/cards")
-@PreAuthorize("hasAuthority('manage_cards')")
 public class CardArtController {
 
     private static final Logger log = LoggerFactory.getLogger(CardArtController.class);
@@ -40,12 +39,14 @@ public class CardArtController {
         this.art = art;
     }
 
+    @PreAuthorize("hasAuthority('manage_cards')")
     @PutMapping(value = "/{id}/art", consumes = {"image/jpeg", "image/png", "image/webp", "application/octet-stream"})
     public ResponseEntity<Object> set(@PathVariable String id, @RequestBody byte[] image) {
         if (image == null || image.length == 0) return ResponseEntity.badRequest().body(Map.of("message", "Elige una imagen"));
         return apply(() -> art.set(id, image));
     }
 
+    @PreAuthorize("hasAuthority('manage_cards')")
     @GetMapping("/{id}/art")
     public ResponseEntity<byte[]> get(@PathVariable String id) {
         return art.get(id)
@@ -56,6 +57,7 @@ public class CardArtController {
                 .orElse(ResponseEntity.notFound().build());
     }
 
+    @PreAuthorize("hasAuthority('manage_cards')")
     @PutMapping(value = "/{id}/render", consumes = {"image/jpeg", "image/png", "image/webp", "application/octet-stream"})
     public ResponseEntity<Object> setRender(@PathVariable String id, @RequestBody byte[] image) {
         if (image == null || image.length == 0) return ResponseEntity.badRequest().body(Map.of("message", "Falta la imagen"));
@@ -73,6 +75,7 @@ public class CardArtController {
                 .orElse(ResponseEntity.notFound().build());
     }
 
+    @PreAuthorize("hasAuthority('manage_cards')")
     @DeleteMapping("/{id}/art")
     public ResponseEntity<Object> remove(@PathVariable String id) {
         return apply(() -> art.remove(id));

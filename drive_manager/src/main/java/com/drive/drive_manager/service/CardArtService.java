@@ -1,7 +1,9 @@
 package com.drive.drive_manager.service;
 
 import com.drive.drive_manager.dto.Card;
+import com.drive.drive_manager.dto.DriveCard;
 import com.drive.drive_manager.repository.CardRepository;
+import com.drive.drive_manager.repository.DriveCardRepository;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
@@ -24,10 +26,22 @@ public class CardArtService {
 
     private final CardRepository cards;
     private final CardArtStore store;
+    private final DriveCardRepository images;
 
-    public CardArtService(CardRepository cards, CardArtStore store) {
+    public CardArtService(CardRepository cards, CardArtStore store, DriveCardRepository images) {
         this.cards = cards;
         this.store = store;
+        this.images = images;
+    }
+
+    /**
+     * The card's image record (drive_cards), as a card synced from Drive has: what makes it a card of the catalog, the
+     * deck builder and the simulator. Its image is the editor's finished card; it carries the card's code and name.
+     */
+    void register(Card card) {
+        DriveCard image = new DriveCard(DriveCard.WEB_PREFIX + card.getId(), null, card.getCardName(), card.getCardNumber(),
+                card.getColorIdentity(), card.getEdition(), card.getSubEdition(), Instant.now(), DriveCard.WEB);
+        images.save(image);
     }
 
     /** Stores a new art for the card and drops the one it had: the card after it, empty if none. */
@@ -59,6 +73,7 @@ public class CardArtService {
             card.setRenderKey(key);
             Card saved = cards.save(card);
             if (old != null) store.delete(old);
+            register(saved);
             return saved;
         });
     }

@@ -23,6 +23,9 @@ public class CardService {
     @Autowired
     private CardNames cardNames;
 
+    @Autowired
+    private com.drive.drive_manager.repository.DriveCardRepository driveCards;
+
     /**
      * Create a new card.
      */
@@ -189,6 +192,8 @@ public class CardService {
     public boolean deleteCard(String id) {
         if (cardRepository.existsById(id)) {
             cardRepository.deleteById(id);
+            // A card made in the editor takes its image record with it
+            if (driveCards != null) driveCards.deleteById(com.drive.drive_manager.dto.DriveCard.WEB_PREFIX + id);
             return true;
         }
         return false;
