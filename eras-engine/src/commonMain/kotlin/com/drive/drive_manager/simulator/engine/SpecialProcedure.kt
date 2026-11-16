@@ -98,15 +98,19 @@ object SpecialProcedure {
         if (stage == Selector.Stage.SUMMONER) {
             // Rule 9.2.0.13: the summoner is declared first; it must meet part of the Requerimiento
             if (summoner != null) return frozenListOf()
-            return if (req!!.sum) Rituals.summonerCandidates(materials, req.level) else materials.filter { req.fits(it) }
+            return if (req!!.sum) Rituals.summonerCandidates(materials, req) else materials.filter { req.fits(it) }
         }
-        if (summoner == null || !req!!.sum || EffectEngine.hasLevel(summoner, req.level)) return frozenListOf()
-        return Rituals.fittingSacrifices(materials.filter { c -> c !== summoner }, remaining(player, target, req, summoner))
+        if (summoner == null || !req!!.sum || req.summonerAlone(summoner)) return frozenListOf()
+        val others = materials.filter { c -> c !== summoner }
+        if (req.sumMax() == req.level) return Rituals.fittingSacrifices(others, remaining(player, target, req, summoner))
+        return Rituals.remainingSum(req, summoner, others).flatMap { Rituals.fittingSacrifices(others, it) }.distinct()
     }
 
-    /** What the other creatures of a Ritual must add up to, with that summoner. */
+    /** What the other creatures of a Ritual may add up to at most, with that summoner. */
     private fun remaining(player: PlayerState?, target: CardSlot?, req: Rituals.Requirement?, summoner: CardSlot?): Int {
-        return req!!.level - Rituals.summonerLevel(summoner, Rituals.ritualMaterials(player!!, target!!).filter { c -> c !== summoner }, req.level)
+        val others = Rituals.ritualMaterials(player!!, target!!).filter { c -> c !== summoner }
+        val all = if (req!!.sumMax() == req.level) frozenListOf() else Rituals.remainingSum(req, summoner, others)
+        return if (all.isEmpty()) req.level - Rituals.summonerLevel(summoner, others, req.level) else all.max()
     }
 
     @JvmStatic
@@ -144,7 +148,8 @@ object SpecialProcedure {
             Selector.Stage.SUMMONER -> intArrayOf(1, 1, 0)
             Selector.Stage.MATERIAL -> {
                 val rule = resolve(room, effect, special.rule)
-                if (SpecialRequirements.specialRequirement(target(room, effect, rule))!!.levelSum > 0) intArrayOf(1, available, 0) else intArrayOf(1, 1, 0)
+                val req = SpecialRequirements.specialRequirement(target(room, effect, rule))!!
+                if (req.levelSum > 0 || req.moreMaterials) intArrayOf(1, available, 0) else intArrayOf(1, 1, 0)
             }
         }
     }
@@ -181,6 +186,10 @@ object SpecialProcedure {
                     + ". Se sacrifica y " + EffectEngine.name(target) + " ocupa su lugar y hereda su estado.")
         }
         val summoner = summoner(room, effect, rule)
+        if (req!!.sumMax() != req.level) {
+            return ("Elige las demás criaturas que se sacrifican junto a " + EffectEngine.name(summoner) + " (el invocador): con él, sus niveles deben sumar "
+                    + req.sumText() + ".")
+        }
         return ("Elige las demás criaturas que se sacrifican junto a " + EffectEngine.name(summoner) + " (el invocador): sus niveles deben sumar exactamente "
                 + remaining(room.getPlayer(effect.controllerId), target, req, summoner) + ".")
     }
@@ -199,8 +208,9 @@ object SpecialProcedure {
                 val others = picks!!.mapNotNull { id -> EngineContext(room, effect).find(id) }
                 return RitualParts.check(room, player, target!!, req.parts, summoner!!, others)
             }
-            val total = summoner!!.getLevel()!! + picks!!.map { id -> EngineContext(room, effect).find(id) }.sumOf { it!!.getLevel()!! }
-            return if (req!!.sum && total != req.level) "Los niveles suman " + total + ": deben sumar exactamente " + req.level else null
+            val picked = picks!!.mapNotNull { id -> EngineContext(room, effect).find(id) }
+            val total = summoner!!.getLevel()!! + picked.sumOf { it.getLevel()!! }
+            return if (req!!.sum && !req.allAddUp(picked + summoner)) "Los niveles suman " + total + ": deben sumar exactamente " + req.sumText() else null
         }
         val materials = picks!!.map { id -> EngineContext(room, effect).find(id) }
         return SpecialRequirements.checkMaterials(SpecialRequirements.specialRequirement(target)!!, summoner, materials)

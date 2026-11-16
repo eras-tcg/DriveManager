@@ -79,23 +79,28 @@ object Rituals {
                 handRitual(room, player, card, summoner, frozenListOf())
                 return null
             }
-            if (hasLevel(summoner, req.level)) {
+            if (req.summonerAlone(summoner)) {
                 handRitual(room, player, card, summoner, frozenListOf())
                 return null
             }
             val others = materials.filter { c -> c !== summoner }
-            val remaining = req.level - summonerLevel(summoner, others, req.level)
-            if (remaining < 0 || !sumsExactly(others, remaining)) return missing
+            val remaining = if (req.sumMax() == req.level) {
+                // One total, as always: what the summoner's level leaves
+                val left = req.level - summonerLevel(summoner, others, req.level)
+                if (left < 0 || !sumsExactly(others, left)) return missing
+                frozenListOf(left)
+            } else remainingSum(req, summoner, others)
+            if (remaining.isEmpty()) return missing
             // Only those that fit, and no more than the levels left: once they add up, the rest are locked
-            val fitting = fittingSacrifices(others, remaining)
+            val fitting = remaining.flatMap { fittingSacrifices(others, it) }.distinct()
             ritualPrompt(room, player, card, summoner, fitting, "Elige las demás criaturas que se sacrifican junto a " + name(summoner)
-                    + ": con el invocador, sus niveles deben sumar exactamente " + req.level + ".", fitting.size)
-            room.prompt!!.maxLevelSum = remaining
+                    + ": con el invocador, sus niveles deben sumar exactamente " + req.sumText() + ".", fitting.size)
+            room.prompt!!.maxLevelSum = remaining.max()
             return null
         }
 
         // Rule 9.2.0.13: first the summoner (it must meet part of the Requerimiento), then the rest
-        val valid = if (req.sum) summonerCandidates(materials, req.level) else materials.filter { req.fits(it) }
+        val valid = if (req.sum) summonerCandidates(materials, req) else materials.filter { req.fits(it) }
         if (valid.isEmpty()) return missing
         ritualPrompt(room, player, card, null, valid, "Elige el invocador" + (if (req.sum) "" else ": 1 criatura nivel " + req.level + (if (req.atLeast) " o mayor" else ""))
                 + ". Se sacrifica y " + name(card) + " ocupa su lugar y hereda su estado.", 1)
@@ -135,7 +140,7 @@ object Rituals {
         if (!canPay(room, userId, ritualCost(room, userId, card))) return false
         if (req.parts.isNotEmpty()) return RitualParts.summoners(room, player, card, req.parts).isNotEmpty()
         val materials = ritualMaterials(player, card)
-        return if (req.sum) sumsExactly(materials, req.level) else materials.any { s -> req.fits(s) && materials.count { it !== s } >= req.extra }
+        return if (req.sum) req.sumReachable(materials) else materials.any { s -> req.fits(s) && materials.count { it !== s } >= req.extra }
     }
 
     @JvmStatic
@@ -190,6 +195,24 @@ object Rituals {
         /** Each creature used, the summoner among them ("criatura nivel 2 + 1 criatura [ángel] nivel 2 o menor"): RitualParts; empty otherwise. */
         val parts: List<RitualParts.Part> = frozenListOf(),
     ) {
+        /** The totals a level-sum Requerimiento accepts: `level`, or `level`..`maxLevel` ("sumen entre 3 y 4"). */
+        fun sumTargets(): List<Int> = (level..max(level, maxLevel)).toList()
+
+        /** The highest total it accepts. */
+        fun sumMax(): Int = max(level, maxLevel)
+
+        /** "3" or "3 o 4" or "entre 3 y 5". */
+        fun sumText(): String = if (sumMax() == level) "$level" else if (sumMax() == level + 1) "$level o ${sumMax()}" else "entre $level y ${sumMax()}"
+
+        /** Some of the creatures add up exactly to one of the totals. */
+        fun sumReachable(cards: List<CardSlot>): Boolean = sumTargets().any { sumsExactly(cards, it) }
+
+        /** All these creatures together add up exactly to one of the totals. */
+        fun allAddUp(cards: List<CardSlot>): Boolean = sumTargets().any { addsUpTo(cards, it) }
+
+        /** The summoner alone meets the sum. */
+        fun summonerAlone(summoner: CardSlot?): Boolean = sumTargets().any { hasLevel(summoner, it) }
+
         /** The creature alone meets a single-creature Requerimiento. */
         fun fits(c: CardSlot?): Boolean {
             val levelMet = levels(c).any { l -> if (atLeast) l >= this.level else l >= this.level && l <= this.maxLevel }
@@ -199,6 +222,9 @@ object Rituals {
 
     @JvmStatic
     fun requirement(card: CardSlot?): Requirement? {
+        // Programmed by hand in the card file (its `requirement` section): it, not the text
+        val r = CardEffects.requirementOf(card)?.ritual
+        if (r != null) return Requirement(r.sum, r.level, r.atLeast, r.maxStrength, r.maxLevel ?: r.level, r.extra)
         if (card!!.requirement == null) return null
         val text = card.requirement!!.lowercase()
         val parts = RitualParts.parse(text.trim { it <= ' ' })
@@ -219,6 +245,25 @@ object Rituals {
     fun summonerCandidates(materials: List<CardSlot>, level: Int): List<CardSlot> {
         return materials
                 .filter { s -> levels(s).any { l -> l <= level && sumsExactly(materials.filter { c -> c !== s }, level - l) } }
+    }
+
+    /** Those of a level-sum Ritual whose total may be any of its totals ("sumen entre 3 y 4"). */
+    @JvmStatic
+    fun summonerCandidates(materials: List<CardSlot>, req: Requirement): List<CardSlot> {
+        return req.sumTargets().flatMap { summonerCandidates(materials, it) }.distinct()
+    }
+
+    /**
+     * What the other creatures may add up to with that summoner, one value per total the Requerimiento accepts that they can complete
+     * (empty: none).
+     */
+    @JvmStatic
+    fun remainingSum(req: Requirement, summoner: CardSlot?, others: List<CardSlot>): List<Int> {
+        val all: MutableList<Int> = ArrayList()
+        for (total in req.sumTargets()) for (l in levels(summoner)) {
+            if (l < total && sumsExactly(others, total - l) && !all.contains(total - l)) all.add(total - l)
+        }
+        return all
     }
 
     /** Whether some of the creatures' levels add up exactly to `target` ("criaturas que en nivel sumen N"). */
@@ -283,7 +328,10 @@ object Rituals {
     /** Creatures that may be used for the Ritual of `target`. */
     @JvmStatic
     fun ritualMaterials(player: PlayerState, target: CardSlot): List<CardSlot> {
-        return player.field.filter { c -> "creature" == c.cardType && c.getLevel() != null && shares(c, target) }
+        // Programmed by hand: "criaturas nivel N o menor que sumen …"
+        val most = CardEffects.requirementOf(target)?.ritual?.eachMaxLevel
+        return player.field.filter { c -> "creature" == c.cardType && c.getLevel() != null && shares(c, target)
+                && (most == null || levels(c).any { l -> l in 1..most }) }
     }
 
     @JvmStatic
@@ -301,10 +349,10 @@ object Rituals {
             val self = find(materials, effect.sourceInstanceId) ?: return false
             if (!req.sum) return req.fits(self) && materials.count { it !== self } >= req.extra
             // The summoner is one of them: the others make up the rest
-            return levels(self).any { l -> l <= req.level && sumsExactly(materials.filter { c -> c !== self }, req.level - l) }
+            return req.sumTargets().any { total -> levels(self).any { l -> l <= total && sumsExactly(materials.filter { c -> c !== self }, total - l) } }
         }
         if (!req.sum) return materials.any { s -> req.fits(s) && materials.count { it !== s } >= req.extra }
-        return sumsExactly(materials, req.level)
+        return req.sumReachable(materials)
     }
 
     @JvmStatic

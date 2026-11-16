@@ -126,5 +126,16 @@
         "limit" : "ONCE_PER_TURN"
       }
     ]
+  },
+  "requirement" : {
+    "summoner": {
+      "level": 3,
+      "filter": {
+        "classes": [
+          "dragón",
+          "fauna"
+        ]
+      }
+    }
   }
 }

@@ -111,5 +111,19 @@
       "allyTurn" : true,
       "limit" : "ONCE_PER_TURN"
     }
-  ]
+  ],
+  "requirement" : {
+    "summoner": {
+      "level": 2
+    },
+    "materials": {
+      "count": 1,
+      "level": 2,
+      "orLess": true,
+      "zones": [
+        "hand",
+        "tributeZone"
+      ]
+    }
+  }
 }

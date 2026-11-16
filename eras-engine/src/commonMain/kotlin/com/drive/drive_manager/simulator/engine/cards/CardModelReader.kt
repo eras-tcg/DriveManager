@@ -201,6 +201,8 @@ internal object CardModelReader {
 
     fun formationEffects(e: JsonElement, at: String): com.drive.drive_manager.simulator.engine.FormationEffects = readFormationEffects(J.objectOf(e, at, "FormationEffects"), at)
 
+    fun materialSpec(e: JsonElement, at: String): com.drive.drive_manager.simulator.engine.MaterialSpec = readMaterialSpec(J.objectOf(e, at, "MaterialSpec"), at)
+
     fun reaction(e: JsonElement, at: String): com.drive.drive_manager.simulator.engine.Reaction {
         val o = J.objectOf(e, at, "Reaction")
         return when (val id = J.typeId(o, at, "Reaction")) {
@@ -486,7 +488,7 @@ internal object CardModelReader {
     }
 
     private fun readCardDefinition(o: JsonObject, at: String): com.drive.drive_manager.simulator.engine.CardDefinition {
-        J.fields(o, at, "CardDefinition", setOf("name", "effects", "inherited", "continuous", "reactions", "inheritedReactions", "traits", "formation"), false)
+        J.fields(o, at, "CardDefinition", setOf("name", "effects", "inherited", "continuous", "reactions", "inheritedReactions", "traits", "formation", "requirement"), false)
         return com.drive.drive_manager.simulator.engine.CardDefinition(
             name = J.str(o, "name", at),
             effects = J.list(o, "effects", at) { e, p -> effectScript(e, p) },
@@ -496,6 +498,7 @@ internal object CardModelReader {
             inheritedReactions = J.list(o, "inheritedReactions", at) { e, p -> reaction(e, p) },
             traits = J.value(o, "traits", at, ::cardTraits),
             formation = J.value(o, "formation", at, ::formationEffects),
+            requirement = J.value(o, "requirement", at, ::requirementSpec),
         )
     }
 
@@ -574,7 +577,7 @@ internal object CardModelReader {
     }
 
     private fun readCardFilter(o: JsonObject, at: String): com.drive.drive_manager.simulator.engine.CardFilter {
-        J.fields(o, at, "CardFilter", setOf("colors", "classes", "cardType", "level", "maxLevel", "maxStrength", "activeOnly", "exhaustedOnly", "minLevel", "minStrength", "maxCost", "name", "notName", "starterOnly", "colorAndClass", "notColors", "nameContains", "minCost", "cardTypes", "anyOf", "mentions", "backOnly", "enlace"), false)
+        J.fields(o, at, "CardFilter", setOf("colors", "classes", "cardType", "level", "maxLevel", "maxStrength", "activeOnly", "exhaustedOnly", "minLevel", "minStrength", "maxCost", "name", "notName", "starterOnly", "colorAndClass", "notColors", "nameContains", "minCost", "cardTypes", "anyOf", "mentions", "backOnly", "enlace", "frontOnly"), false)
         return com.drive.drive_manager.simulator.engine.CardFilter(
             colors = J.list(o, "colors", at) { e, p -> J.stringElement(e, p) },
             classes = J.list(o, "classes", at) { e, p -> J.stringElement(e, p) },
@@ -599,6 +602,7 @@ internal object CardModelReader {
             mentions = J.str(o, "mentions", at),
             backOnly = J.bool(o, "backOnly", at),
             enlace = J.bool(o, "enlace", at),
+            frontOnly = J.bool(o, "frontOnly", at),
         )
     }
 
@@ -1298,6 +1302,19 @@ internal object CardModelReader {
         )
     }
 
+    private fun readMaterialSpec(o: JsonObject, at: String): com.drive.drive_manager.simulator.engine.MaterialSpec {
+        J.fields(o, at, "MaterialSpec", setOf("count", "more", "level", "orLess", "levelSum", "zones", "filter"), false)
+        return com.drive.drive_manager.simulator.engine.MaterialSpec(
+            count = J.int(o, "count", at),
+            more = J.bool(o, "more", at),
+            level = J.int(o, "level", at),
+            orLess = J.bool(o, "orLess", at),
+            levelSum = J.int(o, "levelSum", at),
+            zones = J.list(o, "zones", at) { e, p -> J.stringElement(e, p) },
+            filter = J.value(o, "filter", at, ::cardFilter),
+        )
+    }
+
     private fun readReactionAttacksBeforeAscended(o: JsonObject, at: String): com.drive.drive_manager.simulator.engine.Reaction.AttacksBeforeAscended {
         J.fields(o, at, "Reaction.AttacksBeforeAscended", emptySet(), true)
         return com.drive.drive_manager.simulator.engine.Reaction.AttacksBeforeAscended
@@ -1326,6 +1343,38 @@ internal object CardModelReader {
     private fun readReactionTributesInsteadOfDamage(o: JsonObject, at: String): com.drive.drive_manager.simulator.engine.Reaction.TributesInsteadOfDamage {
         J.fields(o, at, "Reaction.TributesInsteadOfDamage", emptySet(), true)
         return com.drive.drive_manager.simulator.engine.Reaction.TributesInsteadOfDamage
+    }
+
+    private fun readRequirementSpec(o: JsonObject, at: String): com.drive.drive_manager.simulator.engine.RequirementSpec {
+        J.fields(o, at, "RequirementSpec", setOf("summoner", "materials", "alliesSum", "alliesSumByCost", "alone", "aloneAtLevel", "strongest", "formationSize", "formationAtLeast", "condition", "conditionText", "alternative", "ritual"), false)
+        return com.drive.drive_manager.simulator.engine.RequirementSpec(
+            summoner = J.value(o, "summoner", at, ::summonerSpec),
+            materials = J.value(o, "materials", at, ::materialSpec),
+            alliesSum = J.int(o, "alliesSum", at),
+            alliesSumByCost = J.bool(o, "alliesSumByCost", at),
+            alone = J.bool(o, "alone", at),
+            aloneAtLevel = J.int(o, "aloneAtLevel", at),
+            strongest = J.bool(o, "strongest", at),
+            formationSize = J.int(o, "formationSize", at),
+            formationAtLeast = J.bool(o, "formationAtLeast", at),
+            condition = J.value(o, "condition", at, ::condition),
+            conditionText = J.str(o, "conditionText", at),
+            alternative = J.value(o, "alternative", at, ::requirementSpec),
+            ritual = J.value(o, "ritual", at, ::ritualSpec),
+        )
+    }
+
+    private fun readRitualSpec(o: JsonObject, at: String): com.drive.drive_manager.simulator.engine.RitualSpec {
+        J.fields(o, at, "RitualSpec", setOf("sum", "level", "maxLevel", "atLeast", "maxStrength", "extra", "eachMaxLevel"), false)
+        return com.drive.drive_manager.simulator.engine.RitualSpec(
+            sum = J.bool(o, "sum", at),
+            level = J.int(o, "level", at),
+            maxLevel = J.intOrNull(o, "maxLevel", at),
+            atLeast = J.bool(o, "atLeast", at),
+            maxStrength = J.intOrNull(o, "maxStrength", at),
+            extra = J.int(o, "extra", at),
+            eachMaxLevel = J.intOrNull(o, "eachMaxLevel", at),
+        )
     }
 
     private fun readSelector(o: JsonObject, at: String): com.drive.drive_manager.simulator.engine.effects.model.Selector {
@@ -1379,6 +1428,23 @@ internal object CardModelReader {
         )
     }
 
+    private fun readSummonerSpec(o: JsonObject, at: String): com.drive.drive_manager.simulator.engine.SummonerSpec {
+        J.fields(o, at, "SummonerSpec", setOf("level", "maxLevel", "atLeast", "orLess", "filter", "zones", "none"), false)
+        return com.drive.drive_manager.simulator.engine.SummonerSpec(
+            level = J.int(o, "level", at),
+            maxLevel = J.intOrNull(o, "maxLevel", at),
+            atLeast = J.bool(o, "atLeast", at),
+            orLess = J.bool(o, "orLess", at),
+            filter = J.value(o, "filter", at, ::cardFilter),
+            zones = J.list(o, "zones", at) { e, p -> J.stringElement(e, p) },
+            none = J.bool(o, "none", at),
+        )
+    }
+
+    fun requirementSpec(e: JsonElement, at: String): com.drive.drive_manager.simulator.engine.RequirementSpec = readRequirementSpec(J.objectOf(e, at, "RequirementSpec"), at)
+
+    fun ritualSpec(e: JsonElement, at: String): com.drive.drive_manager.simulator.engine.RitualSpec = readRitualSpec(J.objectOf(e, at, "RitualSpec"), at)
+
     fun selector(e: JsonElement, at: String): com.drive.drive_manager.simulator.engine.effects.model.Selector = readSelector(J.objectOf(e, at, "Selector"), at)
 
     fun selectorRelative(e: JsonElement, at: String): com.drive.drive_manager.simulator.engine.effects.model.Selector.Relative = readSelectorRelative(J.objectOf(e, at, "Selector.Relative"), at)
@@ -1386,4 +1452,6 @@ internal object CardModelReader {
     fun selectorSpecial(e: JsonElement, at: String): com.drive.drive_manager.simulator.engine.effects.model.Selector.Special = readSelectorSpecial(J.objectOf(e, at, "Selector.Special"), at)
 
     fun specialRule(e: JsonElement, at: String): com.drive.drive_manager.simulator.engine.effects.model.SpecialRule = readSpecialRule(J.objectOf(e, at, "SpecialRule"), at)
+
+    fun summonerSpec(e: JsonElement, at: String): com.drive.drive_manager.simulator.engine.SummonerSpec = readSummonerSpec(J.objectOf(e, at, "SummonerSpec"), at)
 }

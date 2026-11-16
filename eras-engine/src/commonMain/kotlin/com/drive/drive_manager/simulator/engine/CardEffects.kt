@@ -54,6 +54,12 @@ object CardEffects {
         BY_NAME[name] = frozenListOf(*scripts)
     }
 
+    /** A Requerimiento programmed by hand for that card name (tests); null removes it. */
+    @JvmStatic
+    fun registerRequirement(name: String, requirement: RequirementSpec?) {
+        if (requirement == null) REQUIREMENTS.remove(name) else REQUIREMENTS[name] = requirement
+    }
+
     /** What identifies a card by its name: [CardKeys.key]. */
     @JvmStatic
     fun key(name: String?): String = CardKeys.key(name)
@@ -142,11 +148,12 @@ object CardEffects {
         names.addAll(CostModifiers.names())
         names.addAll(TRAITS.keys)
         names.addAll(REACTIONS.keys)
+        names.addAll(REQUIREMENTS.keys)
         val all: MutableMap<String, CardDefinition> = LinkedHashMap()
         for (name in names.sorted()) {
             all[name] = CardDefinition(name, BY_NAME[name], INHERITED[name], CONTINUOUS[name],
                 reactionsOf(name), if (INHERITED_REPLACEMENTS.containsKey(name)) frozenListCopy(INHERITED_REPLACEMENTS[name]!!) else null,
-                TRAITS[name], FORMATION[name])
+                TRAITS[name], FORMATION[name], REQUIREMENTS[name])
         }
         return all
     }
@@ -396,6 +403,16 @@ object CardEffects {
     /** What cards change in the rules themselves, by name: [CardTraits]. */
     private val TRAITS: MutableMap<String, CardTraits> = HashMap()
 
+    /** Special summon Requerimientos programmed by hand, by name: [RequirementSpec]. */
+    private val REQUIREMENTS: MutableMap<String, RequirementSpec> = HashMap()
+
+    /** The card's Requerimiento programmed by hand (its file's `requirement` section), or null: then it is read from the printed text. */
+    @JvmStatic
+    fun requirementOf(card: CardSlot?): RequirementSpec? {
+        if (card?.cardName == null) return null
+        return REQUIREMENTS[nameOf(card.cardName)]
+    }
+
     /** What cards do before an event, other than cost changes and replacements of a removal: [Reaction]. */
     private val REACTIONS: MutableMap<String, List<Reaction>> = HashMap()
 
@@ -577,6 +594,7 @@ object CardEffects {
         GrantedEffects.register(d.inherited())
         if (!d.continuous().isEmpty()) CONTINUOUS[name!!] = d.continuous()
         if (d.traits != null) TRAITS[name!!] = d.traits
+        if (d.requirement != null) REQUIREMENTS[name!!] = d.requirement
         val others: MutableList<Reaction> = ArrayList()
         val replacements: MutableList<Replacement> = ArrayList()
         for (r in d.reactions()) {

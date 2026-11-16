@@ -270,9 +270,9 @@ object Answers {
             all.add(summoner)
             if (req!!.parts.isNotEmpty()) RitualParts.check(room, player, card, req.parts, summoner, others)?.let { return it }
             else if (!req.sum && others.size < req.extra) return "Elige al menos " + req.extra + (if (req.extra == 1) " aliado más" else " aliados más")
-            if (req.sum && !addsUpTo(all, req.level)) {
+            if (req.sum && !req.allAddUp(all)) {
                 val total = all.sumOf { it.getLevel()!! }
-                return "Los niveles suman " + total + ": deben sumar exactamente " + req.level
+                return "Los niveles suman " + total + ": deben sumar exactamente " + req.sumText()
             }
             if (!canPay(room, userId, ritualCost(room, userId, card))) return "Ya no tienes gemas suficientes"
             room.prompt = null

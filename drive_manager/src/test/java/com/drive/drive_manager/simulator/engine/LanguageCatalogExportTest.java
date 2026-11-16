@@ -41,7 +41,32 @@ class LanguageCatalogExportTest {
         out.append(section("Condiciones", Condition.class, users));
         out.append(section("Cantidades", Amount.class, users));
         out.append(section("Reacciones", Reaction.class, users));
+        out.append(requirementSection(CardFiles.load()));
         Files.writeString(Path.of(target), out.toString());
+    }
+
+    /** The `requirement` section of the card files (RequirementSpec) and its parts, with the cards that use each. */
+    private static String requirementSection(List<CardDefinition> cards) {
+        TreeMap<String, Set<String>> users = new TreeMap<>();
+        for (CardDefinition card : cards) {
+            RequirementSpec r = card.requirement();
+            if (r == null) continue;
+            users.computeIfAbsent("RequirementSpec", k -> new TreeSet<>()).add(card.name());
+            if (r.summoner() != null) users.computeIfAbsent("SummonerSpec", k -> new TreeSet<>()).add(card.name());
+            if (r.materials() != null) users.computeIfAbsent("MaterialSpec", k -> new TreeSet<>()).add(card.name());
+            if (r.ritual() != null) users.computeIfAbsent("RitualSpec", k -> new TreeSet<>()).add(card.name());
+        }
+        List<Class<?>> records = List.of(RequirementSpec.class, SummonerSpec.class, MaterialSpec.class, RitualSpec.class);
+        StringBuilder s = new StringBuilder("## Requerimiento programado (" + records.size() + ")\n\n"
+                + "Sección `requirement` del archivo de carta: el Requerimiento de su invocación especial, en lugar del texto impreso.\n\n"
+                + "| Nombre | Campos | Cartas | Ejemplo |\n|---|---|---|---|\n");
+        for (Class<?> record : records) {
+            Set<String> names = users.getOrDefault(record.getSimpleName(), Set.of());
+            String fields = Arrays.stream(record.getRecordComponents()).map(RecordComponent::getName).collect(Collectors.joining(", "));
+            s.append("| `").append(record.getSimpleName()).append("` | ").append(fields).append(" | ").append(names.size()).append(" | ")
+                    .append(names.stream().findFirst().orElse("")).append(" |\n");
+        }
+        return s.append('\n').toString();
     }
 
     private static String section(String title, Class<?> family, TreeMap<String, Set<String>> users) {

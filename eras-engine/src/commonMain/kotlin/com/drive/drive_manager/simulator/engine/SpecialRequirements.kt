@@ -66,6 +66,16 @@ object SpecialRequirements {
         /** Enlace: "criatura nivel N en una formación de [al menos] K criaturas": K (0 without it), and whether it is "al menos". */
         val formationSize: Int = 0,
         val formationAtLeast: Boolean = false,
+        /** Programmed by hand ([RequirementSpec]): what else the summoner must be ("[dragón] o [fauna]"); null: any creature. */
+        val summonerFilter: CardFilter? = null,
+        /** Programmed by hand: what else the materials must be ("[artefacto]", a utility); null: creatures. */
+        val materialFilter: CardFilter? = null,
+        /** Programmed by hand: "material nivel N o menor". */
+        val materialOrLess: Boolean = false,
+        /** Programmed by hand: any other check on the board ("mientras controlas 2 o más [ninjas]"); null: none. */
+        val condition: Condition? = null,
+        /** What [condition] asks, for the message; null: the printed text. */
+        val conditionText: String? = null,
     ) {
         /** `moreMaterials`: "N o más criaturas" as materials. */
         constructor(
@@ -83,8 +93,31 @@ object SpecialRequirements {
                 alone, strongest, null)
 
         fun withAlternative(other: SpecialRequirement?): SpecialRequirement {
-            return SpecialRequirement(kind, level, alliesSum, materialLevel, levelSum, atLeast, maxLevel, materialCount, materialZones,
-                    noSummoner, other, alone, strongest, summonerZones, moreMaterials, alliesSumByCost, aloneAtLevel, formationSize, formationAtLeast)
+            return copy(alternative = other)
+        }
+
+        /** The summoner's level is the one asked for (any level when it asks none). */
+        fun levelInRange(summonerLevel: Int): Boolean {
+            return level == ANY_LEVEL || (if (atLeast) summonerLevel >= level else summonerLevel >= level && summonerLevel <= maxLevel)
+        }
+
+        /** The creature is what the summoner must be, besides its level (a programmed filter). */
+        fun summonerMatches(c: CardSlot): Boolean {
+            return summonerFilter == null || summonerFilter.matches(c)
+        }
+
+        /** The card can be one of the materials: a creature (or what the programmed filter says) of the level asked for. */
+        fun materialMatches(c: CardSlot): Boolean {
+            val typed = materialFilter != null && (materialFilter.cardType != null || materialFilter.cardTypes().isNotEmpty())
+            if (!typed && "creature" != c.cardType) return false
+            if (c.getLevel() == null) return false
+            val levelOk = materialLevel == ANY_LEVEL || (if (materialOrLess) levels(c).any { l -> l in 1..materialLevel } else hasLevel(c, materialLevel))
+            return levelOk && (materialFilter == null || materialFilter.matches(c))
+        }
+
+        /** " nivel N [o menor]" of the materials. */
+        fun materialLevelText(): String {
+            return levelText(materialLevel) + (if (materialOrLess && materialLevel != ANY_LEVEL) " o menor" else "")
         }
 
         /** The summoner is declared from the hand or the Tributos (not the field). */
@@ -94,7 +127,7 @@ object SpecialRequirements {
 
         /** A summoner of that level meets it. */
         fun fits(summonerLevel: Int): Boolean {
-            return !noSummoner && (if (atLeast) summonerLevel >= level else summonerLevel >= level && summonerLevel <= maxLevel)
+            return !noSummoner && levelInRange(summonerLevel)
         }
     }
 
@@ -118,7 +151,11 @@ object SpecialRequirements {
     @JvmStatic
     fun specialRequirement(card: CardSlot?): SpecialRequirement? {
         val kind = if (card!!.specialSummonKind == null) "" else card.specialSummonKind!!.lowercase()
-        if (!frozenListOf("evolution", "promotion", "materialization").contains(kind) || card.requirement == null) return null
+        if (!frozenListOf("evolution", "promotion", "materialization").contains(kind)) return null
+        // Programmed by hand in the card file: it, not the text
+        val programmed = CardEffects.requirementOf(card)
+        if (programmed != null && programmed.ritual == null) return fromSpec(kind, programmed)
+        if (card.requirement == null) return null
         val text = card.requirement!!.lowercase().trim { it <= ' ' }
         // "(criatura nivel 3) o (criatura nivel 2 + material nivel 2 en tu mano o campo)"
         val either = Platform.regex("^\\((.*)\\)\\s*o\\s*\\((.*)\\)\\.?$").find(text)
@@ -128,6 +165,29 @@ object SpecialRequirements {
             return if (first == null) second else first.withAlternative(second)
         }
         return parseRequirement(kind, text)
+    }
+
+    /** A Requerimiento programmed by hand ([RequirementSpec]) as the engine checks it. */
+    @JvmStatic
+    fun fromSpec(kind: String?, spec: RequirementSpec): SpecialRequirement {
+        val s = spec.summoner
+        val m = spec.materials
+        val declared = s?.zones?.takeIf { z -> z.isNotEmpty() && z != frozenListOf("field") }
+        val noSummoner = s?.none == true || declared != null
+        // "nivel N o menor": 1..N; level 0: any level
+        val level = if (s == null) ANY_LEVEL else if (s.orLess) 1 else s.level
+        val maxLevel = if (s == null) ANY_LEVEL else if (s.orLess) s.level else s.maxLevel ?: s.level
+        return SpecialRequirement(kind, level, spec.alliesSum, m?.level ?: ANY_LEVEL, m?.levelSum ?: 0, s?.atLeast ?: false, maxLevel,
+                m?.count ?: 0, m?.zones ?: frozenListOf("tributeZone", "field"), noSummoner,
+                spec.alternative?.let { fromSpec(kind, it) }, spec.alone, spec.strongest, declared, m?.more ?: false, spec.alliesSumByCost,
+                spec.aloneAtLevel, spec.formationSize, spec.formationAtLeast, s?.filter, m?.filter, m?.orLess ?: false, spec.condition,
+                spec.conditionText)
+    }
+
+    /** What else a programmed Requerimiento checks on the board ([SpecialRequirement.condition]) holds. */
+    @JvmStatic
+    fun conditionMet(room: GameRoom, player: PlayerState, card: CardSlot, req: SpecialRequirement): Boolean {
+        return req.condition == null || req.condition.test(room, null, card, player.userId)
     }
 
     @JvmStatic
@@ -216,8 +276,8 @@ object SpecialRequirements {
     @JvmStatic
     fun optionFor(req: SpecialRequirement?, summoner: CardSlot?): SpecialRequirement? {
         if (summoner == null) return if (req!!.noSummoner) req else null
-        for (level in levels(summoner)) if (req!!.fits(level)) return req
-        if (req!!.alternative != null) for (level in levels(summoner)) if (req.alternative!!.fits(level)) return req.alternative
+        for (level in levels(summoner)) if (req!!.fits(level) && req.summonerMatches(summoner)) return req
+        if (req!!.alternative != null) for (level in levels(summoner)) if (req.alternative!!.fits(level) && req.alternative.summonerMatches(summoner)) return req.alternative
         return null
     }
 
@@ -271,14 +331,14 @@ object SpecialRequirements {
         val option = optionFor(req, summoner) ?: return frozenListOf()
         if (option.levelSum > 0) {
             return player.field
-                    .filter { c -> c !== summoner && c !== card && "creature" == c.cardType && c.getLevel() != null && shares(c, card) }
+                    .filter { c -> c !== summoner && c !== card && "creature" == c.cardType && c.getLevel() != null && shares(c, card)
+                            && (option.materialFilter == null || option.materialFilter.matches(c)) }
         }
         val all: MutableList<CardSlot> = ArrayList()
         for (z in option.materialZones!!) all.addAll(zone(player, z))
         return all
                 .filter { c ->
-                    c !== summoner && c !== card && "creature" == c.cardType && c.getLevel() != null
-                            && levelMeets(c, option.materialLevel) && shares(c, card)
+                    c !== summoner && c !== card && option.materialMatches(c) && shares(c, card)
                 }
     }
 
@@ -302,7 +362,8 @@ object SpecialRequirements {
         for (z in req.summonerZones!!) all.addAll(zone(player, z))
         return all
                 .filter { c ->
-                    c !== card && "creature" == c.cardType && c.getLevel() != null && levelMeets(c, req.level) && shares(c, card)
+                    c !== card && "creature" == c.cardType && c.getLevel() != null && levels(c).any { l -> req.levelInRange(l) }
+                            && req.summonerMatches(c) && shares(c, card)
                             && specialMaterials(player, card, req, c).size >= req.materialCount
                 }
     }
@@ -330,7 +391,7 @@ object SpecialRequirements {
             return if (addsUpTo(all as List<CardSlot>, option.levelSum)) null
             else "Los niveles deben sumar exactamente " + option.levelSum + " con el invocador (suman " + sum + ")"
         }
-        return if (materials.size == option.materialCount) null
+        return if (materials.size == option.materialCount || (option.moreMaterials && materials.size > option.materialCount)) null
         else "Elige " + option.materialCount + " " + plural(option.materialCount, "material", "materiales")
     }
 
@@ -340,17 +401,17 @@ object SpecialRequirements {
         val option = optionFor(req, summoner) ?: req
         val zones = zonesText(option.materialZones)
         if (req.declaredSummoner() && summoner != null) {
-            return ("Elige " + req.materialCount + " " + plural(req.materialCount, "criatura", "criaturas") + levelText(req.materialLevel) + " de " + zones
+            return ("Elige " + req.materialCount + " " + plural(req.materialCount, "criatura", "criaturas") + req.materialLevelText() + " de " + zones
                     + ": con " + name(summoner) + " (el invocador) se convierten en materiales de " + name(card) + ", que entra en tu retaguardia.")
         }
         if (summoner == null) {
-            return ("Elige " + option.materialCount + " criaturas" + levelText(option.materialLevel) + " de " + zones + ": se convierten en materiales de "
+            return ("Elige " + option.materialCount + " criaturas" + option.materialLevelText() + " de " + zones + ": se convierten en materiales de "
                     + name(card) + ", que entra en tu retaguardia.")
         }
         return if (option.levelSum > 0)
             ("Elige los aliados que se convierten en materiales de " + name(card) + ": con " + name(summoner) + " (nivel " + summoner.getLevel()
                     + ") sus niveles deben sumar exactamente " + option.levelSum + ".")
-        else ("Elige el material: " + option.materialCount + " criatura" + levelText(option.materialLevel) + " de " + zones
+        else ("Elige el material: " + option.materialCount + " criatura" + option.materialLevelText() + " de " + zones
                 + ". Se convierte en material de " + name(card) + " junto a " + name(summoner) + ".")
     }
 
@@ -398,7 +459,8 @@ object SpecialRequirements {
      */
     @JvmStatic
     fun creaturesNeeded(card: CardSlot): Int {
-        if (card.requirement == null) return 0
+        // A Requerimiento programmed by hand says it with its condition
+        if (card.requirement == null || CardEffects.requirementOf(card) != null) return 0
         val m = Platform.regex("controlas\\s+al\\s+menos\\s+(\\d+)\\s+criaturas?").find(card.requirement!!.lowercase())
         return if (m != null) m.groupValues[1].toInt() else 0
     }
@@ -423,6 +485,7 @@ object SpecialRequirements {
         if (!canPay(room, userId, card.specialCost!! - CostModifiers.available(room, player, CostModifiers.Event.SPECIAL_SUMMON, req.kind, card, null))) return false
         if ("promotion" == req.kind && !alliesAddUp(player, req)) return false
         if (!enoughCreatures(player, card)) return false
+        if (!conditionMet(room, player, card, req)) return false
         if (req.declaredSummoner()) return !declaredSummoners(player, card, req).isEmpty()
         if (req.noSummoner) return specialMaterials(player, card, req, null).size >= req.materialCount
         return specialSummoners(player, card, req).any { s -> materialsPossible(player, card, req, s) && affordableWith(room, player, card, req, s) }
@@ -479,6 +542,7 @@ object SpecialRequirements {
                                         - CostModifiers.available(room, player, CostModifiers.Event.SPECIAL_SUMMON, req.kind, c, null)))) return@summoningAs false
                         if ("promotion" == req.kind && !alliesAddUp(player, req)) return@summoningAs false
                         if (!enoughCreatures(player, c)) return@summoningAs false
+                        if (!conditionMet(room, player, c, req)) return@summoningAs false
                         specialSummoners(player, c, req).any { s ->
                             summonerAllowed(special, s, effect)
                                     && materialsPossible(player, c, req, s)
