@@ -17,7 +17,7 @@ class CardBundleTest {
     @Test
     fun holdsEveryCardFileInOrder() {
         val files = CardBundle.files(bundle)
-        assertEquals(380, files.size)
+        assertEquals(389, files.size)
         assertEquals(files.map { it.path }.sorted(), files.map { it.path })
         assertTrue(files.all { it.path.endsWith(".json") && it.path.count { c -> c == '/' } == 1 }, "cards/<edition>/<card>.json")
     }
@@ -25,8 +25,8 @@ class CardBundleTest {
     @Test
     fun readsEveryCard() {
         val cards = CardBundle.read(bundle)
-        assertEquals(380, cards.size)
-        assertEquals(380, cards.map { it.name }.toSet().size)
+        assertEquals(389, cards.size)
+        assertEquals(389, cards.map { it.name }.toSet().size)
         assertTrue(cards.any { it.name == "falis" && it.effects().single().id == "falis:en-tributos" })
     }
 
@@ -56,6 +56,6 @@ class CardBundleTest {
         TestCards.install()
         assertEquals(CardBundle.read(bundle).first { it.name == "falis" }.effects(), CardEffects.of("falis"))
         // What the site calls (installing again once the engine runs changes nothing)
-        assertEquals(380, EngineApi.installCards(bundle))
+        assertEquals(389, EngineApi.installCards(bundle))
     }
 }
