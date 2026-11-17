@@ -73,5 +73,11 @@
       ],
       "zone" : "field"
     }
-  ]
+  ],
+  "requirement" : {
+    "ritual": {
+      "sum": true,
+      "level": 4
+    }
+  }
 }

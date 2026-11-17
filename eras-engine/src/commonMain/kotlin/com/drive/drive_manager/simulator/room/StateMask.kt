@@ -52,6 +52,7 @@ object StateMask {
         view.activatable = onlyMine(update.activatable, viewerId)
         view.specialSummonable = onlyMine(update.specialSummonable, viewerId)
         view.unplayable = onlyMine(update.unplayable, viewerId)
+        view.formationJoins = onlyMine(update.formationJoins, viewerId)
         val timeline = update.timeline
         if (timeline != null) view.timeline = timeline.mapTo(ArrayList(timeline.size)) { e -> redact(e, viewerId, hidden) }
         val eventLog = update.eventLog

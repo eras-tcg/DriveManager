@@ -107,10 +107,11 @@ sealed interface EffectStep {
     /**
      * "hasta N veces: puedes elegir 1 enemigo; reduce en X su fuerza [hasta el final del ataque]" (the same enemy can be
      * chosen again). `times` below 0: as many times as the last cost paid (`lastCount`). `until`:
-     * "attack" or "turn".
+     * "attack" or "turn". `perTriggerCard`: "por cada carta removida, reduce en X la fuerza de un enemigo": once for each card of
+     * the events that triggered the effect ([Memory.TRIGGER_CARDS]), and each time an enemy must be chosen (`times` is not read).
      */
     @JvmRecord
-    data class ReduceRepeatedly(val times: Int, val amount: Int, val until: String?) : EffectStep
+    data class ReduceRepeatedly(val times: Int, val amount: Int, val until: String?, val perTriggerCard: Boolean = false) : EffectStep
 
     /** "tantas veces como quieras: descarta N tributos [filtro]; esta carta gana [habilidad] 1 hasta el final del ataque" (it adds up). */
     @JvmRecord
@@ -174,7 +175,10 @@ sealed interface EffectStep {
     @JvmRecord
     data class IfSaved(val name: String?, val covers: Int) : EffectStep
 
-    /** "Si [condición sobre la mesa]:": the next `covers` steps only if it holds now. */
+    /**
+     * "Si [condición sobre la mesa]:": the next `covers` steps only if it holds now. A `Compare` reads its amounts as the effect does
+     * ("Luego, si enviaste 10": `LastCount`).
+     */
     @JvmRecord
     data class IfCondition(val condition: Condition?, val covers: Int) : EffectStep
 
@@ -326,4 +330,41 @@ sealed interface EffectStep {
      */
     @JvmRecord
     data class SpecialSelfDeclaredSummoner(val zones: String?) : NeedsTarget
+
+    // ------------------------------------------------------------------ Cards in testing T1, Ángeles (2026-11-13)
+
+    /**
+     * "cambia el tipo de [dicho aliado] de [X] a [Y] hasta el final del turno" (Kristia): the subject loses the type `from` and has `to`
+     * instead, until the end of the turn. A change of a printed property: lost when it leaves the field, and not handed to a creature
+     * summoned from it (Invocaciones especiales, "Resolución común").
+     */
+    @JvmRecord
+    data class ChangeClass(val from: String?, val to: String?) : EffectStep
+
+    /**
+     * "[dicho aliado] gana hasta el final del turno: «[habilidad]»" (Shilpher): the subject gains the quoted ability, written as an effect
+     * of its own (`effect`: moment, condition, steps). It is lost at the end of the turn or when the card leaves the field; an "En
+     * Destrucción" one still triggers from that destruction, as an inherited one does.
+     */
+    @JvmRecord
+    data class GrantEffect(val effect: EffectScript?) : EffectStep
+
+    /**
+     * "un aliado [filtro] invoca especialmente 1 [filtro] de tus [zona] del mismo nivel ignorando el requerimiento y coste especial"
+     * (Decepción): the ally chosen is the summoner, and the creature is summoned by its own method (designer, Ángeles 3): Materialización
+     * (the summoner, with its materials, becomes a material), Ritual (the summoner is sacrificed; its attachments pass), Evolución, Ascenso.
+     * Creatures without a special method are not offered.
+     */
+    @JvmRecord
+    data class AllySpecialSummonsSameLevel(val ally: CardFilter?, val zone: String?, val filter: CardFilter?) : EffectStep
+
+    // ------------------------------------------------------------------ Cards in testing T1, Paladines (Enlace, 2026-11-13)
+
+    /**
+     * "intercambia de posición esta carta con otro aliado en la misma formación" (`withSelf`) and "cambia de posición dos aliados en la
+     * misma formación": the two swap their places in the Línea frontal, their formations as they were (Formations.swap). The two are saved
+     * as "swapped" ("ambos aliados ganan …"); `lastDone` when they were swapped.
+     */
+    @JvmRecord
+    data class SwapInFormation(val withSelf: Boolean) : NeedsTarget
 }

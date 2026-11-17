@@ -39,17 +39,22 @@ public class DriveParser {
 
     // Pattern: {edition}-{color}{number}-{name}.jpg  (dash separator = sRGB web image)
     // Files using a space separator are CMYK print files and are intentionally ignored.
-    // edition = ST\d+ | E\d+ | E\d+_\d+  (underscore used instead of dot to avoid filesystem ambiguity)
+    // edition = ST\d+ | E\d+ | E\d+_\d+ | T\d+ (a testing edition, TestCards)  (underscore used instead of dot to avoid filesystem ambiguity)
     /** "E2-B05 Roto-G0.psd": the code, a space and the printed name. */
     private static final Pattern REAL_NAME_PATTERN = Pattern.compile(
-            "^((?:ST|E)\\d+(?:_\\d+)?-[BGPRW]\\d+) (.+)\\.(?:psd|jpe?g)$", Pattern.CASE_INSENSITIVE);
+            "^((?:ST|E|T)\\d+(?:_\\d+)?-[BGPRW]\\d+) (.+)\\.(?:psd|jpe?g)$", Pattern.CASE_INSENSITIVE);
     /** The code at the start of an exported file name ("E2-B05" of "E2-B05-Roto-G0.jpg"). */
-    private static final Pattern FILE_CODE_PATTERN = Pattern.compile("^((?:ST|E)\\d+(?:_\\d+)?-[BGPRW]\\d+)-", Pattern.CASE_INSENSITIVE);
+    private static final Pattern FILE_CODE_PATTERN = Pattern.compile("^((?:ST|E|T)\\d+(?:_\\d+)?-[BGPRW]\\d+)-", Pattern.CASE_INSENSITIVE);
 
     private static final Pattern FILE_NAME_PATTERN = Pattern.compile(
-            "^((?:ST|E)\\d+(?:_\\d+)?)-([BGPRW])(\\d+)-(.+)\\.jpe?g$",
+            "^((?:ST|E|T)\\d+(?:_\\d+)?)-([BGPRW])(\\d+)-(.+)\\.jpe?g$",
             Pattern.CASE_INSENSITIVE
     );
+
+    /** An edition's folder: "E1", "E2"… or a testing edition, "T1" ({@link TestCards}), laid out the same way. */
+    static boolean isEditionFolder(String name) {
+        return name != null && (name.startsWith(EDITION_PREFIX) || TestCards.isTestEdition(name));
+    }
 
     private final DriveClientFactory driveClientFactory;
     private final String baseFolderId;
@@ -140,7 +145,7 @@ public class DriveParser {
                 staged.addAll(stageStructures(drive, eds, cols, now));
             }
 
-            boolean processEditions = noEditionFilter || eds.stream().anyMatch(e -> e.startsWith(EDITION_PREFIX)) || !subs.isEmpty();
+            boolean processEditions = noEditionFilter || eds.stream().anyMatch(DriveParser::isEditionFolder) || !subs.isEmpty();
             if (processEditions) {
                 staged.addAll(stageEditions(drive, eds, subs, cols, now));
             }
@@ -203,11 +208,11 @@ public class DriveParser {
                                              List<String> subEditionFilter, List<String> colorFilter,
                                              Instant now) throws IOException {
         List<FolderInfo> rootFolders = listChildFolders(drive, baseFolderId);
-        rootFolders.removeIf(f -> !f.name.startsWith(EDITION_PREFIX));
+        rootFolders.removeIf(f -> !isEditionFolder(f.name));
 
         if (!editionFilter.isEmpty()) {
             Set<String> eFilter = editionFilter.stream()
-                    .filter(e -> e.startsWith(EDITION_PREFIX))
+                    .filter(DriveParser::isEditionFolder)
                     .collect(Collectors.toSet());
             rootFolders.removeIf(f -> !eFilter.contains(f.name));
         }
@@ -336,7 +341,7 @@ public class DriveParser {
                                                                                 List<String> colorFilter)
             throws IOException {
         Set<String> eFilter = editionFilter.stream()
-                .filter(e -> e.startsWith(EDITION_PREFIX))
+                .filter(DriveParser::isEditionFolder)
                 .collect(Collectors.toSet());
 
         if (!editionFilter.isEmpty() && eFilter.isEmpty()) {
@@ -344,7 +349,7 @@ public class DriveParser {
         }
 
         List<FolderInfo> rootFolders = listChildFolders(drive, rootFolderId);
-        rootFolders.removeIf(folder -> !folder.name.startsWith(EDITION_PREFIX));
+        rootFolders.removeIf(folder -> !isEditionFolder(folder.name));
         if (!eFilter.isEmpty()) {
             rootFolders.removeIf(folder -> !eFilter.contains(folder.name));
         }

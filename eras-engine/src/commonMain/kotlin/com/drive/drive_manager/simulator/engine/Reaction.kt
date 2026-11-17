@@ -19,6 +19,13 @@ sealed interface Reaction {
     /** "cuando fuera a ser ascendida: puede declarar ataque". */
     data object AttacksBeforeAscended : Reaction
 
+    /**
+     * "cuando fueras a invocar esta carta [en turno oponente]: puedes utilizar un enemigo considerándolo [tipo] para el requerimiento" (a Reactivo–Modificador
+     * of its Ritual): an enemy of the opponent's Línea frontal can fill a part of that type of the Requerimiento ([RitualParts]).
+     */
+    @JvmRecord
+    data class EnemyAsTypeForRequirement(val asType: String?, val opponentTurn: Boolean) : Reaction
+
     /** "cuando fuera a ser ascendida: gana [habilidad]". */
     @JvmRecord
     data class GainBeforeAscended(val keyword: String?) : Reaction

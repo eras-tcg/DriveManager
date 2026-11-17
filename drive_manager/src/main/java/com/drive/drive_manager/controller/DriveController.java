@@ -5,6 +5,8 @@ import com.drive.drive_manager.service.DriveParser;
 import com.drive.drive_manager.service.DriveParser.CardsResponse;
 import com.drive.drive_manager.service.DriveParser.SyncResult;
 import com.drive.drive_manager.service.R2Service;
+import com.drive.drive_manager.service.TestCards;
+import org.springframework.security.core.Authentication;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.mongodb.core.MongoTemplate;
@@ -82,11 +84,14 @@ public class DriveController {
             @RequestParam(required = false) String edition,
             @RequestParam(required = false) String color,
             @RequestParam(required = false) String subEdition,
-            @RequestParam(required = false) String name) {
+            @RequestParam(required = false) String name,
+            Authentication auth) {
 
         String baseUrl = r2PublicUrl.stripTrailing();
+        boolean testCards = TestCards.canSee(auth);
 
         List<Map<String, Object>> result = driveCardRepository.findAll().stream()
+                .filter(c -> testCards || !TestCards.isTestEdition(c.getEdition()))
                 .filter(c -> edition == null || edition.equalsIgnoreCase(c.getEdition()))
                 .filter(c -> color == null || color.equalsIgnoreCase(c.getColorIdentity()))
                 .filter(c -> subEdition == null || subEdition.equalsIgnoreCase(c.getSubEdition()))
@@ -169,8 +174,9 @@ public class DriveController {
      * GET /api/drive/cards/db/{id}/image
      */
     @GetMapping("/cards/db/{id}/image")
-    public ResponseEntity<byte[]> proxyImage(@PathVariable String id) {
-        if (!driveCardRepository.existsById(id))
+    public ResponseEntity<byte[]> proxyImage(@PathVariable String id, Authentication auth) {
+        DriveCard card = driveCardRepository.findById(id).orElse(null);
+        if (card == null || TestCards.hidden(card.getEdition(), auth))
             return ResponseEntity.notFound().build();
         try {
             byte[] data = r2Service.getImage(id);
@@ -193,9 +199,16 @@ public class DriveController {
      */
     @GetMapping("/cards")
     public ResponseEntity<CardsResponse> readCards(
-            @RequestParam(required = false) String folderUrl) {
+            @RequestParam(required = false) String folderUrl,
+            Authentication auth) {
         try {
             CardsResponse response = driveParser.listCards(folderUrl);
+            if (!TestCards.canSee(auth) && response.editions() != null) {
+                // The testing editions' folders are listed only to who may see them
+                Map<String, Map<String, Map<String, List<DriveParser.ImageDoc>>>> editions = new java.util.LinkedHashMap<>(response.editions());
+                editions.keySet().removeIf(TestCards::isTestEdition);
+                response = new CardsResponse(response.structures(), editions);
+            }
             return ResponseEntity.ok(response);
         } catch (IllegalArgumentException e) {
             log.error("GET /api/drive/cards bad request", e);

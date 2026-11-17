@@ -1,0 +1,24 @@
+{
+  "name": "johan vex",
+  "requirement": {
+    "summoner": {
+      "level": 2
+    },
+    "condition": {
+      "type": "Compare",
+      "left": {
+        "type": "OnField",
+        "filter": {
+          "cardType": "creature",
+          "frontOnly": true
+        }
+      },
+      "op": "AT_LEAST",
+      "right": {
+        "type": "Fixed",
+        "value": 2
+      }
+    },
+    "conditionText": "controlar al menos 2 criaturas en tu línea frontal"
+  }
+}

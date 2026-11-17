@@ -22,13 +22,10 @@ import com.drive.drive_manager.simulator.room.GameRoom
 import com.drive.drive_manager.simulator.room.PlayerState
 
 /** Taking from the cards looked at, and revealing. Each step: whether it can be done, carrying it out, and applying the player's choice. */
-object LookSteps {
+object LookSteps : StepFamily {
 
-    @JvmStatic
-    fun possibleStep(room: GameRoom, effect: PendingEffect, step: EffectStep): Boolean {
+    override fun possibleStep(room: GameRoom, effect: PendingEffect, step: EffectStep): Boolean {
         val player = room.getPlayer(effect.controllerId)!!
-        @Suppress("UNUSED_VARIABLE")
-        val onField = find(player.field, effect.sourceInstanceId)
         return when (step) {
             is RevealFromHand -> assignable(player.hand.filter { c -> c.instanceId!! != effect.sourceInstanceId && withAlly(player, step, c) },
                 step.filters)
@@ -41,8 +38,7 @@ object LookSteps {
         return !step.withAllyOfLevel || EffectEngine.allies(player).any { a -> a.getLevel() != null && a.getLevel() == card.getLevel() }
     }
 
-    @JvmStatic
-    fun runStep(room: GameRoom, effect: PendingEffect, step: EffectStep): Boolean {
+    override fun runStep(room: GameRoom, effect: PendingEffect, step: EffectStep): Boolean {
         val player = room.getPlayer(effect.controllerId)!!
         val userId = player.userId
 
@@ -52,7 +48,7 @@ object LookSteps {
                 SearchHope.apply(room, effect, player, { c -> step.filters!!.any { f -> f.matches(c) } }, step.filters!!.size)
                 val valid = effect.looked.filter { c -> step.filters!!.any { f -> f.matches(c) } }.map { it.instanceId }
                 val prompt = prompt(room, effect, Prompt.Kind.TAKE_REVEALED_REST_BOTTOM, "Toma " +
-                        step.filters!!.joinToString(" y ") { f -> "hasta 1 " + f.describe() } + " para tu mano. Ordena el resto: irá al fondo de tu mazo.")
+                        step.filters!!.joinToString(" y ") { f -> "hasta 1 " + f.describe() } + " para tu mano.")
                 prompt.cards = ArrayList(effect.looked)
                 prompt.validIds = ArrayList(valid)
                 prompt.min = 0
@@ -68,7 +64,7 @@ object LookSteps {
                 SearchHope.apply(room, effect, player, { c -> filter.matches(c) }, step.max)
                 val valid = effect.looked.filter { c -> filter.matches(c) }.map { it.instanceId }
                 val prompt = prompt(room, effect, Prompt.Kind.TAKE_REVEALED_REST_BOTTOM,
-                        "Toma hasta " + step.max + " cartas " + step.filter!!.describe() + " con distinto nivel para tu mano. Ordena el resto: irá al fondo de tu mazo.")
+                        "Toma hasta " + step.max + " cartas " + step.filter!!.describe() + " con distinto nivel para tu mano.")
                 prompt.cards = ArrayList(effect.looked)
                 prompt.validIds = ArrayList(valid)
                 prompt.min = 0
@@ -116,10 +112,9 @@ object LookSteps {
         }
     }
 
-    @JvmStatic
-    fun applyStep(
+    override fun applyStep(
         room: GameRoom, effect: PendingEffect, step: EffectStep, player: PlayerState, picks: List<String>,
-        order: List<String>?, repeat: BooleanArray?,
+        order: List<String>?, repeat: BooleanArray,
     ): String? {
         val userId = player.userId
         when (step) {

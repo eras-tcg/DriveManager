@@ -1,0 +1,97 @@
+{
+  "name" : "salomón el paladín vanidoso",
+  "effects" : [
+    {
+      "id" : "salomon:al-atacar",
+      "moment" : "ON_ATTACK",
+      "label" : "Al Atacar",
+      "text" : "Puedes enviar 5 [paladines] de tu descarte al fondo de tu mazo; esta carta gana Letalidad 1 hasta el final del ataque.",
+      "cost" : [
+        {
+          "type" : "Do",
+          "action" : {
+            "type" : "Move",
+            "cards" : {
+              "zones" : "discardPile",
+              "owner" : "YOU",
+              "filter" : {
+                "classes" : [
+                  "paladín"
+                ]
+              },
+              "min" : {
+                "type" : "Fixed",
+                "value" : 5
+              },
+              "max" : {
+                "type" : "Fixed",
+                "value" : 5
+              },
+              "self" : "ANY",
+              "mode" : "CHOOSE"
+            },
+            "to" : "deckBottom"
+          }
+        }
+      ],
+      "steps" : [
+        {
+          "type" : "Do",
+          "action" : {
+            "type" : "Modify",
+            "cards" : {
+              "zones" : "subjectOrSelf",
+              "owner" : "YOU",
+              "filter" : {},
+              "min" : {
+                "type" : "Fixed"
+              },
+              "max" : {
+                "type" : "Fixed",
+                "value" : 2147483647
+              },
+              "self" : "ANY",
+              "mode" : "ALL"
+            },
+            "keyword" : "Letalidad 1",
+            "until" : "ATTACK"
+          }
+        }
+      ],
+      "sourceZone" : "field",
+      "limit" : "NONE"
+    }
+  ],
+  "formation" : {
+    "continuous" : [
+      {
+        "label" : "Turno Aliado",
+        "text" : "Esta carta y los aliados [paladín] adyacentes en la formación ganan fuerza 3.",
+        "allyTurn" : true,
+        "strength" : 3,
+        "zone" : "field"
+      },
+      {
+        "label" : "Turno Aliado",
+        "text" : "Esta carta y los aliados [paladín] adyacentes en la formación ganan fuerza 3.",
+        "allyTurn" : true,
+        "strength" : 3,
+        "zone" : "field",
+        "targets" : {
+          "cardType" : "creature",
+          "classes" : [
+            "paladín"
+          ]
+        },
+        "formationNeighbours" : true
+      }
+    ]
+  },
+  "requirement" : {
+    "summoner": {
+      "level": 4
+    },
+    "formationSize": 3,
+    "formationAtLeast": true
+  }
+}

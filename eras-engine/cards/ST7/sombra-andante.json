@@ -1,0 +1,85 @@
+{
+  "name": "sombra andante",
+  "effects": [
+    {
+      "id": "sombra-andante:en-destruccion",
+      "moment": "ON_DESTROY",
+      "mandatory": true,
+      "label": "En Destrucción por efecto o enfrentamiento",
+      "text": "Elige 1 enemigo nivel 2 o menor; destrúyelo.",
+      "cost": [
+        {
+          "type": "Do",
+          "action": {
+            "type": "Select",
+            "selector": {
+              "zones": "frontLine",
+              "owner": "OPPONENT",
+              "filter": {
+                "cardType": "creature",
+                "maxLevel": 2
+              },
+              "min": {
+                "type": "Fixed",
+                "value": 1
+              },
+              "max": {
+                "type": "Fixed",
+                "value": 1
+              },
+              "self": "ANY",
+              "mode": "CHOOSE"
+            },
+            "target": true
+          }
+        }
+      ],
+      "steps": [
+        {
+          "type": "Do",
+          "action": {
+            "type": "Destroy",
+            "cards": {
+              "zones": "saved:targets",
+              "owner": "YOU",
+              "filter": {},
+              "min": {
+                "type": "Fixed"
+              },
+              "max": {
+                "type": "Fixed",
+                "value": 2147483647
+              },
+              "self": "ANY",
+              "mode": "ALL"
+            }
+          }
+        }
+      ],
+      "condition": {
+        "type": "Any",
+        "any": [
+          {
+            "type": "ByEffect",
+            "by": "ANY"
+          },
+          {
+            "type": "Happened",
+            "actor": "ANY",
+            "owner": "ANY",
+            "data": [
+              "cause=BATTLE"
+            ]
+          }
+        ]
+      },
+      "sourceZone": "field",
+      "limit": "NONE"
+    }
+  ],
+  "requirement": {
+    "ritual": {
+      "level": 1
+    }
+  }
+}

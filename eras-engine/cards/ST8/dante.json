@@ -1,0 +1,8 @@
+{
+  "name": "dante",
+  "requirement": {
+    "summoner": {
+      "level": 3
+    }
+  }
+}

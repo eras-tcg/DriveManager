@@ -181,6 +181,7 @@ class E12CardsTest extends CardBatchSupport {
         c.setSpecialSummonKind("materialization");
         c.setSpecialCost(2);
         c.setRequirement("criatura nivel 2 o 3 + material nivel 2 en campo o mano.");
+        Req.program(c);
         return c;
     }
 
@@ -436,6 +437,27 @@ class E12CardsTest extends CardBatchSupport {
     }
 
     @Test
+    void trampaVegetalChoosesWhichOfTheEnemiesThatEnteredTogetherToExhaust() {
+        CardSlot trampa = utility("tv", "Trampa Vegetal", 1, "G");
+        play(trampa);
+        room.setCurrentTurnUserId("guest");
+        CardSlot first = onField(guest, card("e1", "Enemigo Uno", 1, 1, "R"), BACK);
+        CardSlot second = onField(guest, card("e2", "Enemigo Dos", 1, 1, "R"), BACK);
+        first.setY(25.0);
+        second.setY(25.0);
+        EffectEngine.record(room, GameEvent.MOVE, "guest", first, null, "frontLine", null, null, "sube");
+        EffectEngine.record(room, GameEvent.MOVE, "guest", second, null, "frontLine", null, null, "sube");
+        Chain.advance(room);
+        // A lone mandatory effect may ask to be confirmed first
+        for (int i = 0; i < 3 && room.getPrompt() != null && !room.getPrompt().getValidIds().contains("e2"); i++) answer(room.getPrompt().getValidIds().get(0));
+        assertThat(room.getPrompt().getValidIds()).containsExactlyInAnyOrder("e1", "e2");
+        answer("e2");
+        assertThat(second.isTapped()).isTrue();
+        assertThat(first.isTapped()).isFalse();
+        assertThat(host.getDiscardPile()).contains(trampa);
+    }
+
+    @Test
     void trampaVegetalReturnsToTheHandAtTheEndOfTheOpponentsTurn() {
         CardSlot trampa = onField(host, utility("tv", "Trampa Vegetal", 1, "G"), BACK);
         room.setCurrentTurnUserId("guest");
@@ -451,6 +473,7 @@ class E12CardsTest extends CardBatchSupport {
         evo.setSpecialSummonKind("evolution");
         evo.setSpecialCost(2);
         evo.setRequirement("criatura nivel 2.");
+        Req.program(evo);
         host.getHand().add(evo);
         int before = gems();
         play(utility("pa", "Poder Antiguo", 1, "G"));
@@ -568,6 +591,7 @@ class E12CardsTest extends CardBatchSupport {
         ritual.setSpecialSummonKind("ritual");
         ritual.setSpecialCost(2);
         ritual.setRequirement("criatura nivel 1.");
+        Req.program(ritual);
         host.getTributeZone().add(ritual);
         for (int i = 0; i < 10; i++) host.getTributeZone().add(card("t" + i, "Tributo " + i, 1, 1, "P"));
         int before = gems();
@@ -695,6 +719,7 @@ class E12CardsTest extends CardBatchSupport {
         forjado.setSpecialSummonKind("promotion");
         forjado.setSpecialCost(1);
         forjado.setRequirement("criatura nivel 1, mientras no controlas otros aliados nivel 1.");
+        Req.program(forjado);
         host.getHand().add(forjado);
         assertThat(SpecialSummons.specialByPlayer(room, "host", "gf", "s1")).isNotNull();
         host.getField().remove(other);
@@ -735,6 +760,7 @@ class E12CardsTest extends CardBatchSupport {
         ascended.setSpecialSummonKind("promotion");
         ascended.setSpecialCost(1);
         ascended.setRequirement("criatura nivel 3.");
+        Req.program(ascended);
         host.getHand().add(ascended);
         assertThat(SpecialSummons.specialByPlayer(room, "host", "as", "ed")).isNull();
         // A mandatory Reacción shown to be activated before the Ascenso
@@ -894,6 +920,7 @@ class E12CardsTest extends CardBatchSupport {
         c.setSpecialSummonKind("ritual");
         c.setSpecialCost(specialCost);
         c.setRequirement(requirement);
+        Req.program(c);
         host.getHand().add(c);
         return c;
     }

@@ -56,5 +56,25 @@
     "limit" : "ONCE_PER_TURN_BETWEEN_COPIES",
     "cost" : "TRIBUTE_ONE_FROM_HAND",
     "resourceFilter" : { }
-  } ]
+  } ],
+  "requirement" : {
+    "summoner": {
+      "level": 1
+    },
+    "condition": {
+      "type": "Compare",
+      "left": {
+        "type": "OnField",
+        "filter": {
+          "cardType": "creature"
+        }
+      },
+      "op": "AT_LEAST",
+      "right": {
+        "type": "Fixed",
+        "value": 2
+      }
+    },
+    "conditionText": "controlar 2 o más criaturas"
+  }
 }

@@ -8,5 +8,19 @@
     "limit" : "NONE",
     "cost" : "TRIBUTE_TWO_MATERIALS",
     "resourceFilter" : { }
-  } ]
+  } ],
+  "requirement" : {
+    "summoner": {
+      "level": 2,
+      "maxLevel": 3
+    },
+    "materials": {
+      "count": 1,
+      "level": 2,
+      "zones": [
+        "hand",
+        "field"
+      ]
+    }
+  }
 }

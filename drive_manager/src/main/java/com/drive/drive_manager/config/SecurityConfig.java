@@ -45,9 +45,16 @@ public class SecurityConfig {
                 .cors(Customizer.withDefaults())
                 .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
+                        // A request that failed is forwarded to the error page without its session: it must answer
+                        // the real error (500, 404), never a 401 that signs the player out
+                        .dispatcherTypeMatchers(jakarta.servlet.DispatcherType.ERROR).permitAll()
                         // The whole site needs a session: only the deploy health check, the Drive webhook
                         // (validated by its channel token), the idle check and the simulator socket are open.
                         .requestMatchers(HttpMethod.GET, "/api/drive/health").permitAll()
+                        // The finished card drawn by the editor: a card image, as public as the ones in R2
+                        .requestMatchers(HttpMethod.GET, "/api/cards/*/render").permitAll()
+                        // An edition's cover kept in the local folder (local development): as public as one in R2
+                        .requestMatchers(HttpMethod.GET, "/api/drive/editions/image/*").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/drive/webhook").permitAll()
                         // A server that sleeps asks it to know whether anybody is still using the site
                         .requestMatchers(HttpMethod.GET, "/api/system/activity").permitAll()

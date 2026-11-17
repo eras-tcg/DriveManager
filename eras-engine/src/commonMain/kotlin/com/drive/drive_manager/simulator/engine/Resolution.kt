@@ -21,16 +21,15 @@ import com.drive.drive_manager.simulator.room.PlayerState
 
 /**
  * Resolution (rule 11.6): runs the steps of an effect. A step is a basic action ([Do], run by its handler) or a step of a family
- * ([FlowSteps], [LookSteps], [CombatSteps], [AllySteps], [SummonSteps], [TableSteps]), with what it
+ * ([StepFamily]: [FlowSteps], [LookSteps], [CombatSteps], [AllySteps], [SummonSteps], [TableSteps]), with what it
  * needs in one place. A new step is a record in [EffectStep], its cases in a family and its line in [FAMILY].
  */
 object Resolution {
 
-    private enum class Family { FLOW, LOOK, COMBAT, ALLY, SUMMON, TABLE }
+    /** The family of each step that is not a basic action: what runs it. */
+    private val FAMILY: MutableMap<KClass<*>, StepFamily> = HashMap()
 
-    private val FAMILY: MutableMap<KClass<*>, Family> = HashMap()
-
-    private fun family(family: Family, vararg steps: KClass<*>) {
+    private fun family(family: StepFamily, vararg steps: KClass<*>) {
         for (step in steps) FAMILY[step] = family
     }
 
@@ -40,13 +39,15 @@ object Resolution {
     }
 
     init {
-        family(Family.FLOW, EndYourTurn::class, IfChosenGone::class, IfSaved::class, IfCondition::class, IfDone::class, IfNotDone::class, IfPossible::class, IfTributed::class, KeepOnField::class, MayDo::class, SubjectFromTrigger::class, SubjectIsThisCard::class)
-        family(Family.LOOK, RevealFromHand::class, RevealOpponentHandSendOneToBottom::class, TakeFromLookedDistinctLevels::class, TakeFromLookedEachRestToBottom::class, TakeFromLookedLikeSubject::class)
-        family(Family.COMBAT, AlliesGain::class, BounceChosen::class, ChooseEnemiesLevelSum::class, ChooseWeakestEnemy::class, DeclareBlockSelf::class, ExtraCombatHitThenEndTurn::class, ExtraHit::class, GroupUp::class, NoUntapChosen::class, PickAllyUpToSacrificedLevel::class, ReduceRepeatedly::class, ReturnSubjectAtAttackEnd::class, SkipBlockStep::class, TributesToDeckBottomForKeyword::class)
-        family(Family.ALLY, ActivateSubjectSummonEffect::class, ActivateTributedSummonEffect::class, AddResourceToHigherAlly::class, AttachLowerFromTributes::class, AttachSelfAsResourceToAlly::class, AttachSubjectToHigherAlly::class, AttachSubjectToSummoned::class, MaterialOfExhaustedAllyToBack::class, PickAllyWithHigherAlly::class, PickAllyWithMaterials::class, PlaceFromHandUntilTurnEnd::class, ReturnAllyOfSummonedLevel::class, SacrificeAlly::class, TributeAlliesLevelSum::class, TributeAllyMaterial::class, TributeAllyMaterialWhere::class, TributeAllyResources::class)
-        family(Family.SUMMON, ChooseOpponentTribute::class, MaterializeSelfOnTriggerAlly::class, PlaceChosenTributeAndSelf::class, SpecialSelfDeclaredSummoner::class, SummonFreeLevelSum::class, SummonLikeSubject::class)
-        family(Family.TABLE, DestroyFaceUpLife::class, DestroyTopLife::class, EachPlayerDiscards::class, EachPlayerKeepsOneInFrontLine::class, EachPlayerLowersMarker::class, GainGemsPerOwnSacrificed::class, HandsToBottomDrawOpponentLives::class, LivesFaceDown::class, OpponentGainsGemsAsCounter::class, OpponentMovesOneToFront::class, ReduceOpponentLivesBy::class)
+        family(FlowSteps, EndYourTurn::class, IfChosenGone::class, IfSaved::class, IfCondition::class, IfDone::class, IfNotDone::class, IfPossible::class, IfTributed::class, KeepOnField::class, MayDo::class, SubjectFromTrigger::class, SubjectIsThisCard::class)
+        family(LookSteps, RevealFromHand::class, RevealOpponentHandSendOneToBottom::class, TakeFromLookedDistinctLevels::class, TakeFromLookedEachRestToBottom::class, TakeFromLookedLikeSubject::class)
+        family(CombatSteps, AlliesGain::class, BounceChosen::class, ChooseEnemiesLevelSum::class, ChooseWeakestEnemy::class, DeclareBlockSelf::class, ExtraCombatHitThenEndTurn::class, ExtraHit::class, GroupUp::class, NoUntapChosen::class, PickAllyUpToSacrificedLevel::class, ReduceRepeatedly::class, ReturnSubjectAtAttackEnd::class, SkipBlockStep::class, TributesToDeckBottomForKeyword::class)
+        family(AllySteps, ActivateSubjectSummonEffect::class, ChangeClass::class, GrantEffect::class, ActivateTributedSummonEffect::class, AddResourceToHigherAlly::class, AttachLowerFromTributes::class, AttachSelfAsResourceToAlly::class, AttachSubjectToHigherAlly::class, AttachSubjectToSummoned::class, MaterialOfExhaustedAllyToBack::class, PickAllyWithHigherAlly::class, PickAllyWithMaterials::class, PlaceFromHandUntilTurnEnd::class, ReturnAllyOfSummonedLevel::class, SacrificeAlly::class, TributeAlliesLevelSum::class, TributeAllyMaterial::class, TributeAllyMaterialWhere::class, TributeAllyResources::class)
+        family(SummonSteps, AllySpecialSummonsSameLevel::class, ChooseOpponentTribute::class, MaterializeSelfOnTriggerAlly::class, PlaceChosenTributeAndSelf::class, SpecialSelfDeclaredSummoner::class, SummonFreeLevelSum::class, SummonLikeSubject::class)
+        family(TableSteps, SwapInFormation::class, DestroyFaceUpLife::class, DestroyTopLife::class, EachPlayerDiscards::class, EachPlayerKeepsOneInFrontLine::class, EachPlayerLowersMarker::class, GainGemsPerOwnSacrificed::class, HandsToBottomDrawOpponentLives::class, LivesFaceDown::class, OpponentGainsGemsAsCounter::class, OpponentMovesOneToFront::class, ReduceOpponentLivesBy::class)
     }
+
+    private fun familyOf(step: EffectStep): StepFamily = FAMILY[step::class]!!
 
     // ------------------------------------------------------------------ Resolution
 
@@ -116,8 +117,15 @@ object Resolution {
     /** Whether a step can do anything now (used to offer optional effects and "puedes" choices). */
     @JvmStatic
     fun possible(room: GameRoom, effect: PendingEffect, step: EffectStep): Boolean {
-        return if (effect.ritualTargetId != null) summoningAs(looker(room, effect)) { possibleAs(room, effect, step) }
-        else lookingAs(looker(room, effect)) { possibleAs(room, effect, step) }
+        return asLooker(room, effect) { possibleAs(room, effect, step) }
+    }
+
+    /**
+     * Runs `body` with the table read as the card this effect works for sees it ([looker]): the creature it is special summoning
+     * ([summoningAs]), else its own card ([lookingAs]).
+     */
+    private fun <T> asLooker(room: GameRoom, effect: PendingEffect, body: () -> T): T {
+        return if (effect.ritualTargetId != null) summoningAs(looker(room, effect), body) else lookingAs(looker(room, effect), body)
     }
 
     /** The card whose rules read the table while this effect works: the creature it is special summoning, or its own card. */
@@ -131,35 +139,20 @@ object Resolution {
     fun possibleAs(room: GameRoom, effect: PendingEffect, step: EffectStep): Boolean {
         if (room.getPlayer(effect.controllerId) == null) return false
         if (step is Do) return Actions.possible(EngineContext(room, effect), step.action!!)
-        return when (FAMILY[step::class]!!) {
-            Family.FLOW -> FlowSteps.possibleStep(room, effect, step)
-            Family.LOOK -> LookSteps.possibleStep(room, effect, step)
-            Family.COMBAT -> CombatSteps.possibleStep(room, effect, step)
-            Family.ALLY -> AllySteps.possibleStep(room, effect, step)
-            Family.SUMMON -> SummonSteps.possibleStep(room, effect, step)
-            Family.TABLE -> TableSteps.possibleStep(room, effect, step)
-        }
+        return familyOf(step).possibleStep(room, effect, step)
     }
 
     /** Runs one step. Returns true when it is now waiting for the player's choice. */
     @JvmStatic
     fun run(room: GameRoom, effect: PendingEffect, step: EffectStep): Boolean {
-        return if (effect.ritualTargetId != null) summoningAs(looker(room, effect)) { runAs(room, effect, step) }
-        else lookingAs(looker(room, effect)) { runAs(room, effect, step) }
+        return asLooker(room, effect) { runAs(room, effect, step) }
     }
 
     @JvmStatic
     fun runAs(room: GameRoom, effect: PendingEffect, step: EffectStep): Boolean {
         if (room.getPlayer(effect.controllerId) == null) return false
         if (step is Do) return Actions.run(EngineContext(room, effect), step.action!!)
-        return when (FAMILY[step::class]!!) {
-            Family.FLOW -> FlowSteps.runStep(room, effect, step)
-            Family.LOOK -> LookSteps.runStep(room, effect, step)
-            Family.COMBAT -> CombatSteps.runStep(room, effect, step)
-            Family.ALLY -> AllySteps.runStep(room, effect, step)
-            Family.SUMMON -> SummonSteps.runStep(room, effect, step)
-            Family.TABLE -> TableSteps.runStep(room, effect, step)
-        }
+        return familyOf(step).runStep(room, effect, step)
     }
 
     /** Carries out the step with the player's choice. Sets `repeat[0]` when the step asks again. */
@@ -168,8 +161,7 @@ object Resolution {
         room: GameRoom, effect: PendingEffect, step: EffectStep, player: PlayerState, picks: List<String>,
         order: List<String>?, repeat: BooleanArray,
     ): String? {
-        return if (effect.ritualTargetId != null) summoningAs(looker(room, effect)) { applyAs(room, effect, step, player, picks, order, repeat) }
-        else lookingAs(looker(room, effect)) { applyAs(room, effect, step, player, picks, order, repeat) }
+        return asLooker(room, effect) { applyAs(room, effect, step, player, picks, order, repeat) }
     }
 
     @JvmStatic
@@ -178,13 +170,6 @@ object Resolution {
         order: List<String>?, repeat: BooleanArray,
     ): String? {
         if (step is Do) return Actions.answer(EngineContext(room, effect, repeat), step.action!!, ActionHandler.Answer(picks, order))
-        return when (FAMILY[step::class]!!) {
-            Family.FLOW -> FlowSteps.applyStep(room, effect, step, player, picks, order, repeat)
-            Family.LOOK -> LookSteps.applyStep(room, effect, step, player, picks, order, repeat)
-            Family.COMBAT -> CombatSteps.applyStep(room, effect, step, player, picks, order, repeat)
-            Family.ALLY -> AllySteps.applyStep(room, effect, step, player, picks, order, repeat)
-            Family.SUMMON -> SummonSteps.applyStep(room, effect, step, player, picks, order, repeat)
-            Family.TABLE -> TableSteps.applyStep(room, effect, step, player, picks, order, repeat)
-        }
+        return familyOf(step).applyStep(room, effect, step, player, picks, order, repeat)
     }
 }

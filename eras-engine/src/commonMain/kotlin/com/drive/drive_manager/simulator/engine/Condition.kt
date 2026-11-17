@@ -145,7 +145,8 @@ sealed interface Condition {
      * @param from     the zone it left; null: not asked
      * @param to       the zone it reached; null: not asked
      * @param byEffect an effect did it
-     * @param data     what the event says, as "key=value"; the value "$this" is this card and "$you" is its controller
+     * @param data     what the event says, as "key=value"; the value "$this" is this card, "$you" is its controller and "*" any value
+     *                 (the event says it at all: "targetId=*", an attack on an enemy, not on the rival)
      */
     @JvmRecord
     data class Happened(
@@ -162,6 +163,10 @@ sealed interface Condition {
                 val at = pair.indexOf('=')
                 val value = if (event.data == null) null else event.data!![pair.substring(0, at)]
                 var wanted: String? = pair.substring(at + 1)
+                if (wanted == "*") {
+                    if (value == null) return false
+                    continue
+                }
                 if (wanted == "\$this") wanted = source!!.instanceId
                 if (wanted == "\$you") wanted = controller
                 if (value == null || wanted!! != value.toString()) return false
@@ -352,6 +357,14 @@ sealed interface Condition {
             if (other == null) return false
             val card = EffectEngine.findInRoom(room, other)
             return card != null && enemy!!.matches(card)
+        }
+    }
+
+    /** "esta carta Verde o [paladín] …": the card is of that kind now (a state: no event needed). */
+    @JvmRecord
+    data class ThisMatches(val filter: CardFilter?) : Condition {
+        override fun test(room: GameRoom, event: GameEvent?, source: CardSlot?, controller: String?): Boolean {
+            return source != null && filter!!.matches(source)
         }
     }
 
@@ -758,8 +771,7 @@ sealed interface Condition {
             return GameEvent.DESTROY == event.type || GameEvent.SACRIFICE == event.type
         }
 
-        private fun ownerOf(event: GameEvent): String? {
-            return if (event.data == null) null else event.data!!["ownerId"] as String?
-        }
+        /** The owner of the event's card, when the event says it ([EffectEngine.ownerOf]). */
+        private fun ownerOf(event: GameEvent): String? = EffectEngine.ownerOf(event)
     }
 }

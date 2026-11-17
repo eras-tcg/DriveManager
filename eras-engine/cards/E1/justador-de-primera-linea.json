@@ -1,0 +1,9 @@
+{
+  "name": "justador de primera línea",
+  "requirement": {
+    "summoner": {
+      "level": 3
+    },
+    "alliesSum": 5
+  }
+}

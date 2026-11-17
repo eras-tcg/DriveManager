@@ -66,5 +66,11 @@
       "allyTurn" : true,
       "limit" : "NONE"
     }
-  ]
+  ],
+  "requirement" : {
+    "summoner": {
+      "level": 1
+    },
+    "alone": true
+  }
 }

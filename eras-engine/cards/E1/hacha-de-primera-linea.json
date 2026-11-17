@@ -1,0 +1,8 @@
+{
+  "name" : "hacha de primera línea",
+  "requirement" : {
+    "summoner" : {
+      "level" : 1
+    }
+  }
+}

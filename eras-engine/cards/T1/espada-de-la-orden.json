@@ -1,0 +1,181 @@
+{
+  "name" : "espada de la orden",
+  "effects" : [
+    {
+      "id" : "espada-de-la-orden:descartada",
+      "moment" : "ON_EVENT",
+      "label" : "Una vez por turno entre copias",
+      "text" : "Si esta carta es descartada desde los tributos: puedes enviar 5 cartas de tu descarte al fondo de tu mazo; coloca esta carta en tu línea frontal.",
+      "cost" : [
+        {
+          "type" : "Do",
+          "action" : {
+            "type" : "Move",
+            "cards" : {
+              "zones" : "discardPile",
+              "owner" : "YOU",
+              "filter" : {},
+              "min" : {
+                "type" : "Fixed",
+                "value" : 5
+              },
+              "max" : {
+                "type" : "Fixed",
+                "value" : 5
+              },
+              "self" : "EXCLUDE",
+              "mode" : "CHOOSE"
+            },
+            "to" : "deckBottom"
+          }
+        }
+      ],
+      "steps" : [
+        {
+          "type" : "Do",
+          "action" : {
+            "type" : "Move",
+            "cards" : {
+              "zones" : "discardPile",
+              "owner" : "YOU",
+              "filter" : {},
+              "min" : {
+                "type" : "Fixed",
+                "value" : 1
+              },
+              "max" : {
+                "type" : "Fixed",
+                "value" : 1
+              },
+              "self" : "ANY",
+              "mode" : "SELF"
+            },
+            "to" : "frontLine"
+          }
+        }
+      ],
+      "condition" : {
+        "type" : "Happened",
+        "actor" : "ANY",
+        "owner" : "ANY",
+        "thisCard" : true,
+        "from" : "tributeZone",
+        "to" : "discardPile"
+      },
+      "sourceZone" : "discardPile",
+      "limit" : "ONCE_PER_TURN_BETWEEN_COPIES"
+    },
+    {
+      "id" : "espada-de-la-orden:en-invocacion",
+      "moment" : "ON_SUMMON",
+      "mandatory" : true,
+      "label" : "En Invocación",
+      "text" : "Roba 3 cartas. Luego: tributa 2 cartas de tu mano.",
+      "steps" : [
+        {
+          "type" : "Do",
+          "action" : {
+            "type" : "Draw",
+            "count" : {
+              "type" : "Fixed",
+              "value" : 3
+            }
+          }
+        },
+        {
+          "type" : "Do",
+          "action" : {
+            "type" : "Move",
+            "cards" : {
+              "zones" : "hand",
+              "owner" : "YOU",
+              "filter" : {},
+              "min" : {
+                "type" : "Fixed",
+                "value" : 2
+              },
+              "max" : {
+                "type" : "Fixed",
+                "value" : 2
+              },
+              "self" : "EXCLUDE",
+              "mode" : "CHOOSE"
+            },
+            "to" : "tributeZone"
+          }
+        }
+      ],
+      "sourceZone" : "field",
+      "limit" : "NONE"
+    }
+  ],
+  "formation" : {
+    "effects" : [
+      {
+        "id" : "espada-de-la-orden:enlace",
+        "moment" : "ON_EVENT",
+        "mandatory" : true,
+        "label" : "Todos Los Turnos",
+        "text" : "Una vez por turno: si esta carta es ascendida: tributa 3 cartas del tope de tu mazo. Luego: toma 1 carta de tus tributos.",
+        "steps" : [
+          {
+            "type" : "Do",
+            "action" : {
+              "type" : "Move",
+              "cards" : {
+                "zones" : "deck",
+                "owner" : "YOU",
+                "filter" : {},
+                "min" : {
+                  "type" : "Fixed",
+                  "value" : 3
+                },
+                "max" : {
+                  "type" : "Fixed",
+                  "value" : 3
+                },
+                "self" : "ANY",
+                "mode" : "TOP"
+              },
+              "to" : "tributeZone"
+            }
+          },
+          {
+            "type" : "Do",
+            "action" : {
+              "type" : "Move",
+              "cards" : {
+                "zones" : "tributeZone",
+                "owner" : "YOU",
+                "filter" : {},
+                "min" : {
+                  "type" : "Fixed",
+                  "value" : 1
+                },
+                "max" : {
+                  "type" : "Fixed",
+                  "value" : 1
+                },
+                "self" : "ANY",
+                "mode" : "CHOOSE"
+              },
+              "to" : "hand"
+            }
+          }
+        ],
+        "condition" : {
+          "type" : "Happened",
+          "eventType" : "TRIBUTE",
+          "actor" : "ANY",
+          "owner" : "ANY",
+          "thisCard" : true,
+          "data" : [
+            "cause=promotion"
+          ]
+        },
+        "sourceZone" : "tributeZone",
+        "limit" : "ONCE_PER_TURN"
+      }
+    ]
+  }
+}

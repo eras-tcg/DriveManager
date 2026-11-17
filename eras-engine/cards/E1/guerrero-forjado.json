@@ -69,5 +69,11 @@
       "sourceZone" : "tributeZone",
       "limit" : "NONE"
     }
-  ]
+  ],
+  "requirement" : {
+    "summoner": {
+      "level": 1
+    },
+    "aloneAtLevel": 1
+  }
 }

@@ -1,0 +1,78 @@
+{
+  "name": "fal",
+  "effects": [
+    {
+      "id": "fal:en-tributos",
+      "moment": "ON_EVENT",
+      "label": "En Tributos",
+      "text": "Una vez por turno entre copias: si la fuerza de algún enemigo es reducida a 0, puedes enviar otros 5 de tus tributos Azules al fondo de tu mazo; invoca esta carta en tu línea frontal.",
+      "cost": [
+        {
+          "type": "Do",
+          "action": {
+            "type": "Move",
+            "cards": {
+              "zones": "tributeZone",
+              "owner": "YOU",
+              "filter": {
+                "colors": [
+                  "B"
+                ]
+              },
+              "min": {
+                "type": "Fixed",
+                "value": 5
+              },
+              "max": {
+                "type": "Fixed",
+                "value": 5
+              },
+              "self": "EXCLUDE",
+              "mode": "CHOOSE"
+            },
+            "to": "deckBottom"
+          }
+        }
+      ],
+      "steps": [
+        {
+          "type": "Do",
+          "action": {
+            "type": "Summon",
+            "cards": {
+              "zones": "tributeZone",
+              "owner": "YOU",
+              "filter": {},
+              "min": {
+                "type": "Fixed",
+                "value": 1
+              },
+              "max": {
+                "type": "Fixed",
+                "value": 1
+              },
+              "self": "ANY",
+              "mode": "SELF"
+            },
+            "reduce": {
+              "type": "Fixed"
+            },
+            "toFront": true,
+            "required": true
+          }
+        }
+      ],
+      "condition": {
+        "type": "Happened",
+        "eventType": "STRENGTH_REDUCED",
+        "actor": "ANY",
+        "owner": "ENEMY",
+        "data": [
+          "to=0"
+        ]
+      },
+      "sourceZone": "tributeZone",
+      "limit": "ONCE_PER_TURN_BETWEEN_COPIES"
+    }
+  ]
+}

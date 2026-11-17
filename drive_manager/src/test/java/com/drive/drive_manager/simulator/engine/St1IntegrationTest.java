@@ -452,6 +452,44 @@ class St1IntegrationTest {
         assertThat(host.getField()).doesNotContain(mihel);
     }
 
+    @Test
+    void arcXiomaChoosesAmongTheEnemiesReducedTogetherNotOnlyTheFirstOne() {
+        // Hez reduces every enemy by 4 at once: the first one (4) is destroyed, the other two stay at 2 and 1. Arc-xioma
+        // triggers once (rule 11.7.0.1) and "reducirla a 0" lets its player choose which of the reduced enemies
+        CardSlot hez = onField(host, slot("Hez"), FRONT);
+        hez.getMaterials().add(slot("Jhav"));
+        hez.getMaterials().add(slot("Eisten"));
+        CardSlot arc = slot("Arc-xioma");
+        host.getTributeZone().add(arc);
+        CardSlot first = onField(guest, slot("Damon"), FRONT);
+        first.setStrength(4);
+        CardSlot second = onField(guest, slot("Damon"), FRONT);
+        second.setStrength(6);
+        CardSlot third = onField(guest, slot("Damon"), FRONT);
+        third.setStrength(5);
+
+        TurnRules.turnStarted(room, "host");
+        List<String> offered = null;
+        for (int i = 0; i < 12 && room.getPrompt() != null; i++) {
+            Prompt p = room.getPrompt();
+            List<String> pick;
+            if ("OPTIONAL".equals(p.getPurpose()) && p.getValidIds().contains(hez.getInstanceId())) pick = List.of(hez.getInstanceId());
+            else if ("OPTIONAL".equals(p.getPurpose()) && p.getValidIds().contains(arc.getInstanceId())) pick = List.of(arc.getInstanceId());
+            else if (p.getValidIds().contains(third.getInstanceId())) {
+                offered = p.getValidIds();
+                pick = List.of(third.getInstanceId());
+            } else pick = p.getValidIds().subList(0, Math.max(p.getMin(), Math.min(p.getMax(), p.getValidIds().size())));
+            assertThat(Answers.answer(room, p.getPlayerId(), p.getId(), pick, List.of())).isNull();
+        }
+        assertThat(guest.getDiscardPile()).contains(first);
+        assertThat(host.getDeck()).contains(arc);
+        // The destroyed one is not offered; the player picks the one at 1, the one at 2 stays
+        assertThat(offered).containsExactlyInAnyOrder(second.getInstanceId(), third.getInstanceId());
+        assertThat(guest.getDiscardPile()).contains(third);
+        assertThat(guest.getField()).contains(second);
+        assertThat(EffectEngine.strength(second)).isEqualTo(2);
+    }
+
     // ------------------------------------------------------------------ Helpers
 
     private CardSlot slot(String name) {

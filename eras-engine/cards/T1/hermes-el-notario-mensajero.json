@@ -1,0 +1,223 @@
+{
+  "name" : "hermes el notario mensajero",
+  "effects" : [
+    {
+      "id" : "hermes:en-mano",
+      "moment" : "ON_EVENT",
+      "label" : "En Mano",
+      "text" : "Una vez por turno entre copias: si un aliado es destruido, puedes invocar esta carta reduciendo su coste en 1.",
+      "steps" : [
+        {
+          "type" : "Do",
+          "action" : {
+            "type" : "Summon",
+            "cards" : {
+              "zones" : "hand",
+              "owner" : "YOU",
+              "filter" : {},
+              "min" : {
+                "type" : "Fixed",
+                "value" : 1
+              },
+              "max" : {
+                "type" : "Fixed",
+                "value" : 1
+              },
+              "self" : "ANY",
+              "mode" : "SELF"
+            },
+            "reduce" : {
+              "type" : "Fixed",
+              "value" : 1
+            },
+            "required" : true
+          }
+        }
+      ],
+      "condition" : {
+        "type" : "Destroyed",
+        "owner" : "YOU",
+        "by" : "ANY",
+        "filter" : {
+          "cardType" : "creature"
+        }
+      },
+      "sourceZone" : "hand",
+      "limit" : "ONCE_PER_TURN_BETWEEN_COPIES"
+    },
+    {
+      "id" : "hermes:todos-los-turnos",
+      "moment" : "ON_EVENT",
+      "label" : "Todos Los Turnos",
+      "text" : "Una vez por turno: si un aliado es invocado, puedes tributar 1 material de esta carta; invoca especialmente 1 criatura de tus Tributos. Si lo haces: gana 1 gema.",
+      "cost" : [
+        {
+          "type" : "Do",
+          "action" : {
+            "type" : "Move",
+            "cards" : {
+              "zones" : "materials",
+              "owner" : "YOU",
+              "filter" : {},
+              "min" : {
+                "type" : "Fixed",
+                "value" : 1
+              },
+              "max" : {
+                "type" : "Fixed",
+                "value" : 1
+              },
+              "self" : "ANY",
+              "mode" : "CHOOSE"
+            },
+            "to" : "tributeZone"
+          }
+        }
+      ],
+      "steps" : [
+        {
+          "type" : "Do",
+          "action" : {
+            "type" : "Sequence",
+            "actions" : [
+              {
+                "type" : "Select",
+                "selector" : {
+                  "zones" : "tributeZone",
+                  "owner" : "YOU",
+                  "filter" : {},
+                  "min" : {
+                    "type" : "Fixed"
+                  },
+                  "max" : {
+                    "type" : "Fixed",
+                    "value" : 1
+                  },
+                  "self" : "ANY",
+                  "mode" : "CHOOSE",
+                  "special" : {
+                    "rule" : {
+                      "kind" : "any",
+                      "zone" : "tributeZone",
+                      "summoner" : "any",
+                      "filter" : {
+                        "cardType" : "creature"
+                      }
+                    },
+                    "stage" : "CARD"
+                  }
+                },
+                "saveAs" : "specialCard",
+                "label" : "Invocar"
+              },
+              {
+                "type" : "Select",
+                "selector" : {
+                  "zones" : "tributeZone",
+                  "owner" : "YOU",
+                  "filter" : {},
+                  "min" : {
+                    "type" : "Fixed"
+                  },
+                  "max" : {
+                    "type" : "Fixed",
+                    "value" : 1
+                  },
+                  "self" : "ANY",
+                  "mode" : "CHOOSE",
+                  "special" : {
+                    "rule" : {
+                      "kind" : "any",
+                      "zone" : "tributeZone",
+                      "summoner" : "any",
+                      "filter" : {
+                        "cardType" : "creature"
+                      }
+                    },
+                    "stage" : "SUMMONER"
+                  }
+                },
+                "saveAs" : "specialSummoner",
+                "label" : "Invocador"
+              },
+              {
+                "type" : "Select",
+                "selector" : {
+                  "zones" : "tributeZone",
+                  "owner" : "YOU",
+                  "filter" : {},
+                  "min" : {
+                    "type" : "Fixed"
+                  },
+                  "max" : {
+                    "type" : "Fixed",
+                    "value" : 1
+                  },
+                  "self" : "ANY",
+                  "mode" : "CHOOSE",
+                  "special" : {
+                    "rule" : {
+                      "kind" : "any",
+                      "zone" : "tributeZone",
+                      "summoner" : "any",
+                      "filter" : {
+                        "cardType" : "creature"
+                      }
+                    },
+                    "stage" : "MATERIAL"
+                  }
+                },
+                "saveAs" : "specialMaterials",
+                "label" : "Material"
+              },
+              {
+                "type" : "SummonSpecial",
+                "rule" : {
+                  "kind" : "any",
+                  "zone" : "tributeZone",
+                  "summoner" : "any",
+                  "filter" : {
+                    "cardType" : "creature"
+                  }
+                }
+              }
+            ]
+          }
+        },
+        {
+          "type" : "IfDone",
+          "covers" : 1
+        },
+        {
+          "type" : "Do",
+          "action" : {
+            "type" : "Gems",
+            "count" : {
+              "type" : "Fixed",
+              "value" : 1
+            }
+          }
+        }
+      ],
+      "condition" : {
+        "type" : "Summoned",
+        "side" : "YOU",
+        "filter" : {}
+      },
+      "sourceZone" : "field",
+      "limit" : "ONCE_PER_TURN"
+    }
+  ],
+  "requirement" : {
+    "summoner": {
+      "level": 1
+    },
+    "materials": {
+      "level": 1,
+      "zones": [
+        "field",
+        "tributeZone"
+      ]
+    }
+  }
+}

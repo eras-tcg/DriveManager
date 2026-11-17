@@ -42,6 +42,22 @@ class CardReaderTest {
         assertEquals(Amount.Fixed(2), card.continuous().single().bonus)
     }
 
+    @Test
+    fun readsTheLinkEffectsOfEnlace() {
+        val card = CardReader.read("""{"name":"x","formation":{"effects":[{"id":"x:enlace","moment":"ON_ATTACK","steps":[{"type":"SwapInFormation","withSelf":true}]}],""" +
+            """"continuous":[{"strength":3,"targets":{"enlace":true},"formationNeighbours":true}],"reactions":[{"type":"Replacement","id":"x:r","cost":"ALLY_TO_LIFE_FACE_DOWN"}]}}""")
+        val link = card.formation!!
+        assertEquals(EffectStep.SwapInFormation(true), link.effects().single().steps!!.single())
+        assertTrue(link.continuous().single().formationNeighbours)
+        assertTrue(link.continuous().single().targets!!.enlace)
+        assertEquals(com.drive.drive_manager.simulator.engine.CardEffects.ReplacementCost.ALLY_TO_LIFE_FACE_DOWN,
+            (link.reactions().single() as com.drive.drive_manager.simulator.engine.CardEffects.Replacement).cost)
+        // Absent: none (and its lists, empty)
+        assertNull(CardReader.read("""{"name":"y"}""").formation)
+        assertTrue(CardReader.read("""{"name":"y","formation":{}}""").formation!!.effects().isEmpty())
+        refused("""{"name":"x","formation":{"bogus":[]}}""", "campo desconocido \"bogus\"")
+    }
+
     private fun refused(json: String, part: String) {
         val e = assertFailsWith<IllegalArgumentException> { CardReader.read(json) }
         assertTrue(e.message!!.startsWith("Efectos inválidos: "), e.message)

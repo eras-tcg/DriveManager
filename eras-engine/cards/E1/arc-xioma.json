@@ -106,6 +106,31 @@
         "to" : "deck"
       }
     }, {
+      "type" : "IfSaved",
+      "name" : "eventCards",
+      "covers" : 1
+    }, {
+      "type" : "Do",
+      "action" : {
+        "type" : "Select",
+        "selector" : {
+          "zones" : "saved:eventCards",
+          "owner" : "YOU",
+          "filter" : { },
+          "min" : {
+            "type" : "Fixed",
+            "value" : 1
+          },
+          "max" : {
+            "type" : "Fixed",
+            "value" : 1
+          },
+          "self" : "ANY",
+          "mode" : "CHOOSE"
+        },
+        "saveAs" : "eventCard"
+      }
+    }, {
       "type" : "Do",
       "action" : {
         "type" : "Modify",
@@ -133,5 +158,14 @@
     },
     "sourceZone" : "tributeZone",
     "limit" : "NONE"
-  } ]
+  } ],
+  "requirement" : {
+    "summoner": {
+      "level": 1
+    },
+    "materials": {
+      "count": 1,
+      "level": 1
+    }
+  }
 }

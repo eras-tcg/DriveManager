@@ -40,6 +40,8 @@ object TurnRules {
     @JvmStatic
     fun turnStarted(room: GameRoom, playerId: String?) {
         val player = room.getPlayer(playerId) ?: return
+        // Enlace: the player's formations are undone at the start of their turn (they may form them again)
+        Formations.disband(room, player)
         record(room, GameEvent.TURN_START, playerId, null, null, null, null, null, "Inicio del turno de " + player.username)
         // Reactivar: "al inicio del turno oponente: reactiva esta carta" (the cards of the player whose turn it is not;
         // designer ruling 2026-11-10)

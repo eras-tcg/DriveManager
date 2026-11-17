@@ -8,5 +8,10 @@
     },
     "keywords" : [ "No puede atacar" ],
     "zone" : "field"
-  } ]
+  } ],
+  "requirement" : {
+    "summoner": {
+      "level": 1
+    }
+  }
 }

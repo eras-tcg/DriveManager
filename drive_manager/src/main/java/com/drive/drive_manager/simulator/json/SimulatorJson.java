@@ -5,6 +5,8 @@ import com.drive.drive_manager.simulator.room.CardSlot;
 import com.drive.drive_manager.simulator.room.GameRoom;
 import com.drive.drive_manager.simulator.room.PlayerState;
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.drive.drive_manager.simulator.room.GameStateUpdate;
 import org.springframework.boot.jackson.JacksonMixin;
 import tools.jackson.databind.json.JsonMapper;
 
@@ -27,7 +29,8 @@ public final class SimulatorJson {
                 .addMixIn(GameRoom.class, GameRoomJson.class)
                 .addMixIn(PlayerState.class, PlayerStateJson.class)
                 .addMixIn(CardSlot.class, CardSlotJson.class)
-                .addMixIn(PendingEffect.class, PendingEffectJson.class);
+                .addMixIn(PendingEffect.class, PendingEffectJson.class)
+                .addMixIn(GameStateUpdate.class, GameStateUpdateJson.class);
     }
 
     /** The room: the server's own settings and bookkeeping, and its chance (which would reveal what comes next). */
@@ -43,16 +46,33 @@ public final class SimulatorJson {
         @JsonIgnore Object startSetup;
     }
 
-    /** A player: when they lost the connection (the server's to know). */
+    /**
+     * A player: when they lost the connection (the server's to know), and the Enlace bookkeeping of what entered the Línea frontal.
+     * Their formations only when they have some (a game without Enlace sends what it always sent), and "Opcionales en Auto"
+     * only when it is on.
+     */
     @JacksonMixin(PlayerState.class)
     abstract static class PlayerStateJson {
         @JsonIgnore Object disconnectedAt;
+        @JsonInclude(JsonInclude.Include.NON_DEFAULT) Object autoOptional;
+        @JsonIgnore Object frontSeen;
+        @JsonIgnore Object formationEntries;
+        @JsonInclude(JsonInclude.Include.NON_DEFAULT) Object formations;
     }
 
-    /** A card: the addresses of its alternative arts (only the one it shows travels). */
+    /** A card: the addresses of its alternative arts (only the one it shows travels); its Enlace properties only when it has them. */
     @JacksonMixin(CardSlot.class)
     abstract static class CardSlotJson {
         @JsonIgnore Object altArtUrls;
+        @JsonInclude(JsonInclude.Include.NON_DEFAULT) Object arrows;
+        @JsonInclude(JsonInclude.Include.NON_DEFAULT) Object enlace;
+        @JsonInclude(JsonInclude.Include.NON_DEFAULT) Object formationGrants;
+    }
+
+    /** An update: the Enlace choices of the main phase only when there are some. */
+    @JacksonMixin(GameStateUpdate.class)
+    abstract static class GameStateUpdateJson {
+        @JsonInclude(JsonInclude.Include.NON_EMPTY) Object formationJoins;
     }
 
     /** An effect being resolved: the engine's working state, and the cards it looked at (secret). */

@@ -124,5 +124,20 @@
     } ],
     "sourceZone" : "field",
     "limit" : "NONE"
-  } ]
+  } ],
+  "requirement" : {
+    "summoner": {
+      "level": 2,
+      "orLess": true,
+      "zones": [
+        "hand"
+      ]
+    },
+    "materials": {
+      "count": 1,
+      "zones": [
+        "hand"
+      ]
+    }
+  }
 }

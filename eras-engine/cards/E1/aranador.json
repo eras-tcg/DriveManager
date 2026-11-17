@@ -72,5 +72,10 @@
     "sourceZone" : "field",
     "allyTurn" : true,
     "limit" : "ONCE_PER_TURN"
-  } ]
+  } ],
+  "requirement" : {
+    "ritual": {
+      "level": 3
+    }
+  }
 }

@@ -1,0 +1,9 @@
+{
+  "name": "halx",
+  "requirement": {
+    "ritual": {
+      "sum": true,
+      "level": 3
+    }
+  }
+}

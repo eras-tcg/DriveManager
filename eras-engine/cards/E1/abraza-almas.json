@@ -69,5 +69,10 @@
         "classes" : [ "espectro" ]
       }
     }
+  },
+  "requirement" : {
+    "ritual": {
+      "level": 1
+    }
   }
 }

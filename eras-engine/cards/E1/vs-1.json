@@ -123,5 +123,18 @@
       "sourceZone" : "tributeZone",
       "limit" : "ONCE_PER_TURN_BETWEEN_COPIES"
     }
-  ]
+  ],
+  "requirement" : {
+    "summoner": {
+      "level": 1
+    },
+    "materials": {
+      "count": 1,
+      "level": 1,
+      "zones": [
+        "field",
+        "hand"
+      ]
+    }
+  }
 }

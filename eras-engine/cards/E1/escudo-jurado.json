@@ -20,5 +20,25 @@
     },
     "keywords" : [ "Inmune" ],
     "zone" : "field"
-  } ]
+  } ],
+  "requirement" : {
+    "summoner": {
+      "level": 1
+    },
+    "condition": {
+      "type": "Compare",
+      "left": {
+        "type": "OnField",
+        "filter": {
+          "cardType": "creature"
+        }
+      },
+      "op": "AT_LEAST",
+      "right": {
+        "type": "Fixed",
+        "value": 2
+      }
+    },
+    "conditionText": "controlar 2 o más aliados"
+  }
 }

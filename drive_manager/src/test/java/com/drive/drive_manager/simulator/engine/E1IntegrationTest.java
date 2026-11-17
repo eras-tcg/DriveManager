@@ -147,6 +147,7 @@ class E1IntegrationTest {
         evolved.setSpecialSummonKind("evolution");
         evolved.setSpecialCost(2);
         evolved.setRequirement("criatura nivel 1.");
+        Req.program(evolved);
         host.getHand().add(evolved);
 
         // 1 gem and a cost of 2: the structure pays the other one
@@ -173,6 +174,7 @@ class E1IntegrationTest {
         evolved.setSpecialSummonKind("evolution");
         evolved.setSpecialCost(2);
         evolved.setRequirement("criatura nivel 1.");
+        Req.program(evolved);
         host.getHand().add(evolved);
         assertThat(SpecialSummons.specialByPlayer(room, "host", "evo", "base")).isNull();
         assertThat(Answers.answer(room, "host", room.getPrompt().getId(), List.of(), List.of())).isNull();
@@ -182,16 +184,16 @@ class E1IntegrationTest {
     }
 
     @Test
-    void legionarioDeEspadasDoblesGivesStrengthToArmadaAlliesOnItsTurn() {
+    void legionarioDeEspadasDoblesGivesStrengthToRedOrArmadaAlliesOnItsTurn() {
         CardSlot legionario = onField(host, card("leg", "Legionario De Espadas Dobles", 1, 1, "R"), FRONT);
         legionario.setClasses(new ArrayList<>(List.of("armada")));
         CardSlot sargento = onField(host, card("sar", "Sargento Legionario", 1, 1, "R"), FRONT);
         sargento.setClasses(new ArrayList<>(List.of("armada")));
-        CardSlot other = onField(host, card("o", "Otro", 1, 1, "R"), FRONT);
+        CardSlot other = onField(host, card("o", "Otro Azul", 1, 1, "B"), FRONT);
         other.setClasses(new ArrayList<>(List.of("legionario")));
 
         EffectEngine.refreshContinuous(room);
-        // +1 from the aura; the Sargento also +1 per [legionario] ally
+        // +1 from the aura (Red or [armada] allies); the Sargento also +1 per [legionario] ally; a Blue [legionario] gets nothing
         assertThat(EffectEngine.strength(legionario)).isEqualTo(4);
         assertThat(EffectEngine.strength(sargento)).isEqualTo(5);
         assertThat(EffectEngine.strength(other)).isEqualTo(3);

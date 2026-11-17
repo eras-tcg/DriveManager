@@ -159,5 +159,12 @@
     },
     "sourceZone" : "field",
     "limit" : "NONE"
-  } ]
+  } ],
+  "requirement" : {
+    "ritual": {
+      "sum": true,
+      "level": 3,
+      "maxLevel": 4
+    }
+  }
 }

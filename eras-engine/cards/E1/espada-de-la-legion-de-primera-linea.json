@@ -1,0 +1,99 @@
+{
+  "name" : "espada de la legión de primera línea",
+  "effects" : [
+    {
+      "id" : "espada-de-la-legion-de-primera-linea:en-invocacion",
+      "moment" : "ON_SUMMON",
+      "label" : "En Invocación",
+      "text" : "Puedes invocar 1 criatura Roja de coste 1 de tu mano sin pagar su coste en tu línea frontal. Si lo haces: esta carta gana fuerza 2 hasta el final del turno.",
+      "steps" : [
+        {
+          "type" : "Do",
+          "action" : {
+            "type" : "Summon",
+            "cards" : {
+              "zones" : "hand",
+              "owner" : "YOU",
+              "filter" : {
+                "colors" : [
+                  "R"
+                ],
+                "cardType" : "creature",
+                "minCost" : 1,
+                "maxCost" : 1
+              },
+              "min" : {
+                "type" : "Fixed",
+                "value" : 1
+              },
+              "max" : {
+                "type" : "Fixed",
+                "value" : 1
+              },
+              "self" : "EXCLUDE",
+              "mode" : "CHOOSE"
+            },
+            "reduce" : {
+              "type" : "Fixed",
+              "value" : 1000
+            },
+            "toFront" : true,
+            "required" : true
+          }
+        },
+        {
+          "type" : "IfDone",
+          "covers" : 1
+        },
+        {
+          "type" : "Do",
+          "action" : {
+            "type" : "Modify",
+            "cards" : {
+              "zones" : "field",
+              "owner" : "YOU",
+              "filter" : {},
+              "min" : {
+                "type" : "Fixed",
+                "value" : 1
+              },
+              "max" : {
+                "type" : "Fixed",
+                "value" : 1
+              },
+              "self" : "ANY",
+              "mode" : "SELF"
+            },
+            "strength" : {
+              "type" : "Fixed",
+              "value" : 2
+            },
+            "until" : "TURN"
+          }
+        }
+      ],
+      "sourceZone" : "field",
+      "limit" : "NONE"
+    }
+  ],
+  "requirement" : {
+    "summoner" : {
+      "level" : 2
+    },
+    "condition" : {
+      "type" : "Compare",
+      "left" : {
+        "type" : "OnField",
+        "filter" : {
+          "cardType" : "creature"
+        }
+      },
+      "op" : "AT_LEAST",
+      "right" : {
+        "type" : "Fixed",
+        "value" : 3
+      }
+    },
+    "conditionText" : "controlar 3 o más aliados"
+  }
+}

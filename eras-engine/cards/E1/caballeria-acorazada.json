@@ -1,0 +1,8 @@
+{
+  "name" : "caballería acorazada",
+  "requirement" : {
+    "summoner" : {
+      "level" : 3
+    }
+  }
+}

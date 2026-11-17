@@ -56,5 +56,10 @@
     },
     "sourceZone" : "field",
     "limit" : "ONCE_PER_TURN"
-  } ]
+  } ],
+  "requirement" : {
+    "ritual": {
+      "level": 2
+    }
+  }
 }

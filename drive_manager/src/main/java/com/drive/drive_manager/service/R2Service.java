@@ -68,17 +68,27 @@ public class R2Service {
                 .build());
     }
 
+    /** The public address of an object, by its full key. */
+    public String publicUrl(String key) {
+        return publicBaseUrl.stripTrailing() + "/" + key;
+    }
+
     /**
      * Uploads to R2 using the full key as-is (no prefix added).
      *
      * @return the public URL of the uploaded object
      */
     public String uploadRaw(String key, InputStream content, long size) {
+        return uploadRaw(key, content, size, "image/jpeg");
+    }
+
+    /** Uploads to R2 under the full key as-is, with its media type: the public URL of the object. */
+    public String uploadRaw(String key, InputStream content, long size, String contentType) {
         r2Client.putObject(
                 PutObjectRequest.builder()
                         .bucket(bucketName)
                         .key(key)
-                        .contentType("image/jpeg")
+                        .contentType(contentType)
                         .contentLength(size)
                         .build(),
                 RequestBody.fromInputStream(content, size));
@@ -96,6 +106,11 @@ public class R2Service {
         return r2Client.getObjectAsBytes(
                 GetObjectRequest.builder().bucket(bucketName).key(key).build()
         ).asByteArray();
+    }
+
+    /** Fetches an object's bytes by its full key (no prefix added). */
+    public byte[] getRaw(String key) {
+        return r2Client.getObjectAsBytes(GetObjectRequest.builder().bucket(bucketName).key(key).build()).asByteArray();
     }
 
     /** Deletes an object by its full key (no prefix added). Silently ignores if it does not exist. */

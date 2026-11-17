@@ -1,0 +1,55 @@
+{
+  "name" : "serafín ignoto el fuego del caos",
+  "effects" : [
+    {
+      "id" : "serafin-ignoto:en-invocacion",
+      "moment" : "ON_SUMMON",
+      "mandatory" : true,
+      "label" : "En Invocación",
+      "text" : "Efecto Definitivo: envía 1 enemigo al Descarte bocabajo. Este efecto afecta la Retaguardia enemiga y la Línea frontal.",
+      "steps" : [
+        {
+          "type" : "Do",
+          "action" : {
+            "type" : "Move",
+            "cards" : {
+              "zones" : "anyLine",
+              "owner" : "OPPONENT",
+              "filter" : {
+                "cardType" : "creature"
+              },
+              "min" : {
+                "type" : "Fixed",
+                "value" : 1
+              },
+              "max" : {
+                "type" : "Fixed",
+                "value" : 1
+              },
+              "self" : "ANY",
+              "mode" : "CHOOSE"
+            },
+            "to" : "discardPile",
+            "faceDown" : true
+          }
+        }
+      ],
+      "sourceZone" : "field",
+      "limit" : "DEFINITIVE"
+    }
+  ],
+  "requirement" : {
+    "ritual": {
+      "parts": [
+        {
+          "level": 4,
+          "type": "ángel"
+        },
+        {
+          "level": 4,
+          "type": "ángel caído"
+        }
+      ]
+    }
+  }
+}

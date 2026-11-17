@@ -1,0 +1,127 @@
+{
+  "name": "biomaterial cromado",
+  "effects": [
+    {
+      "id": "biomaterial-cromado:en-juego",
+      "moment": "ON_PLAY",
+      "mandatory": true,
+      "label": "En Juego",
+      "text": "Mira las primeras 5 cartas de tu mazo: de ellas toma hasta 1 carta Azul. Envía el resto al fondo de tu mazo. Luego: coloca esta carta agotada en tu retaguardia.",
+      "steps": [
+        {
+          "type": "Do",
+          "action": {
+            "type": "Look",
+            "count": {
+              "type": "Fixed",
+              "value": 5
+            }
+          }
+        },
+        {
+          "type": "Do",
+          "action": {
+            "type": "Move",
+            "cards": {
+              "zones": "looked",
+              "owner": "YOU",
+              "filter": {
+                "colors": [
+                  "B"
+                ]
+              },
+              "min": {
+                "type": "Fixed"
+              },
+              "max": {
+                "type": "Fixed",
+                "value": 1
+              },
+              "self": "ANY",
+              "mode": "CHOOSE"
+            },
+            "to": "hand",
+            "rest": "deckBottom"
+          }
+        },
+        {
+          "type": "KeepOnField",
+          "exhausted": true
+        }
+      ],
+      "sourceZone": "field",
+      "limit": "NONE"
+    },
+    {
+      "id": "biomaterial-cromado:turno-aliado",
+      "moment": "ACTIVATED",
+      "label": "Turno Aliado",
+      "text": "Puedes enviar esta carta activa a tu descarte para invocar 1 criatura Azul de tu mano reduciendo su coste en 1.",
+      "steps": [
+        {
+          "type": "IfPossible"
+        },
+        {
+          "type": "Do",
+          "action": {
+            "type": "Move",
+            "cards": {
+              "zones": "field",
+              "owner": "YOU",
+              "filter": {},
+              "min": {
+                "type": "Fixed",
+                "value": 1
+              },
+              "max": {
+                "type": "Fixed",
+                "value": 1
+              },
+              "self": "ANY",
+              "mode": "SELF"
+            },
+            "to": "discardPile"
+          }
+        },
+        {
+          "type": "Do",
+          "action": {
+            "type": "Summon",
+            "cards": {
+              "zones": "hand",
+              "owner": "YOU",
+              "filter": {
+                "colors": [
+                  "B"
+                ],
+                "cardType": "creature"
+              },
+              "min": {
+                "type": "Fixed",
+                "value": 1
+              },
+              "max": {
+                "type": "Fixed",
+                "value": 1
+              },
+              "self": "ANY",
+              "mode": "CHOOSE"
+            },
+            "reduce": {
+              "type": "Fixed",
+              "value": 1
+            },
+            "required": true
+          }
+        }
+      ],
+      "condition": {
+        "type": "ThisIs",
+        "state": "ACTIVE"
+      },
+      "sourceZone": "field",
+      "allyTurn": true,
+      "limit": "NONE"
+    }
+  ]
+}

@@ -12,4 +12,7 @@ public interface DriveCardRepository extends MongoRepository<DriveCard, String> 
     List<DriveCard> findByEditionAndNumber(String edition, Integer number);
 
     List<DriveCard> findByEdition(String edition);
+
+    /** The images whose edition matches the pattern (the testing editions, {@code TestCards}). */
+    List<DriveCard> findByEditionRegex(String regex);
 }

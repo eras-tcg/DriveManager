@@ -19,15 +19,13 @@ import com.drive.drive_manager.simulator.room.GameRoom
 import com.drive.drive_manager.simulator.room.PlayerState
 
 /** "Si …", "puedes …" and who the next steps act on: what steers the rest of the effect. Each step: whether it can be done, carrying it out, and applying the player's choice. */
-object FlowSteps {
+object FlowSteps : StepFamily {
 
-    @JvmStatic
-    fun possibleStep(room: GameRoom, effect: PendingEffect, step: EffectStep): Boolean {
+    override fun possibleStep(room: GameRoom, effect: PendingEffect, step: EffectStep): Boolean {
         return true
     }
 
-    @JvmStatic
-    fun runStep(room: GameRoom, effect: PendingEffect, step: EffectStep): Boolean {
+    override fun runStep(room: GameRoom, effect: PendingEffect, step: EffectStep): Boolean {
         val player = room.getPlayer(effect.controllerId)!!
         val userId = player.userId
 
@@ -38,7 +36,19 @@ object FlowSteps {
             }
             is IfCondition -> {
                 val source = findAnywhere(room, userId, effect.sourceInstanceId)
-                val holds = source != null && step.condition!!.test(room, null, source, userId)
+                val condition = step.condition!!
+                // "Luego, si enviaste 10": a comparison may read what only the effect knows (LastCount)
+                val holds = source != null && (if (condition is Condition.Compare) {
+                    val context = EngineContext(room, effect)
+                    val a = context.amount(condition.left)
+                    val b = context.amount(condition.right)
+                    when (condition.op!!) {
+                        Condition.Op.AT_LEAST -> a >= b
+                        Condition.Op.AT_MOST -> a <= b
+                        Condition.Op.LESS -> a < b
+                        Condition.Op.EQUAL -> a == b
+                    }
+                } else condition.test(room, null, source, userId))
                 if (!holds) effect.stepIndex = effect.stepIndex + step.covers
                 return false
             }
@@ -128,10 +138,9 @@ object FlowSteps {
         }
     }
 
-    @JvmStatic
-    fun applyStep(
+    override fun applyStep(
         room: GameRoom, effect: PendingEffect, step: EffectStep, player: PlayerState, picks: List<String>,
-        order: List<String>?, repeat: BooleanArray?,
+        order: List<String>?, repeat: BooleanArray,
     ): String? {
         val userId = player.userId
         when (step) {

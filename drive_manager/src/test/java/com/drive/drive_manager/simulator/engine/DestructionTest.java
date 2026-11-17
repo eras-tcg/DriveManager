@@ -108,6 +108,7 @@ class DestructionTest {
         krokler.setSpecialSummonKind("ritual");
         krokler.setSpecialCost(1);
         krokler.setRequirement("Criatura nivel 1.");
+        Req.program(krokler);
         host.getHand().add(krokler);
         onField(host, card("sum", "Invocador", 1, 1, "P"), 20.0);
         onField(guest, card("ec", "Carnhaus", 1, 1, "P"), 20.0);
@@ -130,6 +131,7 @@ class DestructionTest {
         krokler.setSpecialSummonKind("ritual");
         krokler.setSpecialCost(1);
         krokler.setRequirement("Criatura nivel 1.");
+        Req.program(krokler);
         host.getHand().add(krokler);
         onField(host, card("sum", "Invocador", 1, 1, "P"), 20.0);
         CardSlot enemy = onField(guest, card("ec", "Carnhaus", 1, 1, "P"), 20.0);
@@ -217,11 +219,14 @@ class DestructionTest {
         }
         Summons.normalSummon(room, "host", "ber", 50.0, 70.0);
 
-        Prompt may = room.getPrompt();
-        assertThat(may.getKind()).isEqualTo(Prompt.Kind.CONFIRM);
-        Answers.answer(room, "host", may.getId(), List.of("ber"), List.of());
+        // Printed text (2026-11-17): "envía hasta 10 [bestias] de tus tributos …; reactiva esta carta. Luego, si enviaste 10: …"
         Prompt send = room.getPrompt();
-        assertThat(send.getMin()).isEqualTo(10);
+        if (send.getKind() == Prompt.Kind.CONFIRM) {
+            Answers.answer(room, "host", send.getId(), List.of("ber"), List.of());
+            send = room.getPrompt();
+        }
+        assertThat(send.getMin()).isZero();
+        assertThat(send.getMax()).isEqualTo(10);
         List<String> ten = new ArrayList<>();
         for (int i = 0; i < 10; i++) ten.add("b" + i);
         assertThat(Answers.answer(room, "host", send.getId(), ten, List.of())).isNull();
@@ -230,6 +235,9 @@ class DestructionTest {
         assertThat(host.getDeck().subList(host.getDeck().size() - 10, host.getDeck().size()))
                 .extracting(CardSlot::getInstanceId).containsExactlyElementsOf(ten);
         assertThat(berkelus.getTurnKeywords()).containsExactly("Furia 1");
+        // "puede declarar ataque sin agotarse": it says yes
+        assertThat(room.getPrompt()).isNotNull();
+        Answers.answer(room, "host", room.getPrompt().getId(), List.of("ber"), List.of());
         // Summoned normally it is in the Retaguardia: it cannot attack (rule 10.1.1.1)
         assertThat(room.getCombat()).isNull();
         assertThat(room.getEventLog()).anyMatch(l -> l.getText().contains("no está en la línea frontal"));

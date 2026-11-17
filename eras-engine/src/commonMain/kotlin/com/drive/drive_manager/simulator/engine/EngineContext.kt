@@ -112,8 +112,8 @@ internal class EngineContext(private val room: GameRoom, private val effect: Pen
         room.prompt!!.topOrBottom = true
     }
 
-    override fun attack(opponentOnly: Boolean): Boolean {
-        return CombatRules.attackByEffect(room, effect, opponentOnly)
+    override fun attack(opponentOnly: Boolean, creaturesOnly: Boolean, activeToo: Boolean, at: String?): Boolean {
+        return CombatRules.attackByEffect(room, effect, opponentOnly, creaturesOnly, activeToo, if (at == null) null else saved(at).toSet())
     }
 
     override fun attackChosen(picks: List<String?>?) {
@@ -181,6 +181,8 @@ internal class EngineContext(private val room: GameRoom, private val effect: Pen
     }
 
     override fun attached(zone: String?): List<CardSlot> {
+        // "materiales de tus aliados": every material of your creatures on the field
+        if (zone == "materials:allies") return player()!!.field.filter { "creature" == it.cardType }.flatMap { it.materials!! }
         val host = if (zone!!.endsWith(":subject")) StepHelpers.subject(room, effect) else EffectEngine.find(player()!!.field, effect.sourceInstanceId)
         if (host == null) return frozenListOf()
         return if (zone.startsWith("materials")) host.materials!! else host.resources!!
@@ -351,8 +353,11 @@ internal class EngineContext(private val room: GameRoom, private val effect: Pen
         val userId = player()!!.userId
         room.sharedCounter = EffectEngine.clamp(room.sharedCounter + count * EffectEngine.direction(room, userId))
         EffectEngine.record(room, GameEvent.GAIN_GEMS, userId, null, null, null, effect, frozenMapOf<String, Any?>("count", count),
-            player()!!.username + " gana " + EffectEngine.gemsText(count) + " (" + effect.sourceName + ")")
+            player()!!.username + (if (count < 0) " paga " + EffectEngine.gemsText(-count) else " gana " + EffectEngine.gemsText(count))
+                    + " (" + effect.sourceName + ")")
     }
+
+    override fun canPayGems(count: Int): Boolean = EffectEngine.canPay(room, player()!!.userId, count)
 
     override fun damage(amount: Int) {
         StepHelpers.damageByEffect(room, effect, player(), amount)
@@ -468,6 +473,9 @@ internal class EngineContext(private val room: GameRoom, private val effect: Pen
     }
 
     override fun eventCardOnField(): CardSlot? {
+        // Triggered by several cards at once: the one chosen among them
+        val chosen = effect.saved[Memory.EVENT_CARD]
+        if (!chosen.isNullOrEmpty()) return find(chosen[0])
         val trigger = EffectEngine.triggerEvent(room, effect)
         return if (trigger == null) null else find(trigger.cardInstanceId)
     }

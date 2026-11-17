@@ -1,0 +1,73 @@
+{
+  "name": "explorador de la ciudad muerta",
+  "effects": [
+    {
+      "id": "explorador-de-la-ciudad-muerta:en-invocacion",
+      "moment": "ON_SUMMON",
+      "mandatory": true,
+      "label": "En Invocación",
+      "text": "Tributa 3 cartas del tope de tu mazo. Luego: toma 1 carta de tus tributos.",
+      "steps": [
+        {
+          "type": "Do",
+          "action": {
+            "type": "Move",
+            "cards": {
+              "zones": "deck",
+              "owner": "YOU",
+              "filter": {},
+              "min": {
+                "type": "Fixed",
+                "value": 3
+              },
+              "max": {
+                "type": "Fixed",
+                "value": 3
+              },
+              "self": "ANY",
+              "mode": "TOP"
+            },
+            "to": "tributeZone"
+          }
+        },
+        {
+          "type": "Do",
+          "action": {
+            "type": "Move",
+            "cards": {
+              "zones": "tributeZone",
+              "owner": "YOU",
+              "filter": {},
+              "min": {
+                "type": "Fixed",
+                "value": 1
+              },
+              "max": {
+                "type": "Fixed",
+                "value": 1
+              },
+              "self": "ANY",
+              "mode": "CHOOSE"
+            },
+            "to": "hand"
+          }
+        }
+      ],
+      "sourceZone": "field",
+      "limit": "NONE"
+    }
+  ],
+  "requirement": {
+    "summoner": {
+      "level": 1
+    },
+    "materials": {
+      "count": 1,
+      "level": 1,
+      "zones": [
+        "hand",
+        "discardPile"
+      ]
+    }
+  }
+}

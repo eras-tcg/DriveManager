@@ -42,7 +42,15 @@ enum class PromptPurpose {
     /** Carnirex: the ally sacrificed to summon it ("summon-sacrifice|card|ally or -"). */
     SUMMON_SACRIFICE,
     /** The cards tributed instead of receiving damage (Estoque De Los Guerreros Jurados). */
-    DAMAGE_TRIBUTE;
+    DAMAGE_TRIBUTE,
+    /**
+     * Enlace: a creature that entered the Línea frontal (`subjectId`) takes a position and may join a formation. `cards`: the Línea
+     * frontal in order; `validIds`: options "pos:<index>" (that position, no formation) and "pos:<index>:<id>" (that position, joining the
+     * formation of creature `id`, or forming one with it when it has none), `cardLabels` says each in words. None: it stays where it is.
+     */
+    FORMATION_ENTRY,
+    /** "en su lugar, puedes colocar 1 aliado al tope de tus vidas bocabajo" (a link effect): the ally placed instead of the removal. */
+    REPLACE_LIFE;
 
     /** The purpose string the prompt carries. */
     fun id(): String = name

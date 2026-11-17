@@ -136,6 +136,7 @@ class E1BugfixTest {
         kagravu.setSpecialSummonKind("ritual");
         kagravu.setSpecialCost(0);
         kagravu.setRequirement("criaturas que sumen 2 en nivel incluido el invocador.");
+        Req.program(kagravu);
         host.getHand().add(kagravu);
         CardSlot one = onField(host, card("l1", "Nivel 1", 1, 1, "R"));
         CardSlot other = onField(host, card("l1b", "Otro nivel 1", 1, 1, "R"), BACK);
@@ -221,6 +222,7 @@ class E1BugfixTest {
         card.setSpecialSummonKind("promotion");
         card.setSpecialCost(cost);
         card.setRequirement(requirement);
+        Req.program(card);
         return card;
     }
 

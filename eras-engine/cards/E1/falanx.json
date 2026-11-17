@@ -117,5 +117,15 @@
   ],
   "traits" : {
     "specialFromTributes" : true
+  },
+  "requirement" : {
+    "summoner": {
+      "level": 3,
+      "atLeast": true
+    },
+    "materials": {
+      "level": 3,
+      "levelSum": 6
+    }
   }
 }
