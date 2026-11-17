@@ -132,6 +132,7 @@ public class EditionMetadataController {
     static void keepSlots(EditionMetadata body, EditionMetadata existing) {
         if (body.getColors() == null) body.setColors(existing.getColors());
         if (body.getCardsPerColor() == null) body.setCardsPerColor(existing.getCardsPerColor());
+        if (body.getCardsByColor() == null) body.setCardsByColor(existing.getCardsByColor());
         if (body.getCoverFrame() == null) body.setCoverFrame(existing.getCoverFrame());
     }
 
