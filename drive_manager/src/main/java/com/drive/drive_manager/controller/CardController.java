@@ -37,6 +37,9 @@ public class CardController {
     @Autowired
     private com.drive.drive_manager.service.CardSlots cardSlots;
 
+    @Autowired
+    private com.drive.drive_manager.service.CardReprints cardReprints;
+
     private static final String REF_ID = "default";
 
     /**
@@ -102,6 +105,21 @@ public class CardController {
         try {
             return ResponseEntity.ok(cardSlots.move(moves));
         } catch (com.drive.drive_manager.service.CardSlots.InvalidMove e) {
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(java.util.Map.of("message", e.getMessage()));
+        }
+    }
+
+    /**
+     * Reprints a card in an empty slot of another edition (a card of its own, with its own copy of the art).
+     * POST /api/cards/{id}/reprint  {edition, subEdition, cardNumber}
+     */
+    @PreAuthorize("hasAuthority('manage_cards')")
+    @PostMapping("/{id}/reprint")
+    public ResponseEntity<Object> reprint(@PathVariable String id, @RequestBody com.drive.drive_manager.service.CardSlots.Move slot) {
+        try {
+            return ResponseEntity.status(HttpStatus.CREATED)
+                    .body(cardReprints.reprint(id, slot.edition(), slot.subEdition(), slot.cardNumber()));
+        } catch (com.drive.drive_manager.service.CardReprints.InvalidReprint e) {
             return ResponseEntity.status(HttpStatus.CONFLICT).body(java.util.Map.of("message", e.getMessage()));
         }
     }
