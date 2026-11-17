@@ -168,6 +168,7 @@ class RoomCopy private constructor(
         c.starterCardId = o.starterCardId
         c.ready = o.ready
         c.skipOptional = o.skipOptional
+        c.autoOptional = o.autoOptional
         c.resourceCount = o.resourceCount
         c.turnsStarted = o.turnsStarted
         c.hand = cards(o.hand)!!
@@ -177,6 +178,9 @@ class RoomCopy private constructor(
         c.tributeZone = cards(o.tributeZone)!!
         c.discardPile = cards(o.discardPile)!!
         c.field = cards(o.field)!!
+        c.formations = o.formations.mapTo(ArrayList<MutableList<String>>()) { ArrayList(it) }
+        c.frontSeen = list(o.frontSeen)
+        c.formationEntries = list(o.formationEntries)!!
         return c
     }
 
@@ -227,6 +231,9 @@ class RoomCopy private constructor(
         c.finish = o.finish
         c.alt = o.alt
         c.altArtUrls = map(o.altArtUrls)
+        c.arrows = list(o.arrows)
+        c.enlace = o.enlace
+        c.formationGrants = list(o.formationGrants)
         return c
     }
 

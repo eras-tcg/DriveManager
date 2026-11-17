@@ -34,7 +34,13 @@ public final class CardMeta {
         allKeywords.addAll(slot.getInheritKeywords());
         slot.setUnprogrammed(CardEffects.pending(meta.getCardName(),
                 meta.getEffects() == null ? 0 : meta.getEffects().size(),
-                meta.getInheritEffects() == null ? 0 : meta.getInheritEffects().size(), allKeywords));
+                meta.getInheritEffects() == null ? 0 : meta.getInheritEffects().size(),
+                (meta.getFormationEffects() == null ? 0 : meta.getFormationEffects().size())
+                        + (meta.getFormationKeywordEffects() == null ? 0 : meta.getFormationKeywordEffects().size()), allKeywords,
+                meta.getSpecialSummonKind()));
+        // Enlace: its printed arrows and its category
+        slot.setArrows(meta.getArrows() != null ? new ArrayList<>(meta.getArrows()) : new ArrayList<>());
+        slot.setEnlace(Boolean.TRUE.equals(meta.getEnlace()));
         slot.setMentions(mentionedTypes(meta));
         List<String> colors = new ArrayList<>();
         if (meta.getColorIdentity() != null) colors.add(meta.getColorIdentity());
@@ -49,6 +55,7 @@ public final class CardMeta {
         List<com.drive.drive_manager.dto.Effect> all = new ArrayList<>();
         if (meta.getEffects() != null) all.addAll(meta.getEffects());
         if (meta.getInheritEffects() != null) all.addAll(meta.getInheritEffects());
+        if (meta.getFormationEffects() != null) all.addAll(meta.getFormationEffects());
         for (com.drive.drive_manager.dto.Effect e : all) {
             if (e.getEffectBlocks() == null) continue;
             for (com.drive.drive_manager.dto.Effect.effectBlock b : e.getEffectBlocks()) {

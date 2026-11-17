@@ -4,5 +4,10 @@
     "type" : "DamageReplacement",
     "maxDamage" : 8,
     "reduce" : 1
-  } ]
+  } ],
+  "requirement" : {
+    "summoner": {
+      "level": 1
+    }
+  }
 }

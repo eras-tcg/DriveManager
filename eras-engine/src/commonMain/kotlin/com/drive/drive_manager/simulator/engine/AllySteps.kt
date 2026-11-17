@@ -41,10 +41,9 @@ import com.drive.drive_manager.simulator.room.GameRoom
 import com.drive.drive_manager.simulator.room.PlayerState
 
 /** Allies, their materials and Recursos. Each step: whether it can be done, carrying it out, and applying the player's choice. */
-object AllySteps {
+object AllySteps : StepFamily {
 
-    @JvmStatic
-    fun possibleStep(room: GameRoom, effect: PendingEffect, step: EffectStep): Boolean {
+    override fun possibleStep(room: GameRoom, effect: PendingEffect, step: EffectStep): Boolean {
         val player = room.getPlayer(effect.controllerId)!!
         val onField = find(player.field, effect.sourceInstanceId)
         return when (step) {
@@ -74,8 +73,7 @@ object AllySteps {
         }
     }
 
-    @JvmStatic
-    fun runStep(room: GameRoom, effect: PendingEffect, step: EffectStep): Boolean {
+    override fun runStep(room: GameRoom, effect: PendingEffect, step: EffectStep): Boolean {
         val player = room.getPlayer(effect.controllerId)!!
         val userId = player.userId
 
@@ -250,12 +248,22 @@ object AllySteps {
                 pick(room, effect, "Tributa 1 material de 1 de tus aliados.", "Tributar", valid, ids(valid), 1)
                 return true
             }
+            is ChangeClass -> {
+                val ally = subject(room, effect) ?: return false
+                effect.lastDone = ClassChanges.change(room, effect, ally, step.from!!, step.to!!)
+                return false
+            }
+            is GrantEffect -> {
+                val ally = subject(room, effect) ?: return false
+                GrantedEffects.grant(room, effect, ally, step.effect!!)
+                effect.lastDone = true
+                return false
+            }
             else -> throw IllegalStateException("Paso de otra familia: $step")
         }
     }
 
-    @JvmStatic
-    fun applyStep(
+    override fun applyStep(
         room: GameRoom, effect: PendingEffect, step: EffectStep, player: PlayerState, picks: List<String>,
         order: List<String>?, repeat: BooleanArray,
     ): String? {

@@ -1,0 +1,65 @@
+{
+  "name": "muerte caminante",
+  "effects": [
+    {
+      "id": "muerte-caminante:todos-los-turnos",
+      "moment": "ON_EVENT",
+      "mandatory": true,
+      "label": "Todos Los Turnos",
+      "text": "Una vez por turno: si alguna criatura es destruida por efecto o enfrentamiento, reactiva esta carta.",
+      "steps": [
+        {
+          "type": "Do",
+          "action": {
+            "type": "SetTapped",
+            "cards": {
+              "zones": "thisCard",
+              "owner": "YOU",
+              "filter": {},
+              "min": {
+                "type": "Fixed"
+              },
+              "max": {
+                "type": "Fixed",
+                "value": 2147483647
+              },
+              "self": "ANY",
+              "mode": "ALL"
+            }
+          }
+        }
+      ],
+      "condition": {
+        "type": "Any",
+        "any": [
+          {
+            "type": "Destroyed",
+            "owner": "ANY",
+            "by": "ANY",
+            "cause": "effect",
+            "filter": {
+              "cardType": "creature"
+            }
+          },
+          {
+            "type": "Destroyed",
+            "owner": "ANY",
+            "by": "ANY",
+            "cause": "battle",
+            "filter": {
+              "cardType": "creature"
+            }
+          }
+        ]
+      },
+      "sourceZone": "field",
+      "limit": "ONCE_PER_TURN"
+    }
+  ],
+  "requirement": {
+    "ritual": {
+      "sum": true,
+      "level": 5
+    }
+  }
+}

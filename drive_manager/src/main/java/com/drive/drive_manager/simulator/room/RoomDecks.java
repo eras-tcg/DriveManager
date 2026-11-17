@@ -16,20 +16,22 @@ final class RoomDecks {
 
     /** Pre-room: the deck a player will use; its first Iniciador is the starter until another is chosen. */
     static GameStateUpdate setDeck(RoomService service, GameRoom room, String userId, GameAction action) {
-        return DeckChoice.setDeck(room, userId, action, new Shelf(service));
+        return DeckChoice.setDeck(room, userId, action, new Shelf(service, userId));
     }
 
     static GameStateUpdate refreshCardMetadata(RoomService service, GameRoom room, String userId, GameAction action) {
-        return DeckChoice.refreshCardMetadata(room, userId, action, new Shelf(service));
+        return DeckChoice.refreshCardMetadata(room, userId, action, new Shelf(service, userId));
     }
 
-    /** The decks as the server has them (none in tests: no deck is found). */
-    private record Shelf(RoomService service) implements DeckChoice.Shelf {
+    /** The decks as the server has them (none in tests: no deck is found), as the player {@code userId} looks for them. */
+    private record Shelf(RoomService service, String userId) implements DeckChoice.Shelf {
 
         @Override
         public DeckChoice.Found find(String deckId) {
             DeckList deck = service.decks == null ? null : service.decks.deck(deckId).orElse(null);
             if (deck == null) return null;
+            // A deck with cards in testing is played only by its owner (who could save it: they may see them)
+            if (!java.util.Objects.equals(deck.getUserId(), userId) && service.decks.hasTestCards(deck)) return null;
             return new DeckChoice.Found(deck.getDeckName(), deck.isPrivateDeck(), deck.getUserId(), () -> service.decks.slots(deck));
         }
 

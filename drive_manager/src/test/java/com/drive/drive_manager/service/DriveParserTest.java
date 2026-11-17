@@ -39,4 +39,15 @@ class DriveParserTest {
         // Without a .psd it keeps the file's name
         assertThat(DriveParser.withRealName(parser.parseFileName("E2-B02-Flerik.jpg"), "E2-B02-Flerik.jpg", real).name()).isEqualTo("Flerik");
     }
+
+    @Test
+    void aTestingEditionIsReadLikeAnyOther() {
+        DriveParser.ParsedFileName parsed = parser.parseFileName("T1-W01-Bazael-Pintor-del-Firmamento.jpg");
+        assertThat(parsed.edition()).isEqualTo("T1");
+        assertThat(parsed.color()).isEqualTo("W");
+        assertThat(parsed.number()).isEqualTo(1);
+        assertThat(DriveParser.isEditionFolder("T1")).isTrue();
+        assertThat(DriveParser.isEditionFolder("E2")).isTrue();
+        assertThat(DriveParser.isEditionFolder("Tributos")).isFalse();
+    }
 }

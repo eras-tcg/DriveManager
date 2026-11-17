@@ -1,0 +1,9 @@
+{
+  "name": "caballero justador",
+  "requirement": {
+    "summoner": {
+      "level": 2
+    },
+    "alliesSum": 3
+  }
+}

@@ -48,5 +48,12 @@
     "strength" : 2,
     "keywords" : [ "Enfrentar 3" ],
     "zone" : "field"
-  } ]
+  } ],
+  "requirement" : {
+    "summoner": {
+      "level": 2
+    },
+    "alliesSum": 4,
+    "alliesSumByCost": true
+  }
 }

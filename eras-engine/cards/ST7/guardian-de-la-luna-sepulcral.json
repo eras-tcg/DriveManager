@@ -1,0 +1,13 @@
+{
+  "name": "guardían de la luna sepulcral",
+  "requirement": {
+    "ritual": {
+      "parts": [
+        {
+          "level": 3
+        },
+        {}
+      ]
+    }
+  }
+}

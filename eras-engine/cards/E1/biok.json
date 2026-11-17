@@ -45,5 +45,18 @@
     },
     "reduce" : 1,
     "limit" : "NONE"
-  } ]
+  } ],
+  "requirement" : {
+    "summoner": {
+      "level": 3
+    },
+    "materials": {
+      "count": 1,
+      "level": 3,
+      "zones": [
+        "hand",
+        "discardPile"
+      ]
+    }
+  }
 }

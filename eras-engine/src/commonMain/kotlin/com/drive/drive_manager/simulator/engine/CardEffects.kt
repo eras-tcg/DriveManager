@@ -34,6 +34,9 @@ object CardEffects {
     /** Inherited effects ("heredables"): what a card gives the creature it is a Recurso of (rule 11.4.0.3). */
     private val INHERITED: MutableMap<String, List<EffectScript>> = HashMap()
     private val CONTINUOUS: MutableMap<String, List<Continuous>> = HashMap()
+    private val INHERITED_CONTINUOUS: MutableMap<String, List<Continuous>> = HashMap()
+    /** Enlace: the link effects, what a card gives the members of its formation it points to (Formations). */
+    private val FORMATION: MutableMap<String, FormationEffects> = HashMap()
 
     /**
      * Keyword abilities with an effect the engine runs ("Celeridad"). Others (Provocar, Letalidad…) are combat rules; Asalto modifies the
@@ -50,6 +53,12 @@ object CardEffects {
     @JvmStatic
     fun register(name: String, vararg scripts: EffectScript) {
         BY_NAME[name] = frozenListOf(*scripts)
+    }
+
+    /** A Requerimiento programmed by hand for that card name (tests); null removes it. */
+    @JvmStatic
+    fun registerRequirement(name: String, requirement: RequirementSpec?) {
+        if (requirement == null) REQUIREMENTS.remove(name) else REQUIREMENTS[name] = requirement
     }
 
     /** What identifies a card by its name: [CardKeys.key]. */
@@ -85,11 +94,13 @@ object CardEffects {
      * @param levelBonus levels it gains while it applies ("gana 1 nivel por cada copia"), or null
      * @param targets    the cards it affects; null: this card
      * @param enemies    `targets` are the opponent's ("los enemigos de fuerza 3 o menos no pueden declarar ataque")
+     * @param formationNeighbours `targets` are only the members of its formation next to it ("los aliados [paladín] adyacentes en la formación")
      */
     @JvmRecord
     data class Continuous(
         val label: String?, val text: String?, val allyTurn: Boolean, val condition: Condition?, val strength: Int, val keywords: List<String>?,
         val bonus: Amount?, val zone: String?, val levelBonus: Amount?, val targets: CardFilter?, val enemies: Boolean,
+        val formationNeighbours: Boolean = false,
     ) {
         constructor(label: String?, text: String?, allyTurn: Boolean, condition: Condition?, strength: Int, keywords: List<String>?,
                     bonus: Amount?, zone: String?, levelBonus: Amount?) :
@@ -132,17 +143,18 @@ object CardEffects {
     fun definitions(): Map<String, CardDefinition> {
         // In the order of the names (a TreeSet's): collected, then sorted
         val names: MutableSet<String> = HashSet()
-        for (registry in frozenListOf<Map<String, *>>(BY_NAME, INHERITED, CONTINUOUS, REPLACEMENTS, INHERITED_REPLACEMENTS)) {
+        for (registry in frozenListOf<Map<String, *>>(BY_NAME, INHERITED, CONTINUOUS, REPLACEMENTS, INHERITED_REPLACEMENTS, FORMATION, INHERITED_CONTINUOUS)) {
             names.addAll(registry.keys)
         }
         names.addAll(CostModifiers.names())
         names.addAll(TRAITS.keys)
         names.addAll(REACTIONS.keys)
+        names.addAll(REQUIREMENTS.keys)
         val all: MutableMap<String, CardDefinition> = LinkedHashMap()
         for (name in names.sorted()) {
             all[name] = CardDefinition(name, BY_NAME[name], INHERITED[name], CONTINUOUS[name],
                 reactionsOf(name), if (INHERITED_REPLACEMENTS.containsKey(name)) frozenListCopy(INHERITED_REPLACEMENTS[name]!!) else null,
-                TRAITS[name])
+                TRAITS[name], FORMATION[name], REQUIREMENTS[name], INHERITED_CONTINUOUS[name])
         }
         return all
     }
@@ -172,6 +184,7 @@ object CardEffects {
                 if (r is Reaction.SwapsBlocker) rules.add("cambia al bloqueador declarado por otro aliado")
                 if (r is Reaction.AttacksBeforeAscended) rules.add("declara ataque antes de ser ascendida")
                 if (r is Reaction.GainBeforeAscended) rules.add("gana " + r.keyword + " antes de ser ascendida")
+                if (r is Reaction.EnemyAsTypeForRequirement) rules.add("puede usar un enemigo como [" + r.asType + "] para su Requerimiento")
                 if (r is AllyRemovalSummon) rules.add("se invoca especialmente en lugar de que un aliado sea removido")
                 if (r is AllyGuard) rules.add("evita que sus aliados sean removidos por efecto oponente")
                 if (r is Reaction.TributesInsteadOfDamage) rules.add("se tributa con 2 [retador] en lugar de recibir daño")
@@ -196,18 +209,35 @@ object CardEffects {
      * or null when everything is programmed. `own`/`inherited`: its effects in the metadata.
      */
     @JvmStatic
-    fun pending(cardName: String?, own: Int, inherited: Int, keywords: List<String>): String? {
+    fun pending(cardName: String?, own: Int, inherited: Int, keywords: List<String>): String? = pending(cardName, own, inherited, 0, keywords)
+
+    /** With `formation`: its link effects in the metadata ("Efecto de enlace" and the abilities it gives), counted as the inherited ones. */
+    @JvmStatic
+    fun pending(cardName: String?, own: Int, inherited: Int, formation: Int, keywords: List<String>): String? =
+        pending(cardName, own, inherited, formation, keywords, null)
+
+    /**
+     * With `specialKind`: the card's special summon method in the metadata; its Requerimiento must be programmed in the card file (it is
+     * never read from the text), else it counts as not programmed.
+     */
+    @JvmStatic
+    fun pending(cardName: String?, own: Int, inherited: Int, formation: Int, keywords: List<String>, specialKind: String?): String? {
         val name = nameOf(cardName)
         val ownDone = BY_NAME.valueOr(name, frozenListOf()).size + CONTINUOUS.valueOr(name, frozenListOf()).size +
                 CostModifiers.of(name).size + REPLACEMENTS.valueOr(name, frozenListOf()).size +
                 ruleEffects().valueOr(name, frozenListOf()).size
-        val inheritedDone = INHERITED.valueOr(name, frozenListOf()).size + INHERITED_REPLACEMENTS.valueOr(name, frozenListOf()).size
+        val inheritedDone = INHERITED.valueOr(name, frozenListOf()).size + INHERITED_REPLACEMENTS.valueOr(name, frozenListOf()).size +
+                INHERITED_CONTINUOUS.valueOr(name, frozenListOf()).size
         val pending: MutableList<String> = ArrayList()
         if (own > ownDone) pending.add((own - ownDone).toString() + " de " + own + " efectos propios")
         if (inherited > inheritedDone) pending.add((inherited - inheritedDone).toString() + " de " + inherited + " heredados")
+        val link = FORMATION[name]
+        val formationDone = if (link == null) 0 else link.effects().size + link.continuous().size + link.reactions().size
+        if (formation > formationDone) pending.add((formation - formationDone).toString() + " de " + formation + " de enlace")
         val manual = keywords.map { k -> k.replace(TRAILING_NUMBER, "").trim { it <= ' ' } }
             .filter { k -> !k.isEmpty() && !ENGINE_KEYWORDS.contains(k) }.distinct()
         if (!manual.isEmpty()) pending.add(manual.joinToString(", "))
+        if (!specialKind.isNullOrBlank() && !REQUIREMENTS.containsKey(name)) pending.add("Requerimiento de invocación especial")
         return if (pending.isEmpty()) null else pending.joinToString("; ")
     }
 
@@ -247,11 +277,38 @@ object CardEffects {
                     "inflija daño 1 vez extra por cada uno.", frozenListOf<EffectStep>(GroupUp(allies)))
     }
 
-    /** The card's own continuous effects. */
+    /** The card's continuous effects: its own, those its Recursos give it and those of its formation's link. */
     @JvmStatic
     fun continuousOf(card: CardSlot): List<Continuous> {
-        if (card.cardName == null) return frozenListOf()
-        return CONTINUOUS.valueOr(nameOf(card.cardName), frozenListOf())
+        val own = if (card.cardName == null) frozenListOf() else CONTINUOUS.valueOr(nameOf(card.cardName), frozenListOf())
+        val given = card.resources.orEmpty().filter { it.cardName != null && INHERITED_CONTINUOUS.containsKey(nameOf(it.cardName)) }
+        if (card.formationGrants.isNullOrEmpty() && given.isEmpty()) return own
+        val all: MutableList<Continuous> = ArrayList(own)
+        for (resource in given) all.addAll(INHERITED_CONTINUOUS[nameOf(resource.cardName)]!!)
+        for (g in Formations.grants(card.formationGrants)) FORMATION[nameOf(g.sourceName)]?.let { all.addAll(it.continuous()) }
+        return all
+    }
+
+    /** The link effects (triggered and activated) the grants give ("source|since|name"), each with the id of its grant. */
+    @JvmStatic
+    fun formationScripts(grants: List<*>?): List<EffectScript> {
+        val all: MutableList<EffectScript> = ArrayList()
+        for (g in Formations.grants(grants)) {
+            val link = FORMATION[nameOf(g.sourceName)] ?: continue
+            for (s in link.effects()) all.add(s.copy(id = Formations.grantedId(s.id, g)))
+        }
+        return all
+    }
+
+    /** The name of the card whose link effect it is (the id of a granted copy), or null. */
+    @JvmStatic
+    fun formationFrom(scriptId: String?): String? {
+        if (scriptId == null || !scriptId.contains(Formations.VIA)) return null
+        val base = scriptId.substringBefore(Formations.VIA)
+        for ((key, value) in FORMATION) {
+            if (value.effects().any { it.id == base } || value.reactions().any { (it as? Replacement)?.id == base }) return key
+        }
+        return null
     }
 
     /** The card's own effects, those its Recursos give it and those of the keywords the engine runs. */
@@ -261,8 +318,12 @@ object CardEffects {
         for (resource in card.resources!!) {
             if (resource.cardName != null) all.addAll(INHERITED.valueOr(nameOf(resource.cardName), frozenListOf()))
         }
+        // Enlace: what the members of its formation that point to it give it
+        if (!card.formationGrants.isNullOrEmpty()) all.addAll(formationScripts(card.formationGrants))
         for (keyword in EffectEngine.keywords(card)) {
             var script = KEYWORDS[keyword.lowercase()]
+            // An ability gained between «» (GrantEffect)
+            if (script == null) script = GrantedEffects.byMarker(keyword)
             // Agrupar N: up to N allies
             val groupUp = AGRUPAR.matchEntire(keyword.lowercase())
             if (script == null && groupUp != null) script = agrupar(groupUp.groupValues[1].toInt())
@@ -274,9 +335,15 @@ object CardEffects {
     /** Looks an effect up by its id (card effects and keywords). */
     @JvmStatic
     fun byId(id: String): EffectScript? {
+        if (id.contains(Formations.VIA)) {
+            val base = id.substringBefore(Formations.VIA)
+            for (link in FORMATION.values) for (s in link.effects()) if (s.id == base) return s.copy(id = id)
+            return null
+        }
         for (scripts in BY_NAME.values) for (s in scripts) if (s.id == id) return s
         for (scripts in INHERITED.values) for (s in scripts) if (s.id == id) return s
         for (s in KEYWORDS.values) if (s.id == id) return s
+        GrantedEffects.byId(id)?.let { return it }
         return if (id.startsWith("kw:agrupar-")) agrupar(id.substring("kw:agrupar-".length).toInt()) else null
     }
 
@@ -311,7 +378,9 @@ object CardEffects {
          * "coloca el recurso de este efecto en tu retaguardia con todos los recursos [filtro] de esta carta como sus recursos" (mandatory: done by
          * the rules before the removal, Removals.reactionsBeforeRemoval; never offered as a choice).
          */
-        RESOURCE_TO_BACK_WITH_OTHERS
+        RESOURCE_TO_BACK_WITH_OTHERS,
+        /** "en su lugar, puedes colocar 1 aliado al tope de tus vidas bocabajo" (another ally of its owner; a link effect, Enlace). */
+        ALLY_TO_LIFE_FACE_DOWN
     }
 
     /**
@@ -346,6 +415,16 @@ object CardEffects {
      */
     /** What cards change in the rules themselves, by name: [CardTraits]. */
     private val TRAITS: MutableMap<String, CardTraits> = HashMap()
+
+    /** Special summon Requerimientos programmed by hand, by name: [RequirementSpec]. */
+    private val REQUIREMENTS: MutableMap<String, RequirementSpec> = HashMap()
+
+    /** The card's Requerimiento programmed by hand (its file's `requirement` section), or null: then it is read from the printed text. */
+    @JvmStatic
+    fun requirementOf(card: CardSlot?): RequirementSpec? {
+        if (card?.cardName == null) return null
+        return REQUIREMENTS[nameOf(card.cardName)]
+    }
 
     /** What cards do before an event, other than cost changes and replacements of a removal: [Reaction]. */
     private val REACTIONS: MutableMap<String, List<Reaction>> = HashMap()
@@ -447,6 +526,11 @@ object CardEffects {
             if (resource.cardName != null)
                 all.addAll(INHERITED_REPLACEMENTS.valueOr(nameOf(resource.cardName), frozenListOf()))
         }
+        // Enlace: the replacements the members of its formation that point to it give it, each with the id of its grant
+        for (g in Formations.grants(card.formationGrants)) {
+            val link = FORMATION[nameOf(g.sourceName)] ?: continue
+            for (r in link.reactions()) if (r is Replacement) all.add(r.copy(id = Formations.grantedId(r.id, g)))
+        }
         return all
     }
 
@@ -481,6 +565,12 @@ object CardEffects {
         return gain?.keyword
     }
 
+    /** "puedes utilizar un enemigo considerándolo [tipo] para el requerimiento" (RitualParts). */
+    @JvmStatic
+    fun enemyAsTypeForRequirement(card: CardSlot): Reaction.EnemyAsTypeForRequirement? {
+        return reaction<Reaction.EnemyAsTypeForRequirement>(card)
+    }
+
     /** "cuando un aliado sea declarado bloqueador: en su lugar, puedes reactivarlo y elegir otro aliado …" (CombatRules.offerBlockerSwap). */
     @JvmStatic
     fun swapsBlocker(card: CardSlot): Boolean {
@@ -513,8 +603,12 @@ object CardEffects {
         check(other == null || other == name) { "La misma carta en dos archivos: \"$other\" y \"$name\"" }
         if (!d.effects().isEmpty()) BY_NAME[name!!] = d.effects()
         if (!d.inherited().isEmpty()) INHERITED[name!!] = d.inherited()
+        GrantedEffects.register(d.effects())
+        GrantedEffects.register(d.inherited())
         if (!d.continuous().isEmpty()) CONTINUOUS[name!!] = d.continuous()
+        if (!d.inheritedContinuous().isEmpty()) INHERITED_CONTINUOUS[name!!] = d.inheritedContinuous()
         if (d.traits != null) TRAITS[name!!] = d.traits
+        if (d.requirement != null) REQUIREMENTS[name!!] = d.requirement
         val others: MutableList<Reaction> = ArrayList()
         val replacements: MutableList<Replacement> = ArrayList()
         for (r in d.reactions()) {
@@ -526,6 +620,10 @@ object CardEffects {
         if (!others.isEmpty()) REACTIONS[name!!] = others
         val inherited = d.inheritedReactions().map { it as Replacement }
         if (!inherited.isEmpty()) INHERITED_REPLACEMENTS[name!!] = inherited
+        if (d.formation != null) {
+            FORMATION[name!!] = d.formation
+            GrantedEffects.register(d.formation.effects())
+        }
     }
 
     init {

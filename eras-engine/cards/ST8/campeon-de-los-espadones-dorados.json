@@ -1,0 +1,9 @@
+{
+  "name": "campeón de los espadones dorados",
+  "requirement": {
+    "summoner": {
+      "level": 2
+    },
+    "strongest": true
+  }
+}

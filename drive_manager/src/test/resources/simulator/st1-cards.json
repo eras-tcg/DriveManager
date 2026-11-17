@@ -482,7 +482,7 @@
      {
       "activationCondition": "si reduces a 0 la fuerza de algún enemigo",
       "cost": "",
-      "resolution": "puedes invocar esta carta reduciendo su coste en 2."
+      "resolution": "puedes invocar esta carta en tu línea frontal reduciendo su coste en 2."
      }
     ],
     "kind": "disparado",

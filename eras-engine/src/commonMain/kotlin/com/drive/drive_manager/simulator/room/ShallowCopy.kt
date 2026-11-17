@@ -64,6 +64,7 @@ object ShallowCopy {
         c.unplayable = o.unplayable
         c.legalActions = o.legalActions
         c.attackTargets = o.attackTargets
+        c.formationJoins = o.formationJoins
         c.winnerId = o.winnerId
         c.endReason = o.endReason
         return c
@@ -84,6 +85,7 @@ object ShallowCopy {
         c.starterCardId = o.starterCardId
         c.ready = o.ready
         c.skipOptional = o.skipOptional
+        c.autoOptional = o.autoOptional
         c.resourceCount = o.resourceCount
         c.turnsStarted = o.turnsStarted
         c.hand = o.hand
@@ -93,6 +95,9 @@ object ShallowCopy {
         c.tributeZone = o.tributeZone
         c.discardPile = o.discardPile
         c.field = o.field
+        c.formations = o.formations
+        c.frontSeen = o.frontSeen
+        c.formationEntries = o.formationEntries
         return c
     }
 
@@ -141,6 +146,9 @@ object ShallowCopy {
         c.finish = o.finish
         c.alt = o.alt
         c.altArtUrls = o.altArtUrls
+        c.arrows = o.arrows
+        c.enlace = o.enlace
+        c.formationGrants = o.formationGrants
         return c
     }
 

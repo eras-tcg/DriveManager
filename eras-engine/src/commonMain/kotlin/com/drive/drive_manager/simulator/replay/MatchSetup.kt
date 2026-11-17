@@ -30,7 +30,7 @@ data class MatchSetup(
     @JvmRecord
     data class Seat(
         val userId: String?, val username: String?, val deckId: String?, val deckName: String?, val starterCardId: String?,
-        val skipOptional: Boolean, val deck: List<CardSlot>?,
+        val skipOptional: Boolean, val deck: List<CardSlot>?, val autoOptional: Boolean = false,
     )
 
     /** A new room, with this id, as the game's room was just before it started (its players seated and connected). */
@@ -53,6 +53,7 @@ data class MatchSetup(
             p.deckName = s.deckName
             p.starterCardId = s.starterCardId
             p.skipOptional = s.skipOptional
+            p.autoOptional = s.autoOptional
             p.deck = PreRoomActions.deepCopySlots(s.deck)
             p.originalDeck = PreRoomActions.deepCopySlots(s.deck)
             room.players[s.userId!!] = p
@@ -74,7 +75,7 @@ data class MatchSetup(
             val seats = ArrayList<Seat>()
             for (p in room.players.values) {
                 seats.add(Seat(p.userId, p.username, p.deckId, p.deckName, p.starterCardId,
-                        p.skipOptional, frozenListCopy(PreRoomActions.deepCopySlots(p.deck))))
+                        p.skipOptional, frozenListCopy(PreRoomActions.deepCopySlots(p.deck)), p.autoOptional))
             }
             return MatchSetup(seed, room.editor, room.bot, room.ranked, room.confirmMandatory, room.hostId,
                     room.firstChoice, room.idSeq, room.eventSeq, frozenListCopy(seats), room.botEdge)

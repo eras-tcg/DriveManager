@@ -1,0 +1,10 @@
+{
+  "name": "bafón",
+  "requirement": {
+    "summoner": {
+      "level": 1
+    },
+    "alliesSum": 2,
+    "alliesSumByCost": true
+  }
+}

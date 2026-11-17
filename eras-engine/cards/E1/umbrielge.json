@@ -1,0 +1,58 @@
+{
+  "name" : "umbrielge",
+  "effects" : [
+    {
+      "id" : "umbrielge:turno-aliado",
+      "moment" : "ON_EVENT",
+      "mandatory" : true,
+      "label" : "Turno Aliado",
+      "text" : "Una vez por turno: si esta carta destruye un enemigo, reactiva esta carta.",
+      "steps" : [
+        {
+          "type" : "Do",
+          "action" : {
+            "type" : "SetTapped",
+            "cards" : {
+              "zones" : "field",
+              "owner" : "YOU",
+              "filter" : {},
+              "min" : {
+                "type" : "Fixed",
+                "value" : 1
+              },
+              "max" : {
+                "type" : "Fixed",
+                "value" : 1
+              },
+              "self" : "ANY",
+              "mode" : "SELF"
+            }
+          }
+        }
+      ],
+      "condition" : {
+        "type" : "Destroyed",
+        "owner" : "ENEMY",
+        "by" : "ANY",
+        "byThis" : true
+      },
+      "allyTurn" : true,
+      "limit" : "ONCE_PER_TURN",
+      "sourceZone" : "field"
+    }
+  ],
+  "inheritedContinuous" : [
+    {
+      "label" : "Turno Aliado",
+      "text" : "Heredado de Umbrielge: esta carta gana fuerza 2.",
+      "allyTurn" : true,
+      "strength" : 2,
+      "zone" : "field"
+    }
+  ],
+  "requirement" : {
+    "summoner" : {
+      "level" : 3
+    }
+  }
+}

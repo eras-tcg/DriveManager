@@ -1,0 +1,8 @@
+{
+  "name": "guardia del templo abandonado",
+  "requirement": {
+    "ritual": {
+      "level": 1
+    }
+  }
+}

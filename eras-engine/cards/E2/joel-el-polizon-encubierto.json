@@ -1,0 +1,23 @@
+{
+  "name": "joel el polizón encubierto",
+  "requirement": {
+    "summoner": {
+      "level": 1
+    },
+    "condition": {
+      "type": "Compare",
+      "left": {
+        "type": "OnField",
+        "filter": {
+          "cardType": "creature"
+        }
+      },
+      "op": "AT_LEAST",
+      "right": {
+        "type": "Fixed",
+        "value": 2
+      }
+    },
+    "conditionText": "controlar al menos 2 aliados"
+  }
+}

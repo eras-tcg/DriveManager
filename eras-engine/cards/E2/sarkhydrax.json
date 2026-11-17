@@ -63,5 +63,11 @@
     "limit" : "NONE",
     "cost" : "RESOURCE_TRIBUTED_ANOTHER_TO_HAND",
     "resourceFilter" : { }
-  } ]
+  } ],
+  "requirement" : {
+    "summoner": {
+      "level": 1,
+      "maxLevel": 2
+    }
+  }
 }

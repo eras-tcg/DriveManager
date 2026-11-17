@@ -113,5 +113,18 @@
     } ],
     "sourceZone" : "field",
     "limit" : "NONE"
-  } ]
+  } ],
+  "requirement" : {
+    "summoner": {
+      "level": 3
+    },
+    "materials": {
+      "count": 1,
+      "level": 3,
+      "levelSum": 3,
+      "zones": [
+        "tributeZone"
+      ]
+    }
+  }
 }

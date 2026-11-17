@@ -1,0 +1,9 @@
+{
+  "name": "armadura perpetua",
+  "requirement": {
+    "ritual": {
+      "sum": true,
+      "level": 2
+    }
+  }
+}

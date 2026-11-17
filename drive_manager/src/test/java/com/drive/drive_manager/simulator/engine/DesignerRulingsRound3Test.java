@@ -22,6 +22,7 @@ class DesignerRulingsRound3Test extends CardBatchSupport {
         card.setSpecialSummonKind(kind);
         card.setSpecialCost(cost);
         card.setRequirement(requirement);
+        Req.program(card);
         return card;
     }
 

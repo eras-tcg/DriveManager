@@ -24,6 +24,7 @@ import com.drive.drive_manager.simulator.engine.EffectEngine.record
 import com.drive.drive_manager.simulator.engine.EffectEngine.refreshContinuous
 import com.drive.drive_manager.simulator.engine.EffectEngine.strength
 import com.drive.drive_manager.simulator.engine.EffectStep.*
+import com.drive.drive_manager.simulator.engine.effects.model.Memory
 import com.drive.drive_manager.simulator.engine.Removals.deferRemoval
 import com.drive.drive_manager.simulator.engine.Removals.removeFromField
 import com.drive.drive_manager.simulator.engine.StepHelpers.RETURN_AT_ATTACK_END
@@ -40,13 +41,10 @@ import com.drive.drive_manager.simulator.room.GameRoom
 import com.drive.drive_manager.simulator.room.PlayerState
 
 /** Attacks, blocks, and what acts on chosen enemies. Each step: whether it can be done, carrying it out, and applying the player's choice. */
-object CombatSteps {
+object CombatSteps : StepFamily {
 
-    @JvmStatic
-    fun possibleStep(room: GameRoom, effect: PendingEffect, step: EffectStep): Boolean {
+    override fun possibleStep(room: GameRoom, effect: PendingEffect, step: EffectStep): Boolean {
         val player = room.getPlayer(effect.controllerId)!!
-        @Suppress("UNUSED_VARIABLE")
-        val onField = find(player.field, effect.sourceInstanceId)
         return when (step) {
             is TributesToDeckBottomForKeyword -> {
                 val f = step.filter!!
@@ -60,8 +58,7 @@ object CombatSteps {
         }
     }
 
-    @JvmStatic
-    fun runStep(room: GameRoom, effect: PendingEffect, step: EffectStep): Boolean {
+    override fun runStep(room: GameRoom, effect: PendingEffect, step: EffectStep): Boolean {
         val player = room.getPlayer(effect.controllerId)!!
         val userId = player.userId
 
@@ -134,7 +131,8 @@ object CombatSteps {
                 return false
             }
             is ReduceRepeatedly -> {
-                val total = if (step.times < 0) effect.lastCount else step.times
+                val total = if (step.perTriggerCard) effect.saved[Memory.TRIGGER_CARDS]?.size ?: 1
+                    else if (step.times < 0) effect.lastCount else step.times
                 val valid = enemyTargets(room, effect, CardFilter.creatures())
                 if (effect.repeatsDone >= total || valid.isEmpty()) {
                     effect.repeatsDone = 0
@@ -142,9 +140,9 @@ object CombatSteps {
                 }
                 val opponent = room.getPlayer(room.getOpponentId(userId))
                 pick(room, effect, "Elige 1 enemigo: reduce en " + step.amount + " su fuerza" + (if ("attack" == step.until) " hasta el final del ataque" else "")
-                        + " (" + (effect.repeatsDone + 1) + " de " + total + "). Puedes no elegir más.", "Reducir",
+                        + " (" + (effect.repeatsDone + 1) + " de " + total + ")." + (if (step.perTriggerCard) "" else " Puedes no elegir más."), "Reducir",
                     frontLine(opponent!!.field), ids(valid), 1)
-                room.prompt!!.min = 0
+                room.prompt!!.min = if (step.perTriggerCard) 1 else 0
                 return true
             }
             is TributesToDeckBottomForKeyword -> {
@@ -221,8 +219,7 @@ object CombatSteps {
         }
     }
 
-    @JvmStatic
-    fun applyStep(
+    override fun applyStep(
         room: GameRoom, effect: PendingEffect, step: EffectStep, player: PlayerState, picks: List<String>,
         order: List<String>?, repeat: BooleanArray,
     ): String? {

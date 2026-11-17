@@ -69,5 +69,10 @@
     "limit" : "NONE",
     "cost" : "RESOURCES_TO_TRIBUTES_BEFORE",
     "resourceFilter" : { }
-  } ]
+  } ],
+  "requirement" : {
+    "summoner": {
+      "level": 1
+    }
+  }
 }

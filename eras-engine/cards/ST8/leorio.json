@@ -1,0 +1,39 @@
+{
+  "name": "leorio",
+  "effects": [
+    {
+      "id": "leorio:turno-aliado",
+      "moment": "ON_EVENT",
+      "mandatory": true,
+      "label": "Turno Aliado",
+      "text": "Una vez por turno: si esta carta destruye 1 enemigo por enfrentamiento, gana 1 gema.",
+      "steps": [
+        {
+          "type": "Do",
+          "action": {
+            "type": "Gems",
+            "count": {
+              "type": "Fixed",
+              "value": 1
+            }
+          }
+        }
+      ],
+      "condition": {
+        "type": "Destroyed",
+        "owner": "ENEMY",
+        "by": "ANY",
+        "byThis": true,
+        "cause": "battle"
+      },
+      "sourceZone": "field",
+      "allyTurn": true,
+      "limit": "ONCE_PER_TURN"
+    }
+  ],
+  "requirement": {
+    "summoner": {
+      "level": 2
+    }
+  }
+}

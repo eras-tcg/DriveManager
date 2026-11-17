@@ -1,0 +1,104 @@
+{
+  "name" : "peleador del inframundo",
+  "effects" : [
+    {
+      "id" : "peleador-del-inframundo:en-destruccion",
+      "moment" : "ON_DESTROY",
+      "label" : "En Destrucción",
+      "text" : "Por efecto o enfrentamiento: puedes descartar 1 carta de tu mano; al final del turno: coloca esta carta en tu línea frontal.",
+      "cost" : [
+        {
+          "type" : "Do",
+          "action" : {
+            "type" : "Move",
+            "cards" : {
+              "zones" : "hand",
+              "owner" : "YOU",
+              "filter" : {},
+              "min" : {
+                "type" : "Fixed",
+                "value" : 1
+              },
+              "max" : {
+                "type" : "Fixed",
+                "value" : 1
+              },
+              "self" : "EXCLUDE",
+              "mode" : "CHOOSE"
+            },
+            "to" : "discardPile"
+          }
+        }
+      ],
+      "steps" : [
+        {
+          "type" : "Do",
+          "action" : {
+            "type" : "AtEndOfTurn",
+            "effect" : "peleador-del-inframundo:final-del-turno"
+          }
+        }
+      ],
+      "condition" : {
+        "type" : "Any",
+        "any" : [
+          {
+            "type" : "ByEffect",
+            "by" : "ANY"
+          },
+          {
+            "type" : "Happened",
+            "actor" : "ANY",
+            "owner" : "ANY",
+            "data" : [
+              "cause=BATTLE"
+            ]
+          }
+        ]
+      },
+      "sourceZone" : "field",
+      "limit" : "NONE"
+    },
+    {
+      "id" : "peleador-del-inframundo:final-del-turno",
+      "moment" : "DELAYED",
+      "mandatory" : true,
+      "label" : "Al final del turno",
+      "text" : "Coloca esta carta en tu línea frontal.",
+      "steps" : [
+        {
+          "type" : "Do",
+          "action" : {
+            "type" : "Move",
+            "cards" : {
+              "zones" : "tributeZone,discardPile",
+              "owner" : "YOU",
+              "filter" : {
+                "name" : "Peleador del Inframundo"
+              },
+              "min" : {
+                "type" : "Fixed",
+                "value" : 1
+              },
+              "max" : {
+                "type" : "Fixed",
+                "value" : 1
+              },
+              "self" : "ANY",
+              "mode" : "SELF"
+            },
+            "to" : "frontLine",
+            "required" : true
+          }
+        }
+      ],
+      "sourceZone" : "field",
+      "limit" : "NONE"
+    }
+  ],
+  "requirement" : {
+    "ritual" : {
+      "level" : 1
+    }
+  }
+}

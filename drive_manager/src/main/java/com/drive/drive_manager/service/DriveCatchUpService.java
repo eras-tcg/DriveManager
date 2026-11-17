@@ -135,7 +135,8 @@ public class DriveCatchUpService {
      */
     List<StagedChange> compareWithDrive() throws Exception {
         List<StagedChange> inDrive = driveParser.scan(List.of(), List.of(), List.of());
-        List<DriveCard> cards = driveCardRepository.findAll();
+        // Cards made in the site's card editor are not in Drive: never compared, never deleted by a scan
+        List<DriveCard> cards = driveCardRepository.findAll().stream().filter(c -> !c.fromWeb()).toList();
         // A scan that sees (almost) nothing is a Drive problem, not every card gone
         if (inDrive.isEmpty() || inDrive.size() < cards.size() / 2) {
             throw new IllegalStateException("Drive devolvió " + inDrive.size() + " imágenes para " + cards.size()

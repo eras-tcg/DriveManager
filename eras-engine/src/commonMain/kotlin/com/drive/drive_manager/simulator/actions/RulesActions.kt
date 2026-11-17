@@ -20,12 +20,19 @@ import com.drive.drive_manager.simulator.room.SimMessages
 /** What a player asks the rules engine to do. */
 object RulesActions {
 
+    /** A rules action: the engine's refusal as an error, else the room after it. */
+    private inline fun ruled(room: GameRoom, userId: String?, type: ActionType, rules: () -> String?): GameStateUpdate {
+        val error = rules()
+        if (error != null) return GameStateUpdate.error(room.roomId, error)
+        return GameStateUpdate.from(room, type, userId)
+    }
+
     /** Taking a creature from the hand to the board without an effect is a normal summon (rules engine). */
     @JvmStatic
     fun handleNormalSummon(room: GameRoom, userId: String?, action: GameAction): GameStateUpdate {
-        val error = Summons.normalSummon(room, userId, action.getString("instanceId"), action.getDouble("x"), action.getDouble("y"))
-        if (error != null) return GameStateUpdate.error(room.roomId, error)
-        return GameStateUpdate.from(room, ActionType.NORMAL_SUMMON, userId)
+        return ruled(room, userId, ActionType.NORMAL_SUMMON) {
+            Summons.normalSummon(room, userId, action.getString("instanceId"), action.getDouble("x"), action.getDouble("y"))
+        }
     }
 
     /** The player's choice for the effect step the engine is waiting on. */
@@ -46,47 +53,56 @@ object RulesActions {
     /** Destroys a card on the field (to its owner's Descarte); its "En Destrucción" effects trigger. */
     @JvmStatic
     fun handleDestroyCard(room: GameRoom, userId: String?, action: GameAction): GameStateUpdate {
-        val error = Removals.destroyByPlayer(room, userId, action.getString("targetPlayerId"), action.getString("instanceId"))
-        if (error != null) return GameStateUpdate.error(room.roomId, error)
-        return GameStateUpdate.from(room, ActionType.DESTROY_CARD, userId)
+        return ruled(room, userId, ActionType.DESTROY_CARD) {
+            Removals.destroyByPlayer(room, userId, action.getString("targetPlayerId"), action.getString("instanceId"))
+        }
     }
 
     /** Sacrifices one of your cards on the field (destroyed, to your Tributos). */
     @JvmStatic
     fun handleSacrificeCard(room: GameRoom, userId: String?, action: GameAction): GameStateUpdate {
-        val error = Removals.sacrificeByPlayer(room, userId, action.getString("instanceId"))
-        if (error != null) return GameStateUpdate.error(room.roomId, error)
-        return GameStateUpdate.from(room, ActionType.SACRIFICE_CARD, userId)
+        return ruled(room, userId, ActionType.SACRIFICE_CARD) {
+            Removals.sacrificeByPlayer(room, userId, action.getString("instanceId"))
+        }
     }
 
     /** Declares an attack (rule 10): the engine runs the combat. targetInstanceId null = the opponent. */
     @JvmStatic
     fun handleAttack(room: GameRoom, userId: String?, action: GameAction): GameStateUpdate {
-        val error = CombatRules.attackByPlayer(room, userId, action.getString("instanceId"), action.getString("targetInstanceId"))
-        if (error != null) return GameStateUpdate.error(room.roomId, error)
-        return GameStateUpdate.from(room, ActionType.ATTACK, userId)
+        return ruled(room, userId, ActionType.ATTACK) {
+            CombatRules.attackByPlayer(room, userId, action.getString("instanceId"), action.getString("targetInstanceId"))
+        }
     }
 
     /** Plays a utility or structure from the hand: pays its cost and fires its "En Juego" effects. */
     @JvmStatic
     fun handlePlayCard(room: GameRoom, userId: String?, action: GameAction): GameStateUpdate {
-        val error = Summons.playByPlayer(room, userId, action.getString("instanceId"), action.getDouble("x"), action.getDouble("y"))
-        if (error != null) return GameStateUpdate.error(room.roomId, error)
-        return GameStateUpdate.from(room, ActionType.PLAY_CARD, userId)
+        return ruled(room, userId, ActionType.PLAY_CARD) {
+            Summons.playByPlayer(room, userId, action.getString("instanceId"), action.getDouble("x"), action.getDouble("y"))
+        }
     }
 
     @JvmStatic
     fun handleRitualSummon(room: GameRoom, userId: String?, action: GameAction): GameStateUpdate {
-        val error = SpecialSummons.specialByPlayer(room, userId, action.getString("instanceId"), action.getString("summonerId"))
-        if (error != null) return GameStateUpdate.error(room.roomId, error)
-        return GameStateUpdate.from(room, ActionType.RITUAL_SUMMON, userId)
+        return ruled(room, userId, ActionType.RITUAL_SUMMON) {
+            SpecialSummons.specialByPlayer(room, userId, action.getString("instanceId"), action.getString("summonerId"))
+        }
     }
 
     @JvmStatic
     fun handleActivateEffect(room: GameRoom, userId: String?, action: GameAction): GameStateUpdate {
-        val error = Chain.activateByPlayer(room, userId, action.getString("instanceId"), action.getString("scriptId"))
-        if (error != null) return GameStateUpdate.error(room.roomId, error)
-        return GameStateUpdate.from(room, ActionType.ACTIVATE_EFFECT, userId)
+        return ruled(room, userId, ActionType.ACTIVATE_EFFECT) {
+            Chain.activateByPlayer(room, userId, action.getString("instanceId"), action.getString("scriptId"))
+        }
+    }
+
+    /** Enlace: a creature of the Línea frontal links with the one next to it (its formation, or a new one with it). */
+    @JvmStatic
+    fun handleFormationJoin(room: GameRoom, userId: String?, action: GameAction): GameStateUpdate {
+        return ruled(room, userId, ActionType.FORMATION_JOIN) {
+            com.drive.drive_manager.simulator.engine.Formations.joinByPlayer(room, userId, action.getString("instanceId"),
+                action.getString("targetId"))
+        }
     }
 
     /**
@@ -152,49 +168,24 @@ object RulesActions {
         // Rule 9.2.0.3: its whole state, also its effects until the end of the turn and its role in a combat
         Summons.inheritFromSummoner(room, summoned, summoner)
 
-        when (summonType!!) {
-            "materialization" -> {
-                summoned.tapped = summoner.tapped
-                summoned.strengthModifier = summoner.strengthModifier
-                summoned.materials!!.addAll(0, summoner.materials!!)
-                summoned.resources!!.addAll(0, summoner.resources!!)
-                summoner.materials = ArrayList()
-                summoner.resources = ArrayList()
-                summoner.tapped = false; summoner.x = null; summoner.y = null
-                summoned.materials!!.add(0, summoner)
+        if (summonType!! in PASSING_METHODS) {
+            // The summoner's state and attachments pass to the summoned creature (rule 9.3.0.5 for a Ritual)
+            summoned.tapped = summoner.tapped
+            summoned.strengthModifier = summoner.strengthModifier
+            summoned.materials!!.addAll(0, summoner.materials!!)
+            summoned.resources!!.addAll(0, summoner.resources!!)
+            summoner.materials = ArrayList()
+            summoner.resources = ArrayList()
+            summoner.tapped = false; summoner.x = null; summoner.y = null
+            when (summonType) {
+                "materialization" -> summoned.materials!!.add(0, summoner)
+                "evolution" -> summoned.resources!!.add(0, summoner)
+                // Ritual (the summoner is sacrificed) and Ascenso: the summoner goes to the Tributos
+                else -> {
+                    summoner.faceDown = false
+                    player.tributeZone.add(summoner)
+                }
             }
-            "evolution" -> {
-                summoned.tapped = summoner.tapped
-                summoned.strengthModifier = summoner.strengthModifier
-                summoned.materials!!.addAll(0, summoner.materials!!)
-                summoned.resources!!.addAll(0, summoner.resources!!)
-                summoner.materials = ArrayList()
-                summoner.resources = ArrayList()
-                summoner.tapped = false; summoner.x = null; summoner.y = null
-                summoned.resources!!.add(0, summoner)
-            }
-            "ritual" -> {
-                // The summoner is sacrificed; its Recursos and Materiales pass to the summoned creature (rule 9.3.0.5)
-                summoned.tapped = summoner.tapped
-                summoned.strengthModifier = summoner.strengthModifier
-                summoned.materials!!.addAll(0, summoner.materials!!)
-                summoned.resources!!.addAll(0, summoner.resources!!)
-                summoner.materials = ArrayList()
-                summoner.resources = ArrayList()
-                summoner.faceDown = false; summoner.tapped = false; summoner.x = null; summoner.y = null
-                player.tributeZone.add(summoner)
-            }
-            "promotion" -> {
-                summoned.tapped = summoner.tapped
-                summoned.strengthModifier = summoner.strengthModifier
-                summoned.materials!!.addAll(0, summoner.materials!!)
-                summoned.resources!!.addAll(0, summoner.resources!!)
-                summoner.materials = ArrayList()
-                summoner.resources = ArrayList()
-                summoner.faceDown = false; summoner.tapped = false; summoner.x = null; summoner.y = null
-                player.tributeZone.add(summoner)
-            }
-            else -> {}
         }
 
         summoned.faceDown = false
@@ -206,6 +197,9 @@ object RulesActions {
                         + " (" + summonTypeLabel(summonType) + ") usando " + cardLabel(summoner))
         return GameStateUpdate.from(room, ActionType.SPECIAL_SUMMON, userId)
     }
+
+    /** The special summon methods whose summoner hands its state to the creature it summons. */
+    private val PASSING_METHODS = setOf("materialization", "evolution", "ritual", "promotion")
 
     @JvmStatic
     fun summonTypeLabel(summonType: String?): String {

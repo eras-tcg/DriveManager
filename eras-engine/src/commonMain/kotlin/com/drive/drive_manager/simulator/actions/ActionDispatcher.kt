@@ -21,6 +21,7 @@ import com.drive.drive_manager.simulator.actions.PreRoomActions.handleStartGame
 import com.drive.drive_manager.simulator.actions.RulesActions.handleActivateEffect
 import com.drive.drive_manager.simulator.actions.RulesActions.handleAttack
 import com.drive.drive_manager.simulator.actions.RulesActions.handleDestroyCard
+import com.drive.drive_manager.simulator.actions.RulesActions.handleFormationJoin
 import com.drive.drive_manager.simulator.actions.RulesActions.handleEffectSummonResolve
 import com.drive.drive_manager.simulator.actions.RulesActions.handleNormalSummon
 import com.drive.drive_manager.simulator.actions.RulesActions.handlePlayCard
@@ -80,6 +81,7 @@ class ActionDispatcher(private val host: RoomHost) {
             ActionType.PLAY_CARD                   -> handlePlayCard(room, userId, action)
             ActionType.RITUAL_SUMMON               -> handleRitualSummon(room, userId, action)
             ActionType.ACTIVATE_EFFECT             -> handleActivateEffect(room, userId, action)
+            ActionType.FORMATION_JOIN              -> handleFormationJoin(room, userId, action)
             ActionType.JOIN_ROOM                   -> host.join(room, userId, action)
             ActionType.DRAW_CARD                   -> handleDraw(room, userId)
             ActionType.MOVE_CARD                   -> handleMove(room, userId, action)

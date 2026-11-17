@@ -176,19 +176,16 @@
   "effects": [
    {
     "instance": "En Invocación",
-    "ussageLimit": null,
     "effectBlocks": [
      {
       "activationCondition": "",
-      "cost": "",
-      "resolution": "reactiva esta carta.",
-      "plainEffect": "reactiva esta carta."
+      "cost": "envía hasta 10 [bestias] de tus tributos al fondo de tu mazo",
+      "resolution": "reactiva esta carta."
      },
      {
-      "activationCondition": "Luego",
-      "cost": "puedes enviar 10 criaturas [bestia] de tus tributos al fondo de tu mazo",
-      "resolution": "esta carta declara taque y gana [[Furia {gemas}:1]] hasta el final del turno.",
-      "plainEffect": "Luego: puedes enviar 10 criaturas [bestia] de tus tributos al fondo de tu mazo; esta carta declara taque y gana Furia 1 hasta el final del turno."
+      "activationCondition": "Luego, si enviaste 10",
+      "cost": "",
+      "resolution": "esta carta gana [[Furia {gemas}:1]] hasta el final del turno y puede declarar ataque sin agotarse."
      }
     ],
     "kind": "disparado",
@@ -197,8 +194,7 @@
      "ofensivo",
      "reactivo",
      "declara ataque"
-    ],
-    "plainEffect": "<En Invocación> reactiva esta carta. Luego: puedes enviar 10 criaturas [bestia] de tus tributos al fondo de tu mazo; esta carta declara taque y gana Furia 1 hasta el final del turno."
+    ]
    }
   ],
   "inheritEffects": [],
@@ -462,21 +458,17 @@
   "regulation": "A",
   "effects": [
    {
-    "instance": null,
-    "ussageLimit": null,
     "effectBlocks": [
      {
       "activationCondition": "cuando fueras a jugar esta carta, si tienes menos de 0 gemas",
       "cost": "",
-      "resolution": "reduce su coste en 1.",
-      "plainEffect": "cuando fueras a jugar esta carta, si tienes menos de 0 gemas: reduce su coste en 1."
+      "resolution": "reduce su coste en 1."
      }
     ],
     "kind": "reactivo-modificador",
     "tags": [
      "ofensivo"
-    ],
-    "plainEffect": "cuando fueras a jugar esta carta, si tienes menos de 0 gemas: reduce su coste en 1."
+    ]
    },
    {
     "instance": "En Juego",
@@ -485,15 +477,13 @@
      {
       "activationCondition": "",
       "cost": "",
-      "resolution": "elige 1 aliado para que gane [[Provocar {nivel}:3]] hasta el final del turno y declare ataque.",
-      "plainEffect": "elige 1 aliado para que gane Provocar 3 hasta el final del turno y declare ataque."
+      "resolution": "1 aliado gana [[Provocar {nivel}:3]] hasta el final del turno y ataca sin agotarse."
      }
     ],
     "kind": "disparado",
     "tags": [
      "ofensivo"
-    ],
-    "plainEffect": "<En Juego> (1) elige 1 aliado para que gane Provocar 3 hasta el final del turno y declare ataque."
+    ]
    }
   ],
   "inheritEffects": [],

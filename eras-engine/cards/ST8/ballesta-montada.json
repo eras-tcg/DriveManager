@@ -45,5 +45,11 @@
       "allyTurn" : true,
       "limit" : "NONE"
     }
-  ]
+  ],
+  "requirement" : {
+    "summoner": {
+      "level": 2
+    },
+    "alliesSum": 3
+  }
 }

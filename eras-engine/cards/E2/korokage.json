@@ -1,0 +1,28 @@
+{
+  "name": "korokage",
+  "requirement": {
+    "summoner": {
+      "zones": [
+        "hand"
+      ]
+    },
+    "condition": {
+      "type": "Compare",
+      "left": {
+        "type": "OnField",
+        "filter": {
+          "cardType": "creature",
+          "classes": [
+            "ninja"
+          ]
+        }
+      },
+      "op": "AT_LEAST",
+      "right": {
+        "type": "Fixed",
+        "value": 3
+      }
+    },
+    "conditionText": "controlar 3 o más [ninjas]"
+  }
+}

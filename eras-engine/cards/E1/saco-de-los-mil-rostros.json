@@ -73,5 +73,10 @@
     } ],
     "sourceZone" : "field",
     "limit" : "NONE"
-  } ]
+  } ],
+  "requirement" : {
+    "ritual": {
+      "level": 2
+    }
+  }
 }

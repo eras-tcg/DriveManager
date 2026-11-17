@@ -219,6 +219,7 @@ class E1ThirdBugfixTest {
         card.setSpecialSummonKind("materialization");
         card.setSpecialCost(cost);
         card.setRequirement(requirement);
+        Req.program(card);
         return card;
     }
 

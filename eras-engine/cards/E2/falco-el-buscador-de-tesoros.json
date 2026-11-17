@@ -130,5 +130,23 @@
     } ],
     "sourceZone" : "field",
     "limit" : "ONCE_PER_TURN_BETWEEN_COPIES"
-  } ]
+  } ],
+  "requirement" : {
+    "summoner": {
+      "level": 1
+    },
+    "materials": {
+      "count": 1,
+      "zones": [
+        "hand",
+        "tributeZone"
+      ],
+      "filter": {
+        "cardType": "utility",
+        "classes": [
+          "artefacto"
+        ]
+      }
+    }
+  }
 }

@@ -28,7 +28,7 @@ import java.util.regex.Pattern;
 public class CardPoolService {
 
     /** The code at the start of an image's file name: "E1_3-B10-…" is edition E1, sub-edition 3, blue, number 10. */
-    private static final Pattern FILE_CODE = Pattern.compile("^((?:ST|E)\\d+)(?:_(\\d+))?-([BGPRW])(\\d+)-", Pattern.CASE_INSENSITIVE);
+    private static final Pattern FILE_CODE = Pattern.compile("^((?:ST|E|T)\\d+)(?:_(\\d+))?-([BGPRW])(\\d+)-", Pattern.CASE_INSENSITIVE);
 
     private final DriveCardRepository driveCards;
     private final CardRepository metadata;
@@ -115,6 +115,8 @@ public class CardPoolService {
 
     /** Card id → metadata, for the images of an edition joined to theirs (as the web joins them). */
     private Map<String, Card> joined(String editionId) {
+        // Cards in testing never come out of a pack, a structure deck or a craft
+        if (TestCards.isTestEdition(editionId)) return Map.of();
         String[] parts = editionId.split("\\.", 2);
         String base = parts[0];
         String sub = parts.length > 1 ? parts[1] : "";

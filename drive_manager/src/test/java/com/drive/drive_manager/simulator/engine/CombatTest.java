@@ -301,6 +301,7 @@ class CombatTest {
         hong.setSpecialSummonKind("ritual");
         hong.setSpecialCost(2);
         hong.setRequirement("criatura nivel 2.");
+        Req.program(hong);
         host.getTributeZone().add(hong);
 
         CombatRules.attackByPlayer(room, "host", "zox", null);
@@ -384,6 +385,7 @@ class CombatTest {
         zhaglizer.setSpecialSummonKind("ritual");
         zhaglizer.setSpecialCost(2);
         zhaglizer.setRequirement("criatura nivel 2.");
+        Req.program(zhaglizer);
         guest.getTributeZone().add(zhaglizer);
         room.setSharedCounter(-2); // guest has 2 gems
 

@@ -1,6 +1,7 @@
 package com.drive.drive_manager.simulator.engine.effects.selection
 
 import kotlin.jvm.JvmStatic
+import com.drive.drive_manager.simulator.engine.ClassChanges
 import com.drive.drive_manager.simulator.engine.frozenListOf
 import com.drive.drive_manager.simulator.engine.effects.model.Selector
 import com.drive.drive_manager.simulator.engine.effects.runtime.EffectContext
@@ -70,9 +71,9 @@ object Selection {
         if (r.differentName && name != null && name.equals(other.cardName, ignoreCase = true)) return false
         if (r.sameName && (name == null || !name.equals(other.cardName, ignoreCase = true))) return false
         if (r.sharesClass) {
-            val theirs: List<String> = other.classes ?: frozenListOf()
-            val classes = card.classes
-            if (classes == null || classes.none { t -> theirs.any { t.equals(it, ignoreCase = true) } }) return false
+            val theirs: List<String> = ClassChanges.classes(other)
+            val classes = ClassChanges.classes(card)
+            if (classes.none { t -> theirs.any { t.equals(it, ignoreCase = true) } }) return false
         }
         return true
     }
@@ -138,20 +139,32 @@ object Selection {
                 if (!enemy) into.addAll(ctx.attached(zone))
                 continue
             }
+            // "tu aliado de mayor fuerza": your creatures with the highest strength (a tie: any of them)
+            if (zone == "strongestAllies") {
+                if (!enemy) {
+                    val creatures = whose!!.field.filter { ctx.isCreature(it) }
+                    val top = creatures.maxOfOrNull { ctx.strength(it) }
+                    if (top != null) into.addAll(creatures.filter { ctx.strength(it) == top })
+                }
+                continue
+            }
             val allies = zone == "allies"
-            val onField = allies || zone == "field" || zone == "frontLine" || zone == "backLine"
+            // "Este efecto afecta la Retaguardia enemiga y la Línea frontal": the whole field, the enemy Retaguardia too
+            val anyLine = zone == "anyLine"
+            val onField = allies || anyLine || zone == "field" || zone == "frontLine" || zone == "backLine"
             if (!onField) {
                 into.addAll(ctx.zone(whose, zone))
                 continue
             }
             // Rule 4.0.6.2: effects reach only the enemies of the Línea frontal, and only from yours
-            if (enemy && ctx.inRetaguardia()) continue
+            // ("afecta la Retaguardia enemiga y la Línea frontal" reaches them from the Retaguardia too: designer, Serafín)
+            if (enemy && ctx.inRetaguardia() && !anyLine) continue
             for (card in whose!!.field) {
                 val front = ctx.inFrontLine(card)
                 if (allies && !ctx.isCreature(card)) continue
                 if (zone == "frontLine" && !front) continue
                 if (zone == "backLine" && front) continue
-                if (enemy && !front) continue
+                if (enemy && !front && !anyLine) continue
                 into.add(card)
             }
         }

@@ -133,14 +133,8 @@ object StepHelpers {
             CombatRules.offerDamageTribute(room, defender, damage, "effect")
             return
         }
-        val life = defender.lifeStack.removeAt(0)
-        life.faceDown = false
-        val tribute = "creature" == life.cardType && (life.strength == null || CardEffects.lifeStrength(room, defender.userId, life) <= damage)
-        (if (tribute) defender.tributeZone else defender.hand).add(life)
-        record(room, GameEvent.LIFE_DAMAGE, player.userId, life, "lifeStack", if (tribute) "tributeZone" else "hand", effect,
-                frozenMapOf<String, Any?>("damage", damage, "attackerId", effect.sourceInstanceId, "defenderId", defender.userId),
-                effect.sourceName + " inflige " + damage + " de daño directo: " + defender.username + " pierde la vida "
-                        + name(life) + (if (tribute) ", que va a sus tributos" else ", que va a su mano"))
+        EffectEngine.loseTopLife(room, defender, damage, player.userId, effect, effect.sourceInstanceId,
+            effect.sourceName + " inflige " + damage + " de daño directo: " + defender.username + " ")
         if (defender.lifeStack.isEmpty()) loseByLives(room, defender)
     }
 

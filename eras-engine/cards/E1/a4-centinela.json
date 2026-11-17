@@ -1,0 +1,16 @@
+{
+  "name": "a4 centinela",
+  "requirement": {
+    "summoner": {
+      "level": 1
+    },
+    "materials": {
+      "count": 1,
+      "level": 1,
+      "zones": [
+        "field",
+        "hand"
+      ]
+    }
+  }
+}

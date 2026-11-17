@@ -114,5 +114,19 @@
     } ],
     "sourceZone" : "field",
     "limit" : "ONCE_PER_TURN"
-  } ]
+  } ],
+  "requirement" : {
+    "summoner": {
+      "level": 3,
+      "maxLevel": 4
+    },
+    "materials": {
+      "count": 1,
+      "level": 3,
+      "zones": [
+        "field",
+        "hand"
+      ]
+    }
+  }
 }

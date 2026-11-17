@@ -74,5 +74,19 @@
       "cost" : "ALLY_SPECIAL_SUMMON",
       "resourceFilter" : { }
     }
-  } ]
+  } ],
+  "requirement" : {
+    "summoner": {
+      "level": 2,
+      "maxLevel": 3
+    },
+    "materials": {
+      "count": 1,
+      "level": 2,
+      "zones": [
+        "field",
+        "hand"
+      ]
+    }
+  }
 }

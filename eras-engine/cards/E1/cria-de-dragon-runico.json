@@ -46,5 +46,13 @@
     },
     "reduce" : 1,
     "limit" : "NONE"
-  } ]
+  } ],
+  "requirement" : {
+    "summoner" : {
+      "level" : 1,
+      "filter" : {
+        "notName" : "Cría De Dragón Rúnico"
+      }
+    }
+  }
 }
