@@ -48,10 +48,10 @@
     "limit" : "NONE"
   } ],
   "requirement" : {
-    "summoner": {
-      "level": 1,
-      "filter": {
-        "noResources": true
+    "summoner" : {
+      "level" : 1,
+      "filter" : {
+        "notName" : "Cría De Dragón Rúnico"
       }
     }
   }

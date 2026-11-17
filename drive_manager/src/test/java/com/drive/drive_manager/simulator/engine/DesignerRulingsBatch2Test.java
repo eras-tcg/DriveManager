@@ -225,10 +225,12 @@ class DesignerRulingsBatch2Test {
     }
 
     @Test
-    void cofreMimicoEntersTheFrontLineFromTheTributosAndItsEnInvocacionIsApart() {
+    void cofreMimicoIsSummonedFromTheTributosAndThenMayDestroy() {
+        // Printed text (2026-11-17): "puedes invocarla. Si lo haces: puedes elegir 1 enemigo nivel 1; destrúyelo", one effect; it still
+        // enters the Línea frontal (earlier ruling: from the Retaguardia it could not reach the enemy, rule 4.0.6.2)
         List<EffectScript> cofre = CardEffects.of(card("cm", "Cofre Mímico", 1, 1, "P"));
-        assertThat(cofre).extracting(EffectScript::moment).containsExactly(EffectScript.Moment.ON_EVENT, EffectScript.Moment.ON_SUMMON);
+        assertThat(cofre).extracting(EffectScript::moment).containsExactly(EffectScript.Moment.ON_EVENT);
         assertThat(cofre.get(0).sourceZone()).isEqualTo("tributeZone");
-        assertThat(cofre.get(0).steps()).containsExactly(Compose.summonSelf("tributeZone", Amount.fixed(0), true));
+        assertThat(cofre.get(0).steps().get(0)).isEqualTo(Compose.summonSelf("tributeZone", Amount.fixed(0), true));
     }
 }

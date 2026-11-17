@@ -51,13 +51,15 @@ class ProgrammedRequirementTest extends CardBatchSupport {
     }
 
     @Test
-    void criaDeDragonRunicoEvolvesOnlyFromACreatureWithoutResources() {
-        CardSlot cria = withClasses(special(card("cr", "Cría De Dragón Rúnico", 2, 2, "G"), "evolution", 1, "criatura nivel 1 sin recursos."), "dragón");
+    void criaDeDragonRunicoEvolvesOnlyFromACreatureThatIsNotACopyOfIt() {
+        CardSlot cria = withClasses(special(card("cr", "Cría De Dragón Rúnico", 2, 2, "G"), "evolution", 1,
+                "criatura nivel 1 que no sea una copia de esta carta."), "dragón");
         host.getHand().add(cria);
+        CardSlot copy = onField(host, withClasses(card("c1", "Cría De Dragón Rúnico", 1, 1, "G"), "dragón"), FRONT);
+        assertThat(SpecialRequirements.canSpecial(room, "host", cria)).isFalse();
+        host.getField().remove(copy);
         CardSlot l1 = onField(host, withClasses(card("l1", "Nivel 1", 1, 1, "G"), "dragón"), FRONT);
         l1.getResources().add(card("rs", "Recurso", 1, 1, "G"));
-        assertThat(SpecialRequirements.canSpecial(room, "host", cria)).isFalse();
-        l1.getResources().clear();
         assertThat(SpecialRequirements.canSpecial(room, "host", cria)).isTrue();
     }
 

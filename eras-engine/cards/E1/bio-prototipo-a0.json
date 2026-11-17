@@ -1,185 +1,113 @@
 {
   "name" : "bio-prototipo a0",
-  "effects" : [
-    {
-      "id" : "bio-prototipo-a0:vida-removida",
-      "moment" : "ON_EVENT",
-      "label" : "Todos Los Turnos",
-      "text" : "Si alguna de tus vidas es removida: puedes añadirla como material a esta carta para elegir 1 enemigo; reduce en 3 su fuerza hasta el final del turno.",
-      "cost" : [
-        {
-          "type" : "Do",
-          "action" : {
-            "type" : "Move",
-            "cards" : {
-              "zones" : "event",
-              "owner" : "YOU",
-              "filter" : {},
-              "min" : {
-                "type" : "Fixed",
-                "value" : 1
-              },
-              "max" : {
-                "type" : "Fixed",
-                "value" : 1
-              },
-              "self" : "ANY",
-              "mode" : "ALL"
-            },
-            "to" : "materials:self"
-          }
-        },
-        {
-          "type" : "Do",
-          "action" : {
-            "type" : "Select",
-            "selector" : {
-              "zones" : "frontLine",
-              "owner" : "OPPONENT",
-              "filter" : {
-                "cardType" : "creature"
-              },
-              "min" : {
-                "type" : "Fixed",
-                "value" : 1
-              },
-              "max" : {
-                "type" : "Fixed",
-                "value" : 1
-              },
-              "self" : "ANY",
-              "mode" : "CHOOSE"
-            },
-            "target" : true
-          }
-        }
-      ],
-      "steps" : [
-        {
-          "type" : "Do",
-          "action" : {
-            "type" : "Modify",
-            "cards" : {
-              "zones" : "saved:targets",
-              "owner" : "YOU",
-              "filter" : {},
-              "min" : {
-                "type" : "Fixed"
-              },
-              "max" : {
-                "type" : "Fixed",
-                "value" : 2147483647
-              },
-              "self" : "ANY",
-              "mode" : "ALL"
-            },
-            "strength" : {
-              "type" : "Fixed",
-              "value" : -3
-            },
-            "until" : "TURN"
-          }
-        }
-      ],
-      "condition" : {
-        "type" : "Any",
-        "any" : [
-          {
-            "type" : "Happened",
-            "actor" : "ANY",
-            "owner" : "YOU",
-            "from" : "lifeStack"
-          },
-          {
-            "type" : "Happened",
-            "actor" : "ANY",
-            "owner" : "ANY",
-            "from" : "lifeStack",
-            "data" : [
-              "defenderId=$you"
-            ]
-          }
-        ]
-      },
-      "sourceZone" : "field",
-      "limit" : "NONE"
-    },
-    {
-      "id" : "bio-prototipo-a0:dano-directo",
-      "moment" : "ON_EVENT",
-      "label" : "Todos Los Turnos",
-      "text" : "Una vez por turno: si recibes daño directo, puedes descartar 2 materiales de esta carta; reactívala.",
-      "cost" : [
-        {
-          "type" : "Do",
-          "action" : {
-            "type" : "Move",
-            "cards" : {
-              "zones" : "materials",
-              "owner" : "YOU",
-              "filter" : {},
-              "min" : {
-                "type" : "Fixed",
-                "value" : 2
-              },
-              "max" : {
-                "type" : "Fixed",
-                "value" : 2
-              },
-              "self" : "ANY",
-              "mode" : "CHOOSE"
-            },
-            "to" : "discardPile"
-          }
-        }
-      ],
-      "steps" : [
-        {
-          "type" : "Do",
-          "action" : {
-            "type" : "SetTapped",
-            "cards" : {
-              "zones" : "field",
-              "owner" : "YOU",
-              "filter" : {},
-              "min" : {
-                "type" : "Fixed",
-                "value" : 1
-              },
-              "max" : {
-                "type" : "Fixed",
-                "value" : 1
-              },
-              "self" : "ANY",
-              "mode" : "SELF"
-            }
-          }
-        }
-      ],
-      "condition" : {
+  "effects" : [ {
+    "id" : "bio-prototipo-a0:cartas-removidas",
+    "moment" : "ON_EVENT",
+    "mandatory" : true,
+    "label" : "Todos Los Turnos",
+    "text" : "Si son removidas cartas de tus vidas o de los materiales de esta carta: por cada carta removida, reduce en 3 la fuerza de un enemigo hasta el final del turno.",
+    "steps" : [ {
+      "type" : "ReduceRepeatedly",
+      "amount" : 3,
+      "until" : "turn",
+      "perTriggerCard" : true
+    } ],
+    "condition" : {
+      "type" : "Any",
+      "any" : [ {
         "type" : "Happened",
-        "eventType" : "LIFE_DAMAGE",
+        "actor" : "ANY",
+        "owner" : "YOU",
+        "from" : "lifeStack"
+      }, {
+        "type" : "Happened",
         "actor" : "ANY",
         "owner" : "ANY",
-        "data" : [
-          "defenderId=$you"
-        ]
-      },
-      "sourceZone" : "field",
-      "limit" : "ONCE_PER_TURN"
-    }
-  ],
-  "requirement" : {
-    "summoner": {
-      "level": 4
+        "from" : "lifeStack",
+        "data" : [ "defenderId=$you" ]
+      }, {
+        "type" : "Happened",
+        "actor" : "ANY",
+        "owner" : "ANY",
+        "from" : "materials",
+        "data" : [ "byCard=$this" ]
+      } ]
     },
-    "materials": {
-      "count": 1,
-      "level": 4,
-      "levelSum": 4,
-      "zones": [
-        "discardPile"
-      ]
+    "sourceZone" : "field",
+    "limit" : "NONE"
+  }, {
+    "id" : "bio-prototipo-a0:final-de-un-ataque",
+    "moment" : "ON_EVENT",
+    "label" : "Todos Los Turnos",
+    "text" : "Una vez por turno: al final de un ataque, puedes descartar 3 materiales de esta carta; reactívala.",
+    "cost" : [ {
+      "type" : "Do",
+      "action" : {
+        "type" : "Move",
+        "cards" : {
+          "zones" : "materials",
+          "owner" : "YOU",
+          "filter" : { },
+          "min" : {
+            "type" : "Fixed",
+            "value" : 3
+          },
+          "max" : {
+            "type" : "Fixed",
+            "value" : 3
+          },
+          "self" : "ANY",
+          "mode" : "CHOOSE"
+        },
+        "to" : "discardPile"
+      }
+    } ],
+    "steps" : [ {
+      "type" : "Do",
+      "action" : {
+        "type" : "SetTapped",
+        "cards" : {
+          "zones" : "field",
+          "owner" : "YOU",
+          "filter" : { },
+          "min" : {
+            "type" : "Fixed",
+            "value" : 1
+          },
+          "max" : {
+            "type" : "Fixed",
+            "value" : 1
+          },
+          "self" : "ANY",
+          "mode" : "SELF"
+        }
+      }
+    } ],
+    "condition" : {
+      "type" : "All",
+      "all" : [ {
+        "type" : "Happened",
+        "eventType" : "ATTACK_ENDED",
+        "actor" : "ANY",
+        "owner" : "ANY"
+      }, {
+        "type" : "Not",
+        "condition" : {
+          "type" : "ThisIs",
+          "state" : "ACTIVE"
+        }
+      } ]
+    },
+    "sourceZone" : "field",
+    "limit" : "ONCE_PER_TURN"
+  } ],
+  "requirement" : {
+    "summoner" : {
+      "level" : 4
+    },
+    "materials" : {
+      "levelSum" : 4,
+      "zones" : [ "discardPile" ]
     }
   }
 }

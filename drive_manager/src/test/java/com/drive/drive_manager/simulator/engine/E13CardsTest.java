@@ -154,7 +154,7 @@ class E13CardsTest extends CardBatchSupport {
     }
 
     @Test
-    void bioPrototipoTakesTheRemovedLifeAsAMaterialToReduceAnEnemy() {
+    void bioPrototipoReducesAnEnemyByThreeForTheRemovedLife() {
         CardSlot bio = onField(host, withClasses(card("bp", "Bio prototipo A0", 8, 5, "B"), "necrómata"));
         CardSlot enemy = onField(guest, card("e", "Enemigo", 1, 1, "R"));
         enemy.setStrength(5);
@@ -162,10 +162,10 @@ class E13CardsTest extends CardBatchSupport {
         host.getHand().add(life);
         EffectEngine.record(room, GameEvent.LIFE_DAMAGE, "guest", life, "lifeStack", "hand", null, java.util.Map.of("defenderId", "host"), "daño");
         Chain.advance(room);
-        untilOffered(bio);
-        answer("bp");
+        // Printed text (2026-11-17): mandatory, once per card removed; the life is not taken as a material
+        if (room.getPrompt() != null && room.getPrompt().getValidIds().contains("bp")) answer("bp");
         answer("e");
-        assertThat(bio.getMaterials()).contains(life);
+        assertThat(bio.getMaterials()).doesNotContain(life);
         assertThat(EffectEngine.strength(enemy)).isEqualTo(2);
     }
 
@@ -259,7 +259,7 @@ class E13CardsTest extends CardBatchSupport {
 
     @Test
     void cylvausExhaustsAGreenCardToLowerTheEvolutionCost() {
-        CardSlot cylvaus = onField(host, withClasses(card("cy", "Cylvarus", 2, 2, "G"), "fauna"));
+        CardSlot cylvaus = onField(host, withClasses(card("cy", "Cylvaus", 2, 2, "G"), "fauna"));
         CardSlot green = onField(host, structure("gr", "Verde", 1, "G"), BACK);
         CardSlot evo = card("ev", "Evolución", 3, 3, "G");
         evo.setSpecialSummonKind("evolution");

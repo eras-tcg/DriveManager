@@ -114,6 +114,10 @@ object Chain {
             if (cards != null && cards.size > 1 && script(e).steps?.any { it is IfSaved && it.name == Memory.EVENT_CARDS } == true) {
                 e.saved[Memory.EVENT_CARDS] = cards.filterTo(ArrayList()) { id -> room.players.values.any { p -> find(p.field, id) != null } }
             }
+            // "por cada carta removida": how many cards triggered it, wherever they went
+            if (cards != null && script(e).steps?.any { it is ReduceRepeatedly && it.perTriggerCard } == true) {
+                e.saved[Memory.TRIGGER_CARDS] = ArrayList(cards)
+            }
         }
         // Rule 11.7.0.5: mandatory of the active player, mandatory of the opponent, optional of the active
         // player, optional of the opponent (within a group, in the order they happened)

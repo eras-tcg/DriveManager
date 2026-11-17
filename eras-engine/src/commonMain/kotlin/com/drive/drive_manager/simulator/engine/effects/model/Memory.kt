@@ -20,4 +20,9 @@ object Memory {
     const val EVENT_CARDS = "eventCards"
     /** The one of [EVENT_CARDS] chosen as "dicho enemigo", "reducirla": the `eventOnField` zone reads it. */
     const val EVENT_CARD = "eventCard"
+    /**
+     * Every card of the events that triggered a "si …" effect in its window, wherever they are now ("por cada carta removida"); saved
+     * only for the effects that count them ([com.drive.drive_manager.simulator.engine.EffectStep.ReduceRepeatedly.perTriggerCard]).
+     */
+    const val TRIGGER_CARDS = "triggerCards"
 }

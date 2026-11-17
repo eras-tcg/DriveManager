@@ -1148,11 +1148,12 @@ internal object CardModelReader {
     }
 
     private fun readEffectStepReduceRepeatedly(o: JsonObject, at: String): com.drive.drive_manager.simulator.engine.EffectStep.ReduceRepeatedly {
-        J.fields(o, at, "EffectStep.ReduceRepeatedly", setOf("times", "amount", "until"), true)
+        J.fields(o, at, "EffectStep.ReduceRepeatedly", setOf("times", "amount", "until", "perTriggerCard"), true)
         return com.drive.drive_manager.simulator.engine.EffectStep.ReduceRepeatedly(
             times = J.int(o, "times", at),
             amount = J.int(o, "amount", at),
             until = J.str(o, "until", at),
+            perTriggerCard = J.bool(o, "perTriggerCard", at),
         )
     }
 

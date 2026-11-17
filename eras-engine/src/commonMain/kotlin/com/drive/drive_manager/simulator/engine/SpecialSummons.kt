@@ -382,6 +382,7 @@ object SpecialSummons {
             var m = find(player.tributeZone, id)
             if (m == null) m = find(player.field, id)
             if (m == null) m = find(player.hand, id)
+            if (m == null && specialRequirement(card)?.materialZones?.contains("discardPile") == true) m = find(player.discardPile, id)
             if (m == null) return "Esa criatura ya no está disponible"
             materials.add(m)
         }

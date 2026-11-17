@@ -72,6 +72,11 @@ object SpecialRequirements {
         val condition: Condition? = null,
         /** What [condition] asks, for the message; null: the printed text. */
         val conditionText: String? = null,
+        /**
+         * "+ materiales que sumen N en nivel en tu descarte": with [levelSum], the materials come from [materialZones] and their levels
+         * add up to N by themselves (the summoner does not count). False: "aliados que sumen N en nivel", the summoner included.
+         */
+        val sumInZones: Boolean = false,
     ) {
         /** `moreMaterials`: "N o más criaturas" as materials. */
         constructor(
@@ -167,7 +172,7 @@ object SpecialRequirements {
                 m?.count ?: 0, m?.zones?.takeIf { it.isNotEmpty() } ?: frozenListOf("tributeZone", "field"), noSummoner,
                 spec.alternative?.let { fromSpec(kind, it) }, spec.alone, spec.strongest, declared, m?.more ?: false, spec.alliesSumByCost,
                 spec.aloneAtLevel, spec.formationSize, spec.formationAtLeast, s?.filter, m?.filter, m?.orLess ?: false, spec.condition,
-                spec.conditionText)
+                spec.conditionText, (m?.levelSum ?: 0) > 0 && !m?.zones.isNullOrEmpty())
     }
 
     /** What else a programmed Requerimiento checks on the board ([SpecialRequirement.condition]) holds. */
@@ -233,7 +238,7 @@ object SpecialRequirements {
             return specialMaterials(player, card, req, null).filter { c -> c !== summoner }
         }
         val option = optionFor(req, summoner) ?: return frozenListOf()
-        if (option.levelSum > 0) {
+        if (option.levelSum > 0 && !option.sumInZones) {
             return player.field
                     .filter { c -> c !== summoner && c !== card && "creature" == c.cardType && c.getLevel() != null && shares(c, card)
                             && (option.materialFilter == null || option.materialFilter.matches(c)) }
@@ -252,6 +257,7 @@ object SpecialRequirements {
         if ("materialization" != req.kind) return true
         val option = optionFor(req, summoner) ?: return false
         val materials = specialMaterials(player, card, req, summoner)
+        if (option.sumInZones) return sumsExactly(materials, option.levelSum)
         return if (option.levelSum > 0) levels(summoner).any { l -> option.levelSum > l && sumsExactly(materials, option.levelSum - l) }
         else materials.size >= option.materialCount
     }
@@ -287,6 +293,11 @@ object SpecialRequirements {
     fun checkMaterials(req: SpecialRequirement, summoner: CardSlot?, materials: List<CardSlot?>): String? {
         if ("materialization" != req.kind) return null
         val option = optionFor(req, summoner) ?: return "Ese invocador no cumple el Requerimiento"
+        if (option.sumInZones) {
+            val chosen = materials.filterNotNull()
+            return if (chosen.size == materials.size && addsUpTo(chosen, option.levelSum)) null
+            else "Los niveles de los materiales deben sumar exactamente " + option.levelSum + " (suman " + chosen.sumOf { it.getLevel() ?: 0 } + ")"
+        }
         if (option.levelSum > 0) {
             val all: MutableList<CardSlot?> = ArrayList(materials)
             all.add(summoner)
@@ -311,6 +322,10 @@ object SpecialRequirements {
         if (summoner == null) {
             return ("Elige " + option.materialCount + " criaturas" + option.materialLevelText() + " de " + zones + ": se convierten en materiales de "
                     + name(card) + ", que entra en tu retaguardia.")
+        }
+        if (option.sumInZones) {
+            return ("Elige los materiales de " + name(card) + " de " + zones + ": sus niveles deben sumar exactamente " + option.levelSum
+                    + ". Se convierten en materiales junto a " + name(summoner) + ".")
         }
         return if (option.levelSum > 0)
             ("Elige los aliados que se convierten en materiales de " + name(card) + ": con " + name(summoner) + " (nivel " + summoner.getLevel()

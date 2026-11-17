@@ -1,102 +1,105 @@
 {
   "name" : "berkelus el cazarrecompensas del bajomundo",
-  "effects" : [
-    {
-      "id" : "berkelus:en-invocacion",
-      "moment" : "ON_SUMMON",
-      "mandatory" : true,
-      "label" : "En Invocación",
-      "text" : "Reactiva esta carta. Luego: puedes enviar 10 criaturas [bestia] de tus tributos al fondo de tu mazo para que esta carta declare ataque y gane Furia 1 hasta el final del turno.",
-      "steps" : [
-        {
-          "type" : "Do",
-          "action" : {
-            "type" : "SetTapped",
-            "cards" : {
-              "zones" : "field",
-              "owner" : "YOU",
-              "filter" : {},
-              "min" : {
-                "type" : "Fixed",
-                "value" : 1
-              },
-              "max" : {
-                "type" : "Fixed",
-                "value" : 1
-              },
-              "self" : "ANY",
-              "mode" : "SELF"
-            }
-          }
+  "effects" : [ {
+    "id" : "berkelus:en-invocacion",
+    "moment" : "ON_SUMMON",
+    "mandatory" : true,
+    "label" : "En Invocación",
+    "text" : "Envía hasta 10 [bestias] de tus tributos al fondo de tu mazo; reactiva esta carta. Luego, si enviaste 10: esta carta gana Furia 1 hasta el final del turno y puede declarar ataque sin agotarse.",
+    "steps" : [ {
+      "type" : "Do",
+      "action" : {
+        "type" : "Move",
+        "cards" : {
+          "zones" : "tributeZone",
+          "owner" : "YOU",
+          "filter" : {
+            "classes" : [ "bestia" ],
+            "cardType" : "creature"
+          },
+          "min" : {
+            "type" : "Fixed"
+          },
+          "max" : {
+            "type" : "Fixed",
+            "value" : 10
+          },
+          "self" : "ANY",
+          "mode" : "CHOOSE"
         },
-        {
-          "type" : "MayDo",
-          "question" : "¿Envías 10 criaturas [bestia] de tus tributos al fondo de tu mazo para que Berkelus declare ataque y gane Furia 1?",
-          "covers" : 3
-        },
-        {
-          "type" : "Do",
-          "action" : {
-            "type" : "Move",
-            "cards" : {
-              "zones" : "tributeZone",
-              "owner" : "YOU",
-              "filter" : {
-                "classes" : [
-                  "bestia"
-                ],
-                "cardType" : "creature"
-              },
-              "min" : {
-                "type" : "Fixed",
-                "value" : 10
-              },
-              "max" : {
-                "type" : "Fixed",
-                "value" : 10
-              },
-              "self" : "ANY",
-              "mode" : "CHOOSE"
-            },
-            "to" : "deckBottom"
-          }
-        },
-        {
-          "type" : "Do",
-          "action" : {
-            "type" : "Modify",
-            "cards" : {
-              "zones" : "subjectOrSelf",
-              "owner" : "YOU",
-              "filter" : {},
-              "min" : {
-                "type" : "Fixed"
-              },
-              "max" : {
-                "type" : "Fixed",
-                "value" : 2147483647
-              },
-              "self" : "ANY",
-              "mode" : "ALL"
-            },
-            "keyword" : "Furia 1",
-            "until" : "TURN"
-          }
-        },
-        {
-          "type" : "Do",
-          "action" : {
-            "type" : "Attack"
-          }
+        "to" : "deckBottom"
+      }
+    }, {
+      "type" : "Do",
+      "action" : {
+        "type" : "SetTapped",
+        "cards" : {
+          "zones" : "field",
+          "owner" : "YOU",
+          "filter" : { },
+          "min" : {
+            "type" : "Fixed",
+            "value" : 1
+          },
+          "max" : {
+            "type" : "Fixed",
+            "value" : 1
+          },
+          "self" : "ANY",
+          "mode" : "SELF"
         }
-      ],
-      "sourceZone" : "field",
-      "limit" : "NONE"
-    }
-  ],
+      }
+    }, {
+      "type" : "IfCondition",
+      "condition" : {
+        "type" : "Compare",
+        "left" : {
+          "type" : "LastCount"
+        },
+        "op" : "AT_LEAST",
+        "right" : {
+          "type" : "Fixed",
+          "value" : 10
+        }
+      },
+      "covers" : 3
+    }, {
+      "type" : "Do",
+      "action" : {
+        "type" : "Modify",
+        "cards" : {
+          "zones" : "subjectOrSelf",
+          "owner" : "YOU",
+          "filter" : { },
+          "min" : {
+            "type" : "Fixed"
+          },
+          "max" : {
+            "type" : "Fixed",
+            "value" : 2147483647
+          },
+          "self" : "ANY",
+          "mode" : "ALL"
+        },
+        "keyword" : "Furia 1",
+        "until" : "TURN"
+      }
+    }, {
+      "type" : "MayDo",
+      "question" : "¿Berkelus declara ataque sin agotarse?",
+      "covers" : 1
+    }, {
+      "type" : "Do",
+      "action" : {
+        "type" : "Attack"
+      }
+    } ],
+    "sourceZone" : "field",
+    "limit" : "NONE"
+  } ],
   "requirement" : {
-    "ritual": {
-      "level": 4
+    "ritual" : {
+      "level" : 4
     }
   }
 }

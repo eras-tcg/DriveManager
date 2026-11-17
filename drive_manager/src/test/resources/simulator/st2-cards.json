@@ -732,7 +732,7 @@
      {
       "activationCondition": "",
       "cost": "",
-      "resolution": "tributa 2 catas del tope de tu mazo."
+      "resolution": "tributa 3 cartas del tope de tu mazo."
      },
      {
       "activationCondition": "Luego",
@@ -745,18 +745,6 @@
      "tributo",
      "busqueda tributos"
     ]
-   },
-   {
-    "instance": "Turno Aliado",
-    "effectBlocks": [
-     {
-      "activationCondition": "cuando esta carta fuera a invocar por Evolución, si tienes 5 o más tributos [dragón]",
-      "cost": "",
-      "resolution": "reduce en 1 el coste especial."
-     }
-    ],
-    "kind": "reactivo-modificador",
-    "tags": []
    }
   ],
   "inheritEffects": [

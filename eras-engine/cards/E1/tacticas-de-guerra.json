@@ -5,38 +5,47 @@
     "moment" : "ON_PLAY",
     "mandatory" : true,
     "label" : "En Juego",
-    "text" : "Tributa 2 cartas del tope de tu mazo. Luego: toma 1 carta Roja de tus tributos y coloca esta carta agotada en tu retaguardia.",
+    "text" : "Mira las primeras 4 cartas de tu mazo: de ellas toma hasta 2 cartas Rojas. Envía el resto al fondo de tu mazo. Luego: tributa 1 carta de tu mano y coloca esta carta agotada en tu retaguardia.",
     "steps" : [ {
       "type" : "Do",
       "action" : {
-        "type" : "Move",
-        "cards" : {
-          "zones" : "deck",
-          "owner" : "YOU",
-          "filter" : { },
-          "min" : {
-            "type" : "Fixed",
-            "value" : 2
-          },
-          "max" : {
-            "type" : "Fixed",
-            "value" : 2
-          },
-          "self" : "ANY",
-          "mode" : "TOP"
-        },
-        "to" : "tributeZone"
+        "type" : "Look",
+        "count" : {
+          "type" : "Fixed",
+          "value" : 4
+        }
       }
     }, {
       "type" : "Do",
       "action" : {
         "type" : "Move",
         "cards" : {
-          "zones" : "tributeZone",
+          "zones" : "looked",
           "owner" : "YOU",
           "filter" : {
             "colors" : [ "R" ]
           },
+          "min" : {
+            "type" : "Fixed"
+          },
+          "max" : {
+            "type" : "Fixed",
+            "value" : 2
+          },
+          "self" : "ANY",
+          "mode" : "CHOOSE"
+        },
+        "to" : "hand",
+        "rest" : "deckBottom"
+      }
+    }, {
+      "type" : "Do",
+      "action" : {
+        "type" : "Move",
+        "cards" : {
+          "zones" : "hand",
+          "owner" : "YOU",
+          "filter" : { },
           "min" : {
             "type" : "Fixed",
             "value" : 1
@@ -45,11 +54,10 @@
             "type" : "Fixed",
             "value" : 1
           },
-          "self" : "ANY",
+          "self" : "EXCLUDE",
           "mode" : "CHOOSE"
         },
-        "to" : "hand",
-        "required" : true
+        "to" : "tributeZone"
       }
     }, {
       "type" : "KeepOnField",

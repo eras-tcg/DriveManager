@@ -329,6 +329,8 @@ object Answers {
                 var material = find(player.tributeZone, id)
                 if (material == null) material = find(player.field, id)
                 if (material == null) material = find(player.hand, id)
+                // "materiales … en descarte" (Velkerop-1)
+                if (material == null && req.materialZones!!.contains("discardPile")) material = find(player.discardPile, id)
                 if (material == null) return "Esa criatura ya no está disponible"
                 materials.add(material)
             }

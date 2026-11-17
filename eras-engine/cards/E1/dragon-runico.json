@@ -5,7 +5,7 @@
     "moment" : "ON_SUMMON",
     "mandatory" : true,
     "label" : "En Invocación",
-    "text" : "Mira las primeras 4 cartas de tu mazo: de ellas toma hasta 1 carta Verde. Envía el resto al fondo de tu mazo.",
+    "text" : "Mira las primeras 4 cartas de tu mazo: de ellas toma hasta 1 carta Verde. Tributa el resto.",
     "steps" : [ {
       "type" : "Do",
       "action" : {
@@ -35,8 +35,27 @@
           "self" : "ANY",
           "mode" : "CHOOSE"
         },
-        "to" : "hand",
-        "rest" : "deckBottom"
+        "to" : "hand"
+      }
+    }, {
+      "type" : "Do",
+      "action" : {
+        "type" : "Move",
+        "cards" : {
+          "zones" : "looked",
+          "owner" : "YOU",
+          "filter" : { },
+          "min" : {
+            "type" : "Fixed"
+          },
+          "max" : {
+            "type" : "Fixed",
+            "value" : 2147483647
+          },
+          "self" : "ANY",
+          "mode" : "ALL"
+        },
+        "to" : "tributeZone"
       }
     } ],
     "sourceZone" : "field",
@@ -163,8 +182,8 @@
     "limit" : "NONE"
   } ],
   "requirement" : {
-    "summoner": {
-      "level": 2
+    "summoner" : {
+      "level" : 2
     }
   }
 }

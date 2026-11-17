@@ -36,7 +36,19 @@ object FlowSteps : StepFamily {
             }
             is IfCondition -> {
                 val source = findAnywhere(room, userId, effect.sourceInstanceId)
-                val holds = source != null && step.condition!!.test(room, null, source, userId)
+                val condition = step.condition!!
+                // "Luego, si enviaste 10": a comparison may read what only the effect knows (LastCount)
+                val holds = source != null && (if (condition is Condition.Compare) {
+                    val context = EngineContext(room, effect)
+                    val a = context.amount(condition.left)
+                    val b = context.amount(condition.right)
+                    when (condition.op!!) {
+                        Condition.Op.AT_LEAST -> a >= b
+                        Condition.Op.AT_MOST -> a <= b
+                        Condition.Op.LESS -> a < b
+                        Condition.Op.EQUAL -> a == b
+                    }
+                } else condition.test(room, null, source, userId))
                 if (!holds) effect.stepIndex = effect.stepIndex + step.covers
                 return false
             }

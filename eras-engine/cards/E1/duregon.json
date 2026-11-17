@@ -95,33 +95,5 @@
     } ],
     "sourceZone" : "field",
     "limit" : "NONE"
-  } ],
-  "reactions" : [ {
-    "type" : "CostModifier",
-    "label" : "Turno Aliado",
-    "event" : "SPECIAL_SUMMON",
-    "kinds" : [ "evolution" ],
-    "holder" : "SUMMONER",
-    "allyTurn" : true,
-    "condition" : {
-      "type" : "Compare",
-      "left" : {
-        "type" : "InZone",
-        "zone" : "tributeZone",
-        "filter" : {
-          "classes" : [ "dragón" ]
-        }
-      },
-      "op" : "AT_LEAST",
-      "right" : {
-        "type" : "Fixed",
-        "value" : 5
-      }
-    },
-    "payment" : {
-      "kind" : "NONE"
-    },
-    "reduce" : 1,
-    "limit" : "NONE"
   } ]
 }
