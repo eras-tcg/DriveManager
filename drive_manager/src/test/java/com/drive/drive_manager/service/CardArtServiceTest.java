@@ -123,15 +123,24 @@ class CardArtServiceTest {
     }
 
     @Test
-    void aCardWithItsDriveImageGetsNoSecondRecord() {
+    void aCardWithItsDriveImageGetsNoSecondRecordAndItsDriveRecordShowsTheRender() {
         byte[] jpg = {(byte) 0xFF, (byte) 0xD8, (byte) 0xFF, 0, 0, 0, 0, 0, 0, 0, 0, 0};
         card.setEdition("E2");
         card.setCardNumber(11);
         card.setColorIdentity("B");
-        when(images.findByEditionAndNumber("E2", 11))
-                .thenReturn(List.of(new DriveCard("drive-id", "E2-B11-VA-7.jpg", "VA 7", 11, "B", "E2", null, null)));
+        DriveCard drive = new DriveCard("drive-id", "E2-B11-VA-7.jpg", "VA 7", 11, "B", "E2", null, null);
+        when(images.findByEditionAndNumber("E2", 11)).thenReturn(List.of(drive));
         service.setRender("m1", jpg);
         verify(images, never()).save(any(DriveCard.class));
         verify(images).deleteById("web-m1");
+        verify(images).saveAll(List.of(drive));
+        assertThat(drive.getRenderOf()).isEqualTo("m1");
+        assertThat(drive.imageUrl("https://r2")).startsWith("/api/cards/m1/render?v=");
+    }
+
+    @Test
+    void aDriveImageWithoutRenderIsServedFromR2() {
+        DriveCard drive = new DriveCard("drive-id", "E2-B11-VA-7.jpg", "VA 7", 11, "B", "E2", null, null);
+        assertThat(drive.imageUrl("https://r2")).isEqualTo("https://r2/cards/drive-id.jpg");
     }
 }

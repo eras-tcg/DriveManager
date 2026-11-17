@@ -7,6 +7,7 @@ import com.drive.drive_manager.repository.DriveCardRepository;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
+import java.util.List;
 import java.util.Optional;
 
 /**
@@ -40,9 +41,17 @@ public class CardArtService {
      */
     void register(Card card) {
         String id = DriveCard.WEB_PREFIX + card.getId();
-        // A card that has its image from Drive keeps it as its only record: a second one would list it twice
-        if (hasDriveImage(card)) {
+        // A card that has its image from Drive keeps it as its only record (a second one would list it twice), now showing
+        // the editor's render: decks and collections point to that record
+        List<DriveCard> drive = driveImages(card);
+        if (!drive.isEmpty()) {
             images.deleteById(id);
+            Instant now = Instant.now();
+            for (DriveCard d : drive) {
+                d.setRenderOf(card.getId());
+                d.setTimeStamp(now);
+            }
+            images.saveAll(drive);
             return;
         }
         DriveCard image = new DriveCard(id, null, card.getCardName(), card.getCardNumber(),
@@ -50,12 +59,14 @@ public class CardArtService {
         images.save(image);
     }
 
-    private boolean hasDriveImage(Card card) {
-        if (card.getEdition() == null || card.getCardNumber() == null) return false;
+    /** The Drive image records at the card's code (edition, number, sub-edition and color). */
+    private List<DriveCard> driveImages(Card card) {
+        if (card.getEdition() == null || card.getCardNumber() == null) return List.of();
         return images.findByEditionAndNumber(card.getEdition(), card.getCardNumber()).stream()
                 .filter(d -> d.getId() != null && !d.getId().startsWith(DriveCard.WEB_PREFIX))
-                .anyMatch(d -> java.util.Objects.equals(blankToNull(d.getSubEdition()), blankToNull(card.getSubEdition()))
-                        && d.getColorIdentity() != null && d.getColorIdentity().equalsIgnoreCase(card.getColorIdentity()));
+                .filter(d -> java.util.Objects.equals(blankToNull(d.getSubEdition()), blankToNull(card.getSubEdition()))
+                        && d.getColorIdentity() != null && d.getColorIdentity().equalsIgnoreCase(card.getColorIdentity()))
+                .toList();
     }
 
     /** Drops a stored file unless another card still points to it (a reprint made as a copy shares its files). */
