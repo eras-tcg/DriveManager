@@ -154,7 +154,7 @@ interface EffectContext {
     fun asksTopOrBottom()
 
     /** "declara ataque". Returns true when it asks what to attack. */
-    fun attack(opponentOnly: Boolean, creaturesOnly: Boolean, activeToo: Boolean): Boolean
+    fun attack(opponentOnly: Boolean, creaturesOnly: Boolean, activeToo: Boolean, at: String? = null): Boolean
 
     /** What to attack; none: the opponent. */
     fun attackChosen(picks: List<String?>?)

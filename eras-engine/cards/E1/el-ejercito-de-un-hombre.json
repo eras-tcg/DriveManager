@@ -1,0 +1,19 @@
+{
+  "name" : "el ejercito de un hombre",
+  "continuous" : [
+    {
+      "label" : "Todos Los Turnos",
+      "text" : "Al entrar al paso de bloqueo por ataque de esta carta: el oponente debe elegir una de sus criaturas activas para bloquear.",
+      "keywords" : [
+        "Bloqueo obligatorio"
+      ],
+      "zone" : "field"
+    }
+  ],
+  "requirement" : {
+    "summoner" : {
+      "level" : 4
+    },
+    "strongest" : true
+  }
+}

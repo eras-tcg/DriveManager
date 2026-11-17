@@ -184,6 +184,9 @@ object CombatRules {
      */
     const val NO_BLOCK_AGAINST = "Sin bloqueo ante cartas "
 
+    /** Given by a continuous effect: "el oponente debe elegir una de sus criaturas activas para bloquear" (its attacks). */
+    const val MUST_BLOCK = "Bloqueo obligatorio"
+
     @JvmStatic
     fun noBlockAgainst(defender: PlayerState, c: Combat, attacker: CardSlot): Boolean {
         val id = c.targetId ?: return false
@@ -252,9 +255,13 @@ object CombatRules {
                     val options = if (keywordLevel(attacker, "Imbloqueable") != null || noBlockAgainst(defender, c, attacker)) frozenListOf<CardSlot>()
                     else blockers(defender).filter { b -> b.instanceId != c.targetId }
                     if (!options.isEmpty()) {
+                        // "el oponente debe elegir una de sus criaturas activas para bloquear": a blocker is not optional
+                        val forced = keywords(attacker).contains(MUST_BLOCK)
                         rulesPrompt(room, defender.userId, PromptPurpose.BLOCK.id(), name(attacker) + " ataca",
-                            "Puedes elegir 1 criatura activa de tu línea frontal para bloquear (se agota), o ninguna.",
+                            if (forced) "Debes elegir 1 criatura activa de tu línea frontal para bloquear (se agota)."
+                            else "Puedes elegir 1 criatura activa de tu línea frontal para bloquear (se agota), o ninguna.",
                             "Bloquear", options, defender.field)
+                        if (forced) room.prompt!!.min = 1
                         return false
                     }
                 }
@@ -575,9 +582,15 @@ object CombatRules {
             .filter { c -> "creature" == c.cardType && inFrontLine(c) && (c.tapped || challenges(attacker, c)) }
     }
 
-    /** "declara ataque" by an effect: the subject attacks if it can. Returns true when the player is asked what to attack. */
+    /**
+     * "declara ataque" by an effect: the subject attacks if it can. Returns true when the player is asked what to attack. `at`: the enemies
+     * it attacks, already chosen ("ataca al enemigo elegido"): the first of them still a target, with no choice.
+     */
     @JvmStatic
-    fun attackByEffect(room: GameRoom, effect: PendingEffect, opponentOnly: Boolean, creaturesOnly: Boolean = false, activeToo: Boolean = false): Boolean {
+    fun attackByEffect(
+        room: GameRoom, effect: PendingEffect, opponentOnly: Boolean, creaturesOnly: Boolean = false, activeToo: Boolean = false,
+        at: Set<String?>? = null,
+    ): Boolean {
         val userId = effect.controllerId
         val subject = subject(room, effect) ?: return false
         if (room.combat != null) {
@@ -597,6 +610,12 @@ object CombatRules {
         else if (activeToo) room.getPlayer(room.getOpponentId(userId))?.field?.filter { c -> "creature" == c.cardType && inFrontLine(c) }
             ?: frozenListOf()
         else attackTargets(room, userId, subject)
+        if (at != null) {
+            val chosen = targets.firstOrNull { it.instanceId in at }
+            if (chosen == null) log(room, name(subject) + " no puede atacar: el enemigo elegido ya no está", null)
+            else startCombat(room, userId, subject, chosen.instanceId, true, effect)
+            return false
+        }
         // "puede atacar un enemigo": an exhausted enemy creature, never the rival
         if (creaturesOnly && targets.isEmpty()) {
             log(room, name(subject) + " no puede atacar: no hay enemigos " + (if (activeToo) "" else "agotados ") + "a los que atacar", null)

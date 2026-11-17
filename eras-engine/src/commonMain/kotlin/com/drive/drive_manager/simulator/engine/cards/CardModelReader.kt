@@ -228,11 +228,12 @@ internal object CardModelReader {
     }
 
     private fun readActionAttack(o: JsonObject, at: String): com.drive.drive_manager.simulator.engine.effects.model.Action.Attack {
-        J.fields(o, at, "Action.Attack", setOf("opponentOnly", "creaturesOnly", "activeToo"), true)
+        J.fields(o, at, "Action.Attack", setOf("opponentOnly", "creaturesOnly", "activeToo", "at"), true)
         return com.drive.drive_manager.simulator.engine.effects.model.Action.Attack(
             opponentOnly = J.bool(o, "opponentOnly", at),
             creaturesOnly = J.bool(o, "creaturesOnly", at),
             activeToo = J.bool(o, "activeToo", at),
+            at = J.str(o, "at", at),
         )
     }
 

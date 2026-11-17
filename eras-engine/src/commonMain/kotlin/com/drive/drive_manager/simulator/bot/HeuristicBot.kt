@@ -251,11 +251,11 @@ open class HeuristicBot(rules: BotSettings) : BotPlayer() {
         // hBlockBest: the answer that leaves its table best, tried on copies (BlockSearch), instead of the rules below
         if (on("hBlockBest") && self != null) {
             val best = BlockSearch.best(room, self.userId, prompt, rules)
-            if (best != null) return best
+            if (best != null && best.size >= prompt.min) return best
         }
         if (on("hCombat") && self != null) {
             val searched = CombatSearch.block(room, self.userId, prompt, rules)
-            if (searched != null) return searched
+            if (searched != null && searched.size >= prompt.min) return searched
         }
         val combat = room.combat
         val attacker = if (combat == null) null else onField(rival, combat.attackerId)
@@ -273,6 +273,8 @@ open class HeuristicBot(rules: BotSettings) : BotPlayer() {
         if (direct && self!!.lifeStack.size <= hits(attacker) + rules.get("hChumpLives") && !mine.isEmpty()) {
             return frozenListOf(mine.minWithOrNull(comparingDouble { c: CardSlot -> value(c) })!!.instanceId)
         }
+        // A block it must declare ("debe elegir … para bloquear"): its least valuable creature
+        if (prompt.min > 0 && !mine.isEmpty()) return frozenListOf(mine.minWithOrNull(comparingDouble { c: CardSlot -> value(c) })!!.instanceId)
         return if (prompt.min == 0) frozenListOf() else null
     }
 
