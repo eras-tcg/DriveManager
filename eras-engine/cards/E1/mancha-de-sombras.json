@@ -1,0 +1,67 @@
+{
+  "name" : "mancha de sombras",
+  "effects" : [
+    {
+      "id" : "mancha-de-sombras:en-mano",
+      "moment" : "ACTIVATED",
+      "label" : "Turno Aliado",
+      "text" : "En Mano: puedes tributar 1 copia de esta carta en tu mano para colocar esta carta en tu retaguardia.",
+      "steps" : [
+        {
+          "type" : "IfPossible"
+        },
+        {
+          "type" : "Do",
+          "action" : {
+            "type" : "Move",
+            "cards" : {
+              "zones" : "hand",
+              "owner" : "YOU",
+              "filter" : {
+                "name" : "Mancha de Sombras"
+              },
+              "min" : {
+                "type" : "Fixed",
+                "value" : 1
+              },
+              "max" : {
+                "type" : "Fixed",
+                "value" : 1
+              },
+              "self" : "EXCLUDE",
+              "mode" : "CHOOSE"
+            },
+            "to" : "tributeZone",
+            "required" : true
+          }
+        },
+        {
+          "type" : "Do",
+          "action" : {
+            "type" : "Move",
+            "cards" : {
+              "zones" : "hand",
+              "owner" : "YOU",
+              "filter" : {},
+              "min" : {
+                "type" : "Fixed",
+                "value" : 1
+              },
+              "max" : {
+                "type" : "Fixed",
+                "value" : 1
+              },
+              "self" : "ANY",
+              "mode" : "SELF"
+            },
+            "to" : "backLine",
+            "required" : true
+          }
+        }
+      ],
+      "sourceZone" : "hand",
+      "allyTurn" : true,
+      "limit" : "NONE"
+    }
+  ]
+}

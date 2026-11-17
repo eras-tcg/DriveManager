@@ -2,7 +2,8 @@
   "name": "halx",
   "requirement": {
     "ritual": {
-      "level": 1
+      "sum": true,
+      "level": 3
     }
   }
 }
