@@ -45,6 +45,9 @@ public class SecurityConfig {
                 .cors(Customizer.withDefaults())
                 .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
+                        // A request that failed is forwarded to the error page without its session: it must answer
+                        // the real error (500, 404), never a 401 that signs the player out
+                        .dispatcherTypeMatchers(jakarta.servlet.DispatcherType.ERROR).permitAll()
                         // The whole site needs a session: only the deploy health check, the Drive webhook
                         // (validated by its channel token), the idle check and the simulator socket are open.
                         .requestMatchers(HttpMethod.GET, "/api/drive/health").permitAll()
