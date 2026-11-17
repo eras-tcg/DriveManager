@@ -41,6 +41,10 @@ public class EditionMetadata {
     @Field("cards_per_color")
     private Integer cardsPerColor;
 
+    /** How its cover sits in the card-shaped tiles (the image itself is not cut); null: centered, not zoomed. */
+    @Field("cover_frame")
+    private CoverFrame coverFrame;
+
     // ── Booster simulation config ──────────────────────────────────────────────
 
     @Field("pack_types")
@@ -50,6 +54,16 @@ public class EditionMetadata {
     private BoxConfig boxConfig;
 
     // ── Nested types ───────────────────────────────────────────────────────────
+
+    /** The point of the cover kept in view (x, y in % of the image) and how much it is enlarged (1 = just covers). */
+    @Data
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class CoverFrame {
+        private double x;
+        private double y;
+        private double zoom;
+    }
 
     @Data
     @NoArgsConstructor

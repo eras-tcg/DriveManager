@@ -33,4 +33,17 @@ class EditionSlotsTest {
         assertThat(body.getColors()).containsExactly("G", "R");
         assertThat(body.getCardsPerColor()).isEqualTo(12);
     }
+
+    @Test
+    void aSaveWithoutTheCoverFramingKeepsIt() {
+        EditionMetadata existing = edition(List.of("G"), 18);
+        existing.setCoverFrame(new EditionMetadata.CoverFrame(30, 60, 1.5));
+        EditionMetadata body = edition(null, null);
+        EditionMetadataController.keepSlots(body, existing);
+        assertThat(body.getCoverFrame().getZoom()).isEqualTo(1.5);
+        EditionMetadata framed = edition(null, null);
+        framed.setCoverFrame(new EditionMetadata.CoverFrame(50, 50, 1));
+        EditionMetadataController.keepSlots(framed, existing);
+        assertThat(framed.getCoverFrame().getX()).isEqualTo(50);
+    }
 }

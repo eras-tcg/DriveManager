@@ -128,10 +128,11 @@ public class EditionMetadataController {
         return ResponseEntity.ok(repo.save(body));
     }
 
-    /** A save that does not send the slots (the shop's form) keeps the ones the edition has. */
+    /** A save that does not send the slots or the cover's framing (the shop's form) keeps the ones the edition has. */
     static void keepSlots(EditionMetadata body, EditionMetadata existing) {
         if (body.getColors() == null) body.setColors(existing.getColors());
         if (body.getCardsPerColor() == null) body.setCardsPerColor(existing.getCardsPerColor());
+        if (body.getCoverFrame() == null) body.setCoverFrame(existing.getCoverFrame());
     }
 
     @PreAuthorize("hasAuthority('manage_editions')")
