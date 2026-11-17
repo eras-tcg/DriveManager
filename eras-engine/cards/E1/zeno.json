@@ -1,0 +1,68 @@
+{
+  "name" : "zeno",
+  "effects" : [
+    {
+      "id" : "zeno:en-invocacion",
+      "moment" : "ON_SUMMON",
+      "label" : "En Invocación",
+      "text" : "Puedes descartar 1 carta de tu mano para tomar 1 carta Azul de tu descarte.",
+      "steps" : [
+        {
+          "type" : "IfPossible"
+        },
+        {
+          "type" : "Do",
+          "action" : {
+            "type" : "Move",
+            "cards" : {
+              "zones" : "hand",
+              "owner" : "YOU",
+              "filter" : {},
+              "min" : {
+                "type" : "Fixed",
+                "value" : 1
+              },
+              "max" : {
+                "type" : "Fixed",
+                "value" : 1
+              },
+              "self" : "EXCLUDE",
+              "mode" : "CHOOSE"
+            },
+            "to" : "discardPile",
+            "required" : true
+          }
+        },
+        {
+          "type" : "Do",
+          "action" : {
+            "type" : "Move",
+            "cards" : {
+              "zones" : "discardPile",
+              "owner" : "YOU",
+              "filter" : {
+                "colors" : [
+                  "B"
+                ]
+              },
+              "min" : {
+                "type" : "Fixed",
+                "value" : 1
+              },
+              "max" : {
+                "type" : "Fixed",
+                "value" : 1
+              },
+              "self" : "ANY",
+              "mode" : "CHOOSE"
+            },
+            "to" : "hand",
+            "required" : true
+          }
+        }
+      ],
+      "sourceZone" : "field",
+      "limit" : "NONE"
+    }
+  ]
+}

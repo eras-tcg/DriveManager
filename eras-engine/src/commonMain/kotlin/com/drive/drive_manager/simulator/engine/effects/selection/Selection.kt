@@ -139,6 +139,15 @@ object Selection {
                 if (!enemy) into.addAll(ctx.attached(zone))
                 continue
             }
+            // "tu aliado de mayor fuerza": your creatures with the highest strength (a tie: any of them)
+            if (zone == "strongestAllies") {
+                if (!enemy) {
+                    val creatures = whose!!.field.filter { ctx.isCreature(it) }
+                    val top = creatures.maxOfOrNull { ctx.strength(it) }
+                    if (top != null) into.addAll(creatures.filter { ctx.strength(it) == top })
+                }
+                continue
+            }
             val allies = zone == "allies"
             // "Este efecto afecta la Retaguardia enemiga y la Línea frontal": the whole field, the enemy Retaguardia too
             val anyLine = zone == "anyLine"

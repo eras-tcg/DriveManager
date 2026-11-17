@@ -1,0 +1,73 @@
+{
+  "name" : "lue y bonz",
+  "effects" : [
+    {
+      "id" : "lue-y-bonz:en-mano",
+      "moment" : "ACTIVATED",
+      "label" : "Turno Aliado",
+      "text" : "En Mano: puedes enviar 5 cartas Azules de tu descarte al fondo de tu mazo para invocar esta carta en tu línea frontal reduciendo su coste en 1.",
+      "steps" : [
+        {
+          "type" : "IfPossible"
+        },
+        {
+          "type" : "Do",
+          "action" : {
+            "type" : "Move",
+            "cards" : {
+              "zones" : "discardPile",
+              "owner" : "YOU",
+              "filter" : {
+                "colors" : [
+                  "B"
+                ]
+              },
+              "min" : {
+                "type" : "Fixed",
+                "value" : 5
+              },
+              "max" : {
+                "type" : "Fixed",
+                "value" : 5
+              },
+              "self" : "ANY",
+              "mode" : "CHOOSE"
+            },
+            "to" : "deckBottom",
+            "required" : true
+          }
+        },
+        {
+          "type" : "Do",
+          "action" : {
+            "type" : "Summon",
+            "cards" : {
+              "zones" : "hand",
+              "owner" : "YOU",
+              "filter" : {},
+              "min" : {
+                "type" : "Fixed",
+                "value" : 1
+              },
+              "max" : {
+                "type" : "Fixed",
+                "value" : 1
+              },
+              "self" : "ANY",
+              "mode" : "SELF"
+            },
+            "reduce" : {
+              "type" : "Fixed",
+              "value" : 1
+            },
+            "toFront" : true,
+            "required" : true
+          }
+        }
+      ],
+      "sourceZone" : "hand",
+      "allyTurn" : true,
+      "limit" : "NONE"
+    }
+  ]
+}

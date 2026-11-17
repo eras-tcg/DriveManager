@@ -26,7 +26,7 @@ class ProgrammedCardsExportTest {
         for (CardDefinition d : CardEffects.definitions().values()) {
             json.append(sep).append(entry(d.name(), d.effects().size() + d.continuous().size()
                     + (int) d.reactions().stream().filter(r -> r instanceof CostModifiers.CostModifier || r instanceof CardEffects.Replacement).count() + rules.getOrDefault(d.name(), List.of()).size(),
-                    d.inherited().size() + d.inheritedReactions().size(),
+                    d.inherited().size() + d.inheritedReactions().size() + d.inheritedContinuous().size(),
                     d.effects().stream().map(EffectScript::id).toList()));
             sep = ",\n";
         }

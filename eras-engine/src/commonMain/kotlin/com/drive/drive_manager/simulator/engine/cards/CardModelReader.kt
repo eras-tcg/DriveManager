@@ -490,7 +490,7 @@ internal object CardModelReader {
     }
 
     private fun readCardDefinition(o: JsonObject, at: String): com.drive.drive_manager.simulator.engine.CardDefinition {
-        J.fields(o, at, "CardDefinition", setOf("name", "effects", "inherited", "continuous", "reactions", "inheritedReactions", "traits", "formation", "requirement"), false)
+        J.fields(o, at, "CardDefinition", setOf("name", "effects", "inherited", "continuous", "reactions", "inheritedReactions", "traits", "formation", "requirement", "inheritedContinuous"), false)
         return com.drive.drive_manager.simulator.engine.CardDefinition(
             name = J.str(o, "name", at),
             effects = J.list(o, "effects", at) { e, p -> effectScript(e, p) },
@@ -501,6 +501,7 @@ internal object CardModelReader {
             traits = J.value(o, "traits", at, ::cardTraits),
             formation = J.value(o, "formation", at, ::formationEffects),
             requirement = J.value(o, "requirement", at, ::requirementSpec),
+            inheritedContinuous = J.list(o, "inheritedContinuous", at) { e, p -> cardEffectsContinuous(e, p) },
         )
     }
 

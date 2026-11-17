@@ -34,6 +34,7 @@ object CardEffects {
     /** Inherited effects ("heredables"): what a card gives the creature it is a Recurso of (rule 11.4.0.3). */
     private val INHERITED: MutableMap<String, List<EffectScript>> = HashMap()
     private val CONTINUOUS: MutableMap<String, List<Continuous>> = HashMap()
+    private val INHERITED_CONTINUOUS: MutableMap<String, List<Continuous>> = HashMap()
     /** Enlace: the link effects, what a card gives the members of its formation it points to (Formations). */
     private val FORMATION: MutableMap<String, FormationEffects> = HashMap()
 
@@ -142,7 +143,7 @@ object CardEffects {
     fun definitions(): Map<String, CardDefinition> {
         // In the order of the names (a TreeSet's): collected, then sorted
         val names: MutableSet<String> = HashSet()
-        for (registry in frozenListOf<Map<String, *>>(BY_NAME, INHERITED, CONTINUOUS, REPLACEMENTS, INHERITED_REPLACEMENTS, FORMATION)) {
+        for (registry in frozenListOf<Map<String, *>>(BY_NAME, INHERITED, CONTINUOUS, REPLACEMENTS, INHERITED_REPLACEMENTS, FORMATION, INHERITED_CONTINUOUS)) {
             names.addAll(registry.keys)
         }
         names.addAll(CostModifiers.names())
@@ -153,7 +154,7 @@ object CardEffects {
         for (name in names.sorted()) {
             all[name] = CardDefinition(name, BY_NAME[name], INHERITED[name], CONTINUOUS[name],
                 reactionsOf(name), if (INHERITED_REPLACEMENTS.containsKey(name)) frozenListCopy(INHERITED_REPLACEMENTS[name]!!) else null,
-                TRAITS[name], FORMATION[name], REQUIREMENTS[name])
+                TRAITS[name], FORMATION[name], REQUIREMENTS[name], INHERITED_CONTINUOUS[name])
         }
         return all
     }
@@ -225,7 +226,8 @@ object CardEffects {
         val ownDone = BY_NAME.valueOr(name, frozenListOf()).size + CONTINUOUS.valueOr(name, frozenListOf()).size +
                 CostModifiers.of(name).size + REPLACEMENTS.valueOr(name, frozenListOf()).size +
                 ruleEffects().valueOr(name, frozenListOf()).size
-        val inheritedDone = INHERITED.valueOr(name, frozenListOf()).size + INHERITED_REPLACEMENTS.valueOr(name, frozenListOf()).size
+        val inheritedDone = INHERITED.valueOr(name, frozenListOf()).size + INHERITED_REPLACEMENTS.valueOr(name, frozenListOf()).size +
+                INHERITED_CONTINUOUS.valueOr(name, frozenListOf()).size
         val pending: MutableList<String> = ArrayList()
         if (own > ownDone) pending.add((own - ownDone).toString() + " de " + own + " efectos propios")
         if (inherited > inheritedDone) pending.add((inherited - inheritedDone).toString() + " de " + inherited + " heredados")
@@ -275,12 +277,14 @@ object CardEffects {
                     "inflija daño 1 vez extra por cada uno.", frozenListOf<EffectStep>(GroupUp(allies)))
     }
 
-    /** The card's own continuous effects. */
+    /** The card's continuous effects: its own, those its Recursos give it and those of its formation's link. */
     @JvmStatic
     fun continuousOf(card: CardSlot): List<Continuous> {
         val own = if (card.cardName == null) frozenListOf() else CONTINUOUS.valueOr(nameOf(card.cardName), frozenListOf())
-        if (card.formationGrants.isNullOrEmpty()) return own
+        val given = card.resources.orEmpty().filter { it.cardName != null && INHERITED_CONTINUOUS.containsKey(nameOf(it.cardName)) }
+        if (card.formationGrants.isNullOrEmpty() && given.isEmpty()) return own
         val all: MutableList<Continuous> = ArrayList(own)
+        for (resource in given) all.addAll(INHERITED_CONTINUOUS[nameOf(resource.cardName)]!!)
         for (g in Formations.grants(card.formationGrants)) FORMATION[nameOf(g.sourceName)]?.let { all.addAll(it.continuous()) }
         return all
     }
@@ -602,6 +606,7 @@ object CardEffects {
         GrantedEffects.register(d.effects())
         GrantedEffects.register(d.inherited())
         if (!d.continuous().isEmpty()) CONTINUOUS[name!!] = d.continuous()
+        if (!d.inheritedContinuous().isEmpty()) INHERITED_CONTINUOUS[name!!] = d.inheritedContinuous()
         if (d.traits != null) TRAITS[name!!] = d.traits
         if (d.requirement != null) REQUIREMENTS[name!!] = d.requirement
         val others: MutableList<Reaction> = ArrayList()
