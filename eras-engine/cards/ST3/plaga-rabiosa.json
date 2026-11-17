@@ -5,7 +5,7 @@
       "id": "plaga-rabiosa:turno-aliado-en-tributos",
       "moment": "ACTIVATED",
       "label": "Turno Aliado / En Tributos",
-      "text": "Una vez por turno entre copias: puedes enviar 5 de tus tributos Violeta al fondo de tu mazo para invocar esta carta en tu línea frontal.",
+      "text": "Una vez por turno entre copias: puedes enviar otros 5 de tus tributos Violeta al fondo de tu mazo para invocar esta carta en tu línea frontal.",
       "steps": [
         {
           "type": "IfPossible"
