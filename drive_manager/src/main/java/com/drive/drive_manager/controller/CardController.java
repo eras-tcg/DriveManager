@@ -34,6 +34,9 @@ public class CardController {
     @Autowired
     private CardRefDataRepository refRepo;
 
+    @Autowired
+    private com.drive.drive_manager.service.CardSlots cardSlots;
+
     private static final String REF_ID = "default";
 
     /**
@@ -86,6 +89,20 @@ public class CardController {
             return ResponseEntity.status(HttpStatus.CONFLICT).body(java.util.Map.of("message", e.getMessage()));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(java.util.Map.of("message", e.getMessage()));
+        }
+    }
+
+    /**
+     * Moves cards to other slots all at once (a chain where each takes the next one's place), with their images.
+     * PUT /api/cards/slots  [{id, edition, subEdition, cardNumber}, …]
+     */
+    @PreAuthorize("hasAuthority('manage_cards')")
+    @PutMapping("/slots")
+    public ResponseEntity<Object> moveCards(@RequestBody List<com.drive.drive_manager.service.CardSlots.Move> moves) {
+        try {
+            return ResponseEntity.ok(cardSlots.move(moves));
+        } catch (com.drive.drive_manager.service.CardSlots.InvalidMove e) {
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(java.util.Map.of("message", e.getMessage()));
         }
     }
 
