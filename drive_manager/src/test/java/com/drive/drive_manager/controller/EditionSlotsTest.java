@@ -35,6 +35,28 @@ class EditionSlotsTest {
     }
 
     @Test
+    void eachColorKeepsItsOwnCount() {
+        EditionMetadata existing = edition(List.of("B", "W"), 25);
+        existing.setCardsByColor(java.util.Map.of("W", 5));
+        EditionMetadata body = edition(null, null);
+        EditionMetadataController.keepSlots(body, existing);
+        assertThat(body.getCardsByColor()).containsEntry("W", 5);
+        EditionMetadata changed = edition(List.of("B", "W"), 25);
+        changed.setCardsByColor(java.util.Map.of("W", 4));
+        EditionMetadataController.keepSlots(changed, existing);
+        assertThat(changed.getCardsByColor()).containsEntry("W", 4);
+    }
+
+    @Test
+    void aSaveWithoutTheRegulationKeepsIt() {
+        EditionMetadata existing = edition(List.of("B"), 25);
+        existing.setRegulation("A");
+        EditionMetadata body = edition(null, null);
+        EditionMetadataController.keepSlots(body, existing);
+        assertThat(body.getRegulation()).isEqualTo("A");
+    }
+
+    @Test
     void aSaveWithoutTheCoverFramingKeepsIt() {
         EditionMetadata existing = edition(List.of("G"), 18);
         existing.setCoverFrame(new EditionMetadata.CoverFrame(30, 60, 1.5));

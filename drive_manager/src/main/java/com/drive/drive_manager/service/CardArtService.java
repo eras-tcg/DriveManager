@@ -7,6 +7,7 @@ import com.drive.drive_manager.repository.DriveCardRepository;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
+import java.util.List;
 import java.util.Optional;
 
 /**
@@ -39,9 +40,53 @@ public class CardArtService {
      * deck builder and the simulator. Its image is the editor's finished card; it carries the card's code and name.
      */
     void register(Card card) {
-        DriveCard image = new DriveCard(DriveCard.WEB_PREFIX + card.getId(), null, card.getCardName(), card.getCardNumber(),
+        String id = DriveCard.WEB_PREFIX + card.getId();
+        // A card that has its image from Drive keeps it as its only record (a second one would list it twice), now showing
+        // the editor's render: decks and collections point to that record
+        List<DriveCard> drive = driveImages(card);
+        if (!drive.isEmpty()) {
+            images.deleteById(id);
+            Instant now = Instant.now();
+            for (DriveCard d : drive) {
+                d.setRenderOf(card.getId());
+                d.setTimeStamp(now);
+            }
+            images.saveAll(drive);
+            return;
+        }
+        DriveCard image = new DriveCard(id, null, card.getCardName(), card.getCardNumber(),
                 card.getColorIdentity(), card.getEdition(), card.getSubEdition(), Instant.now(), DriveCard.WEB);
         images.save(image);
+    }
+
+    /** The Drive image records at the card's code (edition, number, sub-edition and color). */
+    private List<DriveCard> driveImages(Card card) {
+        if (card.getEdition() == null || card.getCardNumber() == null) return List.of();
+        return images.findByEditionAndNumber(card.getEdition(), card.getCardNumber()).stream()
+                .filter(d -> d.getId() != null && !d.getId().startsWith(DriveCard.WEB_PREFIX))
+                .filter(d -> java.util.Objects.equals(blankToNull(d.getSubEdition()), blankToNull(card.getSubEdition()))
+                        && d.getColorIdentity() != null && d.getColorIdentity().equalsIgnoreCase(card.getColorIdentity()))
+                .toList();
+    }
+
+    /** Drops a stored file unless another card still points to it (a reprint made as a copy shares its files). */
+    private void dropUnlessShared(String key, String cardId) {
+        if (key == null) return;
+        if (cards.existsByArtKeyAndIdNot(key, cardId) || cards.existsByRenderKeyAndIdNot(key, cardId)) return;
+        store.delete(key);
+    }
+
+    /** A stored file, or empty when it is gone (a missing file is "no image", not an error). */
+    private Optional<byte[]> read(String key) {
+        try {
+            return Optional.of(store.get(key));
+        } catch (RuntimeException e) {
+            return Optional.empty();
+        }
+    }
+
+    private static String blankToNull(String s) {
+        return s == null || s.isBlank() ? null : s;
     }
 
     /** Stores a new art for the card and drops the one it had: the card after it, empty if none. */
@@ -56,7 +101,7 @@ public class CardArtService {
             card.setArtKey(key);
             card.setArtType(type);
             Card saved = cards.save(card);
-            if (old != null) store.delete(old);
+            dropUnlessShared(old, cardId);
             return saved;
         });
     }
@@ -72,7 +117,7 @@ public class CardArtService {
             store.put(key, bytes, type);
             card.setRenderKey(key);
             Card saved = cards.save(card);
-            if (old != null) store.delete(old);
+            dropUnlessShared(old, cardId);
             register(saved);
             return saved;
         });
@@ -81,12 +126,13 @@ public class CardArtService {
     public Optional<Art> getRender(String cardId) {
         return cards.findById(cardId)
                 .filter(c -> c.getRenderKey() != null)
-                .map(c -> new Art(store.get(c.getRenderKey()), "image/" + c.getRenderKey().substring(c.getRenderKey().lastIndexOf('.') + 1)));
+                .flatMap(c -> read(c.getRenderKey())
+                        .map(bytes -> new Art(bytes, "image/" + c.getRenderKey().substring(c.getRenderKey().lastIndexOf('.') + 1))));
     }
 
     public Optional<Card> remove(String cardId) {
         return cards.findById(cardId).map(card -> {
-            if (card.getArtKey() != null) store.delete(card.getArtKey());
+            dropUnlessShared(card.getArtKey(), cardId);
             card.setArtKey(null);
             card.setArtType(null);
             return cards.save(card);
@@ -96,7 +142,7 @@ public class CardArtService {
     public Optional<Art> get(String cardId) {
         return cards.findById(cardId)
                 .filter(c -> c.getArtKey() != null)
-                .map(c -> new Art(store.get(c.getArtKey()), c.getArtType()));
+                .flatMap(c -> read(c.getArtKey()).map(bytes -> new Art(bytes, c.getArtType())));
     }
 
     /** The image's media type from its first bytes: image/jpeg, image/png or image/webp; null for anything else. */

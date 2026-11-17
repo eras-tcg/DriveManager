@@ -41,6 +41,14 @@ public class EditionMetadata {
     @Field("cards_per_color")
     private Integer cardsPerColor;
 
+    /** Cards of a color when it has its own count (E1: 25 of each color but 5 white); the rest use cardsPerColor. */
+    @Field("cards_by_color")
+    private java.util.Map<String, Integer> cardsByColor;
+
+    /** The regulation its cards print (A…): the one a new card of the edition starts with. */
+    @Field("regulation")
+    private String regulation;
+
     /** How its cover sits in the card-shaped tiles (the image itself is not cut); null: centered, not zoomed. */
     @Field("cover_frame")
     private CoverFrame coverFrame;

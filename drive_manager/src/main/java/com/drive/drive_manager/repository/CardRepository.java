@@ -13,6 +13,11 @@ import java.util.List;
 @Repository
 public interface CardRepository extends MongoRepository<Card, String> {
 
+    /** Another card points to this art or finished-card file (a reprint made as a copy shares them). */
+    boolean existsByArtKeyAndIdNot(String artKey, String id);
+
+    boolean existsByRenderKeyAndIdNot(String renderKey, String id);
+
     /**
      * Find all cards by card name (case-insensitive).
      */
