@@ -34,6 +34,26 @@ class ST3CardsTest extends CardBatchSupport {
     }
 
     @Test
+    void guardianDeLaLunaSepulcralNeedsALevelThreeAndExactlyOneMoreAlly() {
+        CardSlot guardian = violet("gl", "Guardían de la Luna Sepulcral", 5, 4, 11);
+        guardian.setSpecialSummonKind("ritual");
+        guardian.setSpecialCost(1);
+        host.getHand().add(guardian);
+        onField(host, violet("s", "Invocador", 3, 3, 8), FRONT);
+        assertThat(SpecialRequirements.canSpecial(room, "host", guardian)).isFalse();
+        onField(host, violet("a", "Aliado A", 1, 1, 2), BACK);
+        onField(host, violet("b", "Aliado B", 2, 2, 4), BACK);
+        assertThat(SpecialRequirements.canSpecial(room, "host", guardian)).isTrue();
+        assertThat(SpecialSummons.specialByPlayer(room, "host", "gl", "s")).isNull();
+        Prompt others = room.getPrompt();
+        assertThat(others.getMax()).isEqualTo(1);
+        answer(others, "b");
+        for (int i = 0; i < 5 && room.getPrompt() != null && !host.getField().contains(guardian); i++) answer(room.getPrompt());
+        assertThat(host.getField()).contains(guardian);
+        assertThat(host.getField()).extracting(CardSlot::getInstanceId).contains("a").doesNotContain("s", "b");
+    }
+
+    @Test
     void plagaRabiosaSendsFiveVioletTributesToTheBottomToSummonItselfInTheFrontLine() {
         CardSlot plaga = violet("pl", "Plaga Rabiosa", 1, 1, 3);
         host.getTributeZone().add(plaga);

@@ -135,6 +135,22 @@ class ST4CardsTest extends CardBatchSupport {
     }
 
     @Test
+    void enfrentamientoDeGuerraMayAttackAnActiveEnemyToo() {
+        room.setFirstTurn(false);
+        CardSlot ally = onField(host, red("al", "Aliado", 2, 2, 5), FRONT);
+        CardSlot active = onField(guest, enemy("ac", 7), FRONT);
+        play(utility("eg", "Enfrentamiento De Guerra", 3, "R"));
+        answer("al");
+        answer("eg");
+        Prompt attack = room.getPrompt();
+        assertThat(attack.getValidIds()).containsExactly("ac");
+        answer(attack, "ac");
+        drain();
+        assertThat(guest.getField()).doesNotContain(active);
+        assertThat(ally.isTapped()).isFalse();
+    }
+
+    @Test
     void enfrentamientoDeGuerraCannotAttackTheRivalDirectly() {
         room.setFirstTurn(false);
         CardSlot ally = onField(host, red("al", "Aliado", 2, 2, 5), FRONT);

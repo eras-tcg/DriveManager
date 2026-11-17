@@ -5,7 +5,7 @@
       "id": "fal:en-tributos",
       "moment": "ON_EVENT",
       "label": "En Tributos",
-      "text": "Una vez por turno entre copias: si la fuerza de algún enemigo es reducida a 0, puedes enviar 5 de tus tributos Violeta al fondo de tu mazo; invoca esta carta en tu línea frontal.",
+      "text": "Una vez por turno entre copias: si la fuerza de algún enemigo es reducida a 0, puedes enviar 5 de tus tributos Azules al fondo de tu mazo; invoca esta carta en tu línea frontal.",
       "cost": [
         {
           "type": "Do",
@@ -16,7 +16,7 @@
               "owner": "YOU",
               "filter": {
                 "colors": [
-                  "P"
+                  "B"
                 ]
               },
               "min": {

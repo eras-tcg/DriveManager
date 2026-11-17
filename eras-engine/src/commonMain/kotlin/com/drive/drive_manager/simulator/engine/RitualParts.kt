@@ -21,12 +21,13 @@ object RitualParts {
     @JvmRecord
     data class Part(val level: Int, val orLess: Boolean, val type: String?) {
         fun fits(card: CardSlot, asType: String?): Boolean {
-            if (EffectEngine.levels(card).none { l -> if (orLess) l <= level else l == level }) return false
+            // Level 0: any level ("+ 1 aliado")
+            if (level > 0 && EffectEngine.levels(card).none { l -> if (orLess) l <= level else l == level }) return false
             if (type == null) return true
             return ClassChanges.classes(card).any { it.equals(type, ignoreCase = true) } || type.equals(asType, ignoreCase = true)
         }
 
-        fun describe(): String = "criatura" + (if (type == null) "" else " [$type]") + " nivel " + level + (if (orLess) " o menor" else "")
+        fun describe(): String = "criatura" + (if (type == null) "" else " [$type]") + (if (level == 0) "" else " nivel " + level + (if (orLess) " o menor" else ""))
     }
 
     /** The enemies that can fill a part for this Ritual now (Lilith), and the type they count as; empty without such a reaction. */

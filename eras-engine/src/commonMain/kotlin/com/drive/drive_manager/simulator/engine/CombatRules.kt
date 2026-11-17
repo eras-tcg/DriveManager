@@ -577,7 +577,7 @@ object CombatRules {
 
     /** "declara ataque" by an effect: the subject attacks if it can. Returns true when the player is asked what to attack. */
     @JvmStatic
-    fun attackByEffect(room: GameRoom, effect: PendingEffect, opponentOnly: Boolean, creaturesOnly: Boolean = false): Boolean {
+    fun attackByEffect(room: GameRoom, effect: PendingEffect, opponentOnly: Boolean, creaturesOnly: Boolean = false, activeToo: Boolean = false): Boolean {
         val userId = effect.controllerId
         val subject = subject(room, effect) ?: return false
         if (room.combat != null) {
@@ -592,10 +592,14 @@ object CombatRules {
             log(room, name(subject) + " no puede atacar: no está en la línea frontal", null)
             return false
         }
-        val targets = if (opponentOnly) frozenListOf<CardSlot>() else attackTargets(room, userId, subject)
+        val targets = if (opponentOnly) frozenListOf<CardSlot>()
+        // "a un enemigo activo o agotado": any creature of the enemy Línea frontal
+        else if (activeToo) room.getPlayer(room.getOpponentId(userId))?.field?.filter { c -> "creature" == c.cardType && inFrontLine(c) }
+            ?: frozenListOf()
+        else attackTargets(room, userId, subject)
         // "puede atacar un enemigo": an exhausted enemy creature, never the rival
         if (creaturesOnly && targets.isEmpty()) {
-            log(room, name(subject) + " no puede atacar: no hay enemigos agotados a los que atacar", null)
+            log(room, name(subject) + " no puede atacar: no hay enemigos " + (if (activeToo) "" else "agotados ") + "a los que atacar", null)
             return false
         }
         if (targets.isEmpty()) {
@@ -604,7 +608,8 @@ object CombatRules {
         }
         val opponent = room.getPlayer(room.getOpponentId(userId))
         val prompt = prompt(room, effect, Prompt.Kind.PICK,
-            name(subject) + " declara ataque: elige una criatura agotada a la que atacar" + (if (creaturesOnly) "." else ", o ninguna para atacar a tu rival."))
+            name(subject) + " declara ataque: elige una criatura " + (if (activeToo) "enemiga" else "agotada") + " a la que atacar"
+                    + (if (creaturesOnly) "." else ", o ninguna para atacar a tu rival."))
         prompt.cards = ArrayList(opponent!!.field)
         prompt.validIds = ArrayList(ids(targets))
         prompt.min = if (creaturesOnly) 1 else 0

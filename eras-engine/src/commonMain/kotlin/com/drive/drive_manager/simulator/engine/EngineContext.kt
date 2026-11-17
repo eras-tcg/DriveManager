@@ -112,8 +112,8 @@ internal class EngineContext(private val room: GameRoom, private val effect: Pen
         room.prompt!!.topOrBottom = true
     }
 
-    override fun attack(opponentOnly: Boolean, creaturesOnly: Boolean): Boolean {
-        return CombatRules.attackByEffect(room, effect, opponentOnly, creaturesOnly)
+    override fun attack(opponentOnly: Boolean, creaturesOnly: Boolean, activeToo: Boolean): Boolean {
+        return CombatRules.attackByEffect(room, effect, opponentOnly, creaturesOnly, activeToo)
     }
 
     override fun attackChosen(picks: List<String?>?) {

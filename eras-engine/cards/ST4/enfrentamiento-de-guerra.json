@@ -6,7 +6,7 @@
       "moment": "ON_PLAY",
       "mandatory": true,
       "label": "En Juego",
-      "text": "Un aliado gana fuerza 3. Luego: puede atacar un enemigo sin agotarse.",
+      "text": "Un aliado gana fuerza 3. Luego: puede atacar sin agotarse a un enemigo activo o agotado.",
       "steps": [
         {
           "type": "Do",
@@ -59,14 +59,15 @@
         },
         {
           "type": "MayDo",
-          "question": "¿Ataca un enemigo sin agotarse?",
+          "question": "¿Ataca sin agotarse a un enemigo activo o agotado?",
           "covers": 1
         },
         {
           "type": "Do",
           "action": {
             "type": "Attack",
-            "creaturesOnly": true
+            "creaturesOnly": true,
+            "activeToo": true
           }
         }
       ],

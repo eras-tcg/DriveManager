@@ -13,7 +13,7 @@ class AttackHandler : ActionHandler<Attack> {
     }
 
     override fun run(ctx: EffectContext, action: Attack): Boolean {
-        return ctx.attack(action.opponentOnly, action.creaturesOnly)
+        return ctx.attack(action.opponentOnly, action.creaturesOnly, action.activeToo)
     }
 
     override fun answer(ctx: EffectContext, action: Attack, answer: Answer): String? {
