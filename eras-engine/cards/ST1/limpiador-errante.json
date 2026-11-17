@@ -1,0 +1,15 @@
+{
+  "name": "limpiador errante",
+  "requirement": {
+    "summoner": {
+      "level": 2
+    },
+    "materials": {
+      "count": 1,
+      "level": 2,
+      "zones": [
+        "discardPile"
+      ]
+    }
+  }
+}

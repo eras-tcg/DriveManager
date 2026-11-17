@@ -1,0 +1,77 @@
+{
+  "name": "benzo",
+  "effects": [
+    {
+      "id": "benzo:en-mano",
+      "moment": "ON_EVENT",
+      "label": "En Mano",
+      "text": "Una vez por turno entre copias: si algún aliado declara ataque, puedes enviar 5 de tus tributos Rojos al fondo de tu mazo para invocar esta carta sin pagar su coste.",
+      "steps": [
+        {
+          "type": "IfPossible"
+        },
+        {
+          "type": "Do",
+          "action": {
+            "type": "Move",
+            "cards": {
+              "zones": "tributeZone",
+              "owner": "YOU",
+              "filter": {
+                "colors": [
+                  "R"
+                ]
+              },
+              "min": {
+                "type": "Fixed",
+                "value": 5
+              },
+              "max": {
+                "type": "Fixed",
+                "value": 5
+              },
+              "self": "ANY",
+              "mode": "CHOOSE"
+            },
+            "to": "deckBottom",
+            "required": true
+          }
+        },
+        {
+          "type": "Do",
+          "action": {
+            "type": "Summon",
+            "cards": {
+              "zones": "hand",
+              "owner": "YOU",
+              "filter": {},
+              "min": {
+                "type": "Fixed",
+                "value": 1
+              },
+              "max": {
+                "type": "Fixed",
+                "value": 1
+              },
+              "self": "ANY",
+              "mode": "SELF"
+            },
+            "reduce": {
+              "type": "Fixed",
+              "value": 1000
+            },
+            "required": true
+          }
+        }
+      ],
+      "condition": {
+        "type": "Happened",
+        "eventType": "ATTACK_DECLARED",
+        "actor": "YOU",
+        "owner": "ANY"
+      },
+      "sourceZone": "hand",
+      "limit": "ONCE_PER_TURN_BETWEEN_COPIES"
+    }
+  ]
+}

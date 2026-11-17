@@ -112,8 +112,8 @@ internal class EngineContext(private val room: GameRoom, private val effect: Pen
         room.prompt!!.topOrBottom = true
     }
 
-    override fun attack(opponentOnly: Boolean): Boolean {
-        return CombatRules.attackByEffect(room, effect, opponentOnly)
+    override fun attack(opponentOnly: Boolean, creaturesOnly: Boolean): Boolean {
+        return CombatRules.attackByEffect(room, effect, opponentOnly, creaturesOnly)
     }
 
     override fun attackChosen(picks: List<String?>?) {
@@ -181,6 +181,8 @@ internal class EngineContext(private val room: GameRoom, private val effect: Pen
     }
 
     override fun attached(zone: String?): List<CardSlot> {
+        // "materiales de tus aliados": every material of your creatures on the field
+        if (zone == "materials:allies") return player()!!.field.filter { "creature" == it.cardType }.flatMap { it.materials!! }
         val host = if (zone!!.endsWith(":subject")) StepHelpers.subject(room, effect) else EffectEngine.find(player()!!.field, effect.sourceInstanceId)
         if (host == null) return frozenListOf()
         return if (zone.startsWith("materials")) host.materials!! else host.resources!!

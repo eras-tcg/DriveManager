@@ -51,9 +51,12 @@ sealed interface Action {
         }
     }
 
-    /** "declara ataque": this card, or the ally chosen before, attacks without being exhausted (rule 11.9.3.1); `opponentOnly`: "a tu rival". */
+    /**
+     * "declara ataque": this card, or the ally chosen before, attacks without being exhausted (rule 11.9.3.1); `opponentOnly`: "a tu rival";
+     * `creaturesOnly`: "puede atacar un enemigo" (an exhausted enemy creature, never the rival; none: no attack).
+     */
     @JvmRecord
-    data class Attack(val opponentOnly: Boolean) : Action
+    data class Attack(val opponentOnly: Boolean, val creaturesOnly: Boolean = false) : Action
 
     /** "al final del turno: …": what follows is another effect of the card, `effect` (moment DELAYED), for the same subject. */
     @JvmRecord

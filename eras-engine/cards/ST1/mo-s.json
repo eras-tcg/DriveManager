@@ -1,0 +1,84 @@
+{
+  "name": "mo-s",
+  "effects": [
+    {
+      "id": "mo-s:turno-aliado",
+      "moment": "ACTIVATED",
+      "label": "Turno Aliado",
+      "text": "Una vez por turno: puedes subir 1 material de esta carta a tu mano; invoca 1 criatura Azul de tu descarte reduciendo su coste en 2.",
+      "cost": [
+        {
+          "type": "Do",
+          "action": {
+            "type": "Move",
+            "cards": {
+              "zones": "materials",
+              "owner": "YOU",
+              "filter": {},
+              "min": {
+                "type": "Fixed",
+                "value": 1
+              },
+              "max": {
+                "type": "Fixed",
+                "value": 1
+              },
+              "self": "ANY",
+              "mode": "CHOOSE"
+            },
+            "to": "hand"
+          }
+        }
+      ],
+      "steps": [
+        {
+          "type": "Do",
+          "action": {
+            "type": "Summon",
+            "cards": {
+              "zones": "discardPile",
+              "owner": "YOU",
+              "filter": {
+                "colors": [
+                  "B"
+                ],
+                "cardType": "creature"
+              },
+              "min": {
+                "type": "Fixed",
+                "value": 1
+              },
+              "max": {
+                "type": "Fixed",
+                "value": 1
+              },
+              "self": "ANY",
+              "mode": "CHOOSE"
+            },
+            "reduce": {
+              "type": "Fixed",
+              "value": 2
+            },
+            "required": true
+          }
+        }
+      ],
+      "sourceZone": "field",
+      "allyTurn": true,
+      "limit": "ONCE_PER_TURN"
+    }
+  ],
+  "requirement": {
+    "summoner": {
+      "level": 3
+    },
+    "materials": {
+      "count": 1,
+      "level": 3,
+      "zones": [
+        "hand",
+        "discardPile"
+      ]
+    }
+  }
+}

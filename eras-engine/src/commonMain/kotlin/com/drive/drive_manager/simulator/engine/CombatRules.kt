@@ -178,6 +178,25 @@ object CombatRules {
         }
     }
 
+    /**
+     * "si es atacado por un aliado [color]: salta el paso de bloqueo" left on the attacked enemy as the keyword
+     * "Sin bloqueo ante cartas Rojas" (until it ends): no blocker is declared, the attacked creature itself clashes (rule 10.1.2.7).
+     */
+    const val NO_BLOCK_AGAINST = "Sin bloqueo ante cartas "
+
+    @JvmStatic
+    fun noBlockAgainst(defender: PlayerState, c: Combat, attacker: CardSlot): Boolean {
+        val id = c.targetId ?: return false
+        val target = find(defender.field, id) ?: return false
+        val colors = attacker.colors ?: return false
+        return keywords(target).any { k ->
+            k.startsWith(NO_BLOCK_AGAINST) && colors.any { code ->
+                val name = CardFilter.colorName(code)
+                k.substring(NO_BLOCK_AGAINST.length) == name + (if (name.last() in "aeiou") "s" else "es")
+            }
+        }
+    }
+
     @JvmStatic
     fun nextStep(c: Combat, defender: PlayerState, attacker: CardSlot?): Combat.Step {
         return when (c.step!!) {
@@ -212,7 +231,7 @@ object CombatRules {
                 if (!c.provokeAsked) {
                     c.provokeAsked = true
                     val provoke = keywordLevel(attacker, "Provocar")
-                    if (provoke != null && c.blockerId == null) {
+                    if (provoke != null && c.blockerId == null && !noBlockAgainst(defender, c, attacker)) {
                         val options = blockers(defender).filter { b ->
                             b.instanceId != c.targetId
                                     && (provoke == 0 || (b.getLevel() != null && b.getLevel()!! <= provoke))
@@ -230,7 +249,7 @@ object CombatRules {
                 // Rule 10.1.2.3: the defender may declare a blocker, unless one was already declared
                 if (c.blockerId == null && !c.blockAsked) {
                     c.blockAsked = true
-                    val options = if (keywordLevel(attacker, "Imbloqueable") != null) frozenListOf<CardSlot>()
+                    val options = if (keywordLevel(attacker, "Imbloqueable") != null || noBlockAgainst(defender, c, attacker)) frozenListOf<CardSlot>()
                     else blockers(defender).filter { b -> b.instanceId != c.targetId }
                     if (!options.isEmpty()) {
                         rulesPrompt(room, defender.userId, PromptPurpose.BLOCK.id(), name(attacker) + " ataca",
@@ -558,7 +577,7 @@ object CombatRules {
 
     /** "declara ataque" by an effect: the subject attacks if it can. Returns true when the player is asked what to attack. */
     @JvmStatic
-    fun attackByEffect(room: GameRoom, effect: PendingEffect, opponentOnly: Boolean): Boolean {
+    fun attackByEffect(room: GameRoom, effect: PendingEffect, opponentOnly: Boolean, creaturesOnly: Boolean = false): Boolean {
         val userId = effect.controllerId
         val subject = subject(room, effect) ?: return false
         if (room.combat != null) {
@@ -574,16 +593,21 @@ object CombatRules {
             return false
         }
         val targets = if (opponentOnly) frozenListOf<CardSlot>() else attackTargets(room, userId, subject)
+        // "puede atacar un enemigo": an exhausted enemy creature, never the rival
+        if (creaturesOnly && targets.isEmpty()) {
+            log(room, name(subject) + " no puede atacar: no hay enemigos agotados a los que atacar", null)
+            return false
+        }
         if (targets.isEmpty()) {
             startCombat(room, userId, subject, null, true, effect)
             return false
         }
         val opponent = room.getPlayer(room.getOpponentId(userId))
         val prompt = prompt(room, effect, Prompt.Kind.PICK,
-            name(subject) + " declara ataque: elige una criatura agotada a la que atacar, o ninguna para atacar a tu rival.")
+            name(subject) + " declara ataque: elige una criatura agotada a la que atacar" + (if (creaturesOnly) "." else ", o ninguna para atacar a tu rival."))
         prompt.cards = ArrayList(opponent!!.field)
         prompt.validIds = ArrayList(ids(targets))
-        prompt.min = 0
+        prompt.min = if (creaturesOnly) 1 else 0
         prompt.max = 1
         prompt.chosenLabel = "Atacar"
         room.prompt = prompt

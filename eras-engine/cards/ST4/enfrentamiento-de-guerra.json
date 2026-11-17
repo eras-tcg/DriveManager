@@ -1,0 +1,77 @@
+{
+  "name": "enfrentamiento de guerra",
+  "effects": [
+    {
+      "id": "enfrentamiento-de-guerra:en-juego",
+      "moment": "ON_PLAY",
+      "mandatory": true,
+      "label": "En Juego",
+      "text": "Un aliado gana fuerza 3. Luego: puede atacar un enemigo sin agotarse.",
+      "steps": [
+        {
+          "type": "Do",
+          "action": {
+            "type": "Select",
+            "selector": {
+              "zones": "pickableAllies",
+              "owner": "YOU",
+              "filter": {},
+              "min": {
+                "type": "Fixed",
+                "value": 1
+              },
+              "max": {
+                "type": "Fixed",
+                "value": 1
+              },
+              "self": "ANY",
+              "mode": "CHOOSE"
+            },
+            "saveAs": "subject",
+            "label": "Elegido",
+            "endsIfNone": true
+          }
+        },
+        {
+          "type": "Do",
+          "action": {
+            "type": "Modify",
+            "cards": {
+              "zones": "subjectOrSelf",
+              "owner": "YOU",
+              "filter": {},
+              "min": {
+                "type": "Fixed"
+              },
+              "max": {
+                "type": "Fixed",
+                "value": 2147483647
+              },
+              "self": "ANY",
+              "mode": "ALL"
+            },
+            "strength": {
+              "type": "Fixed",
+              "value": 3
+            },
+            "until": "TURN"
+          }
+        },
+        {
+          "type": "MayDo",
+          "question": "¿Ataca un enemigo sin agotarse?",
+          "covers": 1
+        },
+        {
+          "type": "Do",
+          "action": {
+            "type": "Attack",
+            "creaturesOnly": true
+          }
+        }
+      ],
+      "sourceZone": "field",
+      "limit": "NONE"
+    }
+  ]
+}

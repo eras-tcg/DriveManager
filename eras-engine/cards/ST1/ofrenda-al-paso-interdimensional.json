@@ -1,0 +1,167 @@
+{
+  "name": "ofrenda al paso interdimensional",
+  "effects": [
+    {
+      "id": "ofrenda-al-paso-interdimensional:en-juego",
+      "moment": "ON_PLAY",
+      "mandatory": true,
+      "label": "En Juego",
+      "text": "Tributa 2 materiales de entre tus aliados para que un aliado invoque por Materialización 1 criatura Azul de tu mano o tributos reduciendo su coste especial en 2.",
+      "steps": [
+        {
+          "type": "IfPossible"
+        },
+        {
+          "type": "Do",
+          "action": {
+            "type": "Move",
+            "cards": {
+              "zones": "materials:allies",
+              "owner": "YOU",
+              "filter": {},
+              "min": {
+                "type": "Fixed",
+                "value": 2
+              },
+              "max": {
+                "type": "Fixed",
+                "value": 2
+              },
+              "self": "ANY",
+              "mode": "CHOOSE"
+            },
+            "to": "tributeZone",
+            "required": true
+          }
+        },
+        {
+          "type": "Do",
+          "action": {
+            "type": "Sequence",
+            "actions": [
+              {
+                "type": "Select",
+                "selector": {
+                  "zones": "hand,tributeZone",
+                  "owner": "YOU",
+                  "filter": {},
+                  "min": {
+                    "type": "Fixed"
+                  },
+                  "max": {
+                    "type": "Fixed",
+                    "value": 1
+                  },
+                  "self": "ANY",
+                  "mode": "CHOOSE",
+                  "special": {
+                    "rule": {
+                      "kind": "materialization",
+                      "zone": "hand,tributeZone",
+                      "reduce": 2,
+                      "summoner": "any",
+                      "filter": {
+                        "colors": [
+                          "B"
+                        ],
+                        "cardType": "creature"
+                      }
+                    },
+                    "stage": "CARD"
+                  }
+                },
+                "saveAs": "specialCard",
+                "label": "Invocar"
+              },
+              {
+                "type": "Select",
+                "selector": {
+                  "zones": "hand,tributeZone",
+                  "owner": "YOU",
+                  "filter": {},
+                  "min": {
+                    "type": "Fixed"
+                  },
+                  "max": {
+                    "type": "Fixed",
+                    "value": 1
+                  },
+                  "self": "ANY",
+                  "mode": "CHOOSE",
+                  "special": {
+                    "rule": {
+                      "kind": "materialization",
+                      "zone": "hand,tributeZone",
+                      "reduce": 2,
+                      "summoner": "any",
+                      "filter": {
+                        "colors": [
+                          "B"
+                        ],
+                        "cardType": "creature"
+                      }
+                    },
+                    "stage": "SUMMONER"
+                  }
+                },
+                "saveAs": "specialSummoner",
+                "label": "Invocador"
+              },
+              {
+                "type": "Select",
+                "selector": {
+                  "zones": "hand,tributeZone",
+                  "owner": "YOU",
+                  "filter": {},
+                  "min": {
+                    "type": "Fixed"
+                  },
+                  "max": {
+                    "type": "Fixed",
+                    "value": 1
+                  },
+                  "self": "ANY",
+                  "mode": "CHOOSE",
+                  "special": {
+                    "rule": {
+                      "kind": "materialization",
+                      "zone": "hand,tributeZone",
+                      "reduce": 2,
+                      "summoner": "any",
+                      "filter": {
+                        "colors": [
+                          "B"
+                        ],
+                        "cardType": "creature"
+                      }
+                    },
+                    "stage": "MATERIAL"
+                  }
+                },
+                "saveAs": "specialMaterials",
+                "label": "Material"
+              },
+              {
+                "type": "SummonSpecial",
+                "rule": {
+                  "kind": "materialization",
+                  "zone": "hand,tributeZone",
+                  "reduce": 2,
+                  "summoner": "any",
+                  "filter": {
+                    "colors": [
+                      "B"
+                    ],
+                    "cardType": "creature"
+                  }
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "sourceZone": "field",
+      "limit": "NONE"
+    }
+  ]
+}

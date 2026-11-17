@@ -1,0 +1,80 @@
+{
+  "name": "frehle",
+  "effects": [
+    {
+      "id": "frehle:turno-aliado",
+      "moment": "ACTIVATED",
+      "label": "Turno Aliado",
+      "text": "Una vez por turno: puedes tributar 1 material de esta carta; toma 1 carta Azul de tus tributos.",
+      "cost": [
+        {
+          "type": "Do",
+          "action": {
+            "type": "Move",
+            "cards": {
+              "zones": "materials",
+              "owner": "YOU",
+              "filter": {},
+              "min": {
+                "type": "Fixed",
+                "value": 1
+              },
+              "max": {
+                "type": "Fixed",
+                "value": 1
+              },
+              "self": "ANY",
+              "mode": "CHOOSE"
+            },
+            "to": "tributeZone"
+          }
+        }
+      ],
+      "steps": [
+        {
+          "type": "Do",
+          "action": {
+            "type": "Move",
+            "cards": {
+              "zones": "tributeZone",
+              "owner": "YOU",
+              "filter": {
+                "colors": [
+                  "B"
+                ]
+              },
+              "min": {
+                "type": "Fixed",
+                "value": 1
+              },
+              "max": {
+                "type": "Fixed",
+                "value": 1
+              },
+              "self": "ANY",
+              "mode": "CHOOSE"
+            },
+            "to": "hand",
+            "required": true
+          }
+        }
+      ],
+      "sourceZone": "field",
+      "allyTurn": true,
+      "limit": "ONCE_PER_TURN"
+    }
+  ],
+  "requirement": {
+    "summoner": {
+      "level": 2
+    },
+    "materials": {
+      "count": 1,
+      "level": 2,
+      "zones": [
+        "hand",
+        "tributeZone"
+      ]
+    }
+  }
+}

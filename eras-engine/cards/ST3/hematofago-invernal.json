@@ -1,0 +1,51 @@
+{
+  "name": "hematófago invernal",
+  "effects": [
+    {
+      "id": "hematofago-invernal:al-atacar",
+      "moment": "ON_ATTACK",
+      "label": "Al Atacar",
+      "text": "Puedes invocar 1 criatura Violeta de tus tributos reduciendo su coste en 1.",
+      "steps": [
+        {
+          "type": "Do",
+          "action": {
+            "type": "Summon",
+            "cards": {
+              "zones": "tributeZone",
+              "owner": "YOU",
+              "filter": {
+                "colors": [
+                  "P"
+                ],
+                "cardType": "creature"
+              },
+              "min": {
+                "type": "Fixed",
+                "value": 1
+              },
+              "max": {
+                "type": "Fixed",
+                "value": 1
+              },
+              "self": "ANY",
+              "mode": "CHOOSE"
+            },
+            "reduce": {
+              "type": "Fixed",
+              "value": 1
+            },
+            "required": true
+          }
+        }
+      ],
+      "sourceZone": "field",
+      "limit": "NONE"
+    }
+  ],
+  "requirement": {
+    "ritual": {
+      "level": 3
+    }
+  }
+}
