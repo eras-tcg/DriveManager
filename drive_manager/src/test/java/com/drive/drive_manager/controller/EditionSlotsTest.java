@@ -48,6 +48,15 @@ class EditionSlotsTest {
     }
 
     @Test
+    void aSaveWithoutTheRegulationKeepsIt() {
+        EditionMetadata existing = edition(List.of("B"), 25);
+        existing.setRegulation("A");
+        EditionMetadata body = edition(null, null);
+        EditionMetadataController.keepSlots(body, existing);
+        assertThat(body.getRegulation()).isEqualTo("A");
+    }
+
+    @Test
     void aSaveWithoutTheCoverFramingKeepsIt() {
         EditionMetadata existing = edition(List.of("G"), 18);
         existing.setCoverFrame(new EditionMetadata.CoverFrame(30, 60, 1.5));

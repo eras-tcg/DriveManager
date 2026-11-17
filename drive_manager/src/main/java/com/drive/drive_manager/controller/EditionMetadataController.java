@@ -133,6 +133,7 @@ public class EditionMetadataController {
         if (body.getColors() == null) body.setColors(existing.getColors());
         if (body.getCardsPerColor() == null) body.setCardsPerColor(existing.getCardsPerColor());
         if (body.getCardsByColor() == null) body.setCardsByColor(existing.getCardsByColor());
+        if (body.getRegulation() == null) body.setRegulation(existing.getRegulation());
         if (body.getCoverFrame() == null) body.setCoverFrame(existing.getCoverFrame());
     }
 

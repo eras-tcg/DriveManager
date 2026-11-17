@@ -45,6 +45,10 @@ public class EditionMetadata {
     @Field("cards_by_color")
     private java.util.Map<String, Integer> cardsByColor;
 
+    /** The regulation its cards print (A…): the one a new card of the edition starts with. */
+    @Field("regulation")
+    private String regulation;
+
     /** How its cover sits in the card-shaped tiles (the image itself is not cut); null: centered, not zoomed. */
     @Field("cover_frame")
     private CoverFrame coverFrame;
