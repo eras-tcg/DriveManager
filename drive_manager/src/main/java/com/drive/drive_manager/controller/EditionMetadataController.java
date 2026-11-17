@@ -3,6 +3,7 @@ package com.drive.drive_manager.controller;
 import com.drive.drive_manager.dto.EditionMetadata;
 import com.drive.drive_manager.repository.EditionMetadataRepository;
 import com.drive.drive_manager.service.DriveClientFactory;
+import com.drive.drive_manager.service.EditionImageService;
 import com.drive.drive_manager.service.R2Service;
 import com.drive.drive_manager.service.TestCards;
 import org.springframework.security.core.Authentication;
@@ -28,6 +29,8 @@ import java.util.Map;
  * POST   /api/drive/editions              — create/update
  * DELETE /api/drive/editions/{editionId}  — delete
  * POST   /api/drive/editions/{editionId}/pull-image  — download banner from Drive → R2
+ * PUT    /api/drive/editions/{editionId}/image       — the cover chosen on the site (the image is the body)
+ * GET    /api/drive/editions/image/{file}            — a cover kept in the local folder (local development)
  */
 @RestController
 @RequestMapping("/api/drive/editions")
@@ -38,13 +41,43 @@ public class EditionMetadataController {
     private final EditionMetadataRepository repo;
     private final DriveClientFactory driveClientFactory;
     private final R2Service r2Service;
+    private final EditionImageService covers;
 
     public EditionMetadataController(EditionMetadataRepository repo,
                                      DriveClientFactory driveClientFactory,
-                                     R2Service r2Service) {
+                                     R2Service r2Service,
+                                     EditionImageService covers) {
         this.repo = repo;
         this.driveClientFactory = driveClientFactory;
         this.r2Service = r2Service;
+        this.covers = covers;
+    }
+
+    @PreAuthorize("hasAuthority('manage_editions')")
+    @PutMapping(value = "/{editionId}/image", consumes = {"image/jpeg", "image/png", "image/webp", "application/octet-stream"})
+    public ResponseEntity<Object> setImage(@PathVariable String editionId, @RequestBody byte[] image) {
+        if (image == null || image.length == 0) return ResponseEntity.badRequest().body(Map.of("message", "Elige una imagen"));
+        try {
+            return covers.set(editionId, image).<ResponseEntity<Object>>map(ResponseEntity::ok)
+                    .orElse(ResponseEntity.notFound().build());
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
+        } catch (Exception e) {
+            log.error("Could not store the cover of edition {}", editionId, e);
+            return ResponseEntity.internalServerError().body(Map.of("message", "No se pudo guardar la portada"));
+        }
+    }
+
+    @GetMapping("/image/{file}")
+    public ResponseEntity<byte[]> image(@PathVariable String file) {
+        // Each cover has its own name: it can be kept for good
+        return covers.get(file)
+                .map(bytes -> ResponseEntity.ok()
+                        .contentType(org.springframework.http.MediaType.parseMediaType(
+                                "image/" + file.substring(file.lastIndexOf('.') + 1)))
+                        .cacheControl(org.springframework.http.CacheControl.maxAge(java.time.Duration.ofDays(365)))
+                        .body(bytes))
+                .orElse(ResponseEntity.notFound().build());
     }
 
     @GetMapping

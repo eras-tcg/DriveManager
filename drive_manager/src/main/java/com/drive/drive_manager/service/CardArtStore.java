@@ -60,6 +60,14 @@ public class CardArtStore {
         }
     }
 
+    /**
+     * Where a stored object can be read without a session: its public R2 address, or {@code apiPath} (served by this
+     * server) when it is in the local folder.
+     */
+    public String publicUrl(String key, String apiPath) {
+        return dir == null ? r2.publicUrl(key) : apiPath;
+    }
+
     /** The key's file inside the folder (keys are built by the server, never taken from a request). */
     private Path local(String key) {
         Path file = dir.resolve(key).normalize();

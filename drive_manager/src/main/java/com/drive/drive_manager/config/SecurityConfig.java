@@ -50,6 +50,8 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/drive/health").permitAll()
                         // The finished card drawn by the editor: a card image, as public as the ones in R2
                         .requestMatchers(HttpMethod.GET, "/api/cards/*/render").permitAll()
+                        // An edition's cover kept in the local folder (local development): as public as one in R2
+                        .requestMatchers(HttpMethod.GET, "/api/drive/editions/image/*").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/drive/webhook").permitAll()
                         // A server that sleeps asks it to know whether anybody is still using the site
                         .requestMatchers(HttpMethod.GET, "/api/system/activity").permitAll()

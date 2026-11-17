@@ -68,6 +68,11 @@ public class R2Service {
                 .build());
     }
 
+    /** The public address of an object, by its full key. */
+    public String publicUrl(String key) {
+        return publicBaseUrl.stripTrailing() + "/" + key;
+    }
+
     /**
      * Uploads to R2 using the full key as-is (no prefix added).
      *
