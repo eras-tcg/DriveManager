@@ -7,7 +7,6 @@ import kotlin.math.max
 import com.drive.drive_manager.simulator.engine.EffectEngine.allies
 import com.drive.drive_manager.simulator.engine.EffectEngine.canPay
 import com.drive.drive_manager.simulator.engine.EffectEngine.find
-import com.drive.drive_manager.simulator.engine.EffectEngine.findAnywhere
 import com.drive.drive_manager.simulator.engine.EffectEngine.hasLevel
 import com.drive.drive_manager.simulator.engine.EffectEngine.levels
 import com.drive.drive_manager.simulator.engine.EffectEngine.name
@@ -471,7 +470,8 @@ object SpecialRequirements {
     fun triggerSourceLevel(room: GameRoom, effect: PendingEffect): Int {
         val trigger = triggerEvent(room, effect)
         val by = if (trigger == null || trigger.data == null) null else trigger.data!!["byCard"]
-        val source = if (by == null) null else findAnywhere(room, trigger!!.playerId, by as String)
+        // "dicho aliado": the creature that tributed it as it is now (one that evolved since is the creature it became)
+        val source = if (by == null) null else EffectEngine.actingCard(room, by as String)
         return if (source == null || source.getLevel() == null) 0 else source.getLevel()!!
     }
 

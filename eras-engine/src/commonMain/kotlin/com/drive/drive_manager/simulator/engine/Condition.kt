@@ -282,7 +282,7 @@ sealed interface Condition {
             if (by == null) return true
             val byId = if (event.data == null) null else event.data!!["byCard"]
             if (event.effectId == null || byId == null) return false
-            val byCard = EffectEngine.findInRoom(room, byId as String)
+            val byCard = EffectEngine.actingCard(room, byId as String)
             return byCard != null && by.matches(byCard)
         }
     }
