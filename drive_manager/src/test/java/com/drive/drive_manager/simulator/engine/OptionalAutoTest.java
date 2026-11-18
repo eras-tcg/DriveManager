@@ -41,6 +41,8 @@ class OptionalAutoTest {
         evolved.setSpecialSummonKind("evolution");
         evolved.setSpecialCost(1);
         evolved.setRequirement("criatura nivel 1.");
+        // Requerimientos come only from card files: this test card gets its own
+        Req.program(evolved);
         host.getHand().add(evolved);
         return evolved;
     }
