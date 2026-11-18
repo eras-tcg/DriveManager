@@ -1,9 +1,12 @@
 # Build on GitHub, publish to GHCR, deploy to AWS with eras-tcg/infra (deploy-aws.yml: image copied to ECR,
 # eras-deploy on the server through SSM with healthcheck and rollback).
-#   PR to develop/main -> tests + build only
-#   push to develop    -> tests + build + push the image (staging is not deployed: it is an optional step)
-#   push to main       -> build + push + deploy production (waits for approval)
-#   Run workflow       -> deploy an existing image: staging on demand (sha of a develop run), or a rollback
+#   PR to main          -> tests, engine and image at once; when all pass, the image is published as tested for the
+#                          exact code of the merge (tag tree-<git tree>)
+#   push to main        -> the merged code was tested in its PR (the branch must be up to date to merge): its image is
+#                          promoted and deployed to production (waits for approval), no tests or build again. Code that
+#                          was not tested that way (a direct push, a stale branch) runs everything first.
+#   push to develop     -> as before (develop is optional: PRs go straight to main)
+#   Run workflow        -> deploy an existing image: staging on demand, or a rollback
 name: CI/CD
 
 on:
@@ -31,8 +34,39 @@ concurrency:
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
+  # Push to main: was this exact code (its git tree) already tested and built in its PR?
+  tested:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: read
+    outputs:
+      ready: ${{ steps.check.outputs.ready }}
+      tree: ${{ steps.check.outputs.tree }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - id: check
+        run: |
+          tree=$(git rev-parse 'HEAD^{tree}')
+          echo "tree=$tree" >> "$GITHUB_OUTPUT"
+          if docker buildx imagetools inspect "ghcr.io/eras-tcg/drive-manager:tree-$tree" > /dev/null 2>&1; then
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+            echo "Tested in its PR: tree-$tree"
+          else
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+            echo "Not tested as is: running the tests and the build"
+          fi
+
   test:
-    if: github.event_name != 'workflow_dispatch'
+    needs: tested
+    if: ${{ !cancelled() && github.event_name != 'workflow_dispatch' && needs.tested.outputs.ready != 'true' }}
     runs-on: ubuntu-latest
     services:
       mongo:
@@ -74,7 +108,8 @@ jobs:
   # its npm package (kept as an artifact) and a game played with it, then its artifact against java.util.Random and Jackson
   # from DriveManager's Java (the kmp-engine profile). The server's own build (test job, image) builds the engine first.
   engine:
-    if: github.event_name != 'workflow_dispatch'
+    needs: tested
+    if: ${{ !cancelled() && github.event_name != 'workflow_dispatch' && needs.tested.outputs.ready != 'true' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -105,20 +140,27 @@ jobs:
         working-directory: drive_manager
         run: mvn -B -ntp -Pkmp-engine test -Dtest='KotlinEngineInteropTest' -Dsurefire.failIfNoSpecifiedTests=false
 
+  # The image builds while the tests run (it does not wait for them): published under the commit's sha, and on a PR
+  # (from this repository) as a candidate for its code; it only counts as tested once every job passes (mark-tested)
   build:
-    if: github.event_name != 'workflow_dispatch'
-    needs: test
+    needs: tested
+    if: ${{ !cancelled() && github.event_name != 'workflow_dispatch' && needs.tested.outputs.ready != 'true' }}
     runs-on: ubuntu-latest
     permissions:
       contents: read
       packages: write
     outputs:
       image: ghcr.io/eras-tcg/drive-manager:${{ github.sha }}
+      tree: ${{ steps.tree.outputs.tree }}
+    env:
+      PUBLISH: ${{ github.event_name == 'push' || github.event.pull_request.head.repo.full_name == github.repository }}
     steps:
       - uses: actions/checkout@v4
+      - id: tree
+        run: echo "tree=$(git rev-parse 'HEAD^{tree}')" >> "$GITHUB_OUTPUT"
       - uses: docker/setup-buildx-action@v3
       - name: Login to GHCR
-        if: github.event_name == 'push'
+        if: env.PUBLISH == 'true'
         uses: docker/login-action@v3
         with:
           registry: ghcr.io
@@ -130,15 +172,53 @@ jobs:
           # The repository root: the image builds the game's engine (eras-engine) before the server
           context: .
           file: drive_manager/Dockerfile
-          push: ${{ github.event_name == 'push' }}
-          tags: ghcr.io/eras-tcg/drive-manager:${{ github.sha }}
+          push: ${{ env.PUBLISH == 'true' }}
+          tags: |
+            ghcr.io/eras-tcg/drive-manager:${{ github.sha }}
+            ghcr.io/eras-tcg/drive-manager:candidate-${{ steps.tree.outputs.tree }}
           labels: org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
+  # Every job passed: this code's image is the tested one (what a push to main with the same code deploys)
+  mark-tested:
+    needs: [test, engine, build]
+    if: ${{ !cancelled() && needs.test.result == 'success' && needs.engine.result == 'success' && needs.build.result == 'success' && (github.event_name == 'push' || github.event.pull_request.head.repo.full_name == github.repository) }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - run: |
+          docker buildx imagetools create             -t "ghcr.io/eras-tcg/drive-manager:tree-${{ needs.build.outputs.tree }}"             "ghcr.io/eras-tcg/drive-manager:candidate-${{ needs.build.outputs.tree }}"
+
+  # Push to main with code tested in its PR: its image under this commit's sha, ready to deploy
+  promote:
+    needs: tested
+    if: ${{ needs.tested.outputs.ready == 'true' }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - run: |
+          docker buildx imagetools create             -t "ghcr.io/eras-tcg/drive-manager:${{ github.sha }}"             "ghcr.io/eras-tcg/drive-manager:tree-${{ needs.tested.outputs.tree }}"
+
   deploy-production:
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-    needs: build
+    if: ${{ !cancelled() && github.event_name == 'push' && github.ref == 'refs/heads/main' && (needs.promote.result == 'success' || needs.mark-tested.result == 'success') }}
+    needs: [promote, mark-tested]
     permissions:
       contents: read
       packages: read
