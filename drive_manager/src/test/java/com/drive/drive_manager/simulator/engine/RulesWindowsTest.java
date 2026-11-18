@@ -410,6 +410,19 @@ class RulesWindowsTest {
     }
 
     @Test
+    void golpeRapidoKeepsARevealedCreatureFromReforzar() {
+        CardSlot life = guest.getLifeStack().get(0);
+        life.setStrength(9);
+        CardSlot a = field(host, creature("a", "A", 1, 5), FRONT);
+        a.getKeywords().add("Golpe rápido");
+        CombatRules.attackByPlayer(room, "host", "a", null);
+
+        assertThat(room.getPrompt()).isNull();
+        assertThat(guest.getHand()).contains(life);
+        assertThat(guest.getLifeStack()).hasSize(2);
+    }
+
+    @Test
     void aFaceUpLifeCannotReforzarAgain() {
         CardSlot life = guest.getLifeStack().get(0);
         life.setStrength(9);

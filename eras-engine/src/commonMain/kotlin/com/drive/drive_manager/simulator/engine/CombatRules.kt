@@ -307,7 +307,7 @@ object CombatRules {
     /**
      * Rule 10.1.4: the attacker deals damage equal to its strength to the top life card, which is revealed. A
      * creature with that strength or less is tributed; a stronger one goes to the hand, and if it was just
-     * revealed it may Reforzar instead (face up at the bottom of the life stack). A utility or structure may be
+     * revealed it may Reforzar instead (face up at the bottom of the life stack), unless the attacker has Golpe rápido. A utility or structure may be
      * played without paying its cost, otherwise it goes to the hand. Letalidad N repeats the damage.
      *
      * @return false while it waits for the defender's choice
@@ -338,7 +338,13 @@ object CombatRules {
             val (life, tribute) = EffectEngine.loseTopLife(room, defender, damage, owner.userId, null, attacker.instanceId,
                 name(attacker) + " inflige " + damage + " de daño directo: " + defender.username + " ")
             val creature = "creature" == life.cardType
-            if (creature && !tribute && revealedNow) {
+            // Golpe rápido: "las criaturas reveladas en las vidas oponentes por el daño de ataque de esta carta no pueden
+            // reforzar": the stronger creature stays in the hand
+            val quickStrike = keywordLevel(attacker, "Golpe rápido") != null
+            if (creature && !tribute && revealedNow && quickStrike) {
+                log(room, name(attacker) + " tiene Golpe rápido: " + name(life) + " no puede reforzar", null)
+            }
+            if (creature && !tribute && revealedNow && !quickStrike) {
                 lifePrompt(room, defender, life, PromptPurpose.REINFORCE.id(), "Reforzar", name(life) +
                         " tiene más fuerza que el daño y va a tu mano. ¿Refuerzas con ella? Se coloca bocarriba al fondo de tu pila de vidas.", "Reforzar")
                 return false
