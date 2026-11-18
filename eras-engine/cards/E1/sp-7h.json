@@ -73,5 +73,18 @@
       "sourceZone" : "field",
       "limit" : "NONE"
     }
-  ]
+  ],
+  "requirement" : {
+    "summoner": {
+      "level": 2
+    },
+    "materials": {
+      "count": 1,
+      "level": 2,
+      "zones": [
+        "hand",
+        "field"
+      ]
+    }
+  }
 }

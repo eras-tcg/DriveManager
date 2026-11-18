@@ -62,6 +62,9 @@ interface EffectContext {
 
     fun gainGems(count: Int)
 
+    /** The effect's controller can pay that many gems now ("pagar N gemas": [gainGems] of a negative count). */
+    fun canPayGems(count: Int): Boolean
+
     fun damage(amount: Int)
 
     fun look(count: Int)
@@ -151,7 +154,7 @@ interface EffectContext {
     fun asksTopOrBottom()
 
     /** "declara ataque". Returns true when it asks what to attack. */
-    fun attack(opponentOnly: Boolean): Boolean
+    fun attack(opponentOnly: Boolean, creaturesOnly: Boolean, activeToo: Boolean, at: String? = null): Boolean
 
     /** What to attack; none: the opponent. */
     fun attackChosen(picks: List<String?>?)

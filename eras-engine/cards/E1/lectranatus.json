@@ -58,7 +58,7 @@
     "moment" : "ON_ATTACK",
     "mandatory" : true,
     "label" : "Al Atacar",
-    "text" : "Heredado de Lectranatus: elige 1 enemigo de fuerza 9 o menos; este no puede agotarse hasta el final del turno.",
+    "text" : "Heredado de Lectranatus: elige 1 enemigo de fuerza 9 o menos; este no puede ser agotado hasta el final del turno.",
     "cost" : [ {
       "type" : "Do",
       "action" : {
@@ -119,5 +119,10 @@
       "maxStrength" : 3
     },
     "enemies" : true
-  } ]
+  } ],
+  "requirement" : {
+    "summoner" : {
+      "level" : 3
+    }
+  }
 }

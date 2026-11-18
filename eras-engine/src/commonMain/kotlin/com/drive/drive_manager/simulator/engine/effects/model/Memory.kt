@@ -13,4 +13,16 @@ object Memory {
     const val LAST = "last"
     /** Of what was last chosen, the active allies at that moment: "si era un aliado activo". */
     const val ACTIVE_ALLIES = "activeAllies"
+    /**
+     * Of a "si … algún enemigo …" effect that triggered once for several cards in one window (rule 11.7.0.1), those still on the field;
+     * saved only when there are several.
+     */
+    const val EVENT_CARDS = "eventCards"
+    /** The one of [EVENT_CARDS] chosen as "dicho enemigo", "reducirla": the `eventOnField` zone reads it. */
+    const val EVENT_CARD = "eventCard"
+    /**
+     * Every card of the events that triggered a "si …" effect in its window, wherever they are now ("por cada carta removida"); saved
+     * only for the effects that count them ([com.drive.drive_manager.simulator.engine.EffectStep.ReduceRepeatedly.perTriggerCard]).
+     */
+    const val TRIGGER_CARDS = "triggerCards"
 }

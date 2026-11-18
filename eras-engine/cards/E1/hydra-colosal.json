@@ -5,7 +5,31 @@
     "moment" : "ON_SUMMON",
     "mandatory" : true,
     "label" : "En Invocación",
-    "text" : "Tributa las primeras 3 cartas de tu mazo. Luego: elige 1 enemigo de fuerza 7 o menos; destrúyelo.",
+    "text" : "Elige hasta 1 enemigo de fuerza 7 o menos; tributa 3 cartas del tope de tu mazo. Luego: destrúyelo.",
+    "cost" : [ {
+      "type" : "Do",
+      "action" : {
+        "type" : "Select",
+        "selector" : {
+          "zones" : "frontLine",
+          "owner" : "OPPONENT",
+          "filter" : {
+            "cardType" : "creature",
+            "maxStrength" : 7
+          },
+          "min" : {
+            "type" : "Fixed"
+          },
+          "max" : {
+            "type" : "Fixed",
+            "value" : 1
+          },
+          "self" : "ANY",
+          "mode" : "CHOOSE"
+        },
+        "target" : true
+      }
+    } ],
     "steps" : [ {
       "type" : "Do",
       "action" : {
@@ -26,30 +50,6 @@
           "mode" : "TOP"
         },
         "to" : "tributeZone"
-      }
-    }, {
-      "type" : "Do",
-      "action" : {
-        "type" : "Select",
-        "selector" : {
-          "zones" : "frontLine",
-          "owner" : "OPPONENT",
-          "filter" : {
-            "cardType" : "creature",
-            "maxStrength" : 7
-          },
-          "min" : {
-            "type" : "Fixed",
-            "value" : 1
-          },
-          "max" : {
-            "type" : "Fixed",
-            "value" : 1
-          },
-          "self" : "ANY",
-          "mode" : "CHOOSE"
-        },
-        "target" : true
       }
     }, {
       "type" : "Do",
@@ -193,12 +193,16 @@
     "type" : "Replacement",
     "id" : "hydra-colosal:hereda-todos-los-turnos",
     "label" : "Todos Los Turnos",
-    "text" : "Heredado de Hydra Colosal: si esta carta fuera a ser destruida, en su lugar, puedes tributar todos los recursos [Hydra] de esta carta.",
-    "destroyOnly" : true,
+    "text" : "Heredado de Hydra Colosal: cuando esta carta fuera a ser removida: en su lugar, puedes tributar todos los recursos [hydra] de esta carta.",
     "limit" : "NONE",
     "cost" : "TRIBUTE_RESOURCES",
     "resourceFilter" : {
       "classes" : [ "hydra" ]
     }
-  } ]
+  } ],
+  "requirement" : {
+    "summoner" : {
+      "level" : 3
+    }
+  }
 }

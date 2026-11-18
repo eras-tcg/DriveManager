@@ -147,5 +147,18 @@
     },
     "sourceZone" : "hand",
     "limit" : "ONCE_PER_TURN_BETWEEN_COPIES"
-  } ]
+  } ],
+  "requirement" : {
+    "summoner": {
+      "zones": [
+        "hand"
+      ]
+    },
+    "materials": {
+      "count": 1,
+      "zones": [
+        "hand"
+      ]
+    }
+  }
 }

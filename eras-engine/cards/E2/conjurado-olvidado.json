@@ -77,5 +77,11 @@
       }
     },
     "zone" : "field"
-  } ]
+  } ],
+  "requirement" : {
+    "ritual": {
+      "level": 2,
+      "maxLevel": 3
+    }
+  }
 }

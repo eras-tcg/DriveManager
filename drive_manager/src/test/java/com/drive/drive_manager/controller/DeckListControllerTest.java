@@ -7,6 +7,9 @@ import com.drive.drive_manager.repository.DeckListRepository;
 import com.drive.drive_manager.service.ActivityLogService;
 import com.drive.drive_manager.service.ProgressionRules;
 import com.drive.drive_manager.service.ProgressionService;
+import com.drive.drive_manager.service.TestCards;
+import com.drive.drive_manager.dto.DriveCard;
+import com.drive.drive_manager.repository.DriveCardRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.security.authentication.AnonymousAuthenticationToken;
@@ -36,6 +39,7 @@ class DeckListControllerTest {
     private ProgressionService progression;
     private DeckBoxRepository deckBoxes;
     private DeckListController controller;
+    private TestCards testCards;
 
     @BeforeEach
     void setUp() {
@@ -48,6 +52,33 @@ class DeckListControllerTest {
         when(repo.findByUserId("alice")).thenReturn(List.of(alicePublic, alicePrivate));
         when(repo.findById("d2")).thenReturn(Optional.of(alicePrivate));
         when(repo.findById("d1")).thenReturn(Optional.of(alicePublic));
+        DriveCardRepository driveCards = mock(DriveCardRepository.class);
+        DriveCard testImage = new DriveCard();
+        testImage.setId("T1-W01");
+        testImage.setEdition("T1");
+        when(driveCards.findByEditionRegex(anyString())).thenReturn(List.of(testImage));
+        testCards = new TestCards(driveCards);
+    }
+
+    @Test
+    void aDeckWithCardsInTestingIsSeenOnlyWithThePermission() {
+        DeckList testing = deck("d4", "alice", false);
+        testing.setCards(List.of("E2-B01", "T1-W01"));
+        when(repo.findPublicDecks()).thenReturn(List.of(alicePublic, testing));
+        when(repo.findById("d4")).thenReturn(Optional.of(testing));
+
+        assertThat(controller().listAll(null, false, user("bob")).getBody()).containsExactly(alicePublic);
+        assertThat(controller().listAll(null, false, tester("bob")).getBody()).containsExactly(alicePublic, testing);
+        assertThat(controller().getOne("d4", user("bob")).getStatusCode().value()).isEqualTo(404);
+        assertThat(controller().getOne("d4", user("alice")).getBody()).isEqualTo(testing);
+    }
+
+    @Test
+    void onlyATesterSavesADeckWithCardsInTesting() {
+        DeckList body = deck(null, null, false);
+        body.setCards(List.of("T1-W01"));
+        assertThat(controller().create(body, user("alice")).getStatusCode().value()).isEqualTo(400);
+        assertThat(controller().create(body, tester("alice")).getStatusCode().value()).isEqualTo(200);
     }
 
     @Test
@@ -129,12 +160,16 @@ class DeckListControllerTest {
     }
 
     private DeckListController controller() {
-        if (controller == null) controller = new DeckListController(repo, progression, mock(ActivityLogService.class), deckBoxes);
+        if (controller == null) controller = new DeckListController(repo, progression, mock(ActivityLogService.class), deckBoxes, testCards);
         return controller;
     }
 
     private static Authentication user(String id) {
         return new UsernamePasswordAuthenticationToken(id, null, AuthorityUtils.NO_AUTHORITIES);
+    }
+
+    private static Authentication tester(String id) {
+        return new UsernamePasswordAuthenticationToken(id, null, AuthorityUtils.createAuthorityList(TestCards.PERMISSION));
     }
 
     private static Authentication anonymous() {

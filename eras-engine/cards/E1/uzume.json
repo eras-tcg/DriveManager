@@ -144,5 +144,10 @@
       "allyTurn" : true,
       "limit" : "NONE"
     }
-  ]
+  ],
+  "requirement" : {
+    "summoner": {
+      "level": 4
+    }
+  }
 }

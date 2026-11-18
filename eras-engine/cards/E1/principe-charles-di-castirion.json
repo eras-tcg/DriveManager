@@ -21,5 +21,26 @@
   } ],
   "reactions" : [ {
     "type" : "AttacksBeforeAscended"
-  } ]
+  } ],
+  "requirement" : {
+    "summoner": {
+      "level": 3
+    },
+    "condition": {
+      "type": "Compare",
+      "left": {
+        "type": "OnField",
+        "filter": {
+          "cardType": "creature",
+          "frontOnly": true
+        }
+      },
+      "op": "AT_LEAST",
+      "right": {
+        "type": "Fixed",
+        "value": 4
+      }
+    },
+    "conditionText": "controlar 4 o más criaturas en tu línea frontal"
+  }
 }

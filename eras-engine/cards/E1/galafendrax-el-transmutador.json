@@ -85,5 +85,18 @@
     },
     "sourceZone" : "field",
     "limit" : "ONCE_PER_TURN"
-  } ]
+  } ],
+  "requirement" : {
+    "summoner": {
+      "level": 4
+    },
+    "materials": {
+      "count": 1,
+      "level": 4,
+      "zones": [
+        "field",
+        "tributeZone"
+      ]
+    }
+  }
 }

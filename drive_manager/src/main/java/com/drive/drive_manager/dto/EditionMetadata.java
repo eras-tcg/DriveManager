@@ -34,6 +34,25 @@ public class EditionMetadata {
     @Field("release_date")
     private String releaseDate;
 
+    /** Its slots: the colors it has and how many cards each (ST2: ["G"] × 18 → G01–G18); null before slots existed. */
+    @Field("colors")
+    private List<String> colors;
+
+    @Field("cards_per_color")
+    private Integer cardsPerColor;
+
+    /** Cards of a color when it has its own count (E1: 25 of each color but 5 white); the rest use cardsPerColor. */
+    @Field("cards_by_color")
+    private java.util.Map<String, Integer> cardsByColor;
+
+    /** The regulation its cards print (A…): the one a new card of the edition starts with. */
+    @Field("regulation")
+    private String regulation;
+
+    /** How its cover sits in the card-shaped tiles (the image itself is not cut); null: centered, not zoomed. */
+    @Field("cover_frame")
+    private CoverFrame coverFrame;
+
     // ── Booster simulation config ──────────────────────────────────────────────
 
     @Field("pack_types")
@@ -43,6 +62,16 @@ public class EditionMetadata {
     private BoxConfig boxConfig;
 
     // ── Nested types ───────────────────────────────────────────────────────────
+
+    /** The point of the cover kept in view (x, y in % of the image) and how much it is enlarged (1 = just covers). */
+    @Data
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class CoverFrame {
+        private double x;
+        private double y;
+        private double zoom;
+    }
 
     @Data
     @NoArgsConstructor

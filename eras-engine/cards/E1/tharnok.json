@@ -121,5 +121,10 @@
         "faceDownOnly" : true
       }
     }
-  ]
+  ],
+  "requirement" : {
+    "summoner": {
+      "level": 3
+    }
+  }
 }

@@ -1,5 +1,5 @@
 {
-  "name" : "cylvarus",
+  "name" : "cylvaus",
   "reactions" : [ {
     "type" : "CostModifier",
     "label" : "Turno Aliado",
@@ -16,5 +16,10 @@
     },
     "reduce" : 1,
     "limit" : "NONE"
-  } ]
+  } ],
+  "requirement" : {
+    "summoner" : {
+      "level" : 1
+    }
+  }
 }

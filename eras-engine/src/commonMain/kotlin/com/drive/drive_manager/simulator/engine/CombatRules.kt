@@ -178,6 +178,28 @@ object CombatRules {
         }
     }
 
+    /**
+     * "si es atacado por un aliado [color]: salta el paso de bloqueo" left on the attacked enemy as the keyword
+     * "Sin bloqueo ante cartas Rojas" (until it ends): no blocker is declared, the attacked creature itself clashes (rule 10.1.2.7).
+     */
+    const val NO_BLOCK_AGAINST = "Sin bloqueo ante cartas "
+
+    /** Given by a continuous effect: "el oponente debe elegir una de sus criaturas activas para bloquear" (its attacks). */
+    const val MUST_BLOCK = "Bloqueo obligatorio"
+
+    @JvmStatic
+    fun noBlockAgainst(defender: PlayerState, c: Combat, attacker: CardSlot): Boolean {
+        val id = c.targetId ?: return false
+        val target = find(defender.field, id) ?: return false
+        val colors = attacker.colors ?: return false
+        return keywords(target).any { k ->
+            k.startsWith(NO_BLOCK_AGAINST) && colors.any { code ->
+                val name = CardFilter.colorName(code)
+                k.substring(NO_BLOCK_AGAINST.length) == name + (if (name.last() in "aeiou") "s" else "es")
+            }
+        }
+    }
+
     @JvmStatic
     fun nextStep(c: Combat, defender: PlayerState, attacker: CardSlot?): Combat.Step {
         return when (c.step!!) {
@@ -212,7 +234,7 @@ object CombatRules {
                 if (!c.provokeAsked) {
                     c.provokeAsked = true
                     val provoke = keywordLevel(attacker, "Provocar")
-                    if (provoke != null && c.blockerId == null) {
+                    if (provoke != null && c.blockerId == null && !noBlockAgainst(defender, c, attacker)) {
                         val options = blockers(defender).filter { b ->
                             b.instanceId != c.targetId
                                     && (provoke == 0 || (b.getLevel() != null && b.getLevel()!! <= provoke))
@@ -230,12 +252,16 @@ object CombatRules {
                 // Rule 10.1.2.3: the defender may declare a blocker, unless one was already declared
                 if (c.blockerId == null && !c.blockAsked) {
                     c.blockAsked = true
-                    val options = if (keywordLevel(attacker, "Imbloqueable") != null) frozenListOf<CardSlot>()
+                    val options = if (keywordLevel(attacker, "Imbloqueable") != null || noBlockAgainst(defender, c, attacker)) frozenListOf<CardSlot>()
                     else blockers(defender).filter { b -> b.instanceId != c.targetId }
                     if (!options.isEmpty()) {
+                        // "el oponente debe elegir una de sus criaturas activas para bloquear": a blocker is not optional
+                        val forced = keywords(attacker).contains(MUST_BLOCK)
                         rulesPrompt(room, defender.userId, PromptPurpose.BLOCK.id(), name(attacker) + " ataca",
-                            "Puedes elegir 1 criatura activa de tu línea frontal para bloquear (se agota), o ninguna.",
+                            if (forced) "Debes elegir 1 criatura activa de tu línea frontal para bloquear (se agota)."
+                            else "Puedes elegir 1 criatura activa de tu línea frontal para bloquear (se agota), o ninguna.",
                             "Bloquear", options, defender.field)
+                        if (forced) room.prompt!!.min = 1
                         return false
                     }
                 }
@@ -308,16 +334,10 @@ object CombatRules {
                 return false
             }
             c.hitsLeft = c.hitsLeft!! - 1
-            val life = defender.lifeStack.removeAt(0)
-            val revealedNow = life.faceDown
-            life.faceDown = false
+            val revealedNow = defender.lifeStack[0].faceDown
+            val (life, tribute) = EffectEngine.loseTopLife(room, defender, damage, owner.userId, null, attacker.instanceId,
+                name(attacker) + " inflige " + damage + " de daño directo: " + defender.username + " ")
             val creature = "creature" == life.cardType
-            val tribute = creature && (life.strength == null || CardEffects.lifeStrength(room, defender.userId, life) <= damage)
-            (if (tribute) defender.tributeZone else defender.hand).add(life)
-            record(room, GameEvent.LIFE_DAMAGE, owner.userId, life, "lifeStack", if (tribute) "tributeZone" else "hand", null,
-                frozenMapOf<String, Any?>("damage", damage, "attackerId", attacker.instanceId, "defenderId", defender.userId),
-                name(attacker) + " inflige " + damage + " de daño directo: " + defender.username + " pierde la vida " +
-                        name(life) + (if (tribute) ", que va a sus tributos" else ", que va a su mano"))
             if (creature && !tribute && revealedNow) {
                 lifePrompt(room, defender, life, PromptPurpose.REINFORCE.id(), "Reforzar", name(life) +
                         " tiene más fuerza que el daño y va a tu mano. ¿Refuerzas con ella? Se coloca bocarriba al fondo de tu pila de vidas.", "Reforzar")
@@ -562,9 +582,15 @@ object CombatRules {
             .filter { c -> "creature" == c.cardType && inFrontLine(c) && (c.tapped || challenges(attacker, c)) }
     }
 
-    /** "declara ataque" by an effect: the subject attacks if it can. Returns true when the player is asked what to attack. */
+    /**
+     * "declara ataque" by an effect: the subject attacks if it can. Returns true when the player is asked what to attack. `at`: the enemies
+     * it attacks, already chosen ("ataca al enemigo elegido"): the first of them still a target, with no choice.
+     */
     @JvmStatic
-    fun attackByEffect(room: GameRoom, effect: PendingEffect, opponentOnly: Boolean): Boolean {
+    fun attackByEffect(
+        room: GameRoom, effect: PendingEffect, opponentOnly: Boolean, creaturesOnly: Boolean = false, activeToo: Boolean = false,
+        at: Set<String?>? = null,
+    ): Boolean {
         val userId = effect.controllerId
         val subject = subject(room, effect) ?: return false
         if (room.combat != null) {
@@ -579,17 +605,33 @@ object CombatRules {
             log(room, name(subject) + " no puede atacar: no está en la línea frontal", null)
             return false
         }
-        val targets = if (opponentOnly) frozenListOf<CardSlot>() else attackTargets(room, userId, subject)
+        val targets = if (opponentOnly) frozenListOf<CardSlot>()
+        // "a un enemigo activo o agotado": any creature of the enemy Línea frontal
+        else if (activeToo) room.getPlayer(room.getOpponentId(userId))?.field?.filter { c -> "creature" == c.cardType && inFrontLine(c) }
+            ?: frozenListOf()
+        else attackTargets(room, userId, subject)
+        if (at != null) {
+            val chosen = targets.firstOrNull { it.instanceId in at }
+            if (chosen == null) log(room, name(subject) + " no puede atacar: el enemigo elegido ya no está", null)
+            else startCombat(room, userId, subject, chosen.instanceId, true, effect)
+            return false
+        }
+        // "puede atacar un enemigo": an exhausted enemy creature, never the rival
+        if (creaturesOnly && targets.isEmpty()) {
+            log(room, name(subject) + " no puede atacar: no hay enemigos " + (if (activeToo) "" else "agotados ") + "a los que atacar", null)
+            return false
+        }
         if (targets.isEmpty()) {
             startCombat(room, userId, subject, null, true, effect)
             return false
         }
         val opponent = room.getPlayer(room.getOpponentId(userId))
         val prompt = prompt(room, effect, Prompt.Kind.PICK,
-            name(subject) + " declara ataque: elige una criatura agotada a la que atacar, o ninguna para atacar a tu rival.")
+            name(subject) + " declara ataque: elige una criatura " + (if (activeToo) "enemiga" else "agotada") + " a la que atacar"
+                    + (if (creaturesOnly) "." else ", o ninguna para atacar a tu rival."))
         prompt.cards = ArrayList(opponent!!.field)
         prompt.validIds = ArrayList(ids(targets))
-        prompt.min = 0
+        prompt.min = if (creaturesOnly) 1 else 0
         prompt.max = 1
         prompt.chosenLabel = "Atacar"
         room.prompt = prompt

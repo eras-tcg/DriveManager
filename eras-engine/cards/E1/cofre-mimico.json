@@ -4,7 +4,7 @@
     "id" : "cofre-mimico:tributada",
     "moment" : "ON_EVENT",
     "label" : "En Tributos",
-    "text" : "Si esta carta es tributada desde tus vidas: puedes invocarla en tu línea frontal.",
+    "text" : "Si esta carta es tributada desde tus vidas: puedes invocarla. Si lo haces: puedes elegir 1 enemigo nivel 1; destrúyelo.",
     "steps" : [ {
       "type" : "Do",
       "action" : {
@@ -30,19 +30,10 @@
         "toFront" : true,
         "required" : true
       }
-    } ],
-    "condition" : {
-      "type" : "ThisTributed",
-      "fromZone" : "lifeStack"
-    },
-    "sourceZone" : "tributeZone",
-    "limit" : "NONE"
-  }, {
-    "id" : "cofre-mimico:en-invocacion",
-    "moment" : "ON_SUMMON",
-    "label" : "En Invocación",
-    "text" : "Puedes elegir 1 enemigo nivel 1; destrúyelo.",
-    "cost" : [ {
+    }, {
+      "type" : "IfDone",
+      "covers" : 2
+    }, {
       "type" : "Do",
       "action" : {
         "type" : "Select",
@@ -65,8 +56,7 @@
         },
         "target" : true
       }
-    } ],
-    "steps" : [ {
+    }, {
       "type" : "Do",
       "action" : {
         "type" : "Destroy",
@@ -86,7 +76,11 @@
         }
       }
     } ],
-    "sourceZone" : "field",
+    "condition" : {
+      "type" : "ThisTributed",
+      "fromZone" : "lifeStack"
+    },
+    "sourceZone" : "tributeZone",
     "limit" : "NONE"
   } ]
 }

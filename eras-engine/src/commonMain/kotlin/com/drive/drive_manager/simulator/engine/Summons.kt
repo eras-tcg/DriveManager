@@ -104,7 +104,7 @@ object Summons {
                 cost = max(0, cost - lower)
             }
         }
-        val tap = CostModifiers.unansweredTap(room, player, CostModifiers.Event.SUMMON, null, card)
+        val tap = CostModifiers.unansweredTap(room, player, CostModifiers.Event.SUMMON, null, card, cost)
         if (tap != null) {
             rulesPrompt(room, userId, PromptPurpose.COST_TAP.id(), name(tap.holder) + " · " + tap.modifier.label,
                     "¿Agotas " + name(tap.holder) + " para reducir en " + tap.modifier.reduceNow(room, userId) + " el coste de " + name(card) + "?",
@@ -264,7 +264,10 @@ object Summons {
      */
     @JvmStatic
     fun askTap(room: GameRoom, player: PlayerState, card: CardSlot, kind: String?, summonerId: String?): Boolean {
-        val use = CostModifiers.unansweredTap(room, player, CostModifiers.Event.SPECIAL_SUMMON, kind, card) ?: return false
+        // Its special cost as printed (the starter's advantage of a Ritual off): the discounts of the pieces it uses are not known yet
+        val cost = if (card.specialCost == null) null
+            else card.specialCost!! - (if ("ritual" == kind && starterAdvantage(room, player.userId, card, card.specialCost)) 1 else 0)
+        val use = CostModifiers.unansweredTap(room, player, CostModifiers.Event.SPECIAL_SUMMON, kind, card, cost) ?: return false
         rulesPrompt(room, player.userId, PromptPurpose.COST_TAP.id(), name(use.holder) + " · " + use.modifier.label,
                 "¿Agotas " + name(use.holder) + " para reducir en " + use.modifier.reduceNow(room, player.userId) + " el coste especial de " + name(card) + "?",
                 "Agotar", frozenListOf(use.holder), frozenListOf(use.holder))
@@ -281,6 +284,8 @@ object Summons {
      */
     @JvmStatic
     fun inheritFromSummoner(room: GameRoom, target: CardSlot, summoner: CardSlot?) {
+        // Enlace: its position and its formation too (designer, 2026-11-13)
+        Formations.inherit(room, target, summoner!!)
         target.faceDown = false
         target.x = summoner!!.x
         target.y = summoner.y
@@ -300,7 +305,8 @@ object Summons {
         target.noUntap = summoner.noUntap
         target.noStartUntap = summoner.noStartUntap
         target.floating!!.clear()
-        target.floating!!.addAll(summoner.floating!!)
+        // but not a change of its types (a printed property: it stays with the card that left the field)
+        target.floating!!.addAll(summoner.floating!!.filter { !ClassChanges.isChange(it) })
         target.materials!!.addAll(0, summoner.materials!!)
         target.resources!!.addAll(0, summoner.resources!!)
         summoner.materials = ArrayList()
@@ -370,7 +376,11 @@ object Summons {
     ) {
         inheritFromSummoner(room, target, summoner)
         destroy(room, summoner, player, true, CAUSE_RITUAL, player.userId, null, effect)
-        for (other in others) destroy(room, other, player, true, CAUSE_RITUAL, player.userId, null, effect)
+        // An enemy used for it (RitualParts) is sacrificed too, and goes to its owner's Tributos
+        for (other in others) {
+            val owner = if (player.field.contains(other)) player else room.getPlayer(room.getOpponentId(player.userId)) ?: player
+            destroy(room, other, owner, true, CAUSE_RITUAL, player.userId, null, effect)
+        }
         player.field.add(target)
         record(room, GameEvent.SPECIAL_SUMMON, player.userId, target, fromZone, "field", effect,
                 frozenMapOf<String, Any?>("summonType", "ritual", "cost", cost, "used", 1 + others.size), logText)

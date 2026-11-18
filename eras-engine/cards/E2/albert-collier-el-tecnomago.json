@@ -18,5 +18,22 @@
         "classes" : [ "artefacto" ]
       }
     }
-  } ]
+  } ],
+  "requirement" : {
+    "summoner": {
+      "level": 1
+    },
+    "materials": {
+      "count": 1,
+      "zones": [
+        "field"
+      ],
+      "filter": {
+        "cardType": "creature",
+        "classes": [
+          "artefacto"
+        ]
+      }
+    }
+  }
 }

@@ -69,5 +69,10 @@
     },
     "sourceZone" : "field",
     "limit" : "ONCE_PER_TURN"
-  } ]
+  } ],
+  "requirement" : {
+    "summoner": {
+      "level": 4
+    }
+  }
 }

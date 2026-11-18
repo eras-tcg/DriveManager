@@ -1,0 +1,81 @@
+{
+  "name" : "duelo disparejo",
+  "effects" : [
+    {
+      "id" : "duelo-disparejo:en-juego",
+      "moment" : "ON_PLAY",
+      "mandatory" : true,
+      "label" : "En Juego",
+      "text" : "Elige 1 aliado y un enemigo de menor fuerza; el aliado elegido ataca al enemigo elegido sin agotarse.",
+      "cost" : [
+        {
+          "type" : "Do",
+          "action" : {
+            "type" : "Select",
+            "selector" : {
+              "zones" : "pickableAllies",
+              "owner" : "YOU",
+              "filter" : {},
+              "min" : {
+                "type" : "Fixed",
+                "value" : 1
+              },
+              "max" : {
+                "type" : "Fixed",
+                "value" : 1
+              },
+              "self" : "ANY",
+              "mode" : "CHOOSE"
+            },
+            "target" : true,
+            "saveAs" : "subject",
+            "label" : "Aliado",
+            "endsIfNone" : true
+          }
+        },
+        {
+          "type" : "Do",
+          "action" : {
+            "type" : "Select",
+            "selector" : {
+              "zones" : "frontLine",
+              "owner" : "OPPONENT",
+              "filter" : {
+                "cardType" : "creature"
+              },
+              "min" : {
+                "type" : "Fixed",
+                "value" : 1
+              },
+              "max" : {
+                "type" : "Fixed",
+                "value" : 1
+              },
+              "self" : "ANY",
+              "mode" : "CHOOSE",
+              "relative" : {
+                "to" : "subject",
+                "compareStrength" : "LESS"
+              }
+            },
+            "target" : true,
+            "label" : "Enemigo"
+          }
+        }
+      ],
+      "steps" : [
+        {
+          "type" : "Do",
+          "action" : {
+            "type" : "Attack",
+            "creaturesOnly" : true,
+            "activeToo" : true,
+            "at" : "targets"
+          }
+        }
+      ],
+      "sourceZone" : "field",
+      "limit" : "NONE"
+    }
+  ]
+}

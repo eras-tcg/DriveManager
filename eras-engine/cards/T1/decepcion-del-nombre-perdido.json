@@ -1,0 +1,216 @@
+{
+  "name" : "decepción del nombre perdido",
+  "effects" : [
+    {
+      "id" : "decepcion-nombre-perdido:en-juego",
+      "moment" : "ON_PLAY",
+      "mandatory" : true,
+      "label" : "En Juego",
+      "text" : "Una vez por turno entre copias: un aliado [ángel] invoca especialmente uno de tus Tributos [ángel caído] del mismo nivel ignorando el requerimiento y coste especial.",
+      "steps" : [
+        {
+          "type" : "AllySpecialSummonsSameLevel",
+          "ally" : {
+            "classes" : [
+              "ángel"
+            ],
+            "cardType" : "creature"
+          },
+          "zone" : "tributeZone",
+          "filter" : {
+            "classes" : [
+              "ángel caído"
+            ],
+            "cardType" : "creature"
+          }
+        }
+      ],
+      "sourceZone" : "field",
+      "limit" : "ONCE_PER_TURN_BETWEEN_COPIES"
+    },
+    {
+      "id" : "decepcion-nombre-perdido:en-descarte",
+      "moment" : "ACTIVATED",
+      "label" : "Turno Aliado — En Descarte",
+      "text" : "Puedes enviar 10 de tus Tributos y esta carta al fondo de tu mazo en orden aleatorio; invoca especialmente 1 [ángel] de tu mano reduciendo el coste especial en 2.",
+      "cost" : [
+        {
+          "type" : "Do",
+          "action" : {
+            "type" : "Move",
+            "cards" : {
+              "zones" : "tributeZone",
+              "owner" : "YOU",
+              "filter" : {},
+              "min" : {
+                "type" : "Fixed",
+                "value" : 10
+              },
+              "max" : {
+                "type" : "Fixed",
+                "value" : 10
+              },
+              "self" : "ANY",
+              "mode" : "CHOOSE"
+            },
+            "to" : "deckBottom",
+            "random" : true
+          }
+        },
+        {
+          "type" : "Do",
+          "action" : {
+            "type" : "Move",
+            "cards" : {
+              "zones" : "discardPile",
+              "owner" : "YOU",
+              "filter" : {},
+              "min" : {
+                "type" : "Fixed",
+                "value" : 1
+              },
+              "max" : {
+                "type" : "Fixed",
+                "value" : 1
+              },
+              "self" : "ANY",
+              "mode" : "SELF"
+            },
+            "to" : "deckBottom",
+            "random" : true
+          }
+        }
+      ],
+      "steps" : [
+        {
+          "type" : "Do",
+          "action" : {
+            "type" : "Sequence",
+            "actions" : [
+              {
+                "type" : "Select",
+                "selector" : {
+                  "zones" : "hand",
+                  "owner" : "YOU",
+                  "filter" : {},
+                  "min" : {
+                    "type" : "Fixed"
+                  },
+                  "max" : {
+                    "type" : "Fixed",
+                    "value" : 1
+                  },
+                  "self" : "ANY",
+                  "mode" : "CHOOSE",
+                  "special" : {
+                    "rule" : {
+                      "kind" : "any",
+                      "zone" : "hand",
+                      "reduce" : 2,
+                      "summoner" : "any",
+                      "filter" : {
+                        "classes" : [
+                          "ángel"
+                        ],
+                        "cardType" : "creature"
+                      }
+                    },
+                    "stage" : "CARD"
+                  }
+                },
+                "saveAs" : "specialCard",
+                "label" : "Invocar"
+              },
+              {
+                "type" : "Select",
+                "selector" : {
+                  "zones" : "hand",
+                  "owner" : "YOU",
+                  "filter" : {},
+                  "min" : {
+                    "type" : "Fixed"
+                  },
+                  "max" : {
+                    "type" : "Fixed",
+                    "value" : 1
+                  },
+                  "self" : "ANY",
+                  "mode" : "CHOOSE",
+                  "special" : {
+                    "rule" : {
+                      "kind" : "any",
+                      "zone" : "hand",
+                      "reduce" : 2,
+                      "summoner" : "any",
+                      "filter" : {
+                        "classes" : [
+                          "ángel"
+                        ],
+                        "cardType" : "creature"
+                      }
+                    },
+                    "stage" : "SUMMONER"
+                  }
+                },
+                "saveAs" : "specialSummoner",
+                "label" : "Invocador"
+              },
+              {
+                "type" : "Select",
+                "selector" : {
+                  "zones" : "hand",
+                  "owner" : "YOU",
+                  "filter" : {},
+                  "min" : {
+                    "type" : "Fixed"
+                  },
+                  "max" : {
+                    "type" : "Fixed",
+                    "value" : 1
+                  },
+                  "self" : "ANY",
+                  "mode" : "CHOOSE",
+                  "special" : {
+                    "rule" : {
+                      "kind" : "any",
+                      "zone" : "hand",
+                      "reduce" : 2,
+                      "summoner" : "any",
+                      "filter" : {
+                        "classes" : [
+                          "ángel"
+                        ],
+                        "cardType" : "creature"
+                      }
+                    },
+                    "stage" : "MATERIAL"
+                  }
+                },
+                "saveAs" : "specialMaterials",
+                "label" : "Material"
+              },
+              {
+                "type" : "SummonSpecial",
+                "rule" : {
+                  "kind" : "any",
+                  "zone" : "hand",
+                  "reduce" : 2,
+                  "summoner" : "any",
+                  "filter" : {
+                    "classes" : [
+                      "ángel"
+                    ],
+                    "cardType" : "creature"
+                  }
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "sourceZone" : "discardPile",
+      "allyTurn" : true,
+      "limit" : "NONE"
+    }
+  ]
+}

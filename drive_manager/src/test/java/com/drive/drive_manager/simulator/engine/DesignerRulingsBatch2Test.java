@@ -199,6 +199,7 @@ class DesignerRulingsBatch2Test {
     void ritualRequirementsReadOMayorAndAStrengthLimit() {
         CardSlot zaranthrax = card("zx", "Zaranthrax", 1, 4, "P");
         zaranthrax.setRequirement("criatura nivel 3 o mayor.");
+        Req.program(zaranthrax);
         Rituals.Requirement req = Rituals.requirement(zaranthrax);
         assertThat(req.fits(card("l3", "Nivel 3", 1, 3, "P"))).isTrue();
         assertThat(req.fits(card("l5", "Nivel 5", 1, 5, "P"))).isTrue();
@@ -206,6 +207,7 @@ class DesignerRulingsBatch2Test {
 
         CardSlot krull = card("kr", "Krull", 1, 3, "P");
         krull.setRequirement("criatura nivel 1 de fuerza 3 o menos.");
+        Req.program(krull);
         Rituals.Requirement krullReq = Rituals.requirement(krull);
         CardSlot weak = card("w", "Débil", 1, 1, "P");
         weak.setStrength(3);
@@ -223,10 +225,12 @@ class DesignerRulingsBatch2Test {
     }
 
     @Test
-    void cofreMimicoEntersTheFrontLineFromTheTributosAndItsEnInvocacionIsApart() {
+    void cofreMimicoIsSummonedFromTheTributosAndThenMayDestroy() {
+        // Printed text (2026-11-17): "puedes invocarla. Si lo haces: puedes elegir 1 enemigo nivel 1; destrúyelo", one effect; it still
+        // enters the Línea frontal (earlier ruling: from the Retaguardia it could not reach the enemy, rule 4.0.6.2)
         List<EffectScript> cofre = CardEffects.of(card("cm", "Cofre Mímico", 1, 1, "P"));
-        assertThat(cofre).extracting(EffectScript::moment).containsExactly(EffectScript.Moment.ON_EVENT, EffectScript.Moment.ON_SUMMON);
+        assertThat(cofre).extracting(EffectScript::moment).containsExactly(EffectScript.Moment.ON_EVENT);
         assertThat(cofre.get(0).sourceZone()).isEqualTo("tributeZone");
-        assertThat(cofre.get(0).steps()).containsExactly(Compose.summonSelf("tributeZone", Amount.fixed(0), true));
+        assertThat(cofre.get(0).steps().get(0)).isEqualTo(Compose.summonSelf("tributeZone", Amount.fixed(0), true));
     }
 }

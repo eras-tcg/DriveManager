@@ -210,5 +210,10 @@
       "sourceZone" : "field",
       "limit" : "NONE"
     }
-  ]
+  ],
+  "requirement" : {
+    "ritual": {
+      "level": 3
+    }
+  }
 }

@@ -1,0 +1,222 @@
+{
+  "name" : "voluntad del fuego ignoto",
+  "effects" : [
+    {
+      "id" : "voluntad-fuego-ignoto:en-juego",
+      "moment" : "ON_PLAY",
+      "mandatory" : true,
+      "label" : "En Juego",
+      "text" : "Una vez por turno: toma 2 [ángeles] de tus Tributos.",
+      "steps" : [
+        {
+          "type" : "Do",
+          "action" : {
+            "type" : "Move",
+            "cards" : {
+              "zones" : "tributeZone",
+              "owner" : "YOU",
+              "filter" : {
+                "classes" : [
+                  "ángel"
+                ]
+              },
+              "min" : {
+                "type" : "Fixed",
+                "value" : 2
+              },
+              "max" : {
+                "type" : "Fixed",
+                "value" : 2
+              },
+              "self" : "ANY",
+              "mode" : "CHOOSE"
+            },
+            "to" : "hand"
+          }
+        }
+      ],
+      "sourceZone" : "field",
+      "limit" : "ONCE_PER_TURN"
+    },
+    {
+      "id" : "voluntad-fuego-ignoto:en-descarte",
+      "moment" : "ON_EVENT",
+      "label" : "En Descarte",
+      "text" : "Si algún aliado es invocado por efecto o durante tu turno: puedes enviar 5 cartas de entre tus Tributos y Descarte al fondo del mazo incluida esta carta; invoca especialmente 1 [ángel caído] de tus Tributos.",
+      "cost" : [
+        {
+          "type" : "Do",
+          "action" : {
+            "type" : "Move",
+            "cards" : {
+              "zones" : "tributeZone,discardPile",
+              "owner" : "YOU",
+              "filter" : {},
+              "min" : {
+                "type" : "Fixed",
+                "value" : 5
+              },
+              "max" : {
+                "type" : "Fixed",
+                "value" : 5
+              },
+              "self" : "REQUIRE",
+              "mode" : "CHOOSE"
+            },
+            "to" : "deckBottom"
+          }
+        }
+      ],
+      "steps" : [
+        {
+          "type" : "Do",
+          "action" : {
+            "type" : "Sequence",
+            "actions" : [
+              {
+                "type" : "Select",
+                "selector" : {
+                  "zones" : "tributeZone",
+                  "owner" : "YOU",
+                  "filter" : {},
+                  "min" : {
+                    "type" : "Fixed"
+                  },
+                  "max" : {
+                    "type" : "Fixed",
+                    "value" : 1
+                  },
+                  "self" : "ANY",
+                  "mode" : "CHOOSE",
+                  "special" : {
+                    "rule" : {
+                      "kind" : "any",
+                      "zone" : "tributeZone",
+                      "summoner" : "any",
+                      "filter" : {
+                        "classes" : [
+                          "ángel caído"
+                        ],
+                        "cardType" : "creature"
+                      }
+                    },
+                    "stage" : "CARD"
+                  }
+                },
+                "saveAs" : "specialCard",
+                "label" : "Invocar"
+              },
+              {
+                "type" : "Select",
+                "selector" : {
+                  "zones" : "tributeZone",
+                  "owner" : "YOU",
+                  "filter" : {},
+                  "min" : {
+                    "type" : "Fixed"
+                  },
+                  "max" : {
+                    "type" : "Fixed",
+                    "value" : 1
+                  },
+                  "self" : "ANY",
+                  "mode" : "CHOOSE",
+                  "special" : {
+                    "rule" : {
+                      "kind" : "any",
+                      "zone" : "tributeZone",
+                      "summoner" : "any",
+                      "filter" : {
+                        "classes" : [
+                          "ángel caído"
+                        ],
+                        "cardType" : "creature"
+                      }
+                    },
+                    "stage" : "SUMMONER"
+                  }
+                },
+                "saveAs" : "specialSummoner",
+                "label" : "Invocador"
+              },
+              {
+                "type" : "Select",
+                "selector" : {
+                  "zones" : "tributeZone",
+                  "owner" : "YOU",
+                  "filter" : {},
+                  "min" : {
+                    "type" : "Fixed"
+                  },
+                  "max" : {
+                    "type" : "Fixed",
+                    "value" : 1
+                  },
+                  "self" : "ANY",
+                  "mode" : "CHOOSE",
+                  "special" : {
+                    "rule" : {
+                      "kind" : "any",
+                      "zone" : "tributeZone",
+                      "summoner" : "any",
+                      "filter" : {
+                        "classes" : [
+                          "ángel caído"
+                        ],
+                        "cardType" : "creature"
+                      }
+                    },
+                    "stage" : "MATERIAL"
+                  }
+                },
+                "saveAs" : "specialMaterials",
+                "label" : "Material"
+              },
+              {
+                "type" : "SummonSpecial",
+                "rule" : {
+                  "kind" : "any",
+                  "zone" : "tributeZone",
+                  "summoner" : "any",
+                  "filter" : {
+                    "classes" : [
+                      "ángel caído"
+                    ],
+                    "cardType" : "creature"
+                  }
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "condition" : {
+        "type" : "Any",
+        "any" : [
+          {
+            "type" : "Summoned",
+            "side" : "YOU",
+            "filter" : {},
+            "how" : "effect"
+          },
+          {
+            "type" : "All",
+            "all" : [
+              {
+                "type" : "Summoned",
+                "side" : "YOU",
+                "filter" : {}
+              },
+              {
+                "type" : "GameIs",
+                "state" : "YOUR_TURN"
+              }
+            ]
+          }
+        ]
+      },
+      "sourceZone" : "discardPile",
+      "limit" : "NONE"
+    }
+  ]
+}

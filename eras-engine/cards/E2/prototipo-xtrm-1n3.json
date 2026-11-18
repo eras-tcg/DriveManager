@@ -80,5 +80,23 @@
       "pieces" : 2,
       "reduce" : 3
     }
+  },
+  "requirement" : {
+    "summoner": {
+      "level": 3,
+      "zones": [
+        "hand",
+        "field"
+      ]
+    },
+    "materials": {
+      "count": 1,
+      "more": true,
+      "level": 3,
+      "zones": [
+        "hand",
+        "field"
+      ]
+    }
   }
 }

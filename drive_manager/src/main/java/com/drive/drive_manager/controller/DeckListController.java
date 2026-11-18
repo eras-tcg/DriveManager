@@ -7,6 +7,7 @@ import com.drive.drive_manager.repository.DeckListRepository;
 import com.drive.drive_manager.service.ActivityLogService;
 import com.drive.drive_manager.service.ProgressionRules;
 import com.drive.drive_manager.service.ProgressionService;
+import com.drive.drive_manager.service.TestCards;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.authentication.AnonymousAuthenticationToken;
@@ -33,16 +34,18 @@ public class DeckListController {
     private final ProgressionService progression;
     private final ActivityLogService activity;
     private final DeckBoxRepository deckBoxes;
+    private final TestCards testCards;
 
     /** Longest deck name accepted on create, or on an edit that changes the name (older, longer names are kept). */
     public static final int MAX_NAME_LENGTH = 30;
 
     public DeckListController(DeckListRepository repo, ProgressionService progression, ActivityLogService activity,
-                              DeckBoxRepository deckBoxes) {
+                              DeckBoxRepository deckBoxes, TestCards testCards) {
         this.repo = repo;
         this.progression = progression;
         this.activity = activity;
         this.deckBoxes = deckBoxes;
+        this.testCards = testCards;
     }
 
     @GetMapping
@@ -56,9 +59,10 @@ public class DeckListController {
             if (userId.equals(callerId(auth))) {
                 return ResponseEntity.ok(decks);
             }
-            return ResponseEntity.ok(decks.stream().filter(deck -> !deck.isPrivateDeck()).toList());
+            return ResponseEntity.ok(decks.stream().filter(deck -> !deck.isPrivateDeck() && !testCards.hiddenDeck(deck.getCards(), auth)).toList());
         }
-        return ResponseEntity.ok(repo.findPublicDecks());
+        // A deck with cards in testing is shown only to who may see them
+        return ResponseEntity.ok(repo.findPublicDecks().stream().filter(deck -> !testCards.hiddenDeck(deck.getCards(), auth)).toList());
     }
 
     @GetMapping("/{id}")
@@ -66,6 +70,7 @@ public class DeckListController {
         // A private deck is invisible (404) to anyone but its owner
         return repo.findById(id)
                 .filter(deck -> !deck.isPrivateDeck() || deck.getUserId() != null && deck.getUserId().equals(callerId(auth)))
+                .filter(deck -> deck.getUserId() != null && deck.getUserId().equals(callerId(auth)) || !testCards.hiddenDeck(deck.getCards(), auth))
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }
@@ -73,7 +78,7 @@ public class DeckListController {
     @PreAuthorize("hasAuthority('manage_decks')")
     @PostMapping
     public ResponseEntity<Object> create(@RequestBody DeckList body, Authentication auth) {
-        String err = validate(body, null);
+        String err = validate(body, null, auth);
         if (err != null) return ResponseEntity.badRequest().body(Map.of("error", err));
 
         String callerId = auth.getName();
@@ -105,7 +110,7 @@ public class DeckListController {
             return ResponseEntity.status(403).body(Map.of("error", "Cannot edit another user's deck"));
         }
 
-        String err = validate(body, existing.get().getDeckName());
+        String err = validate(body, existing.get().getDeckName(), auth);
         if (err != null) return ResponseEntity.badRequest().body(Map.of("error", err));
 
         body.setId(id);
@@ -149,9 +154,12 @@ public class DeckListController {
         return auth.getName();
     }
 
-    private String validate(DeckList body, String previousName) {
+    private String validate(DeckList body, String previousName, Authentication auth) {
         if (body.getCards() == null || body.getCards().isEmpty()) {
             return "cards list must not be empty";
+        }
+        if (testCards.hiddenDeck(body.getCards(), auth)) {
+            return "El mazo tiene cartas en prueba que no puedes usar";
         }
         String name = body.getDeckName();
         if (name != null && name.length() > MAX_NAME_LENGTH && !name.equals(previousName)) {

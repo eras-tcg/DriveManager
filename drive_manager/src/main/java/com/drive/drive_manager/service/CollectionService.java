@@ -36,6 +36,8 @@ public class CollectionService {
     /** The shop's odds a crafted copy's finish comes out by. */
     private final Supplier<ShopOdds> odds;
     private final DoubleSupplier random;
+    /** The cards in testing are outside the economy: nobody owns them and nobody lacks them (null in tests). */
+    private TestCards testCards;
 
     @Autowired
     public CollectionService(MongoTemplate mongo, CardPoolService pool, ShopOddsService odds) {
@@ -206,10 +208,19 @@ public class CollectionService {
         return of(userId);
     }
 
-    /** How many copies of each of these cards (one id per copy, as a deck lists them) the player lacks, in total. */
+    @Autowired(required = false)
+    void setTestCards(TestCards testCards) {
+        this.testCards = testCards;
+    }
+
+    /**
+     * How many copies of each of these cards (one id per copy, as a deck lists them) the player lacks, in total. Cards in
+     * testing never count: they are not collected (only testers can put them in a deck).
+     */
     public int missing(String userId, List<String> deckCards) {
         Map<String, Integer> needed = new LinkedHashMap<>();
-        for (String id : deckCards) needed.merge(id, 1, Integer::sum);
+        java.util.Set<String> testing = testCards == null ? java.util.Set.of() : testCards.imageIds();
+        for (String id : deckCards) if (!testing.contains(id)) needed.merge(id, 1, Integer::sum);
         Map<String, Map<String, Integer>> cards = of(userId).cards();
         int missing = 0;
         for (Map.Entry<String, Integer> e : needed.entrySet()) {

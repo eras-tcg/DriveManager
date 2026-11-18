@@ -26,6 +26,12 @@ class PlayerState(userId: String?, username: String?) {
      */
     @get:JvmName("isSkipOptional")
     var skipOptional: Boolean = false
+    /**
+     * "Opcionales en Auto" (only when [skipOptional] is off): optional effects are offered as usual, but cost reducers stop
+     * being asked once the cost is 0 and a lone "En Juego" goes into the chain without the confirmation.
+     */
+    @get:JvmName("isAutoOptional")
+    var autoOptional: Boolean = false
     var resourceCount: Int = 0
     /** How many turns this player has started (their first turn is 1): the bot's edge counts by them. */
     var turnsStarted: Int = 0
@@ -37,6 +43,15 @@ class PlayerState(userId: String?, username: String?) {
     var tributeZone: MutableList<CardSlot> = ArrayList()
     var discardPile: MutableList<CardSlot> = ArrayList()
     var field: MutableList<CardSlot> = ArrayList()
+    /**
+     * Enlace: the player's formations, each the instance ids of its members (public; their order on the Línea frontal is the cards'
+     * `x`). A creature is in one at most; one of fewer than 2 members is none (Formations).
+     */
+    var formations: MutableList<MutableList<String>> = ArrayList()
+    /** The ids of the creatures of their Línea frontal at the last check (null: not taken yet): those not there before just entered. */
+    var frontSeen: MutableList<String>? = null
+    /** Creatures that entered the Línea frontal and wait for their chance to take a position and join a formation. */
+    var formationEntries: MutableList<String> = ArrayList()
 
     // --- What Lombok's @Data generated ---
 
@@ -48,6 +63,7 @@ class PlayerState(userId: String?, username: String?) {
         if (disconnectedAt != other.disconnectedAt) return false
         if (ready != other.ready) return false
         if (skipOptional != other.skipOptional) return false
+        if (autoOptional != other.autoOptional) return false
         if (resourceCount != other.resourceCount) return false
         if (turnsStarted != other.turnsStarted) return false
         if (userId != other.userId) return false
@@ -64,6 +80,7 @@ class PlayerState(userId: String?, username: String?) {
         if (tributeZone != other.tributeZone) return false
         if (discardPile != other.discardPile) return false
         if (field != other.field) return false
+        if (formations != other.formations) return false
         return true
     }
 
@@ -77,6 +94,7 @@ class PlayerState(userId: String?, username: String?) {
         result = result * PRIME + (h_disconnectedAt ushr 32 xor h_disconnectedAt).toInt()
         result = result * PRIME + (if (ready) 79 else 97)
         result = result * PRIME + (if (skipOptional) 79 else 97)
+        result = result * PRIME + (if (autoOptional) 79 else 97)
         result = result * PRIME + resourceCount
         result = result * PRIME + turnsStarted
         val h_userId: Any? = userId
@@ -107,9 +125,10 @@ class PlayerState(userId: String?, username: String?) {
         result = result * PRIME + (h_discardPile?.hashCode() ?: 43)
         val h_field: Any? = field
         result = result * PRIME + (h_field?.hashCode() ?: 43)
+        result = result * PRIME + formations.hashCode()
         return result
     }
 
     override fun toString(): String =
-        "PlayerState(userId=${userId}, username=${username}, avatar=${avatar}, playmat=${playmat}, connected=${connected}, disconnectedAt=${disconnectedAt}, deckId=${deckId}, deckName=${deckName}, starterCardId=${starterCardId}, ready=${ready}, skipOptional=${skipOptional}, resourceCount=${resourceCount}, turnsStarted=${turnsStarted}, hand=${hand}, deck=${deck}, originalDeck=${originalDeck}, lifeStack=${lifeStack}, tributeZone=${tributeZone}, discardPile=${discardPile}, field=${field})"
+        "PlayerState(userId=${userId}, username=${username}, avatar=${avatar}, playmat=${playmat}, connected=${connected}, disconnectedAt=${disconnectedAt}, deckId=${deckId}, deckName=${deckName}, starterCardId=${starterCardId}, ready=${ready}, skipOptional=${skipOptional}, autoOptional=${autoOptional}, resourceCount=${resourceCount}, turnsStarted=${turnsStarted}, hand=${hand}, deck=${deck}, originalDeck=${originalDeck}, lifeStack=${lifeStack}, tributeZone=${tributeZone}, discardPile=${discardPile}, field=${field}, formations=${formations})"
 }

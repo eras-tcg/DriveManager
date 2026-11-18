@@ -1,0 +1,74 @@
+{
+  "name": "espada de las serpientes de plata",
+  "effects": [
+    {
+      "id": "espada-de-las-serpientes-de-plata:en-invocacion",
+      "moment": "ON_SUMMON",
+      "mandatory": true,
+      "label": "En Invocación",
+      "text": "Mira las primeras 5 cartas de tu mazo: de ellas toma hasta 2 cartas Rojas. Envía el resto al fondo de tu mazo. Luego: tributa 1 carta de tu mano.",
+      "steps": [
+        {
+          "type": "Do",
+          "action": {
+            "type": "Look",
+            "count": {
+              "type": "Fixed",
+              "value": 5
+            }
+          }
+        },
+        {
+          "type": "Do",
+          "action": {
+            "type": "Move",
+            "cards": {
+              "zones": "looked",
+              "owner": "YOU",
+              "filter": {
+                "colors": [
+                  "R"
+                ]
+              },
+              "min": {
+                "type": "Fixed"
+              },
+              "max": {
+                "type": "Fixed",
+                "value": 2
+              },
+              "self": "ANY",
+              "mode": "CHOOSE"
+            },
+            "to": "hand",
+            "rest": "deckBottom"
+          }
+        },
+        {
+          "type": "Do",
+          "action": {
+            "type": "Move",
+            "cards": {
+              "zones": "hand",
+              "owner": "YOU",
+              "filter": {},
+              "min": {
+                "type": "Fixed",
+                "value": 1
+              },
+              "max": {
+                "type": "Fixed",
+                "value": 1
+              },
+              "self": "EXCLUDE",
+              "mode": "CHOOSE"
+            },
+            "to": "tributeZone"
+          }
+        }
+      ],
+      "sourceZone": "field",
+      "limit": "NONE"
+    }
+  ]
+}

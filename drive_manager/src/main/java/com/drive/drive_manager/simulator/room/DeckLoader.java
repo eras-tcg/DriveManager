@@ -6,6 +6,7 @@ import com.drive.drive_manager.dto.DriveCard;
 import com.drive.drive_manager.repository.CardRepository;
 import com.drive.drive_manager.repository.DeckListRepository;
 import com.drive.drive_manager.repository.DriveCardRepository;
+import com.drive.drive_manager.service.TestCards;
 import com.drive.drive_manager.simulator.engine.CardEffects;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
@@ -94,6 +95,12 @@ public class DeckLoader {
         }).toList());
     }
 
+    /** Whether the deck has cards in testing (a testing edition, {@link TestCards}). */
+    public boolean hasTestCards(DeckList deck) {
+        if (deck.getCards() == null || deck.getCards().isEmpty()) return false;
+        return driveCards.findAllById(deck.getCards()).stream().anyMatch(dc -> TestCards.isTestEdition(dc.getEdition()));
+    }
+
     /** The same cards as new instances (another seat playing the same deck: the bot's copy of its owner's). */
     public static List<CardSlot> freshCopy(List<CardSlot> slots) {
         return DeckChoice.freshCopy(slots, DeckLoader::newInstanceId);
@@ -145,7 +152,9 @@ public class DeckLoader {
             keywords.addAll(CardMeta.keywordNames(meta.getInheritKeywordEffects()));
             String missing = CardEffects.pending(meta.getCardName(),
                     meta.getEffects() == null ? 0 : meta.getEffects().size(),
-                    meta.getInheritEffects() == null ? 0 : meta.getInheritEffects().size(), keywords);
+                    meta.getInheritEffects() == null ? 0 : meta.getInheritEffects().size(),
+                    0, keywords,
+                    meta.getSpecialSummonKind());
             if (missing != null) pending.put(meta.getId(), missing);
         }
         unprogrammed = java.util.Collections.unmodifiableMap(pending);

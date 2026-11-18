@@ -75,7 +75,9 @@ object Answers {
         if (prompt.playerId != userId) return "Esta elección le corresponde al otro jugador"
         val picks: List<String> = chosen ?: frozenListOf()
         if (HashSet(picks).size != picks.size) return "Elegiste la misma carta dos veces"
-        if (picks.size < prompt.min || picks.size > prompt.max) {
+        // A special summon or a Ritual is always given up with nothing chosen ("No invocar"), whatever its materials need
+        val givenUp = picks.isEmpty() && (PromptPurpose.SPECIAL.`is`(prompt.purpose) || PromptPurpose.RITUAL.`is`(prompt.purpose))
+        if (!givenUp && (picks.size < prompt.min || picks.size > prompt.max)) {
             return if (prompt.min == prompt.max)
                 "Debes elegir " + prompt.min + " " + plural(prompt.min, "carta", "cartas")
             else "Puedes elegir hasta " + prompt.max + " " + plural(prompt.max, "carta", "cartas")
@@ -97,6 +99,14 @@ object Answers {
                 record(room, GameEvent.MOVE, userId, card, null, "frontLine", null, frozenMapOf<String, Any?>("reason", "advance"), null)
             }
             if (!moved.isEmpty()) log(room, player.username + " sube a la línea frontal: " + moved.joinToString(", "), room.eventSeq)
+            advance(room)
+            return null
+        }
+
+        // Enlace: the position of a creature that entered the Línea frontal, and its formation
+        if (PromptPurpose.FORMATION_ENTRY.`is`(prompt.purpose)) {
+            room.prompt = null
+            Formations.answerEntry(room, player, prompt, picks)
             advance(room)
             return null
         }
@@ -175,16 +185,14 @@ object Answers {
     /** Direct damage of `damage` to oneself by an effect (Biok's payment): the top life, as direct damage does. */
     @JvmStatic
     fun selfDamage(room: GameRoom, player: PlayerState, by: CardSlot, damage: Int) {
-        val life = player.lifeStack.removeAt(0)
-        life.faceDown = false
-        val tribute = "creature" == life.cardType && (life.strength == null || CardEffects.lifeStrength(room, player.userId, life) <= damage)
-        (if (tribute) player.tributeZone else player.hand).add(life)
-        record(room, GameEvent.LIFE_DAMAGE, player.userId, life, "lifeStack", if (tribute) "tributeZone" else "hand", null,
-            frozenMapOf<String, Any?>("damage", damage, "attackerId", by.instanceId, "defenderId", player.userId),
-            player.username + " se inflige " + damage + " de daño (" + name(by) + "): pierde la vida " + name(life) +
-                    (if (tribute) ", que va a sus tributos" else ", que va a su mano"))
+        EffectEngine.loseTopLife(room, player, damage, player.userId, null, by.instanceId,
+            player.username + " se inflige " + damage + " de daño (" + name(by) + "): ")
         if (player.lifeStack.isEmpty()) loseByLives(room, player)
     }
+
+    /** The choices of a replacement of a removal ("en su lugar"), answered by [answerRemoval]. */
+    private val REMOVAL_REPLACEMENTS = listOf(PromptPurpose.REPLACE, PromptPurpose.REPLACE_HAND, PromptPurpose.REPLACE_MATERIALS,
+        PromptPurpose.REPLACE_GUARD, PromptPurpose.REPLACE_RESOURCES, PromptPurpose.REPLACE_LIFE)
 
     @JvmStatic
     fun answerRules(room: GameRoom, prompt: Prompt, player: PlayerState, picks: List<String>): String? {
@@ -221,8 +229,7 @@ object Answers {
             }
             return ""
         }
-        if (PromptPurpose.REPLACE.`is`(purpose) || PromptPurpose.REPLACE_HAND.`is`(purpose) || PromptPurpose.REPLACE_MATERIALS.`is`(purpose) ||
-            PromptPurpose.REPLACE_GUARD.`is`(purpose) || PromptPurpose.REPLACE_RESOURCES.`is`(purpose)) {
+        if (REMOVAL_REPLACEMENTS.any { it.`is`(purpose) }) {
             val error = answerRemoval(room, prompt, player, picks)
             if (error != null) return error
             advance(room)
@@ -250,7 +257,9 @@ object Answers {
                 return ""
             }
             val used: MutableList<CardSlot?> = ArrayList()
-            for (id in picks) used.add(find(player.field, id))
+            // An enemy can be used too ("puedes utilizar un enemigo considerándolo [tipo]": RitualParts)
+            val opponent = room.getPlayer(room.getOpponentId(userId))
+            for (id in picks) used.add(find(player.field, id) ?: if (opponent == null) null else find(opponent.field, id))
             val summoner = if (prompt.summonerId != null) find(player.field, prompt.summonerId) else used[0]
             if (summoner == null || used.contains(null)) return "Esa criatura ya no está en el campo"
             val others: MutableList<CardSlot> = ArrayList()
@@ -259,10 +268,11 @@ object Answers {
             val req = requirement(card)
             val all: MutableList<CardSlot> = ArrayList(others)
             all.add(summoner)
-            if (!req!!.sum && others.size < req.extra) return "Elige al menos " + req.extra + (if (req.extra == 1) " aliado más" else " aliados más")
-            if (req.sum && !addsUpTo(all, req.level)) {
+            if (req!!.parts.isNotEmpty()) RitualParts.check(room, player, card, req.parts, summoner, others)?.let { return it }
+            else if (!req.sum && others.size < req.extra) return "Elige al menos " + req.extra + (if (req.extra == 1) " aliado más" else " aliados más")
+            if (req.sum && !req.allAddUp(all)) {
                 val total = all.sumOf { it.getLevel()!! }
-                return "Los niveles suman " + total + ": deben sumar exactamente " + req.level
+                return "Los niveles suman " + total + ": deben sumar exactamente " + req.sumText()
             }
             if (!canPay(room, userId, ritualCost(room, userId, card))) return "Ya no tienes gemas suficientes"
             room.prompt = null
@@ -319,6 +329,8 @@ object Answers {
                 var material = find(player.tributeZone, id)
                 if (material == null) material = find(player.field, id)
                 if (material == null) material = find(player.hand, id)
+                // "materiales … en descarte" (Velkerop-1)
+                if (material == null && req.materialZones!!.contains("discardPile")) material = find(player.discardPile, id)
                 if (material == null) return "Esa criatura ya no está disponible"
                 materials.add(material)
             }
@@ -514,12 +526,7 @@ object Answers {
         if (PromptPurpose.OPTIONAL.`is`(purpose)) {
             room.prompt = null
             val queue = room.triggerQueue
-            val head = rank(queue[0], room.currentTurnUserId)
-            val group: MutableList<PendingEffect> = ArrayList()
-            for (e in queue) {
-                if (rank(e, room.currentTurnUserId) != head) break
-                group.add(e)
-            }
+            val group = Chain.headGroup(room)
             if (picks.isEmpty()) {
                 // No more: the rest of this player's optional effects are not activated
                 for (e in group) {

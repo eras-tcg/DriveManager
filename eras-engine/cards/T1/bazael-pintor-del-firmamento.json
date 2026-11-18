@@ -1,0 +1,134 @@
+{
+  "name" : "bazael pintor del firmamento",
+  "effects" : [
+    {
+      "id" : "bazael:en-invocacion",
+      "moment" : "ON_SUMMON",
+      "mandatory" : true,
+      "label" : "En Invocación",
+      "text" : "Mira las primeras 5 cartas de tu mazo: de ellas toma hasta 2 cartas Blancas, [ángel] o [ángel caído]. Envía el resto al fondo de tu mazo. Luego: tributa 1 carta de tu mano.",
+      "steps" : [
+        {
+          "type" : "Do",
+          "action" : {
+            "type" : "Look",
+            "count" : {
+              "type" : "Fixed",
+              "value" : 5
+            }
+          }
+        },
+        {
+          "type" : "Do",
+          "action" : {
+            "type" : "Move",
+            "cards" : {
+              "zones" : "looked",
+              "owner" : "YOU",
+              "filter" : {
+                "colors" : [
+                  "W"
+                ],
+                "classes" : [
+                  "ángel",
+                  "ángel caído"
+                ]
+              },
+              "min" : {
+                "type" : "Fixed"
+              },
+              "max" : {
+                "type" : "Fixed",
+                "value" : 2
+              },
+              "self" : "ANY",
+              "mode" : "CHOOSE"
+            },
+            "to" : "hand",
+            "rest" : "deckBottom"
+          }
+        },
+        {
+          "type" : "Do",
+          "action" : {
+            "type" : "Move",
+            "cards" : {
+              "zones" : "hand",
+              "owner" : "YOU",
+              "filter" : {},
+              "min" : {
+                "type" : "Fixed",
+                "value" : 1
+              },
+              "max" : {
+                "type" : "Fixed",
+                "value" : 1
+              },
+              "self" : "EXCLUDE",
+              "mode" : "CHOOSE"
+            },
+            "to" : "tributeZone"
+          }
+        }
+      ],
+      "sourceZone" : "field",
+      "limit" : "NONE"
+    },
+    {
+      "id" : "bazael:en-destruccion",
+      "moment" : "ON_DESTROY",
+      "label" : "En Destrucción",
+      "text" : "Puedes añadir esta carta en tu Descarte o Tributos como material a un aliado.",
+      "steps" : [
+        {
+          "type" : "Do",
+          "action" : {
+            "type" : "Select",
+            "selector" : {
+              "zones" : "pickableAllies",
+              "owner" : "YOU",
+              "filter" : {},
+              "min" : {
+                "type" : "Fixed",
+                "value" : 1
+              },
+              "max" : {
+                "type" : "Fixed",
+                "value" : 1
+              },
+              "self" : "ANY",
+              "mode" : "CHOOSE"
+            },
+            "saveAs" : "subject",
+            "label" : "Recibe",
+            "endsIfNone" : true
+          }
+        },
+        {
+          "type" : "Do",
+          "action" : {
+            "type" : "Move",
+            "cards" : {
+              "zones" : "discardPile,tributeZone",
+              "owner" : "YOU",
+              "filter" : {},
+              "min" : {
+                "type" : "Fixed",
+                "value" : 1
+              },
+              "max" : {
+                "type" : "Fixed",
+                "value" : 1
+              },
+              "self" : "ANY",
+              "mode" : "SELF"
+            },
+            "to" : "materials:subject"
+          }
+        }
+      ],
+      "sourceZone" : "field",
+      "limit" : "NONE"
+    }
+  ]
+}

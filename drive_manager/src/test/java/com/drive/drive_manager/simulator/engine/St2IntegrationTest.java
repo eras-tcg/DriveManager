@@ -81,15 +81,16 @@ class St2IntegrationTest {
     }
 
     @Test
-    void duregonReducesTheEvolutionCostWithFiveDragonsInTheTributos() {
+    void duregonNoLongerReducesTheEvolutionCost() {
+        // Printed text (2026-11-17): Duregón has no discount for Evolución
         CardSlot duregon = onField(host, slot("Duregón"), FRONT);
         for (int i = 0; i < 5; i++) host.getTributeZone().add(slot("Flamagón"));
         CardSlot fadrake = slot("Dragón Delta");
         host.getHand().add(fadrake);
         int gems = EffectEngine.gemsOf(room, "host");
         SpecialSummons.specialByPlayer(room, "host", fadrake.getInstanceId(), duregon.getInstanceId());
-        // Special cost 1, minus 1
-        assertThat(EffectEngine.gemsOf(room, "host")).isEqualTo(gems);
+        // Special cost 1, paid in full
+        assertThat(EffectEngine.gemsOf(room, "host")).isEqualTo(gems - 1);
     }
 
     @Test

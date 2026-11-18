@@ -12,7 +12,8 @@ import com.drive.drive_manager.simulator.engine.CardFilter
  * compact constructor did. A Kotlin record cannot change what its constructor stores, so the defaults are given when read, and
  * [equals], [hashCode] and [toString] use what is read, as a record of the stored defaults would.
  *
- * @param zones  comma separated: hand, deck, tributeZone, discardPile, lifeStack, field, frontLine, backLine, materials and resources
+ * @param zones  comma separated: hand, deck, tributeZone, discardPile, lifeStack, field, frontLine, backLine, anyLine (the field, the enemy
+ *               Retaguardia too: "este efecto afecta la Retaguardia enemiga"), materials and resources
  *               (of the effect's card), materials:subject and resources:subject (of the ally chosen before), allies (your creatures on the
  *               field), subjectOrSelf (the card chosen before, or this card), eventOnField, looked (the cards an effect is looking at), saved:x (what the memory has under x), event (the card of the triggering event)
  * @param owner  whose zones

@@ -1,0 +1,67 @@
+{
+  "name": "valentine la comandante carismática",
+  "effects": [
+    {
+      "id": "valentine-la-comandante-carismatica:al-atacar",
+      "moment": "ON_ATTACK",
+      "label": "Al Atacar",
+      "text": "Una vez por turno: puedes invocar 1 criatura Roja de tu mano en tu línea frontal reduciendo su coste en 1.",
+      "steps": [
+        {
+          "type": "Do",
+          "action": {
+            "type": "Summon",
+            "cards": {
+              "zones": "hand",
+              "owner": "YOU",
+              "filter": {
+                "colors": [
+                  "R"
+                ],
+                "cardType": "creature"
+              },
+              "min": {
+                "type": "Fixed",
+                "value": 1
+              },
+              "max": {
+                "type": "Fixed",
+                "value": 1
+              },
+              "self": "ANY",
+              "mode": "CHOOSE"
+            },
+            "reduce": {
+              "type": "Fixed",
+              "value": 1
+            },
+            "toFront": true,
+            "required": true
+          }
+        }
+      ],
+      "sourceZone": "field",
+      "limit": "ONCE_PER_TURN"
+    }
+  ],
+  "requirement": {
+    "summoner": {
+      "level": 3
+    },
+    "condition": {
+      "type": "Compare",
+      "left": {
+        "type": "OnField",
+        "filter": {
+          "cardType": "creature"
+        }
+      },
+      "op": "AT_LEAST",
+      "right": {
+        "type": "Fixed",
+        "value": 3
+      }
+    },
+    "conditionText": "controlar 3 o más aliados"
+  }
+}

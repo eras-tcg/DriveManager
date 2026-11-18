@@ -8,6 +8,7 @@ import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.util.List;
+import java.util.Map;
 
 /**
  * Card entity for MongoDB collection 'cards'.
@@ -43,6 +44,26 @@ public class Card {
     private String requirement;
     private String rarity;
     private List<String> colors;
+    /** Enlace: the arrows printed on it ("left", "right"); null or empty for a card without them. */
+    private List<String> arrows;
+    /** "Criatura Enlace": a creature of that category (its cardType stays "creature"). */
+    private Boolean enlace;
+    /** Enlace: its link effect ("Efecto de enlace"), what it gives the members of its formation it points to. */
+    private List<Effect> formationEffects;
+    /** Enlace: the abilities its link effect gives ("Perforante"). */
+    private List<CardKeywordEffect> formationKeywordEffects;
+    /**
+     * How the card editor draws it: frame (standard, semi or full art), gold border, inherit frame, cost/strength left
+     * out and the art's framing; kept as the editor sends it. Null for cards made before the editor.
+     */
+    private Map<String, Object> design;
+    /** Its illustration alone (CardArtService): the CardArtStore key and media type; null without one. */
+    private String artKey;
+    private String artType;
+    /** The finished card drawn by the editor from this document and its art (a cache, made again on every save). */
+    private String renderKey;
+    /** In a structure deck (ST…): how many copies of this card the deck brings; null where it does not apply. */
+    private Integer deckCopies;
     /**
      * The card's alternative arts, empty for most cards: a copy pulled from a pack may come out with one of them (each
      * by its own odds or the shop's, ShopOdds.alt). Only pictures of the same card, never cards of their own: they

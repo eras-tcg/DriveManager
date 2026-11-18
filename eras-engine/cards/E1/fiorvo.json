@@ -100,5 +100,10 @@
     "sourceZone" : "field",
     "allyTurn" : true,
     "limit" : "ONCE_PER_TURN_BETWEEN_COPIES"
-  } ]
+  } ],
+  "requirement" : {
+    "summoner": {
+      "level": 1
+    }
+  }
 }

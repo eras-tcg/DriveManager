@@ -27,11 +27,10 @@ import com.drive.drive_manager.simulator.engine.SpecialRequirements.SpecialRequi
 import com.drive.drive_manager.simulator.engine.SpecialRequirements.affordableWith
 import com.drive.drive_manager.simulator.engine.SpecialRequirements.alliesAddUp
 import com.drive.drive_manager.simulator.engine.SpecialRequirements.checkMaterials
-import com.drive.drive_manager.simulator.engine.SpecialRequirements.creaturesNeeded
 import com.drive.drive_manager.simulator.engine.SpecialRequirements.declaredSummoners
-import com.drive.drive_manager.simulator.engine.SpecialRequirements.enoughCreatures
 import com.drive.drive_manager.simulator.engine.SpecialRequirements.fieldPiecesDiscount
 import com.drive.drive_manager.simulator.engine.SpecialRequirements.findDeclared
+import com.drive.drive_manager.simulator.engine.SpecialRequirements.levelText
 import com.drive.drive_manager.simulator.engine.SpecialRequirements.kindName
 import com.drive.drive_manager.simulator.engine.SpecialRequirements.materialInstruction
 import com.drive.drive_manager.simulator.engine.SpecialRequirements.materialsPossible
@@ -75,15 +74,19 @@ object SpecialSummons {
         player!!
         val fromZone = if (find(player.hand, card.instanceId) != null) "hand" else "tributeZone"
         val req = specialRequirement(card)
-        if (req == null || card.specialCost == null) return name(card) + " no tiene una invocación especial que el motor conozca"
+        if (req == null || card.specialCost == null) {
+            return if (card.specialSummonKind != null && card.specialCost != null) name(card) + " no tiene su Requerimiento de invocación especial programado"
+            else name(card) + " no tiene una invocación especial que el motor conozca"
+        }
         val kind = kindName(req.kind)
         if (!canPay(room, userId, card.specialCost!! - possibleFieldPiecesDiscount(player, card)
                         - CostModifiers.available(room, player, CostModifiers.Event.SPECIAL_SUMMON, req.kind, card, null)))
             return "No tienes gemas suficientes: tienes " + gemsOf(room, userId) + " y el coste especial es " + card.specialCost
         if (askTap(room, player, card, req.kind, summonerId)) return null
         if ("promotion" == req.kind && !alliesAddUp(player, req)) return "Para el Ascenso tus aliados deben sumar " + req.alliesSum + " o más en " + (if (req.alliesSumByCost) "coste" else "nivel")
-        if (!enoughCreatures(player, card)) return "Para invocar a " + name(card) + " debes controlar al menos " + creaturesNeeded(card) + " criaturas"
-        val missing = "Tus criaturas no cumplen el Requerimiento de " + name(card) + ": " + card.requirement!!.trim { it <= ' ' }
+        if (!SpecialRequirements.conditionMet(room, player, card, req)) return "Para invocar a " + name(card) + " debes " +
+                (req.conditionText ?: "cumplir su Requerimiento: " + (card.requirement ?: "").trim { it <= ' ' })
+        val missing = "Tus criaturas no cumplen el Requerimiento de " + name(card) + ": " + (card.requirement ?: "").trim { it <= ' ' }
         if (req.declaredSummoner()) {
             if (summonerId == null) {
                 // Rule 9.2.0.13: the summoner is declared first
@@ -92,16 +95,22 @@ object SpecialSummons {
                 val shown: MutableList<CardSlot> = ArrayList()
                 for (z in req.summonerZones!!) shown.addAll(zone(player, z))
                 shown.remove(card)
+                val then = if (req.materialCount == 0) " Se tributa y " + name(card) + " entra en tu retaguardia."
+                else " Luego eliges " + req.materialCount + (if (req.moreMaterials) " o más " else " ") + plural(req.materialCount, "material", "materiales") + "."
                 rulesPrompt(room, userId, PromptPurpose.SPECIAL.id(), name(card) + " · " + kind,
-                        "Declara el invocador: 1 criatura nivel " + req.level + " de " + zonesText(req.summonerZones) + ". Luego eliges "
-                                + req.materialCount + (if (req.moreMaterials) " o más " else " ") + plural(req.materialCount, "material", "materiales")
-                                + ". Si no eliges ninguna, no se invoca.",
+                        "Declara el invocador: 1 criatura" + levelText(req.level) + (if (req.maxLevel > req.level) " o " + req.maxLevel else "") + " de " + zonesText(req.summonerZones) + "."
+                                + then + " Si no eliges ninguna, no se invoca.",
                         "Invocador", summoners, shown)
                 room.prompt!!.subjectId = card.instanceId
                 return null
             }
             val summoner = findDeclared(player, req, summonerId)
             if (summoner == null || !declaredSummoners(player, card, req).contains(summoner)) return missing
+            // No other materials (an Ascenso from the hand): it is summoned now
+            if (req.materialCount == 0) {
+                handSpecial(room, player, card, req, null, frozenListOf(summoner), fromZone)
+                return null
+            }
             val shown: MutableList<CardSlot> = ArrayList()
             for (z in req.materialZones!!) shown.addAll(zone(player, z))
             shown.remove(card)
@@ -149,7 +158,7 @@ object SpecialSummons {
             for (z in option.materialZones!!) shown.addAll(zone(player, z))
             rulesPrompt(room, userId, PromptPurpose.SPECIAL.id(), name(card) + " · " + kind, materialInstruction(req, card, summoner), "Material", materials, shown)
             room.prompt!!.min = max(1, option.materialCount)
-            room.prompt!!.max = if (option.levelSum > 0) materials.size else option.materialCount
+            room.prompt!!.max = if (option.levelSum > 0 || option.moreMaterials) materials.size else option.materialCount
             room.prompt!!.subjectId = card.instanceId
             room.prompt!!.summonerId = summoner.instanceId
             return null
@@ -204,6 +213,9 @@ object SpecialSummons {
         // before its event); only when no materials are being chosen
         var use = CostModifiers.choice(room, player, CostModifiers.Event.SPECIAL_SUMMON, req.kind, card, summoner)
         if (use != null && !materials.isEmpty() && use.modifier.payment!!.kind != CostModifiers.PaymentKind.SELF_DAMAGE) use = null
+        // "Opcionales en Auto": a reducer is not asked once the cost is already 0
+        if (use != null && use.modifier.reduceNow(room, player.userId) > 0 && CostModifiers.autoStops(room, player, CostModifiers.Event.SPECIAL_SUMMON,
+                req.kind, card, summoner, max(0, card.specialCost!! - fieldPiecesDiscount(player, card, summoner, materials)))) use = null
         if (use != null) {
             room.usedThisTurn.removeAll { k -> k.startsWith(DISCOUNT_MATERIALS + card.instanceId + "|") }
             if (!materials.isEmpty()) room.usedThisTurn.add(DISCOUNT_MATERIALS + card.instanceId + "|" + ids(materials).joinToString(","))
@@ -264,7 +276,19 @@ object SpecialSummons {
             used = name(summoner)
         }
         when (req.kind!!) {
-            "promotion" -> {
+            "promotion" -> if (summoner == null && materials.isNotEmpty()) {
+                // "criatura en tu mano mientras controlas …" (designer 2026-11-16): the summoner declared from the hand is tributed from
+                // there, and the card enters the Retaguardia
+                for (declared in materials) {
+                    val from = if (player.hand.remove(declared)) "hand" else if (player.tributeZone.remove(declared)) "tributeZone"
+                    else if (player.discardPile.remove(declared)) "discardPile" else "field"
+                    if (Zone.FIELD.`is`(from)) removeFromField(player, declared)
+                    declared.faceDown = false
+                    player.tributeZone.add(declared)
+                    record(room, GameEvent.TRIBUTE, userId, declared, from, "tributeZone", null, frozenMapOf<String, Any?>("cause", "promotion"), null)
+                    used += (if (used.isEmpty()) "" else " y ") + name(declared)
+                }
+            } else {
                 // Java added the summoner as it was (a null one too)
                 @Suppress("UNCHECKED_CAST")
                 (player.tributeZone as MutableList<CardSlot?>).add(summoner)
@@ -330,7 +354,7 @@ object SpecialSummons {
             rulesPrompt(room, player.userId, PromptPurpose.REPLACE_SUMMON.id(), name(card) + " · en lugar de que " + name(ally) + " sea removida",
                     materialInstruction(req, card, ally), "Material", materials, shown)
             room.prompt!!.min = max(1, option.materialCount)
-            room.prompt!!.max = if (option.levelSum > 0) materials.size else option.materialCount
+            room.prompt!!.max = if (option.levelSum > 0 || option.moreMaterials) materials.size else option.materialCount
             room.prompt!!.subjectId = card.instanceId
             room.prompt!!.summonerId = ally.instanceId
             return
@@ -358,6 +382,7 @@ object SpecialSummons {
             var m = find(player.tributeZone, id)
             if (m == null) m = find(player.field, id)
             if (m == null) m = find(player.hand, id)
+            if (m == null && specialRequirement(card)?.materialZones?.contains("discardPile") == true) m = find(player.discardPile, id)
             if (m == null) return "Esa criatura ya no está disponible"
             materials.add(m)
         }

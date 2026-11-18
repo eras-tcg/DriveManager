@@ -41,13 +41,13 @@ class RoomCopyTest {
                     + "postGameChoices eventLog timeline eventSeq chain prompt triggerQueue pendingEvents idSeq pendingRemovals "
                     + "pendingAscension removalDecided combat fieldGrants usedThisTurn firstPlayerId firstTurn starterAdvantageUserId "
                     + "endTurnPending startPhasePending winnerId endReason random headless searchHope startSetup",
-            PlayerState.class, "userId username avatar playmat connected disconnectedAt deckId deckName starterCardId ready skipOptional "
-                    + "resourceCount turnsStarted hand deck originalDeck lifeStack tributeZone discardPile field",
+            PlayerState.class, "userId username avatar playmat connected disconnectedAt deckId deckName starterCardId ready skipOptional autoOptional "
+                    + "resourceCount turnsStarted hand deck originalDeck lifeStack tributeZone discardPile field formations frontSeen formationEntries",
             CardSlot.class, "instanceId cardId imageUrl faceDown tapped x y cardName cardType strength specialSummonKind starter "
                     + "strengthModifier cost level colors classes specialCost requirement keywords inheritKeywords turnKeywords "
                     + "laterKeywords untilNextAttack fieldSeq turnStrength laterStrength continuousStrength continuousLevel "
                     + "returnAtTurnEnd continuousKeywords floating noUntap noStartUntap materials resources unprogrammed mentions "
-                    + "finish alt altArtUrls",
+                    + "finish alt altArtUrls arrows enlace formationGrants",
             PendingEffect.class, "id scriptId controllerId sourceInstanceId sourceFieldSeq sourceName label text triggerSeq link "
                     + "inheritedFromName inheritedFromImage costIndex targetIds repeatsDone resolutionId stepIndex sequenceIndex saved "
                     + "subjectId ritualTargetId ritualSummonerId summonedId looked ordered confirmed lastDone lastCount lastTributed "

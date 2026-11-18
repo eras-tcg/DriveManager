@@ -35,5 +35,21 @@
     } ],
     "sourceZone" : "field",
     "limit" : "NONE"
-  } ]
+  } ],
+  "requirement" : {
+    "summoner": {
+      "level": 1,
+      "zones": [
+        "hand"
+      ]
+    },
+    "materials": {
+      "count": 1,
+      "level": 1,
+      "zones": [
+        "hand",
+        "tributeZone"
+      ]
+    }
+  }
 }

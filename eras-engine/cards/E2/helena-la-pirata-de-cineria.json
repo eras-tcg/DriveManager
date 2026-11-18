@@ -198,5 +198,23 @@
     } ],
     "sourceZone" : "field",
     "limit" : "NONE"
-  } ]
+  } ],
+  "requirement" : {
+    "summoner": {
+      "level": 2
+    },
+    "materials": {
+      "count": 1,
+      "more": true,
+      "zones": [
+        "field"
+      ],
+      "filter": {
+        "cardType": "creature",
+        "classes": [
+          "artefacto"
+        ]
+      }
+    }
+  }
 }

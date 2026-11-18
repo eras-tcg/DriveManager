@@ -1,0 +1,69 @@
+{
+  "name": "guardia del sepulcro",
+  "effects": [
+    {
+      "id": "guardia-del-sepulcro:al-atacar",
+      "moment": "ON_ATTACK",
+      "mandatory": true,
+      "label": "Al Atacar",
+      "text": "Elige 1 enemigo nivel 2 o menor; destrúyelo.",
+      "cost": [
+        {
+          "type": "Do",
+          "action": {
+            "type": "Select",
+            "selector": {
+              "zones": "frontLine",
+              "owner": "OPPONENT",
+              "filter": {
+                "cardType": "creature",
+                "maxLevel": 2
+              },
+              "min": {
+                "type": "Fixed",
+                "value": 1
+              },
+              "max": {
+                "type": "Fixed",
+                "value": 1
+              },
+              "self": "ANY",
+              "mode": "CHOOSE"
+            },
+            "target": true
+          }
+        }
+      ],
+      "steps": [
+        {
+          "type": "Do",
+          "action": {
+            "type": "Destroy",
+            "cards": {
+              "zones": "saved:targets",
+              "owner": "YOU",
+              "filter": {},
+              "min": {
+                "type": "Fixed"
+              },
+              "max": {
+                "type": "Fixed",
+                "value": 2147483647
+              },
+              "self": "ANY",
+              "mode": "ALL"
+            }
+          }
+        }
+      ],
+      "sourceZone": "field",
+      "limit": "NONE"
+    }
+  ],
+  "requirement": {
+    "ritual": {
+      "sum": true,
+      "level": 2
+    }
+  }
+}

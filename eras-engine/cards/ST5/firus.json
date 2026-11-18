@@ -1,0 +1,80 @@
+{
+  "name": "firus",
+  "effects": [
+    {
+      "id": "firus:todos-los-turnos",
+      "moment": "ON_EVENT",
+      "label": "Todos Los Turnos",
+      "text": "Si la fuerza de un enemigo es reducida a 0: puedes tributar 2 materiales de esta carta en tu línea frontal; esta carta inflige 9 de daño al oponente.",
+      "cost": [
+        {
+          "type": "Do",
+          "action": {
+            "type": "Move",
+            "cards": {
+              "zones": "materials",
+              "owner": "YOU",
+              "filter": {},
+              "min": {
+                "type": "Fixed",
+                "value": 2
+              },
+              "max": {
+                "type": "Fixed",
+                "value": 2
+              },
+              "self": "ANY",
+              "mode": "CHOOSE"
+            },
+            "to": "tributeZone"
+          }
+        }
+      ],
+      "steps": [
+        {
+          "type": "Do",
+          "action": {
+            "type": "Damage",
+            "amount": {
+              "type": "Fixed",
+              "value": 9
+            }
+          }
+        }
+      ],
+      "condition": {
+        "type": "All",
+        "all": [
+          {
+            "type": "Happened",
+            "eventType": "STRENGTH_REDUCED",
+            "actor": "ANY",
+            "owner": "ENEMY",
+            "data": [
+              "to=0"
+            ]
+          },
+          {
+            "type": "ThisIs",
+            "state": "IN_FRONT_LINE"
+          }
+        ]
+      },
+      "sourceZone": "field",
+      "limit": "NONE"
+    }
+  ],
+  "requirement": {
+    "summoner": {
+      "level": 1
+    },
+    "materials": {
+      "count": 1,
+      "level": 1,
+      "zones": [
+        "field",
+        "tributeZone"
+      ]
+    }
+  }
+}

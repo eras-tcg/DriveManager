@@ -1,0 +1,23 @@
+{
+  "name": "claus el joven comandante",
+  "requirement": {
+    "summoner": {
+      "level": 4
+    },
+    "condition": {
+      "type": "Compare",
+      "left": {
+        "type": "OnField",
+        "filter": {
+          "cardType": "creature"
+        }
+      },
+      "op": "AT_LEAST",
+      "right": {
+        "type": "Fixed",
+        "value": 5
+      }
+    },
+    "conditionText": "controlar 5 o más aliados"
+  }
+}
