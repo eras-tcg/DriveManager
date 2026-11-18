@@ -282,6 +282,21 @@ object EffectEngine {
         return CardLocator.findInRoom(room, instanceId, CardLocator.ENGINE_ORDER, true)
     }
 
+    /**
+     * The card that did something, as it is now: when it became a resource or a material of a creature on the field since
+     * (it evolved, or an Ascenso took it under), that creature, which carries it on; otherwise the card wherever it is.
+     */
+    @JvmStatic
+    fun actingCard(room: GameRoom, instanceId: String?): CardSlot? {
+        if (instanceId == null) return null
+        for (p in room.players.values) {
+            for (c in p.field) {
+                if (c.resources!!.any { it.instanceId == instanceId } || c.materials!!.any { it.instanceId == instanceId }) return c
+            }
+        }
+        return findInRoom(room, instanceId)
+    }
+
     /** Every card of the room, in every zone, with the cards attached to them. */
     @JvmStatic
     fun cardsInRoom(room: GameRoom): Sequence<CardSlot> {
