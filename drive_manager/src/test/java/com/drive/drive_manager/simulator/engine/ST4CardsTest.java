@@ -135,6 +135,19 @@ class ST4CardsTest extends CardBatchSupport {
     }
 
     @Test
+    void enfrentamientoDeGuerraGivesTheStrengthUntilTheEndOfTheTurn() {
+        room.setFirstTurn(false);
+        CardSlot ally = onField(host, red("al", "Aliado", 2, 2, 5), FRONT);
+        play(utility("eg", "Enfrentamiento De Guerra", 3, "R"));
+        answer("al");
+        assertThat(EffectEngine.strength(ally)).isEqualTo(8);
+        // "hasta el final del turno": back to its own strength once the turn changes
+        drain();
+        com.drive.drive_manager.simulator.actions.TurnActions.passTurn(room, "host");
+        assertThat(EffectEngine.strength(ally)).isEqualTo(5);
+    }
+
+    @Test
     void enfrentamientoDeGuerraMayAttackAnActiveEnemyToo() {
         room.setFirstTurn(false);
         CardSlot ally = onField(host, red("al", "Aliado", 2, 2, 5), FRONT);
