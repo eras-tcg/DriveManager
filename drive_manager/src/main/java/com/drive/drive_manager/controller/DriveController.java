@@ -160,11 +160,20 @@ public class DriveController {
     @PreAuthorize("hasAuthority('manage_cards')")
     @DeleteMapping("/cards/db/{id}")
     public ResponseEntity<?> deleteCard(@PathVariable String id) {
-        if (!driveCardRepository.existsById(id))
+        DriveCard card = driveCardRepository.findById(id).orElse(null);
+        if (card == null)
             return ResponseEntity.notFound().build();
-        r2Service.delete(id);
+        // A card made in the editor has no image of its own in R2 (its render lives with the card). A Drive image that
+        // cannot be removed from R2 (no R2 locally) stays there unused: the record goes anyway
+        if (!card.fromWeb()) {
+            try {
+                r2Service.delete(id);
+            } catch (RuntimeException e) {
+                log.warn("Could not delete the R2 image of {}: {}", id, e.getMessage());
+            }
+        }
         driveCardRepository.deleteById(id);
-        log.info("Deleted drive card and R2 image: {}", id);
+        log.info("Deleted drive card {}", id);
         return ResponseEntity.noContent().build();
     }
 
