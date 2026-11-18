@@ -6,7 +6,7 @@
       "moment": "ON_PLAY",
       "mandatory": true,
       "label": "En Juego",
-      "text": "Un aliado gana fuerza 3. Luego: puede atacar sin agotarse a un enemigo activo o agotado.",
+      "text": "Un aliado gana fuerza 3 hasta el final del turno. Luego: puede atacar sin agotarse a un enemigo activo o agotado.",
       "steps": [
         {
           "type": "Do",
