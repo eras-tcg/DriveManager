@@ -1,9 +1,6 @@
 package com.drive.drive_manager.controller;
 
 import com.drive.drive_manager.repository.DriveCardRepository;
-import com.drive.drive_manager.service.DriveParser;
-import com.drive.drive_manager.service.DriveParser.CardsResponse;
-import com.drive.drive_manager.service.DriveParser.SyncResult;
 import com.drive.drive_manager.service.R2Service;
 import com.drive.drive_manager.service.TestCards;
 import org.springframework.security.core.Authentication;
@@ -25,25 +22,20 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
 
-import java.io.IOException;
 import com.drive.drive_manager.dto.DriveCard;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
 /**
- * REST controller for Google Drive operations.
+ * The card images (records in drive_cards, files in R2): listing, renaming, deleting and the image proxy.
  */
 @RestController
 @RequestMapping("/api/drive")
 public class DriveController {
 
     private static final Logger log = LoggerFactory.getLogger(DriveController.class);
-
-    @Autowired
-    private DriveParser driveParser;
 
     @Autowired
     private DriveCardRepository driveCardRepository;
@@ -197,101 +189,4 @@ public class DriveController {
             return ResponseEntity.notFound().build();
         }
     }
-
-    /**
-     * Full drive listing without persistence.
-     * GET /api/drive/cards?folderUrl=...
-     *
-     * POST /api/drive/cards
-     * Body (optional): { "editions": ["ST1", "ST2", "E1"] }
-     * Empty or omitted editions = return everything.
-     */
-    @GetMapping("/cards")
-    public ResponseEntity<CardsResponse> readCards(
-            @RequestParam(required = false) String folderUrl,
-            Authentication auth) {
-        try {
-            CardsResponse response = driveParser.listCards(folderUrl);
-            if (!TestCards.canSee(auth) && response.editions() != null) {
-                // The testing editions' folders are listed only to who may see them
-                Map<String, Map<String, Map<String, List<DriveParser.ImageDoc>>>> editions = new java.util.LinkedHashMap<>(response.editions());
-                editions.keySet().removeIf(TestCards::isTestEdition);
-                response = new CardsResponse(response.structures(), editions);
-            }
-            return ResponseEntity.ok(response);
-        } catch (IllegalArgumentException e) {
-            log.error("GET /api/drive/cards bad request", e);
-            return ResponseEntity.badRequest().build();
-        } catch (IOException e) {
-            log.error("GET /api/drive/cards failed", e);
-            return ResponseEntity.internalServerError().build();
-        }
-    }
-
-    @PreAuthorize("hasAuthority('manage_cards')")
-    @PostMapping("/cards")
-    public ResponseEntity<CardsResponse> readCardsFiltered(
-            @RequestBody(required = false) CardsFilterRequest body) {
-        List<String> editions    = body != null && body.editions()    != null ? body.editions()    : List.of();
-        List<String> subEditions = body != null && body.subEditions() != null ? body.subEditions() : List.of();
-        List<String> colors      = body != null && body.colors()      != null ? body.colors()      : List.of();
-        try {
-            CardsResponse response = driveParser.listCards(null, editions, subEditions, colors);
-            return ResponseEntity.ok(response);
-        } catch (IllegalArgumentException e) {
-            log.error("POST /api/drive/cards bad request", e);
-            return ResponseEntity.badRequest().build();
-        } catch (IOException e) {
-            log.error("POST /api/drive/cards failed", e);
-            return ResponseEntity.internalServerError().build();
-        }
-    }
-
-    public record CardsFilterRequest(
-            @JsonProperty("editions")    List<String> editions,
-            @JsonProperty("subEditions") List<String> subEditions,
-            @JsonProperty("colors")      List<String> colors) {}
-
-    /**
-     * Filtered drive fetch with MongoDB persistence.
-     *
-     * POST /api/drive/cards/map_to_db
-     *
-     * Body (all fields optional, omit or send empty list to skip that filter):
-     * {
-     *   "editions":    ["ST1", "E1"],   // folder names; empty = all editions
-     *   "subEditions": ["MAIN", "SUB1"],// section names; empty = all sections
-     *   "colors":      ["B", "G"]       // color letters; empty = all colors
-     * }
-     *
-     * Rules:
-     *  - editions + subEditions both empty → parse whole drive
-     *  - colors empty → parse all colors
-     *  - ST entries in editions: no color subfolders; color is matched from filename
-     *  - E entries in editions: traverses section → color subfolders normally
-     */
-
-    @PreAuthorize("hasAuthority('manage_cards')")
-    @PostMapping("/cards/map_to_db")
-    public ResponseEntity<SyncResult> syncCards(
-            @RequestBody(required = false) SyncRequest body) {
-        SyncRequest req = body != null ? body : new SyncRequest(List.of(), List.of(), List.of());
-        try {
-            SyncResult result = driveParser.syncCards(
-                    req.editions() != null ? req.editions() : List.of(),
-                    req.subEditions() != null ? req.subEditions() : List.of(),
-                    req.colors() != null ? req.colors() : List.of()
-            );
-            return ResponseEntity.ok(result);
-        } catch (IOException e) {
-            log.error("POST /api/drive/cards/map_to_db failed", e);
-            return ResponseEntity.internalServerError().build();
-        }
-    }
-
-    public record SyncRequest(
-            @JsonProperty("editions")    List<String> editions,
-            @JsonProperty("subEditions") List<String> subEditions,
-            @JsonProperty("colors")      List<String> colors
-    ) {}
 }
