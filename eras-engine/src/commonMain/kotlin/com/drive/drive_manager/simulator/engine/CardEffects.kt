@@ -100,8 +100,19 @@ object CardEffects {
     data class Continuous(
         val label: String?, val text: String?, val allyTurn: Boolean, val condition: Condition?, val strength: Int, val keywords: List<String>?,
         val bonus: Amount?, val zone: String?, val levelBonus: Amount?, val targets: CardFilter?, val enemies: Boolean,
-        val formationNeighbours: Boolean = false,
+        val formationNeighbours: Boolean = false, val keywordAmount: Amount? = null,
     ) {
+        /**
+         * The keywords it gives now: "gana Letalidad 1 por cada copia de esta carta en tus tributos" is "Letalidad {n}" with
+         * [keywordAmount] as n (none when n is 0 or less).
+         */
+        fun keywordsNow(room: GameRoom, controller: String?): List<String> {
+            val all = keywords ?: return frozenListOf()
+            if (keywordAmount == null) return all
+            val n = keywordAmount.of(room, controller)
+            return all.mapNotNull { k -> if (!k.contains("{n}")) k else if (n <= 0) null else k.replace("{n}", n.toString()) }
+        }
+
         constructor(label: String?, text: String?, allyTurn: Boolean, condition: Condition?, strength: Int, keywords: List<String>?,
                     bonus: Amount?, zone: String?, levelBonus: Amount?) :
                 this(label, text, allyTurn, condition, strength, keywords, bonus, zone, levelBonus, null, false)
@@ -380,18 +391,21 @@ object CardEffects {
          */
         RESOURCE_TO_BACK_WITH_OTHERS,
         /** "en su lugar, puedes colocar 1 aliado al tope de tus vidas bocabajo" (another ally of its owner; a link effect, Enlace). */
-        ALLY_TO_LIFE_FACE_DOWN
+        ALLY_TO_LIFE_FACE_DOWN,
+        /** "en su lugar, puedes agotar 1 de tus estructuras" (an active structure of its owner). */
+        TAP_STRUCTURE
     }
 
     /**
      * "cuando esta carta fuera a ser destruida / removida [por el oponente]: en su lugar, puedes …".
      *
      * @param destroyOnly only when it would be destroyed ("removida" also covers being sent to the hand)
+     * @param withMaterials "si esta carta con materiales fuera a ser …": only while it has materials
      */
     @JvmRecord
     data class Replacement(
         val id: String?, val label: String?, val text: String?, val destroyOnly: Boolean, val byOpponentOnly: Boolean, val limit: Limit?,
-        val cost: ReplacementCost?, val resourceFilter: CardFilter?,
+        val cost: ReplacementCost?, val resourceFilter: CardFilter?, val withMaterials: Boolean = false,
     ) : Reaction {
         constructor(id: String?, label: String?, text: String?, destroyOnly: Boolean, byOpponentOnly: Boolean, limit: Limit?, cost: ReplacementCost?) :
                 this(id, label, text, destroyOnly, byOpponentOnly, limit, cost, CardFilter.any())

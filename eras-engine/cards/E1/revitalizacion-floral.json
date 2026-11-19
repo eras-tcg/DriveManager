@@ -1,0 +1,62 @@
+{
+  "name" : "revitalización floral",
+  "effects" : [ {
+    "id" : "revitalizacion-floral:en-juego",
+    "moment" : "ON_PLAY",
+    "mandatory" : true,
+    "label" : "En Juego",
+    "text" : "Envía 5 de tus tributos Verdes o [vegetación] al fondo de tu mazo; reactiva criaturas o estructuras Verdes bajo tu control que en coste sumen hasta 2.",
+    "cost" : [ {
+      "type" : "Do",
+      "action" : {
+        "type" : "Move",
+        "cards" : {
+          "zones" : "tributeZone",
+          "owner" : "YOU",
+          "filter" : {
+            "colors" : [ "G" ],
+            "classes" : [ "vegetación" ]
+          },
+          "min" : {
+            "type" : "Fixed",
+            "value" : 5
+          },
+          "max" : {
+            "type" : "Fixed",
+            "value" : 5
+          },
+          "self" : "ANY",
+          "mode" : "CHOOSE"
+        },
+        "to" : "deckBottom"
+      }
+    } ],
+    "steps" : [ {
+      "type" : "Do",
+      "action" : {
+        "type" : "SetTapped",
+        "cards" : {
+          "zones" : "field",
+          "owner" : "YOU",
+          "filter" : {
+            "colors" : [ "G" ],
+            "cardTypes" : [ "creature", "structure" ],
+            "exhaustedOnly" : true
+          },
+          "min" : {
+            "type" : "Fixed"
+          },
+          "max" : {
+            "type" : "Fixed",
+            "value" : 2147483647
+          },
+          "self" : "ANY",
+          "mode" : "CHOOSE"
+        },
+        "maxCostSum" : 2
+      }
+    } ],
+    "sourceZone" : "field",
+    "limit" : "NONE"
+  } ]
+}

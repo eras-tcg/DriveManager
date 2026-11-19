@@ -1,0 +1,46 @@
+{
+  "name" : "robin",
+  "effects" : [ {
+    "id" : "robin:en-invocacion",
+    "moment" : "ON_SUMMON",
+    "mandatory" : true,
+    "label" : "En Invocación",
+    "text" : "Esta carta gana fuerza 2 hasta el final de su próximo ataque. Luego: puede declarar ataque sin agotarse.",
+    "steps" : [ {
+      "type" : "Do",
+      "action" : {
+        "type" : "Modify",
+        "cards" : {
+          "zones" : "subjectOrSelf",
+          "owner" : "YOU",
+          "filter" : { },
+          "min" : {
+            "type" : "Fixed"
+          },
+          "max" : {
+            "type" : "Fixed",
+            "value" : 2147483647
+          },
+          "self" : "ANY",
+          "mode" : "ALL"
+        },
+        "strength" : {
+          "type" : "Fixed",
+          "value" : 2
+        },
+        "until" : "NEXT_ATTACK"
+      }
+    }, {
+      "type" : "MayDo",
+      "question" : "¿Robin declara ataque sin agotarse?",
+      "covers" : 1
+    }, {
+      "type" : "Do",
+      "action" : {
+        "type" : "Attack"
+      }
+    } ],
+    "sourceZone" : "field",
+    "limit" : "NONE"
+  } ]
+}

@@ -131,6 +131,18 @@ internal class EngineContext(private val room: GameRoom, private val effect: Pen
         EffectEngine.log(room, effect.sourceName + ": al final del turno se resolverá el resto de su efecto", null)
     }
 
+    override fun watch(cards: List<CardSlot>, effect: String?, untilTurnEnd: Boolean) {
+        val source = find(this.effect.sourceInstanceId)
+        for (card in cards) {
+            if (untilTurnEnd || source == null) {
+                room.usedThisTurn.add(Watches.mark(player()!!.userId, this.effect.sourceInstanceId, effect, card.instanceId))
+            } else {
+                EffectEngine.floating(source, this.effect, "Sigue a " + EffectEngine.name(card), Watches.WHILE_ON_FIELD, 0,
+                    Watches.keyword(effect, card.instanceId))
+            }
+        }
+    }
+
     override fun goOn() {
         repeat!![0] = true
     }

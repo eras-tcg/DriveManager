@@ -12,7 +12,7 @@ internal object CardModelReader {
 
     /** The registered type ids (the records' and objects' simple names) of each family. */
     private val TYPES: Map<String, List<String>> = mapOf(
-        "Action" to listOf("AtEndOfTurn", "Attack", "Damage", "Destroy", "Draw", "Gems", "Look", "Modify", "Move", "Play", "Select", "Sequence", "SetTapped", "Summon", "SummonSpecial"),
+        "Action" to listOf("AtEndOfTurn", "Attack", "Damage", "Destroy", "Draw", "Gems", "Look", "Modify", "Move", "Play", "Select", "Sequence", "SetTapped", "Summon", "SummonSpecial", "Watch"),
         "Amount" to listOf("EnemiesInFrontLine", "Fixed", "Gems", "HandOver", "IfThen", "InZone", "InZones", "LastCount", "LevelsOnField", "Lives", "LivesBehind", "OnBothFields", "OnField", "OpponentLevels", "Scaled", "SignedGems", "SourceStrength", "SubjectLevel", "Times", "TriggerSourceLevel", "UsedToSummon"),
         "CardEffects.Replacement" to listOf("Replacement"),
         "Condition" to listOf("All", "AllyDealtDirectDamage", "Always", "Any", "ByEffect", "Compare", "Destroyed", "EntersFrontLine", "GameIs", "Happened", "Immediately", "Not", "NothingElsePlayedThisTurn", "Summoned", "SummonedWithoutMaterial", "Targeted", "ThisClashes", "ThisIs", "ThisMatches", "ThisTributed", "YouReducedStrength"),
@@ -38,6 +38,7 @@ internal object CardModelReader {
             "SetTapped" -> readActionSetTapped(o, at)
             "Summon" -> readActionSummon(o, at)
             "SummonSpecial" -> readActionSummonSpecial(o, at)
+            "Watch" -> readActionWatch(o, at)
             else -> J.unknownType(at, id, "Action", TYPES.getValue("Action"))
         }
     }
@@ -287,7 +288,7 @@ internal object CardModelReader {
     }
 
     private fun readActionMove(o: JsonObject, at: String): com.drive.drive_manager.simulator.engine.effects.model.Action.Move {
-        J.fields(o, at, "Action.Move", setOf("cards", "to", "random", "label", "required", "exhausted", "faceDown", "rest"), true)
+        J.fields(o, at, "Action.Move", setOf("cards", "to", "random", "label", "required", "exhausted", "faceDown", "rest", "sameName"), true)
         return com.drive.drive_manager.simulator.engine.effects.model.Action.Move(
             cards = J.value(o, "cards", at, ::selector),
             to = J.str(o, "to", at),
@@ -297,6 +298,7 @@ internal object CardModelReader {
             exhausted = J.bool(o, "exhausted", at),
             faceDown = J.bool(o, "faceDown", at),
             rest = J.str(o, "rest", at),
+            sameName = J.bool(o, "sameName", at),
         )
     }
 
@@ -328,11 +330,12 @@ internal object CardModelReader {
     }
 
     private fun readActionSetTapped(o: JsonObject, at: String): com.drive.drive_manager.simulator.engine.effects.model.Action.SetTapped {
-        J.fields(o, at, "Action.SetTapped", setOf("cards", "tapped", "required"), true)
+        J.fields(o, at, "Action.SetTapped", setOf("cards", "tapped", "required", "maxCostSum"), true)
         return com.drive.drive_manager.simulator.engine.effects.model.Action.SetTapped(
             cards = J.value(o, "cards", at, ::selector),
             tapped = J.bool(o, "tapped", at),
             required = J.bool(o, "required", at),
+            maxCostSum = J.intOrNull(o, "maxCostSum", at),
         )
     }
 
@@ -350,6 +353,15 @@ internal object CardModelReader {
         J.fields(o, at, "Action.SummonSpecial", setOf("rule"), true)
         return com.drive.drive_manager.simulator.engine.effects.model.Action.SummonSpecial(
             rule = J.value(o, "rule", at, ::specialRule),
+        )
+    }
+
+    private fun readActionWatch(o: JsonObject, at: String): com.drive.drive_manager.simulator.engine.effects.model.Action.Watch {
+        J.fields(o, at, "Action.Watch", setOf("cards", "effect", "untilTurnEnd"), true)
+        return com.drive.drive_manager.simulator.engine.effects.model.Action.Watch(
+            cards = J.value(o, "cards", at, ::selector),
+            effect = J.str(o, "effect", at),
+            untilTurnEnd = J.bool(o, "untilTurnEnd", at),
         )
     }
 
@@ -533,7 +545,7 @@ internal object CardModelReader {
     }
 
     private fun readCardEffectsContinuous(o: JsonObject, at: String): com.drive.drive_manager.simulator.engine.CardEffects.Continuous {
-        J.fields(o, at, "CardEffects.Continuous", setOf("label", "text", "allyTurn", "condition", "strength", "keywords", "bonus", "zone", "levelBonus", "targets", "enemies", "formationNeighbours"), false)
+        J.fields(o, at, "CardEffects.Continuous", setOf("label", "text", "allyTurn", "condition", "strength", "keywords", "bonus", "zone", "levelBonus", "targets", "enemies", "formationNeighbours", "keywordAmount"), false)
         return com.drive.drive_manager.simulator.engine.CardEffects.Continuous(
             label = J.str(o, "label", at),
             text = J.str(o, "text", at),
@@ -547,6 +559,7 @@ internal object CardModelReader {
             targets = J.value(o, "targets", at, ::cardFilter),
             enemies = J.bool(o, "enemies", at),
             formationNeighbours = J.bool(o, "formationNeighbours", at),
+            keywordAmount = J.value(o, "keywordAmount", at, ::amount),
         )
     }
 
@@ -567,7 +580,7 @@ internal object CardModelReader {
     }
 
     private fun readCardEffectsReplacement(o: JsonObject, at: String): com.drive.drive_manager.simulator.engine.CardEffects.Replacement {
-        J.fields(o, at, "CardEffects.Replacement", setOf("id", "label", "text", "destroyOnly", "byOpponentOnly", "limit", "cost", "resourceFilter"), true)
+        J.fields(o, at, "CardEffects.Replacement", setOf("id", "label", "text", "destroyOnly", "byOpponentOnly", "limit", "cost", "resourceFilter", "withMaterials"), true)
         return com.drive.drive_manager.simulator.engine.CardEffects.Replacement(
             id = J.str(o, "id", at),
             label = J.str(o, "label", at),
@@ -577,6 +590,7 @@ internal object CardModelReader {
             limit = J.enum(o, "limit", at, com.drive.drive_manager.simulator.engine.EffectScript.Limit.entries, "EffectScript.Limit"),
             cost = J.enum(o, "cost", at, com.drive.drive_manager.simulator.engine.CardEffects.ReplacementCost.entries, "CardEffects.ReplacementCost"),
             resourceFilter = J.value(o, "resourceFilter", at, ::cardFilter),
+            withMaterials = J.bool(o, "withMaterials", at),
         )
     }
 
@@ -696,7 +710,7 @@ internal object CardModelReader {
     }
 
     private fun readConditionHappened(o: JsonObject, at: String): com.drive.drive_manager.simulator.engine.Condition.Happened {
-        J.fields(o, at, "Condition.Happened", setOf("eventType", "actor", "owner", "thisCard", "filter", "from", "to", "byEffect", "data"), true)
+        J.fields(o, at, "Condition.Happened", setOf("eventType", "actor", "owner", "thisCard", "filter", "from", "to", "byEffect", "data", "byCard"), true)
         return com.drive.drive_manager.simulator.engine.Condition.Happened(
             eventType = J.str(o, "eventType", at),
             actor = J.enum(o, "actor", at, com.drive.drive_manager.simulator.engine.Condition.Side.entries, "Condition.Side"),
@@ -707,6 +721,7 @@ internal object CardModelReader {
             to = J.str(o, "to", at),
             byEffect = J.bool(o, "byEffect", at),
             data = J.list(o, "data", at) { e, p -> J.stringElement(e, p) },
+            byCard = J.value(o, "byCard", at, ::cardFilter),
         )
     }
 
@@ -1017,10 +1032,11 @@ internal object CardModelReader {
     }
 
     private fun readEffectStepIfCondition(o: JsonObject, at: String): com.drive.drive_manager.simulator.engine.EffectStep.IfCondition {
-        J.fields(o, at, "EffectStep.IfCondition", setOf("condition", "covers"), true)
+        J.fields(o, at, "EffectStep.IfCondition", setOf("condition", "covers", "ofTrigger"), true)
         return com.drive.drive_manager.simulator.engine.EffectStep.IfCondition(
             condition = J.value(o, "condition", at, ::condition),
             covers = J.int(o, "covers", at),
+            ofTrigger = J.bool(o, "ofTrigger", at),
         )
     }
 

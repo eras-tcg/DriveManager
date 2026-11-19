@@ -3,6 +3,7 @@ package com.drive.drive_manager.simulator.engine.effects.runtime
 import kotlin.jvm.JvmStatic
 import com.drive.drive_manager.simulator.engine.frozenMapOfEntries
 import com.drive.drive_manager.simulator.engine.effects.actions.AtEndOfTurnHandler
+import com.drive.drive_manager.simulator.engine.effects.actions.WatchHandler
 import com.drive.drive_manager.simulator.engine.effects.actions.AttackHandler
 import com.drive.drive_manager.simulator.engine.effects.actions.DamageHandler
 import com.drive.drive_manager.simulator.engine.effects.actions.DestroyHandler
@@ -27,6 +28,7 @@ object Actions {
             Action.Select::class to SelectHandler(),
             Action.Attack::class to AttackHandler(),
             Action.AtEndOfTurn::class to AtEndOfTurnHandler(),
+            Action.Watch::class to WatchHandler(),
             Action.Move::class to MoveHandler(),
             Action.Draw::class to DrawHandler(),
             Action.Gems::class to GemsHandler(),

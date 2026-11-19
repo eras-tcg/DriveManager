@@ -73,6 +73,8 @@ data class EffectScript(
         RESPONSE,
         /** "al final del turno: …": the rest of another effect of the card, triggered at the end of the turn it was set (`AtEndOfTurn`). */
         DELAYED,
+        /** "si el enemigo elegido …": the rest of another effect of the card, triggered when a card it follows leaves the field (`Watch`). */
+        WATCHED,
     }
 
     /** Rule 11.8: "una vez por turno" (that copy) and "una vez por turno entre copias" (same original name). */
