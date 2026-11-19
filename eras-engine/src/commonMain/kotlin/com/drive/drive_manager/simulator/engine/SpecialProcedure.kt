@@ -110,7 +110,7 @@ object SpecialProcedure {
     private fun remaining(player: PlayerState?, target: CardSlot?, req: Rituals.Requirement?, summoner: CardSlot?): Int {
         val others = Rituals.ritualMaterials(player!!, target!!).filter { c -> c !== summoner }
         val all = if (req!!.sumMax() == req.level) frozenListOf() else Rituals.remainingSum(req, summoner, others)
-        return if (all.isEmpty()) req.level - Rituals.summonerLevel(summoner, others, req.level) else all.max()
+        return if (all.isEmpty()) req.level - (req.summonerLevel ?: Rituals.summonerLevel(summoner, others, req.level)) else all.max()
     }
 
     @JvmStatic

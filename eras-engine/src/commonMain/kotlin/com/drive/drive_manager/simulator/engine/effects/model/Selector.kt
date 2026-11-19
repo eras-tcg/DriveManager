@@ -65,11 +65,13 @@ data class Selector(
      * @param sharesClass   "que comparta tipo con"
      * @param level         exactly this level, read when it is used; null: not asked
      * @param maxLevel      at most this level, read when it is used; null: not asked
+     * @param maxStrength   at most this strength, read when it is used ("de fuerza menor o igual a la cantidad de estructuras que
+     *                      controles"); null: not asked
      */
     @JvmRecord
     data class Relative(
         val to: String?, val compareLevel: Compare?, val plus: Int, val compareStrength: Compare?, val differentName: Boolean,
-        val sameName: Boolean, val sharesClass: Boolean, val level: Amount?, val maxLevel: Amount?,
+        val sameName: Boolean, val sharesClass: Boolean, val level: Amount?, val maxLevel: Amount?, val maxStrength: Amount? = null,
     ) {
         companion object {
             @JvmStatic

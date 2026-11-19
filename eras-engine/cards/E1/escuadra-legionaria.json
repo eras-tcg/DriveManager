@@ -1,0 +1,52 @@
+{
+  "name": "escuadra legionaria",
+  "reactions": [
+    {
+      "type": "Replacement",
+      "id": "escuadra-legionaria:todos-los-turnos",
+      "label": "Todos Los Turnos",
+      "text": "Si esta carta fuera a ser removida: en su lugar, puedes sacrificar otro aliado.",
+      "limit": "NONE",
+      "cost": "SACRIFICE_OTHER_ALLY",
+      "resourceFilter": {}
+    }
+  ],
+  "continuous": [
+    {
+      "label": "Turno Aliado",
+      "text": "Todos los aliados Rojos o [legionarios] ganan fuerza 1.",
+      "allyTurn": true,
+      "strength": 1,
+      "zone": "field",
+      "targets": {
+        "colors": [
+          "R"
+        ],
+        "classes": [
+          "legionario"
+        ],
+        "cardType": "creature"
+      }
+    }
+  ],
+  "requirement": {
+    "summoner": {
+      "level": 1
+    },
+    "condition": {
+      "type": "Compare",
+      "left": {
+        "type": "OnField",
+        "filter": {
+          "cardType": "creature"
+        }
+      },
+      "op": "AT_LEAST",
+      "right": {
+        "type": "Fixed",
+        "value": 4
+      }
+    },
+    "conditionText": "controlar al menos 4 aliados"
+  }
+}

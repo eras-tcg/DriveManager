@@ -1,0 +1,75 @@
+{
+  "name": "mho",
+  "effects": [
+    {
+      "id": "mho:en-tributos",
+      "moment": "ACTIVATED",
+      "label": "Turno Aliado",
+      "text": "(1) En Tributos: si tu oponente tiene 5 o más tributos, puedes invocar esta carta en tu línea frontal reduciendo su coste en 2. Si lo haces: tu oponente puede invocar 1 criatura de sus tributos reduciendo su coste en 2.",
+      "steps": [
+        {
+          "type": "Do",
+          "action": {
+            "type": "Summon",
+            "cards": {
+              "zones": "tributeZone",
+              "owner": "YOU",
+              "filter": {},
+              "min": {
+                "type": "Fixed",
+                "value": 1
+              },
+              "max": {
+                "type": "Fixed",
+                "value": 1
+              },
+              "self": "ANY",
+              "mode": "SELF"
+            },
+            "reduce": {
+              "type": "Fixed",
+              "value": 2
+            },
+            "toFront": true,
+            "required": true
+          }
+        },
+        {
+          "type": "IfDone",
+          "covers": 1
+        },
+        {
+          "type": "OpponentMaySummon",
+          "zone": "tributeZone",
+          "filter": {
+            "cardType": "creature"
+          },
+          "reduce": 2
+        }
+      ],
+      "condition": {
+        "type": "Compare",
+        "left": {
+          "type": "InZone",
+          "zone": "tributeZone",
+          "filter": {},
+          "opponent": true
+        },
+        "op": "AT_LEAST",
+        "right": {
+          "type": "Fixed",
+          "value": 5
+        }
+      },
+      "sourceZone": "tributeZone",
+      "allyTurn": true,
+      "limit": "ONCE_PER_TURN_BETWEEN_COPIES"
+    }
+  ],
+  "requirement": {
+    "ritual": {
+      "sum": true,
+      "level": 2
+    }
+  }
+}

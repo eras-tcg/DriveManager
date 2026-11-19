@@ -85,9 +85,9 @@ sealed interface Action {
     @JvmRecord
     data class Damage(val amount: Amount?) : Action
 
-    /** "mira las primeras N cartas de tu mazo". */
+    /** "mira las primeras N cartas de tu mazo"; `opponent`: "… del mazo de tu oponente" (they go back to that deck). */
     @JvmRecord
-    data class Look(val count: Amount?) : Action
+    data class Look(val count: Amount?, val opponent: Boolean = false) : Action
 
     /**
      * "agota" (`tapped`) or "reactiva".

@@ -192,7 +192,8 @@ object Answers {
 
     /** The choices of a replacement of a removal ("en su lugar"), answered by [answerRemoval]. */
     private val REMOVAL_REPLACEMENTS = listOf(PromptPurpose.REPLACE, PromptPurpose.REPLACE_HAND, PromptPurpose.REPLACE_MATERIALS,
-        PromptPurpose.REPLACE_GUARD, PromptPurpose.REPLACE_RESOURCES, PromptPurpose.REPLACE_LIFE, PromptPurpose.REPLACE_TAP)
+        PromptPurpose.REPLACE_GUARD, PromptPurpose.REPLACE_RESOURCES, PromptPurpose.REPLACE_LIFE, PromptPurpose.REPLACE_TAP,
+        PromptPurpose.REPLACE_DISCARD, PromptPurpose.REPLACE_SACRIFICE)
 
     @JvmStatic
     fun answerRules(room: GameRoom, prompt: Prompt, player: PlayerState, picks: List<String>): String? {

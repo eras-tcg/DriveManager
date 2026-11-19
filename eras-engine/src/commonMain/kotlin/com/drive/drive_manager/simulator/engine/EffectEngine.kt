@@ -61,6 +61,13 @@ object EffectEngine {
     const val UNREMOVABLE = "Irremovible por efectos oponentes"
     /** "esta carta solo puede ser afectada por copias de sí misma": other cards' effects (yours too) do nothing to it. */
     const val ONLY_COPIES = "Solo la afectan sus copias"
+    /** "este no puede activar efectos" (gained by an effect, for as long as it says): the card activates no effect while on the field. */
+    const val NO_EFFECTS = "No puede activar efectos"
+
+    /** The card is on the field with [NO_EFFECTS]: its effects are not activated (triggered, slow or responses). */
+    @JvmStatic
+    fun cannotActivate(card: CardSlot): Boolean =
+        card.turnKeywords!!.contains(NO_EFFECTS) || card.laterKeywords!!.contains(NO_EFFECTS) || card.continuousKeywords!!.contains(NO_EFFECTS)
 
     // An effect of another card that does nothing to this one (ONLY_COPIES).
     /**

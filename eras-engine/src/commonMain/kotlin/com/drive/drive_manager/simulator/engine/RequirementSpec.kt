@@ -78,9 +78,15 @@ data class MaterialSpec(
  * @param eachMaxLevel "criaturas nivel N o menor que sumen …": the highest level of each creature used; null: any
  * @param parts       each creature used, the summoner among them ("criatura nivel 2 + 1 criatura [ángel] nivel 2 o menor"): one
  *                    [RitualParts.Part] each (level, "o menor", class); null or empty: the fields above
+ * @param summonerLevel "criaturas que en nivel sumen N incluido el invocador nivel M": the level the summoner must be (it counts as M in
+ *                    the sum); null: any
  */
 @JvmRecord
 data class RitualSpec(
     val sum: Boolean, val level: Int, val maxLevel: Int?, val atLeast: Boolean, val maxStrength: Int?, val extra: Int, val eachMaxLevel: Int? = null,
-    val parts: List<RitualParts.Part>? = null,
-)
+    val parts: List<RitualParts.Part>? = null, val summonerLevel: Int? = null,
+) {
+    constructor(
+        sum: Boolean, level: Int, maxLevel: Int?, atLeast: Boolean, maxStrength: Int?, extra: Int, eachMaxLevel: Int?, parts: List<RitualParts.Part>?,
+    ) : this(sum, level, maxLevel, atLeast, maxStrength, extra, eachMaxLevel, parts, null)
+}

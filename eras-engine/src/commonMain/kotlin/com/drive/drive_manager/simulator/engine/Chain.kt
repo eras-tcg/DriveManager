@@ -231,6 +231,7 @@ object Chain {
     @JvmStatic
     fun addIfTriggers(room: GameRoom, result: MutableList<PendingEffect>, script: EffectScript, event: GameEvent,
                       source: CardSlot, controllerId: String?) {
+        if (EffectEngine.cannotActivate(source)) return
         if (script.condition != null && !script.condition.test(room, event, source, controllerId)) return
         val e = pending(room, script, controllerId, source, event.seq)
         if (limitReached(room, e, script)) {
@@ -634,6 +635,7 @@ object Chain {
                 for (script in CardEffects.of(card)) {
                     if (script.moment != EffectScript.Moment.RESPONSE || script.sourceZone != zone) continue
                     if (script.allyTurn && playerId != room.currentTurnUserId) continue
+                    if (EffectEngine.cannotActivate(card)) continue
                     if (script.condition != null && (activation == null || !script.condition.test(room, activation, card, playerId))) continue
                     val e = candidate(script, playerId, card, activation?.seq ?: room.eventSeq, room)
                     if (limitReached(room, e, script)) continue
@@ -670,6 +672,7 @@ object Chain {
                 for (script in CardEffects.of(card)) {
                     if (script.moment != EffectScript.Moment.ACTIVATED || script.sourceZone != zone) continue
                     if (script.allyTurn && userId != room.currentTurnUserId) continue
+                    if (EffectEngine.cannotActivate(card)) continue
                     if (script.condition != null && !script.condition.test(room, null, card, userId)) continue
                     val e = candidate(script, userId, card, room.eventSeq, room)
                     if (limitReached(room, e, script)) continue

@@ -67,7 +67,11 @@ interface EffectContext {
 
     fun damage(amount: Int)
 
-    fun look(count: Int)
+    /** Looks at the top `count` cards of its controller's deck, or of the opponent's (`opponent`). */
+    fun look(count: Int, opponent: Boolean)
+
+    /** The cards looked at come from the opponent's deck (and go back there). */
+    fun lookedAreOpponents(): Boolean
 
     fun onField(card: CardSlot?): Boolean
 

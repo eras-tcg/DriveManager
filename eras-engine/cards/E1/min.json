@@ -1,0 +1,68 @@
+{
+  "name": "min",
+  "effects": [
+    {
+      "id": "min:en-destruccion",
+      "moment": "ON_DESTROY",
+      "label": "En Destrucción",
+      "text": "(1) Puedes invocar 1 criatura Violeta o [interdimensional] de tus tributos en tu línea frontal reduciendo su coste en 1. Si lo haces: tu oponente puede invocar 1 criatura de sus tributos en su línea frontal reduciendo su coste en 1.",
+      "steps": [
+        {
+          "type": "Do",
+          "action": {
+            "type": "Summon",
+            "cards": {
+              "zones": "tributeZone",
+              "owner": "YOU",
+              "filter": {
+                "colors": [
+                  "P"
+                ],
+                "classes": [
+                  "interdimensional"
+                ],
+                "cardType": "creature"
+              },
+              "min": {
+                "type": "Fixed",
+                "value": 1
+              },
+              "max": {
+                "type": "Fixed",
+                "value": 1
+              },
+              "self": "ANY",
+              "mode": "CHOOSE"
+            },
+            "reduce": {
+              "type": "Fixed",
+              "value": 1
+            },
+            "toFront": true,
+            "required": true
+          }
+        },
+        {
+          "type": "IfDone",
+          "covers": 1
+        },
+        {
+          "type": "OpponentMaySummon",
+          "zone": "tributeZone",
+          "filter": {
+            "cardType": "creature"
+          },
+          "reduce": 1,
+          "toFront": true
+        }
+      ],
+      "sourceZone": "field",
+      "limit": "ONCE_PER_TURN_BETWEEN_COPIES"
+    }
+  ],
+  "requirement": {
+    "ritual": {
+      "level": 1
+    }
+  }
+}

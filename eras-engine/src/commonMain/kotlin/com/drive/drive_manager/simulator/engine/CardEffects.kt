@@ -393,7 +393,11 @@ object CardEffects {
         /** "en su lugar, puedes colocar 1 aliado al tope de tus vidas bocabajo" (another ally of its owner; a link effect, Enlace). */
         ALLY_TO_LIFE_FACE_DOWN,
         /** "en su lugar, puedes agotar 1 de tus estructuras" (an active structure of its owner). */
-        TAP_STRUCTURE
+        TAP_STRUCTURE,
+        /** "en su lugar, puedes descartar 1 de sus materiales" (its owner picks which). */
+        DISCARD_ONE_MATERIAL,
+        /** "en su lugar, puedes sacrificar otro aliado" (another creature of its owner, who picks it). */
+        SACRIFICE_OTHER_ALLY,
     }
 
     /**
@@ -401,11 +405,12 @@ object CardEffects {
      *
      * @param destroyOnly only when it would be destroyed ("removida" also covers being sent to the hand)
      * @param withMaterials "si esta carta con materiales fuera a ser …": only while it has materials
+     * @param opponentTurn  "Turno Oponente": only during the opponent's turn (of its owner)
      */
     @JvmRecord
     data class Replacement(
         val id: String?, val label: String?, val text: String?, val destroyOnly: Boolean, val byOpponentOnly: Boolean, val limit: Limit?,
-        val cost: ReplacementCost?, val resourceFilter: CardFilter?, val withMaterials: Boolean = false,
+        val cost: ReplacementCost?, val resourceFilter: CardFilter?, val withMaterials: Boolean = false, val opponentTurn: Boolean = false,
     ) : Reaction {
         constructor(id: String?, label: String?, text: String?, destroyOnly: Boolean, byOpponentOnly: Boolean, limit: Limit?, cost: ReplacementCost?) :
                 this(id, label, text, destroyOnly, byOpponentOnly, limit, cost, CardFilter.any())
@@ -469,6 +474,9 @@ object CardEffects {
     /**
      * "cuando uno o más aliados [filtro] fueran a ser removidos por efecto oponente: en su lugar, puedes …" held by a card on the field (itself
      * included). Designer ruling 2026-10-31: paid once, it saves every one of them that this effect was removing.
+     * With another cost than GUARD_MATERIAL_AND_SACRIFICE ("cuando algún aliado [filtro] fuera a ser destruido: en su lugar, puedes tributar 1
+     * carta de tu mano"), it saves that ally only, and its replacement's own conditions apply (destroyOnly, byOpponentOnly, opponentTurn,
+     * limit, counted on the card that holds it).
      */
     @JvmRecord
     data class AllyGuard(val allies: CardFilter?, val replacement: Replacement?) : Reaction

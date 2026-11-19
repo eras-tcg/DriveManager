@@ -1,0 +1,68 @@
+{
+  "name": "filo legionario",
+  "effects": [
+    {
+      "id": "filo-legionario:en-invocacion",
+      "moment": "ON_SUMMON",
+      "mandatory": true,
+      "label": "En Invocación por efecto",
+      "text": "Esta carta gana fuerza 3 y Celeridad hasta el final del turno oponente.",
+      "steps": [
+        {
+          "type": "Do",
+          "action": {
+            "type": "Modify",
+            "cards": {
+              "zones": "subjectOrSelf",
+              "owner": "YOU",
+              "filter": {},
+              "min": {
+                "type": "Fixed"
+              },
+              "max": {
+                "type": "Fixed",
+                "value": 2147483647
+              },
+              "self": "ANY",
+              "mode": "ALL"
+            },
+            "strength": {
+              "type": "Fixed",
+              "value": 3
+            },
+            "until": "NEXT_TURN"
+          }
+        },
+        {
+          "type": "Do",
+          "action": {
+            "type": "Modify",
+            "cards": {
+              "zones": "subjectOrSelf",
+              "owner": "YOU",
+              "filter": {},
+              "min": {
+                "type": "Fixed"
+              },
+              "max": {
+                "type": "Fixed",
+                "value": 2147483647
+              },
+              "self": "ANY",
+              "mode": "ALL"
+            },
+            "keyword": "Celeridad",
+            "until": "NEXT_TURN"
+          }
+        }
+      ],
+      "condition": {
+        "type": "Summoned",
+        "side": "ANY",
+        "how": "effect"
+      },
+      "sourceZone": "field",
+      "limit": "NONE"
+    }
+  ]
+}
