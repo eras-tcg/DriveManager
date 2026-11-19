@@ -4,7 +4,7 @@
     "id" : "niobats:tributada",
     "moment" : "ON_EVENT",
     "label" : "En Tributos",
-    "text" : "(1) Si esta carta es tributada por efecto de 1 [bestia]: puedes tributar 1 carta de tu mano para tomar 1 carta Violeta de tus tributos.",
+    "text" : "(1) Si esta carta es tributada por efecto de tus cartas Violeta: puedes tributar 1 carta de tu mano para tomar 1 carta Violeta de tus tributos.",
     "steps" : [ {
       "type" : "IfPossible"
     }, {
@@ -56,7 +56,7 @@
     "condition" : {
       "type" : "ThisTributed",
       "by" : {
-        "classes" : [ "bestia" ]
+        "colors" : [ "P" ]
       }
     },
     "sourceZone" : "tributeZone",

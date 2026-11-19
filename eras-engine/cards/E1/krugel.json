@@ -1,0 +1,52 @@
+{
+  "name" : "krugel",
+  "effects" : [ {
+    "id" : "krugel:todos-los-turnos",
+    "moment" : "ON_EVENT",
+    "mandatory" : true,
+    "label" : "Todos Los Turnos",
+    "text" : "Si algún aliado es invocado por efecto: dicho aliado gana fuerza 2 hasta el final del turno.",
+    "steps" : [ {
+      "type" : "SubjectFromTrigger"
+    }, {
+      "type" : "Do",
+      "action" : {
+        "type" : "Modify",
+        "cards" : {
+          "zones" : "subjectOrSelf",
+          "owner" : "YOU",
+          "filter" : { },
+          "min" : {
+            "type" : "Fixed"
+          },
+          "max" : {
+            "type" : "Fixed",
+            "value" : 2147483647
+          },
+          "self" : "ANY",
+          "mode" : "ALL"
+        },
+        "strength" : {
+          "type" : "Fixed",
+          "value" : 2
+        },
+        "until" : "TURN"
+      }
+    } ],
+    "condition" : {
+      "type" : "Summoned",
+      "side" : "YOU",
+      "filter" : {
+        "cardType" : "creature"
+      },
+      "how" : "effect"
+    },
+    "sourceZone" : "field",
+    "limit" : "NONE"
+  } ],
+  "requirement" : {
+    "summoner" : {
+      "level" : 4
+    }
+  }
+}

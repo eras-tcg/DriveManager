@@ -162,6 +162,9 @@ interface EffectContext {
     /** The rest of the effect runs at the end of this turn: `effect` of this card. */
     fun atEndOfTurn(effect: String?)
 
+    /** This card follows those cards: `effect` of this card comes when one of them leaves the field (until the end of the turn, or while it stays). */
+    fun watch(cards: List<CardSlot>, effect: String?, untilTurnEnd: Boolean)
+
     /** How many cards the last action acted on. */
     fun counted(count: Int)
 

@@ -48,7 +48,7 @@ object FlowSteps : StepFamily {
                         Condition.Op.LESS -> a < b
                         Condition.Op.EQUAL -> a == b
                     }
-                } else condition.test(room, null, source, userId))
+                } else condition.test(room, if (step.ofTrigger) EffectEngine.triggerEvent(room, effect) else null, source, userId))
                 if (!holds) effect.stepIndex = effect.stepIndex + step.covers
                 return false
             }

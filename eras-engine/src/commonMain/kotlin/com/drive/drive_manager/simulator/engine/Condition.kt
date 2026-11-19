@@ -147,11 +147,12 @@ sealed interface Condition {
      * @param byEffect an effect did it
      * @param data     what the event says, as "key=value"; the value "$this" is this card, "$you" is its controller and "*" any value
      *                 (the event says it at all: "targetId=*", an attack on an enemy, not on the rival)
+     * @param byCard   "por efecto de un aliado": the card whose effect did it; null: not asked
      */
     @JvmRecord
     data class Happened(
         val eventType: String?, val actor: Side?, val owner: Side?, val thisCard: Boolean, val filter: CardFilter?, val from: String?,
-        val to: String?, val byEffect: Boolean, val data: List<String>?,
+        val to: String?, val byEffect: Boolean, val data: List<String>?, val byCard: CardFilter? = null,
     ) : Condition {
         override fun test(room: GameRoom, event: GameEvent?, source: CardSlot?, controller: String?): Boolean {
             if (event == null || (eventType != null && eventType != event.type)) return false
@@ -170,6 +171,11 @@ sealed interface Condition {
                 if (wanted == "\$this") wanted = source!!.instanceId
                 if (wanted == "\$you") wanted = controller
                 if (value == null || wanted!! != value.toString()) return false
+            }
+            if (byCard != null) {
+                val byId = if (event.data == null) null else event.data!!["byCard"]
+                val acting = if (byId == null) null else EffectEngine.actingCard(room, byId as String)
+                if (acting == null || !byCard.matches(acting)) return false
             }
             if (filter == null) return true
             val card = EffectEngine.eventCard(room, event)
