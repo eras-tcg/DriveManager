@@ -123,7 +123,7 @@ object CostModifiers {
     /** A limited modifier was used: it is not offered again this turn. */
     @JvmStatic
     fun markUsed(room: GameRoom, player: PlayerState, use: Use) {
-        if (use.modifier.limit != EffectScript.Limit.NONE) room.usedThisTurn.add(usageKey(player, use))
+        EffectScript.Limit.take(use.modifier.limit, room.usedThisTurn, usageKey(player, use))
     }
 
     /** A modifier that applies now, with the card that has it. */
@@ -191,7 +191,7 @@ object CostModifiers {
                 if (m.payment.kind == PaymentKind.TAP_SELF && card != null && room.usedThisTurn.contains(tapKey(holder, card, false))) continue
                 val use = Use(m, holder)
                 if (m.limit == EffectScript.Limit.DEFINITIVE && room.firstTurn) continue
-                if (m.limit != EffectScript.Limit.NONE && room.usedThisTurn.contains(usageKey(player, use))) continue
+                if (EffectScript.Limit.spent(m.limit, room.usedThisTurn, usageKey(player, use))) continue
                 uses.add(use)
             }
         }

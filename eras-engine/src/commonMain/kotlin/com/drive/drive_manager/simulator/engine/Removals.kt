@@ -254,7 +254,7 @@ object Removals {
             if (r.byOpponentOnly && !byOpponent) continue
             if (r.withMaterials && card.materials!!.isEmpty()) continue
             if (r.limit == Limit.DEFINITIVE && room.firstTurn) continue
-            if (r.limit != Limit.NONE && room.usedThisTurn.contains(replacementKey(owner, card, r))) continue
+            if (Limit.spent(r.limit, room.usedThisTurn, replacementKey(owner, card, r))) continue
             val payable = when (r.cost!!) {
                 CardEffects.ReplacementCost.TRIBUTE_TWO_MATERIALS -> card.materials!!.size >= 2
                 CardEffects.ReplacementCost.TRIBUTE_ONE_FROM_HAND -> !owner.hand.isEmpty()
@@ -278,7 +278,7 @@ object Removals {
                     val s = CardEffects.allyRemovalSummon(c)
                     if (s == null || s.zone != z || !s.ally!!.matches(card)) continue
                     val r = s.replacement!!
-                    if (r.limit != Limit.NONE && room.usedThisTurn.contains(replacementKey(owner, c, r))) continue
+                    if (Limit.spent(r.limit, room.usedThisTurn, replacementKey(owner, c, r))) continue
                     if (!SpecialSummons.canSummonInsteadOfRemoval(room, owner, c, card, s.reduce)) continue
                     options.add(ReplacementOption(r.id + "@" + c.instanceId, c, r, r.label,
                         r.text + " " + name(card) + " es su invocador."))
@@ -319,7 +319,7 @@ object Removals {
     fun replacementKey(owner: PlayerState, card: CardSlot, r: CardEffects.Replacement): String {
         // A Definitive one counts as the player's Definitive effect of the turn (only 1 per turn, whichever card)
         if (r.limit == Limit.DEFINITIVE) return owner.userId + "|" + EffectEngine.DEFINITIVE_USED
-        return if (r.limit == Limit.ONCE_PER_TURN_BETWEEN_COPIES) owner.userId + "|" + r.id
+        return if (r.limit?.betweenCopies == true) owner.userId + "|" + r.id
         else owner.userId + "|" + card.instanceId + "@" + card.fieldSeq + "|" + r.id
     }
 
@@ -487,7 +487,7 @@ object Removals {
             return null
         }
         val r = chosen.replacement
-        if (r.limit != Limit.NONE) room.usedThisTurn.add(replacementKey(player, card, r))
+        Limit.take(r.limit, room.usedThisTurn, replacementKey(player, card, r))
         when (r.cost!!) {
             CardEffects.ReplacementCost.RESOURCE_TRIBUTED_ANOTHER_TO_HAND -> {
                 rulesPrompt(room, player.userId, PromptPurpose.REPLACE_RESOURCES.id(), name(card) + " · " + r.label,

@@ -247,12 +247,13 @@ object Chain {
     @JvmStatic
     fun limitReached(room: GameRoom, e: PendingEffect, script: EffectScript): Boolean {
         if (script.limit == Limit.DEFINITIVE && room.firstTurn) return true
-        return script.limit != Limit.NONE && room.usedThisTurn.contains(usageKey(e, script))
+        return Limit.spent(script.limit, room.usedThisTurn, usageKey(e, script))
     }
 
     /** Why [limitReached] stops it, for the player. */
     @JvmStatic
     fun limitText(room: GameRoom, e: PendingEffect, script: EffectScript): String {
+        if (script.limit?.uses == 2) return "su efecto ya se usó 2 veces este turno"
         if (script.limit != Limit.DEFINITIVE) return "su efecto ya se usó este turno"
         return if (room.firstTurn) "no se pueden activar Efectos Definitivos en el primer turno de la partida"
         else "ya activaste un Efecto Definitivo este turno (solo 1 por turno)"
@@ -315,7 +316,7 @@ object Chain {
         // A link effect given by a member of its formation (Enlace) counts by that grant: "<id>~via:<source>@<since>"
         val via = script.id?.substringAfter(Formations.VIA, "") ?: ""
         val id = script.id?.substringBefore(Formations.VIA)?.substringBefore('#') + (if (via.isEmpty()) "" else Formations.VIA + via)
-        return if (script.limit == Limit.ONCE_PER_TURN_BETWEEN_COPIES)
+        return if (script.limit?.betweenCopies == true)
             e.controllerId + "|" + id
         // "Una vez por turno" belongs to this card while it stays on the field (rule 11.8: back on the field it is a new card)
         else e.controllerId + "|" + e.sourceInstanceId + "@" + e.sourceFieldSeq + "|" + id
@@ -492,7 +493,7 @@ object Chain {
     @JvmStatic
     fun activate(room: GameRoom, effect: PendingEffect) {
         val script = script(effect)
-        if (script.limit != Limit.NONE) room.usedThisTurn.add(usageKey(effect, script))
+        Limit.take(script.limit, room.usedThisTurn, usageKey(effect, script))
         effect.link = room.chain.size + 1
         record(room, GameEvent.EFFECT_ACTIVATED, effect.controllerId, null, null, null, effect,
             frozenMapOf<String, Any?>("label", effect.label, "link", effect.link, "sourceId", effect.sourceInstanceId,
