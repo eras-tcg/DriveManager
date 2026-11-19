@@ -1,6 +1,7 @@
 package com.drive.drive_manager.simulator;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Tag;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -20,6 +21,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * games): it is to become Kotlin Multiplatform and run in the browser too (plan of the Kotlin engine, phase 1).
  * Whatever the server adds around it lives outside these files.
  */
+@Tag("basic")
 class CoreBoundaryTest {
 
     private static final Path ROOT = Path.of("src/main/java/com/drive/drive_manager/simulator");

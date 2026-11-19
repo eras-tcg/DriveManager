@@ -11,6 +11,7 @@ import com.drive.drive_manager.simulator.room.GameStateUpdate;
 import com.drive.drive_manager.simulator.room.RoomOptions;
 import com.drive.drive_manager.simulator.room.RoomService;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Tag;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.test.util.ReflectionTestUtils;
 
@@ -25,6 +26,7 @@ import static org.mockito.Mockito.mock;
  * Every game is recorded as it is played (its start and its actions) and, played again from the record, it ends the
  * same: the same cards everywhere, the same turn and the same winner (its fingerprint), rematches included.
  */
+@Tag("deep")
 public class MatchReplayTest {
 
     /** Keeps the games instead of writing them to the database. */

@@ -10,6 +10,7 @@ import com.drive.drive_manager.simulator.room.GameStateUpdate;
 import com.drive.drive_manager.simulator.room.RoomService;
 import com.drive.drive_manager.simulator.room.StateMask;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Tag;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.List;
@@ -18,6 +19,7 @@ import java.util.Map;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /** Watching a kept game again: from its start to its end, move by move, read only and for its viewer alone. */
+@Tag("server")
 class ReplayRoomsTest {
 
     private final RoomService service = new RoomService();

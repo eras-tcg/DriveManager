@@ -2,6 +2,7 @@ package com.drive.drive_manager.simulator.engine;
 
 import com.drive.drive_manager.simulator.room.CardSlot;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Tag;
 
 import java.util.List;
 import java.util.Map;
@@ -10,6 +11,8 @@ import static com.drive.drive_manager.simulator.engine.TestTable.*;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /** Cards in testing T1, archetype Ángeles (2026-11-13): one test (or more) per programmed effect, from the printed text. */
+@Tag("cards")
+@Tag("t1")
 class T1AngelesCardsTest extends CardBatchSupport {
 
     private void destroyByOpponent(CardSlot card) {

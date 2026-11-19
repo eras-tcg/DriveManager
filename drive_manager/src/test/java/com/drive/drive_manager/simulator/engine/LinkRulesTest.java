@@ -5,6 +5,7 @@ import com.drive.drive_manager.simulator.room.CardSlot;
 import com.drive.drive_manager.simulator.room.GameStateUpdate;
 import com.drive.drive_manager.simulator.room.PlayerState;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Tag;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -17,6 +18,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * Enlace (reglas en desarrollo, designer 2026-10-25 and 2026-11-13): order of the Línea frontal, admission, persistence, the link effects
  * given by active members, their refresh, the row closing up, the start of the turn and Ascenso.
  */
+@Tag("engine")
 class LinkRulesTest extends CardBatchSupport {
 
     static final String[] BOTH = {"left", "right"};

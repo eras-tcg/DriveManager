@@ -4,12 +4,14 @@ import com.drive.drive_manager.simulator.bot.BotPlayer;
 import com.drive.drive_manager.simulator.room.GameRoom;
 import com.drive.drive_manager.simulator.room.RoomService;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Tag;
 
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
 /** The ranked queue: pairing by strength with a window that grows while waiting, and the room reserved for the two. */
+@Tag("server")
 class RankedQueueTest {
 
     private final RoomService rooms = new RoomService();

@@ -2,6 +2,7 @@ package com.drive.drive_manager.simulator.bot;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+import org.junit.jupiter.api.Tag;
 
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -12,6 +13,7 @@ import java.util.Random;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /** The bot's value model learns who wins from the table, is saved and read back the same, and the promotion criteria. */
+@Tag("server")
 class ValueModelTest {
 
     private static final int LIFE_DIFF = BoardFeatures.NAMES.indexOf("lifeDiff");

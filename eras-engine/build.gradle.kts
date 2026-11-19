@@ -183,8 +183,31 @@ tasks.withType<org.jetbrains.kotlin.gradle.targets.js.testing.KotlinJsTest>().co
     providers.environmentVariable("ERAS_TEST_DUMP").orNull?.let { environment("ERAS_TEST_DUMP", "$it/js") }
 }
 
+/**
+ * Test levels on the JVM: the same classes as jvmTest, split in two. jvmTestBasic is what every change runs (the card files
+ * read, the bundle's counts, the generated reader, the platform seam); jvmTestDeep plays whole seeded games against their
+ * reference hashes (SeededBotGameTest, LocalMatchTest). jvmTest (and `build`, what CI runs) still runs them all.
+ */
+val deepEngineTests = listOf("**/SeededBotGameTest*", "**/LocalMatchTest*")
+val jvmTestBasic by tasks.registering(Test::class) {
+    description = "The engine's basic JVM tests: card files, bundle counts, card reader, platform (not the whole games)."
+    group = "verification"
+    exclude(deepEngineTests)
+}
+val jvmTestDeep by tasks.registering(Test::class) {
+    description = "The engine's deep JVM tests: whole seeded games against their reference hashes."
+    group = "verification"
+    include(deepEngineTests)
+}
+
 // `./gradlew jvmTest -PregenerateCardReader` rewrites the generated card reader (CardModelReaderGeneratorTest)
-tasks.named<Test>("jvmTest") {
+tasks.withType<Test>().matching { it.name in setOf("jvmTest", "jvmTestBasic", "jvmTestDeep") }.configureEach {
+    if (name != "jvmTest") {
+        val jvmTest = tasks.named<Test>("jvmTest").get()
+        testClassesDirs = jvmTest.testClassesDirs
+        classpath = jvmTest.classpath
+        useJUnit()
+    }
     dependsOn(cardBundle, botResources, starterDecks)
     environment("ERAS_CARD_BUNDLE", bundlePath)
     environment("ERAS_BOT_RESOURCES", botResourcesPath)

@@ -4,10 +4,12 @@ import com.drive.drive_manager.simulator.room.CardSlot;
 import com.drive.drive_manager.simulator.room.GameRoom;
 import com.drive.drive_manager.simulator.room.PlayerState;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Tag;
 
 import static com.drive.drive_manager.simulator.engine.TestTable.*;
 import static org.assertj.core.api.Assertions.assertThat;
 
+@Tag("engine")
 class PlayabilityTest {
 
     @Test

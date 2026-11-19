@@ -1,6 +1,7 @@
 package com.drive.drive_manager.simulator.engine;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Tag;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -13,6 +14,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /** The frozen collections behave as Java's List.of, List.copyOf, Set.of, Map.of and Map.ofEntries. */
+@Tag("basic")
 class FrozenTest {
 
     @Test
