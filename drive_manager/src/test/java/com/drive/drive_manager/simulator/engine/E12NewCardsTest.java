@@ -566,6 +566,16 @@ class E12NewCardsTest extends CardBatchSupport {
     }
 
     @Test
+    void selloDeContencionIsADefinitiveEffect() {
+        onField(guest, enemy("e", 1, 2));
+        host.getHand().add(utility("sc", "Sello de Contención", 2, "W"));
+        room.setFirstTurn(true);
+        assertThat(Summons.unplayable(room, "host")).contains("sc");
+        room.setFirstTurn(false);
+        assertThat(Summons.unplayable(room, "host")).doesNotContain("sc");
+    }
+
+    @Test
     void withoutTheSelloTheEnemyActivatesItsEffect() {
         CardSlot muerte = onField(guest, creature("mc", "Muerte Caminante", 4, 4, "P", 10));
         muerte.setTapped(true);
