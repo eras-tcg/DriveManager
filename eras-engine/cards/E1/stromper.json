@@ -1,0 +1,63 @@
+{
+  "name": "stromper",
+  "effects": [
+    {
+      "id": "stromper:en-invocacion",
+      "moment": "ON_SUMMON",
+      "label": "En Invocación",
+      "text": "Puedes jugar 1 estructura Verde de tu mano o tributos reduciendo su coste en 1.",
+      "steps": [
+        {
+          "type": "Do",
+          "action": {
+            "type": "Play",
+            "cards": {
+              "zones": "hand,tributeZone",
+              "owner": "YOU",
+              "filter": {
+                "colors": [
+                  "G"
+                ],
+                "cardTypes": [
+                  "structure"
+                ]
+              },
+              "min": {
+                "type": "Fixed",
+                "value": 1
+              },
+              "max": {
+                "type": "Fixed",
+                "value": 1
+              },
+              "self": "ANY",
+              "mode": "CHOOSE"
+            },
+            "reduce": {
+              "type": "Fixed",
+              "value": 1
+            },
+            "required": true
+          }
+        }
+      ],
+      "sourceZone": "field",
+      "limit": "NONE"
+    }
+  ],
+  "inheritedContinuous": [
+    {
+      "label": "Todos Los Turnos",
+      "text": "Heredado de Stromper: esta carta no puede ser objetivo de cartas enemigas nivel 2 o menor.",
+      "keywords": [
+        "Inmune 2"
+      ],
+      "zone": "field"
+    }
+  ],
+  "requirement": {
+    "summoner": {
+      "level": 3
+    }
+  }
+}

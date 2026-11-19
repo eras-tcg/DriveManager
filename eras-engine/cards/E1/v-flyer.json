@@ -1,0 +1,93 @@
+{
+  "name": "v-flyer",
+  "effects": [
+    {
+      "id": "v-flyer:al-atacar",
+      "moment": "ON_ATTACK",
+      "label": "Al Atacar",
+      "text": "Puedes destruir un aliado para que esta carta gane Letalidad 1 hasta el final del ataque.",
+      "steps": [
+        {
+          "type": "IfPossible"
+        },
+        {
+          "type": "Do",
+          "action": {
+            "type": "Destroy",
+            "cards": {
+              "zones": "allies",
+              "owner": "YOU",
+              "filter": {
+                "cardType": "creature"
+              },
+              "min": {
+                "type": "Fixed",
+                "value": 1
+              },
+              "max": {
+                "type": "Fixed",
+                "value": 1
+              },
+              "self": "EXCLUDE",
+              "mode": "CHOOSE"
+            },
+            "required": true
+          }
+        },
+        {
+          "type": "SubjectIsThisCard"
+        },
+        {
+          "type": "Do",
+          "action": {
+            "type": "Modify",
+            "cards": {
+              "zones": "subjectOrSelf",
+              "owner": "YOU",
+              "filter": {},
+              "min": {
+                "type": "Fixed"
+              },
+              "max": {
+                "type": "Fixed",
+                "value": 2147483647
+              },
+              "self": "ANY",
+              "mode": "ALL"
+            },
+            "keyword": "Letalidad 1",
+            "until": "ATTACK"
+          }
+        }
+      ],
+      "sourceZone": "field",
+      "limit": "NONE"
+    }
+  ],
+  "reactions": [
+    {
+      "type": "Replacement",
+      "id": "v-flyer:turno-oponente",
+      "label": "Turno Oponente",
+      "text": "Una vez por turno: cuando esta carta fuera a ser destruida: en su lugar, puedes descartar 1 de sus materiales.",
+      "destroyOnly": true,
+      "limit": "ONCE_PER_TURN",
+      "cost": "DISCARD_ONE_MATERIAL",
+      "resourceFilter": {},
+      "opponentTurn": true
+    }
+  ],
+  "requirement": {
+    "summoner": {
+      "level": 2
+    },
+    "materials": {
+      "count": 1,
+      "level": 2,
+      "zones": [
+        "hand",
+        "discardPile"
+      ]
+    }
+  }
+}
