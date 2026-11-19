@@ -77,15 +77,20 @@ class MoveHandler : ActionHandler<Move> {
             picked.add(card)
         }
         if (action.cards!!.self() == Selector.Self.REQUIRE && !picked.isEmpty() && picked.none { ctx.isSelf(it) }) return "Debes incluir esta carta"
+        if (action.sameName && picked.map { it.cardName?.lowercase() }.toSet().size > 1) return "Las cartas deben ser copias de una misma carta"
         move(ctx, action, picked)
         if (Move.DECK_TOP_KEPT == action.rest) ctx.lookedRestTo(Move.DECK_TOP, null)
         else if (action.rest != null) ctx.lookedRestTo(action.rest, answer.order)
         return null
     }
 
-    /** Never a card already where it is going. */
+    /** Never a card already where it is going; "N copias de una criatura": only cards with at least N copies among them. */
     private fun candidates(ctx: EffectContext, action: Move): List<CardSlot> {
-        return Selection.candidates(ctx, action.cards!!, false).filter { !ctx.alreadyIn(it, action.to) && !ctx.unaffected(it) }
+        val found = Selection.candidates(ctx, action.cards!!, false).filter { !ctx.alreadyIn(it, action.to) && !ctx.unaffected(it) }
+        if (!action.sameName) return found
+        val copies = max(1, ctx.amount(action.cards.min))
+        val byName = found.groupBy { it.cardName?.lowercase() }
+        return found.filter { (byName[it.cardName?.lowercase()]?.size ?: 0) >= copies }
     }
 
     private fun move(ctx: EffectContext, action: Move, cards: List<CardSlot>) {

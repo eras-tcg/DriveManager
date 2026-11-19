@@ -195,6 +195,19 @@ object Chain {
                 result.add(e)
             }
         }
+        // "si el enemigo elegido es …" (Watch): the rest of the effect of each card that follows the one leaving the field
+        val leaving = event.cardInstanceId
+        if (leaving != null && Zone.FIELD.`is`(event.fromZone) && !Zone.FIELD.`is`(event.toZone)) {
+            for (w in Watches.leaving(room, leaving)) {
+                val script = CardEffects.byId(w.script)
+                val source = findAnywhere(room, w.controllerId, w.sourceId)
+                if (script == null || source == null || script.moment != EffectScript.Moment.WATCHED) continue
+                if (script.condition != null && !script.condition.test(room, event, source, w.controllerId)) continue
+                val e = pending(room, script, w.controllerId, source, event.seq)
+                e.subjectId = leaving
+                result.add(e)
+            }
+        }
         // Passive effects with a trigger condition, from the cards in play (or in the hand for "En Mano")
         for (p in room.players.values) {
             for (zone in frozenListOf("field", "hand", "tributeZone", "discardPile")) {

@@ -3,6 +3,7 @@ package com.drive.drive_manager.simulator.mission;
 import com.drive.drive_manager.service.CollectionService;
 import com.drive.drive_manager.simulator.room.CardSlot;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Tag;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -13,6 +14,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 /** A deck's copies shine as their owner has them in the collection, the finest first. */
+@Tag("server")
 class DeckFinishesTest {
 
     @Test

@@ -50,7 +50,9 @@ enum class PromptPurpose {
      */
     FORMATION_ENTRY,
     /** "en su lugar, puedes colocar 1 aliado al tope de tus vidas bocabajo" (a link effect): the ally placed instead of the removal. */
-    REPLACE_LIFE;
+    REPLACE_LIFE,
+    /** "en su lugar, puedes agotar 1 de tus estructuras": the structure exhausted instead of the removal. */
+    REPLACE_TAP;
 
     /** The purpose string the prompt carries. */
     fun id(): String = name

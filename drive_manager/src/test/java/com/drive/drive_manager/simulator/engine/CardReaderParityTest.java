@@ -4,6 +4,7 @@ import com.drive.drive_manager.simulator.engine.cards.CardBundle;
 import com.drive.drive_manager.simulator.engine.cards.CardReader;
 import com.drive.drive_manager.simulator.json.SimulatorJson;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Tag;
 import tools.jackson.databind.json.JsonMapper;
 
 import java.lang.reflect.RecordComponent;
@@ -23,6 +24,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
  * the same object graph down to the classes of its lists and sets. It refuses what Jackson refused, and the card bundle the
  * engine's jar carries holds exactly the card files of the class path.
  */
+@Tag("basic")
 class CardReaderParityTest {
 
     private static final JsonMapper ROOM_JSON = SimulatorJson.configure(JsonMapper.builder()).build();
@@ -31,8 +33,8 @@ class CardReaderParityTest {
     void theBundleHoldsTheCardFilesOfTheClassPath() {
         List<CardBundle.File> bundle = CardBundle.files(CardFiles.bundle());
         List<Map.Entry<String, String>> files = JacksonCardFiles.files();
-        assertThat(bundle).hasSize(512);
-        assertThat(files).hasSize(512);
+        assertThat(bundle).hasSize(536);
+        assertThat(files).hasSize(536);
         for (int i = 0; i < files.size(); i++) {
             assertThat(files.get(i).getKey()).endsWith("/cards/" + bundle.get(i).getPath());
             assertThat(bundle.get(i).getText()).as(bundle.get(i).getPath()).isEqualTo(files.get(i).getValue());
@@ -56,14 +58,14 @@ class CardReaderParityTest {
             sameGraph(jackson, common, where);
             compared++;
         }
-        assertThat(compared).isEqualTo(512);
+        assertThat(compared).isEqualTo(536);
     }
 
     @Test
     void theServerLoadsWhatJacksonLoaded() {
         List<CardDefinition> common = CardFiles.load();
         List<CardDefinition> jackson = JacksonCardFiles.load();
-        assertThat(common).hasSize(512).isEqualTo(jackson);
+        assertThat(common).hasSize(536).isEqualTo(jackson);
         assertThat(new ServerCardSource().cards()).isEqualTo(jackson);
     }
 

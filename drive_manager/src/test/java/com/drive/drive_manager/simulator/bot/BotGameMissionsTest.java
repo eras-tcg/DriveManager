@@ -12,6 +12,7 @@ import com.drive.drive_manager.simulator.room.RoomOptions;
 import com.drive.drive_manager.simulator.room.RoomService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Tag;
 
 import java.util.Map;
 
@@ -30,6 +31,7 @@ import static org.mockito.Mockito.verify;
  * player does (through RoomService's MissionHooks.count, after each action, the bot's moves included), never for the
  * bot; the Sala de pruebas, even with its bots playing, counts nothing.
  */
+@Tag("deep")
 class BotGameMissionsTest {
 
     private final RoomService service = new RoomService();

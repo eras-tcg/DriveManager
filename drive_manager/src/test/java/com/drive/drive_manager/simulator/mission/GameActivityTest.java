@@ -4,6 +4,7 @@ import com.drive.drive_manager.service.ActivityLogService;
 import com.drive.drive_manager.simulator.room.GameRoom;
 import com.drive.drive_manager.simulator.room.RoomService;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Tag;
 
 import java.util.List;
 import java.util.Map;
@@ -11,6 +12,7 @@ import java.util.Map;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /** The games a room's action puts in the activity log. */
+@Tag("server")
 class GameActivityTest {
 
     private static GameRoom room(GameRoom.RoomStatus status, boolean editor) {

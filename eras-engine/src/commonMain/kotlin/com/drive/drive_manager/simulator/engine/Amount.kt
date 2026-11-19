@@ -50,6 +50,14 @@ sealed interface Amount {
         }
     }
 
+    /** How many cards your hand lacks to have that number ("roba cartas hasta tener 5 cartas en tu mano"). */
+    @JvmRecord
+    data class HandUnder(val upTo: Int) : Amount {
+        override fun of(room: GameRoom, controller: String?): Int {
+            return max(0, upTo - room.getPlayer(controller)!!.hand.size)
+        }
+    }
+
     /** "en el nivel de dicho aliado": the card of the triggering event, read by EngineContext. */
     data object TriggerSourceLevel : Amount {
         override fun of(room: GameRoom, controller: String?): Int {

@@ -15,6 +15,7 @@ import com.drive.drive_manager.simulator.replay.MatchReplay;
 import com.drive.drive_manager.simulator.replay.MatchReplayTest;
 import org.bson.Document;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Tag;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.lang.reflect.Field;
@@ -29,6 +30,7 @@ import java.util.stream.Collectors;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /** What the 2026-11-05 audit fixed, kept fixed. */
+@Tag("server")
 class AuditFixesTest {
 
     private final RoomService service = new RoomService();

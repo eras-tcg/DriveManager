@@ -23,6 +23,7 @@ import com.drive.drive_manager.simulator.room.RoomService;
 import com.eras.engine.local.LocalMatchRoom;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Tag;
 import tools.jackson.core.type.TypeReference;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.node.ObjectNode;
@@ -55,6 +56,7 @@ import static org.mockito.Mockito.when;
  * progression included); a tampered result or action list, an illegal deck or one not owned, and a game too long to
  * check are refused, and credit nothing; a player over the day's replays is told to send it later.
  */
+@Tag("deep")
 class OfflineGamesTest {
 
     private static final String ALICE = "alice";

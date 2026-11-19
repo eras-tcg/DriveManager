@@ -5,6 +5,7 @@ import com.drive.drive_manager.simulator.room.GameRoom;
 import com.drive.drive_manager.simulator.room.PlayerState;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Tag;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -13,6 +14,8 @@ import static com.drive.drive_manager.simulator.engine.TestTable.*;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /** E1.1, third batch: the designer's rulings of 2026-10-29 and the new mechanics (immunity, durations, reactions). */
+@Tag("cards")
+@Tag("e11")
 class E11ThirdBatchTest {
 
     private GameRoom room;

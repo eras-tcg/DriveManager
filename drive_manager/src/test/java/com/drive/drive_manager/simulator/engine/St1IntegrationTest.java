@@ -7,6 +7,7 @@ import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Tag;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.io.InputStream;
@@ -16,6 +17,8 @@ import static com.drive.drive_manager.simulator.engine.TestTable.*;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /** ST1 (Entes) with its real metadata: Materialización, materials as costs, strength reduction and its triggers. */
+@Tag("cards")
+@Tag("st5")
 class St1IntegrationTest {
 
     private static final double FRONT = 20.0;

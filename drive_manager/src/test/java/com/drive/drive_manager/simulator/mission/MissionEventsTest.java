@@ -8,12 +8,14 @@ import com.drive.drive_manager.simulator.room.GameRoom;
 import com.drive.drive_manager.simulator.room.PlayerState;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Tag;
 
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
 /** What an online game's actions count for the players' missions (a game against the bot too; never the Sala de pruebas). */
+@Tag("server")
 class MissionEventsTest {
 
     private GameRoom room;

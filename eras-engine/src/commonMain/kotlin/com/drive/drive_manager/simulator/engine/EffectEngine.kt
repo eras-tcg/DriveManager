@@ -389,7 +389,7 @@ object EffectEngine {
                     if (card.faceDown || !c.holds(room, card, p.userId!!)) continue
                     strength += c.strength + (if (c.bonus == null) 0 else c.bonus.of(room, p.userId))
                     level += if (c.levelBonus == null) 0 else c.levelBonus.of(room, p.userId)
-                    keywords.addAll(c.keywords!!)
+                    keywords.addAll(c.keywordsNow(room, p.userId))
                 }
                 // "Todos tus aliados … ganan …" on this side of the table
                 for (g in room.fieldGrants) {
@@ -414,7 +414,7 @@ object EffectEngine {
                     for (enemy in opponent.field) {
                         if (!c.targets.matches(enemy) || !inFrontLine(enemy)) continue
                         val keywords = ArrayList<String>(enemy.continuousKeywords!!)
-                        keywords.addAll(c.keywords!!)
+                        keywords.addAll(c.keywordsNow(room, p.userId))
                         enemy.continuousKeywords = keywords
                         enemy.continuousStrength = enemy.continuousStrength + c.strength
                     }

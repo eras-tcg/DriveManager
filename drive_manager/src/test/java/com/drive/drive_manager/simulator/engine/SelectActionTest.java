@@ -10,6 +10,7 @@ import com.drive.drive_manager.simulator.engine.effects.runtime.ActionHandler;
 import com.drive.drive_manager.simulator.engine.effects.runtime.Actions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Tag;
 
 import java.util.Arrays;
 import java.util.List;
@@ -18,6 +19,7 @@ import static com.drive.drive_manager.simulator.engine.TestTable.*;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /** The core of the new effect language: {@link Action.Select}, the memory, and old steps reading what actions saved. */
+@Tag("engine")
 class SelectActionTest {
 
     private GameRoom room;

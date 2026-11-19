@@ -2,6 +2,7 @@ package com.drive.drive_manager.simulator.engine;
 
 import com.drive.drive_manager.simulator.room.CardSlot;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Tag;
 
 import java.util.List;
 
@@ -9,6 +10,8 @@ import static com.drive.drive_manager.simulator.engine.TestTable.*;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /** E1 Rojo and the 21st cards of Azul, Verde and Violeta (licuado del 2026-11-17), from the printed text. */
+@Tag("cards")
+@Tag("e1")
 class E1RedCardsTest extends CardBatchSupport {
 
     private static CardSlot creature(String id, String name, int cost, int level, String color, int strength) {

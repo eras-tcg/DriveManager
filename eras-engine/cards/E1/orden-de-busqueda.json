@@ -1,0 +1,107 @@
+{
+  "name" : "orden de busqueda",
+  "effects" : [ {
+    "id" : "orden-de-busqueda:en-juego",
+    "moment" : "ON_PLAY",
+    "mandatory" : true,
+    "label" : "En Juego",
+    "text" : "(1) Elige 1 enemigo; coloca esta carta en tu retaguardia.",
+    "cost" : [ {
+      "type" : "Do",
+      "action" : {
+        "type" : "Select",
+        "selector" : {
+          "zones" : "frontLine",
+          "owner" : "OPPONENT",
+          "filter" : {
+            "cardType" : "creature"
+          },
+          "min" : {
+            "type" : "Fixed",
+            "value" : 1
+          },
+          "max" : {
+            "type" : "Fixed",
+            "value" : 1
+          },
+          "self" : "ANY",
+          "mode" : "CHOOSE"
+        },
+        "target" : true
+      }
+    } ],
+    "steps" : [ {
+      "type" : "KeepOnField"
+    }, {
+      "type" : "Do",
+      "action" : {
+        "type" : "Watch",
+        "cards" : {
+          "zones" : "saved:targets",
+          "owner" : "YOU",
+          "filter" : { },
+          "min" : {
+            "type" : "Fixed"
+          },
+          "max" : {
+            "type" : "Fixed",
+            "value" : 2147483647
+          },
+          "self" : "ANY",
+          "mode" : "ALL"
+        },
+        "effect" : "orden-de-busqueda:todos-los-turnos"
+      }
+    } ],
+    "sourceZone" : "field",
+    "limit" : "ONCE_PER_TURN_BETWEEN_COPIES"
+  }, {
+    "id" : "orden-de-busqueda:todos-los-turnos",
+    "moment" : "WATCHED",
+    "mandatory" : true,
+    "label" : "Todos Los Turnos",
+    "text" : "Si el enemigo elegido es removido: envía esta carta a tu descarte. Si fue removido por tus cartas: gana 2 gemas.",
+    "steps" : [ {
+      "type" : "Do",
+      "action" : {
+        "type" : "Move",
+        "cards" : {
+          "zones" : "field",
+          "owner" : "YOU",
+          "filter" : { },
+          "min" : {
+            "type" : "Fixed",
+            "value" : 1
+          },
+          "max" : {
+            "type" : "Fixed",
+            "value" : 1
+          },
+          "self" : "ANY",
+          "mode" : "SELF"
+        },
+        "to" : "discardPile"
+      }
+    }, {
+      "type" : "IfCondition",
+      "condition" : {
+        "type" : "Happened",
+        "actor" : "YOU",
+        "owner" : "ANY"
+      },
+      "covers" : 1,
+      "ofTrigger" : true
+    }, {
+      "type" : "Do",
+      "action" : {
+        "type" : "Gems",
+        "count" : {
+          "type" : "Fixed",
+          "value" : 2
+        }
+      }
+    } ],
+    "sourceZone" : "field",
+    "limit" : "NONE"
+  } ]
+}

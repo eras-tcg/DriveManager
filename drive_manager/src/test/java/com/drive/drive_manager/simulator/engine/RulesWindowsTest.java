@@ -5,6 +5,7 @@ import com.drive.drive_manager.simulator.room.GameRoom;
 import com.drive.drive_manager.simulator.room.PlayerState;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Tag;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -15,6 +16,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * Ritual from the hand, moving up after a special summon, Furia, Reforzar, the "ventaja del iniciador", slow
  * effects (Arañador), the order of simultaneous triggers and responding to a chain.
  */
+@Tag("engine")
 class RulesWindowsTest {
 
     private static final double FRONT = 20.0;
@@ -407,6 +409,19 @@ class RulesWindowsTest {
         assertThat(guest.getLifeStack()).hasSize(3).last().isEqualTo(life);
         assertThat(life.isFaceDown()).isFalse();
         assertThat(room.getTimeline()).extracting(GameEvent::getType).containsSubsequence(GameEvent.LIFE_DAMAGE, GameEvent.SEND, GameEvent.ATTACK_ENDED);
+    }
+
+    @Test
+    void golpeRapidoKeepsARevealedCreatureFromReforzar() {
+        CardSlot life = guest.getLifeStack().get(0);
+        life.setStrength(9);
+        CardSlot a = field(host, creature("a", "A", 1, 5), FRONT);
+        a.getKeywords().add("Golpe rápido");
+        CombatRules.attackByPlayer(room, "host", "a", null);
+
+        assertThat(room.getPrompt()).isNull();
+        assertThat(guest.getHand()).contains(life);
+        assertThat(guest.getLifeStack()).hasSize(2);
     }
 
     @Test

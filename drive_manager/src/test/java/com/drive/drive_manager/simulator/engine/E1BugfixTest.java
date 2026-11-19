@@ -5,6 +5,7 @@ import com.drive.drive_manager.simulator.room.GameRoom;
 import com.drive.drive_manager.simulator.room.PlayerState;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Tag;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -13,6 +14,8 @@ import static com.drive.drive_manager.simulator.engine.TestTable.*;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /** Fixes reported while playing E1 (2026-10-30): timing of costs, blocks, Asalto, Enfrentar and several cards. */
+@Tag("cards")
+@Tag("e1")
 class E1BugfixTest {
 
     private GameRoom room;

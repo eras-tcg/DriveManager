@@ -180,7 +180,7 @@ sealed interface EffectStep {
      * ("Luego, si enviaste 10": `LastCount`).
      */
     @JvmRecord
-    data class IfCondition(val condition: Condition?, val covers: Int) : EffectStep
+    data class IfCondition(val condition: Condition?, val covers: Int, val ofTrigger: Boolean = false) : EffectStep
 
     /**
      * "todos [tus otros] aliados [filtro] ganan [habilidad] hasta el final del turno [oponente]" (`until`: "turn" or

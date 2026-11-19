@@ -34,7 +34,8 @@ class SetTappedHandler : ActionHandler<SetTapped> {
         val min = min(ctx.amount(selector.min), max)
         val verb = if (action.tapped) "Agota " else "Reactiva "
         val filter = selector.filter().describe()
-        ctx.ask(verb + (if (min < max) "hasta " else "") + max + (if (max == 1) " carta" else " cartas") + (if (filter.all { JavaText.isWhitespace(it) }) "" else " $filter") + ".",
+        val sum = if (action.maxCostSum == null) "" else " que en coste sumen hasta " + action.maxCostSum
+        ctx.ask(verb + (if (min < max) "hasta " else "") + max + (if (max == 1) " carta" else " cartas") + (if (filter.all { JavaText.isWhitespace(it) }) "" else " $filter") + sum + ".",
                 if (action.tapped) "Agotar" else "Reactivar", Selection.pool(ctx, selector), valid, min, max)
         return true
     }
@@ -46,6 +47,7 @@ class SetTappedHandler : ActionHandler<SetTapped> {
             val card = valid.firstOrNull { it.instanceId == id } ?: return "Esa carta ya no se puede " + (if (action.tapped) "agotar" else "reactivar")
             picked.add(card)
         }
+        if (action.maxCostSum != null && picked.sumOf { it.cost ?: 0 } > action.maxCostSum) return "Las cartas elegidas deben sumar " + action.maxCostSum + " o menos en coste"
         apply(ctx, action, picked)
         return null
     }
@@ -53,6 +55,7 @@ class SetTappedHandler : ActionHandler<SetTapped> {
     private fun candidates(ctx: EffectContext, action: SetTapped): List<CardSlot> {
         return Selection.candidates(ctx, action.cards!!, false)
                 .filter { ctx.onField(it) && !ctx.unaffected(it) && (if (action.tapped) ctx.canTap(it) else ctx.canUntap(it)) }
+                .filter { action.maxCostSum == null || (it.cost ?: 0) <= action.maxCostSum }
     }
 
     private fun apply(ctx: EffectContext, action: SetTapped, cards: List<CardSlot>) {

@@ -10,6 +10,7 @@ import com.drive.drive_manager.simulator.room.RoomOptions;
 import com.drive.drive_manager.simulator.room.RoomService;
 import com.drive.drive_manager.simulator.room.StateMask;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Tag;
 
 import java.util.List;
 import java.util.Map;
@@ -22,6 +23,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * without the bot getting stuck on a choice; the stronger bots beat the weaker ones. Also the room against the
  * bot: its owner plays, the bot answers by itself. Long runs that keep their results are the arena's ({@link BotArenaRun}).
  */
+@Tag("deep")
 class BotPlayTest {
 
     /** Games of each pair of decks (-Dbot.games to play more). */

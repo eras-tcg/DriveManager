@@ -5,6 +5,7 @@ import com.drive.drive_manager.simulator.room.GameRoom;
 import com.drive.drive_manager.simulator.room.PlayerState;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Tag;
 
 import java.util.List;
 
@@ -15,6 +16,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * "Opcionales en Auto": cost reducers are asked only while the cost can still go down, and the "En Juego" of a card just
  * played goes into the chain without the confirmation when nothing else triggered. On keeps asking both.
  */
+@Tag("engine")
 class OptionalAutoTest {
 
     private GameRoom room;

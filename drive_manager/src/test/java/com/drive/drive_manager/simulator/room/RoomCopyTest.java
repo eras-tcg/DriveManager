@@ -9,6 +9,7 @@ import com.drive.drive_manager.simulator.engine.GameEvent;
 import com.drive.drive_manager.simulator.engine.PendingEffect;
 import com.drive.drive_manager.simulator.engine.Prompt;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Tag;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
@@ -31,6 +32,7 @@ import static org.assertj.core.api.Assertions.fail;
  * the reflective copy it replaced, after every action of whole bot games, and that no field of the copied classes is
  * left out.
  */
+@Tag("server")
 class RoomCopyTest {
 
     /** The fields RoomCopy copies, by class. A field added to one of these classes goes into RoomCopy and here. */

@@ -241,6 +241,10 @@ object Removals {
     @Suppress("UNCHECKED_CAST")
     private fun decided(room: GameRoom): MutableSet<String?> = room.removalDecided as MutableSet<String?>
 
+    /** The active structures of the player that can be exhausted. */
+    private fun tappableStructures(owner: PlayerState): List<CardSlot> =
+        owner.field.filter { c -> "structure" == c.cardType && !c.tapped && !EffectEngine.keywords(c).contains(EffectEngine.CANNOT_TAP) }
+
     @JvmStatic
     fun replacementOptions(room: GameRoom, card: CardSlot, owner: PlayerState, destroy: Boolean, byId: String?, byEffect: Boolean): List<ReplacementOption> {
         val options: MutableList<ReplacementOption> = ArrayList()
@@ -248,6 +252,7 @@ object Removals {
         for (r in CardEffects.replacementsOf(card)) {
             if (r.destroyOnly && !destroy) continue
             if (r.byOpponentOnly && !byOpponent) continue
+            if (r.withMaterials && card.materials!!.isEmpty()) continue
             if (r.limit == Limit.DEFINITIVE && room.firstTurn) continue
             if (r.limit != Limit.NONE && room.usedThisTurn.contains(replacementKey(owner, card, r))) continue
             val payable = when (r.cost!!) {
@@ -262,6 +267,7 @@ object Removals {
                 CardEffects.ReplacementCost.RESOURCE_TO_BACK_WITH_OTHERS -> false
                 CardEffects.ReplacementCost.RESOURCE_TRIBUTED_ANOTHER_TO_HAND -> card.resources!!.size >= 2
                 CardEffects.ReplacementCost.ALLY_TO_LIFE_FACE_DOWN -> owner.field.any { c -> c !== card && "creature" == c.cardType }
+                CardEffects.ReplacementCost.TAP_STRUCTURE -> tappableStructures(owner).isNotEmpty()
             }
             if (payable) options.add(ReplacementOption(r.id + "@" + card.instanceId, card, r, r.label, r.text))
         }
@@ -434,6 +440,18 @@ object Removals {
             if (card != null) destroyIfStillNoStrength(room, pending, player, card)
             return null
         }
+        if (PromptPurpose.REPLACE_TAP.`is`(prompt.purpose)) {
+            // "en su lugar, puedes agotar 1 de tus estructuras": that structure is exhausted, the card stays
+            val structure = (if (picks.isEmpty()) null else find(tappableStructures(player), picks[0])) ?: return "Elige 1 de tus estructuras activas"
+            room.prompt = null
+            room.pendingRemovals.removeAt(0)
+            structure.tapped = true
+            record(room, GameEvent.TAP, player.userId, structure, null, null, null, frozenMapOf<String, Any?>("ownerId", player.userId),
+                player.username + " agota " + name(structure) + ": " + (if (card == null) "la carta" else name(card))
+                        + " no es " + (if (pending.destroy) "destruida" else "removida"))
+            if (card != null) destroyIfStillNoStrength(room, pending, player, card)
+            return null
+        }
         if (PromptPurpose.REPLACE_HAND.`is`(prompt.purpose)) {
             // Caballero Leal: the hand card tributed instead
             val paid = (if (picks.isEmpty()) null else find(player.hand, picks[0])) ?: return "Elige 1 carta de tu mano"
@@ -553,6 +571,15 @@ object Removals {
                     "A tus vidas", allies, allies)
                 room.prompt!!.min = 1
                 room.prompt!!.subjectId = card.instanceId
+                return null
+            }
+            CardEffects.ReplacementCost.TAP_STRUCTURE -> {
+                // The structure is chosen next; the removal stays pending until then
+                val structures = tappableStructures(player)
+                rulesPrompt(room, player.userId, PromptPurpose.REPLACE_TAP.id(), name(card) + " · " + r.label,
+                    "Agota 1 de tus estructuras: " + name(card) + " no es " + (if (pending.destroy) "destruida." else "removida."),
+                    "Agotar", structures, structures)
+                room.prompt!!.min = 1
                 return null
             }
             CardEffects.ReplacementCost.TRIBUTE_ONE_FROM_HAND -> {

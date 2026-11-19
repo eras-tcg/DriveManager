@@ -1,6 +1,7 @@
 package com.drive.drive_manager.simulator.engine;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Tag;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -10,6 +11,7 @@ import java.util.stream.DoubleStream;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /** JavaMath gives exactly what Math.round(double), DoubleStream.sum() and DoubleStream.average() give. */
+@Tag("basic")
 class JavaMathTest {
 
     @Test

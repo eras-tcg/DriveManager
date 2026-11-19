@@ -64,6 +64,15 @@ sealed interface Action {
     @JvmRecord
     data class AtEndOfTurn(val effect: String?) : Action
 
+    /**
+     * "el enemigo elegido": this card follows the cards `cards` picks (usually `saved:targets`), and `effect` (moment WATCHED) is the rest
+     * of its text, triggered when one of them leaves the field, for that card ("si es destruido este turno por tus cartas puedes invocar…",
+     * "si el enemigo elegido es removido: envía esta carta a tu descarte"). `untilTurnEnd`: it is followed until the end of the turn
+     * ("este turno"); otherwise while this card stays on the field.
+     */
+    @JvmRecord
+    data class Watch(val cards: Selector?, val effect: String?, val untilTurnEnd: Boolean) : Action
+
     /** "roba N cartas"; `bothPlayers`: "ambos jugadores roban". */
     @JvmRecord
     data class Draw(val count: Amount?, val bothPlayers: Boolean) : Action
@@ -80,9 +89,13 @@ sealed interface Action {
     @JvmRecord
     data class Look(val count: Amount?) : Action
 
-    /** "agota" (`tapped`) or "reactiva". */
+    /**
+     * "agota" (`tapped`) or "reactiva".
+     *
+     * @param maxCostSum "que en coste sumen hasta N": the cards picked add up to N or less in cost; null: no limit
+     */
     @JvmRecord
-    data class SetTapped(val cards: Selector?, val tapped: Boolean, val required: Boolean) : Action {
+    data class SetTapped(val cards: Selector?, val tapped: Boolean, val required: Boolean, val maxCostSum: Int? = null) : Action {
         override fun needsCards(): Boolean {
             return required
         }
@@ -126,11 +139,12 @@ sealed interface Action {
      * @param exhausted "agotada": entering the field that way
      * @param faceDown  "bocabajo"; cards going to the deck always are
      * @param rest      looked cards: where those not picked go, in the order the player gives, in the same choice; null: they stay
+     * @param sameName  "N copias de una criatura": the cards picked all have the same name (only cards with enough copies can be picked)
      */
     @JvmRecord
     data class Move(
         val cards: Selector?, val to: String?, val random: Boolean, val label: String?, val required: Boolean, val exhausted: Boolean,
-        val faceDown: Boolean, val rest: String?,
+        val faceDown: Boolean, val rest: String?, val sameName: Boolean = false,
     ) : Action {
         constructor(cards: Selector?, to: String?, random: Boolean, label: String?, required: Boolean) :
                 this(cards, to, random, label, required, false, false, null)

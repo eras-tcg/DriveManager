@@ -10,6 +10,7 @@ import com.drive.drive_manager.simulator.room.GameStateUpdate;
 import com.drive.drive_manager.simulator.room.RoomOptions;
 import com.drive.drive_manager.simulator.room.RoomService;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Tag;
 
 import java.util.List;
 import java.util.Map;
@@ -19,6 +20,7 @@ import java.util.stream.Collectors;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /** Friendly and ranked rooms: what the owner may still choose in a ranked one, online and against the bot. */
+@Tag("server")
 class RankedRoomTest {
 
     private final RoomService service = new RoomService();

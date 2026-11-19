@@ -1,12 +1,14 @@
 package com.drive.drive_manager.simulator.engine;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Tag;
 
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
 /** A special summon or a Ritual can always be given up with nothing chosen ("No invocar"), even on a step that needs materials. */
+@Tag("engine")
 class GiveUpSummonTest extends CardBatchSupport {
 
     private Prompt asking(String purpose, int min) {
