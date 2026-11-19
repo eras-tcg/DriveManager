@@ -16,7 +16,7 @@ internal object CardModelReader {
         "Amount" to listOf("EnemiesInFrontLine", "Fixed", "Gems", "HandOver", "HandUnder", "IfThen", "InZone", "InZones", "LastCount", "LevelsOnField", "Lives", "LivesBehind", "OnBothFields", "OnField", "OpponentLevels", "Scaled", "SignedGems", "SourceStrength", "SubjectLevel", "Times", "TriggerSourceLevel", "UsedToSummon"),
         "CardEffects.Replacement" to listOf("Replacement"),
         "Condition" to listOf("All", "AllyDealtDirectDamage", "Always", "Any", "ByEffect", "Compare", "Destroyed", "EntersFrontLine", "GameIs", "Happened", "Immediately", "Not", "NothingElsePlayedThisTurn", "Summoned", "SummonedWithoutMaterial", "Targeted", "ThisClashes", "ThisIs", "ThisMatches", "ThisTributed", "YouReducedStrength"),
-        "EffectStep" to listOf("ActivateSubjectSummonEffect", "ActivateTributedSummonEffect", "AddResourceToHigherAlly", "AlliesGain", "AllySpecialSummonsSameLevel", "AttachLowerFromTributes", "AttachSelfAsResourceToAlly", "AttachSubjectToHigherAlly", "AttachSubjectToSummoned", "BounceChosen", "ChangeClass", "ChooseEnemiesLevelSum", "ChooseOpponentTribute", "ChooseWeakestEnemy", "DeclareBlockSelf", "DestroyFaceUpLife", "DestroyTopLife", "Do", "EachPlayerDiscards", "EachPlayerKeepsOneInFrontLine", "EachPlayerLowersMarker", "EndYourTurn", "ExtraCombatHitThenEndTurn", "ExtraHit", "GainGemsPerOwnSacrificed", "GrantEffect", "GroupUp", "HandsToBottomDrawOpponentLives", "IfChosenGone", "IfCondition", "IfDone", "IfNotDone", "IfPossible", "IfSaved", "IfTributed", "KeepOnField", "LivesFaceDown", "MaterialOfExhaustedAllyToBack", "MaterializeSelfOnTriggerAlly", "MayDo", "NoUntapChosen", "OpponentGainsGemsAsCounter", "OpponentMovesOneToFront", "PickAllyUpToSacrificedLevel", "PickAllyWithHigherAlly", "PickAllyWithMaterials", "PlaceChosenTributeAndSelf", "PlaceFromHandUntilTurnEnd", "ReduceOpponentLivesBy", "ReduceRepeatedly", "ReturnAllyOfSummonedLevel", "ReturnSubjectAtAttackEnd", "RevealFromHand", "RevealOpponentHandSendOneToBottom", "SacrificeAlly", "SkipBlockStep", "SpecialSelfDeclaredSummoner", "SubjectFromTrigger", "SubjectIsThisCard", "SummonFreeLevelSum", "SummonLikeSubject", "SwapInFormation", "TakeFromLookedDistinctLevels", "TakeFromLookedEachRestToBottom", "TakeFromLookedLikeSubject", "TributeAlliesLevelSum", "TributeAllyMaterial", "TributeAllyMaterialWhere", "TributeAllyResources", "TributesToDeckBottomForKeyword"),
+        "EffectStep" to listOf("ActivateSubjectSummonEffect", "ActivateTributedSummonEffect", "AddResourceToHigherAlly", "AlliesGain", "AllySpecialSummonsSameLevel", "AttachLowerFromTributes", "AttachSelfAsResourceToAlly", "AttachSubjectToHigherAlly", "AttachSubjectToSummoned", "BounceChosen", "ChangeClass", "ChooseEnemiesLevelSum", "ChooseOpponentTribute", "ChooseWeakestEnemy", "DeclareBlockSelf", "DestroyFaceUpLife", "DestroyTopLife", "Do", "EachPlayerDiscards", "EachPlayerKeepsOneInFrontLine", "EachPlayerLowersMarker", "EndYourTurn", "ExtraCombatHitThenEndTurn", "ExtraHit", "GainGemsPerOwnSacrificed", "GrantEffect", "GroupUp", "HandsToBottomDrawOpponentLives", "IfChosenGone", "IfCondition", "IfDone", "IfNotDone", "IfPossible", "IfSaved", "IfTributed", "KeepOnField", "LivesFaceDown", "MaterialOfExhaustedAllyToBack", "MaterializeSelfOnTriggerAlly", "MayDo", "NoUntapChosen", "OpponentGainsGemsAsCounter", "OpponentMaySummon", "OpponentMovesOneToFront", "PickAllyUpToSacrificedLevel", "PickAllyWithHigherAlly", "PickAllyWithMaterials", "PlaceChosenTributeAndSelf", "PlaceFromHandUntilTurnEnd", "ReduceOpponentLivesBy", "ReduceRepeatedly", "ReturnAllyOfSummonedLevel", "ReturnSubjectAtAttackEnd", "RevealFromHand", "RevealOpponentHandSendOneToBottom", "SacrificeAlly", "SkipBlockStep", "SpecialSelfDeclaredSummoner", "SubjectFromTrigger", "SubjectIsThisCard", "SummonFreeLevelSum", "SummonLikeSubject", "SwapInFormation", "TakeFromLookedDistinctLevels", "TakeFromLookedEachRestToBottom", "TakeFromLookedLikeSubject", "TributeAlliesLevelSum", "TributeAllyMaterial", "TributeAllyMaterialWhere", "TributeAllyResources", "TributesToDeckBottomForKeyword"),
         "Reaction" to listOf("AllyGuard", "AllyRemovalSummon", "AttacksBeforeAscended", "CostModifier", "DamageReplacement", "EnemyAsTypeForRequirement", "GainBeforeAscended", "Replacement", "SwapsBlocker", "TributesInsteadOfDamage"),
     )
 
@@ -169,6 +169,7 @@ internal object CardModelReader {
             "MayDo" -> readEffectStepMayDo(o, at)
             "NoUntapChosen" -> readEffectStepNoUntapChosen(o, at)
             "OpponentGainsGemsAsCounter" -> readEffectStepOpponentGainsGemsAsCounter(o, at)
+            "OpponentMaySummon" -> readEffectStepOpponentMaySummon(o, at)
             "OpponentMovesOneToFront" -> readEffectStepOpponentMovesOneToFront(o, at)
             "PickAllyUpToSacrificedLevel" -> readEffectStepPickAllyUpToSacrificedLevel(o, at)
             "PickAllyWithHigherAlly" -> readEffectStepPickAllyWithHigherAlly(o, at)
@@ -271,9 +272,10 @@ internal object CardModelReader {
     }
 
     private fun readActionLook(o: JsonObject, at: String): com.drive.drive_manager.simulator.engine.effects.model.Action.Look {
-        J.fields(o, at, "Action.Look", setOf("count"), true)
+        J.fields(o, at, "Action.Look", setOf("count", "opponent"), true)
         return com.drive.drive_manager.simulator.engine.effects.model.Action.Look(
             count = J.value(o, "count", at, ::amount),
+            opponent = J.bool(o, "opponent", at),
         )
     }
 
@@ -407,10 +409,11 @@ internal object CardModelReader {
     }
 
     private fun readAmountInZone(o: JsonObject, at: String): com.drive.drive_manager.simulator.engine.Amount.InZone {
-        J.fields(o, at, "Amount.InZone", setOf("zone", "filter"), true)
+        J.fields(o, at, "Amount.InZone", setOf("zone", "filter", "opponent"), true)
         return com.drive.drive_manager.simulator.engine.Amount.InZone(
             zone = J.str(o, "zone", at),
             filter = J.value(o, "filter", at, ::cardFilter),
+            opponent = J.bool(o, "opponent", at),
         )
     }
 
@@ -588,7 +591,7 @@ internal object CardModelReader {
     }
 
     private fun readCardEffectsReplacement(o: JsonObject, at: String): com.drive.drive_manager.simulator.engine.CardEffects.Replacement {
-        J.fields(o, at, "CardEffects.Replacement", setOf("id", "label", "text", "destroyOnly", "byOpponentOnly", "limit", "cost", "resourceFilter", "withMaterials"), true)
+        J.fields(o, at, "CardEffects.Replacement", setOf("id", "label", "text", "destroyOnly", "byOpponentOnly", "limit", "cost", "resourceFilter", "withMaterials", "opponentTurn"), true)
         return com.drive.drive_manager.simulator.engine.CardEffects.Replacement(
             id = J.str(o, "id", at),
             label = J.str(o, "label", at),
@@ -599,6 +602,7 @@ internal object CardModelReader {
             cost = J.enum(o, "cost", at, com.drive.drive_manager.simulator.engine.CardEffects.ReplacementCost.entries, "CardEffects.ReplacementCost"),
             resourceFilter = J.value(o, "resourceFilter", at, ::cardFilter),
             withMaterials = J.bool(o, "withMaterials", at),
+            opponentTurn = J.bool(o, "opponentTurn", at),
         )
     }
 
@@ -1130,6 +1134,16 @@ internal object CardModelReader {
         return com.drive.drive_manager.simulator.engine.EffectStep.OpponentGainsGemsAsCounter
     }
 
+    private fun readEffectStepOpponentMaySummon(o: JsonObject, at: String): com.drive.drive_manager.simulator.engine.EffectStep.OpponentMaySummon {
+        J.fields(o, at, "EffectStep.OpponentMaySummon", setOf("zone", "filter", "reduce", "toFront"), true)
+        return com.drive.drive_manager.simulator.engine.EffectStep.OpponentMaySummon(
+            zone = J.str(o, "zone", at),
+            filter = J.value(o, "filter", at, ::cardFilter),
+            reduce = J.int(o, "reduce", at),
+            toFront = J.bool(o, "toFront", at),
+        )
+    }
+
     private fun readEffectStepOpponentMovesOneToFront(o: JsonObject, at: String): com.drive.drive_manager.simulator.engine.EffectStep.OpponentMovesOneToFront {
         J.fields(o, at, "EffectStep.OpponentMovesOneToFront", emptySet(), true)
         return com.drive.drive_manager.simulator.engine.EffectStep.OpponentMovesOneToFront
@@ -1404,7 +1418,7 @@ internal object CardModelReader {
     }
 
     private fun readRitualSpec(o: JsonObject, at: String): com.drive.drive_manager.simulator.engine.RitualSpec {
-        J.fields(o, at, "RitualSpec", setOf("sum", "level", "maxLevel", "atLeast", "maxStrength", "extra", "eachMaxLevel", "parts"), false)
+        J.fields(o, at, "RitualSpec", setOf("sum", "level", "maxLevel", "atLeast", "maxStrength", "extra", "eachMaxLevel", "parts", "summonerLevel"), false)
         return com.drive.drive_manager.simulator.engine.RitualSpec(
             sum = J.bool(o, "sum", at),
             level = J.int(o, "level", at),
@@ -1414,6 +1428,7 @@ internal object CardModelReader {
             extra = J.int(o, "extra", at),
             eachMaxLevel = J.intOrNull(o, "eachMaxLevel", at),
             parts = J.list(o, "parts", at) { e, p -> ritualPartsPart(e, p) },
+            summonerLevel = J.intOrNull(o, "summonerLevel", at),
         )
     }
 
@@ -1433,7 +1448,7 @@ internal object CardModelReader {
     }
 
     private fun readSelectorRelative(o: JsonObject, at: String): com.drive.drive_manager.simulator.engine.effects.model.Selector.Relative {
-        J.fields(o, at, "Selector.Relative", setOf("to", "compareLevel", "plus", "compareStrength", "differentName", "sameName", "sharesClass", "level", "maxLevel"), false)
+        J.fields(o, at, "Selector.Relative", setOf("to", "compareLevel", "plus", "compareStrength", "differentName", "sameName", "sharesClass", "level", "maxLevel", "maxStrength"), false)
         return com.drive.drive_manager.simulator.engine.effects.model.Selector.Relative(
             to = J.str(o, "to", at),
             compareLevel = J.enum(o, "compareLevel", at, com.drive.drive_manager.simulator.engine.effects.model.Selector.Compare.entries, "Selector.Compare"),
@@ -1444,6 +1459,7 @@ internal object CardModelReader {
             sharesClass = J.bool(o, "sharesClass", at),
             level = J.value(o, "level", at, ::amount),
             maxLevel = J.value(o, "maxLevel", at, ::amount),
+            maxStrength = J.value(o, "maxStrength", at, ::amount),
         )
     }
 

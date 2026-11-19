@@ -12,7 +12,7 @@ class LookHandler : ActionHandler<Look> {
     }
 
     override fun run(ctx: EffectContext, action: Look): Boolean {
-        ctx.look(ctx.amount(action.count))
+        ctx.look(ctx.amount(action.count), action.opponent)
         return false
     }
 }
