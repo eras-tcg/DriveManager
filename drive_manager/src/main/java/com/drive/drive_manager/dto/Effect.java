@@ -25,6 +25,8 @@ public class Effect {
         if (instance != null) plainEffect.append("<").append(instance).append("> ");
         if ("once per turn".equals(ussageLimit)) plainEffect.append("[").append(ussageLimit).append("] ");
         if ("once per turn between copies".equals(ussageLimit)) plainEffect.append("(1)").append(" ");
+        if ("twice per turn".equals(ussageLimit)) plainEffect.append("[").append(ussageLimit).append("] ");
+        if ("twice per turn between copies".equals(ussageLimit)) plainEffect.append("(2)").append(" ");
         if (effectBlocks != null) {
             for (effectBlock block : effectBlocks) {
                 plainEffect.append(block.getPlainEffect()).append(" ");

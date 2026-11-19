@@ -2,6 +2,7 @@ package com.drive.drive_manager.simulator.engine
 
 import kotlin.jvm.JvmSuppressWildcards
 import kotlin.jvm.JvmRecord
+import kotlin.jvm.JvmStatic
 /**
  * An effect the engine runs on its own: when it triggers, whether it is mandatory, and its steps.
  *
@@ -77,12 +78,33 @@ data class EffectScript(
         WATCHED,
     }
 
-    /** Rule 11.8: "una vez por turno" (that copy) and "una vez por turno entre copias" (same original name). */
-    enum class Limit {
-        NONE, ONCE_PER_TURN, ONCE_PER_TURN_BETWEEN_COPIES,
+    /**
+     * Rule 11.8: "una vez por turno" (that copy) and "una vez por turno entre copias" (same original name); "dos veces por
+     * turno" (and "entre copias") the same with two uses. [uses]: activations a turn; [betweenCopies]: counted by the name.
+     */
+    enum class Limit(val uses: Int = 1, val betweenCopies: Boolean = false) {
+        NONE(0), ONCE_PER_TURN, ONCE_PER_TURN_BETWEEN_COPIES(1, true),
+        TWICE_PER_TURN(2), TWICE_PER_TURN_BETWEEN_COPIES(2, true),
         /** "Efecto Definitivo": a player can activate only 1 of them per turn, whatever card it is. */
         DEFINITIVE,
         /** "Solo puedes activar 1 efecto de «X» por turno": one of the card's effects, whichever, between copies. */
         ONE_EFFECT_OF_NAME_PER_TURN,
+        ;
+
+        companion object {
+            /** The mark of the second use of a limit of two, after its key. */
+            const val SECOND_USE = "#2"
+
+            /** Every use [limit] allows this turn is taken under [key] (without a limit, never; an unknown one counts once). */
+            @JvmStatic
+            fun spent(limit: Limit?, used: Set<String>, key: String): Boolean =
+                limit != NONE && used.contains(key) && ((limit?.uses ?: 1) < 2 || used.contains(key + SECOND_USE))
+
+            /** One use of [limit] taken under [key]. */
+            @JvmStatic
+            fun take(limit: Limit?, used: MutableSet<String>, key: String) {
+                if (limit != NONE && !used.add(key) && (limit?.uses ?: 1) > 1) used.add(key + SECOND_USE)
+            }
+        }
     }
 }
