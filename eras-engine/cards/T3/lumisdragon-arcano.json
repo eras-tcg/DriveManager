@@ -57,7 +57,6 @@
   ],
   "requirement": {
     "summoner": {
-      "level": 0,
       "filter": {
         "classes": [
           "dragón",

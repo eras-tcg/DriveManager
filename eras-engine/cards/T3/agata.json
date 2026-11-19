@@ -169,7 +169,6 @@
   ],
   "requirement": {
     "summoner": {
-      "level": 0,
       "filter": {
         "activeOnly": true,
         "minSpecialCost": 2
