@@ -1,6 +1,7 @@
 package com.drive.drive_manager.simulator.engine;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Tag;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -15,6 +16,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * GameRandom draws exactly the numbers of java.util.Random from the same seed, and GameRandom.shuffle shuffles exactly
  * as Collections.shuffle, on random-access lists and linked ones.
  */
+@Tag("basic")
 class GameRandomTest {
 
     @Test

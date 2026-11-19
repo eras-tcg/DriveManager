@@ -4,6 +4,7 @@ import com.drive.drive_manager.simulator.engine.cards.CardBundle;
 import com.drive.drive_manager.simulator.engine.cards.CardReader;
 import com.drive.drive_manager.simulator.json.SimulatorJson;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Tag;
 import tools.jackson.databind.json.JsonMapper;
 
 import java.lang.reflect.RecordComponent;
@@ -23,6 +24,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
  * the same object graph down to the classes of its lists and sets. It refuses what Jackson refused, and the card bundle the
  * engine's jar carries holds exactly the card files of the class path.
  */
+@Tag("basic")
 class CardReaderParityTest {
 
     private static final JsonMapper ROOM_JSON = SimulatorJson.configure(JsonMapper.builder()).build();

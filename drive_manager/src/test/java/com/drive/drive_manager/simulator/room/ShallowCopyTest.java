@@ -2,6 +2,7 @@ package com.drive.drive_manager.simulator.room;
 
 import com.drive.drive_manager.simulator.engine.GameEvent;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Tag;
 import org.springframework.beans.BeanUtils;
 
 import java.lang.reflect.Field;
@@ -23,6 +24,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * card with face-down materials, StateMask). ShallowCopy copies the field itself: the oracle is BeanUtils with that
  * field corrected, and a copy's {@code getLevel()} is the original's.
  */
+@Tag("server")
 class ShallowCopyTest {
 
     @Test

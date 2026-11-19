@@ -6,6 +6,7 @@ import com.drive.drive_manager.simulator.bot.BotPlayer;
 import com.drive.drive_manager.simulator.bot.HeuristicBot;
 import com.drive.drive_manager.simulator.replay.MatchReplay;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Tag;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -18,6 +19,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * The Sala de pruebas' time line: going back and forth through the moves gives the game exactly as it was, a move
  * from the past forgets the future, going back pauses the bots, and the room's settings never travel.
  */
+@Tag("server")
 class TestTimelineTest {
 
     private final RoomService service = new RoomService();

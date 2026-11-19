@@ -2,6 +2,7 @@ package com.drive.drive_manager.simulator.engine;
 
 import com.drive.drive_manager.simulator.room.CardSlot;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Tag;
 
 import java.util.List;
 
@@ -12,6 +13,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * Special summon Requerimientos programmed by hand (the card file's `requirement` section, RequirementSpec): the engine uses them and not the
  * printed text, in the four ways. One test (or more) per card programmed on 2026-11-16, plus the section itself.
  */
+@Tag("engine")
 class ProgrammedRequirementTest extends CardBatchSupport {
 
     private static CardSlot special(CardSlot card, String kind, int cost, String requirement) {

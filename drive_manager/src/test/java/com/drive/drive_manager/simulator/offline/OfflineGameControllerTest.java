@@ -2,6 +2,7 @@ package com.drive.drive_manager.simulator.offline;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Tag;
 import org.springframework.http.ResponseEntity;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -22,6 +23,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 /** The upload is the signed-in player's, bounded in size and in games, and answers one verdict per game, in order. */
+@Tag("server")
 class OfflineGameControllerTest {
 
     private OfflineGames games;

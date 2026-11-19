@@ -2,6 +2,7 @@ package com.drive.drive_manager.simulator.engine;
 
 import com.drive.drive_manager.simulator.engine.effects.model.Action;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Tag;
 
 import java.lang.reflect.RecordComponent;
 import java.nio.file.Files;
@@ -22,6 +23,7 @@ import static org.junit.jupiter.api.Assumptions.assumeTrue;
  * Writes the catalog of the effect language from the code, with the cards that use each word (vault: Catálogo del lenguaje). Only when asked:
  * {@code ./mvnw -o test -Dtest=LanguageCatalogExportTest -Dexport.catalog=<file.md>}.
  */
+@Tag("basic")
 class LanguageCatalogExportTest {
 
     private static final Pattern TYPE = Pattern.compile("\"type\":\"(\\w+)\"");

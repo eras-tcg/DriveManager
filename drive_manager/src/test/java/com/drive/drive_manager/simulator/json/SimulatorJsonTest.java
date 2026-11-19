@@ -10,6 +10,7 @@ import com.drive.drive_manager.simulator.room.GameStateUpdate;
 import com.drive.drive_manager.simulator.room.RoomService;
 import com.drive.drive_manager.simulator.room.StateMask;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Tag;
 import tools.jackson.databind.json.JsonMapper;
 
 import java.nio.charset.StandardCharsets;
@@ -25,6 +26,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * classes for the mix-ins ({@link SimulatorJson}): the rooms and updates the players receive, and the fingerprints
  * that confirm a kept game replays the same. The sums were taken with the annotations still on the classes.
  */
+@Tag("deep")
 class SimulatorJsonTest {
 
     /** Per game: the JSON of the room and of each update after every action, and the fingerprints, summed up. */

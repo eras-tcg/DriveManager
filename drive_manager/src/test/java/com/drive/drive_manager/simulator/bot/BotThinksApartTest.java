@@ -5,6 +5,7 @@ import com.drive.drive_manager.simulator.room.GameRoom;
 import com.drive.drive_manager.simulator.room.RoomOptions;
 import com.drive.drive_manager.simulator.room.RoomService;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Tag;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.Map;
@@ -14,6 +15,7 @@ import java.util.concurrent.TimeUnit;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /** A bot thinks on a copy of the room, without holding it: the owner keeps acting meanwhile, and a stale thought is dropped. */
+@Tag("server")
 class BotThinksApartTest {
 
     /** A bot that takes its time to think (and plays nothing). */

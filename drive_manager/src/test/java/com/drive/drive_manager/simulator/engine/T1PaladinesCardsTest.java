@@ -3,6 +3,7 @@ package com.drive.drive_manager.simulator.engine;
 import com.drive.drive_manager.simulator.room.CardSlot;
 import com.drive.drive_manager.simulator.room.PlayerState;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Tag;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -11,6 +12,8 @@ import static com.drive.drive_manager.simulator.engine.TestTable.*;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /** Cards in testing T1, archetype Paladines (Enlace, 2026-11-13): one test (or more) per programmed effect, from the printed text. */
+@Tag("cards")
+@Tag("t1")
 class T1PaladinesCardsTest extends CardBatchSupport {
 
     static final String[] BOTH = {"left", "right"};

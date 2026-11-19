@@ -7,6 +7,7 @@ import com.drive.drive_manager.repository.CardRepository;
 import com.drive.drive_manager.repository.DeckListRepository;
 import com.drive.drive_manager.repository.DriveCardRepository;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Tag;
 
 import java.util.List;
 
@@ -16,6 +17,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 /** A deck's cards take their metadata by the printed code, as the web joins them, not by the image's name. */
+@Tag("server")
 class DeckLoaderTest {
 
     @Test

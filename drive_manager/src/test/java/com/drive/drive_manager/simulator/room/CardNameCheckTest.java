@@ -2,11 +2,13 @@ package com.drive.drive_manager.simulator.room;
 
 import com.drive.drive_manager.dto.Card;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Tag;
 
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+@Tag("basic")
 class CardNameCheckTest {
 
     private static Card card(String name, String edition, String sub, String color, int number) {
