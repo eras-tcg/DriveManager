@@ -53,7 +53,8 @@ object SpecialProcedure {
      * 2026-11-13: it only enables that creature's own special summon, whatever its method).
      */
     private fun ritual(room: GameRoom, effect: PendingEffect, special: Selector.Special): Boolean {
-        val kind = special.rule!!.kind
+        // "invoca por Ritual esta carta" ([SpecialRule.OF_THIS_CARD]): the method of the card, worked out
+        val kind = if (SpecialRule.OF_THIS_CARD == special.rule!!.kind) resolve(room, effect, special.rule).kind else special.rule.kind
         if (SpecialRule.RITUAL == kind) return true
         if ("any" != kind) return false
         val target = target(room, effect, resolve(room, effect, special.rule))

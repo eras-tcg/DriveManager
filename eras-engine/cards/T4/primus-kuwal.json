@@ -1,0 +1,222 @@
+{
+  "name": "primus kuwal",
+  "effects": [
+    {
+      "id": "primus-kuwal:descartada",
+      "moment": "ON_EVENT",
+      "label": "En Descarte",
+      "text": "Una vez por turno entre copias, si esta carta es descartada desde tus tributos: puedes tributar 1 carta de tu mano; invoca esta carta por Ritual.",
+      "cost": [
+        {
+          "type": "Do",
+          "action": {
+            "type": "Move",
+            "cards": {
+              "zones": "hand",
+              "owner": "YOU",
+              "filter": {},
+              "min": {
+                "type": "Fixed",
+                "value": 1
+              },
+              "max": {
+                "type": "Fixed",
+                "value": 1
+              },
+              "self": "EXCLUDE",
+              "mode": "CHOOSE"
+            },
+            "to": "tributeZone"
+          }
+        }
+      ],
+      "steps": [
+        {
+          "type": "Do",
+          "action": {
+            "type": "Sequence",
+            "actions": [
+              {
+                "type": "Select",
+                "selector": {
+                  "zones": "discardPile",
+                  "owner": "YOU",
+                  "filter": {},
+                  "min": {
+                    "type": "Fixed"
+                  },
+                  "max": {
+                    "type": "Fixed",
+                    "value": 1
+                  },
+                  "self": "ANY",
+                  "mode": "CHOOSE",
+                  "special": {
+                    "rule": {
+                      "kind": "ofThisCard",
+                      "zone": "discardPile",
+                      "summoner": "any",
+                      "filter": {}
+                    },
+                    "stage": "CARD"
+                  }
+                },
+                "saveAs": "specialCard",
+                "label": "Invocar"
+              },
+              {
+                "type": "Select",
+                "selector": {
+                  "zones": "discardPile",
+                  "owner": "YOU",
+                  "filter": {},
+                  "min": {
+                    "type": "Fixed"
+                  },
+                  "max": {
+                    "type": "Fixed",
+                    "value": 1
+                  },
+                  "self": "ANY",
+                  "mode": "CHOOSE",
+                  "special": {
+                    "rule": {
+                      "kind": "ofThisCard",
+                      "zone": "discardPile",
+                      "summoner": "any",
+                      "filter": {}
+                    },
+                    "stage": "SUMMONER"
+                  }
+                },
+                "saveAs": "specialSummoner",
+                "label": "Invocador"
+              },
+              {
+                "type": "Select",
+                "selector": {
+                  "zones": "discardPile",
+                  "owner": "YOU",
+                  "filter": {},
+                  "min": {
+                    "type": "Fixed"
+                  },
+                  "max": {
+                    "type": "Fixed",
+                    "value": 1
+                  },
+                  "self": "ANY",
+                  "mode": "CHOOSE",
+                  "special": {
+                    "rule": {
+                      "kind": "ofThisCard",
+                      "zone": "discardPile",
+                      "summoner": "any",
+                      "filter": {}
+                    },
+                    "stage": "MATERIAL"
+                  }
+                },
+                "saveAs": "specialMaterials",
+                "label": "Sacrificar"
+              },
+              {
+                "type": "SummonSpecial",
+                "rule": {
+                  "kind": "ofThisCard",
+                  "zone": "discardPile",
+                  "summoner": "any",
+                  "filter": {}
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "condition": {
+        "type": "Happened",
+        "actor": "ANY",
+        "owner": "ANY",
+        "thisCard": true,
+        "from": "tributeZone",
+        "to": "discardPile"
+      },
+      "sourceZone": "discardPile",
+      "limit": "ONCE_PER_TURN_BETWEEN_COPIES"
+    },
+    {
+      "id": "primus-kuwal:en-invocacion",
+      "moment": "ON_SUMMON",
+      "label": "En Invocación",
+      "text": "Puedes colocar 1 [kuwal] de coste 2 en tus tributos en tu línea frontal. Si lo haces: sacrifica 1 aliado.",
+      "steps": [
+        {
+          "type": "Do",
+          "action": {
+            "type": "Move",
+            "cards": {
+              "zones": "tributeZone",
+              "owner": "YOU",
+              "filter": {
+                "classes": [
+                  "kuwal"
+                ],
+                "cardType": "creature",
+                "minCost": 2,
+                "maxCost": 2
+              },
+              "min": {
+                "type": "Fixed",
+                "value": 1
+              },
+              "max": {
+                "type": "Fixed",
+                "value": 1
+              },
+              "self": "ANY",
+              "mode": "CHOOSE"
+            },
+            "to": "frontLine",
+            "required": true
+          }
+        },
+        {
+          "type": "IfDone",
+          "covers": 1
+        },
+        {
+          "type": "Do",
+          "action": {
+            "type": "Destroy",
+            "cards": {
+              "zones": "field",
+              "owner": "YOU",
+              "filter": {
+                "cardType": "creature"
+              },
+              "min": {
+                "type": "Fixed",
+                "value": 1
+              },
+              "max": {
+                "type": "Fixed",
+                "value": 1
+              },
+              "self": "ANY",
+              "mode": "CHOOSE"
+            },
+            "sacrifice": true
+          }
+        }
+      ],
+      "sourceZone": "field",
+      "limit": "NONE"
+    }
+  ],
+  "requirement": {
+    "ritual": {
+      "level": 3,
+      "orCost": true
+    }
+  }
+}

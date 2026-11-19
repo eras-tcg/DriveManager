@@ -3,6 +3,7 @@ package com.drive.drive_manager.simulator.engine.effects.runtime
 import kotlin.jvm.JvmSuppressWildcards
 import com.drive.drive_manager.simulator.engine.GameRandom
 import com.drive.drive_manager.simulator.engine.Amount
+import com.drive.drive_manager.simulator.engine.CardFilter
 import com.drive.drive_manager.simulator.engine.effects.model.Action
 import com.drive.drive_manager.simulator.engine.effects.model.Selector
 import com.drive.drive_manager.simulator.engine.effects.model.SpecialRule
@@ -68,6 +69,18 @@ interface EffectContext {
     fun damage(amount: Int)
 
     fun look(count: Int)
+
+    /**
+     * "excava cartas de tu mazo hasta que reveles N cartas o 1 [filtro]": the top cards one by one, revealed to both players, until N or the first
+     * that matches `until` (null: N); they stay with the effect as the cards looked at do. The player excavated (an event, when any card was).
+     */
+    fun excavate(count: Int, until: CardFilter?)
+
+    /** The choice just asked takes cards of different levels ("de distinto nivel"). */
+    fun asksDistinctLevels()
+
+    /** "sacrifica 1 carta de tu mano": it goes to the Tributos as a sacrifice ([destroy] of a card of the hand). */
+    fun inHand(card: CardSlot?): Boolean
 
     fun onField(card: CardSlot?): Boolean
 

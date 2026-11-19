@@ -58,6 +58,16 @@ sealed interface Amount {
         }
     }
 
+    /**
+     * "la fuerza que tenía dicho aliado antes de ser removido": the strength the card of the triggering event had on the field as it left it
+     * (Removals.rememberStrength), read by EngineContext; its strength now when it is not known.
+     */
+    data object TriggerStrengthBeforeRemoval : Amount {
+        override fun of(room: GameRoom, controller: String?): Int {
+            return 0
+        }
+    }
+
     /** "en el nivel de dicho aliado": the card of the triggering event, read by EngineContext. */
     data object TriggerSourceLevel : Amount {
         override fun of(room: GameRoom, controller: String?): Int {

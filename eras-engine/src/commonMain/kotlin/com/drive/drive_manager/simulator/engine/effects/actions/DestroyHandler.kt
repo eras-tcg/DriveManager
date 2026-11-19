@@ -11,7 +11,10 @@ import com.drive.drive_manager.simulator.engine.effects.runtime.EffectContext
 import com.drive.drive_manager.simulator.engine.effects.selection.Selection
 import com.drive.drive_manager.simulator.room.CardSlot
 
-/** "destruye" and "sacrifica" (rule 4.0.4.2: sacrificing is destroying and going to the Tributos). */
+/**
+ * "destruye" and "sacrifica" (rule 4.0.4.2: sacrificing is destroying and going to the Tributos). "sacrifica 1 [kuwal] en tu campo o mano": a
+ * sacrifice may take a card of your hand too, when the selector's zones say it (it goes to the Tributos, EffectContext.destroy).
+ */
 class DestroyHandler : ActionHandler<Destroy> {
 
     override fun possible(ctx: EffectContext, action: Destroy): Boolean {
@@ -33,7 +36,8 @@ class DestroyHandler : ActionHandler<Destroy> {
         }
         val min = min(ctx.amount(selector.min), max)
         val filter = selector.filter().describe()
-        ctx.ask((if (action.sacrifice) "Sacrifica " else "Destruye ") + (if (min < max) "hasta " else "") + max + (if (max == 1) " criatura" else " criaturas")
+        val what = if (action.sacrifice && valid.any { ctx.inHand(it) }) (if (max == 1) " carta" else " cartas") else (if (max == 1) " criatura" else " criaturas")
+        ctx.ask((if (action.sacrifice) "Sacrifica " else "Destruye ") + (if (min < max) "hasta " else "") + max + what
                         + (if (filter.all { JavaText.isWhitespace(it) }) "" else " $filter") + ".",
                 if (action.sacrifice) "Sacrificar" else "Destruir", Selection.pool(ctx, selector), valid, min, max)
         return true
@@ -51,7 +55,7 @@ class DestroyHandler : ActionHandler<Destroy> {
     }
 
     private fun candidates(ctx: EffectContext, action: Destroy): List<CardSlot> {
-        return Selection.candidates(ctx, action.cards!!, false).filter { ctx.onField(it) }
+        return Selection.candidates(ctx, action.cards!!, false).filter { ctx.onField(it) || (action.sacrifice && ctx.inHand(it)) }
     }
 
     private fun apply(ctx: EffectContext, action: Destroy, cards: List<CardSlot>) {

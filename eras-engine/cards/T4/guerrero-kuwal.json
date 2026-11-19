@@ -1,0 +1,94 @@
+{
+  "name": "guerrero kuwal",
+  "effects": [
+    {
+      "id": "guerrero-kuwal:todos-los-turnos",
+      "moment": "ON_EVENT",
+      "mandatory": true,
+      "label": "Todos Los Turnos",
+      "text": "Una vez por turno: si excavas cartas: elige 1 aliado para que gane Perforante por el turno.",
+      "cost": [
+        {
+          "type": "Do",
+          "action": {
+            "type": "Select",
+            "selector": {
+              "zones": "field",
+              "owner": "YOU",
+              "filter": {
+                "cardType": "creature"
+              },
+              "min": {
+                "type": "Fixed",
+                "value": 1
+              },
+              "max": {
+                "type": "Fixed",
+                "value": 1
+              },
+              "self": "ANY",
+              "mode": "CHOOSE"
+            },
+            "target": true
+          }
+        }
+      ],
+      "steps": [
+        {
+          "type": "Do",
+          "action": {
+            "type": "Modify",
+            "cards": {
+              "zones": "saved:targets",
+              "owner": "YOU",
+              "filter": {},
+              "min": {
+                "type": "Fixed"
+              },
+              "max": {
+                "type": "Fixed",
+                "value": 2147483647
+              },
+              "self": "ANY",
+              "mode": "ALL"
+            },
+            "keyword": "Perforante",
+            "until": "TURN"
+          }
+        }
+      ],
+      "condition": {
+        "type": "Happened",
+        "eventType": "EXCAVATE",
+        "actor": "YOU",
+        "owner": "ANY"
+      },
+      "sourceZone": "field",
+      "limit": "ONCE_PER_TURN"
+    }
+  ],
+  "continuous": [
+    {
+      "label": "Turno Aliado",
+      "text": "Todos los aliados [kuwal] ganan fuerza 2.",
+      "allyTurn": true,
+      "strength": 2,
+      "targets": {
+        "classes": [
+          "kuwal"
+        ],
+        "cardType": "creature"
+      },
+      "zone": "field"
+    }
+  ],
+  "requirement": {
+    "ritual": {
+      "level": 2,
+      "orCost": true,
+      "filter": {
+        "notName": "Guerrero Kuwal"
+      }
+    }
+  }
+}

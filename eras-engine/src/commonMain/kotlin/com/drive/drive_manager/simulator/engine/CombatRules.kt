@@ -546,7 +546,7 @@ object CombatRules {
             if (card == null) continue
             val materials = ArrayList(card.materials!!)
             card.materials!!.clear()
-            Removals.removeFromField(owner, card)
+            Removals.removeFromField(room, owner, card)
             owner!!.hand.add(card)
             materials.forEach { m ->
                 m.faceDown = false

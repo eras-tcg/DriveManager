@@ -36,12 +36,12 @@ final class Req {
 
     static RequirementSpec ritual(boolean sum, int level, Integer maxLevel, boolean atLeast, Integer maxStrength, int extra) {
         return new RequirementSpec(null, null, 0, false, false, 0, false, 0, false, null, null, null,
-                new RitualSpec(sum, level, maxLevel, atLeast, maxStrength, extra, null, List.of()));
+                new RitualSpec(sum, level, maxLevel, atLeast, maxStrength, extra, null, List.of(), false, null));
     }
 
     static RequirementSpec ritualParts(List<RitualParts.Part> parts) {
         return new RequirementSpec(null, null, 0, false, false, 0, false, 0, false, null, null, null,
-                new RitualSpec(false, 0, null, false, null, 0, null, parts));
+                new RitualSpec(false, 0, null, false, null, 0, null, parts, false, null));
     }
 
     private static SummonerSpec level(int level) {

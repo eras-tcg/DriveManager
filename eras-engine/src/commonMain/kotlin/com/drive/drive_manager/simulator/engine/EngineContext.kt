@@ -261,7 +261,7 @@ internal class EngineContext(private val room: GameRoom, private val effect: Pen
             }
             if (origin.looked) effect.looked.remove(card)
             else if (origin.host != null) (if ("materials" == from) origin.host.materials!! else origin.host.resources!!).remove(card)
-            else if (Zone.FIELD.`is`(from)) Removals.removeFromField(origin.owner, card)
+            else if (Zone.FIELD.`is`(from)) Removals.removeFromField(room, origin.owner, card)
             else EffectEngine.zone(origin.owner, from).remove(card)
             card.faceDown = Zone.DECK.`is`(zone) || faceDown
             val data: MutableMap<String, Any?> = Platform.hashMap()
@@ -382,6 +382,29 @@ internal class EngineContext(private val room: GameRoom, private val effect: Pen
             player()!!.username + " mira las primeras " + n + " cartas de su mazo (" + effect.sourceName + ")")
     }
 
+    override fun excavate(count: Int, until: CardFilter?) {
+        val player = player()!!
+        val revealed: MutableList<CardSlot> = ArrayList()
+        while (revealed.size < count && player.deck.isNotEmpty()) {
+            val card = player.deck.removeAt(0)
+            revealed.add(card)
+            effect.looked.add(card)
+            if (until != null && until.matches(card)) break
+        }
+        if (revealed.isEmpty()) return
+        EffectEngine.record(room, GameEvent.EXCAVATE, player.userId, null, "deck", null, effect, frozenMapOf<String, Any?>("count", revealed.size),
+            player.username + " excava " + revealed.size + " " + (if (revealed.size == 1) "carta" else "cartas") + " de su mazo (" + effect.sourceName + ")"
+                    + EffectEngine.names(revealed))
+    }
+
+    override fun asksDistinctLevels() {
+        room.prompt!!.distinctLevels = true
+    }
+
+    override fun inHand(card: CardSlot?): Boolean {
+        return EffectEngine.find(player()!!.hand, card!!.instanceId) != null
+    }
+
     private fun ownerOnField(card: CardSlot): PlayerState? {
         for (p in room.players.values) if (EffectEngine.find(p.field, card.instanceId) != null) return p
         return null
@@ -476,6 +499,11 @@ internal class EngineContext(private val room: GameRoom, private val effect: Pen
     }
 
     override fun destroy(card: CardSlot?, sacrifice: Boolean) {
+        // "sacrifica 1 [kuwal] en tu campo o mano": a card of the hand is sacrificed into the Tributos
+        if (sacrifice && inHand(card)) {
+            Removals.sacrificeFromHand(room, player()!!, card!!, effect)
+            return
+        }
         val owner = ownerOnField(card!!) ?: return
         Removals.destroy(room, card, owner, sacrifice, EffectEngine.CAUSE_EFFECT, effect.controllerId, if (sacrifice) effect.sourceInstanceId else null, effect)
     }
@@ -599,6 +627,15 @@ internal class EngineContext(private val room: GameRoom, private val effect: Pen
         if (amount is Amount.Times) return this.amount(amount.base) * amount.factor
         if (amount is Amount.Scaled) return this.amount(amount.base) / amount.divisor + amount.plus
         if (amount is Amount.TriggerSourceLevel) return SpecialRequirements.triggerSourceLevel(room, effect)
+        if (amount is Amount.TriggerStrengthBeforeRemoval) {
+            // Triggered by several cards at once: the one chosen among them
+            val chosen = effect.saved[Memory.EVENT_CARD]
+            val id = if (!chosen.isNullOrEmpty()) chosen[0] else EffectEngine.triggerEvent(room, effect)?.cardInstanceId
+            val known = Removals.strengthWhenLeft(room, id)
+            if (known != null) return known
+            val card = if (id == null) null else EffectEngine.findInRoom(room, id)
+            return if (card == null) 0 else EffectEngine.strength(card)
+        }
         if (amount is Amount.SubjectLevel) {
             val subject = StepHelpers.subject(room, effect)
             return if (subject == null || subject.getLevel() == null) 0 else subject.getLevel()!!

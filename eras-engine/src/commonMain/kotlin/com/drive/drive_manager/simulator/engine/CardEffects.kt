@@ -393,7 +393,9 @@ object CardEffects {
         /** "en su lugar, puedes colocar 1 aliado al tope de tus vidas bocabajo" (another ally of its owner; a link effect, Enlace). */
         ALLY_TO_LIFE_FACE_DOWN,
         /** "en su lugar, puedes agotar 1 de tus estructuras" (an active structure of its owner). */
-        TAP_STRUCTURE
+        TAP_STRUCTURE,
+        /** A guard ([AllyGuard]): "en su lugar, puedes sacrificar otro aliado o una carta de tu mano" (a creature of its owner's field or a card of the hand). */
+        SACRIFICE_OTHER_ALLY_OR_HAND
     }
 
     /**

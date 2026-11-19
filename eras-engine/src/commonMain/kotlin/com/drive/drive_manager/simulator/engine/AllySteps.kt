@@ -316,7 +316,7 @@ object AllySteps : StepFamily {
             }
             is ReturnAllyOfSummonedLevel -> {
                 val ally = find(player.field, picks[0]) ?: return "Ese aliado ya no está en el campo"
-                removeFromField(player, ally)
+                removeFromField(room, player, ally)
                 player.hand.add(ally)
                 effect.lastTributed = ArrayList(frozenListOf(ally.instanceId))
                 record(room, GameEvent.SEND, userId, ally, "field", "hand", effect, null,
@@ -335,7 +335,7 @@ object AllySteps : StepFamily {
                 val subject = subject(room, effect)
                 val holder = find(player.field, picks[0])
                 if (subject == null || holder == null || !higherThan(player, subject).contains(holder)) return "Debe ser un aliado de nivel mayor"
-                removeFromField(player, subject)
+                removeFromField(room, player, subject)
                 subject.faceDown = false
                 holder.materials!!.add(subject)
                 effect.lastDone = true

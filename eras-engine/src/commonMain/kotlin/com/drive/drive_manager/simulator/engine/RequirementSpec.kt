@@ -78,9 +78,11 @@ data class MaterialSpec(
  * @param eachMaxLevel "criaturas nivel N o menor que sumen …": the highest level of each creature used; null: any
  * @param parts       each creature used, the summoner among them ("criatura nivel 2 + 1 criatura [ángel] nivel 2 o menor"): one
  *                    [RitualParts.Part] each (level, "o menor", class); null or empty: the fields above
+ * @param orCost      "coste o nivel N", "que sumen N en coste o nivel": each creature used counts as its level or as its cost
+ * @param filter      what each creature used must be besides ("que no sea una copia de esta carta": `notName`); null: any
  */
 @JvmRecord
 data class RitualSpec(
     val sum: Boolean, val level: Int, val maxLevel: Int?, val atLeast: Boolean, val maxStrength: Int?, val extra: Int, val eachMaxLevel: Int? = null,
-    val parts: List<RitualParts.Part>? = null,
+    val parts: List<RitualParts.Part>? = null, val orCost: Boolean = false, val filter: CardFilter? = null,
 )

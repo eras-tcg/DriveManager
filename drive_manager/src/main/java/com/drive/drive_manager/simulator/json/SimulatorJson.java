@@ -43,6 +43,7 @@ public final class SimulatorJson {
         @JsonIgnore Object random;
         @JsonIgnore Object headless;
         @JsonIgnore Object searchHope;
+        @JsonIgnore Object strengthLeft;
         @JsonIgnore Object startSetup;
     }
 

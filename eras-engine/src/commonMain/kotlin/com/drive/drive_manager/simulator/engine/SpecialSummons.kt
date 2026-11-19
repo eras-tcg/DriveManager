@@ -271,6 +271,7 @@ object SpecialSummons {
                 floating(summoner, null, "Gana $gain hasta el final del turno", "turn", 0, gain)
             }
             inheritFromSummoner(room, card, summoner)
+            Removals.rememberStrength(room, summoner)
             player.field.remove(summoner)
             leaveField(summoner)
             used = name(summoner)
@@ -282,7 +283,7 @@ object SpecialSummons {
                 for (declared in materials) {
                     val from = if (player.hand.remove(declared)) "hand" else if (player.tributeZone.remove(declared)) "tributeZone"
                     else if (player.discardPile.remove(declared)) "discardPile" else "field"
-                    if (Zone.FIELD.`is`(from)) removeFromField(player, declared)
+                    if (Zone.FIELD.`is`(from)) removeFromField(room, player, declared)
                     declared.faceDown = false
                     player.tributeZone.add(declared)
                     record(room, GameEvent.TRIBUTE, userId, declared, from, "tributeZone", null, frozenMapOf<String, Any?>("cause", "promotion"), null)
@@ -304,7 +305,7 @@ object SpecialSummons {
                     val from = if (player.tributeZone.remove(material)) "tributeZone" else if (player.hand.remove(material)) "hand"
                     else if (player.discardPile.remove(material)) "discardPile" else "field"
                     // A creature of the field used as a material loses its state; its attachments go to the Descarte
-                    if (Zone.FIELD.`is`(from)) removeFromField(player, material)
+                    if (Zone.FIELD.`is`(from)) removeFromField(room, player, material)
                     material.faceDown = false
                     card.materials!!.add(material)
                     used += (if (used.isEmpty()) "" else " y ") + name(material)

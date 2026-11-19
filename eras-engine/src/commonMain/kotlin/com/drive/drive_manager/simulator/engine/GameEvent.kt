@@ -91,6 +91,8 @@ class GameEvent {
         const val EFFECT_ACTIVATED = "EFFECT_ACTIVATED"
         const val EFFECT_RESOLVED = "EFFECT_RESOLVED"
         const val LOOK_TOP = "LOOK_TOP"
+        /** "excava cartas de tu mazo": the player revealed cards from the top of their deck ("si excavas cartas"). */
+        const val EXCAVATE = "EXCAVATE"
         const val ADD_TO_HAND = "ADD_TO_HAND"
         const val TRIBUTE = "TRIBUTE"
         const val EFFECT_DECLINED = "EFFECT_DECLINED"

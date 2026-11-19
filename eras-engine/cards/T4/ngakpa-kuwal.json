@@ -1,0 +1,176 @@
+{
+  "name": "ngakpa kuwal",
+  "effects": [
+    {
+      "id": "ngakpa-kuwal:en-tributos",
+      "moment": "ACTIVATED",
+      "label": "Turno Aliado / En Tributos",
+      "text": "Una vez por turno entre copias: puedes pagar 2 gemas y descartar 5 de tus tributos [kuwal] de distinto nivel; coloca esta carta en tu línea frontal.",
+      "cost": [
+        {
+          "type": "Do",
+          "action": {
+            "type": "Gems",
+            "count": {
+              "type": "Fixed",
+              "value": -2
+            }
+          }
+        },
+        {
+          "type": "Do",
+          "action": {
+            "type": "Move",
+            "cards": {
+              "zones": "tributeZone",
+              "owner": "YOU",
+              "filter": {
+                "classes": [
+                  "kuwal"
+                ]
+              },
+              "min": {
+                "type": "Fixed",
+                "value": 5
+              },
+              "max": {
+                "type": "Fixed",
+                "value": 5
+              },
+              "self": "EXCLUDE",
+              "mode": "CHOOSE"
+            },
+            "to": "discardPile",
+            "distinctLevels": true
+          }
+        }
+      ],
+      "steps": [
+        {
+          "type": "Do",
+          "action": {
+            "type": "Move",
+            "cards": {
+              "zones": "tributeZone",
+              "owner": "YOU",
+              "filter": {},
+              "min": {
+                "type": "Fixed",
+                "value": 1
+              },
+              "max": {
+                "type": "Fixed",
+                "value": 1
+              },
+              "self": "ANY",
+              "mode": "SELF"
+            },
+            "to": "frontLine"
+          }
+        }
+      ],
+      "sourceZone": "tributeZone",
+      "allyTurn": true,
+      "limit": "ONCE_PER_TURN_BETWEEN_COPIES"
+    },
+    {
+      "id": "ngakpa-kuwal:turno-oponente",
+      "moment": "ON_EVENT",
+      "label": "Turno Oponente",
+      "text": "Al inicio del turno: puedes descartar 5 de tus tributos; invoca 1 [kuwal] de coste 2 de tus tributos sin pagar su coste. Si lo haces: tributa 1 carta de tu mano.",
+      "cost": [
+        {
+          "type": "Do",
+          "action": {
+            "type": "Move",
+            "cards": {
+              "zones": "tributeZone",
+              "owner": "YOU",
+              "filter": {},
+              "min": {
+                "type": "Fixed",
+                "value": 5
+              },
+              "max": {
+                "type": "Fixed",
+                "value": 5
+              },
+              "self": "ANY",
+              "mode": "CHOOSE"
+            },
+            "to": "discardPile"
+          }
+        }
+      ],
+      "steps": [
+        {
+          "type": "Do",
+          "action": {
+            "type": "Summon",
+            "cards": {
+              "zones": "tributeZone",
+              "owner": "YOU",
+              "filter": {
+                "classes": [
+                  "kuwal"
+                ],
+                "cardType": "creature",
+                "minCost": 2,
+                "maxCost": 2
+              },
+              "min": {
+                "type": "Fixed",
+                "value": 1
+              },
+              "max": {
+                "type": "Fixed",
+                "value": 1
+              },
+              "self": "ANY",
+              "mode": "CHOOSE"
+            },
+            "reduce": {
+              "type": "Fixed",
+              "value": 1000
+            },
+            "required": true
+          }
+        },
+        {
+          "type": "IfDone",
+          "covers": 1
+        },
+        {
+          "type": "Do",
+          "action": {
+            "type": "Move",
+            "cards": {
+              "zones": "hand",
+              "owner": "YOU",
+              "filter": {},
+              "min": {
+                "type": "Fixed",
+                "value": 1
+              },
+              "max": {
+                "type": "Fixed",
+                "value": 1
+              },
+              "self": "EXCLUDE",
+              "mode": "CHOOSE"
+            },
+            "to": "tributeZone"
+          }
+        }
+      ],
+      "condition": {
+        "type": "Happened",
+        "eventType": "TURN_START",
+        "actor": "ENEMY",
+        "owner": "ANY"
+      },
+      "sourceZone": "field",
+      "limit": "NONE"
+    }
+  ]
+}

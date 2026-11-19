@@ -192,11 +192,14 @@ object Answers {
 
     /** The choices of a replacement of a removal ("en su lugar"), answered by [answerRemoval]. */
     private val REMOVAL_REPLACEMENTS = listOf(PromptPurpose.REPLACE, PromptPurpose.REPLACE_HAND, PromptPurpose.REPLACE_MATERIALS,
-        PromptPurpose.REPLACE_GUARD, PromptPurpose.REPLACE_RESOURCES, PromptPurpose.REPLACE_LIFE, PromptPurpose.REPLACE_TAP)
+        PromptPurpose.REPLACE_GUARD, PromptPurpose.REPLACE_RESOURCES, PromptPurpose.REPLACE_LIFE, PromptPurpose.REPLACE_TAP,
+        PromptPurpose.REPLACE_SACRIFICE)
 
     @JvmStatic
     fun answerRules(room: GameRoom, prompt: Prompt, player: PlayerState, picks: List<String>): String? {
         val looker = if (prompt.subjectId == null) null else findAnywhere(room, player.userId, prompt.subjectId)
+        // A Ritual's choice reads the table as the creature being summoned does ("coste o nivel")
+        if (PromptPurpose.RITUAL.`is`(prompt.purpose)) return EffectEngine.summoningAs(looker) { answerRulesAs(room, prompt, player, picks) }
         return lookingAs(looker) { answerRulesAs(room, prompt, player, picks) }
     }
 

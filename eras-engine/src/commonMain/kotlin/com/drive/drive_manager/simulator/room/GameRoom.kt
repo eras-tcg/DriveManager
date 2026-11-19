@@ -180,6 +180,13 @@ class GameRoom {
     @Transient
     var searchHope: String? = null
 
+    /**
+     * The strength each card had on the field when it last left it ("la fuerza que tenía dicho aliado antes de ser removido",
+     * engine/Removals.rememberStrength): the engine's memory, not part of the state sent to players; copied with the room.
+     */
+    @Transient
+    var strengthLeft: MutableMap<String, Int> = HashMap()
+
     /** How the game in course started (its seed, seats and decks), to record and play it again (MatchRecorder). */
     var startSetup: MatchSetup? = null
 

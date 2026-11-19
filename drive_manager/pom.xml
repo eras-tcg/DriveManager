@@ -192,7 +192,7 @@
 		<!-- Test levels of the simulator: JUnit 5 tags on its test classes, chosen with surefire's `groups`. Without one of
 		     these profiles every test runs, as CI does (`mvn verify`). Each simulator test class has exactly one level tag:
 		       basic   the card files read, the bundle's counts, the code's own rules: run on every change
-		       cards   one card, edition or structure; also an edition tag (e1, e11, e12, e13, e2, st1..st8, t1)
+		       cards   one card, edition or structure; also an edition tag (e1, e11, e12, e13, e2, st1..st8, t1, t4)
 		       engine  the general rules: combat, chain, turns, replacements, requirements
 		       server  rooms, missions, ranks, replays, the bot's server side
 		       deep    whole games and reference hashes (bot games, offline games, replays, JSON, LocalMatch parity)

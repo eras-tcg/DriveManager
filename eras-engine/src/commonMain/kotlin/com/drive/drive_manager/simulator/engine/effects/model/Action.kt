@@ -3,6 +3,7 @@ package com.drive.drive_manager.simulator.engine.effects.model
 import kotlin.jvm.JvmSuppressWildcards
 import kotlin.jvm.JvmRecord
 import com.drive.drive_manager.simulator.engine.Amount
+import com.drive.drive_manager.simulator.engine.CardFilter
 
 /**
  * A basic action effects are composed of. Plain data: what each one does is in its handler (effects/actions), one class
@@ -85,9 +86,15 @@ sealed interface Action {
     @JvmRecord
     data class Damage(val amount: Amount?) : Action
 
-    /** "mira las primeras N cartas de tu mazo". */
+    /**
+     * "mira las primeras N cartas de tu mazo", or "excava cartas de tu mazo hasta que reveles N cartas o 1 [filtro]" (rule in development,
+     * vault `01 Reglas/03 Mecánicas/Excavar`): they stay with the effect until an action moves them.
+     *
+     * @param until    "hasta que reveles … o 1 [filtro]": it stops at the first card that matches (it is the last one taken); null: N cards
+     * @param excavate "excava": the cards are revealed to both players and the player excavated ("si excavas cartas" reads it)
+     */
     @JvmRecord
-    data class Look(val count: Amount?) : Action
+    data class Look(val count: Amount?, val until: CardFilter? = null, val excavate: Boolean = false) : Action
 
     /**
      * "agota" (`tapped`) or "reactiva".
@@ -140,11 +147,12 @@ sealed interface Action {
      * @param faceDown  "bocabajo"; cards going to the deck always are
      * @param rest      looked cards: where those not picked go, in the order the player gives, in the same choice; null: they stay
      * @param sameName  "N copias de una criatura": the cards picked all have the same name (only cards with enough copies can be picked)
+     * @param distinctLevels "N cartas de distinto nivel": no two cards picked have the same level
      */
     @JvmRecord
     data class Move(
         val cards: Selector?, val to: String?, val random: Boolean, val label: String?, val required: Boolean, val exhausted: Boolean,
-        val faceDown: Boolean, val rest: String?, val sameName: Boolean = false,
+        val faceDown: Boolean, val rest: String?, val sameName: Boolean = false, val distinctLevels: Boolean = false,
     ) : Action {
         constructor(cards: Selector?, to: String?, random: Boolean, label: String?, required: Boolean) :
                 this(cards, to, random, label, required, false, false, null)

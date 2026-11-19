@@ -53,6 +53,7 @@ object Selection {
             val level = card.getLevel()
             if (level == null || level > ctx.amount(r.maxLevel)) return false
         }
+        if (r.maxStrength != null && ctx.strength(card) > ctx.amount(r.maxStrength)) return false
         if (r.to == null) return true
         val other = ctx.relativeTo(r.to) ?: return false
         if (r.compareLevel != null) {

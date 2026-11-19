@@ -323,9 +323,12 @@ object Rituals {
     @JvmStatic
     fun ritualMaterials(player: PlayerState, target: CardSlot): List<CardSlot> {
         // Programmed by hand: "criaturas nivel N o menor que sumen …"
-        val most = CardEffects.requirementOf(target)?.ritual?.eachMaxLevel
+        val spec = CardEffects.requirementOf(target)?.ritual
+        val most = spec?.eachMaxLevel
+        // "que no sea una copia de esta carta" and the like
+        val filter = spec?.filter
         return player.field.filter { c -> "creature" == c.cardType && c.getLevel() != null && shares(c, target)
-                && (most == null || levels(c).any { l -> l in 1..most }) }
+                && (most == null || levels(c).any { l -> l in 1..most }) && (filter == null || filter.matches(c)) }
     }
 
     @JvmStatic

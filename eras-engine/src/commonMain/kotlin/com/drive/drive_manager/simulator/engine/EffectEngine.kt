@@ -81,12 +81,19 @@ object EffectEngine {
         }
     }
 
-    /** The levels the card can count as for the card looking now: its own, and another one some cards may count as. */
+    /**
+     * The levels the card can count as for the card looking now: its own, and another one some cards may count as. For the Ritual of a card whose
+     * Requerimiento says "coste o nivel" ([RitualSpec.orCost]), its cost too.
+     */
     @JvmStatic
     fun levels(card: CardSlot?): List<Int> {
         if (card!!.getLevel() == null) return frozenListOf()
         val other = CardEffects.alternativeLevel(card, LOOKER.get())
-        return if (other == null || other == card.getLevel()) frozenListOf(card.getLevel()!!) else frozenListOf(card.getLevel()!!, other)
+        val levels = if (other == null || other == card.getLevel()) frozenListOf(card.getLevel()!!) else frozenListOf(card.getLevel()!!, other)
+        val cost = card.cost
+        if (cost == null || levels.contains(cost) || SUMMONING.get() != true) return levels
+        val looker = LOOKER.get() ?: return levels
+        return if (CardEffects.requirementOf(looker)?.ritual?.orCost == true) levels + cost else levels
     }
 
     /** The card looking now is being special summoned (not an effect reading the table). */

@@ -29,6 +29,8 @@ class MoveHandler : ActionHandler<Move> {
         if (selector.mode() == Selector.Mode.ALL && ctx.amount(selector.min) <= 0 && selector.self() != Selector.Self.REQUIRE) return true
         val found = candidates(ctx, action)
         if (selector.self() == Selector.Self.REQUIRE && found.none { ctx.isSelf(it) }) return false
+        // "N cartas de distinto nivel": as many different levels
+        if (action.distinctLevels) return found.mapNotNull { it.getLevel() }.distinct().size >= max(1, ctx.amount(selector.min))
         return found.size >= max(1, ctx.amount(selector.min))
     }
 
@@ -62,6 +64,7 @@ class MoveHandler : ActionHandler<Move> {
         val min = min(ctx.amount(selector.min), max)
         ctx.ask(instruction(ctx, action, min, max), action.label ?: label(action.to), Selection.pool(ctx, selector), valid, min, max)
         if (selector.self() == Selector.Self.REQUIRE) valid.firstOrNull { ctx.isSelf(it) }?.let { ctx.requireInChoice(it) }
+        if (action.distinctLevels) ctx.asksDistinctLevels()
         return true
     }
 
@@ -78,6 +81,9 @@ class MoveHandler : ActionHandler<Move> {
         }
         if (action.cards!!.self() == Selector.Self.REQUIRE && !picked.isEmpty() && picked.none { ctx.isSelf(it) }) return "Debes incluir esta carta"
         if (action.sameName && picked.map { it.cardName?.lowercase() }.toSet().size > 1) return "Las cartas deben ser copias de una misma carta"
+        if (action.distinctLevels && (picked.any { it.getLevel() == null } || picked.map { it.getLevel() }.toSet().size < picked.size))
+            return "Las cartas deben ser de distinto nivel"
+        if (action.distinctLevels && picked.size < min(ctx.amount(action.cards.min), candidates(ctx, action).size)) return "Elige " + ctx.amount(action.cards.min) + " cartas"
         move(ctx, action, picked)
         if (Move.DECK_TOP_KEPT == action.rest) ctx.lookedRestTo(Move.DECK_TOP, null)
         else if (action.rest != null) ctx.lookedRestTo(action.rest, answer.order)
@@ -123,6 +129,7 @@ class MoveHandler : ActionHandler<Move> {
         val from = if (action.cards.zones == "looked") "" else " de " + ctx.describeZones(action.cards.zones)
         var cards = what + (if (filter.all { JavaText.isWhitespace(it) }) "" else " $filter") + from
         if (action.cards.self() == Selector.Self.REQUIRE) cards += ", incluida esta carta"
+        if (action.distinctLevels) cards += " de distinto nivel"
         val random = if (action.random) " en orden aleatorio" else ""
         if (action.to!!.startsWith("materials:") || action.to.startsWith("resources:")) {
             return "Añade " + cards + " como " + (if (action.to.startsWith("materials:")) "material." else "recurso.")
