@@ -68,6 +68,14 @@ sealed interface Amount {
         }
     }
 
+    /** "por cada material [filtro] tributado": the cards the last action moved that match, read by EngineContext. */
+    @JvmRecord
+    data class LastMoved(val filter: CardFilter?) : Amount {
+        override fun of(room: GameRoom, controller: String?): Int {
+            return 0
+        }
+    }
+
     /** "en el nivel de dicho aliado": the card of the triggering event, read by EngineContext. */
     data object TriggerSourceLevel : Amount {
         override fun of(room: GameRoom, controller: String?): Int {
@@ -117,6 +125,21 @@ sealed interface Amount {
         }
     }
 
+    /** "por cada vida bocarriba": the face-up lives of `whose` (yours, the opponent's or both players'). */
+    @JvmRecord
+    data class FaceUpLives(val whose: Condition.Side?) : Amount {
+        override fun of(room: GameRoom, controller: String?): Int {
+            val opponent = room.getOpponentId(controller)
+            return room.players.values.filter { p ->
+                when (whose ?: Condition.Side.ANY) {
+                    Condition.Side.YOU -> p.userId == controller
+                    Condition.Side.ENEMY -> p.userId == opponent
+                    Condition.Side.ANY -> true
+                }
+            }.sumOf { p -> p.lifeStack.count { !it.faceDown } }
+        }
+    }
+
     /** A fixed number. */
     @JvmRecord
     data class Fixed(val value: Int) : Amount {
@@ -125,11 +148,12 @@ sealed interface Amount {
         }
     }
 
-    /** How many of your cards on the field match. */
+    /** How many of your cards on the field match; `opponent`: of your opponent's field ("si tu oponente controla más criaturas que tú"). */
     @JvmRecord
-    data class OnField(val filter: CardFilter?) : Amount {
+    data class OnField(val filter: CardFilter?, val opponent: Boolean = false) : Amount {
         override fun of(room: GameRoom, controller: String?): Int {
-            return EffectEngine.countOnField(room, controller, filter).toInt()
+            val whose = if (opponent) room.getOpponentId(controller) ?: return 0 else controller
+            return EffectEngine.countOnField(room, whose, filter).toInt()
         }
     }
 

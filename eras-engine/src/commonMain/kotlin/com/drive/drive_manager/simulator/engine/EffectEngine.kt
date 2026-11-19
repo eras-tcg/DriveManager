@@ -53,6 +53,8 @@ object EffectEngine {
     const val NO_ATTACK = "No puede atacar"
     /** "no puede declarar bloqueo" / "no puede bloquear". */
     const val NO_BLOCK = "No puede bloquear"
+    /** "esta carta no inflige daño directo ni destruye las criaturas que enfrenta" (as attacker or blocker). */
+    const val HARMLESS = "No inflige daño directo ni destruye al enfrentar"
     /** "no puede agotarse": it cannot be exhausted (by effects, nor to declare an attack). */
     const val CANNOT_TAP = "No puede agotarse"
     /** "no puede ser objetivo de efectos de cartas oponentes [nivel N o menor]": "Inmune" or "Inmune N". */

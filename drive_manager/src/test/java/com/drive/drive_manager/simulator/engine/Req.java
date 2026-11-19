@@ -49,7 +49,7 @@ final class Req {
     }
 
     private static MaterialSpec material(int count, int level, List<String> zones) {
-        return new MaterialSpec(count, false, level, false, 0, zones, null);
+        return new MaterialSpec(count, false, level, false, 0, zones, null, null);
     }
 
     private static void put(String kind, String text, RequirementSpec spec) {
@@ -84,7 +84,7 @@ final class Req {
         put("materialization", "2 criaturas nivel 1 en tu mano o tributos.",
                 spec(new SummonerSpec(0, null, false, false, null, List.of(), true), material(2, 1, List.of("hand", "tributeZone"))));
         put("materialization", "criatura nivel 3 + aliados que sumen 3 o 4 en nivel.",
-                spec(level(3), new MaterialSpec(0, false, 3, false, 3, List.of(), null)));
+                spec(level(3), new MaterialSpec(0, false, 3, false, 3, List.of(), null, null)));
         // "(A) o (B)": a made-up card with both ways
         put("materialization", "(criatura nivel 3) o (criatura nivel 2 + material nivel 2 en tu mano o campo).",
                 new RequirementSpec(level(3), null, 0, false, false, 0, false, 0, false, null, null,

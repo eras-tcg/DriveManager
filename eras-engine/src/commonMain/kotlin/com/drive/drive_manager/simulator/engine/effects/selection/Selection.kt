@@ -132,6 +132,11 @@ object Selection {
                 if (card != null) into.add(card)
                 continue
             }
+            // "1 de tus vidas, excepto la del tope"
+            if (zone == "livesBelowTop") {
+                if (whose != null) into.addAll(whose.lifeStack.drop(1))
+                continue
+            }
             if (zone == "looked") {
                 if (!enemy) into.addAll(ctx.looked())
                 continue

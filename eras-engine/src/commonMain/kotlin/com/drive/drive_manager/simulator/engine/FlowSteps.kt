@@ -87,6 +87,12 @@ object FlowSteps : StepFamily {
                 if (self != null) {
                     // It stays as a permanent: its effects on the field work like any other card's there
                     if (step.exhausted) self.tapped = true
+                    // "coloca esta carta en tu retaguardia como criatura de fuerza N": a creature while it stays (Removals.leaveField undoes it)
+                    if (step.asCreature != null) {
+                        self.cardType = "creature"
+                        self.strength = step.asCreature
+                        self.y = 75.0
+                    }
                     effect.keepOnField = true
                     log(room, name(self) + (if (step.exhausted) " queda agotada en la retaguardia" else " permanece en el campo"), null)
                 }

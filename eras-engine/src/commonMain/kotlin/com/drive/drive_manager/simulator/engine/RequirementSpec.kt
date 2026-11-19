@@ -60,10 +60,12 @@ data class SummonerSpec(
  * @param levelSum "aliados que sumen N en nivel" (with the summoner); 0 without it
  * @param zones    where they come from ("field", "hand", "tributeZone", "discardPile"); null: the Tributos or the field
  * @param filter   anything else they must be ("[artefacto]", a utility with `cardType`); null: creatures
+ * @param maxCount with [more]: "N o M aliados", at most M; null: no limit
  */
 @JvmRecord
 data class MaterialSpec(
     val count: Int, val more: Boolean, val level: Int, val orLess: Boolean, val levelSum: Int, val zones: List<String>?, val filter: CardFilter?,
+    val maxCount: Int? = null,
 )
 
 /**

@@ -80,7 +80,7 @@ sealed interface EffectStep {
 
     /** "coloca esta carta agotada en tu retaguardia": the utility stays on the field. */
     @JvmRecord
-    data class KeepOnField(val exhausted: Boolean) : EffectStep
+    data class KeepOnField(val exhausted: Boolean, val asCreature: Int? = null) : EffectStep
 
     /**
      * "elige 1 aliado; mira las primeras N cartas: de ellas toma hasta `max` carta que comparta tipo con el

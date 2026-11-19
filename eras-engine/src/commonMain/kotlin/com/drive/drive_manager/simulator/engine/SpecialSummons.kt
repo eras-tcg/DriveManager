@@ -119,7 +119,7 @@ object SpecialSummons {
             rulesPrompt(room, userId, PromptPurpose.SPECIAL.id(), name(card) + " · " + kind, materialInstruction(req, card, summoner), "Material",
                     materialOptions, shown)
             room.prompt!!.min = req.materialCount
-            room.prompt!!.max = if (req.moreMaterials) materialOptions.size else req.materialCount
+            room.prompt!!.max = if (req.moreMaterials) req.materialsAtMost(materialOptions.size) else req.materialCount
             room.prompt!!.subjectId = card.instanceId
             room.prompt!!.summonerId = summoner.instanceId
             return null
@@ -158,7 +158,7 @@ object SpecialSummons {
             for (z in option.materialZones!!) shown.addAll(zone(player, z))
             rulesPrompt(room, userId, PromptPurpose.SPECIAL.id(), name(card) + " · " + kind, materialInstruction(req, card, summoner), "Material", materials, shown)
             room.prompt!!.min = max(1, option.materialCount)
-            room.prompt!!.max = if (option.levelSum > 0 || option.moreMaterials) materials.size else option.materialCount
+            room.prompt!!.max = if (option.levelSum > 0) materials.size else if (option.moreMaterials) option.materialsAtMost(materials.size) else option.materialCount
             room.prompt!!.subjectId = card.instanceId
             room.prompt!!.summonerId = summoner.instanceId
             return null
@@ -355,7 +355,7 @@ object SpecialSummons {
             rulesPrompt(room, player.userId, PromptPurpose.REPLACE_SUMMON.id(), name(card) + " · en lugar de que " + name(ally) + " sea removida",
                     materialInstruction(req, card, ally), "Material", materials, shown)
             room.prompt!!.min = max(1, option.materialCount)
-            room.prompt!!.max = if (option.levelSum > 0 || option.moreMaterials) materials.size else option.materialCount
+            room.prompt!!.max = if (option.levelSum > 0) materials.size else if (option.moreMaterials) option.materialsAtMost(materials.size) else option.materialCount
             room.prompt!!.subjectId = card.instanceId
             room.prompt!!.summonerId = ally.instanceId
             return

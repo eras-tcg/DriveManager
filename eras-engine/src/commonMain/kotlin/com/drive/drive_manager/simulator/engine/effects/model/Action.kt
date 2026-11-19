@@ -116,6 +116,13 @@ sealed interface Action {
     }
 
     /**
+     * "revela 1 de tus vidas" (`faceUp` true), "coloca bocabajo …" (false), "voltea una de tus vidas" (`toggle`: each one turns over). A life revealed
+     * is an event ([com.drive.drive_manager.simulator.engine.GameEvent.LIFE_REVEALED]: "si alguna vida es revelada").
+     */
+    @JvmRecord
+    data class Flip(val cards: Selector?, val faceUp: Boolean = true, val toggle: Boolean = false) : Action
+
+    /**
      * For a while, cards gain or lose strength, or gain an ability or a restriction.
      *
      * @param strength negative: it is reduced; null: no change
@@ -165,6 +172,8 @@ sealed interface Action {
             const val FRONT = "frontLine"
             const val BACK = "backLine"
             const val LIFE_TOP = "lifeTop"
+            /** "al fondo de tus vidas", "al fondo de las vidas oponentes" (of the card's owner). */
+            const val LIFE_BOTTOM = "lifeBottom"
             const val TRIBUTES = "tributeZone"
             const val DISCARD = "discardPile"
             const val DECK_TOP = "deckTop"

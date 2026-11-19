@@ -228,6 +228,11 @@ object Removals {
      */
     @JvmStatic
     fun leaveField(card: CardSlot) {
+        // A card the field had made a creature ("coloca esta carta … como criatura de fuerza N") is its printed card again
+        if (CardEffects.creatureOnFieldOnly(card)) {
+            card.cardType = "utility"
+            card.strength = null
+        }
         card.faceDown = false
         card.tapped = false
         card.strengthModifier = 0

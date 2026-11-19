@@ -76,7 +76,12 @@ object SpecialRequirements {
          * add up to N by themselves (the summoner does not count). False: "aliados que sumen N en nivel", the summoner included.
          */
         val sumInZones: Boolean = false,
+        /** With [moreMaterials]: "1 o 2 aliados", at most this many materials; null: no limit. */
+        val maxMaterials: Int? = null,
     ) {
+        /** The most materials that may be chosen out of `available`. */
+        fun materialsAtMost(available: Int): Int = if (maxMaterials == null) available else kotlin.math.min(available, maxMaterials)
+
         /** `moreMaterials`: "N o más criaturas" as materials. */
         constructor(
             kind: String?, level: Int, alliesSum: Int, materialLevel: Int, levelSum: Int, atLeast: Boolean, maxLevel: Int,
@@ -171,7 +176,7 @@ object SpecialRequirements {
                 m?.count ?: 0, m?.zones?.takeIf { it.isNotEmpty() } ?: frozenListOf("tributeZone", "field"), noSummoner,
                 spec.alternative?.let { fromSpec(kind, it) }, spec.alone, spec.strongest, declared, m?.more ?: false, spec.alliesSumByCost,
                 spec.aloneAtLevel, spec.formationSize, spec.formationAtLeast, s?.filter, m?.filter, m?.orLess ?: false, spec.condition,
-                spec.conditionText, (m?.levelSum ?: 0) > 0 && !m?.zones.isNullOrEmpty())
+                spec.conditionText, (m?.levelSum ?: 0) > 0 && !m?.zones.isNullOrEmpty(), m?.maxCount)
     }
 
     /** What else a programmed Requerimiento checks on the board ([SpecialRequirement.condition]) holds. */
@@ -305,7 +310,8 @@ object SpecialRequirements {
             return if (addsUpTo(all as List<CardSlot>, option.levelSum)) null
             else "Los niveles deben sumar exactamente " + option.levelSum + " con el invocador (suman " + sum + ")"
         }
-        return if (materials.size == option.materialCount || (option.moreMaterials && materials.size > option.materialCount)) null
+        return if (materials.size == option.materialCount || (option.moreMaterials && materials.size > option.materialCount
+                    && (option.maxMaterials == null || materials.size <= option.maxMaterials))) null
         else "Elige " + option.materialCount + " " + plural(option.materialCount, "material", "materiales")
     }
 

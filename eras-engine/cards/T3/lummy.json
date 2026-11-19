@@ -1,0 +1,100 @@
+{
+  "name": "lummy",
+  "effects": [
+    {
+      "id": "lummy:en-juego",
+      "moment": "ON_PLAY",
+      "mandatory": true,
+      "label": "En Juego",
+      "text": "Coloca esta carta en tu retaguardia como criatura de fuerza 1. Luego: si tu oponente controla más criaturas que tú: puedes invocar 1 [lanzador de conjuros] de tus tributos reduciendo su coste en 1.",
+      "steps": [
+        {
+          "type": "KeepOnField",
+          "asCreature": 1
+        },
+        {
+          "type": "IfCondition",
+          "condition": {
+            "type": "Compare",
+            "left": {
+              "type": "OnField",
+              "filter": {
+                "cardType": "creature"
+              },
+              "opponent": true
+            },
+            "op": "AT_LEAST",
+            "right": {
+              "type": "Scaled",
+              "base": {
+                "type": "OnField",
+                "filter": {
+                  "cardType": "creature"
+                }
+              },
+              "divisor": 1,
+              "plus": 1
+            }
+          },
+          "covers": 2
+        },
+        {
+          "type": "MayDo",
+          "question": "¿Invocas 1 [lanzador de conjuros] de tus tributos reduciendo su coste en 1?",
+          "covers": 1
+        },
+        {
+          "type": "Do",
+          "action": {
+            "type": "Summon",
+            "cards": {
+              "zones": "tributeZone",
+              "owner": "YOU",
+              "filter": {
+                "classes": [
+                  "lanzador de conjuros"
+                ],
+                "cardType": "creature"
+              },
+              "min": {
+                "type": "Fixed",
+                "value": 1
+              },
+              "max": {
+                "type": "Fixed",
+                "value": 1
+              },
+              "self": "ANY",
+              "mode": "CHOOSE"
+            },
+            "reduce": {
+              "type": "Fixed",
+              "value": 1
+            },
+            "required": true
+          }
+        }
+      ],
+      "sourceZone": "field",
+      "limit": "NONE"
+    }
+  ],
+  "reactions": [
+    {
+      "type": "CostModifier",
+      "label": "Todos Los Turnos",
+      "event": "SPECIAL_SUMMON",
+      "holder": "SUMMONER",
+      "payment": {
+        "kind": "NONE"
+      },
+      "reduce": 3,
+      "limit": "NONE",
+      "card": {
+        "classes": [
+          "dragón"
+        ]
+      }
+    }
+  ]
+}

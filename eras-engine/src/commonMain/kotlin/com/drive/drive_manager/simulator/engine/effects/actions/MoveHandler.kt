@@ -118,6 +118,7 @@ class MoveHandler : ActionHandler<Move> {
             Move.FRONT -> "A la línea frontal"
             Move.BACK -> "A la retaguardia"
             Move.LIFE_TOP -> "A tus vidas"
+            Move.LIFE_BOTTOM -> "Al fondo de las vidas"
             else -> "Elegida"
         }
     }
@@ -126,7 +127,9 @@ class MoveHandler : ActionHandler<Move> {
         val what = (if (min < max) "hasta " else "") + max + " " + (if (max == 1) "carta" else "cartas")
         val filter = action.cards!!.filter().describe()
         // The cards looked at are the ones on the sheet: no "de …" for them
-        val from = if (action.cards.zones == "looked") "" else " de " + ctx.describeZones(action.cards.zones)
+        val zones = ctx.describeZones(action.cards.zones)!!
+        val from = if (action.cards.zones == "looked") "" else if (action.cards.owner == Selector.Owner.OPPONENT) " de " + zones.replace("tus ", "las ").replace("tu ", "la ") + " oponentes"
+        else " de $zones"
         var cards = what + (if (filter.all { JavaText.isWhitespace(it) }) "" else " $filter") + from
         if (action.cards.self() == Selector.Self.REQUIRE) cards += ", incluida esta carta"
         if (action.distinctLevels) cards += " de distinto nivel"
@@ -149,6 +152,7 @@ class MoveHandler : ActionHandler<Move> {
             Move.FRONT -> "Coloca " + cards + " en tu línea frontal" + (if (action.exhausted) ", agotada." else ".")
             Move.BACK -> "Coloca " + cards + " en tu retaguardia" + (if (action.exhausted) ", agotada." else ".")
             Move.LIFE_TOP -> "Coloca " + cards + " al tope de tus vidas" + (if (action.faceDown) "." else ", bocarriba.")
+            Move.LIFE_BOTTOM -> "Coloca " + cards + " al fondo de las vidas" + (if (action.faceDown) "." else ", bocarriba.")
             else -> "Elige $cards."
         }
     }

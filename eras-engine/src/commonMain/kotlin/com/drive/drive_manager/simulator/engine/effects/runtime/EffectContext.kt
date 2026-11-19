@@ -76,6 +76,9 @@ interface EffectContext {
      */
     fun excavate(count: Int, until: CardFilter?)
 
+    /** Turns a card over ("revela", "coloca bocabajo"): `faceUp` null turns it the other way. */
+    fun flip(card: CardSlot?, faceUp: Boolean?)
+
     /** The choice just asked takes cards of different levels ("de distinto nivel"). */
     fun asksDistinctLevels()
 

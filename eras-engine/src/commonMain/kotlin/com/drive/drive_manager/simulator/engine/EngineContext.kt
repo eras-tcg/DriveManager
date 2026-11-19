@@ -34,7 +34,7 @@ internal class EngineContext(private val room: GameRoom, private val effect: Pen
         const val SPECIAL_SUMMONER = "specialSummoner"
 
         private fun destination(to: String?): String? {
-            if (Action.Move.LIFE_TOP == to) return "lifeStack"
+            if (Action.Move.LIFE_TOP == to || Action.Move.LIFE_BOTTOM == to) return "lifeStack"
             return if (Action.Move.DECK_TOP == to || Action.Move.DECK_BOTTOM == to) "deck" else to
         }
 
@@ -61,6 +61,7 @@ internal class EngineContext(private val room: GameRoom, private val effect: Pen
                 Action.Move.FRONT -> "coloca en su línea frontal"
                 Action.Move.BACK -> "coloca en su retaguardia"
                 Action.Move.LIFE_TOP -> "coloca al tope de sus vidas"
+                Action.Move.LIFE_BOTTOM -> "coloca al fondo de sus vidas"
                 else -> "mueve"
             }
         }
@@ -206,6 +207,7 @@ internal class EngineContext(private val room: GameRoom, private val effect: Pen
             val zone = raw.trim { it <= ' ' }
             if (zone.startsWith("materials")) names.add("los materiales")
             else if (zone.startsWith("resources")) names.add("los recursos")
+            else if (zone == "lifeStack" || zone == "livesBelowTop") names.add("tus vidas")
             else names.add(if (Zone.HAND.`is`(zone) || Zone.DECK.`is`(zone)) "tu " + EffectEngine.zoneName(zone) else "tus " + EffectEngine.zoneName(zone))
         }
         return names.joinToString(" o ")
@@ -395,6 +397,25 @@ internal class EngineContext(private val room: GameRoom, private val effect: Pen
         EffectEngine.record(room, GameEvent.EXCAVATE, player.userId, null, "deck", null, effect, frozenMapOf<String, Any?>("count", revealed.size),
             player.username + " excava " + revealed.size + " " + (if (revealed.size == 1) "carta" else "cartas") + " de su mazo (" + effect.sourceName + ")"
                     + EffectEngine.names(revealed))
+    }
+
+    override fun flip(card: CardSlot?, faceUp: Boolean?) {
+        val c = card ?: return
+        val up = faceUp ?: c.faceDown
+        if (c.faceDown == !up) return
+        c.faceDown = !up
+        val owner = room.players.values.firstOrNull { p -> EffectEngine.find(p.lifeStack, c.instanceId) != null }
+            ?: room.players.values.firstOrNull { p -> EffectEngine.locate(p, c.instanceId) != null }
+        val inLives = owner != null && EffectEngine.find(owner.lifeStack, c.instanceId) != null
+        val whose = if (owner == null || owner.userId == player()!!.userId) "una de sus vidas" else "una vida de " + owner.username
+        if (inLives && up) {
+            EffectEngine.record(room, GameEvent.LIFE_REVEALED, player()!!.userId, c, "lifeStack", "lifeStack", effect,
+                frozenMapOf<String, Any?>("ownerId", owner!!.userId), player()!!.username + " revela " + whose + ": " + EffectEngine.name(c)
+                        + " (" + effect.sourceName + ")")
+        } else {
+            EffectEngine.log(room, player()!!.username + (if (up) " voltea bocarriba " else " coloca bocabajo ") + (if (inLives) whose else EffectEngine.name(c))
+                    + " (" + effect.sourceName + ")", null)
+        }
     }
 
     override fun asksDistinctLevels() {
@@ -627,6 +648,10 @@ internal class EngineContext(private val room: GameRoom, private val effect: Pen
         if (amount is Amount.Times) return this.amount(amount.base) * amount.factor
         if (amount is Amount.Scaled) return this.amount(amount.base) / amount.divisor + amount.plus
         if (amount is Amount.TriggerSourceLevel) return SpecialRequirements.triggerSourceLevel(room, effect)
+        if (amount is Amount.LastMoved) {
+            val filter = amount.filter ?: CardFilter.any()
+            return effect.lastTributed.mapNotNull { id -> EffectEngine.findInRoom(room, id) }.count { filter.matches(it) }
+        }
         if (amount is Amount.TriggerStrengthBeforeRemoval) {
             // Triggered by several cards at once: the one chosen among them
             val chosen = effect.saved[Memory.EVENT_CARD]

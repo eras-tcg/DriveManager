@@ -31,6 +31,9 @@ import com.drive.drive_manager.simulator.room.CardSlot
  * @param frontOnly     "en tu línea frontal" (not in the Retaguardia)
  * @param noResources   "sin recursos": it has no Recursos
  * @param enlace        "Enlace": a "Criatura Enlace" (a category of creature, designer 2026-11-13)
+ * @param faceUpOnly    "bocarriba" (a life, a card in a hidden zone)
+ * @param faceDownOnly  "bocabajo"
+ * @param minSpecialCost "de coste especial N o mayor"
  * @param anyOf         alternatives that cannot be written as one filter ("1 utilidad Violeta o [brujería]"): it matches when this
  *                      filter and one of them do
  */
@@ -41,7 +44,7 @@ data class CardFilter(
     val name: String?, val notName: String?, val starterOnly: Boolean, val colorAndClass: Boolean, private val notColors: List<String>?,
     val nameContains: String?, val minCost: Int?, private val cardTypes: List<String>?, private val anyOf: List<CardFilter>?,
     val mentions: String?, val backOnly: Boolean, val enlace: Boolean = false, val frontOnly: Boolean = false,
-    val noResources: Boolean = false,
+    val noResources: Boolean = false, val faceUpOnly: Boolean = false, val faceDownOnly: Boolean = false, val minSpecialCost: Int? = null,
 ) {
 
     constructor(
@@ -231,6 +234,9 @@ data class CardFilter(
         if (frontOnly && !EffectEngine.inFrontLine(card)) return false
         if (noResources && !card.resources.isNullOrEmpty()) return false
         if (enlace && !card.enlace) return false
+        if (faceUpOnly && card.faceDown) return false
+        if (faceDownOnly && !card.faceDown) return false
+        if (minSpecialCost != null && (card.specialCost == null || card.specialCost!! < minSpecialCost)) return false
         return !starterOnly || card.starter
     }
 

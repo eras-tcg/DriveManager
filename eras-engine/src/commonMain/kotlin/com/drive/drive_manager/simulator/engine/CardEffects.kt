@@ -95,12 +95,14 @@ object CardEffects {
      * @param targets    the cards it affects; null: this card
      * @param enemies    `targets` are the opponent's ("los enemigos de fuerza 3 o menos no pueden declarar ataque")
      * @param formationNeighbours `targets` are only the members of its formation next to it ("los aliados [paladín] adyacentes en la formación")
+     * @param lives      from the field, it gives `strength` to the creatures in its controller's lives ("las criaturas en tus vidas ganan 20 de
+     *                   fuerza"): read when a life's strength is ([lifeStrength])
      */
     @JvmRecord
     data class Continuous(
         val label: String?, val text: String?, val allyTurn: Boolean, val condition: Condition?, val strength: Int, val keywords: List<String>?,
         val bonus: Amount?, val zone: String?, val levelBonus: Amount?, val targets: CardFilter?, val enemies: Boolean,
-        val formationNeighbours: Boolean = false, val keywordAmount: Amount? = null,
+        val formationNeighbours: Boolean = false, val keywordAmount: Amount? = null, val lives: Boolean = false,
     ) {
         /**
          * The keywords it gives now: "gana Letalidad 1 por cada copia de esta carta en tus tributos" is "Letalidad {n}" with
@@ -263,12 +265,26 @@ object CardEffects {
     fun lifeStrength(room: GameRoom, owner: String?, life: CardSlot): Int {
         var strength = if (life.strength == null) 0 else life.strength!!
         for (c in continuousOf(life)) {
-            if (Zone.LIFE_STACK.`is`(c.zone) && c.condition!!.test(room, null, life, owner)) strength += c.strength
+            if (Zone.LIFE_STACK.`is`(c.zone) && !c.lives && c.condition!!.test(room, null, life, owner)) strength += c.strength
+        }
+        // "las criaturas en tus vidas ganan N de fuerza" (Lumisdragon Arcano): a card of the owner's field
+        val player = room.getPlayer(owner)
+        if (player != null && "creature" == life.cardType) for (card in player.field) {
+            if (card.faceDown) continue
+            for (c in continuousOf(card)) {
+                if (c.lives && Zone.FIELD.`is`(c.zone) && (c.condition == null || c.condition.test(room, null, card, owner))) strength += c.strength
+            }
         }
         // Helena: "reduce … las de las vidas oponentes en N, hasta el final del turno"
         val reduced = EffectEngine.LIFE_REDUCED + life.instanceId + "|"
         for (k in room.usedThisTurn) if (k.startsWith(reduced)) strength -= k.substring(reduced.length).toInt()
         return strength
+    }
+
+    /** A utility whose effect keeps it on the field as a creature ([EffectStep.KeepOnField] with `asCreature`), now a creature. */
+    @JvmStatic
+    fun creatureOnFieldOnly(card: CardSlot): Boolean {
+        return "creature" == card.cardType && of(card.cardName).any { s -> s.steps!!.any { it is EffectStep.KeepOnField && it.asCreature != null } }
     }
 
     /** "En Tributos: esta carta puede considerarse como si estuviera en tu mano para invocaciones especiales." */

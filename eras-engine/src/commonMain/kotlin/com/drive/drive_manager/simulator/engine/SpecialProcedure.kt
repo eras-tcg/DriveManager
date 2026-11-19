@@ -150,7 +150,8 @@ object SpecialProcedure {
             Selector.Stage.MATERIAL -> {
                 val rule = resolve(room, effect, special.rule)
                 val req = SpecialRequirements.specialRequirement(target(room, effect, rule))!!
-                if (req.levelSum > 0 || req.moreMaterials) intArrayOf(1, available, 0) else intArrayOf(1, 1, 0)
+                if (req.levelSum > 0) intArrayOf(1, available, 0)
+                else if (req.moreMaterials) intArrayOf(1, req.materialsAtMost(available), 0) else intArrayOf(1, 1, 0)
             }
         }
     }
