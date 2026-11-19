@@ -200,7 +200,7 @@ object CardEffects {
     /** Keyword abilities the engine applies (combat rules, KEYWORDS, Asalto); the rest are played by hand. */
     @JvmField
     val ENGINE_KEYWORDS: Set<String> = frozenSetOf("Provocar", "Enfrentar", "Celeridad", "Asalto", "Furia", "Reactivar",
-        "Letalidad", "Imbloqueable", "Perforante", "Alcance", "Protección", "Agrupar")
+        "Letalidad", "Imbloqueable", "Perforante", "Alcance", "Protección", "Agrupar", "Golpe rápido")
 
     private val TRAILING_NUMBER = Platform.regex("\\s*\\d+$")
 
