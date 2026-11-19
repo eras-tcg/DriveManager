@@ -486,4 +486,42 @@ class E11CardsTest extends CardBatchSupport {
             assertThat(CardEffects.requirementOf(card("x", name, 1, 1, "R"))).as(name).isNotNull();
         }
     }
+
+    // ------------------------------------------------------------------ Blanco
+
+    @Test
+    void favorDeLaNaturalezaDrawsUntilTheHandHasFiveCards() {
+        host.getHand().add(card("h1", "Mano 1", 1, 1, "W"));
+        host.getHand().add(card("h2", "Mano 2", 1, 1, "W"));
+        int deck = host.getDeck().size();
+        play(utility("fn", "Favor de la Naturaleza", 0, "W"));
+        if (room.getPrompt() != null) answer(room.getPrompt(), "fn");
+        assertThat(host.getHand()).hasSize(5);
+        assertThat(host.getDeck()).hasSize(deck - 3);
+    }
+
+    @Test
+    void favorDeLaNaturalezaDrawsNothingWithFiveCardsInHand() {
+        for (int i = 0; i < 5; i++) host.getHand().add(card("h" + i, "Mano " + i, 1, 1, "W"));
+        int deck = host.getDeck().size();
+        play(utility("fn", "Favor de la Naturaleza", 0, "W"));
+        if (room.getPrompt() != null) answer(room.getPrompt(), "fn");
+        assertThat(host.getHand()).hasSize(5);
+        assertThat(host.getDeck()).hasSize(deck);
+    }
+
+    @Test
+    void ultimaLineaCountsEveryLifeUpToThree() {
+        // "si tienes 3 o menos vidas": the face-up ones count too
+        host.getLifeStack().clear();
+        for (int i = 0; i < 4; i++) {
+            CardSlot life = card("hl" + i, "Vida", 1, 1, "R");
+            life.setFaceDown(i > 0);
+            host.getLifeStack().add(life);
+        }
+        host.getHand().add(utility("ul", "Última Línea De Defensa", 0, "W"));
+        assertThat(Summons.playByPlayer(room, "host", "ul", 50.0, 75.0)).contains("condición");
+        host.getLifeStack().remove(0);
+        assertThat(Summons.playByPlayer(room, "host", "ul", 50.0, 75.0)).isNull();
+    }
 }

@@ -1,0 +1,22 @@
+{
+  "name" : "favor de la naturaleza",
+  "effects" : [ {
+    "id" : "favor-de-la-naturaleza:en-juego",
+    "moment" : "ON_PLAY",
+    "mandatory" : true,
+    "label" : "En Juego",
+    "text" : "Efecto Definitivo. Roba cartas hasta tener 5 cartas en tu mano.",
+    "steps" : [ {
+      "type" : "Do",
+      "action" : {
+        "type" : "Draw",
+        "count" : {
+          "type" : "HandUnder",
+          "upTo" : 5
+        }
+      }
+    } ],
+    "sourceZone" : "field",
+    "limit" : "DEFINITIVE"
+  } ]
+}

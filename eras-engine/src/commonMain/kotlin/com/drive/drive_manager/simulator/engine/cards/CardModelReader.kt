@@ -13,7 +13,7 @@ internal object CardModelReader {
     /** The registered type ids (the records' and objects' simple names) of each family. */
     private val TYPES: Map<String, List<String>> = mapOf(
         "Action" to listOf("AtEndOfTurn", "Attack", "Damage", "Destroy", "Draw", "Gems", "Look", "Modify", "Move", "Play", "Select", "Sequence", "SetTapped", "Summon", "SummonSpecial", "Watch"),
-        "Amount" to listOf("EnemiesInFrontLine", "Fixed", "Gems", "HandOver", "IfThen", "InZone", "InZones", "LastCount", "LevelsOnField", "Lives", "LivesBehind", "OnBothFields", "OnField", "OpponentLevels", "Scaled", "SignedGems", "SourceStrength", "SubjectLevel", "Times", "TriggerSourceLevel", "UsedToSummon"),
+        "Amount" to listOf("EnemiesInFrontLine", "Fixed", "Gems", "HandOver", "HandUnder", "IfThen", "InZone", "InZones", "LastCount", "LevelsOnField", "Lives", "LivesBehind", "OnBothFields", "OnField", "OpponentLevels", "Scaled", "SignedGems", "SourceStrength", "SubjectLevel", "Times", "TriggerSourceLevel", "UsedToSummon"),
         "CardEffects.Replacement" to listOf("Replacement"),
         "Condition" to listOf("All", "AllyDealtDirectDamage", "Always", "Any", "ByEffect", "Compare", "Destroyed", "EntersFrontLine", "GameIs", "Happened", "Immediately", "Not", "NothingElsePlayedThisTurn", "Summoned", "SummonedWithoutMaterial", "Targeted", "ThisClashes", "ThisIs", "ThisMatches", "ThisTributed", "YouReducedStrength"),
         "EffectStep" to listOf("ActivateSubjectSummonEffect", "ActivateTributedSummonEffect", "AddResourceToHigherAlly", "AlliesGain", "AllySpecialSummonsSameLevel", "AttachLowerFromTributes", "AttachSelfAsResourceToAlly", "AttachSubjectToHigherAlly", "AttachSubjectToSummoned", "BounceChosen", "ChangeClass", "ChooseEnemiesLevelSum", "ChooseOpponentTribute", "ChooseWeakestEnemy", "DeclareBlockSelf", "DestroyFaceUpLife", "DestroyTopLife", "Do", "EachPlayerDiscards", "EachPlayerKeepsOneInFrontLine", "EachPlayerLowersMarker", "EndYourTurn", "ExtraCombatHitThenEndTurn", "ExtraHit", "GainGemsPerOwnSacrificed", "GrantEffect", "GroupUp", "HandsToBottomDrawOpponentLives", "IfChosenGone", "IfCondition", "IfDone", "IfNotDone", "IfPossible", "IfSaved", "IfTributed", "KeepOnField", "LivesFaceDown", "MaterialOfExhaustedAllyToBack", "MaterializeSelfOnTriggerAlly", "MayDo", "NoUntapChosen", "OpponentGainsGemsAsCounter", "OpponentMovesOneToFront", "PickAllyUpToSacrificedLevel", "PickAllyWithHigherAlly", "PickAllyWithMaterials", "PlaceChosenTributeAndSelf", "PlaceFromHandUntilTurnEnd", "ReduceOpponentLivesBy", "ReduceRepeatedly", "ReturnAllyOfSummonedLevel", "ReturnSubjectAtAttackEnd", "RevealFromHand", "RevealOpponentHandSendOneToBottom", "SacrificeAlly", "SkipBlockStep", "SpecialSelfDeclaredSummoner", "SubjectFromTrigger", "SubjectIsThisCard", "SummonFreeLevelSum", "SummonLikeSubject", "SwapInFormation", "TakeFromLookedDistinctLevels", "TakeFromLookedEachRestToBottom", "TakeFromLookedLikeSubject", "TributeAlliesLevelSum", "TributeAllyMaterial", "TributeAllyMaterialWhere", "TributeAllyResources", "TributesToDeckBottomForKeyword"),
@@ -50,6 +50,7 @@ internal object CardModelReader {
             "Fixed" -> readAmountFixed(o, at)
             "Gems" -> readAmountGems(o, at)
             "HandOver" -> readAmountHandOver(o, at)
+            "HandUnder" -> readAmountHandUnder(o, at)
             "IfThen" -> readAmountIfThen(o, at)
             "InZone" -> readAmountInZone(o, at)
             "InZones" -> readAmountInZones(o, at)
@@ -386,6 +387,13 @@ internal object CardModelReader {
         J.fields(o, at, "Amount.HandOver", setOf("keep"), true)
         return com.drive.drive_manager.simulator.engine.Amount.HandOver(
             keep = J.int(o, "keep", at),
+        )
+    }
+
+    private fun readAmountHandUnder(o: JsonObject, at: String): com.drive.drive_manager.simulator.engine.Amount.HandUnder {
+        J.fields(o, at, "Amount.HandUnder", setOf("upTo"), true)
+        return com.drive.drive_manager.simulator.engine.Amount.HandUnder(
+            upTo = J.int(o, "upTo", at),
         )
     }
 
