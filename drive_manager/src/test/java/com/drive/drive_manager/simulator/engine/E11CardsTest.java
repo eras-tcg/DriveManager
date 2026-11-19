@@ -2,6 +2,7 @@ package com.drive.drive_manager.simulator.engine;
 
 import com.drive.drive_manager.simulator.actions.TurnActions;
 import com.drive.drive_manager.simulator.room.CardSlot;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
@@ -14,6 +15,8 @@ import static org.assertj.core.api.Assertions.assertThat;
  * E1.1 (the edition laid out on 2026-11-17): one test (or more) per effect programmed from the printed text, and the designer's
  * answers of 2026-11-19 (Dendrovorax, Revitalización Floral, Dolicoquirus, Tory, Judeu, Orden de Búsqueda, Infección Mortal).
  */
+@Tag("cards")
+@Tag("e11")
 class E11CardsTest extends CardBatchSupport {
 
     private static CardSlot creature(String id, String name, int cost, int level, String color, int strength, String... classes) {
