@@ -6,7 +6,7 @@
       "moment": "ON_PLAY",
       "mandatory": true,
       "label": "En Juego",
-      "text": "Elige 1 enemigo; este no puede activar efectos durante tu turno.",
+      "text": "Efecto Definitivo. Elige 1 enemigo: este no puede activar efectos hasta el final del turno.",
       "cost": [
         {
           "type": "Do",
@@ -58,7 +58,7 @@
         }
       ],
       "sourceZone": "field",
-      "limit": "NONE"
+      "limit": "DEFINITIVE"
     }
   ]
 }
