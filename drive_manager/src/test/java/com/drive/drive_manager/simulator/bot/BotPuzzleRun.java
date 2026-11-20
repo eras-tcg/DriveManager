@@ -67,7 +67,7 @@ class BotPuzzleRun {
             passedAll += passed;
             playedAll += repeat;
             System.out.println("[puzzle] " + (passed == repeat ? "PASA " : passed == 0 ? "FALLA" : "A VECES") + " " + p.name() + ": " + passed + "/" + repeat + " — " + p.expected());
-            if (firstAudit != null) firstAudit.stream().limit(Boolean.getBoolean("bot.puzzle.trace") ? 80 : 14).forEach(l -> System.out.println("[puzzle]     " + l));
+            if (firstAudit != null) firstAudit.stream().limit(Boolean.getBoolean("bot.puzzle.trace") ? (System.getProperty("bot.puzzle.traceBelow") != null ? 400 : 80) : 14).forEach(l -> System.out.println("[puzzle]     " + l));
         }
         System.out.println("[puzzle] total " + passedAll + "/" + playedAll);
     }
@@ -115,6 +115,26 @@ class BotPuzzleRun {
                     for (String n : List.of("Flarix", "Falanx", "Mathaus", "Falis", "Flarix", "Zula", "Paso Interdimensional", "Hez", "Mihel")) { CardSlot c = card(n); c.setFaceDown(true); t.guest().getHand().add(c); }
                     lives(t.guest(), 1, true);
                 }, t -> "host".equals(t.room().getWinnerId())),
+                // Duel st2-st4 s13081 (2026-11-20, A guest at 3 lives): Dragón Delta (6) attacked and the bot blocked it with
+                // Espada De Los Leones De Fuego (3), which died, with Ballesta Montada (8) and Franchute (11) also in front
+                new Puzzle("bloqueo-delta", "en el turno rival, con 3 vidas, Dragón Delta (6) y Dracoventus (11) atacan; Dragón Volcánico (14) ataca primero; el bot tiene Espadas De Los Leones De Fuego (3), Ballesta Montada (8), Franchute (11) y Peón (4) al frente: si Delta ataca, no debe sobrevivir (Franchute o Ballesta lo destruyen bloqueando)", t -> {
+                    gems(t, 0);
+                    t.room().setCurrentTurnUserId("guest");
+                    front(t.host(), "Espada De Los Leones De Fuego");
+                    front(t.host(), "Ballesta Montada");
+                    front(t.host(), "Franchute");
+                    front(t.host(), "Peón De Línea Frontal");
+                    front(t.host(), "Espada De Los Leones De Fuego");
+                    back(t.host(), "Caballero Real");
+                    lives(t.host(), 3, true);
+                    front(t.guest(), "Dragón Delta");
+                    front(t.guest(), "Dracoventus").getResources().add(card("Ddraig"));
+                    CardSlot volc = front(t.guest(), "Dragón Volcánico");
+                    for (String n : List.of("Saildreik", "Ddraig")) volc.getResources().add(card(n));
+                    for (String n : List.of("Flambreik", "Wyverno De Pantano", "Ddraig", "Fadrake", "Saildreik", "Flamagón", "Galveta")) t.guest().getTributeZone().add(card(n));
+                    lives(t.guest(), 6, true);
+                }, t -> t.turn().stream().noneMatch(e -> GameEvent.ATTACK_DECLARED.equals(e.getType()) && "Dragón Delta".equals(e.getCardName()))
+                        || t.guest().getField().stream().noneMatch(c -> "Dragón Delta".equals(c.getCardName()))),
                 new Puzzle("perforante", "atacar con Franchute a la criatura agotada del rival y destruirla", t -> {
                     gems(t, 0);
                     front(t.host(), "Franchute");
@@ -651,7 +671,7 @@ class BotPuzzleRun {
         String rivalSettings = System.getProperty("bot.puzzle.rival", "");
         BotPlayer rival = rivalSettings.isEmpty() ? new HeuristicBot() : new LookaheadBot(BotSettings.DEFAULT.with(rivalSettings));
         int start = t.room().getTimeline().size();
-        List<String> audit = new ArrayList<>();
+        List<String> audit = new ArrayList<>(), tries = new ArrayList<>();
         boolean first = true;
         // A puzzle may start in the rival's turn (the bot answers as the defender): the rival plays it, then the bot its own
         boolean hostTurn = "host".equals(t.room().getCurrentTurnUserId());
@@ -664,9 +684,21 @@ class BotPuzzleRun {
             if ((first || traceAll) && side == bot) {
                 if (!first) audit.add("— decisión: " + (t.room().getPrompt() == null ? "jugada" : "elección «" + t.room().getPrompt().getTitle() + "» (" + t.room().getPrompt().getKind() + ")"));
                 MoveTrials.AUDIT.set(audit);
+                // bot.puzzle.traceBelow: every try scored below minus this writes its parts (MoveTrials.TRACE)
+                if (System.getProperty("bot.puzzle.traceBelow") != null) {
+                    MoveTrials.TRACE_BELOW = Double.parseDouble(System.getProperty("bot.puzzle.traceBelow"));
+                    MoveTrials.TRACE.set(tries);
+                    MoveTrials.TRACE_LOG = Boolean.getBoolean("bot.puzzle.traceLog");
+                }
             }
             GameAction a = side.next(t.room(), seat);
-            if ((first || traceAll) && side == bot) { MoveTrials.AUDIT.remove(); first = false; }
+            if ((first || traceAll) && side == bot) {
+                MoveTrials.AUDIT.remove();
+                MoveTrials.TRACE.remove();
+                for (String l : tries) audit.add("    ! " + l);
+                tries.clear();
+                first = false;
+            }
             if (traceAll && side == bot && a != null) audit.add("  → " + a.getType() + " " + a.getPayload());
             if (a == null) break;
             GameStateUpdate u = service.applyAction(t.room().getRoomId(), seat, a, false);

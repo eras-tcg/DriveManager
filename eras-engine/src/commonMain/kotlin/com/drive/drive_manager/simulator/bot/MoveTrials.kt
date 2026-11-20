@@ -148,6 +148,7 @@ internal class MoveTrials(
         if (settings.get("searchHope") >= 0.5) copy.searchHope = me
         val start = copy.timeline.size
         try {
+            val logStart = copy.eventLog.size
             var turn = copy.currentTurnUserId
             var passed = 0
             // Both sides of the copy play by the bot's own rules
@@ -208,7 +209,7 @@ internal class MoveTrials(
                 val ended = if (fact || settings.get("winSeen") <= 0) score.applyAsDouble(copy, me) else TableScore.seen(copy, me, settings)
                 val trace = TRACE.get()
                 if (trace != null && ended < -TRACE_BELOW) trace.add(describe(room, move) + ": " + JavaText.fixed(ended, 1) + " = partida terminada ("
-                        + copy.endReason + "), turnos pasados " + passed + (if (fact) ", hecho" else ", vista"))
+                        + copy.endReason + "), turnos pasados " + passed + (if (fact) ", hecho" else ", vista") + tryLog(copy, logStart))
                 return ended
             }
             // overExtendRival 2 (duel st4-st2 s13047, 2026-11-20: with 6 lives each, every candidate of its second turn at -800
@@ -236,7 +237,7 @@ internal class MoveTrials(
             val trace = TRACE.get()
             if (trace != null && total < -TRACE_BELOW) trace.add(describe(room, move) + ": " + JavaText.fixed(total, 1) + " = mesa " + JavaText.fixed(table, 1)
                     + " − deuda " + JavaText.fixed(over, 1) + " (" + debt.toInt() + " gemas, " + paidInTheirs + " en su turno) + vidas " + JavaText.fixed(lives, 1)
-                    + " + hoja " + JavaText.fixed(leaf, 1) + " + plan " + JavaText.fixed(kept, 1) + " − remoción " + JavaText.fixed(exposed, 1) + "; turnos pasados " + passed)
+                    + " + hoja " + JavaText.fixed(leaf, 1) + " + plan " + JavaText.fixed(kept, 1) + " − remoción " + JavaText.fixed(exposed, 1) + "; turnos pasados " + passed + tryLog(copy, logStart))
             return total
         } finally {
             sandbox.drop(copy)
@@ -258,7 +259,19 @@ internal class MoveTrials(
         /** Trace (tests only): when set for the thread, every try scored below −[TRACE_BELOW] writes here its parts. */
         @JvmField
         val TRACE: LocalValue<MutableList<String>?> = LocalValue()
-        const val TRACE_BELOW = 300.0
+        /** Tests may lower it (a puzzle traces every try with a large value). */
+        @JvmField
+        var TRACE_BELOW = 300.0
+
+        /** Tests only: a traced try also writes what happened in it (the copy's history). */
+        @JvmField
+        var TRACE_LOG = false
+
+        private fun tryLog(copy: GameRoom, from: Int): String {
+            if (!TRACE_LOG) return ""
+            val log = copy.eventLog
+            return log.subList(min(from, log.size), log.size).joinToString("") { l -> "\n            · " + l.text }
+        }
 
         private fun audit(room: GameRoom, candidates: List<GameAction>, sum: DoubleArray, tries: IntArray, droppedIn: IntArray, chosen: Int) {
             val out = AUDIT.get()!!
@@ -282,7 +295,10 @@ internal class MoveTrials(
             }
             val id = a.getString("instanceId")
             val target = a.getString("targetInstanceId")
-            return a.type + (if (id == null) "" else " " + name(room, id)) + (if (target == null) "" else " → " + name(room, target))
+            // an answer to a prompt: the cards it chose (a block, the creatures moved up), none if empty
+            val chosen = a.payload?.get("chosen") as? List<*>
+            val picks = if (chosen == null) "" else " [" + (if (chosen.isEmpty()) "ninguna" else chosen.joinToString(", ") { c -> name(room, c.toString()) ?: c.toString() }) + "]"
+            return a.type + (if (id == null) "" else " " + name(room, id)) + (if (target == null) "" else " → " + name(room, target)) + picks
         }
 
         private fun name(room: GameRoom, id: String): String? {
