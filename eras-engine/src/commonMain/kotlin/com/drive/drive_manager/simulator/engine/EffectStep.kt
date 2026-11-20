@@ -99,6 +99,13 @@ sealed interface EffectStep {
     data object OpponentMovesOneToFront : EffectStep
 
     /**
+     * "el oponente puede agotar 1 de sus aliados en su línea frontal [filtro]. Si no lo hace: …": the opponent chooses one of their active
+     * creatures of the Línea frontal that match, or none; `lastDone` when one was exhausted (IfNotDone reads it).
+     */
+    @JvmRecord
+    data class OpponentMayTap(val filter: CardFilter?) : EffectStep
+
+    /**
      * "ambos jugadores envían las cartas de su mano al fondo de su mazo en orden aleatorio. Luego: ambos roban cartas
      * igual a la cantidad de vidas que tiene su oponente."
      */

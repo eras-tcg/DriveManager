@@ -159,6 +159,22 @@ object TableSteps : StepFamily {
                 if (opponent.lifeStack.isEmpty()) loseByLives(room, opponent)
                 return false
             }
+            is OpponentMayTap -> {
+                val opponent = room.getPlayer(room.getOpponentId(userId))
+                val filter = step.filter ?: CardFilter.any()
+                val active = if (opponent == null) frozenListOf() else opponent.field
+                        .filter { c -> "creature" == c.cardType && inFrontLine(c) && !c.tapped && filter.matches(c)
+                                && !EffectEngine.keywords(c).contains(EffectEngine.CANNOT_TAP) }
+                if (active.isEmpty()) {
+                    effect.lastDone = false
+                    return false
+                }
+                pick(room, effect, "Puedes agotar 1 de tus aliados de tu línea frontal, o ninguno (" + effect.sourceName + ").", "Agotar",
+                        opponent!!.field, ids(active), 1)
+                room.prompt!!.min = 0
+                room.prompt!!.playerId = opponent.userId
+                return true
+            }
             is OpponentMovesOneToFront -> {
                 val opponent = room.getPlayer(room.getOpponentId(userId))
                 val back = if (opponent == null) frozenListOf() else opponent.field
@@ -266,6 +282,17 @@ object TableSteps : StepFamily {
                 log(room, player.username + " descarta " + picks.size + " " + plural(picks.size, "carta", "cartas") + " bocabajo (" + effect.sourceName + ")", null)
                 effect.repeatsDone = effect.repeatsDone + 1
                 repeat[0] = true
+            }
+            is OpponentMayTap -> {
+                val card = if (picks.isEmpty()) null else find(player.field, picks[0])
+                if (card == null || card.tapped) {
+                    effect.lastDone = false
+                } else {
+                    card.tapped = true
+                    record(room, GameEvent.TAP, player.userId, card, null, null, effect, null,
+                            player.username + " agota " + name(card) + " (" + effect.sourceName + ")")
+                    effect.lastDone = true
+                }
             }
             is OpponentMovesOneToFront -> {
                 val card = find(player.field, picks[0])

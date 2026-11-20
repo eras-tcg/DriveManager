@@ -29,7 +29,7 @@ object SpecialProcedure {
             val other = ctx.relativeTo(s.relative.to)
             filter = if (other == null || other.getLevel() == null) filter!!.withLevel(-1) else filter!!.withLevel(other.getLevel()!!).notNamed(other.cardName)
         }
-        return SpecialRule(kind, s.zone, reduce, s.summoner, filter)
+        return SpecialRule(kind, s.zone, reduce, s.summoner, filter, null, null, s.otherName, s.sameLevelBonus)
     }
 
     private fun target(room: GameRoom, effect: PendingEffect, rule: SpecialRule): CardSlot? {
@@ -81,6 +81,7 @@ object SpecialProcedure {
             if (summoner != null) return frozenListOf()
             return SpecialRequirements.specialSummoners(player!!, target, req!!)
                     .filter { s -> SpecialRequirements.summonerAllowed(rule, s, effect) && SpecialRequirements.materialsPossible(player, target, req, s) }
+                    .filter { s -> !rule.otherName || !CardEffects.isNamed(s, target.cardName) }
         }
         if (summoner == null || "materialization" != req!!.kind) return frozenListOf()
         return SpecialRequirements.specialMaterials(player!!, target, req, summoner)
@@ -247,7 +248,10 @@ object SpecialProcedure {
         else JavaText.split(COMMA, rule.zone!!)[0].trim { it <= ' ' }
         effect.ritualTargetId = null
         effect.ritualSummonerId = null
-        SpecialSummons.specialSummon(room, player, target, req!!, summoner, materials, from, rule.reduce, effect)
+        // "Si es del mismo nivel: reduce el coste especial en 1 más"
+        val bonus = if (rule.sameLevelBonus > 0 && summoner != null && summoner.getLevel() != null && summoner.getLevel() == target.getLevel())
+            rule.sameLevelBonus else 0
+        SpecialSummons.specialSummon(room, player, target, req!!, summoner, materials, from, rule.reduce + bonus, effect)
         effect.summonedId = target.instanceId
         effect.lastDone = true
     }
