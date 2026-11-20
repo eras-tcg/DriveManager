@@ -161,13 +161,16 @@ class RankedRoomTest {
         when(loader.hasTestCards(any())).thenReturn(false);
         when(loader.slots(any())).thenAnswer(inv -> {
             PlayerState holder = new PlayerState("x", "x");
-            BotMatch.seat(holder, ((DeckList) inv.getArgument(0)).getId(), new int[] {500});
+            String id = ((DeckList) inv.getArgument(0)).getId();
+            BotMatch.seat(holder, id.startsWith("broken-") ? id.substring(7) : id, new int[] {500});
             List<CardSlot> slots = new java.util.ArrayList<>(holder.getDeck());
-            // A card the deck lists that the site no longer has: no name, no metadata
-            CardSlot gone = new CardSlot();
-            gone.setInstanceId("gone");
-            gone.setCardId("deleted-card");
-            slots.add(gone);
+            if (id.startsWith("broken-")) {
+                // A card the deck lists that the site no longer has: no name, no metadata
+                CardSlot gone = new CardSlot();
+                gone.setInstanceId("gone");
+                gone.setCardId("deleted-card");
+                slots.add(gone);
+            }
             return slots;
         });
         service.decks = loader;
@@ -197,6 +200,17 @@ class RankedRoomTest {
         act(id, "owner", "SET_RANKED", Map.of("ranked", false));
         assertThat(bot.getUsername()).isEqualTo(BotCatalog.nameOf(room.getBotLevel()));
         assertThat(bot.getDeckId()).isEqualTo("st1");
+    }
+
+    @Test
+    void aPoolDeckListingACardTheSiteNoLongerHasIsNotPlayed() {
+        pool("broken-st2", "st3");
+        for (int i = 0; i < 4; i++) {
+            GameRoom room = service.createRoom("owner", RoomOptions.BOT);
+            act(room.getRoomId(), "owner", "JOIN_ROOM", Map.of("username", "Ana"));
+            act(room.getRoomId(), "owner", "SET_RANKED", Map.of("ranked", true));
+            assertThat(room.getPlayer(BotRooms.BOT).getDeckId()).isEqualTo("st3");
+        }
     }
 
     @Test
