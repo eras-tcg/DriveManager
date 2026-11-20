@@ -61,24 +61,22 @@ class DeckListControllerTest {
     }
 
     @Test
-    void aDeckWithCardsInTestingIsSeenOnlyWithThePermission() {
+    void aDeckWithCardsInTestingIsSeenByEveryPlayer() {
         DeckList testing = deck("d4", "alice", false);
         testing.setCards(List.of("E2-B01", "T1-W01"));
         when(repo.findPublicDecks()).thenReturn(List.of(alicePublic, testing));
         when(repo.findById("d4")).thenReturn(Optional.of(testing));
 
-        assertThat(controller().listAll(null, false, user("bob")).getBody()).containsExactly(alicePublic);
-        assertThat(controller().listAll(null, false, tester("bob")).getBody()).containsExactly(alicePublic, testing);
-        assertThat(controller().getOne("d4", user("bob")).getStatusCode().value()).isEqualTo(404);
+        assertThat(controller().listAll(null, false, user("bob")).getBody()).containsExactly(alicePublic, testing);
+        assertThat(controller().getOne("d4", user("bob")).getBody()).isEqualTo(testing);
         assertThat(controller().getOne("d4", user("alice")).getBody()).isEqualTo(testing);
     }
 
     @Test
-    void onlyATesterSavesADeckWithCardsInTesting() {
+    void everyPlayerSavesADeckWithCardsInTesting() {
         DeckList body = deck(null, null, false);
         body.setCards(List.of("T1-W01"));
-        assertThat(controller().create(body, user("alice")).getStatusCode().value()).isEqualTo(400);
-        assertThat(controller().create(body, tester("alice")).getStatusCode().value()).isEqualTo(200);
+        assertThat(controller().create(body, user("alice")).getStatusCode().value()).isEqualTo(200);
     }
 
     @Test
@@ -166,10 +164,6 @@ class DeckListControllerTest {
 
     private static Authentication user(String id) {
         return new UsernamePasswordAuthenticationToken(id, null, AuthorityUtils.NO_AUTHORITIES);
-    }
-
-    private static Authentication tester(String id) {
-        return new UsernamePasswordAuthenticationToken(id, null, AuthorityUtils.createAuthorityList(TestCards.PERMISSION));
     }
 
     private static Authentication anonymous() {

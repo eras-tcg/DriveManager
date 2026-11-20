@@ -2,7 +2,6 @@ package com.drive.drive_manager.service;
 
 import com.drive.drive_manager.dto.DriveCard;
 import com.drive.drive_manager.repository.DriveCardRepository;
-import org.springframework.security.authentication.AnonymousAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Component;
 
@@ -12,10 +11,10 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 /**
- * Cards in testing: cards that have no edition yet get a temporary one, "T1", "T2"… (files "T1-W01-Name.jpg"). Only
- * players with the {@value #PERMISSION} permission see them (catalog, deck builder, decks, editions); nobody can get
- * them from the shop or craft them. The rule is the edition's code, so a card loaded before anything else is set up
- * is already hidden.
+ * Cards in testing: cards that have no edition yet get a temporary one, "T1", "T2"… (files "T1-W01-Name.jpg"). Every
+ * player sees them and may build decks with them (the site's searches leave them out unless asked: "Cartas en test");
+ * nobody can get them from the shop or craft them, and they are not valid in ranked games, only in friendly ones.
+ * The rule is the edition's code. Before 2026-11-19 only the {@value #PERMISSION} permission showed them.
  */
 @Component
 public class TestCards {
@@ -42,10 +41,9 @@ public class TestCards {
         return edition != null && TEST_EDITION.matcher(edition.trim()).matches();
     }
 
-    /** Whether the player may see the cards in testing. */
+    /** Whether the player may see the cards in testing: every player does. */
     public static boolean canSee(Authentication auth) {
-        if (auth == null || !auth.isAuthenticated() || auth instanceof AnonymousAuthenticationToken) return false;
-        return auth.getAuthorities().stream().anyMatch(a -> PERMISSION.equals(a.getAuthority()));
+        return true;
     }
 
     /** Whether a card of this edition is hidden from the player. */
