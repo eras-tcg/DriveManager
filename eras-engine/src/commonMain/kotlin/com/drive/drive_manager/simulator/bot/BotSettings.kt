@@ -215,6 +215,7 @@ class BotSettings private constructor(values: Map<String, Double>, bias: Map<Str
             d.put("rType", 0.8)
             d.put("rPlay", 0.85)
             d.put("lifeMine", 0.0)
+            d.put("lifeEdge", 0.0)
             d.put("cascade", 0.0)
             d.put("overExtendPow", 1.0)
             d.put("overExtendUnc", 0.0)

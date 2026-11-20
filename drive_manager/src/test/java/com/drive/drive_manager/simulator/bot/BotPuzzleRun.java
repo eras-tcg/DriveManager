@@ -117,7 +117,7 @@ class BotPuzzleRun {
                 }, t -> "host".equals(t.room().getWinnerId())),
                 // Duel st2-st4 s13081 (2026-11-20, A guest at 3 lives): Dragón Delta (6) attacked and the bot blocked it with
                 // Espada De Los Leones De Fuego (3), which died, with Ballesta Montada (8) and Franchute (11) also in front
-                new Puzzle("bloqueo-delta", "en el turno rival, con 3 vidas, Dragón Delta (6) y Dracoventus (11) atacan; Dragón Volcánico (14) ataca primero; el bot tiene Espadas De Los Leones De Fuego (3), Ballesta Montada (8), Franchute (11) y Peón (4) al frente: si Delta ataca, no debe sobrevivir (Franchute o Ballesta lo destruyen bloqueando)", t -> {
+                new Puzzle("bloqueo-delta", "en el turno rival, con 3 vidas, Dragón Volcánico (14), Dragón Delta (6) y Dracoventus (11) atacan; el bot tiene Espadas De Los Leones De Fuego (3), Ballesta Montada (8), Franchute (11) y Peón (4) al frente: bloquear para no quedar con 1 vida", t -> {
                     gems(t, 0);
                     t.room().setCurrentTurnUserId("guest");
                     front(t.host(), "Espada De Los Leones De Fuego");
@@ -133,8 +133,7 @@ class BotPuzzleRun {
                     for (String n : List.of("Saildreik", "Ddraig")) volc.getResources().add(card(n));
                     for (String n : List.of("Flambreik", "Wyverno De Pantano", "Ddraig", "Fadrake", "Saildreik", "Flamagón", "Galveta")) t.guest().getTributeZone().add(card(n));
                     lives(t.guest(), 6, true);
-                }, t -> t.turn().stream().noneMatch(e -> GameEvent.ATTACK_DECLARED.equals(e.getType()) && "Dragón Delta".equals(e.getCardName()))
-                        || t.guest().getField().stream().noneMatch(c -> "Dragón Delta".equals(c.getCardName()))),
+                }, t -> t.host().getLifeStack().size() >= 2),
                 new Puzzle("perforante", "atacar con Franchute a la criatura agotada del rival y destruirla", t -> {
                     gems(t, 0);
                     front(t.host(), "Franchute");
