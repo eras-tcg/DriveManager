@@ -27,6 +27,8 @@ import java.util.function.Supplier;
  * DELETE /api/cards/{id}/art — the card loses its art: answers the card
  * PUT    /api/cards/{id}/render — the finished card drawn by the editor (a cache): answers the card
  * GET    /api/cards/{id}/render — that image
+ * PUT    /api/cards/{id}/shine — where the card shines, drawn by the editor with its render (a PNG): answers the card
+ * GET    /api/cards/{id}/shine — that image
  */
 @RestController
 @RequestMapping("/api/cards")
@@ -70,6 +72,24 @@ public class CardArtController {
         return art.getRender(id)
                 .map(a -> ResponseEntity.ok()
                         .contentType(MediaType.parseMediaType(a.type().replace("jpg", "jpeg")))
+                        .cacheControl(CacheControl.maxAge(java.time.Duration.ofDays(365)).cachePrivate())
+                        .body(a.bytes()))
+                .orElse(ResponseEntity.notFound().build());
+    }
+
+    @PreAuthorize("hasAuthority('manage_cards')")
+    @PutMapping(value = "/{id}/shine", consumes = {"image/png", "application/octet-stream"})
+    public ResponseEntity<Object> setShine(@PathVariable String id, @RequestBody byte[] image) {
+        if (image == null || image.length == 0) return ResponseEntity.badRequest().body(Map.of("message", "Falta la imagen"));
+        return apply(() -> art.setShine(id, image));
+    }
+
+    @GetMapping("/{id}/shine")
+    public ResponseEntity<byte[]> shine(@PathVariable String id) {
+        // As the render: the key changes with every drawing and the address asks for it (?v=key)
+        return art.getShine(id)
+                .map(a -> ResponseEntity.ok()
+                        .contentType(MediaType.IMAGE_PNG)
                         .cacheControl(CacheControl.maxAge(java.time.Duration.ofDays(365)).cachePrivate())
                         .body(a.bytes()))
                 .orElse(ResponseEntity.notFound().build());
