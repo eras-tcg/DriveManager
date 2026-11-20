@@ -80,6 +80,15 @@ class BotPuzzleRun {
                     t.host().getHand().addAll(List.of(card("Caballero Férreo"), card("Caballero Férreo")));
                     lives(t.guest(), 1, false);
                 }, t -> "host".equals(t.room().getWinnerId())),
+                // Duel st2-st1 s13078 (2026-11-20, lethalBlocks): a win must hold against every block. One attacker alone is
+                // chump-blocked by the Peón; two attackers win whatever it blocks
+                new Puzzle("golpe-con-bloqueo", "el rival tiene 1 vida y un Peón (4) activo que puede bloquear; Fadrake (8) y Filo Vengativo (6) activos: atacar con los dos (bloquee lo que bloquee, uno pasa) y ganar", t -> {
+                    gems(t, 0);
+                    front(t.host(), "Fadrake");
+                    front(t.host(), "Filo Vengativo");
+                    front(t.guest(), "Peón De Línea Frontal");
+                    lives(t.guest(), 1, false);
+                }, t -> "host".equals(t.room().getWinnerId())),
                 // Duelo st1-st2 s13395 (2026-11-06): jugó Huevo, vació el mazo, evolucionó a Carmesí y no atacó; perdió por mazo
                 new Puzzle("remate-mazo-corto", "el rival (st1) tiene 1 vida y la mesa vacía; Dragón Volcánico, Dracoventus y Galveta listos, Huevo De Dragón y Dracoventus en la mano, 4 cartas en el mazo: atacar y ganar", t -> {
                     gems(t, 5);
