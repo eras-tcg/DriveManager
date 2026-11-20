@@ -175,6 +175,18 @@ class BotPuzzleRun {
                 }, t -> t.turn().stream().filter(e -> "host".equals(e.getPlayerId()) && (GameEvent.ATTACK_DECLARED.equals(e.getType())
                         || GameEvent.NORMAL_SUMMON.equals(e.getType()) || GameEvent.SPECIAL_SUMMON.equals(e.getType()) || GameEvent.PLAY.equals(e.getType())))
                         .findFirst().map(e -> GameEvent.ATTACK_DECLARED.equals(e.getType())).orElse(false)),
+                // Duel st4-st2 s13047 (2026-11-20): the attack and the turn's summon were never tried together (seqAttack). An
+                // attack needs 0 or more gems: summoning Fadrake first (3 of 2 gems) leaves no attack. The rival's only creature
+                // (Duregón 2) cannot punish the exhausted Fadrake, so attacking and then summoning loses nothing
+                new Puzzle("atacar-y-desarrollar", "Fadrake (8) activo en la Línea frontal, 2 gemas y la mano de la partida (Fadrake, Galveta, Flamagón, Volcán De Dragones, Dragón Carmesí, Saildreik, Dragón Volcánico), el rival solo con Duregón (2) en la Retaguardia: atacar y también desarrollar (invocar primero deja las gemas bajo 0 y ya no se puede atacar)", t -> {
+                    gems(t, 2);
+                    front(t.host(), "Fadrake");
+                    for (String n : List.of("Fadrake", "Galveta", "Flamagón", "Volcán De Dragones", "Dragón Carmesí", "Saildreik", "Dragón Volcánico")) t.host().getHand().add(card(n));
+                    back(t.guest(), "Duregón");
+                    lives(t.guest(), 5, true);
+                }, t -> t.turn().stream().anyMatch(e -> "host".equals(e.getPlayerId()) && GameEvent.ATTACK_DECLARED.equals(e.getType()))
+                        && t.turn().stream().anyMatch(e -> "host".equals(e.getPlayerId()) && (GameEvent.NORMAL_SUMMON.equals(e.getType())
+                        || GameEvent.SPECIAL_SUMMON.equals(e.getType()) || GameEvent.PLAY.equals(e.getType())))),
                 // ... unless the card makes the attack better: Krokler by Ritual removes the blocker first
                 new Puzzle("remover-antes-de-atacar", "Peón propio (4) contra un Peón rival (4) que lo bloquearía, Buratán en el campo y Krokler en la mano: Ritual de Krokler sobre Buratán (destruye el Peón rival) antes de atacar", t -> {
                     gems(t, 2);

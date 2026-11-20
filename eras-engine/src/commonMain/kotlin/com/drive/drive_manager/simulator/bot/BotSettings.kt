@@ -282,6 +282,8 @@ class BotSettings private constructor(values: Map<String, Double>, bias: Map<Str
             d.put("seqTriggers", 0.0)
             d.put("seqRollout", 0.0)
             d.put("seqShare", 0.25)
+            // seqAttack: each attack also tried before the best plans found (SequenceSearch.attacksFirst)
+            d.put("seqAttack", 0.0)
             d.put("innerCands", 0.0)
             d.put("innerMs", 20.0)
             d.put("innerFinal", 0.0)

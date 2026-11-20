@@ -49,9 +49,19 @@ class BotDuelRun {
                     String[] host = {aHosts ? "A" : "B"}, guest = {aHosts ? "B" : "A"};
                     LookaheadBot hostBot = new LookaheadBot(aHosts ? a : b), guestBot = new LookaheadBot(aHosts ? b : a);
                     // bot.duel.log: every decision A looked ahead for (what it chose, among how many, the score it expected and the table's now)
-                    if (Boolean.getBoolean("bot.duel.log")) (aHosts ? hostBot : guestBot).watch(x -> sb.append("      > A decide ").append(x.type())
+                    // bot.duel.audit (with bot.duel.log): under each main decision of A, every candidate with its mean score, its tries and
+                    // the round it was dropped in (MoveTrials.AUDIT); B's decisions only clear the list (both bots play on this thread)
+                    List<String> audit = new ArrayList<>();
+                    boolean audited = Boolean.getBoolean("bot.duel.audit");
+                    if (audited) MoveTrials.AUDIT.set(audit);
+                    if (Boolean.getBoolean("bot.duel.log")) (aHosts ? hostBot : guestBot).watch(x -> {
+                        sb.append("      > A decide ").append(x.type())
                             .append(' ').append(x.card()).append(x.target() == null ? "" : " → " + x.target()).append(" (opción ").append(x.index()).append(" de ")
-                            .append(x.candidates()).append(", espera ").append(Math.round(x.expected() * 10) / 10.0).append(", ahora ").append(Math.round(x.now() * 10) / 10.0).append(")\n"));
+                            .append(x.candidates()).append(", espera ").append(Math.round(x.expected() * 10) / 10.0).append(", ahora ").append(Math.round(x.now() * 10) / 10.0).append(")\n");
+                        if (audited && !"RESOLVE_PROMPT".equals(x.type())) for (String l : audit) sb.append("          ").append(l).append('\n');
+                        audit.clear();
+                    });
+                    if (audited) (aHosts ? guestBot : hostBot).watch(x -> audit.clear());
                     BotMatch.Result r = BotMatch.playSeededWatching(d[0], d[1], hostBot, guestBot, seed, room -> {
                         List<GameEvent> tl = room.getTimeline();
                         List<GameEvent> turn = after(tl, lastEvent);
