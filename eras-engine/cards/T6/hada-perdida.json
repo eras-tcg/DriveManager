@@ -1,0 +1,119 @@
+{
+  "name" : "hada perdida",
+  "effects" : [
+    {
+      "id" : "hada-perdida:anadida-como-recurso",
+      "moment" : "ON_EVENT",
+      "label" : "Recurso",
+      "text" : "Si esta carta es añadida como recurso: puedes enviar 5 de tus tributos [hada] al fondo de tu mazo; juega 1 estructura Verde de tus tributos reduciendo su coste en 1.",
+      "cost" : [
+        {
+          "type" : "Do",
+          "action" : {
+            "type" : "Move",
+            "cards" : {
+              "zones" : "tributeZone",
+              "owner" : "YOU",
+              "filter" : {
+                "classes" : [
+                  "hada"
+                ]
+              },
+              "min" : {
+                "type" : "Fixed",
+                "value" : 5
+              },
+              "max" : {
+                "type" : "Fixed",
+                "value" : 5
+              },
+              "self" : "ANY",
+              "mode" : "CHOOSE"
+            },
+            "to" : "deckBottom"
+          }
+        }
+      ],
+      "steps" : [
+        {
+          "type" : "Do",
+          "action" : {
+            "type" : "Play",
+            "cards" : {
+              "zones" : "tributeZone",
+              "owner" : "YOU",
+              "filter" : {
+                "colors" : [
+                  "G"
+                ],
+                "cardTypes" : [
+                  "structure"
+                ]
+              },
+              "min" : {
+                "type" : "Fixed",
+                "value" : 1
+              },
+              "max" : {
+                "type" : "Fixed",
+                "value" : 1
+              },
+              "self" : "ANY",
+              "mode" : "CHOOSE"
+            },
+            "reduce" : {
+              "type" : "Fixed",
+              "value" : 1
+            },
+            "required" : true
+          }
+        }
+      ],
+      "condition" : {
+        "type" : "AddedAsResource"
+      },
+      "sourceZone" : "resources",
+      "limit" : "NONE"
+    },
+    {
+      "id" : "hada-perdida:en-invocacion",
+      "moment" : "ON_SUMMON",
+      "mandatory" : true,
+      "label" : "En Invocación",
+      "text" : "Roba 2 cartas.",
+      "steps" : [
+        {
+          "type" : "Do",
+          "action" : {
+            "type" : "Draw",
+            "count" : {
+              "type" : "Fixed",
+              "value" : 2
+            }
+          }
+        }
+      ],
+      "sourceZone" : "field",
+      "limit" : "NONE"
+    }
+  ],
+  "inheritedReactions" : [
+    {
+      "type" : "Replacement",
+      "id" : "hada-perdida:hereda-todos-los-turnos",
+      "label" : "Todos Los Turnos",
+      "text" : "Heredado de Hada Perdida: cuando esta carta [hada] fuera a ser destruida: en su lugar, tributa \"Hada Perdida\" de sus recursos y súbela a tu mano.",
+      "destroyOnly" : true,
+      "limit" : "NONE",
+      "cost" : "TRIBUTE_RESOURCE_RETURN_TO_HAND",
+      "resourceFilter" : {
+        "name" : "Hada Perdida"
+      },
+      "holder" : {
+        "classes" : [
+          "hada"
+        ]
+      }
+    }
+  ]
+}

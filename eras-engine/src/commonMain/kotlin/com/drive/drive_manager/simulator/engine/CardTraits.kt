@@ -17,11 +17,14 @@ import com.drive.drive_manager.simulator.engine.CardEffects.FieldPiecesDiscount
  * @param sacrificeToSummon   "se invoca sacrificando un aliado [filtro]"
  * @param lifePlayCost        "para jugar esta carta desde tus vidas debes pagar N gemas"
  * @param oneEffectPerTurn    "solo 1 de sus efectos por turno"
+ * @param sacrificeUpTo       with [sacrificeToSummon]: "sacrifica hasta N aliados [filtro] activos … reduciendo su coste en la suma de los costes de los
+ *                            aliados sacrificados"; null: 1
  */
 @JvmRecord
 data class CardTraits(
     val alias: String?, val specialFromTributes: Boolean, val alternativeLevel: AlternativeLevel?, val fieldPiecesDiscount: FieldPiecesDiscount?,
     val creatureForEffects: Int?, val sacrificeToSummon: CardFilter?, val lifePlayCost: Int?, val oneEffectPerTurn: Boolean,
+    val sacrificeUpTo: Int? = null,
 ) {
     companion object {
         @JvmField

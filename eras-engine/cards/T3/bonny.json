@@ -1,0 +1,115 @@
+{
+  "name": "bonny",
+  "effects": [
+    {
+      "id": "bonny:en-mano",
+      "moment": "ON_EVENT",
+      "label": "En Mano",
+      "text": "Una vez por turno entre copias, si una de tus vidas es revelada por tus efectos: puedes tributar 1 carta de tu mano; invoca esta carta sin pagar su coste.",
+      "cost": [
+        {
+          "type": "Do",
+          "action": {
+            "type": "Move",
+            "cards": {
+              "zones": "hand",
+              "owner": "YOU",
+              "filter": {},
+              "min": {
+                "type": "Fixed",
+                "value": 1
+              },
+              "max": {
+                "type": "Fixed",
+                "value": 1
+              },
+              "self": "EXCLUDE",
+              "mode": "CHOOSE"
+            },
+            "to": "tributeZone"
+          }
+        }
+      ],
+      "steps": [
+        {
+          "type": "Do",
+          "action": {
+            "type": "Summon",
+            "cards": {
+              "zones": "hand",
+              "owner": "YOU",
+              "filter": {},
+              "min": {
+                "type": "Fixed",
+                "value": 1
+              },
+              "max": {
+                "type": "Fixed",
+                "value": 1
+              },
+              "self": "ANY",
+              "mode": "SELF"
+            },
+            "reduce": {
+              "type": "Fixed",
+              "value": 1000
+            },
+            "required": true
+          }
+        }
+      ],
+      "condition": {
+        "type": "Happened",
+        "eventType": "LIFE_REVEALED",
+        "actor": "YOU",
+        "owner": "YOU",
+        "byEffect": true
+      },
+      "sourceZone": "hand",
+      "limit": "ONCE_PER_TURN_BETWEEN_COPIES"
+    },
+    {
+      "id": "bonny:en-invocacion",
+      "moment": "ON_SUMMON",
+      "mandatory": true,
+      "label": "En Invocación",
+      "text": "Roba 2 cartas. Luego: tributa 2 cartas de tu mano.",
+      "steps": [
+        {
+          "type": "Do",
+          "action": {
+            "type": "Draw",
+            "count": {
+              "type": "Fixed",
+              "value": 2
+            }
+          }
+        },
+        {
+          "type": "Do",
+          "action": {
+            "type": "Move",
+            "cards": {
+              "zones": "hand",
+              "owner": "YOU",
+              "filter": {},
+              "min": {
+                "type": "Fixed",
+                "value": 2
+              },
+              "max": {
+                "type": "Fixed",
+                "value": 2
+              },
+              "self": "EXCLUDE",
+              "mode": "CHOOSE"
+            },
+            "to": "tributeZone"
+          }
+        }
+      ],
+      "sourceZone": "field",
+      "limit": "NONE"
+    }
+  ]
+}

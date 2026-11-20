@@ -36,4 +36,8 @@ public class DeckList {
     private String username;
 
     private boolean privateDeck;
+
+    /** One of the decks the bot may play in ranked Modo solo (its pool); set by a simulator administrator. */
+    @Field("bot_deck")
+    private boolean botDeck;
 }

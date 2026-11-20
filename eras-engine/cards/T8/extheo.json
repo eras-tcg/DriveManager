@@ -1,0 +1,112 @@
+{
+  "name" : "extheo",
+  "effects" : [
+    {
+      "id" : "extheo:en-invocacion",
+      "moment" : "ON_SUMMON",
+      "mandatory" : true,
+      "label" : "En Invocación",
+      "text" : "Tributa hasta 2 materiales de esta carta; por cada material tributado toma 1 [autómata] o [neogeo] de tus tributos.",
+      "steps" : [
+        {
+          "type" : "Do",
+          "action" : {
+            "type" : "Move",
+            "cards" : {
+              "zones" : "materials",
+              "owner" : "YOU",
+              "filter" : {},
+              "min" : {
+                "type" : "Fixed"
+              },
+              "max" : {
+                "type" : "Fixed",
+                "value" : 2
+              },
+              "self" : "ANY",
+              "mode" : "CHOOSE"
+            },
+            "to" : "tributeZone"
+          }
+        },
+        {
+          "type" : "Do",
+          "action" : {
+            "type" : "Move",
+            "cards" : {
+              "zones" : "tributeZone",
+              "owner" : "YOU",
+              "filter" : {
+                "classes" : [
+                  "autómata",
+                  "neogeo"
+                ]
+              },
+              "min" : {
+                "type" : "LastCount"
+              },
+              "max" : {
+                "type" : "LastCount"
+              },
+              "self" : "ANY",
+              "mode" : "CHOOSE"
+            },
+            "to" : "hand"
+          }
+        }
+      ],
+      "sourceZone" : "field",
+      "limit" : "NONE"
+    },
+    {
+      "id" : "extheo:turno-aliado",
+      "moment" : "ACTIVATED",
+      "label" : "Turno Aliado",
+      "text" : "Una vez por turno: puedes reactivar 1 de tus estructuras de coste 2 o menos.",
+      "steps" : [
+        {
+          "type" : "Do",
+          "action" : {
+            "type" : "SetTapped",
+            "cards" : {
+              "zones" : "field",
+              "owner" : "YOU",
+              "filter" : {
+                "cardType" : "structure",
+                "maxCost" : 2,
+                "exhaustedOnly" : true
+              },
+              "min" : {
+                "type" : "Fixed",
+                "value" : 1
+              },
+              "max" : {
+                "type" : "Fixed",
+                "value" : 1
+              },
+              "self" : "ANY",
+              "mode" : "CHOOSE"
+            },
+            "required" : true
+          }
+        }
+      ],
+      "sourceZone" : "field",
+      "allyTurn" : true,
+      "limit" : "ONCE_PER_TURN"
+    }
+  ],
+  "requirement" : {
+    "summoner" : {
+      "level" : 2
+    },
+    "materials" : {
+      "count" : 1,
+      "level" : 2,
+      "zones" : [
+        "hand",
+        "field"
+      ]
+    }
+  }
+}

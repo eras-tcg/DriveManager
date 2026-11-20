@@ -5,6 +5,7 @@ import com.drive.drive_manager.simulator.room.GameRoom;
 import com.drive.drive_manager.simulator.room.PlayerState;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Tag;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -16,6 +17,8 @@ import static org.assertj.core.api.Assertions.assertThat;
  * Fixes reported while playing E1 (2026-10-30, third batch): a summoner declared from the hand, paying a cost whose effect
  * would do nothing, strength 0 checked again after a replacement, reactions before a removal and several cards.
  */
+@Tag("cards")
+@Tag("e1")
 class E1ThirdBugfixTest {
 
     private GameRoom room;

@@ -1,0 +1,135 @@
+{
+  "name": "atalaya",
+  "effects": [
+    {
+      "id": "atalaya:en-mano",
+      "moment": "ON_EVENT",
+      "label": "En Mano",
+      "text": "Una vez por turno entre copias: cuando juegues una estructura que no sea una copia de esta carta: puedes jugar esta carta sin pagar su coste. Si lo haces: roba 1 carta.",
+      "steps": [
+        {
+          "type": "Do",
+          "action": {
+            "type": "Play",
+            "cards": {
+              "zones": "hand",
+              "owner": "YOU",
+              "filter": {},
+              "min": {
+                "type": "Fixed",
+                "value": 1
+              },
+              "max": {
+                "type": "Fixed",
+                "value": 1
+              },
+              "self": "ANY",
+              "mode": "SELF"
+            },
+            "reduce": {
+              "type": "Fixed",
+              "value": 1000
+            },
+            "required": true
+          }
+        },
+        {
+          "type": "IfDone",
+          "covers": 1
+        },
+        {
+          "type": "Do",
+          "action": {
+            "type": "Draw",
+            "count": {
+              "type": "Fixed",
+              "value": 1
+            }
+          }
+        }
+      ],
+      "condition": {
+        "type": "Happened",
+        "actor": "YOU",
+        "owner": "ANY",
+        "eventType": "PLAY",
+        "filter": {
+          "cardTypes": [
+            "structure"
+          ],
+          "notName": "Atalaya"
+        }
+      },
+      "sourceZone": "hand",
+      "limit": "ONCE_PER_TURN_BETWEEN_COPIES"
+    },
+    {
+      "id": "atalaya:turno-aliado",
+      "moment": "ACTIVATED",
+      "label": "Turno Aliado",
+      "text": "Puedes agotar esta carta para mirar la carta del tope de tu mazo: envíala al tope o al fondo de tu mazo.",
+      "steps": [
+        {
+          "type": "IfPossible"
+        },
+        {
+          "type": "Do",
+          "action": {
+            "type": "SetTapped",
+            "cards": {
+              "zones": "field",
+              "owner": "YOU",
+              "filter": {},
+              "min": {
+                "type": "Fixed",
+                "value": 1
+              },
+              "max": {
+                "type": "Fixed",
+                "value": 1
+              },
+              "self": "ANY",
+              "mode": "SELF"
+            },
+            "tapped": true,
+            "required": true
+          }
+        },
+        {
+          "type": "Do",
+          "action": {
+            "type": "Look",
+            "count": {
+              "type": "Fixed",
+              "value": 1
+            }
+          }
+        },
+        {
+          "type": "Do",
+          "action": {
+            "type": "Move",
+            "cards": {
+              "zones": "looked",
+              "owner": "YOU",
+              "filter": {},
+              "min": {
+                "type": "Fixed"
+              },
+              "max": {
+                "type": "Fixed",
+                "value": 2147483647
+              },
+              "self": "ANY",
+              "mode": "CHOOSE"
+            },
+            "to": "deckTopOrBottom"
+          }
+        }
+      ],
+      "sourceZone": "field",
+      "allyTurn": true,
+      "limit": "NONE"
+    }
+  ]
+}

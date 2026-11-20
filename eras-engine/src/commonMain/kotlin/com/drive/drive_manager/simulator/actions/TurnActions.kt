@@ -9,6 +9,7 @@ import com.drive.drive_manager.simulator.engine.replaceEach
 import com.drive.drive_manager.simulator.bot.BotEdge
 import com.drive.drive_manager.simulator.engine.EffectEngine
 import com.drive.drive_manager.simulator.engine.TurnRules
+import com.drive.drive_manager.simulator.engine.Watches
 import com.drive.drive_manager.simulator.room.ActionType
 import com.drive.drive_manager.simulator.room.FloatingEffect
 import com.drive.drive_manager.simulator.room.GameAction
@@ -123,8 +124,8 @@ object TurnActions {
                 // What lasts until the end of the next turn now lasts until the end of this one
                 c.turnStrength = c.laterStrength
                 c.laterStrength = 0
-                c.floating!!.removeAll { f -> "nextTurn" != f.until }
-                c.floating!!.replaceEach { f -> FloatingEffect(f.text, f.source, "turn", f.strength, f.keyword) }
+                c.floating!!.removeAll { f -> "nextTurn" != f.until && Watches.WHILE_ON_FIELD != f.until }
+                c.floating!!.replaceEach { f -> if (Watches.WHILE_ON_FIELD == f.until) f else FloatingEffect(f.text, f.source, "turn", f.strength, f.keyword) }
             }
         }
         // What was given to the table "hasta el final del turno" ends; "del turno oponente" now lasts until the end of this one

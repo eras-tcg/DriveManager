@@ -4,7 +4,7 @@
     "id" : "lomo-plateado:turno-aliado",
     "moment" : "ACTIVATED",
     "label" : "Turno Aliado",
-    "text" : "Una vez por turno: puedes sacrificar 1 otro aliado para que esta carta gane fuerza 3 hasta el final del turno. Si lo haces: puedes mover esta carta a tu línea frontal.",
+    "text" : "Una vez por turno: puedes sacrificar otro aliado para que esta carta gane fuerza 3 hasta el final del turno. Si lo haces: puedes mover esta carta a tu línea frontal.",
     "steps" : [ {
       "type" : "IfPossible"
     }, {

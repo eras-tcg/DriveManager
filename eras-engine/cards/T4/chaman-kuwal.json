@@ -1,0 +1,174 @@
+{
+  "name": "chamán kuwal",
+  "effects": [
+    {
+      "id": "chaman-kuwal:en-tributos",
+      "moment": "ON_EVENT",
+      "label": "En Tributos",
+      "text": "Si excavas cartas: puedes descartar 5 de tus tributos; invoca por Ritual esta carta.",
+      "cost": [
+        {
+          "type": "Do",
+          "action": {
+            "type": "Move",
+            "cards": {
+              "zones": "tributeZone",
+              "owner": "YOU",
+              "filter": {},
+              "min": {
+                "type": "Fixed",
+                "value": 5
+              },
+              "max": {
+                "type": "Fixed",
+                "value": 5
+              },
+              "self": "EXCLUDE",
+              "mode": "CHOOSE"
+            },
+            "to": "discardPile"
+          }
+        }
+      ],
+      "steps": [
+        {
+          "type": "Do",
+          "action": {
+            "type": "Sequence",
+            "actions": [
+              {
+                "type": "Select",
+                "selector": {
+                  "zones": "tributeZone",
+                  "owner": "YOU",
+                  "filter": {},
+                  "min": {
+                    "type": "Fixed"
+                  },
+                  "max": {
+                    "type": "Fixed",
+                    "value": 1
+                  },
+                  "self": "ANY",
+                  "mode": "CHOOSE",
+                  "special": {
+                    "rule": {
+                      "kind": "ofThisCard",
+                      "zone": "tributeZone",
+                      "summoner": "any",
+                      "filter": {}
+                    },
+                    "stage": "CARD"
+                  }
+                },
+                "saveAs": "specialCard",
+                "label": "Invocar"
+              },
+              {
+                "type": "Select",
+                "selector": {
+                  "zones": "tributeZone",
+                  "owner": "YOU",
+                  "filter": {},
+                  "min": {
+                    "type": "Fixed"
+                  },
+                  "max": {
+                    "type": "Fixed",
+                    "value": 1
+                  },
+                  "self": "ANY",
+                  "mode": "CHOOSE",
+                  "special": {
+                    "rule": {
+                      "kind": "ofThisCard",
+                      "zone": "tributeZone",
+                      "summoner": "any",
+                      "filter": {}
+                    },
+                    "stage": "SUMMONER"
+                  }
+                },
+                "saveAs": "specialSummoner",
+                "label": "Invocador"
+              },
+              {
+                "type": "Select",
+                "selector": {
+                  "zones": "tributeZone",
+                  "owner": "YOU",
+                  "filter": {},
+                  "min": {
+                    "type": "Fixed"
+                  },
+                  "max": {
+                    "type": "Fixed",
+                    "value": 1
+                  },
+                  "self": "ANY",
+                  "mode": "CHOOSE",
+                  "special": {
+                    "rule": {
+                      "kind": "ofThisCard",
+                      "zone": "tributeZone",
+                      "summoner": "any",
+                      "filter": {}
+                    },
+                    "stage": "MATERIAL"
+                  }
+                },
+                "saveAs": "specialMaterials",
+                "label": "Sacrificar"
+              },
+              {
+                "type": "SummonSpecial",
+                "rule": {
+                  "kind": "ofThisCard",
+                  "zone": "tributeZone",
+                  "summoner": "any",
+                  "filter": {}
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "condition": {
+        "type": "Happened",
+        "eventType": "EXCAVATE",
+        "actor": "YOU",
+        "owner": "ANY"
+      },
+      "sourceZone": "tributeZone",
+      "limit": "NONE"
+    }
+  ],
+  "reactions": [
+    {
+      "type": "AllyGuard",
+      "allies": {
+        "classes": [
+          "kuwal"
+        ],
+        "cardType": "creature"
+      },
+      "replacement": {
+        "type": "Replacement",
+        "id": "chaman-kuwal:todos-los-turnos",
+        "label": "Todos Los Turnos",
+        "text": "Una vez por turno entre copias, cuando algún aliado [kuwal] fuera a ser destruido: en su lugar, puedes sacrificar otro aliado o una carta de tu mano.",
+        "destroyOnly": true,
+        "limit": "ONCE_PER_TURN_BETWEEN_COPIES",
+        "cost": "SACRIFICE_OTHER_ALLY_OR_HAND"
+      }
+    }
+  ],
+  "requirement": {
+    "ritual": {
+      "sum": true,
+      "level": 3,
+      "maxLevel": 4,
+      "orCost": true
+    }
+  }
+}

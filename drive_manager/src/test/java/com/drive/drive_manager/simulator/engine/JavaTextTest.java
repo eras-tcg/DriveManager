@@ -2,6 +2,7 @@ package com.drive.drive_manager.simulator.engine;
 
 import kotlin.text.Regex;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Tag;
 
 import java.util.Locale;
 import java.util.Random;
@@ -10,6 +11,7 @@ import java.util.regex.Pattern;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /** JavaText gives exactly what Java's Pattern.split, Character.isWhitespace and String.format("%.nf") give. */
+@Tag("basic")
 class JavaTextTest {
 
     @Test

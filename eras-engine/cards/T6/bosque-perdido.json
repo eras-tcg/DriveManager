@@ -1,0 +1,32 @@
+{
+  "name" : "bosque perdido",
+  "continuous" : [
+    {
+      "label" : "Turno Aliado",
+      "text" : "Tus aliados [hada] tienen Golpe rápido.",
+      "allyTurn" : true,
+      "keywords" : [
+        "Golpe rápido"
+      ],
+      "zone" : "field",
+      "targets" : {
+        "classes" : [
+          "hada"
+        ],
+        "cardType" : "creature"
+      }
+    }
+  ],
+  "reactions" : [
+    {
+      "type" : "CostModifier",
+      "label" : "Todos Los Turnos",
+      "event" : "EFFECT_SUMMON",
+      "holder" : "FIELD",
+      "payment" : {
+        "kind" : "TAP_SELF"
+      },
+      "reduce" : 1
+    }
+  ]
+}

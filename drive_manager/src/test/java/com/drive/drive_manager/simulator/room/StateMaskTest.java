@@ -4,6 +4,7 @@ import com.drive.drive_manager.simulator.engine.GameEvent;
 import com.drive.drive_manager.simulator.engine.Prompt;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Tag;
 
 import java.util.HashMap;
 import java.util.List;
@@ -13,6 +14,7 @@ import java.util.UUID;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /** Each player is sent only what they may see of the room. */
+@Tag("server")
 class StateMaskTest {
 
     private final RoomService service = new RoomService();

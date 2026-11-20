@@ -5,7 +5,7 @@
     "moment" : "ON_ATTACK",
     "mandatory" : true,
     "label" : "Al Atacar",
-    "text" : "Heredado de Dragaour: elige 1 enemigo de fuerza 5 o menos; destrúyelo.",
+    "text" : "Heredado de Dragaour: elige 1 enemigo de fuerza 6 o menos; destrúyelo.",
     "cost" : [ {
       "type" : "Do",
       "action" : {
@@ -15,7 +15,7 @@
           "owner" : "OPPONENT",
           "filter" : {
             "cardType" : "creature",
-            "maxStrength" : 5
+            "maxStrength" : 6
           },
           "min" : {
             "type" : "Fixed",

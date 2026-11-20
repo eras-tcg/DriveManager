@@ -281,9 +281,13 @@ object CombatRules {
                     frozenMapOf<String, Any?>("blockerId", blocker.instanceId, "attackerStrength", a, "blockerStrength", b),
                     "Enfrentamiento: " + name(attacker) + " (" + a + ") contra " + name(blocker) + " (" + b + ")")
                 // Rule 10.1.3.2: the weaker one is destroyed; both when equal. Attributed to the opponent and the other creature.
-                if (b <= a) destroy(room, blocker, defender, false, CAUSE_BATTLE, owner.userId, attacker.instanceId, null)
+                // "no destruye las criaturas que enfrenta" (EffectEngine.HARMLESS)
+                // "no puede ser destruido por enfrentamiento" (EffectEngine.NO_CLASH_DESTRUCTION)
+                if (b <= a && !keywords(attacker).contains(EffectEngine.HARMLESS) && !keywords(blocker).contains(EffectEngine.NO_CLASH_DESTRUCTION))
+                    destroy(room, blocker, defender, false, CAUSE_BATTLE, owner.userId, attacker.instanceId, null)
                 // Alcance: "esta carta no puede ser destruida por enfrentamiento como atacante"
-                if (a <= b && keywordLevel(attacker, "Alcance") == null) {
+                if (a <= b && keywordLevel(attacker, "Alcance") == null && !keywords(blocker).contains(EffectEngine.HARMLESS)
+                        && !keywords(attacker).contains(EffectEngine.NO_CLASH_DESTRUCTION)) {
                     destroy(room, attacker, owner, false, CAUSE_BATTLE, defender.userId, blocker.instanceId, null)
                 }
                 return true
@@ -314,6 +318,11 @@ object CombatRules {
      */
     @JvmStatic
     fun directDamage(room: GameRoom, c: Combat, owner: PlayerState, defender: PlayerState, attacker: CardSlot): Boolean {
+        // "esta carta no inflige daño directo"
+        if (keywords(attacker).contains(EffectEngine.HARMLESS)) {
+            log(room, name(attacker) + " no inflige daño directo", null)
+            return true
+        }
         if (c.hitsLeft == null) {
             val lethality = keywordLevel(attacker, "Letalidad")
             c.hitsLeft = 1 + (lethality ?: 0)
@@ -546,7 +555,7 @@ object CombatRules {
             if (card == null) continue
             val materials = ArrayList(card.materials!!)
             card.materials!!.clear()
-            Removals.removeFromField(owner, card)
+            Removals.removeFromField(room, owner, card)
             owner!!.hand.add(card)
             materials.forEach { m ->
                 m.faceDown = false

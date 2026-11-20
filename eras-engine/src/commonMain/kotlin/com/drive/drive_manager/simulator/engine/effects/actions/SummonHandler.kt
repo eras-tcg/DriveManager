@@ -34,6 +34,12 @@ class SummonHandler : ActionHandler<Summon> {
         val min = min(ctx.amount(selector.min), max)
         val filter = selector.filter().describe()
         val cost = if (reduce >= Summon.FREE) " sin pagar su coste" else if (reduce > 0) " reduciendo su coste en $reduce" else " pagando su coste"
+        if (action.orPlay) {
+            ctx.ask("Juega o invoca " + (if (min < max) "hasta " else "") + max + (if (max == 1) " carta" else " cartas")
+                    + (if (filter.all { JavaText.isWhitespace(it) }) "" else " $filter") + " de " + ctx.describeZones(selector.zones) + cost + ".",
+                    "Jugar o invocar", Selection.pool(ctx, selector), valid, min, max)
+            return true
+        }
         ctx.ask("Invoca " + (if (min < max) "hasta " else "") + max + (if (max == 1) " criatura" else " criaturas") + (if (filter.all { JavaText.isWhitespace(it) }) "" else " $filter")
                 + " de " + ctx.describeZones(selector.zones) + cost + ". Entra en " + (if (action.toFront) "tu línea frontal" else "Retaguardia") + " y robas 1 carta.", "Invocar", Selection.pool(ctx, selector), valid, min, max)
         return true
@@ -47,7 +53,7 @@ class SummonHandler : ActionHandler<Summon> {
             picked.add(card)
         }
         val reduce = ctx.amount(action.reduce)
-        val total = picked.sumOf { max(0, (it.cost ?: 0) - reduce) }
+        val total = picked.sumOf { max(0, (if ("creature" == it.cardType) ctx.summonCost(it) else ctx.playCost(it)) - reduce) }
         if (!ctx.canPay(total)) return "No tienes gemas para pagarlas todas ($total)"
         apply(ctx, action, picked)
         return null
@@ -57,7 +63,11 @@ class SummonHandler : ActionHandler<Summon> {
         val reduce = ctx.amount(action.reduce)
         return Selection.candidates(ctx, action.cards!!, false).filter { c ->
             val cost = c.cost
-            "creature" == c.cardType && cost != null && ctx.canPay(max(0, cost - reduce))
+            // "juega o invoca": a utility or structure is played as "juega" plays it
+            if (action.orPlay && ("utility" == c.cardType || "structure" == c.cardType))
+                return@filter ctx.canPay(max(0, ctx.playCost(c) - reduce)) && ctx.canBePlayed(c)
+                        && (action.cards.mode() == Selector.Mode.SELF || !ctx.isSelf(c) || ctx.delayed())
+            "creature" == c.cardType && cost != null && ctx.canPay(max(0, ctx.summonCost(c) - reduce))
                     // An effect does not act on its own card, unless it says "esta carta" or comes back later
                     && (action.cards.mode() == Selector.Mode.SELF || !ctx.isSelf(c) || ctx.delayed())
         }
@@ -65,7 +75,7 @@ class SummonHandler : ActionHandler<Summon> {
 
     private fun apply(ctx: EffectContext, action: Summon, cards: List<CardSlot>) {
         val reduce = ctx.amount(action.reduce)
-        for (card in cards) ctx.summon(card, reduce, action.toFront)
+        for (card in cards) if ("creature" == card.cardType) ctx.summon(card, reduce, action.toFront) else ctx.play(card, reduce)
         ctx.done(!cards.isEmpty())
     }
 }

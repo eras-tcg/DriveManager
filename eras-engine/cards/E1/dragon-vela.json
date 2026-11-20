@@ -1,0 +1,25 @@
+{
+  "name": "dragón vela",
+  "inheritedContinuous": [
+    {
+      "label": "Turno Aliado",
+      "text": "Heredado de Dragón Vela: esta carta nivel 5 tiene Perforante.",
+      "allyTurn": true,
+      "condition": {
+        "type": "ThisMatches",
+        "filter": {
+          "level": 5
+        }
+      },
+      "keywords": [
+        "Perforante"
+      ],
+      "zone": "field"
+    }
+  ],
+  "requirement": {
+    "summoner": {
+      "level": 2
+    }
+  }
+}

@@ -36,8 +36,8 @@ object Selection {
             if (!selector.filter().matches(card) && !(self && selector.self() == Selector.Self.REQUIRE)) continue
             if (selector.self() == Selector.Self.EXCLUDE && self) continue
             if (selector.relative != null && !relative(ctx, selector.relative, card)) continue
-            if (ctx.isOpponents(card)) {
-                // An enemy is a creature
+            if (ctx.isOpponents(card) && ctx.onField(card)) {
+                // An enemy is a creature (the opponent's lives, tributes… are cards of theirs)
                 if (!ctx.isCreature(card)) continue
                 if (target && ctx.immune(card)) continue
             }
@@ -53,6 +53,7 @@ object Selection {
             val level = card.getLevel()
             if (level == null || level > ctx.amount(r.maxLevel)) return false
         }
+        if (r.maxStrength != null && ctx.strength(card) > ctx.amount(r.maxStrength)) return false
         if (r.to == null) return true
         val other = ctx.relativeTo(r.to) ?: return false
         if (r.compareLevel != null) {
@@ -66,7 +67,18 @@ object Selection {
             }
             if (!holds) return false
         }
-        if (r.compareStrength == Selector.Compare.LESS && ctx.strength(card) >= ctx.strength(other)) return false
+        if (r.compareStrength != null) {
+            val mine = ctx.strength(card)
+            val theirs = ctx.strength(other)
+            // "con fuerza mayor a esta carta", "de fuerza menor a esta carta"
+            val holds = when (r.compareStrength) {
+                Selector.Compare.EQUAL -> mine == theirs
+                Selector.Compare.AT_MOST -> mine <= theirs
+                Selector.Compare.LESS -> mine < theirs
+                Selector.Compare.GREATER -> mine > theirs
+            }
+            if (!holds) return false
+        }
         val name = card.cardName
         if (r.differentName && name != null && name.equals(other.cardName, ignoreCase = true)) return false
         if (r.sameName && (name == null || !name.equals(other.cardName, ignoreCase = true))) return false
@@ -88,6 +100,14 @@ object Selection {
         for (raw in splitZones(zones!!)) {
             // As Java's trim(): what is at most a space
             val zone = raw.trim { it <= ' ' }
+            // "si elegiste 1 aliado": of what the memory has, only the player's own cards
+            if (zone.startsWith("savedOwn:")) {
+                if (!enemy) for (id in ctx.saved(zone.substring("savedOwn:".length))) {
+                    val card = ctx.find(id)
+                    if (card != null && !ctx.isOpponents(card)) into.add(card)
+                }
+                continue
+            }
             if (zone.startsWith("saved:")) {
                 if (!enemy) for (id in ctx.saved(zone.substring("saved:".length))) {
                     val card = ctx.find(id)
@@ -111,6 +131,17 @@ object Selection {
                 if (card != null && ctx.onField(card)) into.add(card)
                 continue
             }
+            // "un aliado enlazado a esta carta": the other members of its formation
+            if (zone == "formation") {
+                if (!enemy) into.addAll(ctx.formationMates())
+                continue
+            }
+            // "dicho aliado" (the one that dealt the direct damage)
+            if (zone == "eventAttacker") {
+                val card = if (enemy) null else ctx.eventAttacker()
+                if (card != null) into.add(card)
+                continue
+            }
             if (zone == "subjectOrSummoned") {
                 val card = if (enemy) null else ctx.subjectOrSummoned()
                 if (card != null) into.add(card)
@@ -129,6 +160,11 @@ object Selection {
             if (zone == "event") {
                 val card = if (enemy) null else ctx.eventCard()
                 if (card != null) into.add(card)
+                continue
+            }
+            // "1 de tus vidas, excepto la del tope"
+            if (zone == "livesBelowTop") {
+                if (whose != null) into.addAll(whose.lifeStack.drop(1))
                 continue
             }
             if (zone == "looked") {

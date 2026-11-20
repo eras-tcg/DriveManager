@@ -47,7 +47,7 @@ class PlayHandler : ActionHandler<Play> {
             picked.add(card)
         }
         val reduce = ctx.amount(action.reduce)
-        val total = picked.sumOf { max(0, (it.cost ?: 0) - reduce) }
+        val total = picked.sumOf { max(0, ctx.playCost(it) - reduce) }
         if (!ctx.canPay(total)) return "No tienes gemas para pagarlas todas ($total)"
         apply(ctx, action, picked)
         return null
@@ -56,7 +56,7 @@ class PlayHandler : ActionHandler<Play> {
     private fun candidates(ctx: EffectContext, action: Play): List<CardSlot> {
         val reduce = ctx.amount(action.reduce)
         return Selection.candidates(ctx, action.cards!!, false).filter { c ->
-            ("utility" == c.cardType || "structure" == c.cardType) && ctx.canPay(max(0, (c.cost ?: 0) - reduce)) && ctx.canBePlayed(c)
+            ("utility" == c.cardType || "structure" == c.cardType) && ctx.canPay(max(0, ctx.playCost(c) - reduce)) && ctx.canBePlayed(c)
                     // An effect does not act on its own card, unless it says "esta carta" or comes back later
                     && (action.cards.mode() == Selector.Mode.SELF || !ctx.isSelf(c) || ctx.delayed())
         }

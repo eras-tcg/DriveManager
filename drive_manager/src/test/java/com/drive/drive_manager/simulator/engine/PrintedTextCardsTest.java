@@ -2,6 +2,7 @@ package com.drive.drive_manager.simulator.engine;
 
 import com.drive.drive_manager.simulator.room.CardSlot;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Tag;
 
 import java.util.List;
 
@@ -12,6 +13,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * Cards whose metadata was corrected on 2026-11-17 to follow the printed text (vault "13 Web/Migración de cartas - propuesta de
  * correcciones", "Motor: cartas a revisar"), reprogrammed where the behaviour changed: their Requerimientos and effects.
  */
+@Tag("cards")
 class PrintedTextCardsTest extends CardBatchSupport {
 
     /** A real card with a special summon: its Requerimiento comes from its card file. */

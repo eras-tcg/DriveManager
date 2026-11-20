@@ -1,0 +1,94 @@
+{
+  "name" : "dendrovorax",
+  "effects" : [ {
+    "id" : "dendrovorax:en-invocacion",
+    "moment" : "ON_SUMMON",
+    "mandatory" : true,
+    "label" : "En Invocación",
+    "text" : "(1) Por cada 2 criaturas y/o estructuras agotadas, gana 1 gema.",
+    "steps" : [ {
+      "type" : "Do",
+      "action" : {
+        "type" : "Gems",
+        "count" : {
+          "type" : "Scaled",
+          "base" : {
+            "type" : "OnBothFields",
+            "filter" : {
+              "exhaustedOnly" : true,
+              "cardTypes" : [ "creature", "structure" ]
+            }
+          },
+          "divisor" : 2
+        }
+      }
+    } ],
+    "sourceZone" : "field",
+    "limit" : "ONCE_PER_TURN_BETWEEN_COPIES"
+  }, {
+    "id" : "dendrovorax:final-del-turno",
+    "moment" : "ON_EVENT",
+    "mandatory" : true,
+    "label" : "Turno Aliado",
+    "text" : "Al final del turno: reactiva esta carta y hasta 2 aliados Verdes nivel 2 o menor.",
+    "steps" : [ {
+      "type" : "Do",
+      "action" : {
+        "type" : "SetTapped",
+        "cards" : {
+          "zones" : "field",
+          "owner" : "YOU",
+          "filter" : { },
+          "min" : {
+            "type" : "Fixed",
+            "value" : 1
+          },
+          "max" : {
+            "type" : "Fixed",
+            "value" : 1
+          },
+          "self" : "ANY",
+          "mode" : "SELF"
+        }
+      }
+    }, {
+      "type" : "Do",
+      "action" : {
+        "type" : "SetTapped",
+        "cards" : {
+          "zones" : "field",
+          "owner" : "YOU",
+          "filter" : {
+            "colors" : [ "G" ],
+            "cardType" : "creature",
+            "maxLevel" : 2,
+            "exhaustedOnly" : true
+          },
+          "min" : {
+            "type" : "Fixed"
+          },
+          "max" : {
+            "type" : "Fixed",
+            "value" : 2
+          },
+          "self" : "EXCLUDE",
+          "mode" : "CHOOSE"
+        }
+      }
+    } ],
+    "condition" : {
+      "type" : "Happened",
+      "eventType" : "TURN_END",
+      "actor" : "YOU",
+      "owner" : "ANY"
+    },
+    "sourceZone" : "field",
+    "allyTurn" : true,
+    "limit" : "NONE"
+  } ],
+  "requirement" : {
+    "summoner" : {
+      "level" : 4
+    }
+  }
+}

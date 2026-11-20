@@ -1,7 +1,12 @@
 package com.drive.drive_manager.simulator.rank;
 
 import com.drive.drive_manager.simulator.bot.BotCatalog;
+import com.drive.drive_manager.dto.DeckList;
 import com.drive.drive_manager.simulator.bot.BotMatch;
+import com.drive.drive_manager.simulator.bot.BotNames;
+import com.drive.drive_manager.simulator.room.DeckLoader;
+import com.drive.drive_manager.simulator.room.PlayerState;
+import com.drive.drive_manager.simulator.room.StateMask;
 import com.drive.drive_manager.simulator.bot.BotPlayer;
 import com.drive.drive_manager.simulator.bot.BotRooms;
 import com.drive.drive_manager.simulator.room.CardSlot;
@@ -10,6 +15,7 @@ import com.drive.drive_manager.simulator.room.GameStateUpdate;
 import com.drive.drive_manager.simulator.room.RoomOptions;
 import com.drive.drive_manager.simulator.room.RoomService;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Tag;
 
 import java.util.List;
 import java.util.Map;
@@ -17,8 +23,12 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 /** Friendly and ranked rooms: what the owner may still choose in a ranked one, online and against the bot. */
+@Tag("server")
 class RankedRoomTest {
 
     private final RoomService service = new RoomService();
@@ -95,7 +105,8 @@ class RankedRoomTest {
             act(room.getRoomId(), "owner", "JOIN_ROOM", Map.of("username", "Ana"));
             act(room.getRoomId(), "owner", "SET_RANKED", Map.of("ranked", true));
             assertThat(room.getBotLevel()).as("MMR " + c.getKey()).isEqualTo(c.getValue());
-            assertThat(room.getPlayer(BotRooms.BOT).getUsername()).isEqualTo(BotCatalog.nameOf(c.getValue()));
+            // Under a player's name, never the level's
+            assertThat(BotNames.getNAMES()).contains(room.getPlayer(BotRooms.BOT).getUsername());
         }
     }
 
@@ -133,5 +144,123 @@ class RankedRoomTest {
         assertThat(bots).noneMatch(c -> myIds.contains(c.getInstanceId()));
         assertThat(room.getPlayer(BotRooms.BOT).getOriginalDeck()).noneMatch(c -> myIds.contains(c.getInstanceId()));
         assertThat(bots).allMatch(c -> c.getFinish() == null);
+    }
+
+    /** The bot's pool: these decks (ST decks as the simulator plays them), none with cards in testing. */
+    private void pool(String... decks) {
+        DeckLoader loader = mock(DeckLoader.class);
+        List<DeckList> lists = new java.util.ArrayList<>();
+        for (String d : decks) {
+            DeckList list = new DeckList();
+            list.setId(d);
+            list.setDeckName("Mazo " + d);
+            list.setBotDeck(true);
+            lists.add(list);
+        }
+        when(loader.botPool()).thenReturn(lists);
+        when(loader.hasTestCards(any())).thenReturn(false);
+        when(loader.slots(any())).thenAnswer(inv -> {
+            PlayerState holder = new PlayerState("x", "x");
+            BotMatch.seat(holder, ((DeckList) inv.getArgument(0)).getId(), new int[] {500});
+            return new java.util.ArrayList<>(holder.getDeck());
+        });
+        service.decks = loader;
+    }
+
+    @Test
+    void rankedAgainstTheBotItPlaysADeckOfItsPoolNotTheOwners() {
+        pool("st2", "st3");
+        GameRoom room = service.createRoom("owner", RoomOptions.BOT);
+        String id = room.getRoomId();
+        act(id, "owner", "JOIN_ROOM", Map.of("username", "Ana"));
+        BotMatch.seat(room.getPlayer("owner"), "st1", new int[] {0});
+        room.getPlayer("owner").setDeckId("st1");
+
+        act(id, "owner", "SET_RANKED", Map.of("ranked", true));
+        PlayerState bot = room.getPlayer(BotRooms.BOT);
+        assertThat(bot.getDeckId()).isIn("st2", "st3");
+        assertThat(bot.getDeck()).isNotEmpty();
+        assertThat(bot.getStarterCardId()).isNotNull();
+
+        // Back to the pre-room after a game: a new rival, with the other deck of the pool
+        String before = bot.getDeckId();
+        service.nextRound(room, false);
+        assertThat(bot.getDeckId()).isIn("st2", "st3").isNotEqualTo(before);
+
+        // Friendly again: the level's bot with the owner's deck
+        act(id, "owner", "SET_RANKED", Map.of("ranked", false));
+        assertThat(bot.getUsername()).isEqualTo(BotCatalog.nameOf(room.getBotLevel()));
+        assertThat(bot.getDeckId()).isEqualTo("st1");
+    }
+
+    @Test
+    void withoutAPoolTheRankedBotPlaysACopyOfTheOwnersDeck() {
+        GameRoom room = service.createRoom("owner", RoomOptions.BOT);
+        String id = room.getRoomId();
+        act(id, "owner", "JOIN_ROOM", Map.of("username", "Ana"));
+        act(id, "owner", "SET_RANKED", Map.of("ranked", true));
+        assertThat(room.getBotPoolDeck()).isFalse();
+    }
+
+    @Test
+    void beforeARankedGameTheOwnerDoesNotSeeWhoTheBotIs() {
+        pool("st2");
+        ownerStrength(1450);
+        GameRoom room = service.createRoom("owner", RoomOptions.BOT);
+        String id = room.getRoomId();
+        act(id, "owner", "JOIN_ROOM", Map.of("username", "Ana"));
+        GameStateUpdate update = act(id, "owner", "SET_RANKED", Map.of("ranked", true));
+
+        GameStateUpdate seen = StateMask.forViewer(update, "owner", false);
+        PlayerState rival = seen.getPlayers().get(BotRooms.BOT);
+        assertThat(rival.getUsername()).isEqualTo(StateMask.UNKNOWN_RIVAL);
+        assertThat(rival.getDeckId()).isNull();
+        assertThat(rival.getDeckName()).isNull();
+        assertThat(rival.getStarterCardId()).isNull();
+        assertThat(rival.getOriginalDeck()).isEmpty();
+        assertThat(seen.getBotLevel()).isNull();
+        assertThat(seen.getBotEdge()).isZero();
+        assertThat(seen.getBotChoices()).isNull();
+        // The room itself knows it all
+        assertThat(room.getBotEdge()).isPositive();
+        assertThat(room.getPlayer(BotRooms.BOT).getDeckId()).isEqualTo("st2");
+
+        // Once the game starts it is in view
+        room.setStatus(GameRoom.RoomStatus.MULLIGAN);
+        GameStateUpdate started = StateMask.forViewer(GameStateUpdate.from(room, (String) null, "owner"), "owner", false);
+        assertThat(started.getPlayers().get(BotRooms.BOT).getUsername()).isEqualTo(room.getPlayer(BotRooms.BOT).getUsername());
+        assertThat(started.getBotLevel()).isEqualTo(BotCatalog.HARD);
+    }
+
+    @Test
+    void aRankedRematchKeepsTheRivalAtTheOwnersStrengthNow() {
+        pool("st2", "st3");
+        ownerStrength(1000);
+        GameRoom room = service.createRoom("owner", RoomOptions.BOT);
+        String id = room.getRoomId();
+        act(id, "owner", "JOIN_ROOM", Map.of("username", "Ana"));
+        act(id, "owner", "SET_RANKED", Map.of("ranked", true));
+        assertThat(room.getBotLevel()).isEqualTo(BotCatalog.NORMAL);
+        PlayerState bot = room.getPlayer(BotRooms.BOT);
+        String name = bot.getUsername();
+        String deck = bot.getDeckId();
+
+        ownerStrength(1350);
+        service.nextRound(room, true);
+        assertThat(room.getBotLevel()).isEqualTo(BotCatalog.HARD);
+        assertThat(bot.getUsername()).isEqualTo(name);
+        assertThat(bot.getDeckId()).isEqualTo(deck);
+    }
+
+    @Test
+    void onlyASimulatorAdministratorSeatsAModelUnderTest() {
+        String model = BotCatalog.CHOICES.stream().filter(c -> "model".equals(c.get("kind"))).map(c -> c.get("id")).findFirst().orElse(null);
+        org.junit.jupiter.api.Assumptions.assumeTrue(model != null);
+        GameRoom room = service.createRoom("owner", RoomOptions.BOT);
+        String id = room.getRoomId();
+        act(id, "owner", "JOIN_ROOM", Map.of("username", "Ana"));
+        assertThat(act(id, "owner", "SET_BOT_LEVEL", Map.of("level", model)).getError()).isNotNull();
+        room.getAdminPlayers().add("owner");
+        assertThat(act(id, "owner", "SET_BOT_LEVEL", Map.of("level", model)).getError()).isNull();
     }
 }

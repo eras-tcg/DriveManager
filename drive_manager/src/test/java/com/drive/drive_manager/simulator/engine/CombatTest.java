@@ -5,6 +5,7 @@ import com.drive.drive_manager.simulator.room.GameRoom;
 import com.drive.drive_manager.simulator.room.PlayerState;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Tag;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -12,6 +13,7 @@ import java.util.List;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /** Combat (rule 10) and the ST3 effects that use it, passive triggers and per-turn limits. */
+@Tag("engine")
 class CombatTest {
 
     private static final double FRONT = 20.0;

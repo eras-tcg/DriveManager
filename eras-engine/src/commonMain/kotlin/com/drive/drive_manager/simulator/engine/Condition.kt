@@ -147,11 +147,12 @@ sealed interface Condition {
      * @param byEffect an effect did it
      * @param data     what the event says, as "key=value"; the value "$this" is this card, "$you" is its controller and "*" any value
      *                 (the event says it at all: "targetId=*", an attack on an enemy, not on the rival)
+     * @param byCard   "por efecto de un aliado": the card whose effect did it; null: not asked
      */
     @JvmRecord
     data class Happened(
         val eventType: String?, val actor: Side?, val owner: Side?, val thisCard: Boolean, val filter: CardFilter?, val from: String?,
-        val to: String?, val byEffect: Boolean, val data: List<String>?,
+        val to: String?, val byEffect: Boolean, val data: List<String>?, val byCard: CardFilter? = null,
     ) : Condition {
         override fun test(room: GameRoom, event: GameEvent?, source: CardSlot?, controller: String?): Boolean {
             if (event == null || (eventType != null && eventType != event.type)) return false
@@ -170,6 +171,11 @@ sealed interface Condition {
                 if (wanted == "\$this") wanted = source!!.instanceId
                 if (wanted == "\$you") wanted = controller
                 if (value == null || wanted!! != value.toString()) return false
+            }
+            if (byCard != null) {
+                val byId = if (event.data == null) null else event.data!!["byCard"]
+                val acting = if (byId == null) null else EffectEngine.actingCard(room, byId as String)
+                if (acting == null || !byCard.matches(acting)) return false
             }
             if (filter == null) return true
             val card = EffectEngine.eventCard(room, event)
@@ -287,11 +293,15 @@ sealed interface Condition {
         }
     }
 
-    /** "si reduces [a N o menos] la fuerza de algún enemigo"; `enemyStillThere`: it is still on the field with some strength. */
+    /**
+     * "si reduces [a N o menos] la fuerza de algún enemigo"; `enemyStillThere`: it is still on the field with some strength; `byAnyone`: "si la
+     * fuerza de un enemigo es reducida a 0", whoever reduced it (an enemy of the card's controller).
+     */
     @JvmRecord
-    data class YouReducedStrength(val toAtMost: Int?, val enemyStillThere: Boolean) : Condition {
+    data class YouReducedStrength(val toAtMost: Int?, val enemyStillThere: Boolean, val byAnyone: Boolean = false) : Condition {
         override fun test(room: GameRoom, event: GameEvent?, source: CardSlot?, controller: String?): Boolean {
-            if (event == null || GameEvent.STRENGTH_REDUCED != event.type || controller!! != event.playerId) return false
+            if (event == null || GameEvent.STRENGTH_REDUCED != event.type) return false
+            if (if (byAnyone) controller!! == ownerOf(event) else controller!! != event.playerId) return false
             val to = if (event.data == null) null else event.data!!["to"]
             if (toAtMost != null && !(to is Number && to.toInt() <= toAtMost)) return false
             if (!enemyStillThere) return true
@@ -365,6 +375,38 @@ sealed interface Condition {
     data class ThisMatches(val filter: CardFilter?) : Condition {
         override fun test(room: GameRoom, event: GameEvent?, source: CardSlot?, controller: String?): Boolean {
             return source != null && filter!!.matches(source)
+        }
+    }
+
+    /**
+     * "si esta carta es añadida como recurso": an effect or a cost added it as a Recurso of a card, or it was the summoner of an Evolución (it
+     * becomes the first Recurso of the creature summoned). Read from the Recursos (sourceZone "resources").
+     */
+    data object AddedAsResource : Condition {
+        override fun test(room: GameRoom, event: GameEvent?, source: CardSlot?, controller: String?): Boolean {
+            if (event == null || source == null) return false
+            if (GameEvent.SEND == event.type && "resources" == event.toZone) return source.instanceId == event.cardInstanceId
+            if (GameEvent.SPECIAL_SUMMON != event.type || "evolution" != event.data?.get("summonType")) return false
+            val summoned = EffectEngine.findInRoom(room, event.cardInstanceId)
+            return summoned != null && summoned.resources?.firstOrNull() === source
+        }
+    }
+
+    /**
+     * "cuando un aliado [filtro] entre en enfrentamiento": the clash step of an attack begins with one of your creatures in it, attacking or
+     * blocking (before the strengths are compared).
+     */
+    @JvmRecord
+    data class AllyClashes(val filter: CardFilter?) : Condition {
+        override fun test(room: GameRoom, event: GameEvent?, source: CardSlot?, controller: String?): Boolean {
+            if (event == null || !combatStep(Combat.Step.CLASH, Combat.Phase.ENTER).test(room, event, source, controller)) return false
+            val c = room.combat
+            if (c == null || c.blockerId == null) return false
+            val player = room.getPlayer(controller) ?: return false
+            return listOf(c.attackerId, c.blockerId).any { id ->
+                val card = EffectEngine.find(player.field, id)
+                card != null && "creature" == card.cardType && (filter == null || filter.matches(card))
+            }
         }
     }
 

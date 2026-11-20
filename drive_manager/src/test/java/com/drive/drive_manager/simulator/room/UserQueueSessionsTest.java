@@ -2,6 +2,7 @@ package com.drive.drive_manager.simulator.room;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Tag;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.simp.SimpMessageHeaderAccessor;
 import org.springframework.messaging.simp.SimpMessageType;
@@ -35,6 +36,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
  * "Expected mutable SimpMessageHeaderAccessor" and nothing. The channels are wired as
  * WebSocketMessageBrokerConfigurationSupport / AbstractMessageBrokerConfiguration do (no docker, no server).
  */
+@Tag("server")
 class UserQueueSessionsTest {
 
     private static final String USER = "alice";

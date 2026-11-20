@@ -7,6 +7,7 @@ import com.drive.drive_manager.simulator.engine.EffectScript.Limit;
 import com.drive.drive_manager.simulator.engine.EffectScript.Moment;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Tag;
 
 import java.util.List;
 
@@ -17,6 +18,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * Designer rulings (2026-10-30): a utility can be played only if its "En Juego" can be activated (limit, condition,
  * cost, targets), and no Definitive effect — of any card or moment — can be activated on the first turn of the game.
  */
+@Tag("engine")
 class UtilityActivationTest {
 
     private GameRoom room;
@@ -54,8 +56,8 @@ class UtilityActivationTest {
 
     @Test
     void aUtilityWhoseConditionDoesNotHoldCannotBePlayed() {
-        // Última Línea De Defensa: "si tienes 2 o menos vidas bocabajo"
-        for (int i = 0; i < 3; i++) {
+        // Última Línea De Defensa: "si tienes 3 o menos vidas"
+        for (int i = 0; i < 4; i++) {
             CardSlot life = card("hl" + i, "Vida", 1, 1, "R");
             life.setFaceDown(true);
             host.getLifeStack().add(life);

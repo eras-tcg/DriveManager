@@ -1,0 +1,115 @@
+{
+  "name": "freiha",
+  "effects": [
+    {
+      "id": "freiha:en-mano",
+      "moment": "ACTIVATED",
+      "label": "Turno Aliado / En Mano",
+      "text": "Una vez por turno entre copias: puedes tributar 2 [lanzadores de conjuros] de tu mano; invoca esta carta sin pagar su coste. Si lo haces: revela 1 de tus vidas.",
+      "cost": [
+        {
+          "type": "Do",
+          "action": {
+            "type": "Move",
+            "cards": {
+              "zones": "hand",
+              "owner": "YOU",
+              "filter": {
+                "classes": [
+                  "lanzador de conjuros"
+                ]
+              },
+              "min": {
+                "type": "Fixed",
+                "value": 2
+              },
+              "max": {
+                "type": "Fixed",
+                "value": 2
+              },
+              "self": "EXCLUDE",
+              "mode": "CHOOSE"
+            },
+            "to": "tributeZone"
+          }
+        }
+      ],
+      "steps": [
+        {
+          "type": "Do",
+          "action": {
+            "type": "Summon",
+            "cards": {
+              "zones": "hand",
+              "owner": "YOU",
+              "filter": {},
+              "min": {
+                "type": "Fixed",
+                "value": 1
+              },
+              "max": {
+                "type": "Fixed",
+                "value": 1
+              },
+              "self": "ANY",
+              "mode": "SELF"
+            },
+            "reduce": {
+              "type": "Fixed",
+              "value": 1000
+            },
+            "required": true
+          }
+        },
+        {
+          "type": "IfDone",
+          "covers": 1
+        },
+        {
+          "type": "Do",
+          "action": {
+            "type": "Flip",
+            "cards": {
+              "zones": "lifeStack",
+              "owner": "YOU",
+              "filter": {},
+              "min": {
+                "type": "Fixed",
+                "value": 1
+              },
+              "max": {
+                "type": "Fixed",
+                "value": 1
+              },
+              "self": "ANY",
+              "mode": "CHOOSE"
+            },
+            "faceUp": true
+          }
+        }
+      ],
+      "sourceZone": "hand",
+      "allyTurn": true,
+      "limit": "ONCE_PER_TURN_BETWEEN_COPIES"
+    }
+  ],
+  "reactions": [
+    {
+      "type": "CostModifier",
+      "label": "Todos Los Turnos",
+      "event": "SPECIAL_SUMMON",
+      "holder": "SUMMONER",
+      "payment": {
+        "kind": "TRIBUTES_TO_DECK_BOTTOM",
+        "count": 5,
+        "filter": {
+          "classes": [
+            "lanzador de conjuros"
+          ]
+        }
+      },
+      "reduce": 1,
+      "limit": "NONE"
+    }
+  ]
+}

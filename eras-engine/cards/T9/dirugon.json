@@ -1,0 +1,97 @@
+{
+  "name": "dirugón",
+  "effects": [
+    {
+      "id": "dirugon:todos-los-turnos",
+      "moment": "ON_EVENT",
+      "label": "Todos Los Turnos",
+      "text": "Si algún aliado de fuerza 5 o mayor es invocado: puedes añadirle esta carta como recurso para ganar 1 gema y tomar 1 carta de tus tributos.",
+      "steps": [
+        {
+          "type": "SubjectFromTrigger"
+        },
+        {
+          "type": "IfPossible"
+        },
+        {
+          "type": "Do",
+          "action": {
+            "type": "Move",
+            "cards": {
+              "zones": "field",
+              "owner": "YOU",
+              "filter": {},
+              "min": {
+                "type": "Fixed",
+                "value": 1
+              },
+              "max": {
+                "type": "Fixed",
+                "value": 1
+              },
+              "self": "ANY",
+              "mode": "SELF"
+            },
+            "to": "resources:subject"
+          }
+        },
+        {
+          "type": "Do",
+          "action": {
+            "type": "Gems",
+            "count": {
+              "type": "Fixed",
+              "value": 1
+            }
+          }
+        },
+        {
+          "type": "Do",
+          "action": {
+            "type": "Move",
+            "cards": {
+              "zones": "tributeZone",
+              "owner": "YOU",
+              "filter": {},
+              "min": {
+                "type": "Fixed",
+                "value": 1
+              },
+              "max": {
+                "type": "Fixed",
+                "value": 1
+              },
+              "self": "ANY",
+              "mode": "CHOOSE"
+            },
+            "to": "hand"
+          }
+        }
+      ],
+      "condition": {
+        "type": "Summoned",
+        "side": "YOU",
+        "other": true,
+        "filter": {
+          "cardType": "creature",
+          "minStrength": 5
+        }
+      },
+      "sourceZone": "field",
+      "limit": "NONE"
+    }
+  ],
+  "inheritedContinuous": [
+    {
+      "label": "Todos Los Turnos",
+      "text": "Heredado de Dirugón: los efectos de esta carta [dragón] consideran la fuerza de las criaturas reducida en 1.",
+      "zone": "field",
+      "effectsSeeStrength": -1,
+      "ofHolder": {
+        "classes": [
+          "dragón"
+        ]
+      }
+    }
+  ]
+}

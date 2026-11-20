@@ -1,0 +1,120 @@
+{
+  "name": "peón blanco de cástelan",
+  "effects": [
+    {
+      "id": "peon-blanco:turno-aliado",
+      "moment": "ACTIVATED",
+      "label": "Turno Aliado",
+      "text": "Si controlas un [cástelan] con \"Negro\" o \"Negra\" en el nombre: puedes mover esta carta a tu línea frontal.",
+      "steps": [
+        {
+          "type": "Do",
+          "action": {
+            "type": "Move",
+            "cards": {
+              "zones": "backLine",
+              "owner": "YOU",
+              "filter": {},
+              "min": {
+                "type": "Fixed",
+                "value": 1
+              },
+              "max": {
+                "type": "Fixed",
+                "value": 1
+              },
+              "self": "ANY",
+              "mode": "SELF"
+            },
+            "to": "frontLine",
+            "required": true
+          }
+        }
+      ],
+      "condition": {
+        "type": "Compare",
+        "left": {
+          "type": "OnField",
+          "filter": {
+            "classes": [
+              "cástelan"
+            ],
+            "anyOf": [
+              {
+                "nameContains": "negro"
+              },
+              {
+                "nameContains": "negra"
+              }
+            ]
+          }
+        },
+        "op": "AT_LEAST",
+        "right": {
+          "type": "Fixed",
+          "value": 1
+        }
+      },
+      "sourceZone": "field",
+      "allyTurn": true,
+      "limit": "NONE"
+    },
+    {
+      "id": "peon-blanco:en-invocacion",
+      "moment": "ON_SUMMON",
+      "mandatory": true,
+      "label": "En Invocación",
+      "text": "Roba 3 cartas. Luego: tributa 2 cartas de tu mano.",
+      "steps": [
+        {
+          "type": "Do",
+          "action": {
+            "type": "Draw",
+            "count": {
+              "type": "Fixed",
+              "value": 3
+            }
+          }
+        },
+        {
+          "type": "Do",
+          "action": {
+            "type": "Move",
+            "cards": {
+              "zones": "hand",
+              "owner": "YOU",
+              "filter": {},
+              "min": {
+                "type": "Fixed",
+                "value": 2
+              },
+              "max": {
+                "type": "Fixed",
+                "value": 2
+              },
+              "self": "EXCLUDE",
+              "mode": "CHOOSE"
+            },
+            "to": "tributeZone"
+          }
+        }
+      ],
+      "sourceZone": "field",
+      "limit": "NONE"
+    }
+  ],
+  "formation": {
+    "reactions": [
+      {
+        "type": "Replacement",
+        "id": "peon-blanco:enlace",
+        "label": "Turno Aliado",
+        "text": "Cuando esta carta fuera a ser destruida: en su lugar, puedes destruir un aliado enlazado a esta carta.",
+        "destroyOnly": true,
+        "limit": "NONE",
+        "cost": "DESTROY_LINKED_ALLY",
+        "allyTurn": true
+      }
+    ]
+  }
+}

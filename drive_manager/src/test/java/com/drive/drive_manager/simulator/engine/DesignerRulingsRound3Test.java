@@ -2,6 +2,7 @@ package com.drive.drive_manager.simulator.engine;
 
 import com.drive.drive_manager.simulator.room.CardSlot;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Tag;
 
 import java.util.List;
 
@@ -16,6 +17,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * Exoplanetaria's declared summoner, Sarkhydrax and Fósil inherited reactions, Carnirex summoned by a sacrifice; and the fourth round: "con [tipo]
  * en su texto", "en tu retaguardia", Preparando Expedición, Helena and the lives, Agrupar, Velkerop-1 and A-5H Requerimientos.
  */
+@Tag("engine")
 class DesignerRulingsRound3Test extends CardBatchSupport {
 
     private static CardSlot special(CardSlot card, String kind, int cost, String requirement) {

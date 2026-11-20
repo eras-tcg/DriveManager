@@ -10,6 +10,12 @@ import com.drive.drive_manager.simulator.room.GameStateUpdate;
 import com.drive.drive_manager.simulator.room.RoomCopy;
 import com.drive.drive_manager.simulator.room.RoomEngine;
 import com.drive.drive_manager.simulator.room.RoomService;
+import com.drive.drive_manager.dto.DeckList;
+import com.drive.drive_manager.simulator.room.CardSlot;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -66,6 +72,23 @@ public final class BotRooms {
             return DeckLoader.newInstanceId();
         }
 
+        /** A deck of the pool at random (other than the last one when there is another) the simulator can play in ranked. */
+        @Override
+        public RoomBots.PoolDeck poolDeck(GameRoom room, String avoidDeckId) {
+            if (service.decks == null) return null;
+            List<DeckList> pool = new ArrayList<>(service.decks.botPool());
+            Collections.shuffle(pool, chance);
+            if (pool.size() > 1) pool.sort(Comparator.comparing(d -> d.getId().equals(avoidDeckId)));
+            for (DeckList deck : pool) {
+                if (service.decks.hasTestCards(deck)) continue;
+                List<CardSlot> cards = service.decks.slots(deck);
+                if (cards.isEmpty() || DeckLoader.unprogrammedIn(cards) != null) continue;
+                cards.forEach(c -> c.setFinish(null));
+                return new RoomBots.PoolDeck(deck.getId(), deck.getDeckName(), cards);
+            }
+            return null;
+        }
+
         @Override
         public void dropBot(GameRoom room) {
             bots.remove(room.getRoomId());
@@ -85,6 +108,11 @@ public final class BotRooms {
     /** Seats the bot in a new room against it. */
     public void seat(GameRoom room) {
         RoomBots.seat(room, roster);
+    }
+
+    /** A ranked game over and another coming: a rematch keeps the rival at the owner's level now, the pre-room a new one. */
+    public void nextRound(GameRoom room, boolean rematch) {
+        RoomBots.nextRound(room, roster, rematch);
     }
 
     /** The owner's settings of the room's bots (RoomHost.botSetting): level, ranked, the test room's bots, pace, edge. */

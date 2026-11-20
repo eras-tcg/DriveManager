@@ -1,0 +1,78 @@
+{
+  "name" : "es-101",
+  "effects" : [ {
+    "id" : "es-101:en-invocacion",
+    "moment" : "ON_SUMMON",
+    "label" : "En Invocación",
+    "text" : "Puedes enviar 5 de tus tributos Azules o [autómata] al fondo de tu mazo para reactivar esta carta.",
+    "steps" : [ {
+      "type" : "IfPossible"
+    }, {
+      "type" : "Do",
+      "action" : {
+        "type" : "Move",
+        "cards" : {
+          "zones" : "tributeZone",
+          "owner" : "YOU",
+          "filter" : {
+            "colors" : [ "B" ],
+            "classes" : [ "autómata" ]
+          },
+          "min" : {
+            "type" : "Fixed",
+            "value" : 5
+          },
+          "max" : {
+            "type" : "Fixed",
+            "value" : 5
+          },
+          "self" : "ANY",
+          "mode" : "CHOOSE"
+        },
+        "to" : "deckBottom"
+      }
+    }, {
+      "type" : "Do",
+      "action" : {
+        "type" : "SetTapped",
+        "cards" : {
+          "zones" : "field",
+          "owner" : "YOU",
+          "filter" : { },
+          "min" : {
+            "type" : "Fixed",
+            "value" : 1
+          },
+          "max" : {
+            "type" : "Fixed",
+            "value" : 1
+          },
+          "self" : "ANY",
+          "mode" : "SELF"
+        }
+      }
+    } ],
+    "sourceZone" : "field",
+    "limit" : "NONE"
+  } ],
+  "reactions" : [ {
+    "type" : "Replacement",
+    "id" : "es-101:todos-los-turnos",
+    "label" : "Todos Los Turnos",
+    "text" : "Si esta carta con materiales fuera a ser destruida: en su lugar, puedes agotar 1 de tus estructuras.",
+    "destroyOnly" : true,
+    "limit" : "NONE",
+    "cost" : "TAP_STRUCTURE",
+    "withMaterials" : true
+  } ],
+  "requirement" : {
+    "summoner" : {
+      "level" : 2
+    },
+    "materials" : {
+      "count" : 1,
+      "level" : 2,
+      "zones" : [ "hand", "field" ]
+    }
+  }
+}

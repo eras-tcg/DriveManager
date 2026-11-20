@@ -243,6 +243,8 @@ public class RoomService implements RoomHost {
 
     @Override
     public GameStateUpdate botSetting(ActionType type, GameRoom room, String userId, GameAction action) {
+        GameStateUpdate refused = type == ActionType.SET_RANKED ? RoomDecks.rankedRefusal(this, room, action) : null;
+        if (refused != null) return refused;
         return botRooms.setting(type, room, userId, action);
     }
 
@@ -259,6 +261,11 @@ public class RoomService implements RoomHost {
     @Override
     public GameStateUpdate refreshCardMetadata(GameRoom room, String userId, GameAction action) {
         return RoomDecks.refreshCardMetadata(this, room, userId, action);
+    }
+
+    @Override
+    public void nextRound(GameRoom room, boolean rematch) {
+        botRooms.nextRound(room, rematch);
     }
 
     // ------------------------------------------------------------------ Sessions

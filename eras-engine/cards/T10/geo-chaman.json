@@ -1,0 +1,145 @@
+{
+  "name": "geo chamán",
+  "effects": [
+    {
+      "id": "geo-chaman:en-invocacion",
+      "moment": "ON_SUMMON",
+      "mandatory": true,
+      "label": "En Invocación",
+      "text": "Mira las primeras 5 cartas de tu mazo: de ellas toma hasta 3 [chamán], [neogeo] o [ente]. Envía el resto al fondo de tu mazo. Luego: tributa 1 carta de tu mano por cada carta que tomaste.",
+      "steps": [
+        {
+          "type": "Do",
+          "action": {
+            "type": "Look",
+            "count": {
+              "type": "Fixed",
+              "value": 5
+            }
+          }
+        },
+        {
+          "type": "Do",
+          "action": {
+            "type": "Move",
+            "cards": {
+              "zones": "looked",
+              "owner": "YOU",
+              "filter": {
+                "classes": [
+                  "chamán",
+                  "neogeo",
+                  "ente"
+                ]
+              },
+              "min": {
+                "type": "Fixed"
+              },
+              "max": {
+                "type": "Fixed",
+                "value": 3
+              },
+              "self": "ANY",
+              "mode": "CHOOSE"
+            },
+            "to": "hand",
+            "rest": "deckBottom"
+          }
+        },
+        {
+          "type": "Do",
+          "action": {
+            "type": "Move",
+            "cards": {
+              "zones": "hand",
+              "owner": "YOU",
+              "filter": {},
+              "min": {
+                "type": "LastCount"
+              },
+              "max": {
+                "type": "LastCount"
+              },
+              "self": "ANY",
+              "mode": "CHOOSE"
+            },
+            "to": "tributeZone"
+          }
+        }
+      ],
+      "sourceZone": "field",
+      "limit": "NONE"
+    },
+    {
+      "id": "geo-chaman:en-tributos",
+      "moment": "ON_EVENT",
+      "label": "En Tributos",
+      "text": "Si invocas un [ente] o [neogeo] por efecto: puedes añadir esta carta como material a un [chamán] o [neogeo].",
+      "steps": [
+        {
+          "type": "Do",
+          "action": {
+            "type": "Select",
+            "selector": {
+              "zones": "field",
+              "owner": "YOU",
+              "filter": {
+                "cardType": "creature",
+                "classes": [
+                  "chamán",
+                  "neogeo"
+                ]
+              },
+              "min": {
+                "type": "Fixed",
+                "value": 1
+              },
+              "max": {
+                "type": "Fixed",
+                "value": 1
+              },
+              "self": "ANY",
+              "mode": "CHOOSE"
+            },
+            "endsIfNone": true
+          }
+        },
+        {
+          "type": "Do",
+          "action": {
+            "type": "Move",
+            "cards": {
+              "zones": "tributeZone",
+              "owner": "YOU",
+              "filter": {},
+              "min": {
+                "type": "Fixed",
+                "value": 1
+              },
+              "max": {
+                "type": "Fixed",
+                "value": 1
+              },
+              "self": "ANY",
+              "mode": "SELF"
+            },
+            "to": "materials:last"
+          }
+        }
+      ],
+      "condition": {
+        "type": "Summoned",
+        "side": "YOU",
+        "filter": {
+          "classes": [
+            "ente",
+            "neogeo"
+          ]
+        },
+        "how": "effect"
+      },
+      "sourceZone": "tributeZone",
+      "limit": "NONE"
+    }
+  ]
+}

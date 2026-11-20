@@ -1,6 +1,7 @@
 package com.drive.drive_manager.simulator.engine;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Tag;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -14,6 +15,7 @@ import static org.junit.jupiter.api.Assumptions.assumeTrue;
  * Writes what is programmed for each card, for the vault's status (skill eras-card-effects, sync_vault_status.py).
  * Only when asked: {@code ./mvnw -o test -Dtest=ProgrammedCardsExportTest -Dexport.programmed=<file.json>}.
  */
+@Tag("basic")
 class ProgrammedCardsExportTest {
 
     @Test

@@ -4,7 +4,7 @@
     "id" : "hominox:todos-los-turnos",
     "moment" : "ON_EVENT",
     "label" : "Todos Los Turnos",
-    "text" : "Si esta carta destruye un enemigo: puedes invocar 1 criatura [mutante] de tus tributos de nivel igual o menor a la cantidad de copias de esta carta en tus tributos.",
+    "text" : "Si esta carta destruye un enemigo: puedes invocar 1 [mutante] de tus tributos de nivel igual o menor a la cantidad de copias de esta carta en tus tributos.",
     "steps" : [ {
       "type" : "Do",
       "action" : {

@@ -1,0 +1,227 @@
+{
+  "name": "ax-3l modo asalto aereo",
+  "effects": [
+    {
+      "id": "ax-3l:en-mano",
+      "moment": "ON_EVENT",
+      "label": "En Mano",
+      "text": "Si algún aliado es invocado por efecto o especialmente: puedes invocar esta carta de forma especial.",
+      "steps": [
+        {
+          "type": "Do",
+          "action": {
+            "type": "Sequence",
+            "actions": [
+              {
+                "type": "Select",
+                "selector": {
+                  "zones": "hand",
+                  "owner": "YOU",
+                  "filter": {},
+                  "min": {
+                    "type": "Fixed"
+                  },
+                  "max": {
+                    "type": "Fixed",
+                    "value": 1
+                  },
+                  "self": "ANY",
+                  "mode": "CHOOSE",
+                  "special": {
+                    "rule": {
+                      "kind": "ofThisCard",
+                      "zone": "hand",
+                      "summoner": "any",
+                      "filter": {}
+                    },
+                    "stage": "CARD"
+                  }
+                },
+                "saveAs": "specialCard",
+                "label": "Invocar"
+              },
+              {
+                "type": "Select",
+                "selector": {
+                  "zones": "hand",
+                  "owner": "YOU",
+                  "filter": {},
+                  "min": {
+                    "type": "Fixed"
+                  },
+                  "max": {
+                    "type": "Fixed",
+                    "value": 1
+                  },
+                  "self": "ANY",
+                  "mode": "CHOOSE",
+                  "special": {
+                    "rule": {
+                      "kind": "ofThisCard",
+                      "zone": "hand",
+                      "summoner": "any",
+                      "filter": {}
+                    },
+                    "stage": "SUMMONER"
+                  }
+                },
+                "saveAs": "specialSummoner",
+                "label": "Invocador"
+              },
+              {
+                "type": "Select",
+                "selector": {
+                  "zones": "hand",
+                  "owner": "YOU",
+                  "filter": {},
+                  "min": {
+                    "type": "Fixed"
+                  },
+                  "max": {
+                    "type": "Fixed",
+                    "value": 1
+                  },
+                  "self": "ANY",
+                  "mode": "CHOOSE",
+                  "special": {
+                    "rule": {
+                      "kind": "ofThisCard",
+                      "zone": "hand",
+                      "summoner": "any",
+                      "filter": {}
+                    },
+                    "stage": "MATERIAL"
+                  }
+                },
+                "saveAs": "specialMaterials",
+                "label": "Material"
+              },
+              {
+                "type": "SummonSpecial",
+                "rule": {
+                  "kind": "ofThisCard",
+                  "zone": "hand",
+                  "summoner": "any",
+                  "filter": {}
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "condition": {
+        "type": "Any",
+        "any": [
+          {
+            "type": "Summoned",
+            "side": "YOU",
+            "how": "effect"
+          },
+          {
+            "type": "Summoned",
+            "side": "YOU",
+            "how": "special"
+          }
+        ]
+      },
+      "sourceZone": "hand",
+      "limit": "NONE"
+    },
+    {
+      "id": "ax-3l:en-invocacion",
+      "moment": "ON_SUMMON",
+      "label": "En Invocación",
+      "text": "Puedes subir a tu mano otros aliados: por cada aliado removido elige 1 enemigo; reduce en 3 su fuerza hasta el final del turno.",
+      "cost": [
+        {
+          "type": "Do",
+          "action": {
+            "type": "Move",
+            "cards": {
+              "zones": "field",
+              "owner": "YOU",
+              "filter": {
+                "cardType": "creature"
+              },
+              "min": {
+                "type": "Fixed",
+                "value": 1
+              },
+              "max": {
+                "type": "Fixed",
+                "value": 2147483647
+              },
+              "self": "EXCLUDE",
+              "mode": "CHOOSE"
+            },
+            "to": "hand"
+          }
+        },
+        {
+          "type": "Do",
+          "action": {
+            "type": "Select",
+            "selector": {
+              "zones": "frontLine",
+              "owner": "OPPONENT",
+              "filter": {
+                "cardType": "creature"
+              },
+              "min": {
+                "type": "Fixed",
+                "value": 1
+              },
+              "max": {
+                "type": "LastCount"
+              },
+              "self": "ANY",
+              "mode": "CHOOSE"
+            },
+            "target": true
+          }
+        }
+      ],
+      "steps": [
+        {
+          "type": "Do",
+          "action": {
+            "type": "Modify",
+            "cards": {
+              "zones": "saved:targets",
+              "owner": "YOU",
+              "filter": {},
+              "min": {
+                "type": "Fixed"
+              },
+              "max": {
+                "type": "Fixed",
+                "value": 2147483647
+              },
+              "self": "ANY",
+              "mode": "ALL"
+            },
+            "strength": {
+              "type": "Fixed",
+              "value": -3
+            },
+            "until": "TURN"
+          }
+        }
+      ],
+      "sourceZone": "field",
+      "limit": "NONE"
+    }
+  ],
+  "requirement": {
+    "summoner": {
+      "level": 3
+    },
+    "materials": {
+      "count": 1,
+      "level": 3,
+      "zones": [
+        "hand"
+      ]
+    }
+  }
+}

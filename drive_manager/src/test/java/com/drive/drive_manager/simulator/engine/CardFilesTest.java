@@ -1,12 +1,14 @@
 package com.drive.drive_manager.simulator.engine;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Tag;
 
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
 /** The programmed cards are the files in resources/cards. */
+@Tag("basic")
 class CardFilesTest {
 
     @Test

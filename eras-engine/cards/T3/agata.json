@@ -1,0 +1,178 @@
+{
+  "name": "ágata",
+  "effects": [
+    {
+      "id": "agata:en-tributos",
+      "moment": "ACTIVATED",
+      "label": "Turno Aliado / En Tributos",
+      "text": "Puedes invocar esta carta especialmente sin pagar su coste especial. Si lo haces: revela 1 de tus vidas.",
+      "steps": [
+        {
+          "type": "Do",
+          "action": {
+            "type": "Sequence",
+            "actions": [
+              {
+                "type": "Select",
+                "selector": {
+                  "zones": "tributeZone",
+                  "owner": "YOU",
+                  "filter": {},
+                  "min": {
+                    "type": "Fixed"
+                  },
+                  "max": {
+                    "type": "Fixed",
+                    "value": 1
+                  },
+                  "self": "ANY",
+                  "mode": "CHOOSE",
+                  "special": {
+                    "rule": {
+                      "kind": "ofThisCard",
+                      "zone": "tributeZone",
+                      "reduce": 1000,
+                      "summoner": "any",
+                      "filter": {}
+                    },
+                    "stage": "CARD"
+                  }
+                },
+                "saveAs": "specialCard",
+                "label": "Invocar"
+              },
+              {
+                "type": "Select",
+                "selector": {
+                  "zones": "tributeZone",
+                  "owner": "YOU",
+                  "filter": {},
+                  "min": {
+                    "type": "Fixed"
+                  },
+                  "max": {
+                    "type": "Fixed",
+                    "value": 1
+                  },
+                  "self": "ANY",
+                  "mode": "CHOOSE",
+                  "special": {
+                    "rule": {
+                      "kind": "ofThisCard",
+                      "zone": "tributeZone",
+                      "reduce": 1000,
+                      "summoner": "any",
+                      "filter": {}
+                    },
+                    "stage": "SUMMONER"
+                  }
+                },
+                "saveAs": "specialSummoner",
+                "label": "Invocador"
+              },
+              {
+                "type": "Select",
+                "selector": {
+                  "zones": "tributeZone",
+                  "owner": "YOU",
+                  "filter": {},
+                  "min": {
+                    "type": "Fixed"
+                  },
+                  "max": {
+                    "type": "Fixed",
+                    "value": 1
+                  },
+                  "self": "ANY",
+                  "mode": "CHOOSE",
+                  "special": {
+                    "rule": {
+                      "kind": "ofThisCard",
+                      "zone": "tributeZone",
+                      "reduce": 1000,
+                      "summoner": "any",
+                      "filter": {}
+                    },
+                    "stage": "MATERIAL"
+                  }
+                },
+                "saveAs": "specialMaterials",
+                "label": "Material"
+              },
+              {
+                "type": "SummonSpecial",
+                "rule": {
+                  "kind": "ofThisCard",
+                  "zone": "tributeZone",
+                  "reduce": 1000,
+                  "summoner": "any",
+                  "filter": {}
+                }
+              }
+            ]
+          }
+        },
+        {
+          "type": "IfDone",
+          "covers": 1
+        },
+        {
+          "type": "Do",
+          "action": {
+            "type": "Flip",
+            "cards": {
+              "zones": "lifeStack",
+              "owner": "YOU",
+              "filter": {},
+              "min": {
+                "type": "Fixed",
+                "value": 1
+              },
+              "max": {
+                "type": "Fixed",
+                "value": 1
+              },
+              "self": "ANY",
+              "mode": "CHOOSE"
+            },
+            "faceUp": true
+          }
+        }
+      ],
+      "sourceZone": "tributeZone",
+      "allyTurn": true,
+      "limit": "NONE"
+    }
+  ],
+  "continuous": [
+    {
+      "label": "Todos Los Turnos",
+      "text": "Esta carta gana fuerza 1 por cada vida bocarriba y puede atacar enemigos activos de nivel menor a la cantidad de vidas que tengas bocarriba.",
+      "bonus": {
+        "type": "FaceUpLives",
+        "whose": "ANY"
+      },
+      "keywords": [
+        "Enfrentar {n}"
+      ],
+      "keywordAmount": {
+        "type": "Scaled",
+        "base": {
+          "type": "FaceUpLives",
+          "whose": "YOU"
+        },
+        "divisor": 1,
+        "plus": -1
+      },
+      "zone": "field"
+    }
+  ],
+  "requirement": {
+    "summoner": {
+      "filter": {
+        "activeOnly": true,
+        "minSpecialCost": 2
+      }
+    }
+  }
+}

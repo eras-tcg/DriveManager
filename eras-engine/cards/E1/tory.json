@@ -1,0 +1,79 @@
+{
+  "name" : "tory",
+  "effects" : [ {
+    "id" : "tory:en-mano",
+    "moment" : "ON_EVENT",
+    "label" : "En Mano",
+    "text" : "(1) Si esta carta subió a tu mano por efecto de un aliado: puedes enviar 5 de tus tributos Rojos o [mercenario] al fondo de tu mazo; invoca esta carta en tu línea frontal.",
+    "cost" : [ {
+      "type" : "Do",
+      "action" : {
+        "type" : "Move",
+        "cards" : {
+          "zones" : "tributeZone",
+          "owner" : "YOU",
+          "filter" : {
+            "colors" : [ "R" ],
+            "classes" : [ "mercenario" ]
+          },
+          "min" : {
+            "type" : "Fixed",
+            "value" : 5
+          },
+          "max" : {
+            "type" : "Fixed",
+            "value" : 5
+          },
+          "self" : "ANY",
+          "mode" : "CHOOSE"
+        },
+        "to" : "deckBottom"
+      }
+    } ],
+    "steps" : [ {
+      "type" : "Do",
+      "action" : {
+        "type" : "Summon",
+        "cards" : {
+          "zones" : "hand",
+          "owner" : "YOU",
+          "filter" : { },
+          "min" : {
+            "type" : "Fixed",
+            "value" : 1
+          },
+          "max" : {
+            "type" : "Fixed",
+            "value" : 1
+          },
+          "self" : "ANY",
+          "mode" : "SELF"
+        },
+        "reduce" : {
+          "type" : "Fixed"
+        },
+        "toFront" : true,
+        "required" : true
+      }
+    } ],
+    "condition" : {
+      "type" : "Happened",
+      "actor" : "YOU",
+      "owner" : "ANY",
+      "thisCard" : true,
+      "from" : "field",
+      "to" : "hand",
+      "byEffect" : true,
+      "byCard" : {
+        "cardType" : "creature"
+      }
+    },
+    "sourceZone" : "hand",
+    "limit" : "ONCE_PER_TURN_BETWEEN_COPIES"
+  } ],
+  "requirement" : {
+    "summoner" : {
+      "level" : 2
+    }
+  }
+}

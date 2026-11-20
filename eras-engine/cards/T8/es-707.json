@@ -1,0 +1,80 @@
+{
+  "name" : "es-707",
+  "effects" : [
+    {
+      "id" : "es-707:en-invocacion",
+      "moment" : "ON_SUMMON",
+      "mandatory" : true,
+      "label" : "En Invocación",
+      "text" : "Activa 1 efecto En Invocación de 2 materiales [autómata] con distinto nivel, de esta carta.",
+      "steps" : [
+        {
+          "type" : "ActivateMaterialSummonEffects",
+          "count" : 2,
+          "filter" : {
+            "classes" : [
+              "autómata"
+            ]
+          },
+          "distinctLevels" : true
+        }
+      ],
+      "sourceZone" : "field",
+      "limit" : "NONE"
+    },
+    {
+      "id" : "es-707:al-atacar",
+      "moment" : "ON_ATTACK",
+      "label" : "Al Atacar",
+      "text" : "Puedes tributar hasta 5 materiales de esta carta: por cada material tributado elige 1 enemigo; este pierde fuerza 1 hasta el final del ataque.",
+      "steps" : [
+        {
+          "type" : "Do",
+          "action" : {
+            "type" : "Move",
+            "cards" : {
+              "zones" : "materials",
+              "owner" : "YOU",
+              "filter" : {},
+              "min" : {
+                "type" : "Fixed",
+                "value" : 1
+              },
+              "max" : {
+                "type" : "Fixed",
+                "value" : 5
+              },
+              "self" : "ANY",
+              "mode" : "CHOOSE"
+            },
+            "to" : "tributeZone"
+          }
+        },
+        {
+          "type" : "ReduceRepeatedly",
+          "times" : -1,
+          "amount" : 1,
+          "until" : "attack"
+        }
+      ],
+      "sourceZone" : "field",
+      "limit" : "NONE"
+    }
+  ],
+  "requirement" : {
+    "summoner" : {
+      "level" : 3
+    },
+    "materials" : {
+      "count" : 1,
+      "zones" : [
+        "field",
+        "hand"
+      ],
+      "filter" : {
+        "minLevel" : 2,
+        "maxLevel" : 3
+      }
+    }
+  }
+}

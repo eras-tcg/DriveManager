@@ -15,6 +15,7 @@ import com.drive.drive_manager.simulator.replay.MatchReplay;
 import com.drive.drive_manager.simulator.replay.MatchReplayTest;
 import org.bson.Document;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Tag;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.lang.reflect.Field;
@@ -29,6 +30,7 @@ import java.util.stream.Collectors;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /** What the 2026-11-05 audit fixed, kept fixed. */
+@Tag("server")
 class AuditFixesTest {
 
     private final RoomService service = new RoomService();
@@ -154,7 +156,7 @@ class AuditFixesTest {
         Set<String> settings = Arrays.stream(GameRoom.class.getDeclaredFields())
                 .filter(f -> f.isAnnotationPresent(RoomSetting.class)).map(Field::getName).collect(Collectors.toSet());
         assertThat(settings).containsExactlyInAnyOrder("roomId", "editor", "bot", "ranked", "reserved", "editorBot",
-                "editorSelfBot", "selfBotLevel", "botDelayMs", "botEdge", "botLevel", "confirmMandatory", "hostId", "createdAt", "emptySince",
+                "editorSelfBot", "selfBotLevel", "botDelayMs", "botEdge", "botLevel", "botPoolDeck", "confirmMandatory", "hostId", "createdAt", "emptySince",
                 "manualPlayers", "adminPlayers", "paused", "timelineAt", "timelineSize", "random", "headless", "replay", "version");
     }
 

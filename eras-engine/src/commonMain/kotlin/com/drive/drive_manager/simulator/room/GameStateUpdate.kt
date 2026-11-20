@@ -121,6 +121,10 @@ class GameStateUpdate {
             return build(room, event, actorId)
         }
 
+        /** Ranked against the bot, in the pre-room: the rival (the bot's name, deck and level) is not shown yet. */
+        @JvmStatic
+        fun rivalHidden(room: GameRoom): Boolean = room.bot && room.ranked && room.status == GameRoom.RoomStatus.WAITING
+
         /** The update's event when a chain link has just resolved, mid-action ([chainStep]). */
         const val LINK_RESOLVED = "LINK_RESOLVED"
 
@@ -151,12 +155,14 @@ class GameStateUpdate {
             u.editorSelfBot     = room.editorSelfBot
             u.selfBotLevel      = if (room.editor) room.selfBotLevel else null
             u.botDelayMs        = room.botDelayMs
-            u.botEdge           = room.botEdge
+            // Ranked against the bot: who the rival is (its level, its edge) is seen once the game starts
+            val hiddenRival = rivalHidden(room)
+            u.botEdge           = if (hiddenRival) 0 else room.botEdge
             u.paused            = room.paused
             u.timelineAt        = if (room.editor || room.replay) room.timelineAt else null
             u.timelineSize      = if (room.editor || room.replay) room.timelineSize else null
-            u.botLevel          = if (room.bot || room.editor) room.botLevel else null
-            u.botChoices        = if (room.editor || room.bot && room.status == GameRoom.RoomStatus.WAITING) BotCatalog.CHOICES else null
+            u.botLevel          = if (hiddenRival) null else if (room.bot || room.editor) room.botLevel else null
+            u.botChoices        = if (room.editor || room.bot && !room.ranked && room.status == GameRoom.RoomStatus.WAITING) BotCatalog.CHOICES else null
             u.mulliganReady     = if (room.status == GameRoom.RoomStatus.MULLIGAN) ArrayList(room.mulliganReady) else null
             u.firstChoice       = room.firstChoice
             u.currentTurnUserId = room.currentTurnUserId

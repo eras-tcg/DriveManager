@@ -1,0 +1,21 @@
+{
+  "name" : "gorgath",
+  "continuous" : [ {
+    "label" : "Todos Los Turnos",
+    "text" : "Esta carta gana Letalidad 1 por cada copia de esta carta en tus tributos.",
+    "keywords" : [ "Letalidad {n}" ],
+    "keywordAmount" : {
+      "type" : "InZone",
+      "zone" : "tributeZone",
+      "filter" : {
+        "name" : "Gorgath"
+      }
+    },
+    "zone" : "field"
+  } ],
+  "requirement" : {
+    "ritual" : {
+      "level" : 4
+    }
+  }
+}

@@ -5,6 +5,7 @@ import com.drive.drive_manager.simulator.room.GameRoom;
 import com.drive.drive_manager.simulator.room.PlayerState;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Tag;
 
 import java.util.List;
 
@@ -12,6 +13,7 @@ import static com.drive.drive_manager.simulator.engine.TestTable.*;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /** Materialización as printed: the zones of the material, the summoner's levels, alternatives, and no summoner. */
+@Tag("engine")
 class MaterializationRequirementTest {
 
     private GameRoom room;

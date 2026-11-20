@@ -1,0 +1,172 @@
+{
+  "name" : "treant pantanoso",
+  "effects" : [
+    {
+      "id" : "treant-pantanoso:en-invocacion",
+      "moment" : "ON_SUMMON",
+      "mandatory" : true,
+      "label" : "En Invocación",
+      "text" : "(1) Reactiva esta carta. Luego: puedes añadir 1 [treant] bajo tu control como recurso de esta carta. Si lo haces: puedes jugar o invocar 1 [treant] de tu mano o tributos reduciendo su coste en 1.",
+      "steps" : [
+        {
+          "type" : "Do",
+          "action" : {
+            "type" : "SetTapped",
+            "cards" : {
+              "zones" : "field",
+              "owner" : "YOU",
+              "filter" : {},
+              "min" : {
+                "type" : "Fixed",
+                "value" : 1
+              },
+              "max" : {
+                "type" : "Fixed",
+                "value" : 1
+              },
+              "self" : "ANY",
+              "mode" : "SELF"
+            }
+          }
+        },
+        {
+          "type" : "Do",
+          "action" : {
+            "type" : "Move",
+            "cards" : {
+              "zones" : "field",
+              "owner" : "YOU",
+              "filter" : {
+                "classes" : [
+                  "treant"
+                ]
+              },
+              "min" : {
+                "type" : "Fixed"
+              },
+              "max" : {
+                "type" : "Fixed",
+                "value" : 1
+              },
+              "self" : "EXCLUDE",
+              "mode" : "CHOOSE"
+            },
+            "to" : "resources:self"
+          }
+        },
+        {
+          "type" : "IfDone",
+          "covers" : 2
+        },
+        {
+          "type" : "MayDo",
+          "question" : "¿Juegas o invocas 1 [treant] de tu mano o tributos reduciendo su coste en 1?",
+          "covers" : 1
+        },
+        {
+          "type" : "Do",
+          "action" : {
+            "type" : "Summon",
+            "cards" : {
+              "zones" : "hand,tributeZone",
+              "owner" : "YOU",
+              "filter" : {
+                "classes" : [
+                  "treant"
+                ]
+              },
+              "min" : {
+                "type" : "Fixed",
+                "value" : 1
+              },
+              "max" : {
+                "type" : "Fixed",
+                "value" : 1
+              },
+              "self" : "ANY",
+              "mode" : "CHOOSE"
+            },
+            "reduce" : {
+              "type" : "Fixed",
+              "value" : 1
+            },
+            "required" : true,
+            "orPlay" : true
+          }
+        }
+      ],
+      "sourceZone" : "field",
+      "limit" : "ONCE_PER_TURN_BETWEEN_COPIES"
+    }
+  ],
+  "inherited" : [
+    {
+      "id" : "treant-pantanoso:hereda-turno-aliado",
+      "moment" : "ON_EVENT",
+      "label" : "Turno Aliado",
+      "text" : "Heredado de Treant Pantanoso: una vez por turno, al inicio del turno, puedes añadir 1 [treant] de tu mano o tributos como recurso de esta carta; gana 1 gema.",
+      "cost" : [
+        {
+          "type" : "Do",
+          "action" : {
+            "type" : "Move",
+            "cards" : {
+              "zones" : "hand,tributeZone",
+              "owner" : "YOU",
+              "filter" : {
+                "classes" : [
+                  "treant"
+                ]
+              },
+              "min" : {
+                "type" : "Fixed",
+                "value" : 1
+              },
+              "max" : {
+                "type" : "Fixed",
+                "value" : 1
+              },
+              "self" : "ANY",
+              "mode" : "CHOOSE"
+            },
+            "to" : "resources:self"
+          }
+        }
+      ],
+      "steps" : [
+        {
+          "type" : "Do",
+          "action" : {
+            "type" : "Gems",
+            "count" : {
+              "type" : "Fixed",
+              "value" : 1
+            }
+          }
+        }
+      ],
+      "condition" : {
+        "type" : "Happened",
+        "eventType" : "TURN_START",
+        "actor" : "YOU",
+        "owner" : "ANY"
+      },
+      "sourceZone" : "field",
+      "limit" : "ONCE_PER_TURN"
+    }
+  ],
+  "requirement" : {
+    "summoner" : {
+      "level" : 2,
+      "filter" : {
+        "classes" : [
+          "treant"
+        ],
+        "cardTypes" : [
+          "creature",
+          "structure"
+        ]
+      }
+    }
+  }
+}

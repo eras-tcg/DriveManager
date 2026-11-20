@@ -29,12 +29,12 @@ object SpecialProcedure {
             val other = ctx.relativeTo(s.relative.to)
             filter = if (other == null || other.getLevel() == null) filter!!.withLevel(-1) else filter!!.withLevel(other.getLevel()!!).notNamed(other.cardName)
         }
-        return SpecialRule(kind, s.zone, reduce, s.summoner, filter)
+        return SpecialRule(kind, s.zone, reduce, s.summoner, filter, null, null, s.otherName, s.sameLevelBonus)
     }
 
     private fun target(room: GameRoom, effect: PendingEffect, rule: SpecialRule): CardSlot? {
         val player = room.getPlayer(effect.controllerId)
-        return if (effect.ritualTargetId == null) null else EffectEngine.find(SpecialRequirements.specialZones(player, rule), effect.ritualTargetId)
+        return if (effect.ritualTargetId == null) null else EffectEngine.find(SpecialRequirements.specialZones(player, rule, effect), effect.ritualTargetId)
     }
 
     /** "el aliado elegido", "esta carta", or the one chosen in the summoner's choice. */
@@ -53,7 +53,8 @@ object SpecialProcedure {
      * 2026-11-13: it only enables that creature's own special summon, whatever its method).
      */
     private fun ritual(room: GameRoom, effect: PendingEffect, special: Selector.Special): Boolean {
-        val kind = special.rule!!.kind
+        // "invoca por Ritual esta carta" ([SpecialRule.OF_THIS_CARD]): the method of the card, worked out
+        val kind = if (SpecialRule.OF_THIS_CARD == special.rule!!.kind) resolve(room, effect, special.rule).kind else special.rule.kind
         if (SpecialRule.RITUAL == kind) return true
         if ("any" != kind) return false
         val target = target(room, effect, resolve(room, effect, special.rule))
@@ -80,6 +81,7 @@ object SpecialProcedure {
             if (summoner != null) return frozenListOf()
             return SpecialRequirements.specialSummoners(player!!, target, req!!)
                     .filter { s -> SpecialRequirements.summonerAllowed(rule, s, effect) && SpecialRequirements.materialsPossible(player, target, req, s) }
+                    .filter { s -> !rule.otherName || !CardEffects.isNamed(s, target.cardName) }
         }
         if (summoner == null || "materialization" != req!!.kind) return frozenListOf()
         return SpecialRequirements.specialMaterials(player!!, target, req, summoner)
@@ -110,7 +112,7 @@ object SpecialProcedure {
     private fun remaining(player: PlayerState?, target: CardSlot?, req: Rituals.Requirement?, summoner: CardSlot?): Int {
         val others = Rituals.ritualMaterials(player!!, target!!).filter { c -> c !== summoner }
         val all = if (req!!.sumMax() == req.level) frozenListOf() else Rituals.remainingSum(req, summoner, others)
-        return if (all.isEmpty()) req.level - Rituals.summonerLevel(summoner, others, req.level) else all.max()
+        return if (all.isEmpty()) req.level - (req.summonerLevel ?: Rituals.summonerLevel(summoner, others, req.level)) else all.max()
     }
 
     @JvmStatic
@@ -121,7 +123,7 @@ object SpecialProcedure {
             return if (target == null) player!!.field else player!!.field + RitualParts.enemies(room, player, target)
         }
         return when (special.stage!!) {
-            Selector.Stage.CARD -> SpecialRequirements.specialZones(player, special.rule!!)
+            Selector.Stage.CARD -> SpecialRequirements.specialZones(player, special.rule!!, effect)
             Selector.Stage.SUMMONER -> player!!.field
             Selector.Stage.MATERIAL -> {
                 val all: MutableList<CardSlot> = ArrayList(player!!.tributeZone)
@@ -149,7 +151,8 @@ object SpecialProcedure {
             Selector.Stage.MATERIAL -> {
                 val rule = resolve(room, effect, special.rule)
                 val req = SpecialRequirements.specialRequirement(target(room, effect, rule))!!
-                if (req.levelSum > 0 || req.moreMaterials) intArrayOf(1, available, 0) else intArrayOf(1, 1, 0)
+                if (req.levelSum > 0) intArrayOf(1, available, 0)
+                else if (req.moreMaterials) intArrayOf(1, req.materialsAtMost(available), 0) else intArrayOf(1, 1, 0)
             }
         }
     }
@@ -240,10 +243,15 @@ object SpecialProcedure {
         }
         val req = SpecialRequirements.specialRequirement(target)
         val from = if (EffectEngine.find(player!!.hand, target.instanceId) != null) "hand"
-        else if (EffectEngine.find(player.tributeZone, target.instanceId) != null) "tributeZone" else JavaText.split(COMMA, rule.zone!!)[0].trim { it <= ' ' }
+        else if (EffectEngine.find(player.tributeZone, target.instanceId) != null) "tributeZone"
+        else if (player.field.any { h -> EffectEngine.find(h.resources, target.instanceId) != null }) "resources"
+        else JavaText.split(COMMA, rule.zone!!)[0].trim { it <= ' ' }
         effect.ritualTargetId = null
         effect.ritualSummonerId = null
-        SpecialSummons.specialSummon(room, player, target, req!!, summoner, materials, from, rule.reduce, effect)
+        // "Si es del mismo nivel: reduce el coste especial en 1 más"
+        val bonus = if (rule.sameLevelBonus > 0 && summoner != null && summoner.getLevel() != null && summoner.getLevel() == target.getLevel())
+            rule.sameLevelBonus else 0
+        SpecialSummons.specialSummon(room, player, target, req!!, summoner, materials, from, rule.reduce + bonus, effect)
         effect.summonedId = target.instanceId
         effect.lastDone = true
     }

@@ -3,12 +3,14 @@ package com.drive.drive_manager.simulator.engine.effects.runtime
 import kotlin.jvm.JvmStatic
 import com.drive.drive_manager.simulator.engine.frozenMapOfEntries
 import com.drive.drive_manager.simulator.engine.effects.actions.AtEndOfTurnHandler
+import com.drive.drive_manager.simulator.engine.effects.actions.WatchHandler
 import com.drive.drive_manager.simulator.engine.effects.actions.AttackHandler
 import com.drive.drive_manager.simulator.engine.effects.actions.DamageHandler
 import com.drive.drive_manager.simulator.engine.effects.actions.DestroyHandler
 import com.drive.drive_manager.simulator.engine.effects.actions.DrawHandler
 import com.drive.drive_manager.simulator.engine.effects.actions.GemsHandler
 import com.drive.drive_manager.simulator.engine.effects.actions.LookHandler
+import com.drive.drive_manager.simulator.engine.effects.actions.FlipHandler
 import com.drive.drive_manager.simulator.engine.effects.actions.ModifyHandler
 import com.drive.drive_manager.simulator.engine.effects.actions.MoveHandler
 import com.drive.drive_manager.simulator.engine.effects.actions.PlayHandler
@@ -27,11 +29,13 @@ object Actions {
             Action.Select::class to SelectHandler(),
             Action.Attack::class to AttackHandler(),
             Action.AtEndOfTurn::class to AtEndOfTurnHandler(),
+            Action.Watch::class to WatchHandler(),
             Action.Move::class to MoveHandler(),
             Action.Draw::class to DrawHandler(),
             Action.Gems::class to GemsHandler(),
             Action.Damage::class to DamageHandler(),
             Action.Look::class to LookHandler(),
+            Action.Flip::class to FlipHandler(),
             Action.SetTapped::class to SetTappedHandler(),
             Action.Modify::class to ModifyHandler(),
             Action.Destroy::class to DestroyHandler(),

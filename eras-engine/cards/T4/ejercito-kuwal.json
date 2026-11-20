@@ -1,0 +1,209 @@
+{
+  "name": "ejército kuwal",
+  "effects": [
+    {
+      "id": "ejercito-kuwal:sacrificada",
+      "moment": "ON_EVENT",
+      "label": "En Tributos",
+      "text": "Una vez por turno entre copias, si esta carta es sacrificada: puedes jugar esta carta reduciendo en 1 su coste.",
+      "steps": [
+        {
+          "type": "Do",
+          "action": {
+            "type": "Play",
+            "cards": {
+              "zones": "tributeZone",
+              "owner": "YOU",
+              "filter": {},
+              "min": {
+                "type": "Fixed",
+                "value": 1
+              },
+              "max": {
+                "type": "Fixed",
+                "value": 1
+              },
+              "self": "ANY",
+              "mode": "SELF"
+            },
+            "reduce": {
+              "type": "Fixed",
+              "value": 1
+            },
+            "required": true
+          }
+        }
+      ],
+      "condition": {
+        "type": "Any",
+        "any": [
+          {
+            "type": "Happened",
+            "eventType": "SACRIFICE",
+            "actor": "ANY",
+            "owner": "ANY",
+            "thisCard": true
+          },
+          {
+            "type": "Happened",
+            "eventType": "TRIBUTE",
+            "actor": "ANY",
+            "owner": "ANY",
+            "thisCard": true,
+            "data": [
+              "sacrificed=true"
+            ]
+          }
+        ]
+      },
+      "sourceZone": "tributeZone",
+      "limit": "ONCE_PER_TURN_BETWEEN_COPIES"
+    },
+    {
+      "id": "ejercito-kuwal:en-juego",
+      "moment": "ON_PLAY",
+      "mandatory": true,
+      "label": "En Juego",
+      "text": "Excava cartas de tu mazo hasta revelar 10 o 1 criatura Verde o Roja de coste o nivel 2: puedes añadir esa carta a tu mano o invocarla reduciendo su coste en 2.",
+      "steps": [
+        {
+          "type": "Do",
+          "action": {
+            "type": "Look",
+            "count": {
+              "type": "Fixed",
+              "value": 10
+            },
+            "until": {
+              "cardType": "creature",
+              "colors": [
+                "G",
+                "R"
+              ],
+              "anyOf": [
+                {
+                  "minCost": 2,
+                  "maxCost": 2
+                },
+                {
+                  "level": 2
+                }
+              ]
+            },
+            "excavate": true
+          }
+        },
+        {
+          "type": "MayDo",
+          "question": "¿Invocas la criatura excavada reduciendo su coste en 2? Si no, puedes añadirla a tu mano.",
+          "covers": 1
+        },
+        {
+          "type": "Do",
+          "action": {
+            "type": "Summon",
+            "cards": {
+              "zones": "looked",
+              "owner": "YOU",
+              "filter": {
+                "cardType": "creature",
+                "colors": [
+                  "G",
+                  "R"
+                ],
+                "anyOf": [
+                  {
+                    "minCost": 2,
+                    "maxCost": 2
+                  },
+                  {
+                    "level": 2
+                  }
+                ]
+              },
+              "min": {
+                "type": "Fixed",
+                "value": 1
+              },
+              "max": {
+                "type": "Fixed",
+                "value": 1
+              },
+              "self": "ANY",
+              "mode": "CHOOSE"
+            },
+            "reduce": {
+              "type": "Fixed",
+              "value": 2
+            },
+            "required": true
+          }
+        },
+        {
+          "type": "IfNotDone",
+          "covers": 1
+        },
+        {
+          "type": "Do",
+          "action": {
+            "type": "Move",
+            "cards": {
+              "zones": "looked",
+              "owner": "YOU",
+              "filter": {
+                "cardType": "creature",
+                "colors": [
+                  "G",
+                  "R"
+                ],
+                "anyOf": [
+                  {
+                    "minCost": 2,
+                    "maxCost": 2
+                  },
+                  {
+                    "level": 2
+                  }
+                ]
+              },
+              "min": {
+                "type": "Fixed"
+              },
+              "max": {
+                "type": "Fixed",
+                "value": 1
+              },
+              "self": "ANY",
+              "mode": "CHOOSE"
+            },
+            "to": "hand"
+          }
+        },
+        {
+          "type": "Do",
+          "action": {
+            "type": "Move",
+            "cards": {
+              "zones": "looked",
+              "owner": "YOU",
+              "filter": {},
+              "min": {
+                "type": "Fixed"
+              },
+              "max": {
+                "type": "Fixed",
+                "value": 2147483647
+              },
+              "self": "ANY",
+              "mode": "ALL"
+            },
+            "to": "deckBottom",
+            "random": true
+          }
+        }
+      ],
+      "sourceZone": "field",
+      "limit": "NONE"
+    }
+  ]
+}

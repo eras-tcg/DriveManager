@@ -1,0 +1,149 @@
+{
+  "name": "tenacidad de hydra",
+  "effects": [
+    {
+      "id": "tenacidad-de-hydra:en-juego",
+      "moment": "ON_PLAY",
+      "mandatory": true,
+      "label": "En Juego",
+      "text": "Una vez por turno entre copias: un aliado puede invocar especialmente 1 [hydra] con distinto nombre de tus tributos reduciendo su coste especial en 1. Si es del mismo nivel: reduce el coste especial en 1 más.",
+      "steps": [
+        {
+          "type": "Do",
+          "action": {
+            "type": "Sequence",
+            "actions": [
+              {
+                "type": "Select",
+                "selector": {
+                  "zones": "tributeZone",
+                  "owner": "YOU",
+                  "filter": {},
+                  "min": {
+                    "type": "Fixed"
+                  },
+                  "max": {
+                    "type": "Fixed",
+                    "value": 1
+                  },
+                  "self": "ANY",
+                  "mode": "CHOOSE",
+                  "special": {
+                    "rule": {
+                      "kind": "any",
+                      "zone": "tributeZone",
+                      "summoner": "any",
+                      "filter": {
+                        "cardType": "creature",
+                        "classes": [
+                          "hydra"
+                        ]
+                      },
+                      "otherName": true,
+                      "sameLevelBonus": 1,
+                      "reduce": 1
+                    },
+                    "stage": "CARD"
+                  }
+                },
+                "saveAs": "specialCard",
+                "label": "Invocar"
+              },
+              {
+                "type": "Select",
+                "selector": {
+                  "zones": "tributeZone",
+                  "owner": "YOU",
+                  "filter": {},
+                  "min": {
+                    "type": "Fixed"
+                  },
+                  "max": {
+                    "type": "Fixed",
+                    "value": 1
+                  },
+                  "self": "ANY",
+                  "mode": "CHOOSE",
+                  "special": {
+                    "rule": {
+                      "kind": "any",
+                      "zone": "tributeZone",
+                      "summoner": "any",
+                      "filter": {
+                        "cardType": "creature",
+                        "classes": [
+                          "hydra"
+                        ]
+                      },
+                      "otherName": true,
+                      "sameLevelBonus": 1,
+                      "reduce": 1
+                    },
+                    "stage": "SUMMONER"
+                  }
+                },
+                "saveAs": "specialSummoner",
+                "label": "Invocador"
+              },
+              {
+                "type": "Select",
+                "selector": {
+                  "zones": "tributeZone",
+                  "owner": "YOU",
+                  "filter": {},
+                  "min": {
+                    "type": "Fixed"
+                  },
+                  "max": {
+                    "type": "Fixed",
+                    "value": 1
+                  },
+                  "self": "ANY",
+                  "mode": "CHOOSE",
+                  "special": {
+                    "rule": {
+                      "kind": "any",
+                      "zone": "tributeZone",
+                      "summoner": "any",
+                      "filter": {
+                        "cardType": "creature",
+                        "classes": [
+                          "hydra"
+                        ]
+                      },
+                      "otherName": true,
+                      "sameLevelBonus": 1,
+                      "reduce": 1
+                    },
+                    "stage": "MATERIAL"
+                  }
+                },
+                "saveAs": "specialMaterials",
+                "label": "Material"
+              },
+              {
+                "type": "SummonSpecial",
+                "rule": {
+                  "kind": "any",
+                  "zone": "tributeZone",
+                  "summoner": "any",
+                  "filter": {
+                    "cardType": "creature",
+                    "classes": [
+                      "hydra"
+                    ]
+                  },
+                  "otherName": true,
+                  "sameLevelBonus": 1,
+                  "reduce": 1
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "sourceZone": "field",
+      "limit": "ONCE_PER_TURN_BETWEEN_COPIES"
+    }
+  ]
+}

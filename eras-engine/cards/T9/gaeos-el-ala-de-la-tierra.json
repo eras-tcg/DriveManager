@@ -1,0 +1,153 @@
+{
+  "name": "gaeos el ala de la tierra",
+  "effects": [
+    {
+      "id": "gaeos:turno-aliado",
+      "moment": "ACTIVATED",
+      "label": "Turno Aliado",
+      "text": "Una vez por turno: puedes enviar 5 de tus tributos [dragón] al fondo de tu mazo; invoca 1 [dragón] de tu mano reduciendo su coste en 3.",
+      "cost": [
+        {
+          "type": "Do",
+          "action": {
+            "type": "Move",
+            "cards": {
+              "zones": "tributeZone",
+              "owner": "YOU",
+              "filter": {
+                "classes": [
+                  "dragón"
+                ]
+              },
+              "min": {
+                "type": "Fixed",
+                "value": 5
+              },
+              "max": {
+                "type": "Fixed",
+                "value": 5
+              },
+              "self": "ANY",
+              "mode": "CHOOSE"
+            },
+            "to": "deckBottom"
+          }
+        }
+      ],
+      "steps": [
+        {
+          "type": "Do",
+          "action": {
+            "type": "Summon",
+            "cards": {
+              "zones": "hand",
+              "owner": "YOU",
+              "filter": {
+                "cardType": "creature",
+                "classes": [
+                  "dragón"
+                ]
+              },
+              "min": {
+                "type": "Fixed",
+                "value": 1
+              },
+              "max": {
+                "type": "Fixed",
+                "value": 1
+              },
+              "self": "ANY",
+              "mode": "CHOOSE"
+            },
+            "reduce": {
+              "type": "Fixed",
+              "value": 3
+            },
+            "required": true
+          }
+        }
+      ],
+      "sourceZone": "field",
+      "allyTurn": true,
+      "limit": "ONCE_PER_TURN"
+    },
+    {
+      "id": "gaeos:todos-los-turnos",
+      "moment": "ON_EVENT",
+      "mandatory": true,
+      "label": "Todos Los Turnos",
+      "text": "Si invocas algún [dragón] por efecto: destruye el enemigo de menor fuerza. Si ningún enemigo fue destruido por este efecto: destruye la carta del tope de las vidas oponentes.",
+      "steps": [
+        {
+          "type": "ChooseWeakestEnemy",
+          "filter": {
+            "cardType": "creature"
+          }
+        },
+        {
+          "type": "Do",
+          "action": {
+            "type": "Destroy",
+            "cards": {
+              "zones": "saved:targets",
+              "owner": "YOU",
+              "filter": {},
+              "min": {
+                "type": "Fixed"
+              },
+              "max": {
+                "type": "Fixed",
+                "value": 2147483647
+              },
+              "self": "ANY",
+              "mode": "ALL"
+            }
+          }
+        },
+        {
+          "type": "IfNotDone",
+          "covers": 1
+        },
+        {
+          "type": "DestroyTopLife"
+        }
+      ],
+      "condition": {
+        "type": "Summoned",
+        "side": "YOU",
+        "filter": {
+          "classes": [
+            "dragón"
+          ]
+        },
+        "how": "effect"
+      },
+      "sourceZone": "field",
+      "limit": "NONE"
+    }
+  ],
+  "reactions": [
+    {
+      "type": "CostModifier",
+      "label": "Requerimiento",
+      "event": "SPECIAL_SUMMON",
+      "kinds": [
+        "evolution"
+      ],
+      "holder": "SELF",
+      "payment": {
+        "kind": "SUMMONER_RESOURCES_TO_TRIBUTES",
+        "count": 10,
+        "filter": {},
+        "per": 1
+      },
+      "reduce": 1,
+      "limit": "NONE"
+    }
+  ],
+  "requirement": {
+    "summoner": {
+      "level": 5
+    }
+  }
+}

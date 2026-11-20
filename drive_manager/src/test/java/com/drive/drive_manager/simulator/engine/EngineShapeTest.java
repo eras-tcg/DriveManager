@@ -1,6 +1,7 @@
 package com.drive.drive_manager.simulator.engine;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Tag;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -15,6 +16,7 @@ import java.util.stream.Stream;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /** Rules on the code itself (vault: Plan de refactorización del motor, section 4). */
+@Tag("basic")
 class EngineShapeTest {
 
     private static final Path SIMULATOR = Path.of("src/main/java/com/drive/drive_manager/simulator");

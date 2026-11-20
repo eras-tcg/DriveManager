@@ -1,0 +1,205 @@
+{
+  "name" : "ka-0 x1",
+  "effects" : [
+    {
+      "id" : "ka-0-x1:en-invocacion",
+      "moment" : "ON_SUMMON",
+      "mandatory" : true,
+      "label" : "En Invocación",
+      "text" : "Reactiva esta carta. Luego, si esta carta tiene alguna criatura nivel 5 como material: gana 2 gemas y esta carta gana fuerza 4 hasta el final del turno oponente.",
+      "steps" : [
+        {
+          "type" : "Do",
+          "action" : {
+            "type" : "SetTapped",
+            "cards" : {
+              "zones" : "field",
+              "owner" : "YOU",
+              "filter" : {},
+              "min" : {
+                "type" : "Fixed",
+                "value" : 1
+              },
+              "max" : {
+                "type" : "Fixed",
+                "value" : 1
+              },
+              "self" : "ANY",
+              "mode" : "SELF"
+            }
+          }
+        },
+        {
+          "type" : "IfCondition",
+          "condition" : {
+            "type" : "Compare",
+            "left" : {
+              "type" : "CardsIn",
+              "cards" : {
+                "zones" : "materials",
+                "owner" : "YOU",
+                "filter" : {
+                  "cardType" : "creature",
+                  "level" : 5
+                },
+                "min" : {
+                  "type" : "Fixed"
+                },
+                "max" : {
+                  "type" : "Fixed",
+                  "value" : 2147483647
+                },
+                "self" : "ANY",
+                "mode" : "ALL"
+              }
+            },
+            "op" : "AT_LEAST",
+            "right" : {
+              "type" : "Fixed",
+              "value" : 1
+            }
+          },
+          "covers" : 2
+        },
+        {
+          "type" : "Do",
+          "action" : {
+            "type" : "Gems",
+            "count" : {
+              "type" : "Fixed",
+              "value" : 2
+            }
+          }
+        },
+        {
+          "type" : "Do",
+          "action" : {
+            "type" : "Modify",
+            "cards" : {
+              "zones" : "subjectOrSelf",
+              "owner" : "YOU",
+              "filter" : {},
+              "min" : {
+                "type" : "Fixed"
+              },
+              "max" : {
+                "type" : "Fixed",
+                "value" : 2147483647
+              },
+              "self" : "ANY",
+              "mode" : "ALL"
+            },
+            "strength" : {
+              "type" : "Fixed",
+              "value" : 4
+            },
+            "until" : "NEXT_TURN"
+          }
+        }
+      ],
+      "sourceZone" : "field",
+      "limit" : "NONE"
+    },
+    {
+      "id" : "ka-0-x1:todos-los-turnos",
+      "moment" : "ON_EVENT",
+      "label" : "Todos Los Turnos",
+      "text" : "Una vez por turno, si esta carta es agotada: puedes tributar 2 materiales de esta carta; reactiva esta carta.",
+      "cost" : [
+        {
+          "type" : "Do",
+          "action" : {
+            "type" : "Move",
+            "cards" : {
+              "zones" : "materials",
+              "owner" : "YOU",
+              "filter" : {},
+              "min" : {
+                "type" : "Fixed",
+                "value" : 2
+              },
+              "max" : {
+                "type" : "Fixed",
+                "value" : 2
+              },
+              "self" : "ANY",
+              "mode" : "CHOOSE"
+            },
+            "to" : "tributeZone"
+          }
+        }
+      ],
+      "steps" : [
+        {
+          "type" : "Do",
+          "action" : {
+            "type" : "SetTapped",
+            "cards" : {
+              "zones" : "field",
+              "owner" : "YOU",
+              "filter" : {},
+              "min" : {
+                "type" : "Fixed",
+                "value" : 1
+              },
+              "max" : {
+                "type" : "Fixed",
+                "value" : 1
+              },
+              "self" : "ANY",
+              "mode" : "SELF"
+            }
+          }
+        }
+      ],
+      "condition" : {
+        "type" : "Any",
+        "any" : [
+          {
+            "type" : "Happened",
+            "eventType" : "TAP",
+            "actor" : "ANY",
+            "owner" : "ANY",
+            "thisCard" : true
+          },
+          {
+            "type" : "Happened",
+            "eventType" : "BLOCK",
+            "actor" : "ANY",
+            "owner" : "ANY",
+            "thisCard" : true
+          },
+          {
+            "type" : "Happened",
+            "eventType" : "ATTACK_DECLARED",
+            "actor" : "ANY",
+            "owner" : "ANY",
+            "thisCard" : true,
+            "data" : [
+              "exhausted=true"
+            ]
+          }
+        ]
+      },
+      "sourceZone" : "field",
+      "limit" : "ONCE_PER_TURN"
+    }
+  ],
+  "requirement" : {
+    "summoner" : {
+      "level" : 4,
+      "maxLevel" : 5
+    },
+    "materials" : {
+      "count" : 1,
+      "zones" : [
+        "field",
+        "hand"
+      ],
+      "filter" : {
+        "minLevel" : 3,
+        "maxLevel" : 4
+      }
+    }
+  }
+}

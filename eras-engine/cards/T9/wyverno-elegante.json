@@ -1,0 +1,88 @@
+{
+  "name": "wyverno elegante",
+  "effects": [
+    {
+      "id": "wyverno-elegante:tributada",
+      "moment": "ON_EVENT",
+      "label": "En Tributos",
+      "text": "Una vez por turno entre copias: si esta carta es tributada excepto desde tu mano: puedes activar 1 efecto En Invocación de esta carta.",
+      "steps": [
+        {
+          "type": "ActivateSubjectSummonEffect"
+        }
+      ],
+      "condition": {
+        "type": "ThisTributed",
+        "exceptZone": "hand"
+      },
+      "sourceZone": "tributeZone",
+      "limit": "ONCE_PER_TURN_BETWEEN_COPIES"
+    },
+    {
+      "id": "wyverno-elegante:en-invocacion",
+      "moment": "ON_SUMMON",
+      "label": "En Invocación",
+      "text": "Puedes enviar 5 de tus tributos [wyverno] al fondo de tu mazo; gana 1 gema.",
+      "cost": [
+        {
+          "type": "Do",
+          "action": {
+            "type": "Move",
+            "cards": {
+              "zones": "tributeZone",
+              "owner": "YOU",
+              "filter": {
+                "classes": [
+                  "wyverno"
+                ]
+              },
+              "min": {
+                "type": "Fixed",
+                "value": 5
+              },
+              "max": {
+                "type": "Fixed",
+                "value": 5
+              },
+              "self": "ANY",
+              "mode": "CHOOSE"
+            },
+            "to": "deckBottom"
+          }
+        }
+      ],
+      "steps": [
+        {
+          "type": "Do",
+          "action": {
+            "type": "Gems",
+            "count": {
+              "type": "Fixed",
+              "value": 1
+            }
+          }
+        }
+      ],
+      "sourceZone": "field",
+      "limit": "NONE"
+    }
+  ],
+  "inheritedContinuous": [
+    {
+      "label": "Todos Los Turnos",
+      "text": "Heredado de Wyverno Elegante: los efectos de esta carta [dragón] consideran la fuerza de las criaturas reducida en 1.",
+      "zone": "field",
+      "effectsSeeStrength": -1,
+      "ofHolder": {
+        "classes": [
+          "dragón"
+        ]
+      }
+    }
+  ],
+  "requirement": {
+    "summoner": {
+      "level": 1
+    }
+  }
+}

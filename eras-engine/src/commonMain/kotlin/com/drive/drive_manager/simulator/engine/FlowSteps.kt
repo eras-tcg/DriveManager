@@ -48,7 +48,7 @@ object FlowSteps : StepFamily {
                         Condition.Op.LESS -> a < b
                         Condition.Op.EQUAL -> a == b
                     }
-                } else condition.test(room, null, source, userId))
+                } else condition.test(room, if (step.ofTrigger) EffectEngine.triggerEvent(room, effect) else null, source, userId))
                 if (!holds) effect.stepIndex = effect.stepIndex + step.covers
                 return false
             }
@@ -87,6 +87,12 @@ object FlowSteps : StepFamily {
                 if (self != null) {
                     // It stays as a permanent: its effects on the field work like any other card's there
                     if (step.exhausted) self.tapped = true
+                    // "coloca esta carta en tu retaguardia como criatura de fuerza N": a creature while it stays (Removals.leaveField undoes it)
+                    if (step.asCreature != null) {
+                        self.cardType = "creature"
+                        self.strength = step.asCreature
+                        self.y = 75.0
+                    }
                     effect.keepOnField = true
                     log(room, name(self) + (if (step.exhausted) " queda agotada en la retaguardia" else " permanece en el campo"), null)
                 }
@@ -127,6 +133,9 @@ object FlowSteps : StepFamily {
                 if (source != null) {
                     prompt.cards = ArrayList(frozenListOf(source))
                     prompt.validIds = ArrayList(frozenListOf(source.instanceId))
+                } else if (effect.sourceInstanceId != null) {
+                    // Its card is not in a zone shown (a Recurso now): "yes" is still answered with it
+                    prompt.validIds = ArrayList(frozenListOf(effect.sourceInstanceId!!))
                 }
                 prompt.min = 0
                 prompt.max = 1

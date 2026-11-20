@@ -192,11 +192,14 @@ object Answers {
 
     /** The choices of a replacement of a removal ("en su lugar"), answered by [answerRemoval]. */
     private val REMOVAL_REPLACEMENTS = listOf(PromptPurpose.REPLACE, PromptPurpose.REPLACE_HAND, PromptPurpose.REPLACE_MATERIALS,
-        PromptPurpose.REPLACE_GUARD, PromptPurpose.REPLACE_RESOURCES, PromptPurpose.REPLACE_LIFE)
+        PromptPurpose.REPLACE_GUARD, PromptPurpose.REPLACE_RESOURCES, PromptPurpose.REPLACE_LIFE, PromptPurpose.REPLACE_TAP,
+        PromptPurpose.REPLACE_DISCARD, PromptPurpose.REPLACE_SACRIFICE, PromptPurpose.REPLACE_DESTROY)
 
     @JvmStatic
     fun answerRules(room: GameRoom, prompt: Prompt, player: PlayerState, picks: List<String>): String? {
         val looker = if (prompt.subjectId == null) null else findAnywhere(room, player.userId, prompt.subjectId)
+        // A Ritual's choice reads the table as the creature being summoned does ("coste o nivel")
+        if (PromptPurpose.RITUAL.`is`(prompt.purpose)) return EffectEngine.summoningAs(looker) { answerRulesAs(room, prompt, player, picks) }
         return lookingAs(looker) { answerRulesAs(room, prompt, player, picks) }
     }
 
@@ -219,7 +222,7 @@ object Answers {
                 advance(room)
                 return ""
             }
-            room.usedThisTurn.add(SUMMON_SACRIFICE + card.instanceId + "|" + (if (picks.isEmpty()) "-" else picks[0]))
+            room.usedThisTurn.add(SUMMON_SACRIFICE + card.instanceId + "|" + (if (picks.isEmpty()) "-" else picks.joinToString(",")))
             val y = if (prompt.summonerId == null) "" else prompt.summonerId!!
             val error = normalSummon(room, userId, card.instanceId, 50.0, if (y.isEmpty()) null else y.toDouble())
             if (error != null) {
@@ -393,6 +396,25 @@ object Answers {
             advance(room)
             return ""
         }
+        if (PromptPurpose.SUMMONER_DISCOUNT.`is`(purpose) && prompt.summonerId != null && prompt.summonerId!!.startsWith(NORMAL_SUMMON)) {
+            // A normal summon's payment (Summons.SUMMON_DISCOUNT): the summon goes on with it
+            val card = find(player.hand, prompt.subjectId)
+            room.prompt = null
+            if (card == null) {
+                advance(room)
+                return ""
+            }
+            val key = Summons.SUMMON_DISCOUNT + card.instanceId + "|" + picks.joinToString(",")
+            room.usedThisTurn.add(key)
+            val y = prompt.summonerId!!.substring(NORMAL_SUMMON.length)
+            val error = normalSummon(room, userId, card.instanceId, 50.0, if (y.isEmpty()) null else y.toDouble())
+            if (error != null) {
+                room.usedThisTurn.remove(key)
+                room.prompt = prompt
+                return error
+            }
+            return ""
+        }
         if (PromptPurpose.SUMMONER_DISCOUNT.`is`(purpose)) {
             val card = specialSource(player, prompt.subjectId)
             val summoner = find(player.field, prompt.summonerId)
@@ -405,12 +427,19 @@ object Answers {
             val use = CostModifiers.choice(room, player, CostModifiers.Event.SPECIAL_SUMMON, req!!.kind, card, summoner)
             val count = if (use == null) 0 else use.modifier.payment!!.count
             val selfDamage = use != null && use.modifier.payment!!.kind == CostModifiers.PaymentKind.SELF_DAMAGE
-            if (!picks.isEmpty() && (if (selfDamage) picks.size > count else picks.size != count)) return "Elige $count cartas, o ninguna"
-            val reduce = if (picks.isEmpty() || use == null) 0 else use.modifier.reduceNow(room, userId) * (if (selfDamage) picks.size else 1)
+            // "tributando X recursos del invocador": up to the count, the reduction once per card (or per `per` cards)
+            val fromSummoner = use != null && use.modifier.payment!!.kind == CostModifiers.PaymentKind.SUMMONER_RESOURCES_TO_TRIBUTES
+            if (!picks.isEmpty() && (if (selfDamage || fromSummoner) picks.size > count else picks.size != count)) return "Elige $count cartas, o ninguna"
+            if (!picks.isEmpty() && use != null && use.modifier.payment!!.withHolder && !picks.contains(use.holder.instanceId))
+                return "Debes incluir " + name(use.holder)
+            val reduce = if (picks.isEmpty() || use == null) 0 else use.modifier.reduceNow(room, userId) *
+                    (if (selfDamage) picks.size else if (fromSummoner) use.modifier.payment!!.times(picks.size) else 1)
             // Without it, the others still apply on their own
             if (!canPay(room, userId, card.specialCost!! - reduce -
                         CostModifiers.available(room, player, CostModifiers.Event.SPECIAL_SUMMON, req.kind, card, summoner) +
-                        (if (use == null) 0 else use.modifier.reduceNow(room, userId))))
+                        (if (use == null) 0 else if (fromSummoner) use.modifier.reduceNow(room, userId) *
+                                use.modifier.payment!!.times(kotlin.math.min(count, summoner.resources.orEmpty().size))
+                        else use.modifier.reduceNow(room, userId))))
                 return "Sin la reducción no tienes gemas suficientes: elige $count cartas"
             // The materials chosen before this payment (Biok)
             val kept = room.usedThisTurn.firstOrNull { k -> k.startsWith(DISCOUNT_MATERIALS + card.instanceId + "|") }
@@ -444,9 +473,26 @@ object Answers {
                     record(room, GameEvent.TAP, userId, t, null, null, null, null, player.username + " agota " + name(t) + " para reducir el coste especial")
                     continue
                 }
+                if (fromSummoner) {
+                    // A Recurso of the summoner goes to the Tributos (tributed)
+                    val r = find(summoner.resources, id) ?: continue
+                    summoner.resources!!.remove(r)
+                    r.faceDown = false
+                    player.tributeZone.add(r)
+                    paid.add(r)
+                    record(room, GameEvent.TRIBUTE, userId, r, "resources", "tributeZone", null, frozenMapOf<String, Any?>("byCard", card.instanceId),
+                        player.username + " tributa " + name(r) + " de los recursos de " + name(summoner))
+                    continue
+                }
                 val c = find(player.tributeZone, id) ?: continue
                 player.tributeZone.remove(c)
                 paid.add(c)
+                if (use != null && use.modifier.payment!!.kind == CostModifiers.PaymentKind.TRIBUTES_TO_DECK_TOP) {
+                    c.faceDown = true
+                    player.deck.add(0, c)
+                    record(room, GameEvent.SEND, userId, c, "tributeZone", "deck", null, frozenMapOf<String, Any?>("position", "top"), null)
+                    continue
+                }
                 if (asResource) {
                     // It becomes a Recurso of the summoner, which passes its Recursos on to the creature it summons
                     c.faceDown = false
@@ -459,8 +505,17 @@ object Answers {
                 player.deck.add(c)
                 record(room, GameEvent.SEND, userId, c, "tributeZone", "deck", null, frozenMapOf<String, Any?>("position", "bottom"), null)
             }
-            if (reduce > 0) log(room, player.username + " envía " + paid.size + " tributos al fondo de su mazo: " + name(use!!.holder) +
-                    " reduce en " + reduce + " el coste especial" + names(paid), room.eventSeq)
+            val sentToTop = use != null && use.modifier.payment!!.kind == CostModifiers.PaymentKind.TRIBUTES_TO_DECK_TOP
+            if (reduce > 0 && fromSummoner) log(room, name(use!!.holder) + " reduce en " + reduce + " el coste especial", room.eventSeq)
+            else if (reduce > 0) log(room, player.username + (if (sentToTop) " coloca " + paid.size + " tributos al tope de su mazo: " else " envía " + paid.size +
+                    " tributos al fondo de su mazo: ") + name(use!!.holder) + " reduce en " + reduce + " el coste especial" + names(paid), room.eventSeq)
+            // "…: gana 1 gema" (a Reacción–Acción before the summon)
+            if (!paid.isEmpty() && use != null && use.modifier.gems > 0) {
+                room.sharedCounter = EffectEngine.clamp(room.sharedCounter + use.modifier.gems * EffectEngine.direction(room, userId))
+                record(room, GameEvent.GAIN_GEMS, userId, use.holder, null, null, null, frozenMapOf<String, Any?>("count", use.modifier.gems),
+                    player.username + " coloca " + paid.size + " tributos al tope de su mazo y gana " + EffectEngine.gemsText(use.modifier.gems)
+                            + " (" + name(use.holder) + ")")
+            }
             specialSummon(room, player, card, req, summoner, keptMaterials, if (find(player.hand, card.instanceId) != null) "hand" else "tributeZone",
                 reduce, null)
             advance(room)

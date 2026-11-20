@@ -4,6 +4,7 @@ import com.drive.drive_manager.repository.CardRepository;
 import com.drive.drive_manager.repository.DeckListRepository;
 import com.drive.drive_manager.repository.DriveCardRepository;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Tag;
 import org.springframework.boot.test.context.runner.ApplicationContextRunner;
 import org.springframework.data.mongodb.core.MongoTemplate;
 
@@ -11,6 +12,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 
 /** The endpoint and its services are made by Spring from what the application has (the missions and history optional). */
+@Tag("server")
 class OfflineGamesWiringTest {
 
     @Test

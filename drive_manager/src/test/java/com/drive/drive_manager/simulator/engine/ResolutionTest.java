@@ -2,9 +2,11 @@ package com.drive.drive_manager.simulator.engine;
 
 import kotlin.jvm.JvmClassMappingKt;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Tag;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+@Tag("basic")
 class ResolutionTest {
 
     /** A step without a family would only fail when a card runs it. */

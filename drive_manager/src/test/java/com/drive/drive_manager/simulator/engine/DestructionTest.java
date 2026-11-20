@@ -5,6 +5,7 @@ import com.drive.drive_manager.simulator.room.GameRoom;
 import com.drive.drive_manager.simulator.room.PlayerState;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Tag;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -13,6 +14,7 @@ import static com.drive.drive_manager.simulator.engine.TestTable.*;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /** Destruction, sacrifice, "En Destrucción" triggers and the ST3 "En Invocación" effects. */
+@Tag("engine")
 class DestructionTest {
 
     private GameRoom room;

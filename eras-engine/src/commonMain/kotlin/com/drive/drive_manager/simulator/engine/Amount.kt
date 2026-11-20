@@ -50,6 +50,55 @@ sealed interface Amount {
         }
     }
 
+    /** How many cards your hand lacks to have that number ("roba cartas hasta tener 5 cartas en tu mano"). */
+    @JvmRecord
+    data class HandUnder(val upTo: Int) : Amount {
+        override fun of(room: GameRoom, controller: String?): Int {
+            return max(0, upTo - room.getPlayer(controller)!!.hand.size)
+        }
+    }
+
+    /**
+     * "la fuerza que tenía dicho aliado antes de ser removido": the strength the card of the triggering event had on the field as it left it
+     * (Removals.rememberStrength), read by EngineContext; its strength now when it is not known.
+     */
+    data object TriggerStrengthBeforeRemoval : Amount {
+        override fun of(room: GameRoom, controller: String?): Int {
+            return 0
+        }
+    }
+
+    /** "por cada material [filtro] tributado": the cards the last action moved that match, read by EngineContext. */
+    @JvmRecord
+    data class LastMoved(val filter: CardFilter?) : Amount {
+        override fun of(room: GameRoom, controller: String?): Int {
+            return 0
+        }
+    }
+
+    /**
+     * How many cards an effect's selector finds now, its pseudo-zones included ("si esta carta tiene alguna criatura nivel 5 como material":
+     * `materials`; "si sacrificas 2 o más aliados activos": `saved:activeAllies`), read by EngineContext; 0 outside an effect.
+     */
+    @JvmRecord
+    data class CardsIn(val cards: com.drive.drive_manager.simulator.engine.effects.model.Selector?) : Amount {
+        override fun of(room: GameRoom, controller: String?): Int {
+            return 0
+        }
+    }
+
+    /**
+     * "igual a su fuerza", "reduciendo su coste en el del aliado tributado": the strength, cost or level (`value`: "strength", "cost",
+     * "level") the cards an effect's selector finds add up to, read by EngineContext; a card that left the field counts the strength it had
+     * there. 0 outside an effect.
+     */
+    @JvmRecord
+    data class SumOf(val cards: com.drive.drive_manager.simulator.engine.effects.model.Selector?, val value: String?) : Amount {
+        override fun of(room: GameRoom, controller: String?): Int {
+            return 0
+        }
+    }
+
     /** "en el nivel de dicho aliado": the card of the triggering event, read by EngineContext. */
     data object TriggerSourceLevel : Amount {
         override fun of(room: GameRoom, controller: String?): Int {
@@ -99,6 +148,21 @@ sealed interface Amount {
         }
     }
 
+    /** "por cada vida bocarriba": the face-up lives of `whose` (yours, the opponent's or both players'). */
+    @JvmRecord
+    data class FaceUpLives(val whose: Condition.Side?) : Amount {
+        override fun of(room: GameRoom, controller: String?): Int {
+            val opponent = room.getOpponentId(controller)
+            return room.players.values.filter { p ->
+                when (whose ?: Condition.Side.ANY) {
+                    Condition.Side.YOU -> p.userId == controller
+                    Condition.Side.ENEMY -> p.userId == opponent
+                    Condition.Side.ANY -> true
+                }
+            }.sumOf { p -> p.lifeStack.count { !it.faceDown } }
+        }
+    }
+
     /** A fixed number. */
     @JvmRecord
     data class Fixed(val value: Int) : Amount {
@@ -107,19 +171,20 @@ sealed interface Amount {
         }
     }
 
-    /** How many of your cards on the field match. */
+    /** How many of your cards on the field match; `opponent`: of your opponent's field ("si tu oponente controla más criaturas que tú"). */
     @JvmRecord
-    data class OnField(val filter: CardFilter?) : Amount {
+    data class OnField(val filter: CardFilter?, val opponent: Boolean = false) : Amount {
         override fun of(room: GameRoom, controller: String?): Int {
-            return EffectEngine.countOnField(room, controller, filter).toInt()
+            val whose = if (opponent) room.getOpponentId(controller) ?: return 0 else controller
+            return EffectEngine.countOnField(room, whose, filter).toInt()
         }
     }
 
-    /** How many cards of one of your zones ("tributeZone", "hand") match. */
+    /** How many cards of one of your zones ("tributeZone", "hand") match; `opponent`: of your opponent's ("si tu oponente tiene 5 o más tributos"). */
     @JvmRecord
-    data class InZone(val zone: String?, val filter: CardFilter?) : Amount {
+    data class InZone(val zone: String?, val filter: CardFilter?, val opponent: Boolean = false) : Amount {
         override fun of(room: GameRoom, controller: String?): Int {
-            return EffectEngine.countInZone(room, controller, zone, filter).toInt()
+            return EffectEngine.countInZone(room, if (opponent) room.getOpponentId(controller) else controller, zone, filter).toInt()
         }
     }
 

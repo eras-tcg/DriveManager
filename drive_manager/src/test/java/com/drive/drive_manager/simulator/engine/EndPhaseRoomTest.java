@@ -8,6 +8,7 @@ import com.drive.drive_manager.simulator.room.PlayerState;
 import com.drive.drive_manager.simulator.room.RoomService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Tag;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -18,6 +19,7 @@ import static com.drive.drive_manager.simulator.engine.TestTable.*;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /** End-of-turn effects through the room, as played: ENTER_END_PHASE, the move up, then the triggers (Antorcha Legionaria). */
+@Tag("engine")
 class EndPhaseRoomTest {
 
     private final RoomService service = new RoomService();
