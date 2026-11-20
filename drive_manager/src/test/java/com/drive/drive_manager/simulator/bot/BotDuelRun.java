@@ -51,17 +51,20 @@ class BotDuelRun {
                     // bot.duel.log: every decision A looked ahead for (what it chose, among how many, the score it expected and the table's now)
                     // bot.duel.audit (with bot.duel.log): under each main decision of A, every candidate with its mean score, its tries and
                     // the round it was dropped in (MoveTrials.AUDIT); B's decisions only clear the list (both bots play on this thread)
-                    List<String> audit = new ArrayList<>();
+                    List<String> audit = new ArrayList<>(), trace = new ArrayList<>();
                     boolean audited = Boolean.getBoolean("bot.duel.audit");
-                    if (audited) MoveTrials.AUDIT.set(audit);
+                    if (audited) { MoveTrials.AUDIT.set(audit); MoveTrials.TRACE.set(trace); }
                     if (Boolean.getBoolean("bot.duel.log")) (aHosts ? hostBot : guestBot).watch(x -> {
                         sb.append("      > A decide ").append(x.type())
                             .append(' ').append(x.card()).append(x.target() == null ? "" : " → " + x.target()).append(" (opción ").append(x.index()).append(" de ")
                             .append(x.candidates()).append(", espera ").append(Math.round(x.expected() * 10) / 10.0).append(", ahora ").append(Math.round(x.now() * 10) / 10.0).append(")\n");
                         if (audited && !"RESOLVE_PROMPT".equals(x.type())) for (String l : audit) sb.append("          ").append(l).append('\n');
+                        // the tries scored far below (MoveTrials.TRACE), the first few
+                        if (audited) for (String l : trace.subList(0, Math.min(6, trace.size()))) sb.append("          ! ").append(l).append('\n');
                         audit.clear();
+                        trace.clear();
                     });
-                    if (audited) (aHosts ? guestBot : hostBot).watch(x -> audit.clear());
+                    if (audited) (aHosts ? guestBot : hostBot).watch(x -> { audit.clear(); trace.clear(); });
                     BotMatch.Result r = BotMatch.playSeededWatching(d[0], d[1], hostBot, guestBot, seed, room -> {
                         List<GameEvent> tl = room.getTimeline();
                         List<GameEvent> turn = after(tl, lastEvent);
