@@ -89,6 +89,16 @@ class BotPuzzleRun {
                     front(t.guest(), "Peón De Línea Frontal");
                     lives(t.guest(), 1, false);
                 }, t -> "host".equals(t.room().getWinnerId())),
+                // Duel st2-st1 s13078 (2026-11-20, hBlockBest 2): at 3 lives the rival chump-blocks the attack with Letalidad. The
+                // tries expected a win the rival never gave; with blocks judged over the rest of the turn they expect what happens
+                new Puzzle("remate-contra-sacrificio", "el rival (3 vidas boca abajo) tiene Zula (5) y Mihel (2) activos; Dragón Carmesí y Fadrake activos: lo que espera el bot de su ataque debe acercarse a lo que logra contra un rival que se sacrifica (informativo: pasa si gana)", t -> {
+                    gems(t, 0);
+                    front(t.host(), "Dragón Carmesí");
+                    front(t.host(), "Fadrake");
+                    front(t.guest(), "Zula");
+                    front(t.guest(), "Mihel");
+                    lives(t.guest(), 3, true);
+                }, t -> "host".equals(t.room().getWinnerId())),
                 // Duelo st1-st2 s13395 (2026-11-06): jugó Huevo, vació el mazo, evolucionó a Carmesí y no atacó; perdió por mazo
                 new Puzzle("remate-mazo-corto", "el rival (st1) tiene 1 vida y la mesa vacía; Dragón Volcánico, Dracoventus y Galveta listos, Huevo De Dragón y Dracoventus en la mano, 4 cartas en el mazo: atacar y ganar", t -> {
                     gems(t, 5);
