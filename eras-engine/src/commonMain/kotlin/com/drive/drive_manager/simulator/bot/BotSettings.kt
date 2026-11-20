@@ -245,6 +245,8 @@ class BotSettings private constructor(values: Map<String, Double>, bias: Map<Str
             d.put("hReduce", 0.0)
             d.put("riskCuts", 0.0)
             d.put("lethalLives", 0.0)
+            // lethalBlocks: a win found by LethalSearch must hold against every block of the rival
+            d.put("lethalBlocks", 0.0)
             d.put("winFlat", 0.0)
             d.put("winSeen", 0.0)
             // attackFloor: see AttackFloor; floorSlack: the material an attack may lose in its worst case
