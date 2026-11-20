@@ -449,7 +449,7 @@ object Chain {
         val link = room.chain.size + 1
         val prompt = StepHelpers.prompt(room, effect, Prompt.Kind.CONFIRM, (if (link == 1) "¿Activas este efecto como Cadena 1? "
         else "¿Lo encadenas como Cadena $link? Se resolverá antes que los eslabones que ya están en la cadena. ") + effect.text)
-        val source = findAnywhere(room, effect.controllerId, effect.sourceInstanceId)
+        val source = EffectEngine.findSource(room, effect.controllerId, effect.sourceInstanceId)
         if (source != null) {
             prompt.cards = ArrayList(frozenListOf(source))
             prompt.validIds = ArrayList(frozenListOf(source.instanceId))
@@ -465,7 +465,7 @@ object Chain {
     fun sources(room: GameRoom, group: List<PendingEffect>): List<CardSlot> {
         val sources: MutableList<CardSlot> = ArrayList()
         for (e in group) {
-            val source = findAnywhere(room, e.controllerId, e.sourceInstanceId)
+            val source = EffectEngine.findSource(room, e.controllerId, e.sourceInstanceId)
             if (source != null && !sources.contains(source)) sources.add(source)
         }
         return sources

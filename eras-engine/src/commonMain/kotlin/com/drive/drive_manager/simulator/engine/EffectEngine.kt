@@ -383,19 +383,25 @@ object EffectEngine {
         for (p in room.players.values) {
             // What cards give their allies ("todos los aliados [armada] ganan fuerza 1")
             val fromAllies = HashMap<String?, Int>()
+            // "tus aliados [hada] tienen Alcance": the abilities they give
+            val keywordsFromAllies = HashMap<String?, MutableList<String>>()
             for (source in p.field) {
                 if (source.faceDown) continue
                 for (c in CardEffects.continuousOf(source)) {
                     if (c.targets == null || c.enemies || !c.holds(room, source, p.userId!!)) continue
                     // "los aliados [paladín] adyacentes en la formación": only the members next to it
                     val pool = if (c.formationNeighbours) Formations.adjacentMembers(p, source) else p.field
-                    for (ally in pool) if (c.targets.matches(ally)) fromAllies.mergeWith(ally.instanceId, c.strength) { a, b -> a + b }
+                    for (ally in pool) if (c.targets.matches(ally)) {
+                        fromAllies.mergeWith(ally.instanceId, c.strength) { a, b -> a + b }
+                        val given = c.keywordsNow(room, p.userId)
+                        if (given.isNotEmpty()) keywordsFromAllies.getOrPut(ally.instanceId) { ArrayList() }.addAll(given)
+                    }
                 }
             }
             for (card in p.field) {
                 var strength = fromAllies.valueOr(card.instanceId, 0)
                 var level = 0
-                val keywords = ArrayList<String>()
+                val keywords = ArrayList<String>(keywordsFromAllies[card.instanceId] ?: frozenListOf())
                 for (c in CardEffects.continuousOf(card)) {
                     if (c.targets != null || !Zone.FIELD.`is`(c.zone)) continue
                     if (card.faceDown || !c.holds(room, card, p.userId!!)) continue
@@ -449,6 +455,13 @@ object EffectEngine {
         val p = room.getPlayer(playerId)
         val at = if (p == null) null else locate(p, instanceId)
         return at?.card
+    }
+
+    /** The card of an effect: anywhere, or among the Recursos and materials of the field ("si esta carta es añadida como recurso"). */
+    @JvmStatic
+    fun findSource(room: GameRoom, playerId: String?, instanceId: String?): CardSlot? {
+        return findAnywhere(room, playerId, instanceId)
+            ?: CardLocator.find(room.getPlayer(playerId), instanceId, frozenListOf(com.drive.drive_manager.simulator.room.Zone.FIELD), true)
     }
 
     /** The player's cards in that zone; none for an unknown one. */
