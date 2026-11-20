@@ -286,6 +286,12 @@ object Removals {
     private fun sacrificeOthers(owner: PlayerState, card: CardSlot): List<CardSlot> =
         owner.field.filter { c -> c !== card && "creature" == c.cardType }
 
+    /** The other members of the card's formation (Enlace): "un aliado enlazado a esta carta". */
+    private fun linkedAllies(owner: PlayerState, card: CardSlot): List<CardSlot> {
+        val members = Formations.formationOf(owner, card.instanceId) ?: return frozenListOf()
+        return owner.field.filter { c -> c !== card && members.contains(c.instanceId) }
+    }
+
     /** The active structures of the player that can be exhausted. */
     private fun tappableStructures(owner: PlayerState): List<CardSlot> =
         owner.field.filter { c -> "structure" == c.cardType && !c.tapped && !EffectEngine.keywords(c).contains(EffectEngine.CANNOT_TAP) }
@@ -299,6 +305,7 @@ object Removals {
             if (r.byOpponentOnly && !byOpponent) continue
             if (r.withMaterials && card.materials!!.isEmpty()) continue
             if (r.holder != null && !r.holder.matches(card)) continue
+            if (r.allyTurn && room.currentTurnUserId != owner.userId) continue
             if (r.limit == Limit.DEFINITIVE && room.firstTurn) continue
             if (Limit.spent(r.limit, room.usedThisTurn, replacementKey(owner, card, r))) continue
             val payable = when (r.cost!!) {
@@ -318,6 +325,7 @@ object Removals {
                 CardEffects.ReplacementCost.RESOURCE_TRIBUTED_ANOTHER_TO_HAND -> card.resources!!.size >= 2
                 CardEffects.ReplacementCost.ALLY_TO_LIFE_FACE_DOWN -> owner.field.any { c -> c !== card && "creature" == c.cardType }
                 CardEffects.ReplacementCost.TAP_STRUCTURE -> tappableStructures(owner).isNotEmpty()
+                CardEffects.ReplacementCost.DESTROY_LINKED_ALLY -> linkedAllies(owner, card).isNotEmpty()
             }
             if (payable) options.add(ReplacementOption(r.id + "@" + card.instanceId, card, r, r.label, r.text))
         }
@@ -546,6 +554,18 @@ object Removals {
             if (card != null) destroyIfStillNoStrength(room, pending, player, card)
             return null
         }
+        if (PromptPurpose.REPLACE_DESTROY.`is`(prompt.purpose)) {
+            // "en su lugar, puedes destruir un aliado enlazado a esta carta": that ally is destroyed, the card stays
+            val pick = if (picks.isEmpty()) null else picks[0]
+            val ally = if (card == null) null else linkedAllies(player, card).firstOrNull { it.instanceId == pick }
+                ?: return "Elige 1 aliado enlazado"
+            room.prompt = null
+            room.pendingRemovals.removeAt(0)
+            log(room, player.username + " destruye " + name(ally) + ": " + name(card) + " no es destruida", null)
+            destroy(room, ally, player, false, CAUSE_EFFECT, player.userId, card!!.instanceId, null)
+            destroyIfStillNoStrength(room, pending, player, card)
+            return null
+        }
         if (PromptPurpose.REPLACE_HAND.`is`(prompt.purpose)) {
             // Caballero Leal: the hand card tributed instead
             val paid = (if (picks.isEmpty()) null else find(player.hand, picks[0])) ?: return "Elige 1 carta de tu mano"
@@ -704,6 +724,15 @@ object Removals {
                 room.prompt!!.min = 1
                 room.prompt!!.subjectId = card.instanceId
                 room.prompt!!.summonerId = chosen.source.instanceId
+                return null
+            }
+            CardEffects.ReplacementCost.DESTROY_LINKED_ALLY -> {
+                // The linked ally is chosen next; the removal stays pending until then
+                val linked = linkedAllies(player, card)
+                rulesPrompt(room, player.userId, PromptPurpose.REPLACE_DESTROY.id(), name(card) + " · " + r.label,
+                    "Destruye 1 aliado enlazado a " + name(card) + ": " + name(card) + " no es destruida.", "Destruir", linked, linked)
+                room.prompt!!.min = 1
+                room.prompt!!.subjectId = card.instanceId
                 return null
             }
             CardEffects.ReplacementCost.TRIBUTE_ONE_FROM_HAND -> {

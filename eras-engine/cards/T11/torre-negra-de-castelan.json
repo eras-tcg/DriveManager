@@ -1,0 +1,164 @@
+{
+  "name": "torre negra de cástelan",
+  "effects": [
+    {
+      "id": "torre-negra:turno-aliado-en-tributos",
+      "moment": "ACTIVATED",
+      "label": "Turno Aliado En Tributos",
+      "text": "Puedes tributar 1 aliado agotado de coste 3 o mayor; invoca esta carta en tu línea frontal reduciendo su coste en el del aliado tributado.",
+      "cost": [
+        {
+          "type": "Do",
+          "action": {
+            "type": "Move",
+            "cards": {
+              "zones": "field",
+              "owner": "YOU",
+              "filter": {
+                "cardType": "creature",
+                "exhaustedOnly": true,
+                "minCost": 3
+              },
+              "min": {
+                "type": "Fixed",
+                "value": 1
+              },
+              "max": {
+                "type": "Fixed",
+                "value": 1
+              },
+              "self": "ANY",
+              "mode": "CHOOSE"
+            },
+            "to": "tributeZone"
+          }
+        }
+      ],
+      "steps": [
+        {
+          "type": "Do",
+          "action": {
+            "type": "Summon",
+            "cards": {
+              "zones": "tributeZone",
+              "owner": "YOU",
+              "filter": {},
+              "min": {
+                "type": "Fixed",
+                "value": 1
+              },
+              "max": {
+                "type": "Fixed",
+                "value": 1
+              },
+              "self": "ANY",
+              "mode": "SELF"
+            },
+            "reduce": {
+              "type": "SumOf",
+              "cards": {
+                "zones": "saved:last",
+                "owner": "YOU",
+                "filter": {},
+                "min": {
+                  "type": "Fixed"
+                },
+                "max": {
+                  "type": "Fixed",
+                  "value": 2147483647
+                },
+                "self": "ANY",
+                "mode": "ALL"
+              },
+              "value": "cost"
+            },
+            "toFront": true,
+            "required": true
+          }
+        }
+      ],
+      "sourceZone": "tributeZone",
+      "allyTurn": true,
+      "limit": "NONE"
+    }
+  ],
+  "formation": {
+    "effects": [
+      {
+        "id": "torre-negra:enlace",
+        "moment": "ON_EVENT",
+        "label": "Todos Los Turnos",
+        "text": "Si esta carta es objetivo de un efecto oponente: puedes elegir 1 enemigo de nivel menor que esta carta; destrúyelo.",
+        "cost": [
+          {
+            "type": "Do",
+            "action": {
+              "type": "Select",
+              "selector": {
+                "zones": "frontLine",
+                "owner": "OPPONENT",
+                "filter": {
+                  "cardType": "creature"
+                },
+                "min": {
+                  "type": "Fixed",
+                  "value": 1
+                },
+                "max": {
+                  "type": "Fixed",
+                  "value": 1
+                },
+                "self": "ANY",
+                "mode": "CHOOSE",
+                "relative": {
+                  "to": "self",
+                  "compareLevel": "LESS"
+                }
+              },
+              "target": true
+            }
+          }
+        ],
+        "steps": [
+          {
+            "type": "Do",
+            "action": {
+              "type": "Destroy",
+              "cards": {
+                "zones": "saved:targets",
+                "owner": "YOU",
+                "filter": {},
+                "min": {
+                  "type": "Fixed"
+                },
+                "max": {
+                  "type": "Fixed",
+                  "value": 2147483647
+                },
+                "self": "ANY",
+                "mode": "ALL"
+              }
+            }
+          }
+        ],
+        "condition": {
+          "type": "All",
+          "all": [
+            {
+              "type": "Targeted",
+              "thisCard": true
+            },
+            {
+              "type": "Happened",
+              "actor": "ENEMY",
+              "owner": "ANY",
+              "eventType": "TARGET"
+            }
+          ]
+        },
+        "sourceZone": "field",
+        "limit": "NONE"
+      }
+    ]
+  }
+}

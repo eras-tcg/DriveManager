@@ -650,7 +650,7 @@ internal object CardModelReader {
     }
 
     private fun readCardEffectsReplacement(o: JsonObject, at: String): com.drive.drive_manager.simulator.engine.CardEffects.Replacement {
-        J.fields(o, at, "CardEffects.Replacement", setOf("id", "label", "text", "destroyOnly", "byOpponentOnly", "limit", "cost", "resourceFilter", "withMaterials", "holder"), true)
+        J.fields(o, at, "CardEffects.Replacement", setOf("id", "label", "text", "destroyOnly", "byOpponentOnly", "limit", "cost", "resourceFilter", "withMaterials", "holder", "allyTurn"), true)
         return com.drive.drive_manager.simulator.engine.CardEffects.Replacement(
             id = J.str(o, "id", at),
             label = J.str(o, "label", at),
@@ -662,6 +662,7 @@ internal object CardModelReader {
             resourceFilter = J.value(o, "resourceFilter", at, ::cardFilter),
             withMaterials = J.bool(o, "withMaterials", at),
             holder = J.value(o, "holder", at, ::cardFilter),
+            allyTurn = J.bool(o, "allyTurn", at),
         )
     }
 
@@ -1352,9 +1353,12 @@ internal object CardModelReader {
     }
 
     private fun readEffectStepSwapInFormation(o: JsonObject, at: String): com.drive.drive_manager.simulator.engine.EffectStep.SwapInFormation {
-        J.fields(o, at, "EffectStep.SwapInFormation", setOf("withSelf"), true)
+        J.fields(o, at, "EffectStep.SwapInFormation", setOf("withSelf", "other", "anyFormation", "exceptTargets"), true)
         return com.drive.drive_manager.simulator.engine.EffectStep.SwapInFormation(
             withSelf = J.bool(o, "withSelf", at),
+            other = J.value(o, "other", at, ::cardFilter),
+            anyFormation = J.bool(o, "anyFormation", at),
+            exceptTargets = J.bool(o, "exceptTargets", at),
         )
     }
 

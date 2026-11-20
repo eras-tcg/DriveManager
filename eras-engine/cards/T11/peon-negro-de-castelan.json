@@ -1,0 +1,206 @@
+{
+  "name": "peón negro de cástelan",
+  "effects": [
+    {
+      "id": "peon-negro:turno-aliado-en-tributos",
+      "moment": "ACTIVATED",
+      "label": "Turno Aliado En Tributos",
+      "text": "Una vez por turno entre copias: si controlas una criatura con \"peón\" en el nombre o si solo tu oponente controla criaturas: puedes tributar 1 carta de tu mano; invoca esta carta en tu línea frontal sin pagar su coste.",
+      "cost": [
+        {
+          "type": "Do",
+          "action": {
+            "type": "Move",
+            "cards": {
+              "zones": "hand",
+              "owner": "YOU",
+              "filter": {},
+              "min": {
+                "type": "Fixed",
+                "value": 1
+              },
+              "max": {
+                "type": "Fixed",
+                "value": 1
+              },
+              "self": "ANY",
+              "mode": "CHOOSE"
+            },
+            "to": "tributeZone"
+          }
+        }
+      ],
+      "steps": [
+        {
+          "type": "Do",
+          "action": {
+            "type": "Summon",
+            "cards": {
+              "zones": "tributeZone",
+              "owner": "YOU",
+              "filter": {},
+              "min": {
+                "type": "Fixed",
+                "value": 1
+              },
+              "max": {
+                "type": "Fixed",
+                "value": 1
+              },
+              "self": "ANY",
+              "mode": "SELF"
+            },
+            "reduce": {
+              "type": "Fixed",
+              "value": 1000
+            },
+            "toFront": true,
+            "required": true
+          }
+        }
+      ],
+      "condition": {
+        "type": "Any",
+        "any": [
+          {
+            "type": "Compare",
+            "left": {
+              "type": "OnField",
+              "filter": {
+                "cardType": "creature",
+                "nameContains": "peón"
+              }
+            },
+            "op": "AT_LEAST",
+            "right": {
+              "type": "Fixed",
+              "value": 1
+            }
+          },
+          {
+            "type": "All",
+            "all": [
+              {
+                "type": "Compare",
+                "left": {
+                  "type": "OnField",
+                  "filter": {
+                    "cardType": "creature"
+                  }
+                },
+                "op": "EQUAL",
+                "right": {
+                  "type": "Fixed"
+                }
+              },
+              {
+                "type": "Compare",
+                "left": {
+                  "type": "OnField",
+                  "filter": {
+                    "cardType": "creature"
+                  },
+                  "opponent": true
+                },
+                "op": "AT_LEAST",
+                "right": {
+                  "type": "Fixed",
+                  "value": 1
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "sourceZone": "tributeZone",
+      "allyTurn": true,
+      "limit": "ONCE_PER_TURN_BETWEEN_COPIES"
+    }
+  ],
+  "formation": {
+    "effects": [
+      {
+        "id": "peon-negro:enlace",
+        "moment": "ON_ATTACK",
+        "label": "Al Atacar",
+        "text": "Puedes tributar 1 aliado enlazado a esta carta para invocar 1 [cástelan] de tu mano reduciendo su coste en el del aliado tributado.",
+        "steps": [
+          {
+            "type": "IfPossible"
+          },
+          {
+            "type": "Do",
+            "action": {
+              "type": "Move",
+              "cards": {
+                "zones": "formation",
+                "owner": "YOU",
+                "filter": {
+                  "cardType": "creature"
+                },
+                "min": {
+                  "type": "Fixed",
+                  "value": 1
+                },
+                "max": {
+                  "type": "Fixed",
+                  "value": 1
+                },
+                "self": "ANY",
+                "mode": "CHOOSE"
+              },
+              "to": "tributeZone"
+            }
+          },
+          {
+            "type": "Do",
+            "action": {
+              "type": "Summon",
+              "cards": {
+                "zones": "hand",
+                "owner": "YOU",
+                "filter": {
+                  "cardType": "creature",
+                  "classes": [
+                    "cástelan"
+                  ]
+                },
+                "min": {
+                  "type": "Fixed",
+                  "value": 1
+                },
+                "max": {
+                  "type": "Fixed",
+                  "value": 1
+                },
+                "self": "ANY",
+                "mode": "CHOOSE"
+              },
+              "reduce": {
+                "type": "SumOf",
+                "cards": {
+                  "zones": "saved:last",
+                  "owner": "YOU",
+                  "filter": {},
+                  "min": {
+                    "type": "Fixed"
+                  },
+                  "max": {
+                    "type": "Fixed",
+                    "value": 2147483647
+                  },
+                  "self": "ANY",
+                  "mode": "ALL"
+                },
+                "value": "cost"
+              },
+              "required": true
+            }
+          }
+        ],
+        "sourceZone": "field",
+        "limit": "NONE"
+      }
+    ]
+  }
+}

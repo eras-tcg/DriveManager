@@ -123,6 +123,17 @@ object Selection {
                 if (card != null && ctx.onField(card)) into.add(card)
                 continue
             }
+            // "un aliado enlazado a esta carta": the other members of its formation
+            if (zone == "formation") {
+                if (!enemy) into.addAll(ctx.formationMates())
+                continue
+            }
+            // "dicho aliado" (the one that dealt the direct damage)
+            if (zone == "eventAttacker") {
+                val card = if (enemy) null else ctx.eventAttacker()
+                if (card != null) into.add(card)
+                continue
+            }
             if (zone == "subjectOrSummoned") {
                 val card = if (enemy) null else ctx.subjectOrSummoned()
                 if (card != null) into.add(card)

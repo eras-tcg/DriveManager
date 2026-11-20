@@ -1,0 +1,80 @@
+{
+  "name": "torre blanca de cástelan",
+  "effects": [
+    {
+      "id": "torre-blanca:turno-aliado",
+      "moment": "ACTIVATED",
+      "label": "Turno Aliado",
+      "text": "Una vez por turno: puedes cambiar esta carta de posición con un [cástelan] con \"rey\" en el nombre. Si lo haces: puedes invocar 1 [cástelan] de tus tributos reduciendo su coste en 3.",
+      "steps": [
+        {
+          "type": "SwapInFormation",
+          "withSelf": true,
+          "other": {
+            "cardType": "creature",
+            "classes": [
+              "cástelan"
+            ],
+            "nameContains": "rey"
+          },
+          "anyFormation": true
+        },
+        {
+          "type": "IfDone",
+          "covers": 2
+        },
+        {
+          "type": "MayDo",
+          "question": "¿Invocas 1 [cástelan] de tus tributos reduciendo su coste en 3?",
+          "covers": 1
+        },
+        {
+          "type": "Do",
+          "action": {
+            "type": "Summon",
+            "cards": {
+              "zones": "tributeZone",
+              "owner": "YOU",
+              "filter": {
+                "cardType": "creature",
+                "classes": [
+                  "cástelan"
+                ]
+              },
+              "min": {
+                "type": "Fixed",
+                "value": 1
+              },
+              "max": {
+                "type": "Fixed",
+                "value": 1
+              },
+              "self": "ANY",
+              "mode": "CHOOSE"
+            },
+            "reduce": {
+              "type": "Fixed",
+              "value": 3
+            },
+            "required": true
+          }
+        }
+      ],
+      "sourceZone": "field",
+      "allyTurn": true,
+      "limit": "ONCE_PER_TURN"
+    }
+  ],
+  "formation": {
+    "continuous": [
+      {
+        "label": "Alcance",
+        "text": "Alcance (esta carta no puede ser destruida por enfrentamiento como atacante.)",
+        "keywords": [
+          "Alcance"
+        ],
+        "zone": "field"
+      }
+    ]
+  }
+}

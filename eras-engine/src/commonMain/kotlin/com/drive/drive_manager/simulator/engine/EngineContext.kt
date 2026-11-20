@@ -538,6 +538,19 @@ internal class EngineContext(private val room: GameRoom, private val effect: Pen
         return StepHelpers.subject(room, effect)
     }
 
+    override fun formationMates(): List<CardSlot> {
+        val player = player() ?: return frozenListOf()
+        val self = EffectEngine.find(player.field, effect.sourceInstanceId) ?: return frozenListOf()
+        val members = Formations.formationOf(player, self.instanceId) ?: return frozenListOf()
+        return Formations.ordered(player).filter { it !== self && members.contains(it.instanceId) }
+    }
+
+    override fun eventAttacker(): CardSlot? {
+        val trigger = EffectEngine.triggerEvent(room, effect) ?: return null
+        val id = trigger.data?.get("attackerId") as String? ?: return null
+        return EffectEngine.find(player()!!.field, id)
+    }
+
     override fun eventCardOnField(): CardSlot? {
         // Triggered by several cards at once: the one chosen among them
         val chosen = effect.saved[Memory.EVENT_CARD]

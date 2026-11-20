@@ -418,7 +418,9 @@ object CardEffects {
         /** A guard ([AllyGuard]): "en su lugar, puedes sacrificar otro aliado o una carta de tu mano" (a creature of its owner's field or a card of the hand). */
         SACRIFICE_OTHER_ALLY_OR_HAND,
         /** "en su lugar, tributa "X" de sus recursos y súbela a tu mano" (resourceFilter: the Recurso tributed, one): the card goes to its owner's hand. */
-        TRIBUTE_RESOURCE_RETURN_TO_HAND
+        TRIBUTE_RESOURCE_RETURN_TO_HAND,
+        /** "en su lugar, puedes destruir un aliado enlazado a esta carta" (Enlace): another member of its formation is destroyed instead. */
+        DESTROY_LINKED_ALLY
     }
 
     /**
@@ -433,6 +435,8 @@ object CardEffects {
         val cost: ReplacementCost?, val resourceFilter: CardFilter?, val withMaterials: Boolean = false,
         /** "cuando esta carta [hada] fuera a ser destruida": what the card must be for it to apply; null: anything. */
         val holder: CardFilter? = null,
+        /** "Turno Aliado: cuando esta carta fuera a ser destruida": only on its owner's turn. */
+        val allyTurn: Boolean = false,
     ) : Reaction {
         constructor(id: String?, label: String?, text: String?, destroyOnly: Boolean, byOpponentOnly: Boolean, limit: Limit?, cost: ReplacementCost?) :
                 this(id, label, text, destroyOnly, byOpponentOnly, limit, cost, CardFilter.any())

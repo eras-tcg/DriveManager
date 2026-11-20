@@ -175,6 +175,12 @@ interface EffectContext {
     /** The rest of the effect does nothing. */
     fun endEffect()
 
+    /** "un aliado enlazado a esta carta": the other members of the formation this card is in (Enlace); none outside one. */
+    fun formationMates(): List<CardSlot>
+
+    /** "dicho aliado" of a direct damage: the creature whose attack dealt the damage that triggered the effect, if it is still on the field. */
+    fun eventAttacker(): CardSlot?
+
     /** The looked cards' choice also says top or bottom of the deck: a card picked is the top. */
     fun asksTopOrBottom()
 

@@ -372,7 +372,14 @@ sealed interface EffectStep {
      * "intercambia de posición esta carta con otro aliado en la misma formación" (`withSelf`) and "cambia de posición dos aliados en la
      * misma formación": the two swap their places in the Línea frontal, their formations as they were (Formations.swap). The two are saved
      * as "swapped" ("ambos aliados ganan …"); `lastDone` when they were swapped.
+     *
+     * @param other        with `withSelf`: what the other card must be ("con un [cástelan] con "rey" en el nombre"); null: any creature
+     * @param anyFormation with `withSelf`: the other may stand anywhere in the Línea frontal ("cambia de posición esta carta con …"), not
+     *                     only in this card's formation
+     * @param exceptTargets with `withSelf`: "con otro aliado enlazado al aliado elegido": never the ally chosen before (the targets)
      */
     @JvmRecord
-    data class SwapInFormation(val withSelf: Boolean) : NeedsTarget
+    data class SwapInFormation(
+        val withSelf: Boolean, val other: CardFilter? = null, val anyFormation: Boolean = false, val exceptTargets: Boolean = false,
+    ) : NeedsTarget
 }

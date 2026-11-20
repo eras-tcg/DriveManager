@@ -54,7 +54,9 @@ enum class PromptPurpose {
     /** "en su lugar, puedes agotar 1 de tus estructuras": the structure exhausted instead of the removal. */
     REPLACE_TAP,
     /** "en su lugar, puedes sacrificar otro aliado o una carta de tu mano": the card sacrificed instead of the destruction (`summonerId`: the guard). */
-    REPLACE_SACRIFICE;
+    REPLACE_SACRIFICE,
+    /** "en su lugar, puedes destruir un aliado enlazado a esta carta": the member of its formation destroyed instead. */
+    REPLACE_DESTROY;
 
     /** The purpose string the prompt carries. */
     fun id(): String = name
