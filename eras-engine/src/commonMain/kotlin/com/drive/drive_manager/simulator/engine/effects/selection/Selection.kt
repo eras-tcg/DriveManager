@@ -36,8 +36,8 @@ object Selection {
             if (!selector.filter().matches(card) && !(self && selector.self() == Selector.Self.REQUIRE)) continue
             if (selector.self() == Selector.Self.EXCLUDE && self) continue
             if (selector.relative != null && !relative(ctx, selector.relative, card)) continue
-            if (ctx.isOpponents(card)) {
-                // An enemy is a creature
+            if (ctx.isOpponents(card) && ctx.onField(card)) {
+                // An enemy is a creature (the opponent's lives, tributes… are cards of theirs)
                 if (!ctx.isCreature(card)) continue
                 if (target && ctx.immune(card)) continue
             }
@@ -100,6 +100,14 @@ object Selection {
         for (raw in splitZones(zones!!)) {
             // As Java's trim(): what is at most a space
             val zone = raw.trim { it <= ' ' }
+            // "si elegiste 1 aliado": of what the memory has, only the player's own cards
+            if (zone.startsWith("savedOwn:")) {
+                if (!enemy) for (id in ctx.saved(zone.substring("savedOwn:".length))) {
+                    val card = ctx.find(id)
+                    if (card != null && !ctx.isOpponents(card)) into.add(card)
+                }
+                continue
+            }
             if (zone.startsWith("saved:")) {
                 if (!enemy) for (id in ctx.saved(zone.substring("saved:".length))) {
                     val card = ctx.find(id)

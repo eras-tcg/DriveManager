@@ -158,7 +158,7 @@ data class Selector(
 
     /** It acts on what an action before it left in the memory, which is not known until then. */
     fun fromMemory(): Boolean {
-        return zones!!.startsWith("saved:")
+        return zones!!.startsWith("saved:") || zones.startsWith("savedOwn:")
     }
 
     /** It depends on a card chosen by an action before it, not chosen yet. */
