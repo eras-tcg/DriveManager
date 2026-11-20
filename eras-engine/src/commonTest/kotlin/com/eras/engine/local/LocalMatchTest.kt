@@ -144,6 +144,10 @@ class LocalMatchTest {
 
     companion object {
         /**
+         * 2026-11-20, EXPECTED and EXPECTED_WITH_LINKS: the list of bots sent with the room's state before the game
+         * (botChoices) has the three levels and "guiado" only (the earlier models to try were taken out of models.txt).
+         * The games play as before: EXPECTED_RESULT, with the final state's digest, did not change.
+         *
          * 2026-11-11, the three maps below. The games against the easy bot play as before (their results here did not
          * change): only their messages did, the list of bots sent with the room's state before the game (botChoices) has
          * one more model, "guiado-previo". The game against the normal bot plays otherwise (15 turns, not 11): its check
@@ -163,18 +167,18 @@ class LocalMatchTest {
          * must give the same). Without them the messages give [EXPECTED], as before those updates were sent.
          */
         val EXPECTED_WITH_LINKS = mapOf(
-            "st1-st1-1-easy" to "f90e6412f232b897",
-            "st2-st3-2-easy" to "9dbb2c33bbe5d5a0",
-            "st4-st1-3-easy" to "197f896d9a645467",
-            "st3-st4-5-normal" to "f6c5358e4a00ff69",
+            "st1-st1-1-easy" to "68a131b6676430d4",
+            "st2-st3-2-easy" to "550598d5aeaee871",
+            "st4-st1-3-easy" to "1dc4ede9394e33b6",
+            "st3-st4-5-normal" to "f0c4622f56a2999c",
         )
 
         /** Taken on the JVM; JavaScript must give the same. */
         val EXPECTED = mapOf(
-            "st1-st1-1-easy" to "9c2d41ba1ded9fcb",
-            "st2-st3-2-easy" to "69077c9320f76a23",
-            "st4-st1-3-easy" to "91d31100e3b63e07",
-            "st3-st4-5-normal" to "6e3cd9aa163f55a9",
+            "st1-st1-1-easy" to "5642a4ad8a025caa",
+            "st2-st3-2-easy" to "cd2c80206efb646a",
+            "st4-st1-3-easy" to "4261cdbe163f24a8",
+            "st3-st4-5-normal" to "475cdc0c10934d42",
         )
     }
 }

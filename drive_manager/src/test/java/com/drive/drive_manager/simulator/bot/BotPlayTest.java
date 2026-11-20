@@ -267,12 +267,13 @@ class BotPlayTest {
         assertThat(((LookaheadBot) BotCatalog.botAt(BotCatalog.HARD)).settings().get("hCombat")).isEqualTo(1);
 
         // The models to try (bot/models.txt) come after the levels, marked apart, and are chosen the same way
-        assertThat(hard.getBotChoices()).extracting(c -> c.get("id")).startsWith(BotCatalog.EASY, BotCatalog.NORMAL, BotCatalog.HARD).contains("previo");
+        // (since 2026-11-20 only guiado: the earlier models to try are in docs/bot/modelos-retirados.txt)
+        assertThat(hard.getBotChoices()).extracting(c -> c.get("id")).containsExactly(BotCatalog.EASY, BotCatalog.NORMAL, BotCatalog.HARD, "guiado");
         assertThat(hard.getBotChoices()).filteredOn(c -> "level".equals(c.get("kind"))).hasSize(3);
         // (only a simulator administrator seats a model under test)
         room.getAdminPlayers().add("owner");
-        assertThat(service.applyAction(id, "owner", BotPlayer.action("SET_BOT_LEVEL", Map.of("level", "previo")), false).getError()).isNull();
-        assertThat(((LookaheadBot) BotCatalog.botAt("previo")).settings().get("rankCands")).isEqualTo(0);
+        assertThat(service.applyAction(id, "owner", BotPlayer.action("SET_BOT_LEVEL", Map.of("level", "guiado")), false).getError()).isNull();
+        assertThat(((LookaheadBot) BotCatalog.botAt("guiado")).settings().get("attackFloor")).isEqualTo(1);
     }
 
     @Test
