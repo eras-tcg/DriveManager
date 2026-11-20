@@ -101,8 +101,12 @@ class BotDuelRun {
                     });
                     String winner = "host".equals(r.winner()) ? host[0] : "guest".equals(r.winner()) ? guest[0] : "nadie";
                     String name = pair + "-s" + seed + "-A" + (aHosts ? "host" : "guest") + ".txt";
+                    // What A's tries cost (the sequences' screening before them is not counted): decisions, mean and longest time, out of time
+                    LookaheadBot.Stats st = (aHosts ? hostBot : guestBot).stats();
+                    String cost = "Pruebas de A: " + st.decisions() + " decisiones, media " + (st.decisions() == 0 ? 0 : st.totalNanos() / st.decisions() / 1_000_000)
+                            + " ms, máxima " + st.maxNanos() / 1_000_000 + " ms, sin tiempo " + st.outOfTime();
                     Files.writeString(out.resolve(name), "A = " + System.getProperty("bot.duel.a") + "\nB = " + System.getProperty("bot.duel.b")
-                            + "\nGana " + winner + " (" + r.reason() + ", " + r.turns() + " turnos)\n\n" + sb, StandardCharsets.UTF_8);
+                            + "\nGana " + winner + " (" + r.reason() + ", " + r.turns() + " turnos)\n" + cost + "\n\n" + sb, StandardCharsets.UTF_8);
                     return name + " → gana " + winner + " en " + r.turns() + " turnos (" + r.reason() + ")";
                 }));
             }
