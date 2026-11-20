@@ -1,0 +1,201 @@
+{
+  "name" : "ax-4",
+  "effects" : [
+    {
+      "id" : "ax-4:en-invocacion",
+      "moment" : "ON_SUMMON",
+      "label" : "En Invocación",
+      "text" : "Puedes tributar 1 material de esta carta; reactiva esta carta. Si lo haces con menos de 0 gemas: esta carta declara ataque.",
+      "cost" : [
+        {
+          "type" : "Do",
+          "action" : {
+            "type" : "Move",
+            "cards" : {
+              "zones" : "materials",
+              "owner" : "YOU",
+              "filter" : {},
+              "min" : {
+                "type" : "Fixed",
+                "value" : 1
+              },
+              "max" : {
+                "type" : "Fixed",
+                "value" : 1
+              },
+              "self" : "ANY",
+              "mode" : "CHOOSE"
+            },
+            "to" : "tributeZone"
+          }
+        }
+      ],
+      "steps" : [
+        {
+          "type" : "Do",
+          "action" : {
+            "type" : "SetTapped",
+            "cards" : {
+              "zones" : "field",
+              "owner" : "YOU",
+              "filter" : {},
+              "min" : {
+                "type" : "Fixed",
+                "value" : 1
+              },
+              "max" : {
+                "type" : "Fixed",
+                "value" : 1
+              },
+              "self" : "ANY",
+              "mode" : "SELF"
+            }
+          }
+        },
+        {
+          "type" : "IfCondition",
+          "condition" : {
+            "type" : "Compare",
+            "left" : {
+              "type" : "SignedGems"
+            },
+            "op" : "LESS",
+            "right" : {
+              "type" : "Fixed"
+            }
+          },
+          "covers" : 1
+        },
+        {
+          "type" : "Do",
+          "action" : {
+            "type" : "Attack"
+          }
+        }
+      ],
+      "sourceZone" : "field",
+      "limit" : "NONE"
+    },
+    {
+      "id" : "ax-4:en-mano",
+      "moment" : "ON_EVENT",
+      "label" : "En Mano",
+      "text" : "Si algún aliado nivel 3 o mayor es invocado y no tiene materiales nivel 3: puedes añadirle esta carta como material.",
+      "steps" : [
+        {
+          "type" : "SubjectFromTrigger"
+        },
+        {
+          "type" : "Do",
+          "action" : {
+            "type" : "Move",
+            "cards" : {
+              "zones" : "hand",
+              "owner" : "YOU",
+              "filter" : {},
+              "min" : {
+                "type" : "Fixed",
+                "value" : 1
+              },
+              "max" : {
+                "type" : "Fixed",
+                "value" : 1
+              },
+              "self" : "ANY",
+              "mode" : "SELF"
+            },
+            "to" : "materials:subject"
+          }
+        }
+      ],
+      "condition" : {
+        "type" : "All",
+        "all" : [
+          {
+            "type" : "Summoned",
+            "side" : "YOU",
+            "filter" : {
+              "cardType" : "creature",
+              "minLevel" : 3
+            }
+          },
+          {
+            "type" : "SummonedWithoutMaterial",
+            "material" : {
+              "level" : 3
+            }
+          }
+        ]
+      },
+      "sourceZone" : "hand",
+      "limit" : "NONE"
+    },
+    {
+      "id" : "ax-4:en-mano#tributos",
+      "moment" : "ON_EVENT",
+      "label" : "En Tributos",
+      "text" : "Si algún aliado nivel 3 o mayor es invocado y no tiene materiales nivel 3: puedes añadirle esta carta como material.",
+      "steps" : [
+        {
+          "type" : "SubjectFromTrigger"
+        },
+        {
+          "type" : "Do",
+          "action" : {
+            "type" : "Move",
+            "cards" : {
+              "zones" : "tributeZone",
+              "owner" : "YOU",
+              "filter" : {},
+              "min" : {
+                "type" : "Fixed",
+                "value" : 1
+              },
+              "max" : {
+                "type" : "Fixed",
+                "value" : 1
+              },
+              "self" : "ANY",
+              "mode" : "SELF"
+            },
+            "to" : "materials:subject"
+          }
+        }
+      ],
+      "condition" : {
+        "type" : "All",
+        "all" : [
+          {
+            "type" : "Summoned",
+            "side" : "YOU",
+            "filter" : {
+              "cardType" : "creature",
+              "minLevel" : 3
+            }
+          },
+          {
+            "type" : "SummonedWithoutMaterial",
+            "material" : {
+              "level" : 3
+            }
+          }
+        ]
+      },
+      "sourceZone" : "tributeZone",
+      "limit" : "NONE"
+    }
+  ],
+  "requirement" : {
+    "summoner" : {
+      "level" : 2
+    },
+    "materials" : {
+      "count" : 1,
+      "level" : 2,
+      "zones" : [
+        "field",
+        "hand"
+      ]
+    }
+  }
+}

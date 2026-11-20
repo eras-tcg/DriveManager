@@ -65,8 +65,8 @@ data class Selector(
      * @param sharesClass   "que comparta tipo con"
      * @param level         exactly this level, read when it is used; null: not asked
      * @param maxLevel      at most this level, read when it is used; null: not asked
-     * @param maxStrength   at most this strength, read when it is used ("de fuerza menor o igual a la cantidad de estructuras que
-     *                      controles"); null: not asked
+     * @param maxStrength   "de fuerza igual o menor a N", "de fuerza menor o igual a la cantidad de estructuras que controles": at most
+     *                      this strength, read when it is used; null: not asked
      */
     @JvmRecord
     data class Relative(
@@ -159,7 +159,7 @@ data class Selector(
 
     /** It acts on what an action before it left in the memory, which is not known until then. */
     fun fromMemory(): Boolean {
-        return zones!!.startsWith("saved:")
+        return zones!!.startsWith("saved:") || zones.startsWith("savedOwn:")
     }
 
     /** It depends on a card chosen by an action before it, not chosen yet. */

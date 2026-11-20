@@ -1,0 +1,96 @@
+{
+  "name": "setsuna",
+  "effects": [
+    {
+      "id": "setsuna:en-invocacion",
+      "moment": "ON_SUMMON",
+      "mandatory": true,
+      "label": "En Invocación",
+      "text": "Mira las primeras 5 cartas de tu mazo: de ellas tributa hasta 2 cartas Blancas o [shogún]. Envía el resto al fondo de tu mazo. Luego: toma carta Blanca o [shogún] de tus tributos.",
+      "steps": [
+        {
+          "type": "Do",
+          "action": {
+            "type": "Look",
+            "count": {
+              "type": "Fixed",
+              "value": 5
+            }
+          }
+        },
+        {
+          "type": "Do",
+          "action": {
+            "type": "Move",
+            "cards": {
+              "zones": "looked",
+              "owner": "YOU",
+              "filter": {
+                "anyOf": [
+                  {
+                    "colors": [
+                      "W"
+                    ]
+                  },
+                  {
+                    "classes": [
+                      "shogún"
+                    ]
+                  }
+                ]
+              },
+              "min": {
+                "type": "Fixed"
+              },
+              "max": {
+                "type": "Fixed",
+                "value": 2
+              },
+              "self": "ANY",
+              "mode": "CHOOSE"
+            },
+            "to": "tributeZone",
+            "rest": "deckBottom"
+          }
+        },
+        {
+          "type": "Do",
+          "action": {
+            "type": "Move",
+            "cards": {
+              "zones": "tributeZone",
+              "owner": "YOU",
+              "filter": {
+                "anyOf": [
+                  {
+                    "colors": [
+                      "W"
+                    ]
+                  },
+                  {
+                    "classes": [
+                      "shogún"
+                    ]
+                  }
+                ]
+              },
+              "min": {
+                "type": "Fixed",
+                "value": 1
+              },
+              "max": {
+                "type": "Fixed",
+                "value": 1
+              },
+              "self": "ANY",
+              "mode": "CHOOSE"
+            },
+            "to": "hand"
+          }
+        }
+      ],
+      "sourceZone": "field",
+      "limit": "NONE"
+    }
+  ]
+}

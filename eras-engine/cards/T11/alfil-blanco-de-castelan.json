@@ -1,0 +1,114 @@
+{
+  "name": "alfil blanco de cástelan",
+  "effects": [
+    {
+      "id": "alfil-blanco:al-atacar",
+      "moment": "ON_ATTACK",
+      "label": "Al Atacar",
+      "text": "Puedes invocar 1 [cástelan] de tu mano reduciendo su coste en 1.",
+      "steps": [
+        {
+          "type": "Do",
+          "action": {
+            "type": "Summon",
+            "cards": {
+              "zones": "hand",
+              "owner": "YOU",
+              "filter": {
+                "cardType": "creature",
+                "classes": [
+                  "cástelan"
+                ]
+              },
+              "min": {
+                "type": "Fixed",
+                "value": 1
+              },
+              "max": {
+                "type": "Fixed",
+                "value": 1
+              },
+              "self": "ANY",
+              "mode": "CHOOSE"
+            },
+            "reduce": {
+              "type": "Fixed",
+              "value": 1
+            },
+            "required": true
+          }
+        }
+      ],
+      "sourceZone": "field",
+      "limit": "NONE"
+    }
+  ],
+  "formation": {
+    "effects": [
+      {
+        "id": "alfil-blanco:enlace",
+        "moment": "ON_ATTACK",
+        "label": "Al Atacar",
+        "text": "Puedes elegir 1 enemigo; dicho enemigo pierde fuerza igual a la fuerza de esta carta.",
+        "cost": [
+          {
+            "type": "Do",
+            "action": {
+              "type": "Select",
+              "selector": {
+                "zones": "frontLine",
+                "owner": "OPPONENT",
+                "filter": {
+                  "cardType": "creature"
+                },
+                "min": {
+                  "type": "Fixed",
+                  "value": 1
+                },
+                "max": {
+                  "type": "Fixed",
+                  "value": 1
+                },
+                "self": "ANY",
+                "mode": "CHOOSE"
+              },
+              "target": true
+            }
+          }
+        ],
+        "steps": [
+          {
+            "type": "Do",
+            "action": {
+              "type": "Modify",
+              "cards": {
+                "zones": "saved:targets",
+                "owner": "YOU",
+                "filter": {},
+                "min": {
+                  "type": "Fixed"
+                },
+                "max": {
+                  "type": "Fixed",
+                  "value": 2147483647
+                },
+                "self": "ANY",
+                "mode": "ALL"
+              },
+              "strength": {
+                "type": "Times",
+                "base": {
+                  "type": "SourceStrength"
+                },
+                "factor": -1
+              },
+              "until": "TURN"
+            }
+          }
+        ],
+        "sourceZone": "field",
+        "limit": "NONE"
+      }
+    ]
+  }
+}

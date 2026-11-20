@@ -1,0 +1,166 @@
+{
+  "name": "solaris",
+  "effects": [
+    {
+      "id": "solaris:vidas#tributos",
+      "moment": "ON_EVENT",
+      "label": "Absoluto",
+      "text": "Cuando esta carta bocarriba fuera a ser removida de tus vidas: puedes colocar 1 criatura que no sea una copia de esta carta al fondo de tus vidas bocarriba.",
+      "steps": [
+        {
+          "type": "Do",
+          "action": {
+            "type": "Move",
+            "cards": {
+              "zones": "hand",
+              "owner": "YOU",
+              "filter": {
+                "cardType": "creature",
+                "notName": "Solaris"
+              },
+              "min": {
+                "type": "Fixed",
+                "value": 1
+              },
+              "max": {
+                "type": "Fixed",
+                "value": 1
+              },
+              "self": "ANY",
+              "mode": "CHOOSE"
+            },
+            "to": "lifeBottom",
+            "required": true
+          }
+        }
+      ],
+      "condition": {
+        "type": "Happened",
+        "actor": "ANY",
+        "owner": "ANY",
+        "thisCard": true,
+        "from": "lifeStack"
+      },
+      "sourceZone": "tributeZone",
+      "limit": "NONE"
+    },
+    {
+      "id": "solaris:vidas#mano",
+      "moment": "ON_EVENT",
+      "label": "Absoluto",
+      "text": "Cuando esta carta bocarriba fuera a ser removida de tus vidas: puedes colocar 1 criatura que no sea una copia de esta carta al fondo de tus vidas bocarriba.",
+      "steps": [
+        {
+          "type": "Do",
+          "action": {
+            "type": "Move",
+            "cards": {
+              "zones": "hand",
+              "owner": "YOU",
+              "filter": {
+                "cardType": "creature",
+                "notName": "Solaris"
+              },
+              "min": {
+                "type": "Fixed",
+                "value": 1
+              },
+              "max": {
+                "type": "Fixed",
+                "value": 1
+              },
+              "self": "ANY",
+              "mode": "CHOOSE"
+            },
+            "to": "lifeBottom",
+            "required": true
+          }
+        }
+      ],
+      "condition": {
+        "type": "Happened",
+        "actor": "ANY",
+        "owner": "ANY",
+        "thisCard": true,
+        "from": "lifeStack"
+      },
+      "sourceZone": "hand",
+      "limit": "NONE"
+    },
+    {
+      "id": "solaris:al-atacar",
+      "moment": "ON_ATTACK",
+      "mandatory": true,
+      "label": "Al Atacar",
+      "text": "Revela 1 vida oponente. Luego: tributa todas las vidas oponentes bocarriba.",
+      "steps": [
+        {
+          "type": "Do",
+          "action": {
+            "type": "Flip",
+            "cards": {
+              "zones": "lifeStack",
+              "owner": "OPPONENT",
+              "filter": {},
+              "min": {
+                "type": "Fixed",
+                "value": 1
+              },
+              "max": {
+                "type": "Fixed",
+                "value": 1
+              },
+              "self": "ANY",
+              "mode": "CHOOSE"
+            },
+            "faceUp": true
+          }
+        },
+        {
+          "type": "Do",
+          "action": {
+            "type": "Move",
+            "cards": {
+              "zones": "lifeStack",
+              "owner": "OPPONENT",
+              "filter": {
+                "faceUpOnly": true
+              },
+              "min": {
+                "type": "Fixed"
+              },
+              "max": {
+                "type": "Fixed",
+                "value": 2147483647
+              },
+              "self": "ANY",
+              "mode": "ALL"
+            },
+            "to": "tributeZone"
+          }
+        }
+      ],
+      "sourceZone": "field",
+      "limit": "NONE"
+    }
+  ],
+  "requirement": {
+    "summoner": {
+      "level": 3,
+      "atLeast": true
+    },
+    "condition": {
+      "type": "Compare",
+      "left": {
+        "type": "Lives",
+        "faceDownOnly": true
+      },
+      "op": "AT_MOST",
+      "right": {
+        "type": "Fixed",
+        "value": 2
+      }
+    },
+    "conditionText": "tener 2 o menos vidas bocabajo"
+  }
+}

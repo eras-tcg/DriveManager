@@ -1,0 +1,146 @@
+{
+  "name": "coloso milenario kuwal",
+  "effects": [
+    {
+      "id": "coloso-milenario-kuwal:descartada",
+      "moment": "ON_EVENT",
+      "label": "En Descarte",
+      "text": "Si esta carta es descartada desde tus tributos: puedes enviar 10 [kuwals] de tu descarte al fondo de tu mazo en orden aleatorio; coloca esta carta en tu línea frontal.",
+      "cost": [
+        {
+          "type": "Do",
+          "action": {
+            "type": "Move",
+            "cards": {
+              "zones": "discardPile",
+              "owner": "YOU",
+              "filter": {
+                "classes": [
+                  "kuwal"
+                ]
+              },
+              "min": {
+                "type": "Fixed",
+                "value": 10
+              },
+              "max": {
+                "type": "Fixed",
+                "value": 10
+              },
+              "self": "EXCLUDE",
+              "mode": "CHOOSE"
+            },
+            "to": "deckBottom",
+            "random": true
+          }
+        }
+      ],
+      "steps": [
+        {
+          "type": "Do",
+          "action": {
+            "type": "Move",
+            "cards": {
+              "zones": "discardPile",
+              "owner": "YOU",
+              "filter": {},
+              "min": {
+                "type": "Fixed",
+                "value": 1
+              },
+              "max": {
+                "type": "Fixed",
+                "value": 1
+              },
+              "self": "ANY",
+              "mode": "SELF"
+            },
+            "to": "frontLine"
+          }
+        }
+      ],
+      "condition": {
+        "type": "Happened",
+        "actor": "ANY",
+        "owner": "ANY",
+        "thisCard": true,
+        "from": "tributeZone",
+        "to": "discardPile"
+      },
+      "sourceZone": "discardPile",
+      "limit": "NONE"
+    },
+    {
+      "id": "coloso-milenario-kuwal:todos-los-turnos",
+      "moment": "ON_EVENT",
+      "mandatory": true,
+      "label": "Todos Los Turnos",
+      "text": "Si algún aliado es removido: elige 1 enemigo de fuerza igual o menor a la fuerza que tenía dicho aliado antes de ser removido; súbelo a la mano.",
+      "cost": [
+        {
+          "type": "Do",
+          "action": {
+            "type": "Select",
+            "selector": {
+              "zones": "field",
+              "owner": "OPPONENT",
+              "filter": {
+                "cardType": "creature"
+              },
+              "min": {
+                "type": "Fixed",
+                "value": 1
+              },
+              "max": {
+                "type": "Fixed",
+                "value": 1
+              },
+              "self": "ANY",
+              "mode": "CHOOSE",
+              "relative": {
+                "maxStrength": {
+                  "type": "TriggerStrengthBeforeRemoval"
+                }
+              }
+            },
+            "target": true
+          }
+        }
+      ],
+      "steps": [
+        {
+          "type": "Do",
+          "action": {
+            "type": "Move",
+            "cards": {
+              "zones": "saved:targets",
+              "owner": "YOU",
+              "filter": {},
+              "min": {
+                "type": "Fixed"
+              },
+              "max": {
+                "type": "Fixed",
+                "value": 2147483647
+              },
+              "self": "ANY",
+              "mode": "ALL"
+            },
+            "to": "hand"
+          }
+        }
+      ],
+      "condition": {
+        "type": "Happened",
+        "actor": "ANY",
+        "owner": "YOU",
+        "from": "field",
+        "filter": {
+          "cardType": "creature"
+        }
+      },
+      "sourceZone": "field",
+      "limit": "NONE"
+    }
+  ]
+}

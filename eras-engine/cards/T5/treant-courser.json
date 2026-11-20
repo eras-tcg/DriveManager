@@ -1,0 +1,254 @@
+{
+  "name" : "treant courser",
+  "effects" : [
+    {
+      "id" : "treant-courser:en-invocacion",
+      "moment" : "ON_SUMMON",
+      "mandatory" : true,
+      "label" : "En Invocación",
+      "text" : "Si controlas algún [treant] nivel 5: reactiva esta carta.",
+      "steps" : [
+        {
+          "type" : "Do",
+          "action" : {
+            "type" : "SetTapped",
+            "cards" : {
+              "zones" : "field",
+              "owner" : "YOU",
+              "filter" : {},
+              "min" : {
+                "type" : "Fixed",
+                "value" : 1
+              },
+              "max" : {
+                "type" : "Fixed",
+                "value" : 1
+              },
+              "self" : "ANY",
+              "mode" : "SELF"
+            }
+          }
+        }
+      ],
+      "condition" : {
+        "type" : "Compare",
+        "left" : {
+          "type" : "OnField",
+          "filter" : {
+            "classes" : [
+              "treant"
+            ],
+            "level" : 5
+          }
+        },
+        "op" : "AT_LEAST",
+        "right" : {
+          "type" : "Fixed",
+          "value" : 1
+        }
+      },
+      "sourceZone" : "field",
+      "limit" : "NONE"
+    },
+    {
+      "id" : "treant-courser:al-atacar",
+      "moment" : "ON_ATTACK",
+      "label" : "Al Atacar",
+      "text" : "(1) Puedes añadir 1 [treant] bajo tu control como recurso de esta carta para reactivarla.",
+      "steps" : [
+        {
+          "type" : "IfPossible"
+        },
+        {
+          "type" : "Do",
+          "action" : {
+            "type" : "Move",
+            "cards" : {
+              "zones" : "field",
+              "owner" : "YOU",
+              "filter" : {
+                "classes" : [
+                  "treant"
+                ]
+              },
+              "min" : {
+                "type" : "Fixed",
+                "value" : 1
+              },
+              "max" : {
+                "type" : "Fixed",
+                "value" : 1
+              },
+              "self" : "EXCLUDE",
+              "mode" : "CHOOSE"
+            },
+            "to" : "resources:self"
+          }
+        },
+        {
+          "type" : "Do",
+          "action" : {
+            "type" : "SetTapped",
+            "cards" : {
+              "zones" : "field",
+              "owner" : "YOU",
+              "filter" : {},
+              "min" : {
+                "type" : "Fixed",
+                "value" : 1
+              },
+              "max" : {
+                "type" : "Fixed",
+                "value" : 1
+              },
+              "self" : "ANY",
+              "mode" : "SELF"
+            }
+          }
+        }
+      ],
+      "sourceZone" : "field",
+      "limit" : "ONCE_PER_TURN_BETWEEN_COPIES"
+    }
+  ],
+  "inherited" : [
+    {
+      "id" : "treant-courser:hereda-turno-aliado",
+      "moment" : "ACTIVATED",
+      "label" : "Turno Aliado",
+      "text" : "Heredado de Treant Courser: puedes invocar especialmente el recurso de este efecto reduciendo su coste especial en 1.",
+      "steps" : [
+        {
+          "type" : "Do",
+          "action" : {
+            "type" : "Sequence",
+            "actions" : [
+              {
+                "type" : "Select",
+                "selector" : {
+                  "zones" : "resources",
+                  "owner" : "YOU",
+                  "filter" : {},
+                  "min" : {
+                    "type" : "Fixed"
+                  },
+                  "max" : {
+                    "type" : "Fixed",
+                    "value" : 1
+                  },
+                  "self" : "ANY",
+                  "mode" : "CHOOSE",
+                  "special" : {
+                    "rule" : {
+                      "kind" : "any",
+                      "zone" : "resources",
+                      "reduce" : 1,
+                      "summoner" : "any",
+                      "filter" : {
+                        "name" : "Treant Courser"
+                      }
+                    },
+                    "stage" : "CARD"
+                  }
+                },
+                "saveAs" : "specialCard",
+                "label" : "Invocar"
+              },
+              {
+                "type" : "Select",
+                "selector" : {
+                  "zones" : "resources",
+                  "owner" : "YOU",
+                  "filter" : {},
+                  "min" : {
+                    "type" : "Fixed"
+                  },
+                  "max" : {
+                    "type" : "Fixed",
+                    "value" : 1
+                  },
+                  "self" : "ANY",
+                  "mode" : "CHOOSE",
+                  "special" : {
+                    "rule" : {
+                      "kind" : "any",
+                      "zone" : "resources",
+                      "reduce" : 1,
+                      "summoner" : "any",
+                      "filter" : {
+                        "name" : "Treant Courser"
+                      }
+                    },
+                    "stage" : "SUMMONER"
+                  }
+                },
+                "saveAs" : "specialSummoner",
+                "label" : "Invocador"
+              },
+              {
+                "type" : "Select",
+                "selector" : {
+                  "zones" : "resources",
+                  "owner" : "YOU",
+                  "filter" : {},
+                  "min" : {
+                    "type" : "Fixed"
+                  },
+                  "max" : {
+                    "type" : "Fixed",
+                    "value" : 1
+                  },
+                  "self" : "ANY",
+                  "mode" : "CHOOSE",
+                  "special" : {
+                    "rule" : {
+                      "kind" : "any",
+                      "zone" : "resources",
+                      "reduce" : 1,
+                      "summoner" : "any",
+                      "filter" : {
+                        "name" : "Treant Courser"
+                      }
+                    },
+                    "stage" : "MATERIAL"
+                  }
+                },
+                "saveAs" : "specialMaterials",
+                "label" : "Material"
+              },
+              {
+                "type" : "SummonSpecial",
+                "rule" : {
+                  "kind" : "any",
+                  "zone" : "resources",
+                  "reduce" : 1,
+                  "summoner" : "any",
+                  "filter" : {
+                    "name" : "Treant Courser"
+                  }
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "sourceZone" : "field",
+      "allyTurn" : true,
+      "limit" : "NONE"
+    }
+  ],
+  "requirement" : {
+    "summoner" : {
+      "level" : 2,
+      "filter" : {
+        "classes" : [
+          "treant"
+        ],
+        "cardTypes" : [
+          "creature",
+          "structure"
+        ]
+      }
+    }
+  }
+}

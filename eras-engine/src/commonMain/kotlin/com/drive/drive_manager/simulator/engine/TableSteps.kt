@@ -30,6 +30,13 @@ import com.drive.drive_manager.simulator.room.PlayerState
 /** Both players, lives and gems, and the Línea frontal's positions. Each step: whether it can be done, carrying it out, and applying the player's choice. */
 object TableSteps : StepFamily {
 
+    /** Who this card may swap its position with ([SwapInFormation] `withSelf`). */
+    private fun swapPartners(player: PlayerState, effect: PendingEffect, step: SwapInFormation, self: CardSlot): List<CardSlot> {
+        if (!EffectEngine.inFrontLine(self)) return frozenListOf()
+        val pool = if (step.anyFormation) Formations.ordered(player) else Formations.members(player).filter { Formations.sameFormation(player, self, it) }
+        return pool.filter { c -> c !== self && (step.other == null || step.other.matches(c)) && !(step.exceptTargets && effect.targetIds.contains(c.instanceId)) }
+    }
+
     /** What [SwapInFormation] saves: the two allies that swap ("ambos aliados"). */
     const val SWAPPED = "swapped"
 
@@ -41,7 +48,7 @@ object TableSteps : StepFamily {
                 val opponent = room.getPlayer(room.getOpponentId(effect.controllerId))
                 opponent != null && opponent.lifeStack.any { l -> !l.faceDown }
             }
-            is SwapInFormation -> if (step.withSelf) onField != null && Formations.sizeOf(player, onField) >= 2
+            is SwapInFormation -> if (step.withSelf) onField != null && swapPartners(player, effect, step, onField).isNotEmpty()
                 else player.formations.any { it.size >= 2 }
             else -> true
         }
@@ -152,6 +159,22 @@ object TableSteps : StepFamily {
                 if (opponent.lifeStack.isEmpty()) loseByLives(room, opponent)
                 return false
             }
+            is OpponentMayTap -> {
+                val opponent = room.getPlayer(room.getOpponentId(userId))
+                val filter = step.filter ?: CardFilter.any()
+                val active = if (opponent == null) frozenListOf() else opponent.field
+                        .filter { c -> "creature" == c.cardType && inFrontLine(c) && !c.tapped && filter.matches(c)
+                                && !EffectEngine.keywords(c).contains(EffectEngine.CANNOT_TAP) }
+                if (active.isEmpty()) {
+                    effect.lastDone = false
+                    return false
+                }
+                pick(room, effect, "Puedes agotar 1 de tus aliados de tu línea frontal, o ninguno (" + effect.sourceName + ").", "Agotar",
+                        opponent!!.field, ids(active), 1)
+                room.prompt!!.min = 0
+                room.prompt!!.playerId = opponent.userId
+                return true
+            }
             is OpponentMovesOneToFront -> {
                 val opponent = room.getPlayer(room.getOpponentId(userId))
                 val back = if (opponent == null) frozenListOf() else opponent.field
@@ -194,7 +217,7 @@ object TableSteps : StepFamily {
                         Formations.ordered(player), ids(members), 1)
                     return true
                 }
-                val valid = members.filter { Formations.sameFormation(player, first, it) }
+                val valid = if (step.withSelf) swapPartners(player, effect, step, first) else members.filter { Formations.sameFormation(player, first, it) }
                 if (valid.isEmpty()) return false
                 pick(room, effect, "Elige el aliado de la formación de " + name(first) + " que intercambia su posición con " + name(first) + ".",
                     "Intercambiar", Formations.ordered(player), ids(valid), 1)
@@ -229,7 +252,8 @@ object TableSteps : StepFamily {
                     repeat[0] = true
                     return null
                 }
-                if (!Formations.sameFormation(player, first, picked)) return "Deben estar en la misma formación"
+                if (step.withSelf && swapPartners(player, effect, step, first).none { it === picked }) return "No puede intercambiarse con esa carta"
+                if (!step.withSelf && !Formations.sameFormation(player, first, picked)) return "Deben estar en la misma formación"
                 chosen.clear()
                 chosen.add(first.instanceId)
                 chosen.add(picked.instanceId)
@@ -258,6 +282,17 @@ object TableSteps : StepFamily {
                 log(room, player.username + " descarta " + picks.size + " " + plural(picks.size, "carta", "cartas") + " bocabajo (" + effect.sourceName + ")", null)
                 effect.repeatsDone = effect.repeatsDone + 1
                 repeat[0] = true
+            }
+            is OpponentMayTap -> {
+                val card = if (picks.isEmpty()) null else find(player.field, picks[0])
+                if (card == null || card.tapped) {
+                    effect.lastDone = false
+                } else {
+                    card.tapped = true
+                    record(room, GameEvent.TAP, player.userId, card, null, null, effect, null,
+                            player.username + " agota " + name(card) + " (" + effect.sourceName + ")")
+                    effect.lastDone = true
+                }
             }
             is OpponentMovesOneToFront -> {
                 val card = find(player.field, picks[0])

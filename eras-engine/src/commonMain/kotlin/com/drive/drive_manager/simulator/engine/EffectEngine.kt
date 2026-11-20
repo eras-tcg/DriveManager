@@ -53,8 +53,13 @@ object EffectEngine {
     const val NO_ATTACK = "No puede atacar"
     /** "no puede declarar bloqueo" / "no puede bloquear". */
     const val NO_BLOCK = "No puede bloquear"
+    /** "esta carta no inflige daño directo ni destruye las criaturas que enfrenta" (as attacker or blocker). */
+    const val HARMLESS = "No inflige daño directo ni destruye al enfrentar"
     /** "no puede agotarse": it cannot be exhausted (by effects, nor to declare an attack). */
     const val CANNOT_TAP = "No puede agotarse"
+
+    /** "no puede ser destruido por enfrentamiento" (as attacker or as blocker). */
+    const val NO_CLASH_DESTRUCTION = "No puede ser destruida por enfrentamiento"
     /** "no puede ser objetivo de efectos de cartas oponentes [nivel N o menor]": "Inmune" or "Inmune N". */
     const val IMMUNE = "Inmune"
     /** "no puede ser removido por efectos oponentes". */
@@ -88,12 +93,19 @@ object EffectEngine {
         }
     }
 
-    /** The levels the card can count as for the card looking now: its own, and another one some cards may count as. */
+    /**
+     * The levels the card can count as for the card looking now: its own, and another one some cards may count as. For the Ritual of a card whose
+     * Requerimiento says "coste o nivel" ([RitualSpec.orCost]), its cost too.
+     */
     @JvmStatic
     fun levels(card: CardSlot?): List<Int> {
         if (card!!.getLevel() == null) return frozenListOf()
         val other = CardEffects.alternativeLevel(card, LOOKER.get())
-        return if (other == null || other == card.getLevel()) frozenListOf(card.getLevel()!!) else frozenListOf(card.getLevel()!!, other)
+        val levels = if (other == null || other == card.getLevel()) frozenListOf(card.getLevel()!!) else frozenListOf(card.getLevel()!!, other)
+        val cost = card.cost
+        if (cost == null || levels.contains(cost) || SUMMONING.get() != true) return levels
+        val looker = LOOKER.get() ?: return levels
+        return if (CardEffects.requirementOf(looker)?.ritual?.orCost == true) levels + cost else levels
     }
 
     /** The card looking now is being special summoned (not an effect reading the table). */
@@ -356,6 +368,23 @@ object EffectEngine {
                 card.laterStrength + card.continuousStrength
     }
 
+    /**
+     * The strength a creature counts as for the limits of the effect looking now ("de fuerza 3 o menos"): its strength, changed by what the
+     * looking card's continuous effects say ("los efectos de esta carta [dragón] consideran la fuerza de las criaturas reducida en 1":
+     * [CardEffects.Continuous.effectsSeeStrength]). Outside an effect, its strength.
+     */
+    @JvmStatic
+    fun strengthSeen(card: CardSlot): Int {
+        val now = strength(card)
+        val looker = LOOKER.get() ?: return now
+        if ("creature" != card.cardType) return now
+        var change = 0
+        for (c in CardEffects.continuousOf(looker)) {
+            if (c.effectsSeeStrength != 0 && (c.ofHolder == null || c.ofHolder.matches(looker))) change += c.effectsSeeStrength
+        }
+        return now + change
+    }
+
     /** Its abilities: printed, inherited from its Recursos, gained this turn and given by its continuous effects now. */
     @JvmStatic
     fun keywords(card: CardSlot?): MutableList<String> {
@@ -378,19 +407,25 @@ object EffectEngine {
         for (p in room.players.values) {
             // What cards give their allies ("todos los aliados [armada] ganan fuerza 1")
             val fromAllies = HashMap<String?, Int>()
+            // "tus aliados [hada] tienen Alcance": the abilities they give
+            val keywordsFromAllies = HashMap<String?, MutableList<String>>()
             for (source in p.field) {
                 if (source.faceDown) continue
                 for (c in CardEffects.continuousOf(source)) {
                     if (c.targets == null || c.enemies || !c.holds(room, source, p.userId!!)) continue
                     // "los aliados [paladín] adyacentes en la formación": only the members next to it
                     val pool = if (c.formationNeighbours) Formations.adjacentMembers(p, source) else p.field
-                    for (ally in pool) if (c.targets.matches(ally)) fromAllies.mergeWith(ally.instanceId, c.strength) { a, b -> a + b }
+                    for (ally in pool) if (c.targets.matches(ally)) {
+                        fromAllies.mergeWith(ally.instanceId, c.strength) { a, b -> a + b }
+                        val given = c.keywordsNow(room, p.userId)
+                        if (given.isNotEmpty()) keywordsFromAllies.getOrPut(ally.instanceId) { ArrayList() }.addAll(given)
+                    }
                 }
             }
             for (card in p.field) {
                 var strength = fromAllies.valueOr(card.instanceId, 0)
                 var level = 0
-                val keywords = ArrayList<String>()
+                val keywords = ArrayList<String>(keywordsFromAllies[card.instanceId] ?: frozenListOf())
                 for (c in CardEffects.continuousOf(card)) {
                     if (c.targets != null || !Zone.FIELD.`is`(c.zone)) continue
                     if (card.faceDown || !c.holds(room, card, p.userId!!)) continue
@@ -444,6 +479,13 @@ object EffectEngine {
         val p = room.getPlayer(playerId)
         val at = if (p == null) null else locate(p, instanceId)
         return at?.card
+    }
+
+    /** The card of an effect: anywhere, or among the Recursos and materials of the field ("si esta carta es añadida como recurso"). */
+    @JvmStatic
+    fun findSource(room: GameRoom, playerId: String?, instanceId: String?): CardSlot? {
+        return findAnywhere(room, playerId, instanceId)
+            ?: CardLocator.find(room.getPlayer(playerId), instanceId, frozenListOf(com.drive.drive_manager.simulator.room.Zone.FIELD), true)
     }
 
     /** The player's cards in that zone; none for an unknown one. */

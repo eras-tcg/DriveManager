@@ -1,0 +1,105 @@
+{
+  "name" : "danza de ensueño",
+  "effects" : [
+    {
+      "id" : "danza-de-ensueno:en-juego",
+      "moment" : "ON_PLAY",
+      "mandatory" : true,
+      "label" : "En Juego",
+      "text" : "Devuelve todos los enemigos de fuerza 9 o menos, agotados, a la mano oponente.",
+      "steps" : [
+        {
+          "type" : "Do",
+          "action" : {
+            "type" : "Move",
+            "cards" : {
+              "zones" : "frontLine",
+              "owner" : "OPPONENT",
+              "filter" : {
+                "cardType" : "creature",
+                "maxStrength" : 9,
+                "exhaustedOnly" : true
+              },
+              "min" : {
+                "type" : "Fixed"
+              },
+              "max" : {
+                "type" : "Fixed",
+                "value" : 2147483647
+              },
+              "self" : "ANY",
+              "mode" : "ALL"
+            },
+            "to" : "hand"
+          }
+        }
+      ],
+      "sourceZone" : "field",
+      "limit" : "NONE"
+    },
+    {
+      "id" : "danza-de-ensueno:en-mano",
+      "moment" : "ON_EVENT",
+      "label" : "En Mano",
+      "text" : "(1) Si recibes daño directo: puedes jugar esta carta reduciendo su coste en 1.",
+      "steps" : [
+        {
+          "type" : "Do",
+          "action" : {
+            "type" : "Play",
+            "cards" : {
+              "zones" : "hand",
+              "owner" : "YOU",
+              "filter" : {},
+              "min" : {
+                "type" : "Fixed",
+                "value" : 1
+              },
+              "max" : {
+                "type" : "Fixed",
+                "value" : 1
+              },
+              "self" : "ANY",
+              "mode" : "SELF"
+            },
+            "reduce" : {
+              "type" : "Fixed",
+              "value" : 1
+            },
+            "required" : true
+          }
+        }
+      ],
+      "condition" : {
+        "type" : "Happened",
+        "eventType" : "LIFE_DAMAGE",
+        "actor" : "ANY",
+        "owner" : "ANY",
+        "data" : [
+          "defenderId=$you"
+        ]
+      },
+      "sourceZone" : "hand",
+      "limit" : "ONCE_PER_TURN_BETWEEN_COPIES"
+    }
+  ],
+  "reactions" : [
+    {
+      "type" : "CostModifier",
+      "label" : "Absoluto",
+      "event" : "PLAY",
+      "holder" : "SELF",
+      "payment" : {
+        "kind" : "NONE"
+      },
+      "amount" : {
+        "type" : "OnField",
+        "filter" : {
+          "cardType" : "creature",
+          "exhaustedOnly" : true
+        },
+        "opponent" : true
+      }
+    }
+  ]
+}

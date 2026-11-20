@@ -1,0 +1,108 @@
+{
+  "name": "montañas volcánicas",
+  "effects": [
+    {
+      "id": "montanas-volcanicas:tributada",
+      "moment": "ON_EVENT",
+      "label": "En Tributos",
+      "text": "Si esta carta es tributada desde el tope de tu mazo: puedes jugar esta carta sin pagar su coste.",
+      "steps": [
+        {
+          "type": "Do",
+          "action": {
+            "type": "Play",
+            "cards": {
+              "zones": "tributeZone",
+              "owner": "YOU",
+              "filter": {},
+              "min": {
+                "type": "Fixed",
+                "value": 1
+              },
+              "max": {
+                "type": "Fixed",
+                "value": 1
+              },
+              "self": "ANY",
+              "mode": "SELF"
+            },
+            "reduce": {
+              "type": "Fixed",
+              "value": 1000
+            },
+            "required": true
+          }
+        }
+      ],
+      "condition": {
+        "type": "ThisTributed",
+        "fromZone": "deck"
+      },
+      "sourceZone": "tributeZone",
+      "limit": "NONE"
+    },
+    {
+      "id": "montanas-volcanicas:todos-los-turnos",
+      "moment": "ON_EVENT",
+      "label": "Todos Los Turnos",
+      "text": "Si algún enemigo es destruido por efecto: puedes agotar esta carta; tributa la carta del tope de tu mazo.",
+      "cost": [
+        {
+          "type": "Do",
+          "action": {
+            "type": "SetTapped",
+            "cards": {
+              "zones": "field",
+              "owner": "YOU",
+              "filter": {},
+              "min": {
+                "type": "Fixed",
+                "value": 1
+              },
+              "max": {
+                "type": "Fixed",
+                "value": 1
+              },
+              "self": "ANY",
+              "mode": "SELF"
+            },
+            "tapped": true,
+            "required": true
+          }
+        }
+      ],
+      "steps": [
+        {
+          "type": "Do",
+          "action": {
+            "type": "Move",
+            "cards": {
+              "zones": "deck",
+              "owner": "YOU",
+              "filter": {},
+              "min": {
+                "type": "Fixed",
+                "value": 1
+              },
+              "max": {
+                "type": "Fixed",
+                "value": 1
+              },
+              "self": "ANY",
+              "mode": "TOP"
+            },
+            "to": "tributeZone"
+          }
+        }
+      ],
+      "condition": {
+        "type": "Destroyed",
+        "owner": "ENEMY",
+        "by": "ANY",
+        "cause": "effect"
+      },
+      "sourceZone": "field",
+      "limit": "NONE"
+    }
+  ]
+}

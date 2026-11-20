@@ -12,11 +12,11 @@ internal object CardModelReader {
 
     /** The registered type ids (the records' and objects' simple names) of each family. */
     private val TYPES: Map<String, List<String>> = mapOf(
-        "Action" to listOf("AtEndOfTurn", "Attack", "Damage", "Destroy", "Draw", "Gems", "Look", "Modify", "Move", "Play", "Select", "Sequence", "SetTapped", "Summon", "SummonSpecial", "Watch"),
-        "Amount" to listOf("EnemiesInFrontLine", "Fixed", "Gems", "HandOver", "HandUnder", "IfThen", "InZone", "InZones", "LastCount", "LevelsOnField", "Lives", "LivesBehind", "OnBothFields", "OnField", "OpponentLevels", "Scaled", "SignedGems", "SourceStrength", "SubjectLevel", "Times", "TriggerSourceLevel", "UsedToSummon"),
+        "Action" to listOf("AtEndOfTurn", "Attack", "Damage", "Destroy", "Draw", "Flip", "Gems", "Look", "Modify", "Move", "Play", "Select", "Sequence", "SetTapped", "Summon", "SummonSpecial", "Watch"),
+        "Amount" to listOf("CardsIn", "EnemiesInFrontLine", "FaceUpLives", "Fixed", "Gems", "HandOver", "HandUnder", "IfThen", "InZone", "InZones", "LastCount", "LastMoved", "LevelsOnField", "Lives", "LivesBehind", "OnBothFields", "OnField", "OpponentLevels", "Scaled", "SignedGems", "SourceStrength", "SubjectLevel", "SumOf", "Times", "TriggerSourceLevel", "TriggerStrengthBeforeRemoval", "UsedToSummon"),
         "CardEffects.Replacement" to listOf("Replacement"),
-        "Condition" to listOf("All", "AllyDealtDirectDamage", "Always", "Any", "ByEffect", "Compare", "Destroyed", "EntersFrontLine", "GameIs", "Happened", "Immediately", "Not", "NothingElsePlayedThisTurn", "Summoned", "SummonedWithoutMaterial", "Targeted", "ThisClashes", "ThisIs", "ThisMatches", "ThisTributed", "YouReducedStrength"),
-        "EffectStep" to listOf("ActivateSubjectSummonEffect", "ActivateTributedSummonEffect", "AddResourceToHigherAlly", "AlliesGain", "AllySpecialSummonsSameLevel", "AttachLowerFromTributes", "AttachSelfAsResourceToAlly", "AttachSubjectToHigherAlly", "AttachSubjectToSummoned", "BounceChosen", "ChangeClass", "ChooseEnemiesLevelSum", "ChooseOpponentTribute", "ChooseWeakestEnemy", "DeclareBlockSelf", "DestroyFaceUpLife", "DestroyTopLife", "Do", "EachPlayerDiscards", "EachPlayerKeepsOneInFrontLine", "EachPlayerLowersMarker", "EndYourTurn", "ExtraCombatHitThenEndTurn", "ExtraHit", "GainGemsPerOwnSacrificed", "GrantEffect", "GroupUp", "HandsToBottomDrawOpponentLives", "IfChosenGone", "IfCondition", "IfDone", "IfNotDone", "IfPossible", "IfSaved", "IfTributed", "KeepOnField", "LivesFaceDown", "MaterialOfExhaustedAllyToBack", "MaterializeSelfOnTriggerAlly", "MayDo", "NoUntapChosen", "OpponentGainsGemsAsCounter", "OpponentMaySummon", "OpponentMovesOneToFront", "PickAllyUpToSacrificedLevel", "PickAllyWithHigherAlly", "PickAllyWithMaterials", "PlaceChosenTributeAndSelf", "PlaceFromHandUntilTurnEnd", "ReduceOpponentLivesBy", "ReduceRepeatedly", "ReturnAllyOfSummonedLevel", "ReturnSubjectAtAttackEnd", "RevealFromHand", "RevealOpponentHandSendOneToBottom", "SacrificeAlly", "SkipBlockStep", "SpecialSelfDeclaredSummoner", "SubjectFromTrigger", "SubjectIsThisCard", "SummonFreeLevelSum", "SummonLikeSubject", "SwapInFormation", "TakeFromLookedDistinctLevels", "TakeFromLookedEachRestToBottom", "TakeFromLookedLikeSubject", "TributeAlliesLevelSum", "TributeAllyMaterial", "TributeAllyMaterialWhere", "TributeAllyResources", "TributesToDeckBottomForKeyword"),
+        "Condition" to listOf("AddedAsResource", "All", "AllyClashes", "AllyDealtDirectDamage", "Always", "Any", "ByEffect", "Compare", "Destroyed", "EntersFrontLine", "GameIs", "Happened", "Immediately", "Not", "NothingElsePlayedThisTurn", "Summoned", "SummonedWithoutMaterial", "Targeted", "ThisClashes", "ThisIs", "ThisMatches", "ThisTributed", "YouReducedStrength"),
+        "EffectStep" to listOf("ActivateMaterialSummonEffects", "ActivateSubjectSummonEffect", "ActivateTributedSummonEffect", "AddResourceToHigherAlly", "AlliesGain", "AllySpecialSummonsSameLevel", "AttachLowerFromTributes", "AttachSelfAsResourceToAlly", "AttachSubjectToHigherAlly", "AttachSubjectToSummoned", "BounceChosen", "ChangeClass", "ChooseEnemiesLevelSum", "ChooseOpponentTribute", "ChooseWeakestEnemy", "DeclareBlockSelf", "DestroyFaceUpLife", "DestroyTopLife", "Do", "EachPlayerDiscards", "EachPlayerKeepsOneInFrontLine", "EachPlayerLowersMarker", "EndYourTurn", "ExtraCombatHitThenEndTurn", "ExtraHit", "GainGemsPerOwnSacrificed", "GrantEffect", "GroupUp", "HandsToBottomDrawOpponentLives", "IfChosenGone", "IfCondition", "IfDone", "IfNotDone", "IfPossible", "IfSaved", "IfTributed", "KeepOnField", "LivesFaceDown", "MaterialOfExhaustedAllyToBack", "MaterializeSelfOnTriggerAlly", "MayDo", "NoUntapChosen", "OpponentGainsGemsAsCounter", "OpponentMaySummon", "OpponentMayTap", "OpponentMovesOneToFront", "PickAllyUpToSacrificedLevel", "PickAllyWithHigherAlly", "PickAllyWithMaterials", "PlaceChosenTributeAndSelf", "PlaceFromHandUntilTurnEnd", "ReduceOpponentLivesBy", "ReduceRepeatedly", "ReturnAllyOfSummonedLevel", "ReturnSubjectAtAttackEnd", "RevealFromHand", "RevealOpponentHandSendOneToBottom", "SacrificeAlly", "SkipBlockStep", "SpecialSelfDeclaredSummoner", "SubjectFromTrigger", "SubjectIsThisCard", "SummonFreeLevelSum", "SummonLikeSubject", "SwapInFormation", "TakeFromLookedDistinctLevels", "TakeFromLookedEachRestToBottom", "TakeFromLookedLikeSubject", "TributeAlliesLevelSum", "TributeAllyMaterial", "TributeAllyMaterialWhere", "TributeAllyResources", "TributesToDeckBottomForKeyword"),
         "Reaction" to listOf("AllyGuard", "AllyRemovalSummon", "AttacksBeforeAscended", "CostModifier", "DamageReplacement", "EnemyAsTypeForRequirement", "GainBeforeAscended", "Replacement", "SwapsBlocker", "TributesInsteadOfDamage"),
     )
 
@@ -28,6 +28,7 @@ internal object CardModelReader {
             "Damage" -> readActionDamage(o, at)
             "Destroy" -> readActionDestroy(o, at)
             "Draw" -> readActionDraw(o, at)
+            "Flip" -> readActionFlip(o, at)
             "Gems" -> readActionGems(o, at)
             "Look" -> readActionLook(o, at)
             "Modify" -> readActionModify(o, at)
@@ -46,7 +47,9 @@ internal object CardModelReader {
     fun amount(e: JsonElement, at: String): com.drive.drive_manager.simulator.engine.Amount {
         val o = J.objectOf(e, at, "Amount")
         return when (val id = J.typeId(o, at, "Amount")) {
+            "CardsIn" -> readAmountCardsIn(o, at)
             "EnemiesInFrontLine" -> readAmountEnemiesInFrontLine(o, at)
+            "FaceUpLives" -> readAmountFaceUpLives(o, at)
             "Fixed" -> readAmountFixed(o, at)
             "Gems" -> readAmountGems(o, at)
             "HandOver" -> readAmountHandOver(o, at)
@@ -55,6 +58,7 @@ internal object CardModelReader {
             "InZone" -> readAmountInZone(o, at)
             "InZones" -> readAmountInZones(o, at)
             "LastCount" -> readAmountLastCount(o, at)
+            "LastMoved" -> readAmountLastMoved(o, at)
             "LevelsOnField" -> readAmountLevelsOnField(o, at)
             "Lives" -> readAmountLives(o, at)
             "LivesBehind" -> readAmountLivesBehind(o, at)
@@ -65,8 +69,10 @@ internal object CardModelReader {
             "SignedGems" -> readAmountSignedGems(o, at)
             "SourceStrength" -> readAmountSourceStrength(o, at)
             "SubjectLevel" -> readAmountSubjectLevel(o, at)
+            "SumOf" -> readAmountSumOf(o, at)
             "Times" -> readAmountTimes(o, at)
             "TriggerSourceLevel" -> readAmountTriggerSourceLevel(o, at)
+            "TriggerStrengthBeforeRemoval" -> readAmountTriggerStrengthBeforeRemoval(o, at)
             "UsedToSummon" -> readAmountUsedToSummon(o, at)
             else -> J.unknownType(at, id, "Amount", TYPES.getValue("Amount"))
         }
@@ -95,7 +101,9 @@ internal object CardModelReader {
     fun condition(e: JsonElement, at: String): com.drive.drive_manager.simulator.engine.Condition {
         val o = J.objectOf(e, at, "Condition")
         return when (val id = J.typeId(o, at, "Condition")) {
+            "AddedAsResource" -> readConditionAddedAsResource(o, at)
             "All" -> readConditionAll(o, at)
+            "AllyClashes" -> readConditionAllyClashes(o, at)
             "AllyDealtDirectDamage" -> readConditionAllyDealtDirectDamage(o, at)
             "Always" -> readConditionAlways(o, at)
             "Any" -> readConditionAny(o, at)
@@ -127,6 +135,7 @@ internal object CardModelReader {
     fun effectStep(e: JsonElement, at: String): com.drive.drive_manager.simulator.engine.EffectStep {
         val o = J.objectOf(e, at, "EffectStep")
         return when (val id = J.typeId(o, at, "EffectStep")) {
+            "ActivateMaterialSummonEffects" -> readEffectStepActivateMaterialSummonEffects(o, at)
             "ActivateSubjectSummonEffect" -> readEffectStepActivateSubjectSummonEffect(o, at)
             "ActivateTributedSummonEffect" -> readEffectStepActivateTributedSummonEffect(o, at)
             "AddResourceToHigherAlly" -> readEffectStepAddResourceToHigherAlly(o, at)
@@ -170,6 +179,7 @@ internal object CardModelReader {
             "NoUntapChosen" -> readEffectStepNoUntapChosen(o, at)
             "OpponentGainsGemsAsCounter" -> readEffectStepOpponentGainsGemsAsCounter(o, at)
             "OpponentMaySummon" -> readEffectStepOpponentMaySummon(o, at)
+            "OpponentMayTap" -> readEffectStepOpponentMayTap(o, at)
             "OpponentMovesOneToFront" -> readEffectStepOpponentMovesOneToFront(o, at)
             "PickAllyUpToSacrificedLevel" -> readEffectStepPickAllyUpToSacrificedLevel(o, at)
             "PickAllyWithHigherAlly" -> readEffectStepPickAllyWithHigherAlly(o, at)
@@ -264,6 +274,15 @@ internal object CardModelReader {
         )
     }
 
+    private fun readActionFlip(o: JsonObject, at: String): com.drive.drive_manager.simulator.engine.effects.model.Action.Flip {
+        J.fields(o, at, "Action.Flip", setOf("cards", "faceUp", "toggle"), true)
+        return com.drive.drive_manager.simulator.engine.effects.model.Action.Flip(
+            cards = J.value(o, "cards", at, ::selector),
+            faceUp = J.bool(o, "faceUp", at),
+            toggle = J.bool(o, "toggle", at),
+        )
+    }
+
     private fun readActionGems(o: JsonObject, at: String): com.drive.drive_manager.simulator.engine.effects.model.Action.Gems {
         J.fields(o, at, "Action.Gems", setOf("count"), true)
         return com.drive.drive_manager.simulator.engine.effects.model.Action.Gems(
@@ -272,9 +291,11 @@ internal object CardModelReader {
     }
 
     private fun readActionLook(o: JsonObject, at: String): com.drive.drive_manager.simulator.engine.effects.model.Action.Look {
-        J.fields(o, at, "Action.Look", setOf("count", "opponent"), true)
+        J.fields(o, at, "Action.Look", setOf("count", "until", "excavate", "opponent"), true)
         return com.drive.drive_manager.simulator.engine.effects.model.Action.Look(
             count = J.value(o, "count", at, ::amount),
+            until = J.value(o, "until", at, ::cardFilter),
+            excavate = J.bool(o, "excavate", at),
             opponent = J.bool(o, "opponent", at),
         )
     }
@@ -291,7 +312,7 @@ internal object CardModelReader {
     }
 
     private fun readActionMove(o: JsonObject, at: String): com.drive.drive_manager.simulator.engine.effects.model.Action.Move {
-        J.fields(o, at, "Action.Move", setOf("cards", "to", "random", "label", "required", "exhausted", "faceDown", "rest", "sameName"), true)
+        J.fields(o, at, "Action.Move", setOf("cards", "to", "random", "label", "required", "exhausted", "faceDown", "rest", "sameName", "distinctLevels", "withResources"), true)
         return com.drive.drive_manager.simulator.engine.effects.model.Action.Move(
             cards = J.value(o, "cards", at, ::selector),
             to = J.str(o, "to", at),
@@ -302,6 +323,8 @@ internal object CardModelReader {
             faceDown = J.bool(o, "faceDown", at),
             rest = J.str(o, "rest", at),
             sameName = J.bool(o, "sameName", at),
+            distinctLevels = J.bool(o, "distinctLevels", at),
+            withResources = J.bool(o, "withResources", at),
         )
     }
 
@@ -315,13 +338,14 @@ internal object CardModelReader {
     }
 
     private fun readActionSelect(o: JsonObject, at: String): com.drive.drive_manager.simulator.engine.effects.model.Action.Select {
-        J.fields(o, at, "Action.Select", setOf("selector", "target", "saveAs", "label", "endsIfNone"), true)
+        J.fields(o, at, "Action.Select", setOf("selector", "target", "saveAs", "label", "endsIfNone", "maxLevelSum"), true)
         return com.drive.drive_manager.simulator.engine.effects.model.Action.Select(
             selector = J.value(o, "selector", at, ::selector),
             target = J.bool(o, "target", at),
             saveAs = J.str(o, "saveAs", at),
             label = J.str(o, "label", at),
             endsIfNone = J.bool(o, "endsIfNone", at),
+            maxLevelSum = J.intOrNull(o, "maxLevelSum", at),
         )
     }
 
@@ -343,12 +367,13 @@ internal object CardModelReader {
     }
 
     private fun readActionSummon(o: JsonObject, at: String): com.drive.drive_manager.simulator.engine.effects.model.Action.Summon {
-        J.fields(o, at, "Action.Summon", setOf("cards", "reduce", "toFront", "required"), true)
+        J.fields(o, at, "Action.Summon", setOf("cards", "reduce", "toFront", "required", "orPlay"), true)
         return com.drive.drive_manager.simulator.engine.effects.model.Action.Summon(
             cards = J.value(o, "cards", at, ::selector),
             reduce = J.value(o, "reduce", at, ::amount),
             toFront = J.bool(o, "toFront", at),
             required = J.bool(o, "required", at),
+            orPlay = J.bool(o, "orPlay", at),
         )
     }
 
@@ -368,9 +393,23 @@ internal object CardModelReader {
         )
     }
 
+    private fun readAmountCardsIn(o: JsonObject, at: String): com.drive.drive_manager.simulator.engine.Amount.CardsIn {
+        J.fields(o, at, "Amount.CardsIn", setOf("cards"), true)
+        return com.drive.drive_manager.simulator.engine.Amount.CardsIn(
+            cards = J.value(o, "cards", at, ::selector),
+        )
+    }
+
     private fun readAmountEnemiesInFrontLine(o: JsonObject, at: String): com.drive.drive_manager.simulator.engine.Amount.EnemiesInFrontLine {
         J.fields(o, at, "Amount.EnemiesInFrontLine", emptySet(), true)
         return com.drive.drive_manager.simulator.engine.Amount.EnemiesInFrontLine
+    }
+
+    private fun readAmountFaceUpLives(o: JsonObject, at: String): com.drive.drive_manager.simulator.engine.Amount.FaceUpLives {
+        J.fields(o, at, "Amount.FaceUpLives", setOf("whose"), true)
+        return com.drive.drive_manager.simulator.engine.Amount.FaceUpLives(
+            whose = J.enum(o, "whose", at, com.drive.drive_manager.simulator.engine.Condition.Side.entries, "Condition.Side"),
+        )
     }
 
     private fun readAmountFixed(o: JsonObject, at: String): com.drive.drive_manager.simulator.engine.Amount.Fixed {
@@ -430,6 +469,13 @@ internal object CardModelReader {
         return com.drive.drive_manager.simulator.engine.Amount.LastCount
     }
 
+    private fun readAmountLastMoved(o: JsonObject, at: String): com.drive.drive_manager.simulator.engine.Amount.LastMoved {
+        J.fields(o, at, "Amount.LastMoved", setOf("filter"), true)
+        return com.drive.drive_manager.simulator.engine.Amount.LastMoved(
+            filter = J.value(o, "filter", at, ::cardFilter),
+        )
+    }
+
     private fun readAmountLevelsOnField(o: JsonObject, at: String): com.drive.drive_manager.simulator.engine.Amount.LevelsOnField {
         J.fields(o, at, "Amount.LevelsOnField", setOf("filter"), true)
         return com.drive.drive_manager.simulator.engine.Amount.LevelsOnField(
@@ -460,9 +506,10 @@ internal object CardModelReader {
     }
 
     private fun readAmountOnField(o: JsonObject, at: String): com.drive.drive_manager.simulator.engine.Amount.OnField {
-        J.fields(o, at, "Amount.OnField", setOf("filter"), true)
+        J.fields(o, at, "Amount.OnField", setOf("filter", "opponent"), true)
         return com.drive.drive_manager.simulator.engine.Amount.OnField(
             filter = J.value(o, "filter", at, ::cardFilter),
+            opponent = J.bool(o, "opponent", at),
         )
     }
 
@@ -495,6 +542,14 @@ internal object CardModelReader {
         return com.drive.drive_manager.simulator.engine.Amount.SubjectLevel
     }
 
+    private fun readAmountSumOf(o: JsonObject, at: String): com.drive.drive_manager.simulator.engine.Amount.SumOf {
+        J.fields(o, at, "Amount.SumOf", setOf("cards", "value"), true)
+        return com.drive.drive_manager.simulator.engine.Amount.SumOf(
+            cards = J.value(o, "cards", at, ::selector),
+            value = J.str(o, "value", at),
+        )
+    }
+
     private fun readAmountTimes(o: JsonObject, at: String): com.drive.drive_manager.simulator.engine.Amount.Times {
         J.fields(o, at, "Amount.Times", setOf("base", "factor"), true)
         return com.drive.drive_manager.simulator.engine.Amount.Times(
@@ -506,6 +561,11 @@ internal object CardModelReader {
     private fun readAmountTriggerSourceLevel(o: JsonObject, at: String): com.drive.drive_manager.simulator.engine.Amount.TriggerSourceLevel {
         J.fields(o, at, "Amount.TriggerSourceLevel", emptySet(), true)
         return com.drive.drive_manager.simulator.engine.Amount.TriggerSourceLevel
+    }
+
+    private fun readAmountTriggerStrengthBeforeRemoval(o: JsonObject, at: String): com.drive.drive_manager.simulator.engine.Amount.TriggerStrengthBeforeRemoval {
+        J.fields(o, at, "Amount.TriggerStrengthBeforeRemoval", emptySet(), true)
+        return com.drive.drive_manager.simulator.engine.Amount.TriggerStrengthBeforeRemoval
     }
 
     private fun readAmountUsedToSummon(o: JsonObject, at: String): com.drive.drive_manager.simulator.engine.Amount.UsedToSummon {
@@ -556,7 +616,7 @@ internal object CardModelReader {
     }
 
     private fun readCardEffectsContinuous(o: JsonObject, at: String): com.drive.drive_manager.simulator.engine.CardEffects.Continuous {
-        J.fields(o, at, "CardEffects.Continuous", setOf("label", "text", "allyTurn", "condition", "strength", "keywords", "bonus", "zone", "levelBonus", "targets", "enemies", "formationNeighbours", "keywordAmount"), false)
+        J.fields(o, at, "CardEffects.Continuous", setOf("label", "text", "allyTurn", "condition", "strength", "keywords", "bonus", "zone", "levelBonus", "targets", "enemies", "formationNeighbours", "keywordAmount", "lives", "effectsSeeStrength", "ofHolder"), false)
         return com.drive.drive_manager.simulator.engine.CardEffects.Continuous(
             label = J.str(o, "label", at),
             text = J.str(o, "text", at),
@@ -571,6 +631,9 @@ internal object CardModelReader {
             enemies = J.bool(o, "enemies", at),
             formationNeighbours = J.bool(o, "formationNeighbours", at),
             keywordAmount = J.value(o, "keywordAmount", at, ::amount),
+            lives = J.bool(o, "lives", at),
+            effectsSeeStrength = J.int(o, "effectsSeeStrength", at),
+            ofHolder = J.value(o, "ofHolder", at, ::cardFilter),
         )
     }
 
@@ -591,7 +654,7 @@ internal object CardModelReader {
     }
 
     private fun readCardEffectsReplacement(o: JsonObject, at: String): com.drive.drive_manager.simulator.engine.CardEffects.Replacement {
-        J.fields(o, at, "CardEffects.Replacement", setOf("id", "label", "text", "destroyOnly", "byOpponentOnly", "limit", "cost", "resourceFilter", "withMaterials", "opponentTurn"), true)
+        J.fields(o, at, "CardEffects.Replacement", setOf("id", "label", "text", "destroyOnly", "byOpponentOnly", "limit", "cost", "resourceFilter", "withMaterials", "opponentTurn", "holder", "allyTurn"), true)
         return com.drive.drive_manager.simulator.engine.CardEffects.Replacement(
             id = J.str(o, "id", at),
             label = J.str(o, "label", at),
@@ -603,11 +666,13 @@ internal object CardModelReader {
             resourceFilter = J.value(o, "resourceFilter", at, ::cardFilter),
             withMaterials = J.bool(o, "withMaterials", at),
             opponentTurn = J.bool(o, "opponentTurn", at),
+            holder = J.value(o, "holder", at, ::cardFilter),
+            allyTurn = J.bool(o, "allyTurn", at),
         )
     }
 
     private fun readCardFilter(o: JsonObject, at: String): com.drive.drive_manager.simulator.engine.CardFilter {
-        J.fields(o, at, "CardFilter", setOf("colors", "classes", "cardType", "level", "maxLevel", "maxStrength", "activeOnly", "exhaustedOnly", "minLevel", "minStrength", "maxCost", "name", "notName", "starterOnly", "colorAndClass", "notColors", "nameContains", "minCost", "cardTypes", "anyOf", "mentions", "backOnly", "enlace", "frontOnly", "noResources"), false)
+        J.fields(o, at, "CardFilter", setOf("colors", "classes", "cardType", "level", "maxLevel", "maxStrength", "activeOnly", "exhaustedOnly", "minLevel", "minStrength", "maxCost", "name", "notName", "starterOnly", "colorAndClass", "notColors", "nameContains", "minCost", "cardTypes", "anyOf", "mentions", "backOnly", "enlace", "frontOnly", "noResources", "faceUpOnly", "faceDownOnly", "minSpecialCost", "hasResources", "withoutResource"), false)
         return com.drive.drive_manager.simulator.engine.CardFilter(
             colors = J.list(o, "colors", at) { e, p -> J.stringElement(e, p) },
             classes = J.list(o, "classes", at) { e, p -> J.stringElement(e, p) },
@@ -634,11 +699,16 @@ internal object CardModelReader {
             enlace = J.bool(o, "enlace", at),
             frontOnly = J.bool(o, "frontOnly", at),
             noResources = J.bool(o, "noResources", at),
+            faceUpOnly = J.bool(o, "faceUpOnly", at),
+            faceDownOnly = J.bool(o, "faceDownOnly", at),
+            minSpecialCost = J.intOrNull(o, "minSpecialCost", at),
+            hasResources = J.bool(o, "hasResources", at),
+            withoutResource = J.str(o, "withoutResource", at),
         )
     }
 
     private fun readCardTraits(o: JsonObject, at: String): com.drive.drive_manager.simulator.engine.CardTraits {
-        J.fields(o, at, "CardTraits", setOf("alias", "specialFromTributes", "alternativeLevel", "fieldPiecesDiscount", "creatureForEffects", "sacrificeToSummon", "lifePlayCost", "oneEffectPerTurn"), false)
+        J.fields(o, at, "CardTraits", setOf("alias", "specialFromTributes", "alternativeLevel", "fieldPiecesDiscount", "creatureForEffects", "sacrificeToSummon", "lifePlayCost", "oneEffectPerTurn", "sacrificeUpTo"), false)
         return com.drive.drive_manager.simulator.engine.CardTraits(
             alias = J.str(o, "alias", at),
             specialFromTributes = J.bool(o, "specialFromTributes", at),
@@ -648,13 +718,26 @@ internal object CardModelReader {
             sacrificeToSummon = J.value(o, "sacrificeToSummon", at, ::cardFilter),
             lifePlayCost = J.intOrNull(o, "lifePlayCost", at),
             oneEffectPerTurn = J.bool(o, "oneEffectPerTurn", at),
+            sacrificeUpTo = J.intOrNull(o, "sacrificeUpTo", at),
         )
+    }
+
+    private fun readConditionAddedAsResource(o: JsonObject, at: String): com.drive.drive_manager.simulator.engine.Condition.AddedAsResource {
+        J.fields(o, at, "Condition.AddedAsResource", emptySet(), true)
+        return com.drive.drive_manager.simulator.engine.Condition.AddedAsResource
     }
 
     private fun readConditionAll(o: JsonObject, at: String): com.drive.drive_manager.simulator.engine.Condition.All {
         J.fields(o, at, "Condition.All", setOf("all"), true)
         return com.drive.drive_manager.simulator.engine.Condition.All(
             all = J.list(o, "all", at) { e, p -> condition(e, p) },
+        )
+    }
+
+    private fun readConditionAllyClashes(o: JsonObject, at: String): com.drive.drive_manager.simulator.engine.Condition.AllyClashes {
+        J.fields(o, at, "Condition.AllyClashes", setOf("filter"), true)
+        return com.drive.drive_manager.simulator.engine.Condition.AllyClashes(
+            filter = J.value(o, "filter", at, ::cardFilter),
         )
     }
 
@@ -813,15 +896,16 @@ internal object CardModelReader {
     }
 
     private fun readConditionYouReducedStrength(o: JsonObject, at: String): com.drive.drive_manager.simulator.engine.Condition.YouReducedStrength {
-        J.fields(o, at, "Condition.YouReducedStrength", setOf("toAtMost", "enemyStillThere"), true)
+        J.fields(o, at, "Condition.YouReducedStrength", setOf("toAtMost", "enemyStillThere", "byAnyone"), true)
         return com.drive.drive_manager.simulator.engine.Condition.YouReducedStrength(
             toAtMost = J.intOrNull(o, "toAtMost", at),
             enemyStillThere = J.bool(o, "enemyStillThere", at),
+            byAnyone = J.bool(o, "byAnyone", at),
         )
     }
 
     private fun readCostModifiersCostModifier(o: JsonObject, at: String): com.drive.drive_manager.simulator.engine.CostModifiers.CostModifier {
-        J.fields(o, at, "CostModifiers.CostModifier", setOf("label", "event", "kinds", "holder", "allyTurn", "condition", "payment", "reduce", "limit", "card", "amount"), true)
+        J.fields(o, at, "CostModifiers.CostModifier", setOf("label", "event", "kinds", "holder", "allyTurn", "condition", "payment", "reduce", "limit", "card", "amount", "summoner", "gems"), true)
         return com.drive.drive_manager.simulator.engine.CostModifiers.CostModifier(
             label = J.str(o, "label", at),
             event = J.enum(o, "event", at, com.drive.drive_manager.simulator.engine.CostModifiers.Event.entries, "CostModifiers.Event"),
@@ -834,15 +918,19 @@ internal object CardModelReader {
             limit = J.enum(o, "limit", at, com.drive.drive_manager.simulator.engine.EffectScript.Limit.entries, "EffectScript.Limit"),
             card = J.value(o, "card", at, ::cardFilter),
             amount = J.value(o, "amount", at, ::amount),
+            summoner = J.value(o, "summoner", at, ::cardFilter),
+            gems = J.int(o, "gems", at),
         )
     }
 
     private fun readCostModifiersPayment(o: JsonObject, at: String): com.drive.drive_manager.simulator.engine.CostModifiers.Payment {
-        J.fields(o, at, "CostModifiers.Payment", setOf("kind", "count", "filter"), false)
+        J.fields(o, at, "CostModifiers.Payment", setOf("kind", "count", "filter", "withHolder", "per"), false)
         return com.drive.drive_manager.simulator.engine.CostModifiers.Payment(
             kind = J.enum(o, "kind", at, com.drive.drive_manager.simulator.engine.CostModifiers.PaymentKind.entries, "CostModifiers.PaymentKind"),
             count = J.int(o, "count", at),
             filter = J.value(o, "filter", at, ::cardFilter),
+            withHolder = J.bool(o, "withHolder", at),
+            per = J.intOrNull(o, "per", at),
         )
     }
 
@@ -860,6 +948,15 @@ internal object CardModelReader {
             sourceZone = J.str(o, "sourceZone", at),
             allyTurn = J.bool(o, "allyTurn", at),
             limit = J.enum(o, "limit", at, com.drive.drive_manager.simulator.engine.EffectScript.Limit.entries, "EffectScript.Limit"),
+        )
+    }
+
+    private fun readEffectStepActivateMaterialSummonEffects(o: JsonObject, at: String): com.drive.drive_manager.simulator.engine.EffectStep.ActivateMaterialSummonEffects {
+        J.fields(o, at, "EffectStep.ActivateMaterialSummonEffects", setOf("count", "filter", "distinctLevels"), true)
+        return com.drive.drive_manager.simulator.engine.EffectStep.ActivateMaterialSummonEffects(
+            count = J.int(o, "count", at),
+            filter = J.value(o, "filter", at, ::cardFilter),
+            distinctLevels = J.bool(o, "distinctLevels", at),
         )
     }
 
@@ -1088,9 +1185,10 @@ internal object CardModelReader {
     }
 
     private fun readEffectStepKeepOnField(o: JsonObject, at: String): com.drive.drive_manager.simulator.engine.EffectStep.KeepOnField {
-        J.fields(o, at, "EffectStep.KeepOnField", setOf("exhausted"), true)
+        J.fields(o, at, "EffectStep.KeepOnField", setOf("exhausted", "asCreature"), true)
         return com.drive.drive_manager.simulator.engine.EffectStep.KeepOnField(
             exhausted = J.bool(o, "exhausted", at),
+            asCreature = J.intOrNull(o, "asCreature", at),
         )
     }
 
@@ -1141,6 +1239,13 @@ internal object CardModelReader {
             filter = J.value(o, "filter", at, ::cardFilter),
             reduce = J.int(o, "reduce", at),
             toFront = J.bool(o, "toFront", at),
+        )
+    }
+
+    private fun readEffectStepOpponentMayTap(o: JsonObject, at: String): com.drive.drive_manager.simulator.engine.EffectStep.OpponentMayTap {
+        J.fields(o, at, "EffectStep.OpponentMayTap", setOf("filter"), true)
+        return com.drive.drive_manager.simulator.engine.EffectStep.OpponentMayTap(
+            filter = J.value(o, "filter", at, ::cardFilter),
         )
     }
 
@@ -1270,9 +1375,12 @@ internal object CardModelReader {
     }
 
     private fun readEffectStepSwapInFormation(o: JsonObject, at: String): com.drive.drive_manager.simulator.engine.EffectStep.SwapInFormation {
-        J.fields(o, at, "EffectStep.SwapInFormation", setOf("withSelf"), true)
+        J.fields(o, at, "EffectStep.SwapInFormation", setOf("withSelf", "other", "anyFormation", "exceptTargets"), true)
         return com.drive.drive_manager.simulator.engine.EffectStep.SwapInFormation(
             withSelf = J.bool(o, "withSelf", at),
+            other = J.value(o, "other", at, ::cardFilter),
+            anyFormation = J.bool(o, "anyFormation", at),
+            exceptTargets = J.bool(o, "exceptTargets", at),
         )
     }
 
@@ -1347,7 +1455,7 @@ internal object CardModelReader {
     }
 
     private fun readMaterialSpec(o: JsonObject, at: String): com.drive.drive_manager.simulator.engine.MaterialSpec {
-        J.fields(o, at, "MaterialSpec", setOf("count", "more", "level", "orLess", "levelSum", "zones", "filter"), false)
+        J.fields(o, at, "MaterialSpec", setOf("count", "more", "level", "orLess", "levelSum", "zones", "filter", "maxCount"), false)
         return com.drive.drive_manager.simulator.engine.MaterialSpec(
             count = J.int(o, "count", at),
             more = J.bool(o, "more", at),
@@ -1356,6 +1464,7 @@ internal object CardModelReader {
             levelSum = J.int(o, "levelSum", at),
             zones = J.list(o, "zones", at) { e, p -> J.stringElement(e, p) },
             filter = J.value(o, "filter", at, ::cardFilter),
+            maxCount = J.intOrNull(o, "maxCount", at),
         )
     }
 
@@ -1418,7 +1527,7 @@ internal object CardModelReader {
     }
 
     private fun readRitualSpec(o: JsonObject, at: String): com.drive.drive_manager.simulator.engine.RitualSpec {
-        J.fields(o, at, "RitualSpec", setOf("sum", "level", "maxLevel", "atLeast", "maxStrength", "extra", "eachMaxLevel", "parts", "summonerLevel"), false)
+        J.fields(o, at, "RitualSpec", setOf("sum", "level", "maxLevel", "atLeast", "maxStrength", "extra", "eachMaxLevel", "parts", "orCost", "filter", "summonerLevel"), false)
         return com.drive.drive_manager.simulator.engine.RitualSpec(
             sum = J.bool(o, "sum", at),
             level = J.int(o, "level", at),
@@ -1428,6 +1537,8 @@ internal object CardModelReader {
             extra = J.int(o, "extra", at),
             eachMaxLevel = J.intOrNull(o, "eachMaxLevel", at),
             parts = J.list(o, "parts", at) { e, p -> ritualPartsPart(e, p) },
+            orCost = J.bool(o, "orCost", at),
+            filter = J.value(o, "filter", at, ::cardFilter),
             summonerLevel = J.intOrNull(o, "summonerLevel", at),
         )
     }
@@ -1472,7 +1583,7 @@ internal object CardModelReader {
     }
 
     private fun readSpecialRule(o: JsonObject, at: String): com.drive.drive_manager.simulator.engine.effects.model.SpecialRule {
-        J.fields(o, at, "SpecialRule", setOf("kind", "zone", "reduce", "summoner", "filter", "reduceBy", "relative"), false)
+        J.fields(o, at, "SpecialRule", setOf("kind", "zone", "reduce", "summoner", "filter", "reduceBy", "relative", "otherName", "sameLevelBonus"), false)
         return com.drive.drive_manager.simulator.engine.effects.model.SpecialRule(
             kind = J.str(o, "kind", at),
             zone = J.str(o, "zone", at),
@@ -1481,6 +1592,8 @@ internal object CardModelReader {
             filter = J.value(o, "filter", at, ::cardFilter),
             reduceBy = J.value(o, "reduceBy", at, ::amount),
             relative = J.value(o, "relative", at, ::selectorRelative),
+            otherName = J.bool(o, "otherName", at),
+            sameLevelBonus = J.int(o, "sameLevelBonus", at),
         )
     }
 

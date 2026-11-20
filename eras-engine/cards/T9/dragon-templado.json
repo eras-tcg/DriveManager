@@ -1,0 +1,163 @@
+{
+  "name": "dragón templado",
+  "effects": [
+    {
+      "id": "dragon-templado:tributada",
+      "moment": "ON_EVENT",
+      "label": "En Tributos",
+      "text": "Si esta carta es tributada desde tu mazo: puedes enviar 5 de tus tributos [dragón] al fondo de tu mazo; juega esta carta sin pagar su coste.",
+      "cost": [
+        {
+          "type": "Do",
+          "action": {
+            "type": "Move",
+            "cards": {
+              "zones": "tributeZone",
+              "owner": "YOU",
+              "filter": {
+                "classes": [
+                  "dragón"
+                ]
+              },
+              "min": {
+                "type": "Fixed",
+                "value": 5
+              },
+              "max": {
+                "type": "Fixed",
+                "value": 5
+              },
+              "self": "EXCLUDE",
+              "mode": "CHOOSE"
+            },
+            "to": "deckBottom"
+          }
+        }
+      ],
+      "steps": [
+        {
+          "type": "Do",
+          "action": {
+            "type": "Play",
+            "cards": {
+              "zones": "tributeZone",
+              "owner": "YOU",
+              "filter": {},
+              "min": {
+                "type": "Fixed",
+                "value": 1
+              },
+              "max": {
+                "type": "Fixed",
+                "value": 1
+              },
+              "self": "ANY",
+              "mode": "SELF"
+            },
+            "reduce": {
+              "type": "Fixed",
+              "value": 1000
+            }
+          }
+        }
+      ],
+      "condition": {
+        "type": "ThisTributed",
+        "fromZone": "deck"
+      },
+      "sourceZone": "tributeZone",
+      "limit": "NONE"
+    },
+    {
+      "id": "dragon-templado:en-juego",
+      "moment": "ON_PLAY",
+      "mandatory": true,
+      "label": "En Juego",
+      "text": "Añade esta carta como recurso a un aliado que no la tenga ya en sus recursos.",
+      "steps": [
+        {
+          "type": "Do",
+          "action": {
+            "type": "Select",
+            "selector": {
+              "zones": "field",
+              "owner": "YOU",
+              "filter": {
+                "cardType": "creature",
+                "withoutResource": "Dragón Templado"
+              },
+              "min": {
+                "type": "Fixed",
+                "value": 1
+              },
+              "max": {
+                "type": "Fixed",
+                "value": 1
+              },
+              "self": "ANY",
+              "mode": "CHOOSE"
+            }
+          }
+        },
+        {
+          "type": "Do",
+          "action": {
+            "type": "Move",
+            "cards": {
+              "zones": "field",
+              "owner": "YOU",
+              "filter": {},
+              "min": {
+                "type": "Fixed",
+                "value": 1
+              },
+              "max": {
+                "type": "Fixed",
+                "value": 1
+              },
+              "self": "ANY",
+              "mode": "SELF"
+            },
+            "to": "resources:last"
+          }
+        }
+      ],
+      "sourceZone": "field",
+      "limit": "NONE"
+    }
+  ],
+  "inherited": [
+    {
+      "id": "dragon-templado:hereda-turno-aliado",
+      "moment": "ON_EVENT",
+      "label": "Turno Aliado",
+      "text": "Heredado de Dragón Templado: una vez por turno: al final del turno, si esta carta está activa: esta carta puede declarar ataque.",
+      "steps": [
+        {
+          "type": "Do",
+          "action": {
+            "type": "Attack"
+          }
+        }
+      ],
+      "condition": {
+        "type": "All",
+        "all": [
+          {
+            "type": "Happened",
+            "actor": "YOU",
+            "owner": "ANY",
+            "eventType": "TURN_END"
+          },
+          {
+            "type": "ThisIs",
+            "state": "ACTIVE"
+          }
+        ]
+      },
+      "sourceZone": "field",
+      "allyTurn": true,
+      "limit": "ONCE_PER_TURN"
+    }
+  ]
+}

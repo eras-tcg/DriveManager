@@ -1,0 +1,246 @@
+{
+  "name": "danza lunar",
+  "effects": [
+    {
+      "id": "danza-lunar:en-juego",
+      "moment": "ON_PLAY",
+      "mandatory": true,
+      "label": "En Juego",
+      "text": "Invoca 1 [cortesana] en tus tributos pagando su coste. Luego: coloca esta carta en tu retaguardia agotada.",
+      "steps": [
+        {
+          "type": "Do",
+          "action": {
+            "type": "Summon",
+            "cards": {
+              "zones": "tributeZone",
+              "owner": "YOU",
+              "filter": {
+                "cardType": "creature",
+                "classes": [
+                  "cortesana"
+                ]
+              },
+              "min": {
+                "type": "Fixed",
+                "value": 1
+              },
+              "max": {
+                "type": "Fixed",
+                "value": 1
+              },
+              "self": "ANY",
+              "mode": "CHOOSE"
+            },
+            "reduce": {
+              "type": "Fixed"
+            },
+            "required": true
+          }
+        },
+        {
+          "type": "KeepOnField",
+          "exhausted": true
+        }
+      ],
+      "sourceZone": "field",
+      "limit": "NONE"
+    },
+    {
+      "id": "danza-lunar:turno-aliado",
+      "moment": "ACTIVATED",
+      "label": "Turno Aliado",
+      "text": "Puedes descartar esta carta activa y tributar hasta tantos aliados [cortesana] como controles; invoca especialmente 1 [shogún] de tus tributos reduciendo el coste especial en 1 por cada aliado tributado.",
+      "cost": [
+        {
+          "type": "Do",
+          "action": {
+            "type": "Move",
+            "cards": {
+              "zones": "field",
+              "owner": "YOU",
+              "filter": {
+                "activeOnly": true
+              },
+              "min": {
+                "type": "Fixed",
+                "value": 1
+              },
+              "max": {
+                "type": "Fixed",
+                "value": 1
+              },
+              "self": "ANY",
+              "mode": "SELF"
+            },
+            "to": "discardPile"
+          }
+        },
+        {
+          "type": "Do",
+          "action": {
+            "type": "Move",
+            "cards": {
+              "zones": "field",
+              "owner": "YOU",
+              "filter": {
+                "cardType": "creature",
+                "classes": [
+                  "cortesana"
+                ]
+              },
+              "min": {
+                "type": "Fixed"
+              },
+              "max": {
+                "type": "Fixed",
+                "value": 2147483647
+              },
+              "self": "ANY",
+              "mode": "CHOOSE"
+            },
+            "to": "tributeZone"
+          }
+        }
+      ],
+      "steps": [
+        {
+          "type": "Do",
+          "action": {
+            "type": "Sequence",
+            "actions": [
+              {
+                "type": "Select",
+                "selector": {
+                  "zones": "tributeZone",
+                  "owner": "YOU",
+                  "filter": {},
+                  "min": {
+                    "type": "Fixed"
+                  },
+                  "max": {
+                    "type": "Fixed",
+                    "value": 1
+                  },
+                  "self": "ANY",
+                  "mode": "CHOOSE",
+                  "special": {
+                    "rule": {
+                      "kind": "any",
+                      "zone": "tributeZone",
+                      "summoner": "any",
+                      "filter": {
+                        "cardType": "creature",
+                        "classes": [
+                          "shogún"
+                        ]
+                      },
+                      "reduceBy": {
+                        "type": "LastCount"
+                      }
+                    },
+                    "stage": "CARD"
+                  }
+                },
+                "saveAs": "specialCard",
+                "label": "Invocar"
+              },
+              {
+                "type": "Select",
+                "selector": {
+                  "zones": "tributeZone",
+                  "owner": "YOU",
+                  "filter": {},
+                  "min": {
+                    "type": "Fixed"
+                  },
+                  "max": {
+                    "type": "Fixed",
+                    "value": 1
+                  },
+                  "self": "ANY",
+                  "mode": "CHOOSE",
+                  "special": {
+                    "rule": {
+                      "kind": "any",
+                      "zone": "tributeZone",
+                      "summoner": "any",
+                      "filter": {
+                        "cardType": "creature",
+                        "classes": [
+                          "shogún"
+                        ]
+                      },
+                      "reduceBy": {
+                        "type": "LastCount"
+                      }
+                    },
+                    "stage": "SUMMONER"
+                  }
+                },
+                "saveAs": "specialSummoner",
+                "label": "Invocador"
+              },
+              {
+                "type": "Select",
+                "selector": {
+                  "zones": "tributeZone",
+                  "owner": "YOU",
+                  "filter": {},
+                  "min": {
+                    "type": "Fixed"
+                  },
+                  "max": {
+                    "type": "Fixed",
+                    "value": 1
+                  },
+                  "self": "ANY",
+                  "mode": "CHOOSE",
+                  "special": {
+                    "rule": {
+                      "kind": "any",
+                      "zone": "tributeZone",
+                      "summoner": "any",
+                      "filter": {
+                        "cardType": "creature",
+                        "classes": [
+                          "shogún"
+                        ]
+                      },
+                      "reduceBy": {
+                        "type": "LastCount"
+                      }
+                    },
+                    "stage": "MATERIAL"
+                  }
+                },
+                "saveAs": "specialMaterials",
+                "label": "Material"
+              },
+              {
+                "type": "SummonSpecial",
+                "rule": {
+                  "kind": "any",
+                  "zone": "tributeZone",
+                  "summoner": "any",
+                  "filter": {
+                    "cardType": "creature",
+                    "classes": [
+                      "shogún"
+                    ]
+                  },
+                  "reduceBy": {
+                    "type": "LastCount"
+                  }
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "sourceZone": "field",
+      "allyTurn": true,
+      "limit": "NONE"
+    }
+  ]
+}

@@ -10,6 +10,7 @@ import com.drive.drive_manager.simulator.engine.effects.actions.DestroyHandler
 import com.drive.drive_manager.simulator.engine.effects.actions.DrawHandler
 import com.drive.drive_manager.simulator.engine.effects.actions.GemsHandler
 import com.drive.drive_manager.simulator.engine.effects.actions.LookHandler
+import com.drive.drive_manager.simulator.engine.effects.actions.FlipHandler
 import com.drive.drive_manager.simulator.engine.effects.actions.ModifyHandler
 import com.drive.drive_manager.simulator.engine.effects.actions.MoveHandler
 import com.drive.drive_manager.simulator.engine.effects.actions.PlayHandler
@@ -34,6 +35,7 @@ object Actions {
             Action.Gems::class to GemsHandler(),
             Action.Damage::class to DamageHandler(),
             Action.Look::class to LookHandler(),
+            Action.Flip::class to FlipHandler(),
             Action.SetTapped::class to SetTappedHandler(),
             Action.Modify::class to ModifyHandler(),
             Action.Destroy::class to DestroyHandler(),

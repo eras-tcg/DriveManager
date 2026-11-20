@@ -1,0 +1,134 @@
+{
+  "name": "dragón pluma cristal",
+  "effects": [
+    {
+      "id": "dragon-pluma-cristal:en-invocacion",
+      "moment": "ON_SUMMON",
+      "mandatory": true,
+      "label": "En Invocación",
+      "text": "Sube a la mano oponente todos los enemigos de fuerza 5 o menos. Gana 1 gema por cada enemigo removido.",
+      "steps": [
+        {
+          "type": "Do",
+          "action": {
+            "type": "Move",
+            "cards": {
+              "zones": "frontLine",
+              "owner": "OPPONENT",
+              "filter": {
+                "cardType": "creature",
+                "maxStrength": 5
+              },
+              "min": {
+                "type": "Fixed"
+              },
+              "max": {
+                "type": "Fixed",
+                "value": 2147483647
+              },
+              "self": "ANY",
+              "mode": "ALL"
+            },
+            "to": "hand"
+          }
+        },
+        {
+          "type": "Do",
+          "action": {
+            "type": "Gems",
+            "count": {
+              "type": "LastCount"
+            }
+          }
+        }
+      ],
+      "sourceZone": "field",
+      "limit": "NONE"
+    },
+    {
+      "id": "dragon-pluma-cristal:todos-los-turnos",
+      "moment": "ON_EVENT",
+      "mandatory": true,
+      "label": "Todos Los Turnos",
+      "text": "Una vez por turno: si alguna carta es añadida a la mano oponente por efecto: reactiva esta carta.",
+      "steps": [
+        {
+          "type": "Do",
+          "action": {
+            "type": "SetTapped",
+            "cards": {
+              "zones": "field",
+              "owner": "YOU",
+              "filter": {},
+              "min": {
+                "type": "Fixed",
+                "value": 1
+              },
+              "max": {
+                "type": "Fixed",
+                "value": 1
+              },
+              "self": "ANY",
+              "mode": "SELF"
+            }
+          }
+        }
+      ],
+      "condition": {
+        "type": "Happened",
+        "actor": "ANY",
+        "owner": "ENEMY",
+        "to": "hand",
+        "byEffect": true
+      },
+      "sourceZone": "field",
+      "limit": "ONCE_PER_TURN"
+    }
+  ],
+  "inherited": [
+    {
+      "id": "dragon-pluma-cristal:hereda-todos-los-turnos",
+      "moment": "ON_EVENT",
+      "mandatory": true,
+      "label": "Todos Los Turnos",
+      "text": "Heredado de Dragón Pluma Cristal: una vez por turno: si alguna carta es añadida a la mano oponente por efecto: reactiva esta carta.",
+      "steps": [
+        {
+          "type": "Do",
+          "action": {
+            "type": "SetTapped",
+            "cards": {
+              "zones": "field",
+              "owner": "YOU",
+              "filter": {},
+              "min": {
+                "type": "Fixed",
+                "value": 1
+              },
+              "max": {
+                "type": "Fixed",
+                "value": 1
+              },
+              "self": "ANY",
+              "mode": "SELF"
+            }
+          }
+        }
+      ],
+      "condition": {
+        "type": "Happened",
+        "actor": "ANY",
+        "owner": "ENEMY",
+        "to": "hand",
+        "byEffect": true
+      },
+      "sourceZone": "field",
+      "limit": "ONCE_PER_TURN"
+    }
+  ],
+  "requirement": {
+    "summoner": {
+      "level": 3
+    }
+  }
+}

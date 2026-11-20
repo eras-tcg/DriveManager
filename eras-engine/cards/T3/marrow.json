@@ -1,0 +1,157 @@
+{
+  "name": "marrow",
+  "effects": [
+    {
+      "id": "marrow:al-atacar",
+      "moment": "ON_ATTACK",
+      "mandatory": true,
+      "label": "Al Atacar",
+      "text": "Elige 1 enemigo nivel 1; colócalo al fondo de las vidas oponentes. Luego: revela 1 carta de las vidas oponentes. Aumenta en 1 el máximo elegible por cada 2 vidas bocarriba.",
+      "cost": [
+        {
+          "type": "Do",
+          "action": {
+            "type": "Select",
+            "selector": {
+              "zones": "field",
+              "owner": "OPPONENT",
+              "filter": {
+                "cardType": "creature"
+              },
+              "min": {
+                "type": "Fixed",
+                "value": 1
+              },
+              "max": {
+                "type": "Fixed",
+                "value": 1
+              },
+              "self": "ANY",
+              "mode": "CHOOSE",
+              "relative": {
+                "maxLevel": {
+                  "type": "Scaled",
+                  "base": {
+                    "type": "FaceUpLives",
+                    "whose": "ANY"
+                  },
+                  "divisor": 2,
+                  "plus": 1
+                }
+              }
+            },
+            "target": true
+          }
+        }
+      ],
+      "steps": [
+        {
+          "type": "Do",
+          "action": {
+            "type": "Move",
+            "cards": {
+              "zones": "saved:targets",
+              "owner": "YOU",
+              "filter": {},
+              "min": {
+                "type": "Fixed"
+              },
+              "max": {
+                "type": "Fixed",
+                "value": 2147483647
+              },
+              "self": "ANY",
+              "mode": "ALL"
+            },
+            "to": "lifeBottom",
+            "faceDown": true
+          }
+        },
+        {
+          "type": "Do",
+          "action": {
+            "type": "Flip",
+            "cards": {
+              "zones": "lifeStack",
+              "owner": "OPPONENT",
+              "filter": {},
+              "min": {
+                "type": "Fixed",
+                "value": 1
+              },
+              "max": {
+                "type": "Fixed",
+                "value": 1
+              },
+              "self": "ANY",
+              "mode": "CHOOSE"
+            },
+            "faceUp": true
+          }
+        }
+      ],
+      "sourceZone": "field",
+      "limit": "NONE"
+    },
+    {
+      "id": "marrow:todos-los-turnos",
+      "moment": "ON_EVENT",
+      "mandatory": true,
+      "label": "Todos Los Turnos",
+      "text": "Al final del turno, si esta carta está en tu línea frontal: tributa una vida bocarriba oponente.",
+      "steps": [
+        {
+          "type": "Do",
+          "action": {
+            "type": "Move",
+            "cards": {
+              "zones": "lifeStack",
+              "owner": "OPPONENT",
+              "filter": {
+                "faceUpOnly": true
+              },
+              "min": {
+                "type": "Fixed",
+                "value": 1
+              },
+              "max": {
+                "type": "Fixed",
+                "value": 1
+              },
+              "self": "ANY",
+              "mode": "CHOOSE"
+            },
+            "to": "tributeZone"
+          }
+        }
+      ],
+      "condition": {
+        "type": "All",
+        "all": [
+          {
+            "type": "Happened",
+            "eventType": "TURN_END",
+            "actor": "ANY",
+            "owner": "ANY"
+          },
+          {
+            "type": "ThisIs",
+            "state": "IN_FRONT_LINE"
+          }
+        ]
+      },
+      "sourceZone": "field",
+      "limit": "NONE"
+    }
+  ],
+  "requirement": {
+    "ritual": {
+      "parts": [
+        {
+          "level": 2
+        },
+        {}
+      ]
+    }
+  }
+}

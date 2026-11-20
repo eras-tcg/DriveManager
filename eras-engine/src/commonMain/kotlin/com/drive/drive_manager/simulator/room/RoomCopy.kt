@@ -70,6 +70,7 @@ class RoomCopy private constructor(
             target.winnerId = c.winnerId
             target.endReason = c.endReason
             target.searchHope = c.searchHope
+            target.strengthLeft = c.strengthLeft
             target.startSetup = c.startSetup
         }
 
@@ -149,6 +150,7 @@ class RoomCopy private constructor(
         c.random = if (o.random == null) null else GameRandom(chance!!.nextLong())
         c.headless = o.headless
         c.searchHope = o.searchHope
+        c.strengthLeft = HashMap(o.strengthLeft)
         c.startSetup = o.startSetup
         return c
     }

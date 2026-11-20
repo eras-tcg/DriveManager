@@ -29,6 +29,8 @@ class MoveHandler : ActionHandler<Move> {
         if (selector.mode() == Selector.Mode.ALL && ctx.amount(selector.min) <= 0 && selector.self() != Selector.Self.REQUIRE) return true
         val found = candidates(ctx, action)
         if (selector.self() == Selector.Self.REQUIRE && found.none { ctx.isSelf(it) }) return false
+        // "N cartas de distinto nivel": as many different levels
+        if (action.distinctLevels) return found.mapNotNull { it.getLevel() }.distinct().size >= max(1, ctx.amount(selector.min))
         return found.size >= max(1, ctx.amount(selector.min))
     }
 
@@ -63,6 +65,7 @@ class MoveHandler : ActionHandler<Move> {
         val min = min(ctx.amount(selector.min), max)
         ctx.ask(instruction(ctx, action, min, max), action.label ?: label(action.to), Selection.pool(ctx, selector), valid, min, max)
         if (selector.self() == Selector.Self.REQUIRE) valid.firstOrNull { ctx.isSelf(it) }?.let { ctx.requireInChoice(it) }
+        if (action.distinctLevels) ctx.asksDistinctLevels()
         return true
     }
 
@@ -79,6 +82,9 @@ class MoveHandler : ActionHandler<Move> {
         }
         if (action.cards!!.self() == Selector.Self.REQUIRE && !picked.isEmpty() && picked.none { ctx.isSelf(it) }) return "Debes incluir esta carta"
         if (action.sameName && picked.map { it.cardName?.lowercase() }.toSet().size > 1) return "Las cartas deben ser copias de una misma carta"
+        if (action.distinctLevels && (picked.any { it.getLevel() == null } || picked.map { it.getLevel() }.toSet().size < picked.size))
+            return "Las cartas deben ser de distinto nivel"
+        if (action.distinctLevels && picked.size < min(ctx.amount(action.cards.min), candidates(ctx, action).size)) return "Elige " + ctx.amount(action.cards.min) + " cartas"
         move(ctx, action, picked)
         if (Move.DECK_TOP_KEPT == action.rest) ctx.lookedRestTo(Move.DECK_TOP, null)
         else if (action.rest != null) ctx.lookedRestTo(action.rest, answer.order)
@@ -97,7 +103,7 @@ class MoveHandler : ActionHandler<Move> {
     private fun move(ctx: EffectContext, action: Move, cards: List<CardSlot>) {
         val ordered = ArrayList(cards)
         if (action.random) GameRandom.shuffle(ordered, ctx.random())
-        val done = ctx.move(ordered, action.to, action.exhausted, action.faceDown)
+        val done = ctx.move(ordered, action.to, action.exhausted, action.faceDown, action.withResources)
         // "esta carta" is not what "si tributaste…" or "el material tributado" read
         if (action.cards!!.mode() == Selector.Mode.SELF) ctx.done(!done.isEmpty())
         else ctx.moved(done)
@@ -113,6 +119,7 @@ class MoveHandler : ActionHandler<Move> {
             Move.FRONT -> "A la línea frontal"
             Move.BACK -> "A la retaguardia"
             Move.LIFE_TOP -> "A tus vidas"
+            Move.LIFE_BOTTOM -> "Al fondo de las vidas"
             else -> "Elegida"
         }
     }
@@ -121,12 +128,16 @@ class MoveHandler : ActionHandler<Move> {
         val what = (if (min < max) "hasta " else "") + max + " " + (if (max == 1) "carta" else "cartas")
         val filter = action.cards!!.filter().describe()
         // The cards looked at are the ones on the sheet: no "de …" for them
-        val from = if (action.cards.zones == "looked") "" else " de " + ctx.describeZones(action.cards.zones)
+        val zones = ctx.describeZones(action.cards.zones)!!
+        val from = if (action.cards.zones == "looked") "" else if (action.cards.owner == Selector.Owner.OPPONENT) " de " + zones.replace("tus ", "las ").replace("tu ", "la ") + " oponentes"
+        else " de $zones"
         var cards = what + (if (filter.all { JavaText.isWhitespace(it) }) "" else " $filter") + from
         if (action.cards.self() == Selector.Self.REQUIRE) cards += ", incluida esta carta"
+        if (action.distinctLevels) cards += " de distinto nivel"
         val random = if (action.random) " en orden aleatorio" else ""
         if (action.to!!.startsWith("materials:") || action.to.startsWith("resources:")) {
-            return "Añade " + cards + " como " + (if (action.to.startsWith("materials:")) "material." else "recurso.")
+            return "Añade " + cards + (if (action.withResources) " con todos sus recursos" else "") + " como " +
+                    (if (action.to.startsWith("materials:")) "material." else "recurso.")
         }
         if (Move.DECK_TOP_KEPT == action.rest) return instructionOf(action, cards, random) + " El resto vuelve al tope de tu mazo en su orden."
         // The rest, when the player orders it, is asked on its own sheet afterwards: this one says only what is done now
@@ -143,6 +154,7 @@ class MoveHandler : ActionHandler<Move> {
             Move.FRONT -> "Coloca " + cards + " en tu línea frontal" + (if (action.exhausted) ", agotada." else ".")
             Move.BACK -> "Coloca " + cards + " en tu retaguardia" + (if (action.exhausted) ", agotada." else ".")
             Move.LIFE_TOP -> "Coloca " + cards + " al tope de tus vidas" + (if (action.faceDown) "." else ", bocarriba.")
+            Move.LIFE_BOTTOM -> "Coloca " + cards + " al fondo de las vidas" + (if (action.faceDown) "." else ", bocarriba.")
             else -> "Elige $cards."
         }
     }

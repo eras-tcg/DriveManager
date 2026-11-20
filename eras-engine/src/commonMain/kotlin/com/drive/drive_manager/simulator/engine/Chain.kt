@@ -224,6 +224,16 @@ object Chain {
                     }
                 }
             }
+            // "Si esta carta es añadida como recurso": the Recursos of the cards on the field (sourceZone "resources")
+            for (host in ArrayList(p.field)) {
+                for (card in ArrayList(host.resources!!)) {
+                    for (script in CardEffects.of(card)) {
+                        if (script.moment != EffectScript.Moment.ON_EVENT || script.sourceZone != "resources") continue
+                        if (script.allyTurn && p.userId != room.currentTurnUserId) continue
+                        addIfTriggers(room, result, script, event, card, p.userId)
+                    }
+                }
+            }
         }
         return result
     }
@@ -440,7 +450,7 @@ object Chain {
         val link = room.chain.size + 1
         val prompt = StepHelpers.prompt(room, effect, Prompt.Kind.CONFIRM, (if (link == 1) "¿Activas este efecto como Cadena 1? "
         else "¿Lo encadenas como Cadena $link? Se resolverá antes que los eslabones que ya están en la cadena. ") + effect.text)
-        val source = findAnywhere(room, effect.controllerId, effect.sourceInstanceId)
+        val source = EffectEngine.findSource(room, effect.controllerId, effect.sourceInstanceId)
         if (source != null) {
             prompt.cards = ArrayList(frozenListOf(source))
             prompt.validIds = ArrayList(frozenListOf(source.instanceId))
@@ -456,7 +466,7 @@ object Chain {
     fun sources(room: GameRoom, group: List<PendingEffect>): List<CardSlot> {
         val sources: MutableList<CardSlot> = ArrayList()
         for (e in group) {
-            val source = findAnywhere(room, e.controllerId, e.sourceInstanceId)
+            val source = EffectEngine.findSource(room, e.controllerId, e.sourceInstanceId)
             if (source != null && !sources.contains(source)) sources.add(source)
         }
         return sources
