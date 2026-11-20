@@ -890,10 +890,11 @@ internal object CardModelReader {
     }
 
     private fun readConditionYouReducedStrength(o: JsonObject, at: String): com.drive.drive_manager.simulator.engine.Condition.YouReducedStrength {
-        J.fields(o, at, "Condition.YouReducedStrength", setOf("toAtMost", "enemyStillThere"), true)
+        J.fields(o, at, "Condition.YouReducedStrength", setOf("toAtMost", "enemyStillThere", "byAnyone"), true)
         return com.drive.drive_manager.simulator.engine.Condition.YouReducedStrength(
             toAtMost = J.intOrNull(o, "toAtMost", at),
             enemyStillThere = J.bool(o, "enemyStillThere", at),
+            byAnyone = J.bool(o, "byAnyone", at),
         )
     }
 

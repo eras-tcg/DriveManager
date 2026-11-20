@@ -293,11 +293,15 @@ sealed interface Condition {
         }
     }
 
-    /** "si reduces [a N o menos] la fuerza de algún enemigo"; `enemyStillThere`: it is still on the field with some strength. */
+    /**
+     * "si reduces [a N o menos] la fuerza de algún enemigo"; `enemyStillThere`: it is still on the field with some strength; `byAnyone`: "si la
+     * fuerza de un enemigo es reducida a 0", whoever reduced it (an enemy of the card's controller).
+     */
     @JvmRecord
-    data class YouReducedStrength(val toAtMost: Int?, val enemyStillThere: Boolean) : Condition {
+    data class YouReducedStrength(val toAtMost: Int?, val enemyStillThere: Boolean, val byAnyone: Boolean = false) : Condition {
         override fun test(room: GameRoom, event: GameEvent?, source: CardSlot?, controller: String?): Boolean {
-            if (event == null || GameEvent.STRENGTH_REDUCED != event.type || controller!! != event.playerId) return false
+            if (event == null || GameEvent.STRENGTH_REDUCED != event.type) return false
+            if (if (byAnyone) controller!! == ownerOf(event) else controller!! != event.playerId) return false
             val to = if (event.data == null) null else event.data!!["to"]
             if (toAtMost != null && !(to is Number && to.toInt() <= toAtMost)) return false
             if (!enemyStillThere) return true

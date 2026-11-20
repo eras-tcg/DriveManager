@@ -1,0 +1,122 @@
+{
+  "name": "material biológico",
+  "effects": [
+    {
+      "id": "material-biologico:en-juego",
+      "moment": "ON_PLAY",
+      "label": "En Juego",
+      "text": "Una vez por turno entre copias: puedes destruir 1 aliado [necrómata] nivel 3 o menor; invoca 1 criatura de nivel menor de tu descarte en tu línea frontal reduciendo su coste en 2.",
+      "cost": [
+        {
+          "type": "Do",
+          "action": {
+            "type": "Destroy",
+            "cards": {
+              "zones": "field",
+              "owner": "YOU",
+              "filter": {
+                "cardType": "creature",
+                "classes": [
+                  "necrómata"
+                ],
+                "maxLevel": 3
+              },
+              "min": {
+                "type": "Fixed",
+                "value": 1
+              },
+              "max": {
+                "type": "Fixed",
+                "value": 1
+              },
+              "self": "ANY",
+              "mode": "CHOOSE"
+            },
+            "required": true
+          }
+        }
+      ],
+      "steps": [
+        {
+          "type": "Do",
+          "action": {
+            "type": "Summon",
+            "cards": {
+              "zones": "discardPile",
+              "owner": "YOU",
+              "filter": {
+                "cardType": "creature"
+              },
+              "min": {
+                "type": "Fixed",
+                "value": 1
+              },
+              "max": {
+                "type": "Fixed",
+                "value": 1
+              },
+              "self": "ANY",
+              "mode": "CHOOSE",
+              "relative": {
+                "to": "last",
+                "compareLevel": "LESS"
+              }
+            },
+            "reduce": {
+              "type": "Fixed",
+              "value": 2
+            },
+            "toFront": true,
+            "required": true
+          }
+        }
+      ],
+      "sourceZone": "field",
+      "limit": "ONCE_PER_TURN_BETWEEN_COPIES"
+    },
+    {
+      "id": "material-biologico:en-mano",
+      "moment": "ON_EVENT",
+      "label": "En Mano",
+      "text": "Si recibes daño directo: puedes jugar esta carta pagando su coste.",
+      "steps": [
+        {
+          "type": "Do",
+          "action": {
+            "type": "Play",
+            "cards": {
+              "zones": "hand",
+              "owner": "YOU",
+              "filter": {},
+              "min": {
+                "type": "Fixed",
+                "value": 1
+              },
+              "max": {
+                "type": "Fixed",
+                "value": 1
+              },
+              "self": "ANY",
+              "mode": "SELF"
+            },
+            "reduce": {
+              "type": "Fixed"
+            },
+            "required": true
+          }
+        }
+      ],
+      "condition": {
+        "type": "Happened",
+        "actor": "ANY",
+        "owner": "ANY",
+        "eventType": "LIFE_DAMAGE",
+        "data": [
+          "defenderId=$you"
+        ]
+      },
+      "sourceZone": "hand",
+      "limit": "NONE"
+    }
+  ]
+}

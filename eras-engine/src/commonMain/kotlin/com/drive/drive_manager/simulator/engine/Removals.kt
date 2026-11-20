@@ -310,7 +310,10 @@ object Removals {
                     card.resources!!.any { filter.matches(it) }
                 }
                 CardEffects.ReplacementCost.MATERIALS_TO_BACK -> card.materials!!.any { m -> "creature" == m.cardType && r.resourceFilter!!.matches(m) }
-                CardEffects.ReplacementCost.ALLY_SPECIAL_SUMMON, CardEffects.ReplacementCost.GUARD_MATERIAL_AND_SACRIFICE,
+                // "cuando esta carta fuera a ser destruida: en su lugar puedes tributar 1 de sus materiales y un aliado [ente]" (its own)
+                CardEffects.ReplacementCost.GUARD_MATERIAL_AND_SACRIFICE ->
+                    card.materials!!.isNotEmpty() && owner.field.any { c -> c !== card && r.resourceFilter!!.matches(c) }
+                CardEffects.ReplacementCost.ALLY_SPECIAL_SUMMON,
                 CardEffects.ReplacementCost.RESOURCE_TO_BACK_WITH_OTHERS, CardEffects.ReplacementCost.SACRIFICE_OTHER_ALLY_OR_HAND -> false
                 CardEffects.ReplacementCost.RESOURCE_TRIBUTED_ANOTHER_TO_HAND -> card.resources!!.size >= 2
                 CardEffects.ReplacementCost.ALLY_TO_LIFE_FACE_DOWN -> owner.field.any { c -> c !== card && "creature" == c.cardType }
@@ -456,6 +459,25 @@ object Removals {
             // Albert Collier: 1 material of it and 1 [artefacto]; paid once, every ally it guards that this effect was removing stays
             val guard = find(player.field, prompt.subjectId)
             val g = if (guard == null) null else CardEffects.allyGuard(guard)
+            // Its own replacement (Novikhé): 1 of its materials and 1 ally that matches; only this card stays
+            val own = if (g != null || guard == null || guard !== card) null
+                else CardEffects.replacementsOf(guard).firstOrNull { it.cost == CardEffects.ReplacementCost.GUARD_MATERIAL_AND_SACRIFICE }
+            if (own != null) {
+                val material = picks.map { id -> find(guard!!.materials, id) }.firstOrNull { it != null }
+                val sacrificed = picks.map { id -> find(player.field, id) }.firstOrNull { c -> c != null && c !== guard && own.resourceFilter!!.matches(c) }
+                if (picks.size != 2 || material == null || sacrificed == null)
+                    return "Elige 1 material de " + name(guard) + " y 1 " + own.resourceFilter!!.describe() + " bajo tu control"
+                room.prompt = null
+                room.pendingRemovals.removeAt(0)
+                guard!!.materials!!.remove(material)
+                material.faceDown = false
+                player.tributeZone.add(material)
+                record(room, GameEvent.TRIBUTE, player.userId, material, "materials", "tributeZone", null, frozenMapOf<String, Any?>("byCard", guard.instanceId),
+                    player.username + " tributa " + name(material) + " de los materiales de " + name(guard) + ": no es " + (if (pending.destroy) "destruida" else "removida"))
+                destroy(room, sacrificed, player, true, CAUSE_EFFECT, player.userId, guard.instanceId, null)
+                destroyIfStillNoStrength(room, pending, player, guard)
+                return null
+            }
             if (g == null) {
                 room.prompt = null
                 room.pendingRemovals.removeAt(0)
@@ -577,7 +599,8 @@ object Removals {
                 valid.addAll(player.field.filter { c -> c !== card && r.resourceFilter!!.matches(c) })
                 rulesPrompt(room, player.userId, PromptPurpose.REPLACE_GUARD.id(), name(guard) + " · " + r.label,
                     "Tributa 1 material de " + name(guard) + " y sacrifica 1 " + r.resourceFilter!!.describe() + " bajo tu control: "
-                            + "no se remueve ningún aliado [" + CardEffects.allyGuard(guard)!!.allies!!.classes().joinToString(", ") + "] de este efecto.",
+                            + (CardEffects.allyGuard(guard)?.let { g -> "no se remueve ningún aliado [" + g.allies!!.classes().joinToString(", ") + "] de este efecto." }
+                                ?: (name(guard) + " no es " + (if (pending.destroy) "destruida." else "removida."))),
                     "Pagar", valid, valid)
                 room.prompt!!.min = 2
                 room.prompt!!.max = 2
