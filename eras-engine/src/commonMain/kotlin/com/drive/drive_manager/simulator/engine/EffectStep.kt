@@ -147,6 +147,13 @@ sealed interface EffectStep {
     @JvmRecord
     data class ActivateMaterialSummonEffects(val count: Int, val filter: CardFilter?, val distinctLevels: Boolean) : EffectStep
 
+    /**
+     * "tu oponente puede invocar 1 criatura [filtro] de sus [zona] [en su línea frontal] reduciendo su coste en N": the opponent picks one
+     * (or none) and pays it; a summon by this effect, on the opponent's side.
+     */
+    @JvmRecord
+    data class OpponentMaySummon(val zone: String?, val filter: CardFilter?, val reduce: Int, val toFront: Boolean) : EffectStep
+
     /** "invoca criaturas … que en nivel sumen hasta N de tu mano sin pagar sus costes" (up to that level sum, all at once). */
     @JvmRecord
     data class SummonFreeLevelSum(val zone: String?, val filter: CardFilter?, val maxLevelSum: Int) : NeedsTarget

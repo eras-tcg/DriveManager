@@ -1,0 +1,90 @@
+{
+  "name": "cazador antibiológico",
+  "effects": [
+    {
+      "id": "cazador-antibiologico:todos-los-turnos",
+      "moment": "ON_EVENT",
+      "label": "Todos Los Turnos",
+      "text": "Si esta carta destruye algún enemigo por enfrentamiento: puedes descartar 2 materiales de esta carta; invoca 1 criatura Azul de tu descarte reduciendo su coste en 2.",
+      "cost": [
+        {
+          "type": "Do",
+          "action": {
+            "type": "Move",
+            "cards": {
+              "zones": "materials",
+              "owner": "YOU",
+              "filter": {},
+              "min": {
+                "type": "Fixed",
+                "value": 2
+              },
+              "max": {
+                "type": "Fixed",
+                "value": 2
+              },
+              "self": "ANY",
+              "mode": "CHOOSE"
+            },
+            "to": "discardPile"
+          }
+        }
+      ],
+      "steps": [
+        {
+          "type": "Do",
+          "action": {
+            "type": "Summon",
+            "cards": {
+              "zones": "discardPile",
+              "owner": "YOU",
+              "filter": {
+                "colors": [
+                  "B"
+                ],
+                "cardType": "creature"
+              },
+              "min": {
+                "type": "Fixed",
+                "value": 1
+              },
+              "max": {
+                "type": "Fixed",
+                "value": 1
+              },
+              "self": "ANY",
+              "mode": "CHOOSE"
+            },
+            "reduce": {
+              "type": "Fixed",
+              "value": 2
+            },
+            "required": true
+          }
+        }
+      ],
+      "condition": {
+        "type": "Destroyed",
+        "owner": "ENEMY",
+        "by": "ANY",
+        "byThis": true,
+        "cause": "battle"
+      },
+      "sourceZone": "field",
+      "limit": "NONE"
+    }
+  ],
+  "requirement": {
+    "summoner": {
+      "level": 2
+    },
+    "materials": {
+      "count": 1,
+      "level": 2,
+      "zones": [
+        "hand",
+        "discardPile"
+      ]
+    }
+  }
+}

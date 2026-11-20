@@ -282,10 +282,6 @@ object Removals {
     @Suppress("UNCHECKED_CAST")
     private fun decided(room: GameRoom): MutableSet<String?> = room.removalDecided as MutableSet<String?>
 
-    /** The other creatures of the player that can be sacrificed instead ("sacrificar otro aliado"). */
-    private fun sacrificeOthers(owner: PlayerState, card: CardSlot): List<CardSlot> =
-        owner.field.filter { c -> c !== card && "creature" == c.cardType }
-
     /** The other members of the card's formation (Enlace): "un aliado enlazado a esta carta". */
     private fun linkedAllies(owner: PlayerState, card: CardSlot): List<CardSlot> {
         val members = Formations.formationOf(owner, card.instanceId) ?: return frozenListOf()
@@ -301,33 +297,10 @@ object Removals {
         val options: MutableList<ReplacementOption> = ArrayList()
         val byOpponent = byId != null && byId != owner.userId
         for (r in CardEffects.replacementsOf(card)) {
-            if (r.destroyOnly && !destroy) continue
-            if (r.byOpponentOnly && !byOpponent) continue
             if (r.withMaterials && card.materials!!.isEmpty()) continue
             if (r.holder != null && !r.holder.matches(card)) continue
-            if (r.allyTurn && room.currentTurnUserId != owner.userId) continue
-            if (r.limit == Limit.DEFINITIVE && room.firstTurn) continue
-            if (Limit.spent(r.limit, room.usedThisTurn, replacementKey(owner, card, r))) continue
-            val payable = when (r.cost!!) {
-                CardEffects.ReplacementCost.TRIBUTE_TWO_MATERIALS -> card.materials!!.size >= 2
-                CardEffects.ReplacementCost.TRIBUTE_ONE_FROM_HAND -> !owner.hand.isEmpty()
-                CardEffects.ReplacementCost.TRIBUTE_RESOURCES, CardEffects.ReplacementCost.RESOURCES_TO_TRIBUTES_BEFORE,
-                CardEffects.ReplacementCost.TRIBUTE_RESOURCE_RETURN_TO_HAND -> {
-                    val filter = r.resourceFilter!!
-                    card.resources!!.any { filter.matches(it) }
-                }
-                CardEffects.ReplacementCost.MATERIALS_TO_BACK -> card.materials!!.any { m -> "creature" == m.cardType && r.resourceFilter!!.matches(m) }
-                // "cuando esta carta fuera a ser destruida: en su lugar puedes tributar 1 de sus materiales y un aliado [ente]" (its own)
-                CardEffects.ReplacementCost.GUARD_MATERIAL_AND_SACRIFICE ->
-                    card.materials!!.isNotEmpty() && owner.field.any { c -> c !== card && r.resourceFilter!!.matches(c) }
-                CardEffects.ReplacementCost.ALLY_SPECIAL_SUMMON,
-                CardEffects.ReplacementCost.RESOURCE_TO_BACK_WITH_OTHERS, CardEffects.ReplacementCost.SACRIFICE_OTHER_ALLY_OR_HAND -> false
-                CardEffects.ReplacementCost.RESOURCE_TRIBUTED_ANOTHER_TO_HAND -> card.resources!!.size >= 2
-                CardEffects.ReplacementCost.ALLY_TO_LIFE_FACE_DOWN -> owner.field.any { c -> c !== card && "creature" == c.cardType }
-                CardEffects.ReplacementCost.TAP_STRUCTURE -> tappableStructures(owner).isNotEmpty()
-                CardEffects.ReplacementCost.DESTROY_LINKED_ALLY -> linkedAllies(owner, card).isNotEmpty()
-            }
-            if (payable) options.add(ReplacementOption(r.id + "@" + card.instanceId, card, r, r.label, r.text))
+            if (!applies(room, owner, card, r, destroy, byOpponent)) continue
+            if (payable(owner, card, r)) options.add(ReplacementOption(r.id + "@" + card.instanceId, card, r, r.label, r.text))
         }
         // "cuando algún aliado fuera a ser removido: en su lugar, puede invocar especialmente esta carta" (EXO-91 from the Tributos, SARS-2 from the hand)
         if ("creature" == card.cardType) {
@@ -346,21 +319,18 @@ object Removals {
             }
         }
         // "cuando uno o más aliados [filtro] fueran a ser removidos por efecto oponente: en su lugar, puedes …" (Albert Collier, itself included);
-        // "cuando algún aliado [kuwal] fuera a ser destruido: en su lugar, puedes sacrificar otro aliado o una carta de tu mano" (itself included)
+        // "cuando algún aliado [filtro] fuera a ser destruido: en su lugar, puedes …" (a cost that does not depend on the ally, itself included)
         for (guard in owner.field) {
             val g = CardEffects.allyGuard(guard)
             if (g == null || guard.faceDown || !g.allies!!.matches(card)) continue
             val r = g.replacement!!
-            if (r.destroyOnly && !destroy) continue
-            if (r.byOpponentOnly && !byOpponent) continue
-            if (Limit.spent(r.limit, room.usedThisTurn, replacementKey(owner, guard, r))) continue
-            val payable = when (r.cost) {
-                CardEffects.ReplacementCost.GUARD_MATERIAL_AND_SACRIFICE -> byOpponent && byEffect && guard.materials!!.isNotEmpty()
-                        && owner.field.any { c -> c !== card && r.resourceFilter!!.matches(c) }
-                CardEffects.ReplacementCost.SACRIFICE_OTHER_ALLY_OR_HAND -> owner.hand.isNotEmpty() || sacrificeOthers(owner, card).isNotEmpty()
-                else -> false
+            if (!applies(room, owner, guard, r, destroy, byOpponent)) continue
+            val ok = if (r.cost == CardEffects.ReplacementCost.GUARD_MATERIAL_AND_SACRIFICE) {
+                byOpponent && byEffect && guard.materials!!.isNotEmpty() && owner.field.any { c -> c !== card && r.resourceFilter!!.matches(c) }
+            } else {
+                guardPayable(owner, card, r)
             }
-            if (payable) options.add(ReplacementOption(r.id + "@" + guard.instanceId, guard, r, r.label, r.text))
+            if (ok) options.add(ReplacementOption(r.id + "@" + guard.instanceId, guard, r, r.label, r.text))
         }
         // Protección [tipo]: "cuando algún aliado [tipo] fuera a ser removido: en su lugar, puedes destruir esta carta"
         for (protector in owner.field) {
@@ -375,6 +345,50 @@ object Removals {
         }
         return options
     }
+
+    /** The replacement may be used now: the removal it speaks of, by whom, whose turn, and its limit (counted on `holder`, the card that has it). */
+    private fun applies(room: GameRoom, owner: PlayerState, holder: CardSlot, r: CardEffects.Replacement, destroy: Boolean, byOpponent: Boolean): Boolean {
+        if (r.destroyOnly && !destroy) return false
+        if (r.byOpponentOnly && !byOpponent) return false
+        if (r.opponentTurn && room.currentTurnUserId == owner.userId) return false
+        if (r.allyTurn && room.currentTurnUserId != owner.userId) return false
+        if (r.limit == Limit.DEFINITIVE && room.firstTurn) return false
+        return !Limit.spent(r.limit, room.usedThisTurn, replacementKey(owner, holder, r))
+    }
+
+    /** Its owner can pay the card's own replacement. */
+    private fun payable(owner: PlayerState, card: CardSlot, r: CardEffects.Replacement): Boolean = when (r.cost!!) {
+        CardEffects.ReplacementCost.TRIBUTE_TWO_MATERIALS -> card.materials!!.size >= 2
+        CardEffects.ReplacementCost.TRIBUTE_ONE_FROM_HAND -> !owner.hand.isEmpty()
+        CardEffects.ReplacementCost.TRIBUTE_RESOURCES, CardEffects.ReplacementCost.RESOURCES_TO_TRIBUTES_BEFORE,
+        CardEffects.ReplacementCost.TRIBUTE_RESOURCE_RETURN_TO_HAND -> {
+            val filter = r.resourceFilter!!
+            card.resources!!.any { filter.matches(it) }
+        }
+        CardEffects.ReplacementCost.MATERIALS_TO_BACK -> card.materials!!.any { m -> "creature" == m.cardType && r.resourceFilter!!.matches(m) }
+        // "cuando esta carta fuera a ser destruida: en su lugar puedes tributar 1 de sus materiales y un aliado [ente]" (its own)
+        CardEffects.ReplacementCost.GUARD_MATERIAL_AND_SACRIFICE ->
+            card.materials!!.isNotEmpty() && owner.field.any { c -> c !== card && r.resourceFilter!!.matches(c) }
+        CardEffects.ReplacementCost.ALLY_SPECIAL_SUMMON, CardEffects.ReplacementCost.RESOURCE_TO_BACK_WITH_OTHERS -> false
+        CardEffects.ReplacementCost.RESOURCE_TRIBUTED_ANOTHER_TO_HAND -> card.resources!!.size >= 2
+        CardEffects.ReplacementCost.ALLY_TO_LIFE_FACE_DOWN -> owner.field.any { c -> c !== card && "creature" == c.cardType }
+        CardEffects.ReplacementCost.TAP_STRUCTURE -> tappableStructures(owner).isNotEmpty()
+        CardEffects.ReplacementCost.DISCARD_ONE_MATERIAL -> card.materials!!.isNotEmpty()
+        CardEffects.ReplacementCost.SACRIFICE_OTHER_ALLY -> otherAllies(owner, card).isNotEmpty()
+        CardEffects.ReplacementCost.SACRIFICE_OTHER_ALLY_OR_HAND -> owner.hand.isNotEmpty() || otherAllies(owner, card).isNotEmpty()
+        CardEffects.ReplacementCost.DESTROY_LINKED_ALLY -> linkedAllies(owner, card).isNotEmpty()
+    }
+
+    /** An ally's guard can be paid: only the costs that do not depend on the ally itself. */
+    private fun guardPayable(owner: PlayerState, card: CardSlot, r: CardEffects.Replacement): Boolean = when (r.cost!!) {
+        CardEffects.ReplacementCost.TRIBUTE_ONE_FROM_HAND, CardEffects.ReplacementCost.TAP_STRUCTURE,
+        CardEffects.ReplacementCost.SACRIFICE_OTHER_ALLY, CardEffects.ReplacementCost.SACRIFICE_OTHER_ALLY_OR_HAND -> payable(owner, card, r)
+        else -> false
+    }
+
+    /** The owner's other creatures on the field, which can be sacrificed instead of `card`. */
+    private fun otherAllies(owner: PlayerState, card: CardSlot?): List<CardSlot> =
+        owner.field.filter { c -> c !== card && "creature" == c.cardType }
 
     // Java's "(?i)protección", which JavaScript's regular expressions do not take (no inline flags): case-insensitive for
     // the ASCII letters only, as Java's (?i) without UNICODE_CASE is ("ó" matches "ó" alone). Kotlin's IGNORE_CASE would
@@ -538,18 +552,36 @@ object Removals {
             if (card != null) destroyIfStillNoStrength(room, pending, player, card)
             return null
         }
-        if (PromptPurpose.REPLACE_SACRIFICE.`is`(prompt.purpose)) {
-            // "en su lugar, puedes sacrificar otro aliado o una carta de tu mano": that card is sacrificed, the ally stays
-            val pick = if (picks.isEmpty()) null else picks[0]
-            val ally = if (card == null) null else sacrificeOthers(player, card).firstOrNull { it.instanceId == pick }
-            val inHand = if (pick == null) null else find(player.hand, pick)
-            if (ally == null && inHand == null) return "Elige otro aliado o 1 carta de tu mano"
+        if (PromptPurpose.REPLACE_DISCARD.`is`(prompt.purpose)) {
+            // "en su lugar, puedes descartar 1 de sus materiales": that material goes to the Descarte, the card stays
+            val material = (if (picks.isEmpty() || card == null) null else find(card.materials, picks[0])) ?: return "Elige 1 material de la carta"
             room.prompt = null
             room.pendingRemovals.removeAt(0)
-            val guard = find(player.field, prompt.summonerId)
-            log(room, player.username + " sacrifica " + name(ally ?: inHand) + ": " + (if (card == null) "la carta" else name(card)) + " no es destruida"
-                    + (if (guard == null) "" else " (" + name(guard) + ")"), null)
-            if (ally != null) destroy(room, ally, player, true, CAUSE_EFFECT, player.userId, guard?.instanceId, null)
+            card!!.materials!!.remove(material)
+            material.faceDown = false
+            player.discardPile.add(material)
+            record(room, GameEvent.SEND, player.userId, material, "materials", "discardPile", null, frozenMapOf<String, Any?>("from", card.instanceId),
+                player.username + " descarta " + name(material) + " (material de " + name(card) + "): " + name(card)
+                        + " no es " + (if (pending.destroy) "destruida" else "removida"))
+            destroyIfStillNoStrength(room, pending, player, card)
+            return null
+        }
+        if (PromptPurpose.REPLACE_SACRIFICE.`is`(prompt.purpose)) {
+            // "en su lugar, puedes sacrificar otro aliado [o una carta de tu mano]": that card is sacrificed, the card stays.
+            // The offered cards (validIds) say whether the hand counts; `summonerId` is the card that has the replacement.
+            val valid = prompt.validIds
+            val withHand = valid.any { id -> find(player.hand, id) != null }
+            val pick = if (picks.isEmpty() || !valid.contains(picks[0])) null else picks[0]
+            val ally = if (pick == null) null else find(otherAllies(player, card), pick)
+            val inHand = if (pick == null || ally != null) null else find(player.hand, pick)
+            if (ally == null && inHand == null) return if (withHand) "Elige otro aliado o 1 carta de tu mano" else "Elige otro aliado"
+            room.prompt = null
+            room.pendingRemovals.removeAt(0)
+            val holder = find(player.field, prompt.summonerId)
+            log(room, player.username + " sacrifica " + name(ally ?: inHand) + ": " + (if (card == null) "la carta" else name(card))
+                    + " no es " + (if (pending.destroy) "destruida" else "removida")
+                    + (if (holder == null || holder === card) "" else " (" + name(holder) + ")"), null)
+            if (ally != null) destroy(room, ally, player, true, CAUSE_EFFECT, player.userId, holder?.instanceId ?: card?.instanceId, null)
             else sacrificeFromHand(room, player, inHand!!, null)
             if (card != null) destroyIfStillNoStrength(room, pending, player, card)
             return null
@@ -601,9 +633,8 @@ object Removals {
             return null
         }
         val r = chosen.replacement
-        // A guard's limit is that of the card that guards ("una vez por turno" of it, or between its copies)
-        val guarding = CardEffects.allyGuard(chosen.source)?.replacement == r
-        Limit.take(r.limit, room.usedThisTurn, replacementKey(player, if (guarding) chosen.source else card, r))
+        // Counted on the card that has it (an ally's guard: the guard, not the ally)
+        Limit.take(r.limit, room.usedThisTurn, replacementKey(player, chosen.source, r))
         when (r.cost!!) {
             CardEffects.ReplacementCost.RESOURCE_TRIBUTED_ANOTHER_TO_HAND -> {
                 rulesPrompt(room, player.userId, PromptPurpose.REPLACE_RESOURCES.id(), name(card) + " · " + r.label,
@@ -716,14 +747,24 @@ object Removals {
                 room.prompt!!.min = 1
                 return null
             }
-            CardEffects.ReplacementCost.SACRIFICE_OTHER_ALLY_OR_HAND -> {
-                // The ally or the hand card is chosen next; the removal stays pending until then
-                val valid = sacrificeOthers(player, card) + player.hand
+            CardEffects.ReplacementCost.SACRIFICE_OTHER_ALLY, CardEffects.ReplacementCost.SACRIFICE_OTHER_ALLY_OR_HAND -> {
+                // The ally (or the hand card) is chosen next; the removal stays pending until then
+                val withHand = r.cost == CardEffects.ReplacementCost.SACRIFICE_OTHER_ALLY_OR_HAND
+                val valid = otherAllies(player, card) + (if (withHand) player.hand else frozenListOf())
                 rulesPrompt(room, player.userId, PromptPurpose.REPLACE_SACRIFICE.id(), name(card) + " · " + r.label,
-                    "Sacrifica otro aliado o 1 carta de tu mano: " + name(card) + " no es destruida.", "Sacrificar", valid, valid)
+                    (if (withHand) "Sacrifica otro aliado o 1 carta de tu mano: " else "Sacrifica otro aliado: ") + name(card)
+                            + " no es " + (if (pending.destroy) "destruida." else "removida."), "Sacrificar", valid, valid)
                 room.prompt!!.min = 1
                 room.prompt!!.subjectId = card.instanceId
                 room.prompt!!.summonerId = chosen.source.instanceId
+                return null
+            }
+            CardEffects.ReplacementCost.DISCARD_ONE_MATERIAL -> {
+                // The material is chosen next; the removal stays pending until then
+                rulesPrompt(room, player.userId, PromptPurpose.REPLACE_DISCARD.id(), name(card) + " · " + r.label,
+                    "Descarta 1 material de " + name(card) + ": no es " + (if (pending.destroy) "destruida." else "removida."),
+                    "Descartar", card.materials, card.materials)
+                room.prompt!!.min = 1
                 return null
             }
             CardEffects.ReplacementCost.DESTROY_LINKED_ALLY -> {

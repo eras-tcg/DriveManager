@@ -82,9 +82,20 @@ data class MaterialSpec(
  *                    [RitualParts.Part] each (level, "o menor", class); null or empty: the fields above
  * @param orCost      "coste o nivel N", "que sumen N en coste o nivel": each creature used counts as its level or as its cost
  * @param filter      what each creature used must be besides ("que no sea una copia de esta carta": `notName`); null: any
+ * @param summonerLevel "criaturas que en nivel sumen N incluido el invocador nivel M": the level the summoner must be (it counts as M in
+ *                    the sum); null: any
  */
 @JvmRecord
 data class RitualSpec(
     val sum: Boolean, val level: Int, val maxLevel: Int?, val atLeast: Boolean, val maxStrength: Int?, val extra: Int, val eachMaxLevel: Int? = null,
-    val parts: List<RitualParts.Part>? = null, val orCost: Boolean = false, val filter: CardFilter? = null,
-)
+    val parts: List<RitualParts.Part>? = null, val orCost: Boolean = false, val filter: CardFilter? = null, val summonerLevel: Int? = null,
+) {
+    constructor(
+        sum: Boolean, level: Int, maxLevel: Int?, atLeast: Boolean, maxStrength: Int?, extra: Int, eachMaxLevel: Int?, parts: List<RitualParts.Part>?,
+    ) : this(sum, level, maxLevel, atLeast, maxStrength, extra, eachMaxLevel, parts, false, null, null)
+
+    constructor(
+        sum: Boolean, level: Int, maxLevel: Int?, atLeast: Boolean, maxStrength: Int?, extra: Int, eachMaxLevel: Int?, parts: List<RitualParts.Part>?,
+        orCost: Boolean, filter: CardFilter?,
+    ) : this(sum, level, maxLevel, atLeast, maxStrength, extra, eachMaxLevel, parts, orCost, filter, null)
+}

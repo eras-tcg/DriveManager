@@ -6,7 +6,7 @@
       "moment" : "ON_SUMMON",
       "mandatory" : true,
       "label" : "En Invocación",
-      "text" : "(1) Puedes añadir 1 aliado nivel 1 como recurso de esta carta para ganar 1 gema. Luego: puedes agotar esta carta para reactivar 1 de tus estructuras Verdes de coste 1 o menos.",
+      "text" : "(1) Puedes añadir 1 aliado nivel 1 como recurso de esta carta para ganar 1 gema. Luego: puedes agotar esta carta para reactivar 1 de tus estructuras de coste 1 o menos.",
       "steps" : [
         {
           "type" : "MayDo",
@@ -51,7 +51,7 @@
         },
         {
           "type" : "MayDo",
-          "question" : "¿Agotas a Lyna para reactivar 1 de tus estructuras Verdes de coste 1 o menos?",
+          "question" : "¿Agotas a Lyna para reactivar 1 de tus estructuras de coste 1 o menos?",
           "covers" : 2
         },
         {
@@ -84,9 +84,6 @@
               "zones" : "field",
               "owner" : "YOU",
               "filter" : {
-                "colors" : [
-                  "G"
-                ],
                 "cardType" : "structure",
                 "maxCost" : 1
               },

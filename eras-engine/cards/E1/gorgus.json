@@ -1,0 +1,72 @@
+{
+  "name": "gorgus",
+  "effects": [
+    {
+      "id": "gorgus:todos-los-turnos",
+      "moment": "ON_EVENT",
+      "label": "Todos Los Turnos",
+      "text": "Una vez por turno: si alguna criatura entra a la línea frontal oponente por efecto, puedes invocar 1 criatura Violeta o [interdimensional] de tus tributos reduciendo su coste en 1.",
+      "steps": [
+        {
+          "type": "Do",
+          "action": {
+            "type": "Summon",
+            "cards": {
+              "zones": "tributeZone",
+              "owner": "YOU",
+              "filter": {
+                "colors": [
+                  "P"
+                ],
+                "classes": [
+                  "interdimensional"
+                ],
+                "cardType": "creature"
+              },
+              "min": {
+                "type": "Fixed",
+                "value": 1
+              },
+              "max": {
+                "type": "Fixed",
+                "value": 1
+              },
+              "self": "ANY",
+              "mode": "CHOOSE"
+            },
+            "reduce": {
+              "type": "Fixed",
+              "value": 1
+            },
+            "required": true
+          }
+        }
+      ],
+      "condition": {
+        "type": "All",
+        "all": [
+          {
+            "type": "EntersFrontLine",
+            "enemy": true,
+            "filter": {
+              "cardType": "creature"
+            }
+          },
+          {
+            "type": "ByEffect",
+            "by": "ANY"
+          }
+        ]
+      },
+      "sourceZone": "field",
+      "limit": "ONCE_PER_TURN"
+    }
+  ],
+  "requirement": {
+    "ritual": {
+      "sum": true,
+      "level": 5,
+      "summonerLevel": 3
+    }
+  }
+}

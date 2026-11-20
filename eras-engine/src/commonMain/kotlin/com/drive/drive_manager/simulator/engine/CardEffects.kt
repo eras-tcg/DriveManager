@@ -420,7 +420,11 @@ object CardEffects {
         /** "en su lugar, tributa "X" de sus recursos y súbela a tu mano" (resourceFilter: the Recurso tributed, one): the card goes to its owner's hand. */
         TRIBUTE_RESOURCE_RETURN_TO_HAND,
         /** "en su lugar, puedes destruir un aliado enlazado a esta carta" (Enlace): another member of its formation is destroyed instead. */
-        DESTROY_LINKED_ALLY
+        DESTROY_LINKED_ALLY,
+        /** "en su lugar, puedes descartar 1 de sus materiales" (its owner picks which). */
+        DISCARD_ONE_MATERIAL,
+        /** "en su lugar, puedes sacrificar otro aliado" (another creature of its owner, who picks it). */
+        SACRIFICE_OTHER_ALLY,
     }
 
     /**
@@ -428,11 +432,12 @@ object CardEffects {
      *
      * @param destroyOnly only when it would be destroyed ("removida" also covers being sent to the hand)
      * @param withMaterials "si esta carta con materiales fuera a ser …": only while it has materials
+     * @param opponentTurn  "Turno Oponente": only during the opponent's turn (of its owner)
      */
     @JvmRecord
     data class Replacement(
         val id: String?, val label: String?, val text: String?, val destroyOnly: Boolean, val byOpponentOnly: Boolean, val limit: Limit?,
-        val cost: ReplacementCost?, val resourceFilter: CardFilter?, val withMaterials: Boolean = false,
+        val cost: ReplacementCost?, val resourceFilter: CardFilter?, val withMaterials: Boolean = false, val opponentTurn: Boolean = false,
         /** "cuando esta carta [hada] fuera a ser destruida": what the card must be for it to apply; null: anything. */
         val holder: CardFilter? = null,
         /** "Turno Aliado: cuando esta carta fuera a ser destruida": only on its owner's turn. */
@@ -500,6 +505,9 @@ object CardEffects {
     /**
      * "cuando uno o más aliados [filtro] fueran a ser removidos por efecto oponente: en su lugar, puedes …" held by a card on the field (itself
      * included). Designer ruling 2026-10-31: paid once, it saves every one of them that this effect was removing.
+     * With another cost than GUARD_MATERIAL_AND_SACRIFICE ("cuando algún aliado [filtro] fuera a ser destruido: en su lugar, puedes tributar 1
+     * carta de tu mano"), it saves that ally only, and its replacement's own conditions apply (destroyOnly, byOpponentOnly, opponentTurn,
+     * limit, counted on the card that holds it).
      */
     @JvmRecord
     data class AllyGuard(val allies: CardFilter?, val replacement: Replacement?) : Reaction

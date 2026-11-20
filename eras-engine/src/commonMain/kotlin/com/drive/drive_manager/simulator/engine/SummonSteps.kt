@@ -143,6 +143,21 @@ object SummonSteps : StepFamily {
                         zone(player, step.zone), ids(valid), 1)
                 return true
             }
+            is OpponentMaySummon -> {
+                val opponent = room.getPlayer(room.getOpponentId(userId)) ?: return false
+                val valid = opponentSummonable(room, opponent, step)
+                if (valid.isEmpty()) {
+                    log(room, opponent.username + " no tiene criaturas que pueda invocar (" + effect.sourceName + ")", null)
+                    return false
+                }
+                val filter = step.filter!!.describe()
+                pick(room, effect, "Puedes invocar 1 criatura" + (if (filter.isBlank()) "" else " $filter") + " de tus " + zoneName(step.zone)
+                        + (if (step.reduce > 0) " reduciendo su coste en " + step.reduce else " pagando su coste") + " (" + effect.sourceName + "). Entra en "
+                        + (if (step.toFront) "tu línea frontal" else "Retaguardia") + " y robas 1 carta.", "Invocar", zone(opponent, step.zone), ids(valid), 1)
+                room.prompt!!.min = 0
+                room.prompt!!.playerId = opponent.userId
+                return true
+            }
             is SummonFreeLevelSum -> {
                 val valid = freeLevelSum(room, effect, step)
                 if (valid.isEmpty()) return false
@@ -226,6 +241,12 @@ object SummonSteps : StepFamily {
                 for (card in chosen) summonByEffect(room, effect, player, card, step.zone, card.cost!!, false)
                 effect.lastDone = !chosen.isEmpty()
             }
+            is OpponentMaySummon -> {
+                // `player` is the opponent, who answered; none: nothing happens
+                if (picks.isEmpty()) return null
+                val card = find(opponentSummonable(room, player, step), picks[0]) ?: return "Ya no puedes invocar esa criatura"
+                summonByEffect(room, effect, player, card, step.zone, step.reduce, step.toFront)
+            }
             is SummonLikeSubject -> {
                 val ally = subject(room, effect)
                 val card = (if (ally == null) null else find(likeSubject(player, step, ally), picks[0])) ?: return "Ya no puedes invocar esa criatura"
@@ -239,6 +260,13 @@ object SummonSteps : StepFamily {
         }
         return null
     }
+
+    /** The creatures of the opponent's zone it can summon now: of the filter, with a cost it can pay with the reduction. */
+    @JvmStatic
+    fun opponentSummonable(room: GameRoom, opponent: PlayerState, step: OpponentMaySummon): List<CardSlot> =
+        zone(opponent, step.zone).filter { c ->
+            "creature" == c.cardType && c.cost != null && step.filter!!.matches(c) && canPay(room, opponent.userId, max(0, c.cost!! - step.reduce))
+        }
 
     /** The allies that can be the summoner: of the filter, with some creature of the zone of their level that has a special method. */
     @JvmStatic

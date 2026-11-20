@@ -32,6 +32,8 @@ internal class EngineContext(private val room: GameRoom, private val effect: Pen
         /** The creature and the summoner of a special summon: fields the rules read while it is chosen. */
         const val SPECIAL_CARD = "specialCard"
         const val SPECIAL_SUMMONER = "specialSummoner"
+        /** The cards looked at from the opponent's deck ("mira la carta del tope del mazo de tu oponente"): they go back there. */
+        const val LOOKED_OPPONENT = "lookedOpponent"
 
         private fun destination(to: String?): String? {
             if (Action.Move.LIFE_TOP == to || Action.Move.LIFE_BOTTOM == to) return "lifeStack"
@@ -327,12 +329,21 @@ internal class EngineContext(private val room: GameRoom, private val effect: Pen
     override fun lookedRestTo(to: String?, order: List<String?>?) {
         val rest = StepHelpers.inOrder(effect.looked, order)
         rest.forEach { c -> c.faceDown = true }
-        if (Action.Move.DECK_TOP == to) player()!!.deck.addAll(0, rest)
-        else player()!!.deck.addAll(rest)
+        // The opponent's cards go back to the opponent's deck
+        val theirs = effect.saved.remove(LOOKED_OPPONENT) ?: frozenListOf()
+        val owner = if (rest.isNotEmpty() && rest.all { theirs.contains(it.instanceId) }) room.getPlayer(room.getOpponentId(effect.controllerId)) else player()
+        if (Action.Move.DECK_TOP == to) owner!!.deck.addAll(0, rest)
+        else owner!!.deck.addAll(rest)
         effect.looked.clear()
         if (!rest.isEmpty()) {
-            EffectEngine.log(room, player()!!.username + " " + verb(to) + " " + rest.size + " " + (if (rest.size == 1) "carta" else "cartas"), null)
+            EffectEngine.log(room, player()!!.username + " " + verb(to) + " " + rest.size + " " + (if (rest.size == 1) "carta" else "cartas")
+                    + (if (owner !== player()) " (mazo de " + owner.username + ")" else ""), null)
         }
+    }
+
+    override fun lookedAreOpponents(): Boolean {
+        val theirs = effect.saved[LOOKED_OPPONENT] ?: return false
+        return effect.looked.isNotEmpty() && effect.looked.all { theirs.contains(it.instanceId) }
     }
 
     override fun eventCard(): CardSlot? {
@@ -382,11 +393,18 @@ internal class EngineContext(private val room: GameRoom, private val effect: Pen
         StepHelpers.damageByEffect(room, effect, player(), amount)
     }
 
-    override fun look(count: Int) {
-        val n = min(count, player()!!.deck.size)
-        for (i in 0 until n) effect.looked.add(player()!!.deck.removeAt(0))
-        EffectEngine.record(room, GameEvent.LOOK_TOP, player()!!.userId, null, "deck", null, effect, frozenMapOf<String, Any?>("count", n),
+    override fun look(count: Int, opponent: Boolean) {
+        val owner = (if (opponent) room.getPlayer(room.getOpponentId(effect.controllerId)) else player()) ?: return
+        val n = min(count, owner.deck.size)
+        for (i in 0 until n) {
+            val card = owner.deck.removeAt(0)
+            effect.looked.add(card)
+            if (opponent) effect.saved.getOrPut(LOOKED_OPPONENT) { ArrayList() }.add(card.instanceId)
+        }
+        if (!opponent) EffectEngine.record(room, GameEvent.LOOK_TOP, player()!!.userId, null, "deck", null, effect, frozenMapOf<String, Any?>("count", n),
             player()!!.username + " mira las primeras " + n + " cartas de su mazo (" + effect.sourceName + ")")
+        else EffectEngine.record(room, GameEvent.LOOK_TOP, player()!!.userId, null, "deck", null, effect, frozenMapOf<String, Any?>("count", n, "ownerId", owner.userId),
+            player()!!.username + " mira " + (if (n == 1) "la carta del tope" else "las primeras $n cartas") + " del mazo de " + owner.username + " (" + effect.sourceName + ")")
     }
 
     override fun excavate(count: Int, until: CardFilter?) {

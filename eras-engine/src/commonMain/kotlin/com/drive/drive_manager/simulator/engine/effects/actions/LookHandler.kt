@@ -16,7 +16,7 @@ class LookHandler : ActionHandler<Look> {
 
     override fun run(ctx: EffectContext, action: Look): Boolean {
         if (action.excavate || action.until != null) ctx.excavate(ctx.amount(action.count), action.until)
-        else ctx.look(ctx.amount(action.count))
+        else ctx.look(ctx.amount(action.count), action.opponent)
         return false
     }
 }

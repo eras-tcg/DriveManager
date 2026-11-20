@@ -97,9 +97,10 @@ sealed interface Action {
      *
      * @param until    "hasta que reveles … o 1 [filtro]": it stops at the first card that matches (it is the last one taken); null: N cards
      * @param excavate "excava": the cards are revealed to both players and the player excavated ("si excavas cartas" reads it)
+     * @param opponent "… del mazo de tu oponente": the top cards of the opponent's deck (they go back to that deck); not with `excavate`
      */
     @JvmRecord
-    data class Look(val count: Amount?, val until: CardFilter? = null, val excavate: Boolean = false) : Action
+    data class Look(val count: Amount?, val until: CardFilter? = null, val excavate: Boolean = false, val opponent: Boolean = false) : Action
 
     /**
      * "agota" (`tapped`) or "reactiva".

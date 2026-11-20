@@ -45,7 +45,7 @@
     "moment" : "ON_ATTACK",
     "mandatory" : true,
     "label" : "Al Atacar",
-    "text" : "Heredado de Salamandrake: elige 1 enemigo de fuerza 3 o menos; destrúyelo.",
+    "text" : "Heredado de Salamandrake: elige 1 enemigo de fuerza 3 o menor; destrúyelo.",
     "cost" : [ {
       "type" : "Do",
       "action" : {

@@ -71,7 +71,11 @@ interface EffectContext {
 
     fun damage(amount: Int)
 
-    fun look(count: Int)
+    /** Looks at the top `count` cards of its controller's deck, or of the opponent's (`opponent`). */
+    fun look(count: Int, opponent: Boolean)
+
+    /** The cards looked at come from the opponent's deck (and go back there). */
+    fun lookedAreOpponents(): Boolean
 
     /**
      * "excava cartas de tu mazo hasta que reveles N cartas o 1 [filtro]": the top cards one by one, revealed to both players, until N or the first

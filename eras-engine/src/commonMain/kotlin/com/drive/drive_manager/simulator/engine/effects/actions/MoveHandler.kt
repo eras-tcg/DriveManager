@@ -39,8 +39,9 @@ class MoveHandler : ActionHandler<Move> {
         if (Move.DECK_TOP_OR_BOTTOM == action.to) {
             if (ctx.looked().isEmpty()) return false
             // One choice: their order and where they go (the first one of the order ends up highest)
-            ctx.ask(if (ctx.looked().size > 1) "Ordena las cartas (la de la izquierda queda más arriba) y elige si van al tope o al fondo de tu mazo."
-                    else "Elige si la carta va al tope o al fondo de tu mazo.", null, ctx.looked(), ctx.looked(), 0, 1)
+            val deck = if (ctx.lookedAreOpponents()) "del mazo de tu oponente" else "de tu mazo"
+            ctx.ask(if (ctx.looked().size > 1) "Ordena las cartas (la de la izquierda queda más arriba) y elige si van al tope o al fondo $deck."
+                    else "Elige si la carta va al tope o al fondo $deck.", null, ctx.looked(), ctx.looked(), 0, 1)
             ctx.asksTopOrBottom()
             return true
         }

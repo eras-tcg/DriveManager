@@ -180,11 +180,11 @@ sealed interface Amount {
         }
     }
 
-    /** How many cards of one of your zones ("tributeZone", "hand") match. */
+    /** How many cards of one of your zones ("tributeZone", "hand") match; `opponent`: of your opponent's ("si tu oponente tiene 5 o más tributos"). */
     @JvmRecord
-    data class InZone(val zone: String?, val filter: CardFilter?) : Amount {
+    data class InZone(val zone: String?, val filter: CardFilter?, val opponent: Boolean = false) : Amount {
         override fun of(room: GameRoom, controller: String?): Int {
-            return EffectEngine.countInZone(room, controller, zone, filter).toInt()
+            return EffectEngine.countInZone(room, if (opponent) room.getOpponentId(controller) else controller, zone, filter).toInt()
         }
     }
 
