@@ -102,7 +102,7 @@ class MoveHandler : ActionHandler<Move> {
     private fun move(ctx: EffectContext, action: Move, cards: List<CardSlot>) {
         val ordered = ArrayList(cards)
         if (action.random) GameRandom.shuffle(ordered, ctx.random())
-        val done = ctx.move(ordered, action.to, action.exhausted, action.faceDown)
+        val done = ctx.move(ordered, action.to, action.exhausted, action.faceDown, action.withResources)
         // "esta carta" is not what "si tributaste…" or "el material tributado" read
         if (action.cards!!.mode() == Selector.Mode.SELF) ctx.done(!done.isEmpty())
         else ctx.moved(done)
@@ -135,7 +135,8 @@ class MoveHandler : ActionHandler<Move> {
         if (action.distinctLevels) cards += " de distinto nivel"
         val random = if (action.random) " en orden aleatorio" else ""
         if (action.to!!.startsWith("materials:") || action.to.startsWith("resources:")) {
-            return "Añade " + cards + " como " + (if (action.to.startsWith("materials:")) "material." else "recurso.")
+            return "Añade " + cards + (if (action.withResources) " con todos sus recursos" else "") + " como " +
+                    (if (action.to.startsWith("materials:")) "material." else "recurso.")
         }
         if (Move.DECK_TOP_KEPT == action.rest) return instructionOf(action, cards, random) + " El resto vuelve al tope de tu mazo en su orden."
         // The rest, when the player orders it, is asked on its own sheet afterwards: this one says only what is done now

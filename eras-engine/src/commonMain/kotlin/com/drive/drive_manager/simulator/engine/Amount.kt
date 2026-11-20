@@ -76,6 +76,17 @@ sealed interface Amount {
         }
     }
 
+    /**
+     * How many cards an effect's selector finds now, its pseudo-zones included ("si esta carta tiene alguna criatura nivel 5 como material":
+     * `materials`; "si sacrificas 2 o más aliados activos": `saved:activeAllies`), read by EngineContext; 0 outside an effect.
+     */
+    @JvmRecord
+    data class CardsIn(val cards: com.drive.drive_manager.simulator.engine.effects.model.Selector?) : Amount {
+        override fun of(room: GameRoom, controller: String?): Int {
+            return 0
+        }
+    }
+
     /** "en el nivel de dicho aliado": the card of the triggering event, read by EngineContext. */
     data object TriggerSourceLevel : Amount {
         override fun of(room: GameRoom, controller: String?): Int {

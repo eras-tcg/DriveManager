@@ -374,6 +374,38 @@ sealed interface Condition {
         }
     }
 
+    /**
+     * "si esta carta es añadida como recurso": an effect or a cost added it as a Recurso of a card, or it was the summoner of an Evolución (it
+     * becomes the first Recurso of the creature summoned). Read from the Recursos (sourceZone "resources").
+     */
+    data object AddedAsResource : Condition {
+        override fun test(room: GameRoom, event: GameEvent?, source: CardSlot?, controller: String?): Boolean {
+            if (event == null || source == null) return false
+            if (GameEvent.SEND == event.type && "resources" == event.toZone) return source.instanceId == event.cardInstanceId
+            if (GameEvent.SPECIAL_SUMMON != event.type || "evolution" != event.data?.get("summonType")) return false
+            val summoned = EffectEngine.findInRoom(room, event.cardInstanceId)
+            return summoned != null && summoned.resources?.firstOrNull() === source
+        }
+    }
+
+    /**
+     * "cuando un aliado [filtro] entre en enfrentamiento": the clash step of an attack begins with one of your creatures in it, attacking or
+     * blocking (before the strengths are compared).
+     */
+    @JvmRecord
+    data class AllyClashes(val filter: CardFilter?) : Condition {
+        override fun test(room: GameRoom, event: GameEvent?, source: CardSlot?, controller: String?): Boolean {
+            if (event == null || !combatStep(Combat.Step.CLASH, Combat.Phase.ENTER).test(room, event, source, controller)) return false
+            val c = room.combat
+            if (c == null || c.blockerId == null) return false
+            val player = room.getPlayer(controller) ?: return false
+            return listOf(c.attackerId, c.blockerId).any { id ->
+                val card = EffectEngine.find(player.field, id)
+                card != null && "creature" == card.cardType && (filter == null || filter.matches(card))
+            }
+        }
+    }
+
     /** "si aún no has jugado ni invocado otra carta este turno". */
     data object NothingElsePlayedThisTurn : Condition {
         override fun test(room: GameRoom, event: GameEvent?, source: CardSlot?, controller: String?): Boolean {

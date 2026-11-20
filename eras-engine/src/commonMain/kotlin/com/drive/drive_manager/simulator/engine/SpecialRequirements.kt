@@ -111,6 +111,16 @@ object SpecialRequirements {
             return summonerFilter == null || summonerFilter.matches(c)
         }
 
+        /**
+         * The card can summon: a creature, or what the programmed filter's types allow ("criatura o estructura [treant] nivel 1": a structure
+         * of the field can be the summoner of an Evolución too).
+         */
+        fun summonerType(c: CardSlot): Boolean {
+            if ("creature" == c.cardType) return true
+            val f = summonerFilter ?: return false
+            return f.cardType == c.cardType || f.cardTypes().contains(c.cardType)
+        }
+
         /** The card can be one of the materials: a creature (or what the programmed filter says) of the level asked for. */
         fun materialMatches(c: CardSlot): Boolean {
             val typed = materialFilter != null && (materialFilter.cardType != null || materialFilter.cardTypes().isNotEmpty())
@@ -211,7 +221,7 @@ object SpecialRequirements {
         val creatures = allies(player)
         return player.field
                 .filter { c ->
-                    "creature" == c.cardType && c.getLevel() != null && shares(c, card) && optionFor(req, c) != null
+                    c.getLevel() != null && shares(c, card) && optionFor(req, c)?.summonerType(c) == true
                             // "mientras no controles otras criaturas"
                             && (!req!!.alone || creatures.all { o -> o === c })
                             // "mientras no controlas otros aliados nivel 1"
@@ -432,7 +442,7 @@ object SpecialRequirements {
     @JvmStatic
     fun specialTargets(room: GameRoom, effect: PendingEffect, special: SpecialRule): List<CardSlot> {
         val player = room.getPlayer(effect.controllerId) ?: return frozenListOf()
-        val zones = specialZones(player, special)
+        val zones = specialZones(player, special, effect)
         // Java's method reference (special.filter()::matches) read the filter at once
         val filter = special.filter!!
         return zones
@@ -484,8 +494,22 @@ object SpecialRequirements {
     /** The zones a special summon by effect takes the creature from ("de tu mano o tributos"). */
     @JvmStatic
     fun specialZones(player: PlayerState?, special: SpecialRule): List<CardSlot> {
+        return specialZones(player, special, null)
+    }
+
+    /** `effect`: whose card's Recursos the zone "resources" is ("invocar especialmente el recurso de este efecto"). */
+    @JvmStatic
+    fun specialZones(player: PlayerState?, special: SpecialRule, effect: PendingEffect?): List<CardSlot> {
         val all: MutableList<CardSlot> = ArrayList()
-        for (z in JavaText.split(COMMA, special.zone!!)) all.addAll(zone(player, z.trim { it <= ' ' }))
+        for (z in JavaText.split(COMMA, special.zone!!)) {
+            val name = z.trim { it <= ' ' }
+            if (name == "resources") {
+                val host = if (effect == null) null else find(player!!.field, effect.sourceInstanceId)
+                if (host != null) all.addAll(host.resources!!)
+                continue
+            }
+            all.addAll(zone(player, name))
+        }
         return all
     }
 

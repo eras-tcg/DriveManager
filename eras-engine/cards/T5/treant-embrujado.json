@@ -1,0 +1,97 @@
+{
+  "name" : "treant embrujado",
+  "effects" : [
+    {
+      "id" : "treant-embrujado:en-invocacion",
+      "moment" : "ON_SUMMON",
+      "mandatory" : true,
+      "label" : "En Invocación",
+      "text" : "Elige 1 enemigo de fuerza 4 o menos; destrúyelo. Por cada [treant] bajo tu control aumenta el máximo de fuerza elegible por este efecto.",
+      "cost" : [
+        {
+          "type" : "Do",
+          "action" : {
+            "type" : "Select",
+            "selector" : {
+              "zones" : "frontLine",
+              "owner" : "OPPONENT",
+              "filter" : {
+                "cardType" : "creature"
+              },
+              "min" : {
+                "type" : "Fixed",
+                "value" : 1
+              },
+              "max" : {
+                "type" : "Fixed",
+                "value" : 1
+              },
+              "self" : "ANY",
+              "mode" : "CHOOSE",
+              "relative" : {
+                "maxStrength" : {
+                  "type" : "Scaled",
+                  "base" : {
+                    "type" : "OnField",
+                    "filter" : {
+                      "classes" : [
+                        "treant"
+                      ]
+                    }
+                  },
+                  "divisor" : 1,
+                  "plus" : 4
+                }
+              }
+            },
+            "target" : true,
+            "label" : "Destruir"
+          }
+        }
+      ],
+      "steps" : [
+        {
+          "type" : "Do",
+          "action" : {
+            "type" : "Destroy",
+            "cards" : {
+              "zones" : "saved:targets",
+              "owner" : "YOU",
+              "filter" : {},
+              "min" : {
+                "type" : "Fixed"
+              },
+              "max" : {
+                "type" : "Fixed",
+                "value" : 2147483647
+              },
+              "self" : "ANY",
+              "mode" : "ALL"
+            }
+          }
+        }
+      ],
+      "sourceZone" : "field",
+      "limit" : "NONE"
+    }
+  ],
+  "reactions" : [
+    {
+      "type" : "CostModifier",
+      "label" : "Reactivo",
+      "event" : "SUMMON",
+      "holder" : "SELF",
+      "payment" : {
+        "kind" : "TRIBUTES_TO_DECK_BOTTOM",
+        "count" : 15,
+        "filter" : {
+          "colors" : [
+            "G"
+          ]
+        },
+        "per" : 5
+      },
+      "reduce" : 1
+    }
+  ]
+}

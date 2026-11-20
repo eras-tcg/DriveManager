@@ -34,7 +34,7 @@ object SpecialProcedure {
 
     private fun target(room: GameRoom, effect: PendingEffect, rule: SpecialRule): CardSlot? {
         val player = room.getPlayer(effect.controllerId)
-        return if (effect.ritualTargetId == null) null else EffectEngine.find(SpecialRequirements.specialZones(player, rule), effect.ritualTargetId)
+        return if (effect.ritualTargetId == null) null else EffectEngine.find(SpecialRequirements.specialZones(player, rule, effect), effect.ritualTargetId)
     }
 
     /** "el aliado elegido", "esta carta", or the one chosen in the summoner's choice. */
@@ -122,7 +122,7 @@ object SpecialProcedure {
             return if (target == null) player!!.field else player!!.field + RitualParts.enemies(room, player, target)
         }
         return when (special.stage!!) {
-            Selector.Stage.CARD -> SpecialRequirements.specialZones(player, special.rule!!)
+            Selector.Stage.CARD -> SpecialRequirements.specialZones(player, special.rule!!, effect)
             Selector.Stage.SUMMONER -> player!!.field
             Selector.Stage.MATERIAL -> {
                 val all: MutableList<CardSlot> = ArrayList(player!!.tributeZone)
@@ -242,7 +242,9 @@ object SpecialProcedure {
         }
         val req = SpecialRequirements.specialRequirement(target)
         val from = if (EffectEngine.find(player!!.hand, target.instanceId) != null) "hand"
-        else if (EffectEngine.find(player.tributeZone, target.instanceId) != null) "tributeZone" else JavaText.split(COMMA, rule.zone!!)[0].trim { it <= ' ' }
+        else if (EffectEngine.find(player.tributeZone, target.instanceId) != null) "tributeZone"
+        else if (player.field.any { h -> EffectEngine.find(h.resources, target.instanceId) != null }) "resources"
+        else JavaText.split(COMMA, rule.zone!!)[0].trim { it <= ' ' }
         effect.ritualTargetId = null
         effect.ritualSummonerId = null
         SpecialSummons.specialSummon(room, player, target, req!!, summoner, materials, from, rule.reduce, effect)

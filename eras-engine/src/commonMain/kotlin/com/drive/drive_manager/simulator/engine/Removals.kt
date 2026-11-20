@@ -298,12 +298,14 @@ object Removals {
             if (r.destroyOnly && !destroy) continue
             if (r.byOpponentOnly && !byOpponent) continue
             if (r.withMaterials && card.materials!!.isEmpty()) continue
+            if (r.holder != null && !r.holder.matches(card)) continue
             if (r.limit == Limit.DEFINITIVE && room.firstTurn) continue
             if (Limit.spent(r.limit, room.usedThisTurn, replacementKey(owner, card, r))) continue
             val payable = when (r.cost!!) {
                 CardEffects.ReplacementCost.TRIBUTE_TWO_MATERIALS -> card.materials!!.size >= 2
                 CardEffects.ReplacementCost.TRIBUTE_ONE_FROM_HAND -> !owner.hand.isEmpty()
-                CardEffects.ReplacementCost.TRIBUTE_RESOURCES, CardEffects.ReplacementCost.RESOURCES_TO_TRIBUTES_BEFORE -> {
+                CardEffects.ReplacementCost.TRIBUTE_RESOURCES, CardEffects.ReplacementCost.RESOURCES_TO_TRIBUTES_BEFORE,
+                CardEffects.ReplacementCost.TRIBUTE_RESOURCE_RETURN_TO_HAND -> {
                     val filter = r.resourceFilter!!
                     card.resources!!.any { filter.matches(it) }
                 }
@@ -608,6 +610,23 @@ object Removals {
                 }
                 log(room, player.username + " tributa " + paid.size + " " + plural(paid.size, "recurso", "recursos") + " de " + name(card)
                         + ": no es " + (if (pending.destroy) "destruida" else "removida") + names(paid), null)
+            }
+            CardEffects.ReplacementCost.TRIBUTE_RESOURCE_RETURN_TO_HAND -> {
+                // "en su lugar, tributa "X" de sus recursos y súbela a tu mano": that Recurso to the Tributos, the card to its owner's hand
+                val paid = card.resources!!.firstOrNull { r.resourceFilter!!.matches(it) }
+                if (paid != null) {
+                    card.resources!!.remove(paid)
+                    paid.faceDown = false
+                    player.tributeZone.add(paid)
+                    record(room, GameEvent.TRIBUTE, player.userId, paid, "resources", "tributeZone", null, frozenMapOf<String, Any?>("byCard", card.instanceId), null)
+                }
+                room.pendingRemovals.removeAt(0)
+                removeFromField(room, player, card)
+                card.faceDown = false
+                player.hand.add(card)
+                record(room, GameEvent.SEND, player.userId, card, "field", "hand", null, frozenMapOf<String, Any?>("ownerId", player.userId),
+                    player.username + " tributa " + name(paid) + " y sube a " + name(card) + " a su mano: no es " + (if (pending.destroy) "destruida" else "removida"))
+                return null
             }
             CardEffects.ReplacementCost.RESOURCES_TO_TRIBUTES_BEFORE -> {
                 // A reaction: the Recursos go to the Tributos first, then the removal goes on

@@ -240,7 +240,7 @@ internal class EngineContext(private val room: GameRoom, private val effect: Pen
         return null
     }
 
-    override fun move(cards: List<CardSlot>?, to: String?, exhausted: Boolean, faceDown: Boolean): List<CardSlot> {
+    override fun move(cards: List<CardSlot>?, to: String?, exhausted: Boolean, faceDown: Boolean, withResources: Boolean): List<CardSlot> {
         val zone = destination(to)
         val done: MutableList<CardSlot> = ArrayList()
         var from: String? = null
@@ -261,6 +261,9 @@ internal class EngineContext(private val room: GameRoom, private val effect: Pen
                 done.add(card)
                 continue
             }
+            // "con todos sus recursos": they go along with it, not to the Descarte
+            val carried: List<CardSlot> = if (withResources && isAttachment(to) && Zone.FIELD.`is`(from)) ArrayList(card.resources!!) else frozenListOf()
+            if (carried.isNotEmpty()) card.resources = ArrayList()
             if (origin.looked) effect.looked.remove(card)
             else if (origin.host != null) (if ("materials" == from) origin.host.materials!! else origin.host.resources!!).remove(card)
             else if (Zone.FIELD.`is`(from)) Removals.removeFromField(room, origin.owner, card)
@@ -273,6 +276,7 @@ internal class EngineContext(private val room: GameRoom, private val effect: Pen
             var arrives = zone
             if (isAttachment(to)) {
                 (if (to!!.startsWith("materials:")) host!!.materials!! else host!!.resources!!).add(card)
+                if (carried.isNotEmpty()) (if (to.startsWith("materials:")) host.materials!! else host.resources!!).addAll(carried)
                 data["to"] = host.instanceId
                 arrives = if (to.startsWith("materials:")) "materials" else "resources"
             } else if (Action.Move.FRONT == to || Action.Move.BACK == to) {
@@ -602,9 +606,18 @@ internal class EngineContext(private val room: GameRoom, private val effect: Pen
         effect.saved.getOrPut(SUMMONED_ALL) { ArrayList() }.add(card.instanceId)
     }
 
+    override fun summonCost(card: CardSlot): Int {
+        val cost = card.cost ?: return 0
+        return max(0, cost - CostModifiers.available(room, player(), CostModifiers.Event.EFFECT_SUMMON, null, card, null))
+    }
+
+    override fun playCost(card: CardSlot): Int {
+        return CardEffects.playCost(room, effect.controllerId, card)
+    }
+
     override fun play(card: CardSlot?, reduce: Int) {
-        val from = detach(card!!) ?: return
-        val cost = max(0, (if (card.cost == null) 0 else card.cost!!) - reduce)
+        val cost = max(0, playCost(card!!) - reduce)
+        val from = detach(card) ?: return
         EffectEngine.pay(room, effect.controllerId, cost)
         if (!Zone.HAND.`is`(from)) {
             EffectEngine.zone(player(), from).remove(card)
@@ -648,6 +661,7 @@ internal class EngineContext(private val room: GameRoom, private val effect: Pen
         if (amount is Amount.Times) return this.amount(amount.base) * amount.factor
         if (amount is Amount.Scaled) return this.amount(amount.base) / amount.divisor + amount.plus
         if (amount is Amount.TriggerSourceLevel) return SpecialRequirements.triggerSourceLevel(room, effect)
+        if (amount is Amount.CardsIn) return com.drive.drive_manager.simulator.engine.effects.selection.Selection.candidates(this, amount.cards!!, false).size
         if (amount is Amount.LastMoved) {
             val filter = amount.filter ?: CardFilter.any()
             return effect.lastTributed.mapNotNull { id -> EffectEngine.findInRoom(room, id) }.count { filter.matches(it) }

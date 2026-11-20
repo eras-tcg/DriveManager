@@ -222,7 +222,7 @@ object Answers {
                 advance(room)
                 return ""
             }
-            room.usedThisTurn.add(SUMMON_SACRIFICE + card.instanceId + "|" + (if (picks.isEmpty()) "-" else picks[0]))
+            room.usedThisTurn.add(SUMMON_SACRIFICE + card.instanceId + "|" + (if (picks.isEmpty()) "-" else picks.joinToString(",")))
             val y = if (prompt.summonerId == null) "" else prompt.summonerId!!
             val error = normalSummon(room, userId, card.instanceId, 50.0, if (y.isEmpty()) null else y.toDouble())
             if (error != null) {
@@ -396,6 +396,25 @@ object Answers {
             advance(room)
             return ""
         }
+        if (PromptPurpose.SUMMONER_DISCOUNT.`is`(purpose) && prompt.summonerId != null && prompt.summonerId!!.startsWith(NORMAL_SUMMON)) {
+            // A normal summon's payment (Summons.SUMMON_DISCOUNT): the summon goes on with it
+            val card = find(player.hand, prompt.subjectId)
+            room.prompt = null
+            if (card == null) {
+                advance(room)
+                return ""
+            }
+            val key = Summons.SUMMON_DISCOUNT + card.instanceId + "|" + picks.joinToString(",")
+            room.usedThisTurn.add(key)
+            val y = prompt.summonerId!!.substring(NORMAL_SUMMON.length)
+            val error = normalSummon(room, userId, card.instanceId, 50.0, if (y.isEmpty()) null else y.toDouble())
+            if (error != null) {
+                room.usedThisTurn.remove(key)
+                room.prompt = prompt
+                return error
+            }
+            return ""
+        }
         if (PromptPurpose.SUMMONER_DISCOUNT.`is`(purpose)) {
             val card = specialSource(player, prompt.subjectId)
             val summoner = find(player.field, prompt.summonerId)
@@ -409,6 +428,8 @@ object Answers {
             val count = if (use == null) 0 else use.modifier.payment!!.count
             val selfDamage = use != null && use.modifier.payment!!.kind == CostModifiers.PaymentKind.SELF_DAMAGE
             if (!picks.isEmpty() && (if (selfDamage) picks.size > count else picks.size != count)) return "Elige $count cartas, o ninguna"
+            if (!picks.isEmpty() && use != null && use.modifier.payment!!.withHolder && !picks.contains(use.holder.instanceId))
+                return "Debes incluir " + name(use.holder)
             val reduce = if (picks.isEmpty() || use == null) 0 else use.modifier.reduceNow(room, userId) * (if (selfDamage) picks.size else 1)
             // Without it, the others still apply on their own
             if (!canPay(room, userId, card.specialCost!! - reduce -

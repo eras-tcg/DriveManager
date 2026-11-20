@@ -34,6 +34,7 @@ import com.drive.drive_manager.simulator.room.CardSlot
  * @param faceUpOnly    "bocarriba" (a life, a card in a hidden zone)
  * @param faceDownOnly  "bocabajo"
  * @param minSpecialCost "de coste especial N o mayor"
+ * @param hasResources  "con recursos": it has at least one Recurso
  * @param anyOf         alternatives that cannot be written as one filter ("1 utilidad Violeta o [brujería]"): it matches when this
  *                      filter and one of them do
  */
@@ -45,6 +46,7 @@ data class CardFilter(
     val nameContains: String?, val minCost: Int?, private val cardTypes: List<String>?, private val anyOf: List<CardFilter>?,
     val mentions: String?, val backOnly: Boolean, val enlace: Boolean = false, val frontOnly: Boolean = false,
     val noResources: Boolean = false, val faceUpOnly: Boolean = false, val faceDownOnly: Boolean = false, val minSpecialCost: Int? = null,
+    val hasResources: Boolean = false,
 ) {
 
     constructor(
@@ -233,6 +235,7 @@ data class CardFilter(
         if (backOnly && EffectEngine.inFrontLine(card)) return false
         if (frontOnly && !EffectEngine.inFrontLine(card)) return false
         if (noResources && !card.resources.isNullOrEmpty()) return false
+        if (hasResources && card.resources.isNullOrEmpty()) return false
         if (enlace && !card.enlace) return false
         if (faceUpOnly && card.faceDown) return false
         if (faceDownOnly && !card.faceDown) return false
@@ -270,6 +273,7 @@ data class CardFilter(
         if (backOnly) text += " en tu retaguardia"
         if (frontOnly) text += " en tu línea frontal"
         if (noResources) text += " sin recursos"
+        if (hasResources) text += " con recursos"
         if (enlace) text += " Enlace"
         return text.trim { it <= ' ' }
     }
@@ -285,7 +289,7 @@ data class CardFilter(
                 colorAndClass == other.colorAndClass && notColorList == other.notColorList && nameContains == other.nameContains &&
                 minCost == other.minCost && cardTypeList == other.cardTypeList && anyOfList == other.anyOfList && mentions == other.mentions &&
                 backOnly == other.backOnly && enlace == other.enlace && frontOnly == other.frontOnly &&
-                noResources == other.noResources
+                noResources == other.noResources && hasResources == other.hasResources
     }
 
     /** As a record's: `31 * h + hash(component)` over the components, in order. */
@@ -298,6 +302,7 @@ data class CardFilter(
         // Only when set, so the filters written before it keep their hash
         if (frontOnly) result = 31 * result + true.hashCode()
         if (noResources) result = 31 * result + 1
+        if (hasResources) result = 31 * result + 2
         return result
     }
 

@@ -28,9 +28,14 @@ sealed interface Action {
     @JvmRecord
     data class SummonSpecial(val rule: SpecialRule?) : Action
 
-    /** "invoca": `reduce` lowers its cost, [FREE] is "sin pagar su coste". */
+    /**
+     * "invoca": `reduce` lowers its cost, [FREE] is "sin pagar su coste".
+     *
+     * @param orPlay "juega o invoca 1 [treant]": a utility or structure picked is played (paying its cost, with the same reduction) and a
+     *               creature is summoned
+     */
     @JvmRecord
-    data class Summon(val cards: Selector?, val reduce: Amount?, val toFront: Boolean, val required: Boolean) : Action {
+    data class Summon(val cards: Selector?, val reduce: Amount?, val toFront: Boolean, val required: Boolean, val orPlay: Boolean = false) : Action {
         override fun needsCards(): Boolean {
             return required
         }
@@ -155,11 +160,14 @@ sealed interface Action {
      * @param rest      looked cards: where those not picked go, in the order the player gives, in the same choice; null: they stay
      * @param sameName  "N copias de una criatura": the cards picked all have the same name (only cards with enough copies can be picked)
      * @param distinctLevels "N cartas de distinto nivel": no two cards picked have the same level
+     * @param withResources "añade hasta 3 [treant] bajo tu control con todos sus recursos como recursos de esta carta": a card of the field
+     *                      that becomes a material or a Recurso takes its own Recursos along to the same card (they are not discarded)
      */
     @JvmRecord
     data class Move(
         val cards: Selector?, val to: String?, val random: Boolean, val label: String?, val required: Boolean, val exhausted: Boolean,
         val faceDown: Boolean, val rest: String?, val sameName: Boolean = false, val distinctLevels: Boolean = false,
+        val withResources: Boolean = false,
     ) : Action {
         constructor(cards: Selector?, to: String?, random: Boolean, label: String?, required: Boolean) :
                 this(cards, to, random, label, required, false, false, null)
@@ -195,9 +203,13 @@ sealed interface Action {
      * @param saveAs   the name the next actions read them by; null: [Memory.TARGETS] for targets, [Memory.LAST] otherwise
      * @param label    what is shown on a chosen card ("Al fondo"); null: "Objetivo" or "Elegida"
      * @param endsIfNone with nothing to pick, the rest of the effect does nothing ("elige 1 aliado; …")
+     * @param maxLevelSum "elige criaturas … que sumen hasta N en nivel": the levels of those picked add up to N or less; null: no limit
      */
     @JvmRecord
-    data class Select(val selector: Selector?, val target: Boolean, val saveAs: String?, val label: String?, val endsIfNone: Boolean) : Action {
+    data class Select(
+        val selector: Selector?, val target: Boolean, val saveAs: String?, val label: String?, val endsIfNone: Boolean,
+        val maxLevelSum: Int? = null,
+    ) : Action {
         constructor(selector: Selector?, target: Boolean, saveAs: String?, label: String?) : this(selector, target, saveAs, label, false)
 
         override fun needsCards(): Boolean {

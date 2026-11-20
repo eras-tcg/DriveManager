@@ -45,6 +45,9 @@ object Summons {
     /** The mark of a "puedes agotar…" asked before a normal summon: the summon goes on with the answer (and where it was dropped). */
     const val NORMAL_SUMMON = "normal-summon|"
 
+    /** The payment chosen for a cost modifier of a normal summon ("puedes enviar hasta 15 de tus tributos…"): card id | ids paid. */
+    const val SUMMON_DISCOUNT = "summon-discount|"
+
     /** Why this card of the hand cannot be summoned normally now; null: it can (the main phase of the turn is asked apart). */
     @JvmStatic
     fun whyCannotSummon(room: GameRoom, userId: String?, player: PlayerState?, card: CardSlot?): String? {
@@ -57,8 +60,10 @@ object Summons {
         // Carnirex: the most a sacrifice could lower it
         val canSacrifice = CardEffects.sacrificeToSummon(card)
         val bySacrifice = if (canSacrifice == null) 0 else allies(player).filter { c -> canSacrifice.matches(c) && !name(c).equals(name(card), ignoreCase = true) }
-                .maxOfOrNull { c -> if (c.cost == null) 0 else c.cost!! } ?: 0
-        if (!canPay(room, userId, max(0, cost - bySacrifice - CostModifiers.available(room, player, CostModifiers.Event.SUMMON, null, card, null))))
+                .map { c -> if (c.cost == null) 0 else c.cost!! }.sortedDescending().take(CardEffects.sacrificeUpTo(card)).sum()
+        val byPayment = CostModifiers.choice(room, player, CostModifiers.Event.SUMMON, null, card, null)
+            ?.let { u -> CostModifiers.reductionFor(room, player!!, u, kotlin.math.min(u.modifier.payment!!.count, CostModifiers.paymentOptions(player, u, card).size)) } ?: 0
+        if (!canPay(room, userId, max(0, cost - bySacrifice - byPayment - CostModifiers.available(room, player, CostModifiers.Event.SUMMON, null, card, null))))
             return "No tienes gemas suficientes: tienes " + gemsOf(room, userId) + " y cuesta " + cost
         return null
     }
@@ -83,24 +88,30 @@ object Summons {
         if (sacrifice != null) {
             val options = allies(player).filter { c -> sacrifice.matches(c) && !name(c).equals(name(card), ignoreCase = true) }
             val answer = room.usedThisTurn.firstOrNull { k -> k.startsWith(SUMMON_SACRIFICE + card.instanceId + "|") }
+            val upTo = CardEffects.sacrificeUpTo(card)
             if (answer == null && !options.isEmpty()) {
                 rulesPrompt(room, userId, PromptPurpose.SUMMON_SACRIFICE.id(), name(card) + " · al invocarla",
-                        "Puedes sacrificar 1 aliado [dinosaurio] activo para invocar " + name(card) + " en tu línea frontal reduciendo su coste en el coste "
-                                + "del aliado. O ninguno.", "Sacrificar", options, player.field)
+                        if (upTo <= 1) "Puedes sacrificar 1 aliado [dinosaurio] activo para invocar " + name(card) + " en tu línea frontal reduciendo su coste en el coste "
+                                + "del aliado. O ninguno."
+                        else "Puedes sacrificar hasta " + upTo + " aliados " + sacrifice.describe() + " para invocar " + name(card) + " en tu línea frontal "
+                                + "reduciendo su coste en la suma de sus costes. O ninguno.", "Sacrificar", options, player.field)
                 room.prompt!!.min = 0
+                if (upTo > 1) room.prompt!!.max = kotlin.math.min(upTo, options.size)
                 room.prompt!!.subjectId = card.instanceId
                 room.prompt!!.summonerId = if (y == null) "" else y.toString()
                 return null
             }
+            val chosen: MutableList<CardSlot> = ArrayList()
             if (answer != null) {
                 room.usedThisTurn.remove(answer)
-                val id = answer.substring((SUMMON_SACRIFICE + card.instanceId + "|").length)
-                sacrificed = find(options, id)
+                val ids = answer.substring((SUMMON_SACRIFICE + card.instanceId + "|").length)
+                for (id in ids.split(",")) find(options, id)?.let { if (!chosen.contains(it) && chosen.size < upTo) chosen.add(it) }
             }
-            if (sacrificed != null) {
-                val lower = if (sacrificed.cost == null) 0 else sacrificed.cost!!
+            if (chosen.isNotEmpty()) {
+                sacrificed = chosen[0]
+                val lower = chosen.sumOf { c -> if (c.cost == null) 0 else c.cost!! }
                 if (!canPay(room, userId, max(0, cost - lower))) return "No tienes gemas suficientes: tienes " + gemsOf(room, userId) + " y cuesta " + (cost - lower)
-                destroy(room, sacrificed, player, true, CAUSE_EFFECT, userId, card.instanceId, null)
+                for (c in chosen) destroy(room, c, player, true, CAUSE_EFFECT, userId, card.instanceId, null)
                 cost = max(0, cost - lower)
             }
         }
@@ -113,6 +124,40 @@ object Summons {
             room.prompt!!.subjectId = card.instanceId
             room.prompt!!.summonerId = NORMAL_SUMMON + (if (y == null) "" else y)
             return null
+        }
+        // "cuando fueras a invocar esta carta: puedes enviar hasta 15 de tus tributos Verdes al fondo de tu mazo: por cada 5 reduce en 1 el coste"
+        val discountKey = SUMMON_DISCOUNT + card.instanceId + "|"
+        val discount = room.usedThisTurn.firstOrNull { k -> k.startsWith(discountKey) }
+        val choice = CostModifiers.choice(room, player, CostModifiers.Event.SUMMON, null, card, null)
+        if (discount == null && choice != null && cost > 0) {
+            val options = CostModifiers.paymentOptions(player, choice, card)
+            rulesPrompt(room, userId, PromptPurpose.SUMMONER_DISCOUNT.id(), name(choice.holder) + " · " + choice.modifier.label,
+                    CostModifiers.describe(choice), "Pagar", options, player.tributeZone)
+            room.prompt!!.min = 0
+            room.prompt!!.max = kotlin.math.min(choice.modifier.payment!!.count, options.size)
+            room.prompt!!.subjectId = card.instanceId
+            room.prompt!!.summonerId = NORMAL_SUMMON + (if (y == null) "" else y)
+            return null
+        }
+        if (discount != null) {
+            room.usedThisTurn.remove(discount)
+            val ids = discount.substring(discountKey.length)
+            if (choice != null && ids.isNotEmpty()) {
+                val options = CostModifiers.paymentOptions(player, choice, card)
+                val paid = ids.split(",").mapNotNull { id -> find(options, id) }
+                val lower = CostModifiers.reductionFor(room, player, choice, paid.size)
+                for (c in paid) {
+                    player.tributeZone.remove(c)
+                    c.faceDown = true
+                    player.deck.add(c)
+                }
+                if (paid.isNotEmpty()) {
+                    CostModifiers.markUsed(room, player, choice)
+                    log(room, player.username + " envía " + paid.size + " " + (if (paid.size == 1) "tributo" else "tributos") + " al fondo de su mazo para reducir en "
+                            + lower + " el coste de " + name(card), null)
+                }
+                cost = max(0, cost - lower)
+            }
         }
         cost = max(0, cost - CostModifiers.applyAutomatic(room, player, CostModifiers.Event.SUMMON, null, card, null, cost))
         if (!canPay(room, userId, cost)) return "No tienes gemas suficientes: tienes " + gemsOf(room, userId) + " y cuesta " + cost
@@ -393,7 +438,9 @@ object Summons {
         room: GameRoom, effect: PendingEffect, player: PlayerState?, card: CardSlot, fromZone: String?, reduce: Int,
         toFront: Boolean,
     ) {
-        val cost = max(0, card.cost!! - reduce)
+        var cost = max(0, card.cost!! - reduce)
+        // "cuando algún aliado fuera a ser invocado por efecto: puedes agotar esta carta para reducir su coste en 1": used when it lowers it
+        cost -= CostModifiers.applyAutomatic(room, player, CostModifiers.Event.EFFECT_SUMMON, null, card, null, cost)
         pay(room, player!!.userId, cost)
         zone(player, fromZone).remove(card)
         card.faceDown = false

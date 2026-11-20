@@ -1,0 +1,159 @@
+{
+  "name" : "renacimiento vital",
+  "effects" : [
+    {
+      "id" : "renacimiento-vital:en-juego",
+      "moment" : "ON_PLAY",
+      "mandatory" : true,
+      "label" : "En Juego",
+      "text" : "Tributa 4 cartas del tope de tu mazo. Luego: toma 1 de tus tributos Verdes y coloca esta carta en tu retaguardia agotada.",
+      "steps" : [
+        {
+          "type" : "Do",
+          "action" : {
+            "type" : "Move",
+            "cards" : {
+              "zones" : "deck",
+              "owner" : "YOU",
+              "filter" : {},
+              "min" : {
+                "type" : "Fixed",
+                "value" : 4
+              },
+              "max" : {
+                "type" : "Fixed",
+                "value" : 4
+              },
+              "self" : "ANY",
+              "mode" : "TOP"
+            },
+            "to" : "tributeZone"
+          }
+        },
+        {
+          "type" : "Do",
+          "action" : {
+            "type" : "Move",
+            "cards" : {
+              "zones" : "tributeZone",
+              "owner" : "YOU",
+              "filter" : {
+                "colors" : [
+                  "G"
+                ]
+              },
+              "min" : {
+                "type" : "Fixed",
+                "value" : 1
+              },
+              "max" : {
+                "type" : "Fixed",
+                "value" : 1
+              },
+              "self" : "EXCLUDE",
+              "mode" : "CHOOSE"
+            },
+            "to" : "hand"
+          }
+        },
+        {
+          "type" : "KeepOnField",
+          "exhausted" : true
+        }
+      ],
+      "sourceZone" : "field",
+      "limit" : "NONE"
+    },
+    {
+      "id" : "renacimiento-vital:turno-aliado",
+      "moment" : "ACTIVATED",
+      "label" : "Turno Aliado",
+      "text" : "Puedes enviar esta carta activa a tu descarte; juega o invoca 1 recurso de los recursos de un [treant] o [vegetación] bajo tu control.",
+      "cost" : [
+        {
+          "type" : "Do",
+          "action" : {
+            "type" : "Move",
+            "cards" : {
+              "zones" : "field",
+              "owner" : "YOU",
+              "filter" : {
+                "activeOnly" : true
+              },
+              "min" : {
+                "type" : "Fixed",
+                "value" : 1
+              },
+              "max" : {
+                "type" : "Fixed",
+                "value" : 1
+              },
+              "self" : "ANY",
+              "mode" : "SELF"
+            },
+            "to" : "discardPile"
+          }
+        }
+      ],
+      "steps" : [
+        {
+          "type" : "Do",
+          "action" : {
+            "type" : "Select",
+            "selector" : {
+              "zones" : "field",
+              "owner" : "YOU",
+              "filter" : {
+                "classes" : [
+                  "treant",
+                  "vegetación"
+                ],
+                "hasResources" : true
+              },
+              "min" : {
+                "type" : "Fixed",
+                "value" : 1
+              },
+              "max" : {
+                "type" : "Fixed",
+                "value" : 1
+              },
+              "self" : "ANY",
+              "mode" : "CHOOSE"
+            },
+            "saveAs" : "subject",
+            "label" : "Sus recursos"
+          }
+        },
+        {
+          "type" : "Do",
+          "action" : {
+            "type" : "Summon",
+            "cards" : {
+              "zones" : "resources:subject",
+              "owner" : "YOU",
+              "filter" : {},
+              "min" : {
+                "type" : "Fixed",
+                "value" : 1
+              },
+              "max" : {
+                "type" : "Fixed",
+                "value" : 1
+              },
+              "self" : "ANY",
+              "mode" : "CHOOSE"
+            },
+            "reduce" : {
+              "type" : "Fixed"
+            },
+            "orPlay" : true
+          }
+        }
+      ],
+      "sourceZone" : "field",
+      "allyTurn" : true,
+      "limit" : "NONE"
+    }
+  ]
+}

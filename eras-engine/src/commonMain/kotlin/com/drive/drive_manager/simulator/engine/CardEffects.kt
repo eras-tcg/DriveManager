@@ -411,7 +411,9 @@ object CardEffects {
         /** "en su lugar, puedes agotar 1 de tus estructuras" (an active structure of its owner). */
         TAP_STRUCTURE,
         /** A guard ([AllyGuard]): "en su lugar, puedes sacrificar otro aliado o una carta de tu mano" (a creature of its owner's field or a card of the hand). */
-        SACRIFICE_OTHER_ALLY_OR_HAND
+        SACRIFICE_OTHER_ALLY_OR_HAND,
+        /** "en su lugar, tributa "X" de sus recursos y súbela a tu mano" (resourceFilter: the Recurso tributed, one): the card goes to its owner's hand. */
+        TRIBUTE_RESOURCE_RETURN_TO_HAND
     }
 
     /**
@@ -424,6 +426,8 @@ object CardEffects {
     data class Replacement(
         val id: String?, val label: String?, val text: String?, val destroyOnly: Boolean, val byOpponentOnly: Boolean, val limit: Limit?,
         val cost: ReplacementCost?, val resourceFilter: CardFilter?, val withMaterials: Boolean = false,
+        /** "cuando esta carta [hada] fuera a ser destruida": what the card must be for it to apply; null: anything. */
+        val holder: CardFilter? = null,
     ) : Reaction {
         constructor(id: String?, label: String?, text: String?, destroyOnly: Boolean, byOpponentOnly: Boolean, limit: Limit?, cost: ReplacementCost?) :
                 this(id, label, text, destroyOnly, byOpponentOnly, limit, cost, CardFilter.any())
@@ -542,6 +546,12 @@ object CardEffects {
     @JvmStatic
     fun sacrificeToSummon(card: CardSlot): CardFilter? {
         return traits(card).sacrificeToSummon
+    }
+
+    /** How many allies [sacrificeToSummon] may sacrifice at most ("sacrifica hasta 3 aliados"): 1 unless the card says more. */
+    @JvmStatic
+    fun sacrificeUpTo(card: CardSlot): Int {
+        return traits(card).sacrificeUpTo ?: 1
     }
 
     @JvmStatic

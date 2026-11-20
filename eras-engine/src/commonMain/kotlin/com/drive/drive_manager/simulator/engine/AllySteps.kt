@@ -188,6 +188,20 @@ object AllySteps : StepFamily {
                 pick(room, effect, "Tributa 1 material " + step.material!!.describe() + " de un aliado " + step.ally!!.describe() + ".", "Tributar", valid, ids(valid), 1)
                 return true
             }
+            is ActivateMaterialSummonEffects -> {
+                val self = find(player.field, effect.sourceInstanceId) ?: return false
+                val valid = withSummonEffect(self, step)
+                if (valid.isEmpty()) {
+                    log(room, "No hay un efecto En Invocación de sus materiales que activar (" + effect.sourceName + ")", null)
+                    return false
+                }
+                val most = kotlin.math.min(step.count, if (step.distinctLevels) valid.mapNotNull { it.getLevel() }.distinct().size else valid.size)
+                pick(room, effect, "Elige " + most + " " + plural(most, "material", "materiales") + " " + step.filter!!.describe()
+                        + (if (step.distinctLevels && most > 1) " de distinto nivel" else "") + " de " + name(self) + ": activa 1 efecto En Invocación de cada uno.",
+                    "Activar", self.materials, ids(valid), most)
+                room.prompt!!.min = most
+                return true
+            }
             is ActivateTributedSummonEffect -> {
                 val ally = subject(room, effect)
                 val materialId = if (effect.lastTributed.isEmpty()) null else effect.lastTributed[0]
@@ -263,12 +277,33 @@ object AllySteps : StepFamily {
         }
     }
 
+    /** The materials of `self` that match and have an "En Invocación" effect. */
+    private fun withSummonEffect(self: CardSlot, step: ActivateMaterialSummonEffects): List<CardSlot> {
+        return self.materials!!.filter { m -> step.filter!!.matches(m)
+                && CardEffects.of(m.cardName).any { sc -> sc.moment == EffectScript.Moment.ON_SUMMON } }
+    }
+
     override fun applyStep(
         room: GameRoom, effect: PendingEffect, step: EffectStep, player: PlayerState, picks: List<String>,
         order: List<String>?, repeat: BooleanArray,
     ): String? {
         val userId = player.userId
         when (step) {
+            is ActivateMaterialSummonEffects -> {
+                val self = find(player.field, effect.sourceInstanceId) ?: return null
+                val valid = withSummonEffect(self, step)
+                val picked = picks.map { id -> find(valid, id) ?: return "Ese material ya no está" }
+                if (step.distinctLevels && picked.map { it.getLevel() }.toSet().size < picked.size) return "Los materiales deben ser de distinto nivel"
+                // Each as a new link of this card, after this one resolves (the first picked resolves first)
+                for (material in picked.reversed()) {
+                    val summon = CardEffects.of(material.cardName).first { sc -> sc.moment == EffectScript.Moment.ON_SUMMON }
+                    val link = pending(room, summon, userId, self, room.eventSeq)
+                    link.confirmed = true
+                    link.ordered = true
+                    room.triggerQueue.add(0, link)
+                }
+                if (picked.isNotEmpty()) log(room, name(self) + " activa el efecto En Invocación de " + picked.joinToString(", ") { name(it)!! } + " (" + effect.sourceName + ")", null)
+            }
             is MaterialOfExhaustedAllyToBack -> {
                 if (!picks.isEmpty()) {
                     val card = find(exhaustedAllyMaterials(player, step.filter), picks[0]) ?: return "Ese material ya no está"

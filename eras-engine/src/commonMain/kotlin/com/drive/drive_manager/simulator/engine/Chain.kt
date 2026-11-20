@@ -224,6 +224,16 @@ object Chain {
                     }
                 }
             }
+            // "Si esta carta es añadida como recurso": the Recursos of the cards on the field (sourceZone "resources")
+            for (host in ArrayList(p.field)) {
+                for (card in ArrayList(host.resources!!)) {
+                    for (script in CardEffects.of(card)) {
+                        if (script.moment != EffectScript.Moment.ON_EVENT || script.sourceZone != "resources") continue
+                        if (script.allyTurn && p.userId != room.currentTurnUserId) continue
+                        addIfTriggers(room, result, script, event, card, p.userId)
+                    }
+                }
+            }
         }
         return result
     }

@@ -54,7 +54,12 @@ class SelectHandler : ActionHandler<Select> {
         val instruction = (if (action.target) "Elige " else "Selecciona ") + (if (min < max) "hasta " else "") + max + " " + ctx.describe(selector) +
                 (if (selector.self() == Selector.Self.REQUIRE) ", incluida esta carta" else "") + "."
         val label = action.label ?: if (action.target) "Objetivo" else "Elegida"
-        ctx.ask(instruction, label, Selection.pool(ctx, selector), valid, min, max)
+        // "que sumen hasta N en nivel": only cards that fit, and the board keeps the sum
+        val sum = action.maxLevelSum
+        val fitting = if (sum == null) valid else valid.filter { (it.getLevel() ?: 0) <= sum }
+        ctx.ask(if (sum == null) instruction else instruction.removeSuffix(".") + " que sumen hasta $sum en nivel.", label, Selection.pool(ctx, selector),
+                fitting, kotlin.math.min(min, fitting.size), kotlin.math.min(max, fitting.size))
+        if (sum != null) ctx.limitLevelSum(sum)
         return true
     }
 
@@ -64,6 +69,8 @@ class SelectHandler : ActionHandler<Select> {
         for (id in picks) {
             if (valid.none { it.instanceId == id }) return "Esa carta ya no se puede elegir"
         }
+        val sum = action.maxLevelSum
+        if (sum != null && valid.filter { picks.contains(it.instanceId) }.sumOf { it.getLevel() ?: 0 } > sum) return "Sus niveles deben sumar $sum o menos"
         if (action.selector.self() == Selector.Self.REQUIRE && !picks.isEmpty()
                 && valid.none { ctx.isSelf(it) && picks.contains(it.instanceId) }) {
             return "Debes incluir esta carta"

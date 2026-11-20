@@ -254,7 +254,9 @@ object SpecialSummons {
         // Its cost modifiers that ask for no choice ("reduce en 1 el coste especial", "puedes agotar esta carta para reducir…")
         cost -= CostModifiers.applyAutomatic(room, player, CostModifiers.Event.SPECIAL_SUMMON, req.kind, card, summoner, cost)
         pay(room, userId, cost)
-        zone(player, fromZone).remove(card)
+        // "el recurso de este efecto": it leaves the Recursos of the card that had it
+        if ("resources" == fromZone) for (host in player.field) host.resources!!.remove(card)
+        else zone(player, fromZone).remove(card)
         var used: String
         if (summoner == null) {
             // No summoner ("2 criaturas nivel 1 en tu mano o tributos"): it enters the Retaguardia, active

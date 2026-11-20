@@ -132,6 +132,14 @@ sealed interface EffectStep {
     /** "para que [dicho aliado] active 1 efecto En Invocación del material tributado": a new link with that effect, for the ally. */
     data object ActivateTributedSummonEffect : EffectStep
 
+    /**
+     * "activa 1 efecto En Invocación de 2 materiales [autómata] con distinto nivel, de esta carta": the player picks up to `count` materials of this
+     * card that match and have an "En Invocación" (of different levels when `distinctLevels`); this card activates the first "En Invocación"
+     * of each as its own (new links, after this one resolves).
+     */
+    @JvmRecord
+    data class ActivateMaterialSummonEffects(val count: Int, val filter: CardFilter?, val distinctLevels: Boolean) : EffectStep
+
     /** "invoca criaturas … que en nivel sumen hasta N de tu mano sin pagar sus costes" (up to that level sum, all at once). */
     @JvmRecord
     data class SummonFreeLevelSum(val zone: String?, val filter: CardFilter?, val maxLevelSum: Int) : NeedsTarget

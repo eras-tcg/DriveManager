@@ -15,20 +15,33 @@ import com.drive.drive_manager.simulator.room.PlayerState
  */
 object CostModifiers {
 
-    /** The event whose cost it changes. */
-    enum class Event { SPECIAL_SUMMON, PLAY, SUMMON }
+    /** The event whose cost it changes; EFFECT_SUMMON: "cuando algún aliado fuera a ser invocado por efecto". */
+    enum class Event { SPECIAL_SUMMON, PLAY, SUMMON, EFFECT_SUMMON }
 
     /**
      * Whose it is: the special summon's summoner ("cuando esta carta fuera a invocar…"), any of the player's cards on the
      * field ("cuando fueras a invocar…", a structure) or the card being played itself ("cuando fueras a jugar esta carta").
      */
-    enum class Holder { SUMMONER, FIELD, SELF }
+    enum class Holder { SUMMONER, FIELD, SELF,
+        /** "En Tributos: cuando fueras a invocar…": a card of the player's Tributos. */
+        TRIBUTES }
 
     enum class PaymentKind { NONE, TAP_SELF, TRIBUTES_TO_DECK_BOTTOM, TRIBUTE_AS_RESOURCE, TAP_CARD, SELF_DAMAGE }
 
-    /** What the modifier asks for, if anything. */
+    /**
+     * What the modifier asks for, if anything.
+     *
+     * @param withHolder "puedes enviar esta carta y otros 4 tributos [filtro]": the holder (in the Tributos) is one of the cards paid
+     * @param per        "puedes enviar hasta 15 de tus tributos Verdes al fondo de tu mazo: por cada 5 reduce en 1 el coste": up to [count]
+     *                   cards, and the reduction is applied once per `per` cards sent; null: exactly [count], once
+     */
     @JvmRecord
-    data class Payment(val kind: PaymentKind?, val count: Int, val filter: CardFilter?) {
+    data class Payment(val kind: PaymentKind?, val count: Int, val filter: CardFilter?, val withHolder: Boolean = false, val per: Int? = null) {
+
+        /** How many times the reduction applies when `paid` cards were given. */
+        fun times(paid: Int): Int {
+            return if (per != null && per > 0) paid / per else if (paid > 0) 1 else 0
+        }
 
         /** The damage of a [PaymentKind.SELF_DAMAGE] payment. */
         fun damage(): Int {
@@ -172,16 +185,19 @@ object CostModifiers {
         // The card itself ("cuando fueras a jugar / invocar esta carta"), while it is not on the field yet
         if (card != null && !player.field.contains(card)) holders.add(card)
         holders.addAll(player.field)
+        holders.addAll(player.tributeZone.filter { c -> c !== card && of(c).any { m -> m.holder == Holder.TRIBUTES } })
         for (holder in holders) {
             // A card face down on the field has no effects (the one being played is not on the field yet)
             if (holder !== card && holder.faceDown) continue
             for (m in of(holder)) {
                 if (m.event != event || (!m.kinds!!.isEmpty() && !m.kinds.contains(kind))) continue
                 if (m.card != null && (card == null || !m.card.matches(card))) continue
+                val onField = player.field.contains(holder)
                 val placed = when (m.holder!!) {
                     Holder.SELF -> holder === card
-                    Holder.SUMMONER -> if (summoner == null) holder !== card else holder === summoner
-                    Holder.FIELD -> holder !== card
+                    Holder.SUMMONER -> if (summoner == null) holder !== card && onField else holder === summoner
+                    Holder.FIELD -> holder !== card && onField
+                    Holder.TRIBUTES -> holder !== card && player.tributeZone.contains(holder)
                 }
                 if (!placed) continue
                 if (m.allyTurn && player.userId != room.currentTurnUserId) continue
@@ -203,7 +219,8 @@ object CostModifiers {
         return when (payment.kind!!) {
             PaymentKind.NONE -> true
             PaymentKind.TAP_SELF -> !holder.tapped
-            PaymentKind.TRIBUTES_TO_DECK_BOTTOM, PaymentKind.TRIBUTE_AS_RESOURCE -> tributesFor(player, payment, card).size >= payment.count
+            PaymentKind.TRIBUTES_TO_DECK_BOTTOM, PaymentKind.TRIBUTE_AS_RESOURCE -> tributesFor(player, payment, card).size >= (payment.per ?: payment.count)
+                    && (!payment.withHolder || tributesFor(player, payment, card).contains(holder))
             PaymentKind.TAP_CARD -> player.field.count { c -> !c.tapped && payment.filter!!.matches(c) } >= payment.count
             PaymentKind.SELF_DAMAGE -> !player.lifeStack.isEmpty()
         }
@@ -293,6 +310,12 @@ object CostModifiers {
         return cost - decided <= 0
     }
 
+    /** The reduction of a payment the player gave `paid` cards for. */
+    @JvmStatic
+    fun reductionFor(room: GameRoom, player: PlayerState, use: Use, paid: Int): Int {
+        return use.modifier.reduceNow(room, player.userId) * use.modifier.payment!!.times(paid)
+    }
+
     /** The first one that asks the player for its payment (Flambreik's tributes), or null. */
     @JvmStatic
     fun choice(room: GameRoom, player: PlayerState?, event: Event?, kind: String?, card: CardSlot?, summoner: CardSlot?): Use? {
@@ -329,7 +352,13 @@ object CostModifiers {
             return "Puedes agotar 1 carta " + payment.filter!!.describe() + " bajo tu control para reducir en " + use.modifier.reduce +
                     " el coste especial. Elige 1, o ninguna."
         }
-        val what = if (payment.kind == PaymentKind.TRIBUTES_TO_DECK_BOTTOM)
+        if (payment.kind == PaymentKind.TRIBUTES_TO_DECK_BOTTOM && payment.per != null) {
+            return "Puedes enviar hasta " + payment.count + " de tus tributos " + payment.filter!!.describe() + " al fondo de tu mazo: por cada " + payment.per +
+                    " reduce en " + use.modifier.reduce + " el coste. Elige las cartas, o ninguna."
+        }
+        val what = if (payment.kind == PaymentKind.TRIBUTES_TO_DECK_BOTTOM && payment.withHolder)
+            "enviar " + use.holder.cardName + " y otros " + (payment.count - 1) + " tributos " + payment.filter!!.describe() + " al fondo de tu mazo"
+        else if (payment.kind == PaymentKind.TRIBUTES_TO_DECK_BOTTOM)
             "enviar " + payment.count + " de tus tributos " + payment.filter!!.describe() + " al fondo de tu mazo" else "pagarlo"
         return "Puedes " + what + " para reducir en " + use.modifier.reduce + " el coste. Elige " + payment.count +
                 ", o ninguna para pagar el coste completo."

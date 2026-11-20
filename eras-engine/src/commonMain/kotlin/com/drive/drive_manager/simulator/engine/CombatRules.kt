@@ -282,9 +282,12 @@ object CombatRules {
                     "Enfrentamiento: " + name(attacker) + " (" + a + ") contra " + name(blocker) + " (" + b + ")")
                 // Rule 10.1.3.2: the weaker one is destroyed; both when equal. Attributed to the opponent and the other creature.
                 // "no destruye las criaturas que enfrenta" (EffectEngine.HARMLESS)
-                if (b <= a && !keywords(attacker).contains(EffectEngine.HARMLESS)) destroy(room, blocker, defender, false, CAUSE_BATTLE, owner.userId, attacker.instanceId, null)
+                // "no puede ser destruido por enfrentamiento" (EffectEngine.NO_CLASH_DESTRUCTION)
+                if (b <= a && !keywords(attacker).contains(EffectEngine.HARMLESS) && !keywords(blocker).contains(EffectEngine.NO_CLASH_DESTRUCTION))
+                    destroy(room, blocker, defender, false, CAUSE_BATTLE, owner.userId, attacker.instanceId, null)
                 // Alcance: "esta carta no puede ser destruida por enfrentamiento como atacante"
-                if (a <= b && keywordLevel(attacker, "Alcance") == null && !keywords(blocker).contains(EffectEngine.HARMLESS)) {
+                if (a <= b && keywordLevel(attacker, "Alcance") == null && !keywords(blocker).contains(EffectEngine.HARMLESS)
+                        && !keywords(attacker).contains(EffectEngine.NO_CLASH_DESTRUCTION)) {
                     destroy(room, attacker, owner, false, CAUSE_BATTLE, defender.userId, blocker.instanceId, null)
                 }
                 return true

@@ -38,8 +38,11 @@ interface EffectContext {
     /** The card is already where a move would leave it. */
     fun alreadyIn(card: CardSlot?, to: String?): Boolean
 
-    /** Moves the cards, one by one in that order, recording each one's event by where it arrives. Returns those that moved. */
-    fun move(cards: List<CardSlot>?, to: String?, exhausted: Boolean, faceDown: Boolean): List<CardSlot>
+    /**
+     * Moves the cards, one by one in that order, recording each one's event by where it arrives. Returns those that moved.
+     * `withResources`: a card of the field that becomes a material or a Recurso takes its Recursos along ("con todos sus recursos").
+     */
+    fun move(cards: List<CardSlot>?, to: String?, exhausted: Boolean, faceDown: Boolean, withResources: Boolean = false): List<CardSlot>
 
     /** The cards an effect is looking at. */
     fun looked(): List<CardSlot>
@@ -125,6 +128,12 @@ interface EffectContext {
 
     /** A utility or structure whose "En Juego" can be activated now. */
     fun canBePlayed(card: CardSlot?): Boolean
+
+    /** What summoning a creature by effect costs before the effect's reduction: its cost less the modifiers of a summon by effect. */
+    fun summonCost(card: CardSlot): Int
+
+    /** What playing a utility or structure costs before the effect's reduction: its cost after its own modifiers ("reduce en 1 el coste de esta carta por cada enemigo agotado"). */
+    fun playCost(card: CardSlot): Int
 
     /** The effect comes back later ("al final del turno"), so it may act on its own card. */
     fun delayed(): Boolean

@@ -67,7 +67,18 @@ object Selection {
             }
             if (!holds) return false
         }
-        if (r.compareStrength == Selector.Compare.LESS && ctx.strength(card) >= ctx.strength(other)) return false
+        if (r.compareStrength != null) {
+            val mine = ctx.strength(card)
+            val theirs = ctx.strength(other)
+            // "con fuerza mayor a esta carta", "de fuerza menor a esta carta"
+            val holds = when (r.compareStrength) {
+                Selector.Compare.EQUAL -> mine == theirs
+                Selector.Compare.AT_MOST -> mine <= theirs
+                Selector.Compare.LESS -> mine < theirs
+                Selector.Compare.GREATER -> mine > theirs
+            }
+            if (!holds) return false
+        }
         val name = card.cardName
         if (r.differentName && name != null && name.equals(other.cardName, ignoreCase = true)) return false
         if (r.sameName && (name == null || !name.equals(other.cardName, ignoreCase = true))) return false

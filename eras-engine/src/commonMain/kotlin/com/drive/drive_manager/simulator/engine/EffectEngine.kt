@@ -57,6 +57,9 @@ object EffectEngine {
     const val HARMLESS = "No inflige daño directo ni destruye al enfrentar"
     /** "no puede agotarse": it cannot be exhausted (by effects, nor to declare an attack). */
     const val CANNOT_TAP = "No puede agotarse"
+
+    /** "no puede ser destruido por enfrentamiento" (as attacker or as blocker). */
+    const val NO_CLASH_DESTRUCTION = "No puede ser destruida por enfrentamiento"
     /** "no puede ser objetivo de efectos de cartas oponentes [nivel N o menor]": "Inmune" or "Inmune N". */
     const val IMMUNE = "Inmune"
     /** "no puede ser removido por efectos oponentes". */
