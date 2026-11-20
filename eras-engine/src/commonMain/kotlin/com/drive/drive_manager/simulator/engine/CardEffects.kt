@@ -97,12 +97,17 @@ object CardEffects {
      * @param formationNeighbours `targets` are only the members of its formation next to it ("los aliados [paladín] adyacentes en la formación")
      * @param lives      from the field, it gives `strength` to the creatures in its controller's lives ("las criaturas en tus vidas ganan 20 de
      *                   fuerza"): read when a life's strength is ([lifeStrength])
+     * @param effectsSeeStrength "los efectos de esta carta consideran la fuerza de las criaturas reducida en 1" (-1): what the effects of the card
+     *                   that has it (its own, inherited and granted ones) read as a creature's strength in their limits ("de fuerza 3 o menos")
+     *                   ([EffectEngine.strengthSeen]); 0: none
+     * @param ofHolder   with [effectsSeeStrength]: "esta carta [dragón]", only while the card that has it is that; null: any
      */
     @JvmRecord
     data class Continuous(
         val label: String?, val text: String?, val allyTurn: Boolean, val condition: Condition?, val strength: Int, val keywords: List<String>?,
         val bonus: Amount?, val zone: String?, val levelBonus: Amount?, val targets: CardFilter?, val enemies: Boolean,
         val formationNeighbours: Boolean = false, val keywordAmount: Amount? = null, val lives: Boolean = false,
+        val effectsSeeStrength: Int = 0, val ofHolder: CardFilter? = null,
     ) {
         /**
          * The keywords it gives now: "gana Letalidad 1 por cada copia de esta carta en tus tributos" is "Letalidad {n}" with

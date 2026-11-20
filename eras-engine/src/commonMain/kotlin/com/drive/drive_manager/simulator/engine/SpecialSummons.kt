@@ -220,15 +220,18 @@ object SpecialSummons {
         if (use != null) {
             room.usedThisTurn.removeAll { k -> k.startsWith(DISCOUNT_MATERIALS + card.instanceId + "|") }
             if (!materials.isEmpty()) room.usedThisTurn.add(DISCOUNT_MATERIALS + card.instanceId + "|" + ids(materials).joinToString(","))
+            val fromSummoner = use.modifier.payment!!.kind == CostModifiers.PaymentKind.SUMMONER_RESOURCES_TO_TRIBUTES
             rulesPrompt(room, player.userId, PromptPurpose.SUMMONER_DISCOUNT.id(), name(use.holder) + " · " + use.modifier.label,
-                    CostModifiers.describe(use), "Pagar", CostModifiers.paymentOptions(player, use, card), player.tributeZone)
+                    CostModifiers.describe(use), "Pagar", CostModifiers.paymentOptions(player, use, card, summoner),
+                    if (fromSummoner) summoner!!.resources else player.tributeZone)
             room.prompt!!.max = use.modifier.payment!!.count
-            if (use.modifier.payment!!.kind == CostModifiers.PaymentKind.SELF_DAMAGE) room.prompt!!.min = 0
+            // "hasta N" ones: any number of them, or none
+            if (use.modifier.payment!!.kind == CostModifiers.PaymentKind.SELF_DAMAGE || fromSummoner) room.prompt!!.min = 0
             // "puedes enviar 5…": exactly that many, or none to pay it all
             else room.prompt!!.exactOrNone = true
             // Without this reduction the summon cannot be paid: the payment is not optional any more
             val others = CostModifiers.available(room, player, CostModifiers.Event.SPECIAL_SUMMON, req.kind, card, summoner) - use.modifier.reduceNow(room, player.userId)
-            if (use.modifier.payment!!.kind != CostModifiers.PaymentKind.SELF_DAMAGE && !canPay(room, player.userId, card.specialCost!! - others)) {
+            if (use.modifier.payment!!.kind != CostModifiers.PaymentKind.SELF_DAMAGE && !fromSummoner && !canPay(room, player.userId, card.specialCost!! - others)) {
                 room.prompt!!.min = use.modifier.payment!!.count
             }
             room.prompt!!.subjectId = card.instanceId

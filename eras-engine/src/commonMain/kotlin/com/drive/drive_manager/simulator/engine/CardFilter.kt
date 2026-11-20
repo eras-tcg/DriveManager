@@ -35,6 +35,7 @@ import com.drive.drive_manager.simulator.room.CardSlot
  * @param faceDownOnly  "bocabajo"
  * @param minSpecialCost "de coste especial N o mayor"
  * @param hasResources  "con recursos": it has at least one Recurso
+ * @param withoutResource "que no la tenga ya en sus recursos": none of its Recursos has that name
  * @param anyOf         alternatives that cannot be written as one filter ("1 utilidad Violeta o [brujería]"): it matches when this
  *                      filter and one of them do
  */
@@ -46,7 +47,7 @@ data class CardFilter(
     val nameContains: String?, val minCost: Int?, private val cardTypes: List<String>?, private val anyOf: List<CardFilter>?,
     val mentions: String?, val backOnly: Boolean, val enlace: Boolean = false, val frontOnly: Boolean = false,
     val noResources: Boolean = false, val faceUpOnly: Boolean = false, val faceDownOnly: Boolean = false, val minSpecialCost: Int? = null,
-    val hasResources: Boolean = false,
+    val hasResources: Boolean = false, val withoutResource: String? = null,
 ) {
 
     constructor(
@@ -212,9 +213,12 @@ data class CardFilter(
         // Any level it can count as for the card looking (Abraza Almas)
         if ((level != null || maxLevel != null || minLevel != null) && EffectEngine.levels(card)
                 .none { l -> (level == null || level == l) && (maxLevel == null || l!! <= maxLevel) && (minLevel == null || l!! >= minLevel) }) return false
-        val strength = if (asCreature != null && card.strength == null) asCreature else EffectEngine.strength(card)
-        if (maxStrength != null && strength > maxStrength) return false
-        if (minStrength != null && strength < minStrength) return false
+        if (maxStrength != null || minStrength != null) {
+            // As the effect looking sees it ("los efectos de esta carta consideran la fuerza … reducida en 1")
+            val strength = if (asCreature != null && card.strength == null) asCreature else EffectEngine.strengthSeen(card)
+            if (maxStrength != null && strength > maxStrength) return false
+            if (minStrength != null && strength < minStrength) return false
+        }
         if (maxCost != null && (card.cost == null || card.cost!! > maxCost)) return false
         if (activeOnly && card.tapped) return false
         if (exhaustedOnly && !card.tapped) return false
@@ -236,6 +240,7 @@ data class CardFilter(
         if (frontOnly && !EffectEngine.inFrontLine(card)) return false
         if (noResources && !card.resources.isNullOrEmpty()) return false
         if (hasResources && card.resources.isNullOrEmpty()) return false
+        if (withoutResource != null && card.resources.orEmpty().any { CardEffects.isNamed(it, withoutResource) }) return false
         if (enlace && !card.enlace) return false
         if (faceUpOnly && card.faceDown) return false
         if (faceDownOnly && !card.faceDown) return false
@@ -289,7 +294,7 @@ data class CardFilter(
                 colorAndClass == other.colorAndClass && notColorList == other.notColorList && nameContains == other.nameContains &&
                 minCost == other.minCost && cardTypeList == other.cardTypeList && anyOfList == other.anyOfList && mentions == other.mentions &&
                 backOnly == other.backOnly && enlace == other.enlace && frontOnly == other.frontOnly &&
-                noResources == other.noResources && hasResources == other.hasResources
+                noResources == other.noResources && hasResources == other.hasResources && withoutResource == other.withoutResource
     }
 
     /** As a record's: `31 * h + hash(component)` over the components, in order. */
@@ -303,6 +308,7 @@ data class CardFilter(
         if (frontOnly) result = 31 * result + true.hashCode()
         if (noResources) result = 31 * result + 1
         if (hasResources) result = 31 * result + 2
+        if (withoutResource != null) result = 31 * result + withoutResource.hashCode()
         return result
     }
 

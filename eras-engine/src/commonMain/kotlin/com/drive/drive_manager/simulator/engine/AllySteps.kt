@@ -152,7 +152,8 @@ object AllySteps : StepFamily {
                 return true
             }
             is ActivateSubjectSummonEffect -> {
-                val ally = subject(room, effect)
+                // "puedes activar 1 efecto En Invocación de esta carta" from where it is (the Tributos) when no ally was chosen
+                val ally = subject(room, effect) ?: if (effect.subjectId == null) EffectEngine.findAnywhere(room, userId, effect.sourceInstanceId) else null
                 val summon = if (ally == null) null else CardEffects.of(ally.cardName)
                     .firstOrNull { sc -> sc.moment == EffectScript.Moment.ON_SUMMON }
                 if (summon == null) {
@@ -161,6 +162,11 @@ object AllySteps : StepFamily {
                 }
                 // Activated as the ally's own: a new link of the chain, after this one resolves
                 val link = pending(room, summon, userId, ally!!, room.eventSeq)
+                // Its cost has to be payable ("puedes enviar 5 de tus tributos…")
+                if (summon.cost.orEmpty().any { c -> !Resolution.possible(room, link, c) }) {
+                    log(room, name(ally) + " no puede activar su efecto En Invocación (" + effect.sourceName + ")", null)
+                    return false
+                }
                 link.confirmed = true
                 link.ordered = true
                 room.triggerQueue.add(0, link)

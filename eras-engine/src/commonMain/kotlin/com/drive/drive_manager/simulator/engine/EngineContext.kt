@@ -315,6 +315,7 @@ internal class EngineContext(private val room: GameRoom, private val effect: Pen
             "subject" -> if (effect.subjectId == null) null else EffectEngine.find(player()!!.field, effect.subjectId)
             "last" -> if (effect.lastTributed.isEmpty()) null else EffectEngine.find(player()!!.field, effect.lastTributed[0])
             "event" -> eventCardOnField()
+            "summoned" -> if (effect.summonedId == null) null else EffectEngine.find(player()!!.field, effect.summonedId)
             else -> null
         }
     }
@@ -551,7 +552,8 @@ internal class EngineContext(private val room: GameRoom, private val effect: Pen
             "subject" -> if (effect.subjectId == null) null else find(effect.subjectId)
             "last" -> if (effect.lastTributed.isEmpty()) null else find(effect.lastTributed[0])
             "event" -> eventCardOnField()
-            else -> null
+            // "dicho aliado" said by what an action before saved: the summoned creature, or a name of the memory
+            else -> saved(to).firstOrNull()?.let { find(it) }
         }
     }
 
@@ -662,6 +664,16 @@ internal class EngineContext(private val room: GameRoom, private val effect: Pen
         if (amount is Amount.Scaled) return this.amount(amount.base) / amount.divisor + amount.plus
         if (amount is Amount.TriggerSourceLevel) return SpecialRequirements.triggerSourceLevel(room, effect)
         if (amount is Amount.CardsIn) return com.drive.drive_manager.simulator.engine.effects.selection.Selection.candidates(this, amount.cards!!, false).size
+        if (amount is Amount.SumOf) {
+            val cards = com.drive.drive_manager.simulator.engine.effects.selection.Selection.candidates(this, amount.cards!!, false)
+            return cards.sumOf { c ->
+                when (amount.value) {
+                    "cost" -> c.cost ?: 0
+                    "level" -> c.getLevel() ?: 0
+                    else -> if (onField(c)) strength(c) else Removals.strengthWhenLeft(room, c.instanceId) ?: max(0, c.strength ?: 0)
+                }
+            }
+        }
         if (amount is Amount.LastMoved) {
             val filter = amount.filter ?: CardFilter.any()
             return effect.lastTributed.mapNotNull { id -> EffectEngine.findInRoom(room, id) }.count { filter.matches(it) }

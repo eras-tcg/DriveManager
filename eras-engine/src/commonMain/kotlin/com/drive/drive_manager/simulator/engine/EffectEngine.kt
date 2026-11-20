@@ -361,6 +361,23 @@ object EffectEngine {
                 card.laterStrength + card.continuousStrength
     }
 
+    /**
+     * The strength a creature counts as for the limits of the effect looking now ("de fuerza 3 o menos"): its strength, changed by what the
+     * looking card's continuous effects say ("los efectos de esta carta [dragón] consideran la fuerza de las criaturas reducida en 1":
+     * [CardEffects.Continuous.effectsSeeStrength]). Outside an effect, its strength.
+     */
+    @JvmStatic
+    fun strengthSeen(card: CardSlot): Int {
+        val now = strength(card)
+        val looker = LOOKER.get() ?: return now
+        if ("creature" != card.cardType) return now
+        var change = 0
+        for (c in CardEffects.continuousOf(looker)) {
+            if (c.effectsSeeStrength != 0 && (c.ofHolder == null || c.ofHolder.matches(looker))) change += c.effectsSeeStrength
+        }
+        return now + change
+    }
+
     /** Its abilities: printed, inherited from its Recursos, gained this turn and given by its continuous effects now. */
     @JvmStatic
     fun keywords(card: CardSlot?): MutableList<String> {

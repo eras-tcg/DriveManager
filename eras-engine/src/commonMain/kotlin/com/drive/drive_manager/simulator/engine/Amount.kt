@@ -87,6 +87,18 @@ sealed interface Amount {
         }
     }
 
+    /**
+     * "igual a su fuerza", "reduciendo su coste en el del aliado tributado": the strength, cost or level (`value`: "strength", "cost",
+     * "level") the cards an effect's selector finds add up to, read by EngineContext; a card that left the field counts the strength it had
+     * there. 0 outside an effect.
+     */
+    @JvmRecord
+    data class SumOf(val cards: com.drive.drive_manager.simulator.engine.effects.model.Selector?, val value: String?) : Amount {
+        override fun of(room: GameRoom, controller: String?): Int {
+            return 0
+        }
+    }
+
     /** "en el nivel de dicho aliado": the card of the triggering event, read by EngineContext. */
     data object TriggerSourceLevel : Amount {
         override fun of(room: GameRoom, controller: String?): Int {

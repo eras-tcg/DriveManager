@@ -325,6 +325,8 @@ object Removals {
                     val s = CardEffects.allyRemovalSummon(c)
                     if (s == null || s.zone != z || !s.ally!!.matches(card)) continue
                     val r = s.replacement!!
+                    // "cuando algún aliado fuera a ser destruido"
+                    if (r.destroyOnly && !destroy) continue
                     if (Limit.spent(r.limit, room.usedThisTurn, replacementKey(owner, c, r))) continue
                     if (!SpecialSummons.canSummonInsteadOfRemoval(room, owner, c, card, s.reduce)) continue
                     options.add(ReplacementOption(r.id + "@" + c.instanceId, c, r, r.label,

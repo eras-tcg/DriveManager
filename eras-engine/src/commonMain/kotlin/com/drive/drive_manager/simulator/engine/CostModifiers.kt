@@ -26,7 +26,11 @@ object CostModifiers {
         /** "En Tributos: cuando fueras a invocar…": a card of the player's Tributos. */
         TRIBUTES }
 
-    enum class PaymentKind { NONE, TAP_SELF, TRIBUTES_TO_DECK_BOTTOM, TRIBUTE_AS_RESOURCE, TAP_CARD, SELF_DAMAGE }
+    enum class PaymentKind { NONE, TAP_SELF, TRIBUTES_TO_DECK_BOTTOM, TRIBUTE_AS_RESOURCE, TAP_CARD, SELF_DAMAGE,
+        /** "puedes colocar N de tus tributos al tope de tu mazo": the player picks which, and orders nothing (the first picked ends up highest). */
+        TRIBUTES_TO_DECK_TOP,
+        /** "reduce el coste especial en X tributando X recursos del invocador": up to [Payment.count] Recursos of the summoner go to the Tributos. */
+        SUMMONER_RESOURCES_TO_TRIBUTES }
 
     /**
      * What the modifier asks for, if anything.
@@ -51,7 +55,7 @@ object CostModifiers {
         /** The player has to choose the cards (the others are applied on their own). */
         fun needsChoice(): Boolean {
             return kind == PaymentKind.TRIBUTES_TO_DECK_BOTTOM || kind == PaymentKind.TRIBUTE_AS_RESOURCE || kind == PaymentKind.TAP_CARD
-                    || kind == PaymentKind.SELF_DAMAGE
+                    || kind == PaymentKind.SELF_DAMAGE || kind == PaymentKind.TRIBUTES_TO_DECK_TOP || kind == PaymentKind.SUMMONER_RESOURCES_TO_TRIBUTES
         }
 
         companion object {
@@ -103,11 +107,15 @@ object CostModifiers {
      * @param reduce    how much it lowers the cost
      * @param card      the card whose cost it lowers ("1 criatura Azul nivel 3 o mayor"); null: any
      * @param amount    a reduction read from the game, added to `reduce` ("en 1 por cada [brujería] en tu descarte"); null: none
+     * @param summoner  "Si es nivel 5: reduce el coste especial en 2": only when the special summon's summoner is that; null: any
+     * @param gems      "cuando esta carta fuera a invocar especialmente: puedes colocar 3 de tus tributos al tope de tu mazo: gana 1 gema": the
+     *                  payment gains these gems (a Reacción–Acción before the summon) instead of lowering the cost; 0: none
      */
     @JvmRecord
     data class CostModifier(
         val label: String?, val event: Event?, val kinds: Set<String>?, val holder: Holder?, val allyTurn: Boolean,
         val condition: Condition?, val payment: Payment?, val reduce: Int, val limit: EffectScript.Limit?, val card: CardFilter?, val amount: Amount?,
+        val summoner: CardFilter? = null, val gems: Int = 0,
     ) : Reaction {
         constructor(
             label: String?, event: Event?, kinds: Set<String>?, holder: Holder?, allyTurn: Boolean, condition: Condition?, payment: Payment?,
@@ -202,7 +210,10 @@ object CostModifiers {
                 if (!placed) continue
                 if (m.allyTurn && player.userId != room.currentTurnUserId) continue
                 if (m.condition != null && !m.condition.test(room, null, holder, player.userId)) continue
-                if (!payable(player, m.payment!!, holder, card)) continue
+                // "Si es nivel 5": the summoner chosen, or (none chosen yet) any creature of the field that could be it
+                if (m.summoner != null && !(if (summoner != null) m.summoner.matches(summoner)
+                        else player.field.any { c -> c !== card && "creature" == c.cardType && m.summoner.matches(c) })) continue
+                if (!payable(player, m.payment!!, holder, card, summoner)) continue
                 // "puedes agotar…" the player said no to, for this summon
                 if (m.payment.kind == PaymentKind.TAP_SELF && card != null && room.usedThisTurn.contains(tapKey(holder, card, false))) continue
                 val use = Use(m, holder)
@@ -215,11 +226,14 @@ object CostModifiers {
     }
 
     /** `card`: the card whose cost it lowers, never part of the payment ("envía otras 5…": it may be in the Tributos). */
-    private fun payable(player: PlayerState, payment: Payment, holder: CardSlot, card: CardSlot?): Boolean {
+    private fun payable(player: PlayerState, payment: Payment, holder: CardSlot, card: CardSlot?, summoner: CardSlot?): Boolean {
         return when (payment.kind!!) {
             PaymentKind.NONE -> true
             PaymentKind.TAP_SELF -> !holder.tapped
-            PaymentKind.TRIBUTES_TO_DECK_BOTTOM, PaymentKind.TRIBUTE_AS_RESOURCE -> tributesFor(player, payment, card).size >= (payment.per ?: payment.count)
+            // The summoner not chosen yet: any of the field could pay it
+            PaymentKind.SUMMONER_RESOURCES_TO_TRIBUTES -> if (summoner != null) summoner.resources.orEmpty().size >= (payment.per ?: payment.count)
+                else player.field.any { c -> c !== card && c.resources.orEmpty().size >= (payment.per ?: payment.count) }
+            PaymentKind.TRIBUTES_TO_DECK_BOTTOM, PaymentKind.TRIBUTE_AS_RESOURCE, PaymentKind.TRIBUTES_TO_DECK_TOP -> tributesFor(player, payment, card).size >= (payment.per ?: payment.count)
                     && (!payment.withHolder || tributesFor(player, payment, card).contains(holder))
             PaymentKind.TAP_CARD -> player.field.count { c -> !c.tapped && payment.filter!!.matches(c) } >= payment.count
             PaymentKind.SELF_DAMAGE -> !player.lifeStack.isEmpty()
@@ -229,7 +243,15 @@ object CostModifiers {
     /** How much the cost could go down now, all of them used (to tell whether it is affordable). */
     @JvmStatic
     fun available(room: GameRoom, player: PlayerState?, event: Event?, kind: String?, card: CardSlot?, summoner: CardSlot?): Int {
-        return applicable(room, player, event, kind, card, summoner).sumOf { u -> u.modifier.reduceNow(room, player!!.userId) }
+        return applicable(room, player, event, kind, card, summoner).sumOf { u ->
+            val payment = u.modifier.payment!!
+            // "tributando X recursos del invocador": as many times as the summoner (or the best one of the field) could pay
+            if (payment.kind == PaymentKind.SUMMONER_RESOURCES_TO_TRIBUTES) {
+                val most = if (summoner != null) summoner.resources.orEmpty().size
+                    else player!!.field.filter { it !== card }.maxOfOrNull { it.resources.orEmpty().size } ?: 0
+                u.modifier.reduceNow(room, player!!.userId) * payment.times(min(payment.count, most))
+            } else u.modifier.reduceNow(room, player!!.userId)
+        }
     }
 
     /** The player's answer to "puedes agotar esta carta para reducir…" for this summon (Bosque Frondoso), until it is used. */
@@ -328,8 +350,13 @@ object CostModifiers {
 
     /** The cards that can pay it (`card`: the one whose cost it lowers, left out). */
     @JvmStatic
-    fun paymentOptions(player: PlayerState, use: Use, card: CardSlot?): List<CardSlot> {
+    fun paymentOptions(player: PlayerState, use: Use, card: CardSlot?): List<CardSlot> = paymentOptions(player, use, card, null)
+
+    /** `summoner`: the special summon's summoner, whose Recursos may pay it. */
+    @JvmStatic
+    fun paymentOptions(player: PlayerState, use: Use, card: CardSlot?, summoner: CardSlot?): List<CardSlot> {
         val payment = use.modifier.payment!!
+        if (payment.kind == PaymentKind.SUMMONER_RESOURCES_TO_TRIBUTES) return summoner?.resources.orEmpty()
         if (payment.kind == PaymentKind.TAP_CARD) return player.field.filter { c -> !c.tapped && payment.filter!!.matches(c) }
         // Each life of the top it may take, one per time
         if (payment.kind == PaymentKind.SELF_DAMAGE) return player.lifeStack.subList(0, min(payment.count, player.lifeStack.size))
@@ -351,6 +378,15 @@ object CostModifiers {
         if (payment.kind == PaymentKind.TAP_CARD) {
             return "Puedes agotar 1 carta " + payment.filter!!.describe() + " bajo tu control para reducir en " + use.modifier.reduce +
                     " el coste especial. Elige 1, o ninguna."
+        }
+        if (payment.kind == PaymentKind.SUMMONER_RESOURCES_TO_TRIBUTES) {
+            return "Puedes tributar hasta " + payment.count + " recursos del invocador: por cada " + (payment.per ?: 1) + " reduce en " +
+                    use.modifier.reduce + " el coste especial. Elige los recursos, o ninguno."
+        }
+        if (payment.kind == PaymentKind.TRIBUTES_TO_DECK_TOP) {
+            return "Puedes colocar " + payment.count + " de tus tributos " + payment.filter!!.describe() + " al tope de tu mazo" +
+                    (if (use.modifier.gems > 0) " para ganar " + use.modifier.gems + (if (use.modifier.gems == 1) " gema" else " gemas")
+                    else " para reducir en " + use.modifier.reduce + " el coste") + ". Elige " + payment.count + ", o ninguna."
         }
         if (payment.kind == PaymentKind.TRIBUTES_TO_DECK_BOTTOM && payment.per != null) {
             return "Puedes enviar hasta " + payment.count + " de tus tributos " + payment.filter!!.describe() + " al fondo de tu mazo: por cada " + payment.per +
