@@ -1,0 +1,274 @@
+{
+  "name": "tinflarus",
+  "effects": [
+    {
+      "id": "tinflarus:en-mano",
+      "moment": "ON_EVENT",
+      "label": "En Mano",
+      "text": "Una vez por turno entre copias: si algún aliado es invocado o durante tu turno: puedes añadir esta carta como recurso a un aliado Verde, [fauna] o [treant] nivel 3 o menor; cambia su nivel original a 2. Luego: puede invocar 1 criatura de tu mano.",
+      "cost": [
+        {
+          "type": "Do",
+          "action": {
+            "type": "Select",
+            "selector": {
+              "zones": "field",
+              "owner": "YOU",
+              "filter": {
+                "cardType": "creature",
+                "colors": [
+                  "G"
+                ],
+                "classes": [
+                  "fauna",
+                  "treant"
+                ],
+                "maxLevel": 3
+              },
+              "min": {
+                "type": "Fixed",
+                "value": 1
+              },
+              "max": {
+                "type": "Fixed",
+                "value": 1
+              },
+              "self": "ANY",
+              "mode": "CHOOSE"
+            },
+            "label": "Recibe"
+          }
+        },
+        {
+          "type": "Do",
+          "action": {
+            "type": "Move",
+            "cards": {
+              "zones": "hand",
+              "owner": "YOU",
+              "filter": {},
+              "min": {
+                "type": "Fixed",
+                "value": 1
+              },
+              "max": {
+                "type": "Fixed",
+                "value": 1
+              },
+              "self": "ANY",
+              "mode": "SELF"
+            },
+            "to": "resources:last"
+          }
+        }
+      ],
+      "steps": [
+        {
+          "type": "MayDo",
+          "question": "¿Invocas 1 criatura de tu mano?",
+          "covers": 1
+        },
+        {
+          "type": "Do",
+          "action": {
+            "type": "Summon",
+            "cards": {
+              "zones": "hand",
+              "owner": "YOU",
+              "filter": {
+                "cardType": "creature"
+              },
+              "min": {
+                "type": "Fixed",
+                "value": 1
+              },
+              "max": {
+                "type": "Fixed",
+                "value": 1
+              },
+              "self": "ANY",
+              "mode": "CHOOSE"
+            },
+            "reduce": {
+              "type": "Fixed"
+            },
+            "required": true
+          }
+        }
+      ],
+      "condition": {
+        "type": "Summoned",
+        "side": "YOU"
+      },
+      "sourceZone": "hand",
+      "limit": "ONCE_PER_TURN_BETWEEN_COPIES"
+    },
+    {
+      "id": "tinflarus:en-mano#turno",
+      "moment": "ACTIVATED",
+      "label": "En Mano",
+      "text": "Una vez por turno entre copias: si algún aliado es invocado o durante tu turno: puedes añadir esta carta como recurso a un aliado Verde, [fauna] o [treant] nivel 3 o menor; cambia su nivel original a 2. Luego: puede invocar 1 criatura de tu mano.",
+      "cost": [
+        {
+          "type": "Do",
+          "action": {
+            "type": "Select",
+            "selector": {
+              "zones": "field",
+              "owner": "YOU",
+              "filter": {
+                "cardType": "creature",
+                "colors": [
+                  "G"
+                ],
+                "classes": [
+                  "fauna",
+                  "treant"
+                ],
+                "maxLevel": 3
+              },
+              "min": {
+                "type": "Fixed",
+                "value": 1
+              },
+              "max": {
+                "type": "Fixed",
+                "value": 1
+              },
+              "self": "ANY",
+              "mode": "CHOOSE"
+            },
+            "label": "Recibe"
+          }
+        },
+        {
+          "type": "Do",
+          "action": {
+            "type": "Move",
+            "cards": {
+              "zones": "hand",
+              "owner": "YOU",
+              "filter": {},
+              "min": {
+                "type": "Fixed",
+                "value": 1
+              },
+              "max": {
+                "type": "Fixed",
+                "value": 1
+              },
+              "self": "ANY",
+              "mode": "SELF"
+            },
+            "to": "resources:last"
+          }
+        }
+      ],
+      "steps": [
+        {
+          "type": "MayDo",
+          "question": "¿Invocas 1 criatura de tu mano?",
+          "covers": 1
+        },
+        {
+          "type": "Do",
+          "action": {
+            "type": "Summon",
+            "cards": {
+              "zones": "hand",
+              "owner": "YOU",
+              "filter": {
+                "cardType": "creature"
+              },
+              "min": {
+                "type": "Fixed",
+                "value": 1
+              },
+              "max": {
+                "type": "Fixed",
+                "value": 1
+              },
+              "self": "ANY",
+              "mode": "CHOOSE"
+            },
+            "reduce": {
+              "type": "Fixed"
+            },
+            "required": true
+          }
+        }
+      ],
+      "sourceZone": "hand",
+      "allyTurn": true,
+      "limit": "ONCE_PER_TURN_BETWEEN_COPIES"
+    }
+  ],
+  "inherited": [
+    {
+      "id": "tinflarus:hereda-en-invocacion",
+      "moment": "ON_SUMMON",
+      "label": "En Invocación",
+      "text": "Heredado de Tinflarus: puedes tributar \"Tinflarus\" de los recursos de esta carta; juega 1 estructura de tu mano reduciendo su coste en 1.",
+      "cost": [
+        {
+          "type": "Do",
+          "action": {
+            "type": "Move",
+            "cards": {
+              "zones": "resources",
+              "owner": "YOU",
+              "filter": {
+                "name": "Tinflarus"
+              },
+              "min": {
+                "type": "Fixed",
+                "value": 1
+              },
+              "max": {
+                "type": "Fixed",
+                "value": 1
+              },
+              "self": "ANY",
+              "mode": "TOP"
+            },
+            "to": "tributeZone"
+          }
+        }
+      ],
+      "steps": [
+        {
+          "type": "Do",
+          "action": {
+            "type": "Play",
+            "cards": {
+              "zones": "hand",
+              "owner": "YOU",
+              "filter": {
+                "cardTypes": [
+                  "structure"
+                ]
+              },
+              "min": {
+                "type": "Fixed",
+                "value": 1
+              },
+              "max": {
+                "type": "Fixed",
+                "value": 1
+              },
+              "self": "ANY",
+              "mode": "CHOOSE"
+            },
+            "reduce": {
+              "type": "Fixed",
+              "value": 1
+            },
+            "required": true
+          }
+        }
+      ],
+      "sourceZone": "field",
+      "limit": "NONE"
+    }
+  ]
+}

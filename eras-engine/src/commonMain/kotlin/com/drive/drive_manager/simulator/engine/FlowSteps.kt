@@ -133,6 +133,9 @@ object FlowSteps : StepFamily {
                 if (source != null) {
                     prompt.cards = ArrayList(frozenListOf(source))
                     prompt.validIds = ArrayList(frozenListOf(source.instanceId))
+                } else if (effect.sourceInstanceId != null) {
+                    // Its card is not in a zone shown (a Recurso now): "yes" is still answered with it
+                    prompt.validIds = ArrayList(frozenListOf(effect.sourceInstanceId!!))
                 }
                 prompt.min = 0
                 prompt.max = 1
