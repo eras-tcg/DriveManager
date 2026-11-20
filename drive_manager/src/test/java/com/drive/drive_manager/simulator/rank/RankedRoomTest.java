@@ -162,7 +162,13 @@ class RankedRoomTest {
         when(loader.slots(any())).thenAnswer(inv -> {
             PlayerState holder = new PlayerState("x", "x");
             BotMatch.seat(holder, ((DeckList) inv.getArgument(0)).getId(), new int[] {500});
-            return new java.util.ArrayList<>(holder.getDeck());
+            List<CardSlot> slots = new java.util.ArrayList<>(holder.getDeck());
+            // A card the deck lists that the site no longer has: no name, no metadata
+            CardSlot gone = new CardSlot();
+            gone.setInstanceId("gone");
+            gone.setCardId("deleted-card");
+            slots.add(gone);
+            return slots;
         });
         service.decks = loader;
     }
@@ -179,7 +185,7 @@ class RankedRoomTest {
         act(id, "owner", "SET_RANKED", Map.of("ranked", true));
         PlayerState bot = room.getPlayer(BotRooms.BOT);
         assertThat(bot.getDeckId()).isIn("st2", "st3");
-        assertThat(bot.getDeck()).isNotEmpty();
+        assertThat(bot.getDeck()).isNotEmpty().allMatch(c -> c.getCardName() != null);
         assertThat(bot.getStarterCardId()).isNotNull();
 
         // Back to the pre-room after a game: a new rival, with the other deck of the pool
