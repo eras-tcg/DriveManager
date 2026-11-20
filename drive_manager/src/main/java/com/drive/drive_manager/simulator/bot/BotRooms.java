@@ -81,9 +81,13 @@ public final class BotRooms {
             if (pool.size() > 1) pool.sort(Comparator.comparing(d -> d.getId().equals(avoidDeckId)));
             for (DeckList deck : pool) {
                 if (service.decks.hasTestCards(deck)) continue;
-                // A card the deck still lists but the site no longer has (no name, no metadata) is left out
-                List<CardSlot> cards = new ArrayList<>(service.decks.slots(deck).stream().filter(c -> c.getCardName() != null).toList());
+                List<CardSlot> cards = service.decks.slots(deck);
                 if (cards.isEmpty() || DeckLoader.unprogrammedIn(cards) != null) continue;
+                // A deck listing a card the site no longer has is not played until it is fixed
+                if (cards.stream().anyMatch(c -> c.getCardName() == null)) {
+                    LOG.warn("Bot pool deck {} ({}) lists cards the site no longer has: left out", deck.getDeckName(), deck.getId());
+                    continue;
+                }
                 cards.forEach(c -> c.setFinish(null));
                 return new RoomBots.PoolDeck(deck.getId(), deck.getDeckName(), cards);
             }
