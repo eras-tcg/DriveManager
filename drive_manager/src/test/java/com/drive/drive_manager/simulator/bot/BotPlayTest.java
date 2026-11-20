@@ -269,6 +269,8 @@ class BotPlayTest {
         // The models to try (bot/models.txt) come after the levels, marked apart, and are chosen the same way
         assertThat(hard.getBotChoices()).extracting(c -> c.get("id")).startsWith(BotCatalog.EASY, BotCatalog.NORMAL, BotCatalog.HARD).contains("previo");
         assertThat(hard.getBotChoices()).filteredOn(c -> "level".equals(c.get("kind"))).hasSize(3);
+        // (only a simulator administrator seats a model under test)
+        room.getAdminPlayers().add("owner");
         assertThat(service.applyAction(id, "owner", BotPlayer.action("SET_BOT_LEVEL", Map.of("level", "previo")), false).getError()).isNull();
         assertThat(((LookaheadBot) BotCatalog.botAt("previo")).settings().get("rankCands")).isEqualTo(0);
     }

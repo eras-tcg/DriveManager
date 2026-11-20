@@ -41,9 +41,12 @@ object StateMask {
         // so the rival sees it too while its owner decides
         val revealed = update.prompt?.takeIf { p -> PromptPurpose.REINFORCE.`is`(p.purpose) || PromptPurpose.LIFE_PLAY.`is`(p.purpose) }?.subjectId
         val players: MutableMap<String, PlayerState> = LinkedHashMap()
+        // Ranked against the bot, in the pre-room: its seat says only that a rival is there (and ready)
+        val hiddenRival = update.bot && update.ranked && GameRoom.RoomStatus.WAITING.name == update.status
         byId.forEach { (id, player) ->
             val mine = id == viewerId
-            players[id] = mask(player, mine, manual, if (mine) ownShown else 0, hidden, revealed)
+            players[id] = if (hiddenRival && id == BotSeat.BOT) unknownRival(player)
+            else mask(player, mine, manual, if (mine) ownShown else 0, hidden, revealed)
         }
         view.players = players
 
@@ -97,6 +100,27 @@ object StateMask {
         masked.field = if (mine) player.field else faceDownBacks(player.field, hidden)
         return masked
     }
+
+    /** The bot's seat before a ranked game: no name, deck or starter yet, only whether it is ready. */
+    private fun unknownRival(player: PlayerState): PlayerState {
+        val masked = ShallowCopy.of(player)
+        masked.username = UNKNOWN_RIVAL
+        masked.avatar = null
+        masked.deckId = null
+        masked.deckName = null
+        masked.starterCardId = null
+        masked.hand = ArrayList()
+        masked.deck = ArrayList()
+        masked.originalDeck = ArrayList()
+        masked.lifeStack = ArrayList()
+        masked.tributeZone = ArrayList()
+        masked.discardPile = ArrayList()
+        masked.field = ArrayList()
+        return masked
+    }
+
+    /** The name on the bot's seat until a ranked game starts. */
+    const val UNKNOWN_RIVAL = "Rival"
 
     /** Of the rival's deck list, only the starter they chose: the pre-room shows it on their seat. */
     private fun starterOnly(player: PlayerState): MutableList<CardSlot> {

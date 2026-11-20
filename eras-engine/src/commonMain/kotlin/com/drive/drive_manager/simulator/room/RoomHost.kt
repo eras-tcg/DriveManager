@@ -28,6 +28,9 @@ interface RoomHost {
     /** A card's metadata read again (edited on the site meanwhile). */
     fun refreshCardMetadata(room: GameRoom, userId: String?, action: GameAction): GameStateUpdate
 
+    /** A game over and the next one coming (a rematch, or back to the pre-room): the room's bots get ready for it. */
+    fun nextRound(room: GameRoom, rematch: Boolean)
+
     companion object {
         /** A room that is only played: the lobby and the settings are not available in it. */
         @JvmStatic
@@ -50,5 +53,6 @@ interface RoomHost {
         override fun timeline(room: GameRoom, userId: String?, action: GameAction): GameStateUpdate = refused(room)
         override fun setDeck(room: GameRoom, userId: String?, action: GameAction): GameStateUpdate = refused(room)
         override fun refreshCardMetadata(room: GameRoom, userId: String?, action: GameAction): GameStateUpdate = refused(room)
+        override fun nextRound(room: GameRoom, rematch: Boolean) {}
     }
 }

@@ -38,7 +38,7 @@ class RoomCopyTest {
     /** The fields RoomCopy copies, by class. A field added to one of these classes goes into RoomCopy and here. */
     private static final Map<Class<?>, String> FIELDS = Map.of(
             GameRoom.class, "roomId editor bot ranked replay reserved editorBot editorSelfBot selfBotLevel version paused timelineAt "
-                    + "timelineSize botDelayMs botEdge botLevel confirmMandatory status players hostId currentTurnUserId currentPhase "
+                    + "timelineSize botDelayMs botEdge botLevel botPoolDeck confirmMandatory status players hostId currentTurnUserId currentPhase "
                     + "sharedCounter createdAt firstChoice emptySince starterSelections mulliganReady manualPlayers adminPlayers "
                     + "postGameChoices eventLog timeline eventSeq chain prompt triggerQueue pendingEvents idSeq pendingRemovals "
                     + "pendingAscension removalDecided combat fieldGrants usedThisTurn firstPlayerId firstTurn starterAdvantageUserId "

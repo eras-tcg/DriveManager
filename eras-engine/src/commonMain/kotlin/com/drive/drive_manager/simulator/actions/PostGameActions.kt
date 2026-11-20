@@ -33,8 +33,10 @@ object PostGameActions {
                 reset(room, true)
                 room.players.values.forEach { p -> p.ready = false }
                 room.status = GameRoom.RoomStatus.WAITING
+                host.nextRound(room, false)
             } else {
                 reset(room, true)
+                host.nextRound(room, true)
                 // A rematch starts right away with the same starters: who goes first is drawn again (rule 3.0.1)
                 room.firstChoice = "random"
                 PreRoomActions.startFromPreRoom(room)

@@ -31,6 +31,12 @@ object RoomBots {
         /** The id of a new card instance (the bot's copy of its owner's deck). */
         fun nextInstanceId(): String
 
+        /**
+         * Ranked: a deck for the bot from the decks set aside for it (its pool), other than `avoidDeckId` when there is
+         * another, as new instances of its cards; null without one (it plays a copy of the owner's deck).
+         */
+        fun poolDeck(room: GameRoom, avoidDeckId: String?): PoolDeck? = null
+
         /** Sala de pruebas: the bot of the rival's side is switched off. */
         fun dropBot(room: GameRoom) {}
 
@@ -40,6 +46,9 @@ object RoomBots {
         /** Sala de pruebas: no bot plays the owner's side any more. */
         fun dropSelfBot(room: GameRoom) {}
     }
+
+    /** A deck of the bot's pool, ready to play: its id and name, and its cards as new instances. */
+    class PoolDeck(val deckId: String, val deckName: String?, val cards: List<CardSlot>)
 
     /** Seats the bot in a new room against it. */
     @JvmStatic
@@ -74,6 +83,8 @@ object RoomBots {
         if (room.ranked) return GameStateUpdate.error(room.roomId, "En una partida ranked el nivel del bot lo da tu rango")
         if (!room.editor && room.status != GameRoom.RoomStatus.WAITING) return GameStateUpdate.error(room.roomId, "El nivel se elige antes de empezar la partida")
         if (level == null || !BotCatalog.LEVELS.contains(level)) return GameStateUpdate.error(room.roomId, "Ese nivel no existe")
+        if (BotCatalog.isModel(level) && !room.adminPlayers.contains(userId))
+            return GameStateUpdate.error(room.roomId, "Solo un administrador del simulador prueba modelos del bot")
         room.botLevel = level
         roster.newBot(room, level)
         if (room.bot) room.getPlayer(BotSeat.BOT)?.username = BotCatalog.nameOf(level)
@@ -107,29 +118,76 @@ object RoomBots {
             room.firstChoice = "random"
             if (room.bot) rankedBot(room, roster)
         } else if (room.bot) {
-            room.botEdge = 0
+            friendlyBot(room, roster)
         }
         return GameStateUpdate.from(room, ActionType.SET_RANKED, userId)
     }
 
-    /** Ranked against the bot: it plays at the level of the owner's strength (MMR) with a copy of their deck. */
+    /**
+     * Ranked against the bot: a rival of its own, as a player would be. It plays at the level of the owner's strength
+     * (MMR), under a player's name ([BotNames]) and with a deck of its pool (else a copy of the owner's). The owner sees
+     * none of it until the game starts ([StateMask]).
+     */
     private fun rankedBot(room: GameRoom, roster: Roster) {
-        val strength = roster.ownerStrength(room)
-        val level = BotCatalog.levelFor(strength)
-        room.botLevel = level
-        room.botEdge = if (BotCatalog.HARD == level) BotEdge.levelFor(strength) else 0
-        roster.newBot(room, level)
         val bot = room.getPlayer(BotSeat.BOT) ?: return
         val owner = room.getPlayer(room.hostId)
-        bot.username = BotCatalog.nameOf(level)
+        rankedLevel(room, roster)
+        bot.username = BotNames.pick(room, owner?.username, bot.username) ?: BotCatalog.nameOf(room.botLevel)
+        val pool = roster.poolDeck(room, bot.deckId)
         bot.deckId = null
         bot.deckName = null
         bot.deck = ArrayList()
         bot.originalDeck = ArrayList()
         bot.starterCardId = null
-        // Its own instances of the owner's cards (sharing their ids, the board and the engine would mix the two sides up),
-        // without the owner's finishes
-        if (owner?.deckId != null) {
+        room.botPoolDeck = pool != null
+        if (pool != null) {
+            bot.deckId = pool.deckId
+            bot.deckName = pool.deckName
+            bot.deck = ArrayList(pool.cards)
+            bot.originalDeck = PreRoomActions.deepCopySlots(pool.cards)
+            bot.starterCardId = pool.cards.firstOrNull { it.starter }?.cardId
+        } else if (owner?.deckId != null) {
+            // Its own instances of the owner's cards (sharing their ids, the board and the engine would mix the two sides up),
+            // without the owner's finishes
+            val copy = DeckChoice.freshCopy(owner.originalDeck) { roster.nextInstanceId() }
+            copy.forEach { it.finish = null }
+            mirrorDeck(room, owner, copy)
+        }
+    }
+
+    /** Ranked against the bot: the level (and edge) of the owner's strength, a new bot of that level in the seat. */
+    private fun rankedLevel(room: GameRoom, roster: Roster) {
+        val strength = roster.ownerStrength(room)
+        val level = BotCatalog.levelFor(strength)
+        room.botLevel = level
+        room.botEdge = if (BotCatalog.HARD == level) BotEdge.levelFor(strength) else 0
+        roster.newBot(room, level)
+    }
+
+    /**
+     * A ranked game against the bot is over and another one follows (PostGameActions): a rematch keeps the same rival
+     * (name and deck) at the level of the owner's strength now; back to the pre-room, a new rival.
+     */
+    @JvmStatic
+    fun nextRound(room: GameRoom, roster: Roster, rematch: Boolean) {
+        if (!room.bot || !room.ranked) return
+        if (rematch) rankedLevel(room, roster) else rankedBot(room, roster)
+    }
+
+    /** Back to a friendly game: the bot is the level's again, with the owner's deck until they choose another for it. */
+    private fun friendlyBot(room: GameRoom, roster: Roster) {
+        room.botEdge = 0
+        room.botPoolDeck = false
+        roster.newBot(room, room.botLevel)
+        val bot = room.getPlayer(BotSeat.BOT) ?: return
+        bot.username = BotCatalog.nameOf(room.botLevel)
+        bot.deckId = null
+        bot.deckName = null
+        bot.deck = ArrayList()
+        bot.originalDeck = ArrayList()
+        bot.starterCardId = null
+        val owner = room.getPlayer(room.hostId) ?: return
+        if (owner.deckId != null) {
             val copy = DeckChoice.freshCopy(owner.originalDeck) { roster.nextInstanceId() }
             copy.forEach { it.finish = null }
             mirrorDeck(room, owner, copy)
@@ -140,7 +198,7 @@ object RoomBots {
     @JvmStatic
     fun mirrorDeck(room: GameRoom, owner: PlayerState, deck: List<CardSlot>) {
         val bot = if (room.bot) room.getPlayer(BotSeat.BOT) else null
-        if (bot == null || bot.deckId != null && !room.ranked || owner.userId == BotSeat.BOT) return
+        if (bot == null || bot.deckId != null && !room.ranked || room.ranked && room.botPoolDeck || owner.userId == BotSeat.BOT) return
         bot.deckId = owner.deckId
         bot.deckName = owner.deckName
         bot.deck = ArrayList(deck)

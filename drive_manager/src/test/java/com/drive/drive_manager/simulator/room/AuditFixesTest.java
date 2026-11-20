@@ -156,7 +156,7 @@ class AuditFixesTest {
         Set<String> settings = Arrays.stream(GameRoom.class.getDeclaredFields())
                 .filter(f -> f.isAnnotationPresent(RoomSetting.class)).map(Field::getName).collect(Collectors.toSet());
         assertThat(settings).containsExactlyInAnyOrder("roomId", "editor", "bot", "ranked", "reserved", "editorBot",
-                "editorSelfBot", "selfBotLevel", "botDelayMs", "botEdge", "botLevel", "confirmMandatory", "hostId", "createdAt", "emptySince",
+                "editorSelfBot", "selfBotLevel", "botDelayMs", "botEdge", "botLevel", "botPoolDeck", "confirmMandatory", "hostId", "createdAt", "emptySince",
                 "manualPlayers", "adminPlayers", "paused", "timelineAt", "timelineSize", "random", "headless", "replay", "version");
     }
 

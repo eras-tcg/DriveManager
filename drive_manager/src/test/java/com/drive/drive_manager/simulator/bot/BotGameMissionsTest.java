@@ -27,9 +27,9 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
 /**
- * A game against the server's bot (Modo solo) counts for its player's missions and progression as a game against a
- * player does (through RoomService's MissionHooks.count, after each action, the bot's moves included), never for the
- * bot; the Sala de pruebas, even with its bots playing, counts nothing.
+ * A ranked game against the server's bot (Modo solo) counts for its player's missions and progression as a game against
+ * a player does (through RoomService's MissionHooks.count, after each action, the bot's moves included), never for the
+ * bot; a friendly one only for the progression; the Sala de pruebas, even with its bots playing, counts nothing.
  */
 @Tag("deep")
 class BotGameMissionsTest {
@@ -45,9 +45,9 @@ class BotGameMissionsTest {
         service.hooks = new MissionHooks(missions, progression, null, null);
     }
 
-    @Test
-    void aFinishedGameAgainstTheBotCountsForItsPlayer() {
-        GameRoom room = service.createRoom("owner", RoomOptions.BOT);
+    /** Plays a whole game against the room's bot, the owner as the passive bot would. */
+    private GameRoom playedOut(RoomOptions options) {
+        GameRoom room = service.createRoom("owner", options);
         String id = room.getRoomId();
         service.applyAction(id, "owner", BotPlayer.action("JOIN_ROOM", Map.of("username", "Ana")), false);
         int[] ids = {0};
@@ -68,6 +68,20 @@ class BotGameMissionsTest {
             else owner.played(room, action);
         }
         assertThat(room.getStatus()).isEqualTo(GameRoom.RoomStatus.POST_GAME);
+        return room;
+    }
+
+    @Test
+    void aFriendlyGameAgainstTheBotCountsOnlyForTheProgression() {
+        playedOut(RoomOptions.BOT);
+        verify(missions, never()).record(anyString(), anyString(), anyInt());
+        verify(progression, times(1)).record("owner", MissionRules.GAME_PLAYED, 1);
+        verify(progression, times(1)).record("owner", ProgressionRules.BOT_GAME_PLAYED, 1);
+    }
+
+    @Test
+    void aFinishedRankedGameAgainstTheBotCountsForItsPlayer() {
+        GameRoom room = playedOut(RoomOptions.RANKED_BOT);
 
         verify(missions, times(1)).record("owner", MissionRules.GAME_PLAYED, 1);
         verify(progression, times(1)).record("owner", MissionRules.GAME_PLAYED, 1);
@@ -84,7 +98,7 @@ class BotGameMissionsTest {
 
     @Test
     void theOwnersSummonsCountAsTheyHappen() {
-        GameRoom room = service.createRoom("owner", RoomOptions.BOT);
+        GameRoom room = service.createRoom("owner", RoomOptions.RANKED_BOT);
         String id = room.getRoomId();
         service.applyAction(id, "owner", BotPlayer.action("JOIN_ROOM", Map.of("username", "Ana")), false);
         int[] ids = {0};
