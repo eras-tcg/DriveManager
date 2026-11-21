@@ -1,5 +1,6 @@
 package com.drive.drive_manager.dto;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -11,7 +12,9 @@ import java.time.Instant;
 import java.util.List;
 
 @Data
-@NoArgsConstructor
+// Jackson builds decks through the empty constructor, so a request without a flag (the web sends no botDeck)
+// keeps its default instead of failing on a null primitive in the all-args constructor.
+@NoArgsConstructor(onConstructor_ = @JsonCreator)
 @AllArgsConstructor
 @Document(collection = "deck_lists")
 public class DeckList {

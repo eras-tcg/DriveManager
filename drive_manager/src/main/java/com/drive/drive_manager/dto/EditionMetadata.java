@@ -1,5 +1,6 @@
 package com.drive.drive_manager.dto;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -11,7 +12,7 @@ import java.util.List;
 import java.util.Map;
 
 @Data
-@NoArgsConstructor
+@NoArgsConstructor(onConstructor_ = @JsonCreator)
 @AllArgsConstructor
 @Document(collection = "edition_metadata")
 public class EditionMetadata {
@@ -65,7 +66,7 @@ public class EditionMetadata {
 
     /** The point of the cover kept in view (x, y in % of the image) and how much it is enlarged (1 = just covers). */
     @Data
-    @NoArgsConstructor
+    @NoArgsConstructor(onConstructor_ = @JsonCreator)
     @AllArgsConstructor
     public static class CoverFrame {
         private double x;
@@ -74,7 +75,7 @@ public class EditionMetadata {
     }
 
     @Data
-    @NoArgsConstructor
+    @NoArgsConstructor(onConstructor_ = @JsonCreator)
     @AllArgsConstructor
     public static class PackTypeConfig {
         private String name;
@@ -85,7 +86,7 @@ public class EditionMetadata {
     }
 
     @Data
-    @NoArgsConstructor
+    @NoArgsConstructor(onConstructor_ = @JsonCreator)
     @AllArgsConstructor
     public static class BoxConfig {
         /** Total number of packs in a box. */
@@ -96,7 +97,7 @@ public class EditionMetadata {
     }
 
     @Data
-    @NoArgsConstructor
+    @NoArgsConstructor(onConstructor_ = @JsonCreator)
     @AllArgsConstructor
     public static class BoxEntry {
         @Field("pack_type_name")
@@ -118,7 +119,7 @@ public class EditionMetadata {
     }
 
     @Data
-    @NoArgsConstructor
+    @NoArgsConstructor(onConstructor_ = @JsonCreator)
     @AllArgsConstructor
     public static class ProbOption {
         private int quantity;
