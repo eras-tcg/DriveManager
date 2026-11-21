@@ -1,5 +1,6 @@
 package com.drive.drive_manager.dto;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -12,7 +13,7 @@ import org.springframework.data.mongodb.core.mapping.Document;
  * has its own) and a box's pack going up a rarity. Each is a probability from 0 to 1; editable by manage_editions.
  */
 @Data
-@NoArgsConstructor
+@NoArgsConstructor(onConstructor_ = @JsonCreator)
 @AllArgsConstructor
 @Document(collection = "shop_settings")
 public class ShopOdds {
