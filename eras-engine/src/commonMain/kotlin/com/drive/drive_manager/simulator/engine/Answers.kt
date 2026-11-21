@@ -48,6 +48,7 @@ import com.drive.drive_manager.simulator.engine.Summons.NORMAL_SUMMON
 import com.drive.drive_manager.simulator.engine.Summons.completeAscension
 import com.drive.drive_manager.simulator.engine.Summons.normalSummon
 import com.drive.drive_manager.simulator.engine.Summons.play
+import com.drive.drive_manager.simulator.engine.Summons.playFromLives
 import com.drive.drive_manager.simulator.engine.Summons.regulatoryDraw
 import com.drive.drive_manager.simulator.room.CardSlot
 import com.drive.drive_manager.simulator.room.GameRoom
@@ -534,24 +535,33 @@ object Answers {
             advance(room)
             return ""
         }
-        if (PromptPurpose.REINFORCE.`is`(purpose) || PromptPurpose.LIFE_PLAY.`is`(purpose)) {
+        if (PromptPurpose.REINFORCE.`is`(purpose)) {
             room.prompt = null
             val card = find(player.hand, prompt.subjectId)
             if (!picks.isEmpty() && card != null) {
-                if (PromptPurpose.REINFORCE.`is`(purpose)) {
-                    player.hand.remove(card)
-                    card.faceDown = false
-                    player.lifeStack.add(card)
-                    record(room, GameEvent.SEND, userId, card, "hand", "lifeStack", null, frozenMapOf<String, Any?>("reinforce", true),
-                        player.username + " refuerza con " + name(card) + ": va bocarriba al fondo de su pila de vidas")
-                } else {
-                    val lifeCost = CardEffects.lifePlayCost(card)
-                    if (!canPay(room, userId, lifeCost)) {
-                        advance(room)
-                        return ""
-                    }
+                player.hand.remove(card)
+                card.faceDown = false
+                player.lifeStack.add(card)
+                record(room, GameEvent.SEND, userId, card, "hand", "lifeStack", null, frozenMapOf<String, Any?>("reinforce", true),
+                    player.username + " refuerza con " + name(card) + ": va bocarriba al fondo de su pila de vidas")
+            }
+            advance(room)
+            return ""
+        }
+        // A utility or structure lost as a life, revealed on top of the lives: played from there, else it goes to the hand
+        if (PromptPurpose.LIFE_PLAY.`is`(purpose)) {
+            room.prompt = null
+            val card = find(player.lifeStack, prompt.subjectId)
+            if (card != null) {
+                val lifeCost = CardEffects.lifePlayCost(card)
+                if (!picks.isEmpty() && canPay(room, userId, lifeCost)) {
                     pay(room, userId, lifeCost)
-                    play(room, player, card, lifeCost, null, null, null)
+                    playFromLives(room, player, card, lifeCost)
+                } else {
+                    player.lifeStack.remove(card)
+                    player.hand.add(card)
+                    record(room, GameEvent.SEND, userId, card, "lifeStack", "hand", null, null,
+                        name(card) + " va a la mano de " + player.username)
                 }
             }
             advance(room)

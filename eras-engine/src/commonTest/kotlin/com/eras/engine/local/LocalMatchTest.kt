@@ -156,10 +156,10 @@ class LocalMatchTest {
          */
         /** LocalMatch.result() at the end of each game: taken on the JVM; JavaScript must give the same. */
         val EXPECTED_RESULT = mapOf(
-            "st1-st1-1-easy" to "{\"status\":\"POST_GAME\",\"gamesEnded\":1,\"winnerId\":\"bot\",\"endReason\":\"lives\",\"turns\":15,\"digest\":\"c125b37a716f1e84\"}",
+            "st1-st1-1-easy" to "{\"status\":\"POST_GAME\",\"gamesEnded\":1,\"winnerId\":\"bot\",\"endReason\":\"lives\",\"turns\":15,\"digest\":\"f03e5e35369f52fe\"}",
             "st2-st3-2-easy" to "{\"status\":\"POST_GAME\",\"gamesEnded\":1,\"winnerId\":\"local-player\",\"endReason\":\"lives\",\"turns\":15,\"digest\":\"3c7d1ed9255bfc49\"}",
-            "st4-st1-3-easy" to "{\"status\":\"POST_GAME\",\"gamesEnded\":1,\"winnerId\":\"bot\",\"endReason\":\"lives\",\"turns\":7,\"digest\":\"7c655bbe9153736d\"}",
-            "st3-st4-5-normal" to "{\"status\":\"POST_GAME\",\"gamesEnded\":1,\"winnerId\":\"local-player\",\"endReason\":\"lives\",\"turns\":14,\"digest\":\"c4b177980304b799\"}",
+            "st4-st1-3-easy" to "{\"status\":\"POST_GAME\",\"gamesEnded\":1,\"winnerId\":\"bot\",\"endReason\":\"lives\",\"turns\":7,\"digest\":\"bbe5214d16e40ecf\"}",
+            "st3-st4-5-normal" to "{\"status\":\"POST_GAME\",\"gamesEnded\":1,\"winnerId\":\"local-player\",\"endReason\":\"lives\",\"turns\":14,\"digest\":\"1f6a0f668f053f54\"}",
         )
 
         /**
@@ -167,18 +167,18 @@ class LocalMatchTest {
          * must give the same). Without them the messages give [EXPECTED], as before those updates were sent.
          */
         val EXPECTED_WITH_LINKS = mapOf(
-            "st1-st1-1-easy" to "68a131b6676430d4",
+            "st1-st1-1-easy" to "cee533c441b7ac83",
             "st2-st3-2-easy" to "550598d5aeaee871",
-            "st4-st1-3-easy" to "1dc4ede9394e33b6",
-            "st3-st4-5-normal" to "f0c4622f56a2999c",
+            "st4-st1-3-easy" to "d941965980730ca2",
+            "st3-st4-5-normal" to "0c514a71316dd790",
         )
 
         /** Taken on the JVM; JavaScript must give the same. */
         val EXPECTED = mapOf(
-            "st1-st1-1-easy" to "5642a4ad8a025caa",
+            "st1-st1-1-easy" to "7fc7363d9f98806b",
             "st2-st3-2-easy" to "cd2c80206efb646a",
-            "st4-st1-3-easy" to "4261cdbe163f24a8",
-            "st3-st4-5-normal" to "475cdc0c10934d42",
+            "st4-st1-3-easy" to "3296c46d0ce2252c",
+            "st3-st4-5-normal" to "3cb512354292df0c",
         )
     }
 }

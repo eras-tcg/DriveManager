@@ -56,13 +56,13 @@ class SeededBotGameTest {
         val EXPECTED = mapOf(
             "st1-st2-11" to "88b0de8df414a174",
             "st2-st3-3" to "22fe09f6faafa114",
-            "st1-st3-2" to "de39eaab6af30373",
+            "st1-st3-2" to "e29a8471bc05c39a",
             "st4-st1-1" to "8a0b5311fea31615",
-            "st3-st4-2" to "46a82ca63c7d0d1a",
-            "st3-st4-3" to "7f68ba9c945cce65",
+            "st3-st4-2" to "370504a7679b0075",
+            "st3-st4-3" to "012ef2842d224700",
             "st3-st4-5" to "2be551a9bb7c32b3",
             "lookahead-st1-st2-4" to "bdfc9dc780b4914a",
-            "lookahead-st4-st3-6" to "289970768a70e817",
+            "lookahead-st4-st3-6" to "bbeffab038abf819",
         )
     }
 }
