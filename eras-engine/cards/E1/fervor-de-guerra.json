@@ -5,7 +5,7 @@
       "id" : "fervor-de-guerra:en-mano",
       "moment" : "ON_EVENT",
       "label" : "En Mano",
-      "text" : "Al entrar al paso de bloqueo: puedes jugar esta carta pagando su coste.",
+      "text" : "Al entrar al paso de bloqueo: puedes jugar esta carta pagando su coste. Si tienes menos vidas que tu oponente: reduce su coste en 1.",
       "steps" : [
         {
           "type" : "Do",
@@ -27,7 +27,25 @@
               "mode" : "SELF"
             },
             "reduce" : {
-              "type" : "Fixed"
+              "type" : "IfThen",
+              "condition" : {
+                "type" : "Compare",
+                "left" : {
+                  "type" : "Lives"
+                },
+                "op" : "LESS",
+                "right" : {
+                  "type" : "Lives",
+                  "opponent" : true
+                }
+              },
+              "then" : {
+                "type" : "Fixed",
+                "value" : 1
+              },
+              "otherwise" : {
+                "type" : "Fixed"
+              }
             },
             "required" : true
           }

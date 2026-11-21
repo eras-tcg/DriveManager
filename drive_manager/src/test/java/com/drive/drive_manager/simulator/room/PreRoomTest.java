@@ -2,6 +2,7 @@ package com.drive.drive_manager.simulator.room;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Tag;
 
 import java.util.HashMap;
 import java.util.List;
@@ -10,6 +11,7 @@ import java.util.Map;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /** The pre-room: both players confirm their deck, starter and who goes first, then the game starts at the mulligan. */
+@Tag("server")
 class PreRoomTest {
 
     private final RoomService service = new RoomService();

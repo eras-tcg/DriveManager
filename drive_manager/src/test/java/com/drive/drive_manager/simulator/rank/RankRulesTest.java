@@ -3,10 +3,12 @@ package com.drive.drive_manager.simulator.rank;
 import com.drive.drive_manager.simulator.rank.RankRules.Standing;
 import com.drive.drive_manager.simulator.rank.RankRules.Tier;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Tag;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
 /** The ranked ladder: gems, shields, series and Retador's points, and the hidden MMR. */
+@Tag("server")
 class RankRulesTest {
 
     private static Standing at(Tier tier, int gems, int shields) {

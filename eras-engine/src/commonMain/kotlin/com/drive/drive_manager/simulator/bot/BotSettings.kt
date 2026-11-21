@@ -215,6 +215,7 @@ class BotSettings private constructor(values: Map<String, Double>, bias: Map<Str
             d.put("rType", 0.8)
             d.put("rPlay", 0.85)
             d.put("lifeMine", 0.0)
+            d.put("lifeEdge", 0.0)
             d.put("cascade", 0.0)
             d.put("overExtendPow", 1.0)
             d.put("overExtendUnc", 0.0)
@@ -245,6 +246,8 @@ class BotSettings private constructor(values: Map<String, Double>, bias: Map<Str
             d.put("hReduce", 0.0)
             d.put("riskCuts", 0.0)
             d.put("lethalLives", 0.0)
+            // lethalBlocks: a win found by LethalSearch must hold against every block of the rival
+            d.put("lethalBlocks", 0.0)
             d.put("winFlat", 0.0)
             d.put("winSeen", 0.0)
             // attackFloor: see AttackFloor; floorSlack: the material an attack may lose in its worst case
@@ -282,6 +285,8 @@ class BotSettings private constructor(values: Map<String, Double>, bias: Map<Str
             d.put("seqTriggers", 0.0)
             d.put("seqRollout", 0.0)
             d.put("seqShare", 0.25)
+            // seqAttack: each attack also tried before the best plans found (SequenceSearch.attacksFirst)
+            d.put("seqAttack", 0.0)
             d.put("innerCands", 0.0)
             d.put("innerMs", 20.0)
             d.put("innerFinal", 0.0)

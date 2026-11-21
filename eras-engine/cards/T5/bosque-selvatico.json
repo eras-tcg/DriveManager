@@ -1,0 +1,204 @@
+{
+  "name" : "bosque selvático",
+  "effects" : [
+    {
+      "id" : "bosque-selvatico:en-mano",
+      "moment" : "ON_EVENT",
+      "label" : "En Mano",
+      "text" : "(1) Si algún [treant] o [vegetación] es invocado y no controlas otras criaturas o estructuras: puedes jugar esta carta sin pagar su coste.",
+      "steps" : [
+        {
+          "type" : "Do",
+          "action" : {
+            "type" : "Play",
+            "cards" : {
+              "zones" : "hand",
+              "owner" : "YOU",
+              "filter" : {},
+              "min" : {
+                "type" : "Fixed",
+                "value" : 1
+              },
+              "max" : {
+                "type" : "Fixed",
+                "value" : 1
+              },
+              "self" : "ANY",
+              "mode" : "SELF"
+            },
+            "reduce" : {
+              "type" : "Fixed",
+              "value" : 1000
+            },
+            "required" : true
+          }
+        }
+      ],
+      "condition" : {
+        "type" : "Any",
+        "any" : [
+          {
+            "type" : "All",
+            "all" : [
+              {
+                "type" : "Summoned",
+                "side" : "YOU",
+                "filter" : {
+                  "classes" : [
+                    "treant",
+                    "vegetación"
+                  ],
+                  "cardType" : "creature"
+                }
+              },
+              {
+                "type" : "Compare",
+                "left" : {
+                  "type" : "OnField",
+                  "filter" : {
+                    "cardTypes" : [
+                      "creature",
+                      "structure"
+                    ]
+                  }
+                },
+                "op" : "AT_MOST",
+                "right" : {
+                  "type" : "Fixed",
+                  "value" : 1
+                }
+              }
+            ]
+          },
+          {
+            "type" : "All",
+            "all" : [
+              {
+                "type" : "Summoned",
+                "side" : "ENEMY",
+                "filter" : {
+                  "classes" : [
+                    "treant",
+                    "vegetación"
+                  ],
+                  "cardType" : "creature"
+                }
+              },
+              {
+                "type" : "Compare",
+                "left" : {
+                  "type" : "OnField",
+                  "filter" : {
+                    "cardTypes" : [
+                      "creature",
+                      "structure"
+                    ]
+                  }
+                },
+                "op" : "EQUAL",
+                "right" : {
+                  "type" : "Fixed"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "sourceZone" : "hand",
+      "limit" : "ONCE_PER_TURN_BETWEEN_COPIES"
+    },
+    {
+      "id" : "bosque-selvatico:en-juego",
+      "moment" : "ON_PLAY",
+      "label" : "En Juego",
+      "text" : "Puedes añadir 1 [treant] de tu mano como recurso de esta carta; roba 2 cartas.",
+      "cost" : [
+        {
+          "type" : "Do",
+          "action" : {
+            "type" : "Move",
+            "cards" : {
+              "zones" : "hand",
+              "owner" : "YOU",
+              "filter" : {
+                "classes" : [
+                  "treant"
+                ]
+              },
+              "min" : {
+                "type" : "Fixed",
+                "value" : 1
+              },
+              "max" : {
+                "type" : "Fixed",
+                "value" : 1
+              },
+              "self" : "EXCLUDE",
+              "mode" : "CHOOSE"
+            },
+            "to" : "resources:self"
+          }
+        }
+      ],
+      "steps" : [
+        {
+          "type" : "Do",
+          "action" : {
+            "type" : "Draw",
+            "count" : {
+              "type" : "Fixed",
+              "value" : 2
+            }
+          }
+        }
+      ],
+      "sourceZone" : "field",
+      "limit" : "NONE"
+    }
+  ],
+  "inherited" : [
+    {
+      "id" : "bosque-selvatico:hereda-en-invocacion",
+      "moment" : "ON_SUMMON",
+      "label" : "En Invocación",
+      "text" : "Heredado de Bosque Selvático: una vez por turno, puedes jugar 1 estructura Verde de tu mano o tributos reduciendo su coste en 1.",
+      "steps" : [
+        {
+          "type" : "Do",
+          "action" : {
+            "type" : "Play",
+            "cards" : {
+              "zones" : "hand,tributeZone",
+              "owner" : "YOU",
+              "filter" : {
+                "colors" : [
+                  "G"
+                ],
+                "cardTypes" : [
+                  "structure"
+                ]
+              },
+              "min" : {
+                "type" : "Fixed",
+                "value" : 1
+              },
+              "max" : {
+                "type" : "Fixed",
+                "value" : 1
+              },
+              "self" : "ANY",
+              "mode" : "CHOOSE"
+            },
+            "reduce" : {
+              "type" : "Fixed",
+              "value" : 1
+            },
+            "required" : true
+          }
+        }
+      ],
+      "sourceZone" : "field",
+      "limit" : "ONCE_PER_TURN"
+    }
+  ]
+}

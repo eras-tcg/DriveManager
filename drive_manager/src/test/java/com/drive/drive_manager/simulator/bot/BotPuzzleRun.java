@@ -67,7 +67,7 @@ class BotPuzzleRun {
             passedAll += passed;
             playedAll += repeat;
             System.out.println("[puzzle] " + (passed == repeat ? "PASA " : passed == 0 ? "FALLA" : "A VECES") + " " + p.name() + ": " + passed + "/" + repeat + " — " + p.expected());
-            if (firstAudit != null) firstAudit.stream().limit(Boolean.getBoolean("bot.puzzle.trace") ? 80 : 14).forEach(l -> System.out.println("[puzzle]     " + l));
+            if (firstAudit != null) firstAudit.stream().limit(Boolean.getBoolean("bot.puzzle.trace") ? (System.getProperty("bot.puzzle.traceBelow") != null ? 400 : 80) : 14).forEach(l -> System.out.println("[puzzle]     " + l));
         }
         System.out.println("[puzzle] total " + passedAll + "/" + playedAll);
     }
@@ -79,6 +79,25 @@ class BotPuzzleRun {
                     front(t.host(), "Peón De Línea Frontal");
                     t.host().getHand().addAll(List.of(card("Caballero Férreo"), card("Caballero Férreo")));
                     lives(t.guest(), 1, false);
+                }, t -> "host".equals(t.room().getWinnerId())),
+                // Duel st2-st1 s13078 (2026-11-20, lethalBlocks): a win must hold against every block. One attacker alone is
+                // chump-blocked by the Peón; two attackers win whatever it blocks
+                new Puzzle("golpe-con-bloqueo", "el rival tiene 1 vida y un Peón (4) activo que puede bloquear; Fadrake (8) y Filo Vengativo (6) activos: atacar con los dos (bloquee lo que bloquee, uno pasa) y ganar", t -> {
+                    gems(t, 0);
+                    front(t.host(), "Fadrake");
+                    front(t.host(), "Filo Vengativo");
+                    front(t.guest(), "Peón De Línea Frontal");
+                    lives(t.guest(), 1, false);
+                }, t -> "host".equals(t.room().getWinnerId())),
+                // Duel st2-st1 s13078 (2026-11-20, hBlockBest 2): at 3 lives the rival chump-blocks the attack with Letalidad. The
+                // tries expected a win the rival never gave; with blocks judged over the rest of the turn they expect what happens
+                new Puzzle("remate-contra-sacrificio", "el rival (3 vidas boca abajo) tiene Zula (5) y Mihel (2) activos; Dragón Carmesí y Fadrake activos: lo que espera el bot de su ataque debe acercarse a lo que logra contra un rival que se sacrifica (informativo: pasa si gana)", t -> {
+                    gems(t, 0);
+                    front(t.host(), "Dragón Carmesí");
+                    front(t.host(), "Fadrake");
+                    front(t.guest(), "Zula");
+                    front(t.guest(), "Mihel");
+                    lives(t.guest(), 3, true);
                 }, t -> "host".equals(t.room().getWinnerId())),
                 // Duelo st1-st2 s13395 (2026-11-06): jugó Huevo, vació el mazo, evolucionó a Carmesí y no atacó; perdió por mazo
                 new Puzzle("remate-mazo-corto", "el rival (st1) tiene 1 vida y la mesa vacía; Dragón Volcánico, Dracoventus y Galveta listos, Huevo De Dragón y Dracoventus en la mano, 4 cartas en el mazo: atacar y ganar", t -> {
@@ -96,6 +115,25 @@ class BotPuzzleRun {
                     for (String n : List.of("Flarix", "Falanx", "Mathaus", "Falis", "Flarix", "Zula", "Paso Interdimensional", "Hez", "Mihel")) { CardSlot c = card(n); c.setFaceDown(true); t.guest().getHand().add(c); }
                     lives(t.guest(), 1, true);
                 }, t -> "host".equals(t.room().getWinnerId())),
+                // Duel st2-st4 s13081 (2026-11-20, A guest at 3 lives): Dragón Delta (6) attacked and the bot blocked it with
+                // Espada De Los Leones De Fuego (3), which died, with Ballesta Montada (8) and Franchute (11) also in front
+                new Puzzle("bloqueo-delta", "en el turno rival, con 3 vidas, Dragón Volcánico (14), Dragón Delta (6) y Dracoventus (11) atacan; el bot tiene Espadas De Los Leones De Fuego (3), Ballesta Montada (8), Franchute (11) y Peón (4) al frente: bloquear para no quedar con 1 vida", t -> {
+                    gems(t, 0);
+                    t.room().setCurrentTurnUserId("guest");
+                    front(t.host(), "Espada De Los Leones De Fuego");
+                    front(t.host(), "Ballesta Montada");
+                    front(t.host(), "Franchute");
+                    front(t.host(), "Peón De Línea Frontal");
+                    front(t.host(), "Espada De Los Leones De Fuego");
+                    back(t.host(), "Caballero Real");
+                    lives(t.host(), 3, true);
+                    front(t.guest(), "Dragón Delta");
+                    front(t.guest(), "Dracoventus").getResources().add(card("Ddraig"));
+                    CardSlot volc = front(t.guest(), "Dragón Volcánico");
+                    for (String n : List.of("Saildreik", "Ddraig")) volc.getResources().add(card(n));
+                    for (String n : List.of("Flambreik", "Wyverno De Pantano", "Ddraig", "Fadrake", "Saildreik", "Flamagón", "Galveta")) t.guest().getTributeZone().add(card(n));
+                    lives(t.guest(), 6, true);
+                }, t -> t.host().getLifeStack().size() >= 2),
                 new Puzzle("perforante", "atacar con Franchute a la criatura agotada del rival y destruirla", t -> {
                     gems(t, 0);
                     front(t.host(), "Franchute");
@@ -175,6 +213,18 @@ class BotPuzzleRun {
                 }, t -> t.turn().stream().filter(e -> "host".equals(e.getPlayerId()) && (GameEvent.ATTACK_DECLARED.equals(e.getType())
                         || GameEvent.NORMAL_SUMMON.equals(e.getType()) || GameEvent.SPECIAL_SUMMON.equals(e.getType()) || GameEvent.PLAY.equals(e.getType())))
                         .findFirst().map(e -> GameEvent.ATTACK_DECLARED.equals(e.getType())).orElse(false)),
+                // Duel st4-st2 s13047 (2026-11-20): the attack and the turn's summon were never tried together (seqAttack). An
+                // attack needs 0 or more gems: summoning Fadrake first (3 of 2 gems) leaves no attack. The rival's only creature
+                // (Duregón 2) cannot punish the exhausted Fadrake, so attacking and then summoning loses nothing
+                new Puzzle("atacar-y-desarrollar", "Fadrake (8) activo en la Línea frontal, 2 gemas y la mano de la partida (Fadrake, Galveta, Flamagón, Volcán De Dragones, Dragón Carmesí, Saildreik, Dragón Volcánico), el rival solo con Duregón (2) en la Retaguardia: atacar y también desarrollar (invocar primero deja las gemas bajo 0 y ya no se puede atacar)", t -> {
+                    gems(t, 2);
+                    front(t.host(), "Fadrake");
+                    for (String n : List.of("Fadrake", "Galveta", "Flamagón", "Volcán De Dragones", "Dragón Carmesí", "Saildreik", "Dragón Volcánico")) t.host().getHand().add(card(n));
+                    back(t.guest(), "Duregón");
+                    lives(t.guest(), 5, true);
+                }, t -> t.turn().stream().anyMatch(e -> "host".equals(e.getPlayerId()) && GameEvent.ATTACK_DECLARED.equals(e.getType()))
+                        && t.turn().stream().anyMatch(e -> "host".equals(e.getPlayerId()) && (GameEvent.NORMAL_SUMMON.equals(e.getType())
+                        || GameEvent.SPECIAL_SUMMON.equals(e.getType()) || GameEvent.PLAY.equals(e.getType())))),
                 // ... unless the card makes the attack better: Krokler by Ritual removes the blocker first
                 new Puzzle("remover-antes-de-atacar", "Peón propio (4) contra un Peón rival (4) que lo bloquearía, Buratán en el campo y Krokler en la mano: Ritual de Krokler sobre Buratán (destruye el Peón rival) antes de atacar", t -> {
                     gems(t, 2);
@@ -620,7 +670,7 @@ class BotPuzzleRun {
         String rivalSettings = System.getProperty("bot.puzzle.rival", "");
         BotPlayer rival = rivalSettings.isEmpty() ? new HeuristicBot() : new LookaheadBot(BotSettings.DEFAULT.with(rivalSettings));
         int start = t.room().getTimeline().size();
-        List<String> audit = new ArrayList<>();
+        List<String> audit = new ArrayList<>(), tries = new ArrayList<>();
         boolean first = true;
         // A puzzle may start in the rival's turn (the bot answers as the defender): the rival plays it, then the bot its own
         boolean hostTurn = "host".equals(t.room().getCurrentTurnUserId());
@@ -633,9 +683,21 @@ class BotPuzzleRun {
             if ((first || traceAll) && side == bot) {
                 if (!first) audit.add("— decisión: " + (t.room().getPrompt() == null ? "jugada" : "elección «" + t.room().getPrompt().getTitle() + "» (" + t.room().getPrompt().getKind() + ")"));
                 MoveTrials.AUDIT.set(audit);
+                // bot.puzzle.traceBelow: every try scored below minus this writes its parts (MoveTrials.TRACE)
+                if (System.getProperty("bot.puzzle.traceBelow") != null) {
+                    MoveTrials.TRACE_BELOW = Double.parseDouble(System.getProperty("bot.puzzle.traceBelow"));
+                    MoveTrials.TRACE.set(tries);
+                    MoveTrials.TRACE_LOG = Boolean.getBoolean("bot.puzzle.traceLog");
+                }
             }
             GameAction a = side.next(t.room(), seat);
-            if ((first || traceAll) && side == bot) { MoveTrials.AUDIT.remove(); first = false; }
+            if ((first || traceAll) && side == bot) {
+                MoveTrials.AUDIT.remove();
+                MoveTrials.TRACE.remove();
+                for (String l : tries) audit.add("    ! " + l);
+                tries.clear();
+                first = false;
+            }
             if (traceAll && side == bot && a != null) audit.add("  → " + a.getType() + " " + a.getPayload());
             if (a == null) break;
             GameStateUpdate u = service.applyAction(t.room().getRoomId(), seat, a, false);

@@ -1,0 +1,134 @@
+{
+  "name": "rey blanco de cástelan",
+  "effects": [
+    {
+      "id": "rey-blanco:en-invocacion",
+      "moment": "ON_SUMMON",
+      "mandatory": true,
+      "label": "En Invocación",
+      "text": "Sube esta carta a tu línea frontal. Si lo haces: esta carta puede declarar ataque sin agotarse.",
+      "steps": [
+        {
+          "type": "Do",
+          "action": {
+            "type": "Move",
+            "cards": {
+              "zones": "backLine",
+              "owner": "YOU",
+              "filter": {},
+              "min": {
+                "type": "Fixed",
+                "value": 1
+              },
+              "max": {
+                "type": "Fixed",
+                "value": 1
+              },
+              "self": "ANY",
+              "mode": "SELF"
+            },
+            "to": "frontLine"
+          }
+        },
+        {
+          "type": "IfDone",
+          "covers": 2
+        },
+        {
+          "type": "MayDo",
+          "question": "¿Rey Blanco de Cástelan declara ataque sin agotarse?",
+          "covers": 1
+        },
+        {
+          "type": "Do",
+          "action": {
+            "type": "Attack"
+          }
+        }
+      ],
+      "sourceZone": "field",
+      "limit": "NONE"
+    }
+  ],
+  "formation": {
+    "effects": [
+      {
+        "id": "rey-blanco:enlace",
+        "moment": "ON_EVENT",
+        "label": "Todos Los Turnos",
+        "text": "Al entrar al paso de bloqueo: puedes tributar esta carta para invocar 1 [cástelan] nivel 4 o menor de tu mano sin pagar su coste.",
+        "steps": [
+          {
+            "type": "IfPossible"
+          },
+          {
+            "type": "Do",
+            "action": {
+              "type": "Move",
+              "cards": {
+                "zones": "field",
+                "owner": "YOU",
+                "filter": {},
+                "min": {
+                  "type": "Fixed",
+                  "value": 1
+                },
+                "max": {
+                  "type": "Fixed",
+                  "value": 1
+                },
+                "self": "ANY",
+                "mode": "SELF"
+              },
+              "to": "tributeZone"
+            }
+          },
+          {
+            "type": "Do",
+            "action": {
+              "type": "Summon",
+              "cards": {
+                "zones": "hand",
+                "owner": "YOU",
+                "filter": {
+                  "cardType": "creature",
+                  "classes": [
+                    "cástelan"
+                  ],
+                  "maxLevel": 4
+                },
+                "min": {
+                  "type": "Fixed",
+                  "value": 1
+                },
+                "max": {
+                  "type": "Fixed",
+                  "value": 1
+                },
+                "self": "ANY",
+                "mode": "CHOOSE"
+              },
+              "reduce": {
+                "type": "Fixed",
+                "value": 1000
+              },
+              "required": true
+            }
+          }
+        ],
+        "condition": {
+          "type": "Happened",
+          "actor": "ANY",
+          "owner": "ANY",
+          "eventType": "COMBAT_STEP",
+          "data": [
+            "step=BLOCK",
+            "moment=ENTER"
+          ]
+        },
+        "sourceZone": "field",
+        "limit": "NONE"
+      }
+    ]
+  }
+}

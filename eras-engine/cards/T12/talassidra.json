@@ -1,0 +1,204 @@
+{
+  "name": "talassidra",
+  "effects": [
+    {
+      "id": "talassidra:en-invocacion",
+      "moment": "ON_SUMMON",
+      "mandatory": true,
+      "label": "En Invocación",
+      "text": "Destruye todos los enemigos de fuerza 5 o menos agotados. Si ningún enemigo fue destruido por este efecto: tributa 3 cartas del tope de tu mazo. Luego: añade hasta 1 [hydra] de tus tributos como recurso de esta carta.",
+      "steps": [
+        {
+          "type": "Do",
+          "action": {
+            "type": "Destroy",
+            "cards": {
+              "zones": "frontLine",
+              "owner": "OPPONENT",
+              "filter": {
+                "cardType": "creature",
+                "maxStrength": 5,
+                "exhaustedOnly": true
+              },
+              "min": {
+                "type": "Fixed"
+              },
+              "max": {
+                "type": "Fixed",
+                "value": 2147483647
+              },
+              "self": "ANY",
+              "mode": "ALL"
+            }
+          }
+        },
+        {
+          "type": "IfNotDone",
+          "covers": 2
+        },
+        {
+          "type": "Do",
+          "action": {
+            "type": "Move",
+            "cards": {
+              "zones": "deck",
+              "owner": "YOU",
+              "filter": {},
+              "min": {
+                "type": "Fixed",
+                "value": 3
+              },
+              "max": {
+                "type": "Fixed",
+                "value": 3
+              },
+              "self": "ANY",
+              "mode": "TOP"
+            },
+            "to": "tributeZone"
+          }
+        },
+        {
+          "type": "Do",
+          "action": {
+            "type": "Move",
+            "cards": {
+              "zones": "tributeZone",
+              "owner": "YOU",
+              "filter": {
+                "classes": [
+                  "hydra"
+                ]
+              },
+              "min": {
+                "type": "Fixed"
+              },
+              "max": {
+                "type": "Fixed",
+                "value": 1
+              },
+              "self": "ANY",
+              "mode": "CHOOSE"
+            },
+            "to": "resources:self"
+          }
+        }
+      ],
+      "sourceZone": "field",
+      "limit": "NONE"
+    }
+  ],
+  "inherited": [
+    {
+      "id": "talassidra:hereda-turno-oponente",
+      "moment": "ON_EVENT",
+      "label": "Turno Oponente",
+      "text": "Heredado de Talassidra: una vez por turno: si esta carta [hydra] es agotada: puedes tributar 3 de sus recursos para reactivarla.",
+      "steps": [
+        {
+          "type": "IfPossible"
+        },
+        {
+          "type": "Do",
+          "action": {
+            "type": "Move",
+            "cards": {
+              "zones": "resources",
+              "owner": "YOU",
+              "filter": {},
+              "min": {
+                "type": "Fixed",
+                "value": 3
+              },
+              "max": {
+                "type": "Fixed",
+                "value": 3
+              },
+              "self": "ANY",
+              "mode": "CHOOSE"
+            },
+            "to": "tributeZone"
+          }
+        },
+        {
+          "type": "Do",
+          "action": {
+            "type": "SetTapped",
+            "cards": {
+              "zones": "field",
+              "owner": "YOU",
+              "filter": {},
+              "min": {
+                "type": "Fixed",
+                "value": 1
+              },
+              "max": {
+                "type": "Fixed",
+                "value": 1
+              },
+              "self": "ANY",
+              "mode": "SELF"
+            }
+          }
+        }
+      ],
+      "condition": {
+        "type": "All",
+        "all": [
+          {
+            "type": "Any",
+            "any": [
+              {
+                "type": "Happened",
+                "actor": "ANY",
+                "owner": "ANY",
+                "eventType": "TAP",
+                "thisCard": true
+              },
+              {
+                "type": "Happened",
+                "actor": "ANY",
+                "owner": "ANY",
+                "eventType": "BLOCK",
+                "thisCard": true
+              },
+              {
+                "type": "Happened",
+                "actor": "ANY",
+                "owner": "ANY",
+                "eventType": "ATTACK_DECLARED",
+                "thisCard": true,
+                "data": [
+                  "exhausted=true"
+                ]
+              }
+            ]
+          },
+          {
+            "type": "ThisMatches",
+            "filter": {
+              "classes": [
+                "hydra"
+              ]
+            }
+          },
+          {
+            "type": "Not",
+            "condition": {
+              "type": "GameIs",
+              "state": "YOUR_TURN"
+            }
+          }
+        ]
+      },
+      "sourceZone": "field",
+      "limit": "ONCE_PER_TURN"
+    }
+  ],
+  "requirement": {
+    "summoner": {
+      "level": 2,
+      "maxLevel": 3
+    }
+  }
+}

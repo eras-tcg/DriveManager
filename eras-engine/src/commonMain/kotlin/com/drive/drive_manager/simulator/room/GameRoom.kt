@@ -85,6 +85,9 @@ class GameRoom {
     /** How well the bot plays, chosen by the owner before the game: "easy", "normal" or "hard" (see BotRooms). */
     @field:RoomSetting
     var botLevel: String? = BotCatalog.NORMAL
+    /** Ranked against the bot: it plays a deck of its pool (not a copy of the owner's, which then stays as it is). */
+    @field:RoomSetting
+    var botPoolDeck: Boolean = false
     /**
      * A lone mandatory effect is also shown to its controller to chain it (they see what triggered): rooms created by
      * the service; the engine's tests leave it off and chain it straight away.
@@ -180,6 +183,13 @@ class GameRoom {
     @Transient
     var searchHope: String? = null
 
+    /**
+     * The strength each card had on the field when it last left it ("la fuerza que tenía dicho aliado antes de ser removido",
+     * engine/Removals.rememberStrength): the engine's memory, not part of the state sent to players; copied with the room.
+     */
+    @Transient
+    var strengthLeft: MutableMap<String, Int> = HashMap()
+
     /** How the game in course started (its seed, seats and decks), to record and play it again (MatchRecorder). */
     var startSetup: MatchSetup? = null
 
@@ -234,6 +244,7 @@ class GameRoom {
         if (reserved != other.reserved) return false
         if (selfBotLevel != other.selfBotLevel) return false
         if (botLevel != other.botLevel) return false
+        if (botPoolDeck != other.botPoolDeck) return false
         if (status != other.status) return false
         if (players != other.players) return false
         if (hostId != other.hostId) return false
@@ -367,5 +378,5 @@ class GameRoom {
     }
 
     override fun toString(): String =
-        "GameRoom(roomId=${roomId}, editor=${editor}, bot=${bot}, ranked=${ranked}, replay=${replay}, reserved=${reserved}, editorBot=${editorBot}, editorSelfBot=${editorSelfBot}, selfBotLevel=${selfBotLevel}, version=${version}, paused=${paused}, timelineAt=${timelineAt}, timelineSize=${timelineSize}, botDelayMs=${botDelayMs}, botEdge=${botEdge}, botLevel=${botLevel}, confirmMandatory=${confirmMandatory}, status=${status}, players=${players}, hostId=${hostId}, currentTurnUserId=${currentTurnUserId}, currentPhase=${currentPhase}, sharedCounter=${sharedCounter}, createdAt=${createdAt}, firstChoice=${firstChoice}, emptySince=${emptySince}, starterSelections=${starterSelections}, mulliganReady=${mulliganReady}, manualPlayers=${manualPlayers}, adminPlayers=${adminPlayers}, postGameChoices=${postGameChoices}, eventLog=${eventLog}, timeline=${timeline}, eventSeq=${eventSeq}, chain=${chain}, prompt=${prompt}, triggerQueue=${triggerQueue}, pendingEvents=${pendingEvents}, idSeq=${idSeq}, pendingRemovals=${pendingRemovals}, pendingAscension=${pendingAscension}, removalDecided=${removalDecided}, combat=${combat}, fieldGrants=${fieldGrants}, usedThisTurn=${usedThisTurn}, firstPlayerId=${firstPlayerId}, firstTurn=${firstTurn}, starterAdvantageUserId=${starterAdvantageUserId}, endTurnPending=${endTurnPending}, startPhasePending=${startPhasePending}, winnerId=${winnerId}, endReason=${endReason}, random=${random}, headless=${headless}, searchHope=${searchHope}, startSetup=${startSetup})"
+        "GameRoom(roomId=${roomId}, editor=${editor}, bot=${bot}, ranked=${ranked}, replay=${replay}, reserved=${reserved}, editorBot=${editorBot}, editorSelfBot=${editorSelfBot}, selfBotLevel=${selfBotLevel}, version=${version}, paused=${paused}, timelineAt=${timelineAt}, timelineSize=${timelineSize}, botDelayMs=${botDelayMs}, botEdge=${botEdge}, botLevel=${botLevel}, botPoolDeck=${botPoolDeck}, confirmMandatory=${confirmMandatory}, status=${status}, players=${players}, hostId=${hostId}, currentTurnUserId=${currentTurnUserId}, currentPhase=${currentPhase}, sharedCounter=${sharedCounter}, createdAt=${createdAt}, firstChoice=${firstChoice}, emptySince=${emptySince}, starterSelections=${starterSelections}, mulliganReady=${mulliganReady}, manualPlayers=${manualPlayers}, adminPlayers=${adminPlayers}, postGameChoices=${postGameChoices}, eventLog=${eventLog}, timeline=${timeline}, eventSeq=${eventSeq}, chain=${chain}, prompt=${prompt}, triggerQueue=${triggerQueue}, pendingEvents=${pendingEvents}, idSeq=${idSeq}, pendingRemovals=${pendingRemovals}, pendingAscension=${pendingAscension}, removalDecided=${removalDecided}, combat=${combat}, fieldGrants=${fieldGrants}, usedThisTurn=${usedThisTurn}, firstPlayerId=${firstPlayerId}, firstTurn=${firstTurn}, starterAdvantageUserId=${starterAdvantageUserId}, endTurnPending=${endTurnPending}, startPhasePending=${startPhasePending}, winnerId=${winnerId}, endReason=${endReason}, random=${random}, headless=${headless}, searchHope=${searchHope}, startSetup=${startSetup})"
 }

@@ -19,6 +19,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import kotlin.jvm.functions.Function0;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Tag;
 import org.springframework.beans.factory.support.BeanDefinitionRegistry;
 import org.springframework.boot.autoconfigure.AutoConfigurationPackages;
 import org.springframework.boot.autoconfigure.AutoConfigurations;
@@ -62,6 +63,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * server's), the card instances' ids ({@link DeckLoader#instanceIds}: "c1", "c2"…), the game's chance (the room's random
  * from the seed), the history's times (one fixed time).
  */
+@Tag("deep")
 class LocalMatchParityTest {
 
     private static final String USER = LocalMatch.DEFAULT_USER;

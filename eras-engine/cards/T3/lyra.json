@@ -1,0 +1,190 @@
+{
+  "name": "lyra",
+  "effects": [
+    {
+      "id": "lyra:al-atacar",
+      "moment": "ON_ATTACK",
+      "mandatory": true,
+      "label": "Al Atacar",
+      "text": "Elige 1 enemigo; reduce su fuerza en 1 por cada vida bocarriba.",
+      "cost": [
+        {
+          "type": "Do",
+          "action": {
+            "type": "Select",
+            "selector": {
+              "zones": "field",
+              "owner": "OPPONENT",
+              "filter": {
+                "cardType": "creature"
+              },
+              "min": {
+                "type": "Fixed",
+                "value": 1
+              },
+              "max": {
+                "type": "Fixed",
+                "value": 1
+              },
+              "self": "ANY",
+              "mode": "CHOOSE"
+            },
+            "target": true
+          }
+        }
+      ],
+      "steps": [
+        {
+          "type": "Do",
+          "action": {
+            "type": "Modify",
+            "cards": {
+              "zones": "saved:targets",
+              "owner": "YOU",
+              "filter": {},
+              "min": {
+                "type": "Fixed"
+              },
+              "max": {
+                "type": "Fixed",
+                "value": 2147483647
+              },
+              "self": "ANY",
+              "mode": "ALL"
+            },
+            "strength": {
+              "type": "Times",
+              "base": {
+                "type": "FaceUpLives",
+                "whose": "ANY"
+              },
+              "factor": -1
+            },
+            "until": "TURN"
+          }
+        }
+      ],
+      "sourceZone": "field",
+      "limit": "NONE"
+    },
+    {
+      "id": "lyra:en-tributos",
+      "moment": "ON_EVENT",
+      "label": "En Tributos",
+      "text": "Inmediatamente después de que alguna vida sea revelada: puedes enviar al fondo del mazo esta carta y otro de tus tributos [lanzador de conjuros]; toma 1 de tus vidas, excepto la del tope. Luego: coloca la carta del tope de tu mazo al fondo de tus vidas.",
+      "cost": [
+        {
+          "type": "Do",
+          "action": {
+            "type": "Move",
+            "cards": {
+              "zones": "tributeZone",
+              "owner": "YOU",
+              "filter": {},
+              "min": {
+                "type": "Fixed",
+                "value": 1
+              },
+              "max": {
+                "type": "Fixed",
+                "value": 1
+              },
+              "self": "ANY",
+              "mode": "SELF"
+            },
+            "to": "deckBottom"
+          }
+        },
+        {
+          "type": "Do",
+          "action": {
+            "type": "Move",
+            "cards": {
+              "zones": "tributeZone",
+              "owner": "YOU",
+              "filter": {
+                "classes": [
+                  "lanzador de conjuros"
+                ]
+              },
+              "min": {
+                "type": "Fixed",
+                "value": 1
+              },
+              "max": {
+                "type": "Fixed",
+                "value": 1
+              },
+              "self": "EXCLUDE",
+              "mode": "CHOOSE"
+            },
+            "to": "deckBottom"
+          }
+        }
+      ],
+      "steps": [
+        {
+          "type": "Do",
+          "action": {
+            "type": "Move",
+            "cards": {
+              "zones": "livesBelowTop",
+              "owner": "YOU",
+              "filter": {},
+              "min": {
+                "type": "Fixed",
+                "value": 1
+              },
+              "max": {
+                "type": "Fixed",
+                "value": 1
+              },
+              "self": "ANY",
+              "mode": "CHOOSE"
+            },
+            "to": "hand"
+          }
+        },
+        {
+          "type": "Do",
+          "action": {
+            "type": "Move",
+            "cards": {
+              "zones": "deck",
+              "owner": "YOU",
+              "filter": {},
+              "min": {
+                "type": "Fixed",
+                "value": 1
+              },
+              "max": {
+                "type": "Fixed",
+                "value": 1
+              },
+              "self": "ANY",
+              "mode": "TOP"
+            },
+            "to": "lifeBottom",
+            "faceDown": true
+          }
+        }
+      ],
+      "condition": {
+        "type": "Immediately",
+        "condition": {
+          "type": "Happened",
+          "eventType": "LIFE_REVEALED",
+          "actor": "ANY",
+          "owner": "ANY"
+        }
+      },
+      "sourceZone": "tributeZone",
+      "limit": "NONE"
+    }
+  ],
+  "requirement": {
+    "summoner": {
+      "level": 1
+    }
+  }
+}

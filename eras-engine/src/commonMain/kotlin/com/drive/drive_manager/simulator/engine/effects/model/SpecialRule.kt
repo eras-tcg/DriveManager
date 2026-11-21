@@ -20,6 +20,10 @@ import com.drive.drive_manager.simulator.engine.CardFilter
 data class SpecialRule(
     val kind: String?, val zone: String?, val reduce: Int, val summoner: String?, val filter: CardFilter?, val reduceBy: Amount?,
     val relative: Selector.Relative?,
+    /** "con distinto nombre" (than the summoner): a summoner of the same name as the creature is not offered. */
+    val otherName: Boolean = false,
+    /** "Si es del mismo nivel: reduce el coste especial en N más": when the creature and its summoner have the same level. */
+    val sameLevelBonus: Int = 0,
 ) {
 
     constructor(kind: String?, zone: String?, reduce: Int, summoner: String?, filter: CardFilter?) :

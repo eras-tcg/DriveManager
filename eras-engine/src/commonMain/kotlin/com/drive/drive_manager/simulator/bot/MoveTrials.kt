@@ -148,6 +148,7 @@ internal class MoveTrials(
         if (settings.get("searchHope") >= 0.5) copy.searchHope = me
         val start = copy.timeline.size
         try {
+            val logStart = copy.eventLog.size
             var turn = copy.currentTurnUserId
             var passed = 0
             // Both sides of the copy play by the bot's own rules
@@ -205,9 +206,23 @@ internal class MoveTrials(
             if (settings.get("winFlat") >= 0.5 && copy.status != GameRoom.RoomStatus.IN_PROGRESS && copy.winnerId != null) {
                 // winSeen: past the turn on the table it is a game seen in a try, not a fact (TableScore.seen)
                 val fact = passed == 0 || move.payload!![AttackFloor.LETHAL] == true
-                return if (fact || settings.get("winSeen") <= 0) score.applyAsDouble(copy, me) else TableScore.seen(copy, me, settings)
+                val ended = if (fact || settings.get("winSeen") <= 0) score.applyAsDouble(copy, me) else TableScore.seen(copy, me, settings)
+                val trace = TRACE.get()
+                if (trace != null && ended < -TRACE_BELOW) trace.add(describe(room, move) + ": " + JavaText.fixed(ended, 1) + " = partida terminada ("
+                        + copy.endReason + "), turnos pasados " + passed + (if (fact) ", hecho" else ", vista") + tryLog(copy, logStart))
+                return ended
             }
-            val debt: Double = ((if (fewest == Int.MAX_VALUE) 0 else max(0, -fewest)) + (if (settings.get("overExtendRival") >= 0.5) paidInTheirs else 0)).toDouble()
+            // overExtendRival 2 (duel st4-st2 s13047, 2026-11-20: with 6 lives each, every candidate of its second turn at -800
+            // to -3800): what it pays in the rival's turn is summed over that whole turn (each reaction of the heuristic:
+            // Caballeros De La Primera Línea and the knight it summons, a life played; 4 to 7 gems) and, put into the debt,
+            // was cubed: 7 gems were worth -2744, some 270 lives, and the choice went to the try whose heuristic reacted
+            // least. Those gems are the rival's in the turn the try plays out, so what it does with them is on the table
+            // already: at 2 they cost gemDebt each, as a gem below 0 does, without the curve meant for overextending its own
+            // turn (at 1, as before: added to that debt)
+            val rivalDebt = settings.get("overExtendRival")
+            val ownDebt = if (fewest == Int.MAX_VALUE) 0 else max(0, -fewest)
+            val debt: Double = (ownDebt + (if (rivalDebt >= 0.5 && rivalDebt < 1.5) paidInTheirs else 0)).toDouble()
+            val flat = if (rivalDebt >= 1.5) settings.get("gemDebt") * paidInTheirs * (1 + settings.get("overExtendUnc") * rivalHand) else 0.0
             val lives = if (settings.get("lifeExp") >= 0.5) LifeHits.correction(copy, me, start, settings) else 0.0
             // sUse: what its structures yielded in the try (StructureUse)
             val used = if (settings.get("sUse") != 0.0) settings.get("sUse") * StructureUse.count(copy, me, start) else 0.0
@@ -216,7 +231,14 @@ internal class MoveTrials(
             val b = move.payload!!["bonus"]
             val kept = if (b is Number) b.toDouble() else 0.0
             val exposed = RemovalRisk.charge(atRisk, copy.getPlayer(me), settings)
-            return score.applyAsDouble(copy, me) - TableScore.overExtend(debt, rivalHand, settings) + lives + leaf + kept + used - exposed
+            val table = score.applyAsDouble(copy, me)
+            val over = TableScore.overExtend(debt, rivalHand, settings) + flat
+            val total = table - over + lives + leaf + kept + used - exposed
+            val trace = TRACE.get()
+            if (trace != null && total < -TRACE_BELOW) trace.add(describe(room, move) + ": " + JavaText.fixed(total, 1) + " = mesa " + JavaText.fixed(table, 1)
+                    + " − deuda " + JavaText.fixed(over, 1) + " (" + debt.toInt() + " gemas, " + paidInTheirs + " en su turno) + vidas " + JavaText.fixed(lives, 1)
+                    + " + hoja " + JavaText.fixed(leaf, 1) + " + plan " + JavaText.fixed(kept, 1) + " − remoción " + JavaText.fixed(exposed, 1) + "; turnos pasados " + passed + tryLog(copy, logStart))
+            return total
         } finally {
             sandbox.drop(copy)
         }
@@ -233,6 +255,23 @@ internal class MoveTrials(
          */
         @JvmField
         val AUDIT: LocalValue<MutableList<String>?> = LocalValue()
+
+        /** Trace (tests only): when set for the thread, every try scored below −[TRACE_BELOW] writes here its parts. */
+        @JvmField
+        val TRACE: LocalValue<MutableList<String>?> = LocalValue()
+        /** Tests may lower it (a puzzle traces every try with a large value). */
+        @JvmField
+        var TRACE_BELOW = 300.0
+
+        /** Tests only: a traced try also writes what happened in it (the copy's history). */
+        @JvmField
+        var TRACE_LOG = false
+
+        private fun tryLog(copy: GameRoom, from: Int): String {
+            if (!TRACE_LOG) return ""
+            val log = copy.eventLog
+            return log.subList(min(from, log.size), log.size).joinToString("") { l -> "\n            · " + l.text }
+        }
 
         private fun audit(room: GameRoom, candidates: List<GameAction>, sum: DoubleArray, tries: IntArray, droppedIn: IntArray, chosen: Int) {
             val out = AUDIT.get()!!
@@ -256,7 +295,10 @@ internal class MoveTrials(
             }
             val id = a.getString("instanceId")
             val target = a.getString("targetInstanceId")
-            return a.type + (if (id == null) "" else " " + name(room, id)) + (if (target == null) "" else " → " + name(room, target))
+            // an answer to a prompt: the cards it chose (a block, the creatures moved up), none if empty
+            val chosen = a.payload?.get("chosen") as? List<*>
+            val picks = if (chosen == null) "" else " [" + (if (chosen.isEmpty()) "ninguna" else chosen.joinToString(", ") { c -> name(room, c.toString()) ?: c.toString() }) + "]"
+            return a.type + (if (id == null) "" else " " + name(room, id)) + (if (target == null) "" else " → " + name(room, target)) + picks
         }
 
         private fun name(room: GameRoom, id: String): String? {

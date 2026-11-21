@@ -1,0 +1,82 @@
+{
+  "name": "fresnagón",
+  "effects": [
+    {
+      "id": "fresnagon:en-invocacion",
+      "moment": "ON_SUMMON",
+      "mandatory": true,
+      "label": "En Invocación",
+      "text": "Destruye un enemigo de fuerza 3 o menos.",
+      "steps": [
+        {
+          "type": "Do",
+          "action": {
+            "type": "Destroy",
+            "cards": {
+              "zones": "frontLine",
+              "owner": "OPPONENT",
+              "filter": {
+                "cardType": "creature",
+                "maxStrength": 3
+              },
+              "min": {
+                "type": "Fixed",
+                "value": 1
+              },
+              "max": {
+                "type": "Fixed",
+                "value": 1
+              },
+              "self": "ANY",
+              "mode": "CHOOSE"
+            }
+          }
+        }
+      ],
+      "sourceZone": "field",
+      "limit": "NONE"
+    }
+  ],
+  "inherited": [
+    {
+      "id": "fresnagon:hereda-al-atacar",
+      "moment": "ON_ATTACK",
+      "mandatory": true,
+      "label": "Al Atacar",
+      "text": "Heredado de Fresnagón: destruye 1 enemigo de fuerza 3 o menos.",
+      "steps": [
+        {
+          "type": "Do",
+          "action": {
+            "type": "Destroy",
+            "cards": {
+              "zones": "frontLine",
+              "owner": "OPPONENT",
+              "filter": {
+                "cardType": "creature",
+                "maxStrength": 3
+              },
+              "min": {
+                "type": "Fixed",
+                "value": 1
+              },
+              "max": {
+                "type": "Fixed",
+                "value": 1
+              },
+              "self": "ANY",
+              "mode": "CHOOSE"
+            }
+          }
+        }
+      ],
+      "sourceZone": "field",
+      "limit": "NONE"
+    }
+  ],
+  "requirement": {
+    "summoner": {
+      "level": 2
+    }
+  }
+}

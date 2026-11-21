@@ -7,6 +7,7 @@ import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Tag;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.io.InputStream;
@@ -19,6 +20,8 @@ import static org.assertj.core.api.Assertions.assertThat;
  * The ST3 cards with their real metadata, played through the room's actions (as the board sends them) and
  * serialized as the clients receive them.
  */
+@Tag("cards")
+@Tag("st7")
 class St3IntegrationTest {
 
     private final ObjectMapper json = new ObjectMapper().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);

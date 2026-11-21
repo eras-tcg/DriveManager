@@ -2,6 +2,7 @@ package com.drive.drive_manager.simulator.room;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Tag;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.authority.AuthorityUtils;
@@ -16,6 +17,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 
 /** Solo mode (test rooms) is open to every signed-in player, not only to content editors. */
+@Tag("server")
 class RoomRestControllerTest {
 
     private RoomService rooms;

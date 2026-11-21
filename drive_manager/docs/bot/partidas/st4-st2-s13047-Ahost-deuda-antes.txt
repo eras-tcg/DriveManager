@@ -1,0 +1,742 @@
+A = turns=2,samples=2,maxCandidates=24,sameDeals=1,halving=1,hMullCost=1,hMullKeep=0,hEvenTrade=1.1445,sField=5,seqDepth=3,seqKeep=4,seqTriggers=0,gemDebt=5,vStrSq=0.109,uTribute=2,uDamp=0.5,hUseful=1,budgetMs=2000,seqRollout=1,seqShare=0.5,innerCands=3,innerMs=15,innerFinal=2,guard=0.1,exposed=0.1,firstTries=2,rankCands=1,hRank=1,lifeExp=1,lifeMine=0.85,cascade=1,seqPass=1,leafPlay=0.5,overExtendPow=3,overExtendUnc=0.1,attackFirst=1,overExtendRival=1,planKeep=4,hNoDebt=1,hAttackPick=1,hChumpLives=1,gems=1,frontRisk=1,advanceMore=1,lifeFoe=0.9,riskLives=2,riskAlive=1,lifeCurveExp=1,hPreyGuard=1,hCombat=1,riskSum=2,vResource=1.5,lethalLives=3,vLevelSq=0,hReduce=1,riskCuts=0.5,winFlat=1,attackFloor=1,vCost=0,vStr=1.09,vLevel=0,zHandPlay=0.5,vOpen=0.5,structure=0,defenceFloor=1,hFreeMaterial=1,vBody=4,winSeen=2,seqAttack=1
+B = turns=2,samples=2,maxCandidates=24,sameDeals=1,halving=1,hMullCost=1,hMullKeep=0,hEvenTrade=1.1445,sHand=1,sField=4,seqDepth=3,seqKeep=4,seqTriggers=0,gemDebt=2,vStrSq=0.03,vTop=3,uTribute=2,uDamp=0.5,hUseful=1,budgetMs=2000,seqRollout=1,seqShare=0.5,innerCands=3,innerMs=15,innerFinal=2,vLanes=4,guard=0.1,exposed=0.1,firstTries=2,rankCands=1,handDecay=0.85,hRank=1,lifeExp=1,lifeMine=0.85,cascade=1,seqPass=1,leafPlay=0.5,overExtendPow=3,overExtendUnc=0.1,handLow=3,attackFirst=1,overExtendRival=1,planKeep=4,hNoDebt=1,hAttackPick=1,hChumpLives=1,sUse=3,gems=1,frontRisk=1,advanceMore=1,lifeFoe=0.9,riskLives=2,riskAlive=1,lifeCurveExp=1,hPreyGuard=1,hCombat=1,deckClock=0.5,riskSum=2,vResource=1.5,lethalLives=3,vLevelSq=0.5,hReduce=1,riskCuts=0.5,winFlat=1
+Gana B (lives, 9 turnos)
+
+— turno (A(st4) empieza; B(st2) cerró con 0 gemas; timeline 10, evento 10) | A(st4): vidas 6, mano 7, gemas 1, mazo 39, mesa [], mano {Franchute 5, Reino Medieval 1, Armadura De Plata 2, Investidura 1, Ballesta Montada 3, Caballero Umbrío 1, Espada De Primera Línea 1}  B(st2): vidas 6, mano 6, gemas -1, mazo 35, mesa [Duregón 2^], mano {Galveta 2, Dragón Carmesí 8, Flamagón 1, Fadrake 3, Dragón Volcánico 8, Llamarada 6}  
+  B(st2) invoca Duregón
+  B(st2) tributa Saildreik
+  B(st2) tributa Llamarada
+  B(st2) tributa Saildreik
+      · Beto invocó Duregón pagando 1 gema
+      · Cadena 1: se activa el efecto En Invocación de Duregón
+      · Beto tributa 3 cartas del tope de su mazo (Duregón): Saildreik, Llamarada y Saildreik
+      · Beto añade a su mano 1 carta (Duregón): Llamarada
+      · Se resuelve la Cadena 1: En Invocación de Duregón
+      · Final del turno de Beto
+      · Beto sube a la línea frontal: Duregón
+      · Inicio del turno de Ana
+      > A decide NORMAL_SUMMON Caballero Umbrío (opción 0 de 17, espera -0.1, ahora -38.6)
+          ELEGIDA NORMAL_SUMMON Caballero Umbrío                               media     -0.1  pruebas  9  
+                  cadena: NORMAL_SUMMON Espada De Primera Línea → NORMAL_SUMMON Caballero Umbrío media     -0.8  pruebas  9  cayó en la ronda 5
+                  cadena: NORMAL_SUMMON Espada De Primera Línea → NORMAL_SUMMON Caballero Umbrío → END_TURN media     -1.1  pruebas  6  cayó en la ronda 4
+                  cadena: NORMAL_SUMMON Caballero Umbrío → NORMAL_SUMMON Espada De Primera Línea media    -12.1  pruebas  4  cayó en la ronda 3
+                  cadena: NORMAL_SUMMON Caballero Umbrío → NORMAL_SUMMON Espada De Primera Línea → END_TURN media    -12.1  pruebas  4  cayó en la ronda 3
+                  cadena: NORMAL_SUMMON Caballero Umbrío → END_TURN            media    -18.3  pruebas  3  cayó en la ronda 2
+                  cadena: PLAY_CARD Reino Medieval → END_TURN                  media    -20.7  pruebas  3  cayó en la ronda 2
+                  cadena: NORMAL_SUMMON Espada De Primera Línea → END_TURN     media    -21.7  pruebas  3  cayó en la ronda 2
+                  NORMAL_SUMMON Espada De Primera Línea                        media    -21.7  pruebas  3  cayó en la ronda 2
+                  cadena: NORMAL_SUMMON Caballero Umbrío → NORMAL_SUMMON Espada De Primera Línea → PLAY_CARD Investidura media  -1367.0  pruebas  2  cayó en la ronda 1
+                  cadena: NORMAL_SUMMON Caballero Umbrío → NORMAL_SUMMON Espada De Primera Línea → NORMAL_SUMMON c1 media -Infinity  pruebas  2  cayó en la ronda 1
+                  cadena: NORMAL_SUMMON Armadura De Plata → END_TURN           media    -37.2  pruebas  2  cayó en la ronda 1
+                  cadena: NORMAL_SUMMON Caballero Umbrío → NORMAL_SUMMON Espada De Primera Línea → PLAY_CARD Investidura → END_TURN media  -1367.0  pruebas  2  cayó en la ronda 1
+                  cadena: NORMAL_SUMMON Caballero Umbrío → NORMAL_SUMMON Espada De Primera Línea → NORMAL_SUMMON c1 → END_TURN media -Infinity  pruebas  2  cayó en la ronda 1
+                  PLAY_CARD Reino Medieval                                     media    -25.9  pruebas  2  cayó en la ronda 1
+                  NORMAL_SUMMON Armadura De Plata                              media    -37.2  pruebas  2  cayó en la ronda 1
+                  END_TURN                                                     media    -28.9  pruebas  2  cayó en la ronda 1
+          ! cadena: NORMAL_SUMMON Caballero Umbrío → NORMAL_SUMMON Espada De Primera Línea → PLAY_CARD Investidura: -2703.5 = mesa 38.3 − deuda 2744.0 (7 gemas, 6 en su turno) + vidas 2.2 + hoja 0.0 + plan 0.0 − remoción 0.0; turnos pasados 2
+          ! cadena: NORMAL_SUMMON Caballero Umbrío → NORMAL_SUMMON Espada De Primera Línea → PLAY_CARD Investidura → END_TURN: -2703.5 = mesa 38.3 − deuda 2744.0 (7 gemas, 6 en su turno) + vidas 2.2 + hoja 0.0 + plan 0.0 − remoción 0.0; turnos pasados 2
+      > A decide RESOLVE_PROMPT Efecto obligatorio (opción 0 de 2, espera 7.4, ahora -31.0)
+      > A decide RESOLVE_PROMPT Caballero Umbrío (opción 6 de 7, espera 10.3, ahora -31.0)
+      > A decide RESOLVE_PROMPT Caballero Umbrío (opción 1 de 8, espera 6.7, ahora -21.4)
+      > A decide NORMAL_SUMMON Espada De Primera Línea (opción 0 de 13, espera 0.4, ahora -23.4)
+          ELEGIDA NORMAL_SUMMON Espada De Primera Línea                        media      0.4  pruebas  7  
+                  cadena: NORMAL_SUMMON Espada De Primera Línea → END_TURN     media     -4.8  pruebas  7  cayó en la ronda 4
+                  cadena: NORMAL_SUMMON Espada De Primera Línea → PLAY_CARD Investidura media   -250.7  pruebas  4  cayó en la ronda 3
+                  cadena: NORMAL_SUMMON Espada De Primera Línea → RITUAL_SUMMON Armadura De Plata → END_TURN media   -246.6  pruebas  4  cayó en la ronda 3
+                  cadena: NORMAL_SUMMON Espada De Primera Línea → RITUAL_SUMMON Armadura De Plata media    -16.4  pruebas  3  cayó en la ronda 2
+                  cadena: NORMAL_SUMMON Espada De Primera Línea → PLAY_CARD Investidura → END_TURN media    -13.8  pruebas  3  cayó en la ronda 2
+                  END_TURN                                                     media    -14.9  pruebas  3  cayó en la ronda 2
+                  cadena: NORMAL_SUMMON Espada De Primera Línea → PLAY_CARD c31 media -Infinity  pruebas  2  cayó en la ronda 1
+                  cadena: NORMAL_SUMMON Espada De Primera Línea → NORMAL_SUMMON c34 media -Infinity  pruebas  2  cayó en la ronda 1
+                  cadena: NORMAL_SUMMON Armadura De Plata → END_TURN           media    -15.6  pruebas  2  cayó en la ronda 1
+                  cadena: NORMAL_SUMMON Espada De Primera Línea → PLAY_CARD c31 → END_TURN media -Infinity  pruebas  2  cayó en la ronda 1
+                  cadena: NORMAL_SUMMON Espada De Primera Línea → NORMAL_SUMMON c34 → END_TURN media -Infinity  pruebas  2  cayó en la ronda 1
+                  NORMAL_SUMMON Armadura De Plata                              media    -15.6  pruebas  2  cayó en la ronda 1
+          ! cadena: NORMAL_SUMMON Espada De Primera Línea → RITUAL_SUMMON Armadura De Plata → END_TURN: -961.1 = mesa 31.0 − deuda 1000.0 (5 gemas, 4 en su turno) + vidas 2.0 + hoja 8.2 + plan 0.0 − remoción 2.3; turnos pasados 2
+          ! cadena: NORMAL_SUMMON Espada De Primera Línea → PLAY_CARD Investidura: -961.1 = mesa 31.0 − deuda 1000.0 (5 gemas, 4 en su turno) + vidas 2.0 + hoja 8.2 + plan 0.0 − remoción 2.3; turnos pasados 2
+      > A decide RESOLVE_PROMPT Efecto obligatorio (opción 0 de 2, espera 2.8, ahora -16.9)
+      > A decide RESOLVE_PROMPT Espada De Primera Línea (opción 3 de 8, espera 1.1, ahora -9.8)
+      > A decide END_TURN null (opción 0 de 9, espera 3.7, ahora -11.3)
+          ELEGIDA END_TURN                                                     media      3.7  pruebas  6  
+                  cadena: RITUAL_SUMMON Caballero Férreo → END_TURN            media     -0.3  pruebas  6  cayó en la ronda 4
+                  cadena: RITUAL_SUMMON Caballero Férreo → END_TURN            media      0.5  pruebas  4  cayó en la ronda 3
+                  RITUAL_SUMMON Caballero Férreo                               media     -7.5  pruebas  3  cayó en la ronda 2
+                  RITUAL_SUMMON Caballero Férreo                               media     -7.5  pruebas  3  cayó en la ronda 2
+                  cadena: RITUAL_SUMMON Armadura De Plata → END_TURN           media    -11.7  pruebas  2  cayó en la ronda 1
+                  cadena: PLAY_CARD Investidura → END_TURN                     media   -483.5  pruebas  2  cayó en la ronda 1
+                  PLAY_CARD Investidura                                        media   -483.5  pruebas  2  cayó en la ronda 1
+                  RITUAL_SUMMON Armadura De Plata                              media    -19.7  pruebas  2  cayó en la ronda 1
+          ! cadena: PLAY_CARD Investidura → END_TURN: -948.8 = mesa 45.6 − deuda 1000.0 (5 gemas, 4 en su turno) + vidas 1.7 + hoja 8.0 + plan 0.0 − remoción 4.2; turnos pasados 2
+          ! PLAY_CARD Investidura: -948.8 = mesa 45.6 − deuda 1000.0 (5 gemas, 4 en su turno) + vidas 1.7 + hoja 8.0 + plan 0.0 − remoción 4.2; turnos pasados 2
+      > A decide RESOLVE_PROMPT Final de turno · Línea frontal (opción 1 de 4, espera -2.4, ahora -11.3)
+— turno (B(st2) empieza; A(st4) cerró con 0 gemas; timeline 25, evento 25) | A(st4): vidas 6, mano 7, gemas -2, mazo 35, mesa [Caballero Umbrío 3, Espada De Primera Línea 3], mano {Franchute 5, Armadura De Plata 2, Ballesta Montada 3, Investidura 1, Luke El Filo Rojo 3, Caballero Férreo 2, Caballero Férreo 2}  B(st2): vidas 6, mano 7, gemas 2, mazo 34, mesa [Duregón 2^], mano {Galveta 2, Dragón Carmesí 8, Flamagón 1, Fadrake 3, Dragón Volcánico 8, Llamarada 6, Volcán De Dragones 1}  
+  A(st4) invoca Caballero Umbrío
+  A(st4) tributa Reino Medieval
+  A(st4) invoca Espada De Primera Línea
+  A(st4) tributa Investidura
+      · Ana invocó Caballero Umbrío pagando 0 gemas (ventaja del iniciador)
+      · Cadena 1: se activa el efecto En Invocación de Caballero Umbrío
+      · Ana mira las primeras 4 cartas de su mazo (Caballero Umbrío)
+      · Ana añade a su mano 2 cartas (Caballero Umbrío): Investidura y Luke El Filo Rojo
+      · Ana envía al fondo de su mazo 2 cartas
+      · Ana tributa 1 carta (Caballero Umbrío): Reino Medieval
+      · Se resuelve la Cadena 1: En Invocación de Caballero Umbrío
+      · Ana invocó Espada De Primera Línea pagando 1 gema
+      · Cadena 1: se activa el efecto En Invocación de Espada De Primera Línea
+      · Ana roba 2 cartas (Espada De Primera Línea)
+      · Ana tributa 1 carta (Espada De Primera Línea): Investidura
+      · Se resuelve la Cadena 1: En Invocación de Espada De Primera Línea
+      · Final del turno de Ana
+      · Inicio del turno de Beto
+— turno (A(st4) empieza; B(st2) cerró con 0 gemas; timeline 41, evento 41) | A(st4): vidas 6, mano 8, gemas 2, mazo 34, mesa [Caballero Umbrío 3, Espada De Primera Línea 3], mano {Franchute 5, Armadura De Plata 2, Ballesta Montada 3, Investidura 1, Luke El Filo Rojo 3, Caballero Férreo 2, Caballero Férreo 2, Caballeros De La Primera Línea 1}  B(st2): vidas 6, mano 5, gemas -2, mazo 30, mesa [Galveta 5^, Flamagón 2], mano {Fadrake 3, Dragón Volcánico 8, Llamarada 6, Dragón Volcánico 8, Dragón Volcánico 8}  
+  B(st2) juega Volcán De Dragones
+  B(st2) invoca especial Galveta
+  B(st2) tributa Dragón Carmesí
+  B(st2) tributa Dragón Delta
+  B(st2) tributa Dracoventus
+  B(st2) invoca Flamagón
+      · Beto juega Volcán De Dragones pagando 1 gema
+      · Beto invoca por Evolución a Galveta usando Duregón y pagando 1 gema
+      · Beto roba 1 carta por la invocación
+      · Cadena 1: se activa el efecto En Invocación de Galveta
+      · Cadena 2: se activa el efecto Turno Aliado de Volcán De Dragones
+      · Beto agota a Volcán De Dragones (Volcán De Dragones)
+      · Beto gana 1 gema (Volcán De Dragones)
+      · Beto roba 1 carta (Volcán De Dragones)
+      · Beto tributa 1 carta (Volcán De Dragones): Dragón Carmesí
+      · Se resuelve la Cadena 2: Turno Aliado de Volcán De Dragones
+      · Beto tributa 2 cartas del tope de su mazo (Galveta): Dragón Delta y Dracoventus
+      · Se resuelve la Cadena 1: En Invocación de Galveta
+      · Beto invocó Flamagón pagando 1 gema
+      · Final del turno de Beto
+      · Inicio del turno de Ana
+      > A decide RESOLVE_PROMPT Inicio de turno · Línea frontal (opción 1 de 4, espera -719.7, ahora -42.2)
+          ! RESOLVE_PROMPT: -980.5 = mesa -36.2 − deuda 937.5 (5 gemas, 4 en su turno) + vidas -2.0 + hoja 0.2 + plan 0.0 − remoción 5.0; turnos pasados 2
+          ! RESOLVE_PROMPT: -980.5 = mesa -36.2 − deuda 937.5 (5 gemas, 4 en su turno) + vidas -2.0 + hoja 0.2 + plan 0.0 − remoción 5.0; turnos pasados 2
+          ! RESOLVE_PROMPT: -980.5 = mesa -36.2 − deuda 937.5 (5 gemas, 4 en su turno) + vidas -2.0 + hoja 0.2 + plan 0.0 − remoción 5.0; turnos pasados 2
+          ! RESOLVE_PROMPT: -980.5 = mesa -36.2 − deuda 937.5 (5 gemas, 4 en su turno) + vidas -2.0 + hoja 0.2 + plan 0.0 − remoción 5.0; turnos pasados 2
+          ! RESOLVE_PROMPT: -857.1 = mesa 67.0 − deuda 937.5 (5 gemas, 5 en su turno) + vidas 2.0 + hoja 14.9 + plan 0.0 − remoción 3.4; turnos pasados 2
+          ! RESOLVE_PROMPT: -857.1 = mesa 67.0 − deuda 937.5 (5 gemas, 5 en su turno) + vidas 2.0 + hoja 14.9 + plan 0.0 − remoción 3.4; turnos pasados 2
+      > A decide SEQUENCE null (opción 7 de 23, espera -2.7, ahora -42.2)
+          ! RITUAL_SUMMON Armadura De Plata: -868.9 = mesa 46.2 − deuda 937.5 (5 gemas, 4 en su turno) + vidas 5.5 + hoja 16.9 + plan 0.0 − remoción 0.0; turnos pasados 2
+          ! cadena: RITUAL_SUMMON Caballero Férreo → RITUAL_SUMMON Armadura De Plata: -2480.3 = mesa 75.7 − deuda 2572.5 (7 gemas, 6 en su turno) + vidas 4.0 + hoja 12.6 + plan 0.0 − remoción 0.0; turnos pasados 2
+          ! cadena: NORMAL_SUMMON Ballesta Montada → END_TURN: -906.7 = mesa 22.8 − deuda 937.5 (5 gemas, 4 en su turno) + vidas 5.6 + hoja 2.4 + plan 0.0 − remoción 0.0; turnos pasados 2
+          ! cadena: RITUAL_SUMMON Caballero Férreo → END_TURN: -429.8 = mesa 34.6 − deuda 480.0 (4 gemas, 4 en su turno) + vidas 1.5 + hoja 14.1 + plan 0.0 − remoción 0.0; turnos pasados 2
+          ! cadena: RITUAL_SUMMON Caballero Férreo → RITUAL_SUMMON Armadura De Plata → END_TURN: -2480.3 = mesa 75.7 − deuda 2572.5 (7 gemas, 6 en su turno) + vidas 4.0 + hoja 12.6 + plan 0.0 − remoción 0.0; turnos pasados 2
+          ! NORMAL_SUMMON Armadura De Plata: -888.2 = mesa 45.0 − deuda 937.5 (5 gemas, 5 en su turno) + vidas 1.6 + hoja 5.9 + plan 0.0 − remoción 3.2; turnos pasados 2
+      > A decide RESOLVE_PROMPT Encadenar efectos (opción 0 de 3, espera -2454.7, ahora -19.5)
+          ! RESOLVE_PROMPT: -3815.6 = mesa 30.6 − deuda 3840.0 (8 gemas, 7 en su turno) + vidas 0.0 + hoja 0.0 + plan 0.0 − remoción 6.1; turnos pasados 2
+          ! RESOLVE_PROMPT: -3815.6 = mesa 30.6 − deuda 3840.0 (8 gemas, 7 en su turno) + vidas 0.0 + hoja 0.0 + plan 0.0 − remoción 6.1; turnos pasados 2
+          ! RESOLVE_PROMPT: -3815.6 = mesa 30.6 − deuda 3840.0 (8 gemas, 7 en su turno) + vidas 0.0 + hoja 0.0 + plan 0.0 − remoción 6.1; turnos pasados 2
+          ! RESOLVE_PROMPT: -943.8 = mesa -18.3 − deuda 937.5 (5 gemas, 4 en su turno) + vidas 0.9 + hoja 11.1 + plan 0.0 − remoción 0.0; turnos pasados 2
+          ! RESOLVE_PROMPT: -943.8 = mesa -18.3 − deuda 937.5 (5 gemas, 4 en su turno) + vidas 0.9 + hoja 11.1 + plan 0.0 − remoción 0.0; turnos pasados 2
+          ! RESOLVE_PROMPT: -943.8 = mesa -18.3 − deuda 937.5 (5 gemas, 4 en su turno) + vidas 0.9 + hoja 11.1 + plan 0.0 − remoción 0.0; turnos pasados 2
+      > A decide SEQUENCE null (opción 1 de 7, espera -668.8, ahora -14.2)
+          ELEGIDA cadena: RITUAL_SUMMON Caballero Férreo → END_TURN            media   -668.8  pruebas  5  
+                  END_TURN                                                     media   -763.4  pruebas  5  cayó en la ronda 3
+                  cadena: RITUAL_SUMMON Caballero Férreo → END_TURN            media   -570.1  pruebas  3  cayó en la ronda 2
+                  RITUAL_SUMMON Caballero Férreo                               media   -570.1  pruebas  3  cayó en la ronda 2
+                  cadena: RITUAL_SUMMON Armadura De Plata → END_TURN           media  -1280.8  pruebas  2  cayó en la ronda 1
+                  RITUAL_SUMMON Armadura De Plata                              media  -1940.8  pruebas  2  cayó en la ronda 1
+                  RITUAL_SUMMON Caballero Férreo                               media   -825.1  pruebas  2  cayó en la ronda 1
+          ! RITUAL_SUMMON Armadura De Plata: -2578.9 = mesa -10.2 − deuda 2572.5 (7 gemas, 5 en su turno) + vidas 0.0 + hoja 3.8 + plan 0.0 − remoción 0.0; turnos pasados 2
+          ! RITUAL_SUMMON Caballero Férreo: -1629.1 = mesa -18.1 − deuda 1620.0 (6 gemas, 4 en su turno) + vidas 0.0 + hoja 9.0 + plan 0.0 − remoción 0.0; turnos pasados 2
+          ! RITUAL_SUMMON Caballero Férreo: -1629.1 = mesa -18.1 − deuda 1620.0 (6 gemas, 4 en su turno) + vidas 0.0 + hoja 9.0 + plan 0.0 − remoción 0.0; turnos pasados 2
+          ! cadena: RITUAL_SUMMON Caballero Férreo → END_TURN: -1616.6 = mesa 0.5 − deuda 1620.0 (6 gemas, 4 en su turno) + vidas 0.8 + hoja 2.1 + plan 0.0 − remoción 0.0; turnos pasados 2
+          ! cadena: RITUAL_SUMMON Caballero Férreo → END_TURN: -1616.6 = mesa 0.5 − deuda 1620.0 (6 gemas, 4 en su turno) + vidas 0.8 + hoja 2.1 + plan 0.0 − remoción 0.0; turnos pasados 2
+          ! cadena: RITUAL_SUMMON Armadura De Plata → END_TURN: -2592.8 = mesa -21.0 − deuda 2572.5 (7 gemas, 6 en su turno) + vidas 0.7 + hoja 0.0 + plan 0.0 − remoción 0.0; turnos pasados 2
+      > A decide RESOLVE_PROMPT Caballero Férreo · Ascenso (opción 1 de 2, espera -852.0, ahora -14.2)
+          ! RESOLVE_PROMPT: -1663.2 = mesa -43.2 − deuda 1620.0 (6 gemas, 4 en su turno) + vidas 0.0 + hoja 0.0 + plan 0.0 − remoción 0.0; turnos pasados 2
+          ! RESOLVE_PROMPT: -1663.2 = mesa -43.2 − deuda 1620.0 (6 gemas, 4 en su turno) + vidas 0.0 + hoja 0.0 + plan 0.0 − remoción 0.0; turnos pasados 2
+      > A decide RESOLVE_PROMPT Caballero Férreo · Línea frontal (opción 1 de 2, espera -2765.4, ahora -18.5)
+          ! RESOLVE_PROMPT: -5502.1 = mesa -37.6 − deuda 5467.5 (9 gemas, 7 en su turno) + vidas 0.0 + hoja 6.2 + plan 0.0 − remoción 3.2; turnos pasados 2
+          ! RESOLVE_PROMPT: -5501.1 = mesa -40.3 − deuda 5467.5 (9 gemas, 7 en su turno) + vidas 0.0 + hoja 6.7 + plan 0.0 − remoción 0.0; turnos pasados 2
+      > A decide RESOLVE_PROMPT Efecto obligatorio (opción 0 de 2, espera -1300.4, ahora -15.7)
+          ! RESOLVE_PROMPT: -2567.1 = mesa 7.5 − deuda 2572.5 (7 gemas, 5 en su turno) + vidas 0.0 + hoja 1.3 + plan 0.0 − remoción 3.3; turnos pasados 2
+          ! RESOLVE_PROMPT: -2567.1 = mesa 7.5 − deuda 2572.5 (7 gemas, 5 en su turno) + vidas 0.0 + hoja 1.3 + plan 0.0 − remoción 3.3; turnos pasados 2
+      > A decide RESOLVE_PROMPT Final de turno · Línea frontal (opción 0 de 4, espera -239.5, ahora -15.7)
+          ! RESOLVE_PROMPT: -508.6 = mesa -28.6 − deuda 480.0 (4 gemas, 4 en su turno) + vidas 0.0 + hoja 0.0 + plan 0.0 − remoción 0.0; turnos pasados 2
+          ! RESOLVE_PROMPT: -932.6 = mesa 4.9 − deuda 937.5 (5 gemas, 5 en su turno) + vidas 0.0 + hoja 0.0 + plan 0.0 − remoción 0.0; turnos pasados 2
+          ! RESOLVE_PROMPT: -945.7 = mesa -8.2 − deuda 937.5 (5 gemas, 5 en su turno) + vidas 0.0 + hoja 0.0 + plan 0.0 − remoción 0.0; turnos pasados 2
+          ! RESOLVE_PROMPT: -508.6 = mesa -28.6 − deuda 480.0 (4 gemas, 4 en su turno) + vidas 0.0 + hoja 0.0 + plan 0.0 − remoción 0.0; turnos pasados 2
+          ! RESOLVE_PROMPT: -505.1 = mesa -39.2 − deuda 480.0 (4 gemas, 4 en su turno) + vidas 0.0 + hoja 14.1 + plan 0.0 − remoción 0.0; turnos pasados 2
+          ! RESOLVE_PROMPT: -941.2 = mesa -13.7 − deuda 937.5 (5 gemas, 5 en su turno) + vidas 0.0 + hoja 10.0 + plan 0.0 − remoción 0.0; turnos pasados 2
+— turno (B(st2) empieza; A(st4) cerró con -2 gemas; timeline 54, evento 54) | A(st4): vidas 6, mano 7, gemas -5, mazo 33, mesa [Espada De Primera Línea 3^, Luke El Filo Rojo 9^, Caballero Férreo 4^], mano {Franchute 5, Armadura De Plata 2, Ballesta Montada 3, Investidura 1, Caballero Férreo 2, Caballeros De La Primera Línea 1, Armadura De Plata 2}  B(st2): vidas 6, mano 6, gemas 5, mazo 29, mesa [Galveta 5^, Flamagón 2], mano {Fadrake 3, Dragón Volcánico 8, Llamarada 6, Dragón Volcánico 8, Dragón Volcánico 8, Dragón Delta 2}  
+  A(st4) invoca Luke El Filo Rojo
+  A(st4) tributa Caballero Umbrío
+  A(st4) invoca especial Caballero Férreo
+      · Ana invocó Luke El Filo Rojo pagando 3 gemas
+      · Cadena 1: se activa el efecto Celeridad de Luke El Filo Rojo
+      · Ana coloca en su línea frontal 1 carta (Luke El Filo Rojo): Luke El Filo Rojo
+      · Se resuelve la Cadena 1: Celeridad de Luke El Filo Rojo
+      · Ana invoca por Ascenso a Caballero Férreo usando Caballero Umbrío y pagando 1 gema
+      · Ana roba 1 carta por la invocación
+      · Cadena 1: se activa el efecto En Invocación de Caballero Férreo
+      · Se resuelve la Cadena 1: En Invocación de Caballero Férreo
+      · Final del turno de Ana
+      · Ana sube a la línea frontal: Espada De Primera Línea, Caballero Férreo
+      · Inicio del turno de Beto
+— turno (A(st4) empieza; B(st2) cerró con 0 gemas; timeline 69, evento 69) | A(st4): vidas 6, mano 8, gemas 3, mazo 32, mesa [Espada De Primera Línea 5^, Luke El Filo Rojo 9^, Caballero Férreo 4^], mano {Franchute 5, Armadura De Plata 2, Ballesta Montada 3, Investidura 1, Caballero Férreo 2, Caballeros De La Primera Línea 1, Armadura De Plata 2, Caballeros De La Primera Línea 1}  B(st2): vidas 6, mano 6, gemas -3, mazo 25, mesa [Dragón Delta 6^, Saildreik 11^], mano {Dragón Volcánico 8, Llamarada 6, Dragón Volcánico 8, Dragón Volcánico 8, Wyverno De Pantano 3, Ddraig 3}  
+  B(st2) invoca especial Fadrake
+  B(st2) tributa Dragón Delta
+  B(st2) invoca especial Dragón Delta
+  B(st2) invoca especial Saildreik
+      · Beto invoca por Evolución a Fadrake usando Galveta y pagando 2 gemas
+      · Beto roba 1 carta por la invocación
+      · Cadena 1: se activa el efecto Turno Aliado de Volcán De Dragones
+      · Beto agota a Volcán De Dragones (Volcán De Dragones)
+      · Beto gana 1 gema (Volcán De Dragones)
+      · Beto roba 1 carta (Volcán De Dragones)
+      · Beto tributa 1 carta (Volcán De Dragones): Dragón Delta
+      · Se resuelve la Cadena 1: Turno Aliado de Volcán De Dragones
+      · Beto invoca por Evolución a Dragón Delta usando Flamagón y pagando 1 gema
+      · Beto roba 1 carta por la invocación
+      · Volcán De Dragones: Turno Aliado no puede activarse (no se puede pagar su coste o no hay objetivos válidos)
+      · Beto invoca por Evolución a Saildreik usando Fadrake y pagando 3 gemas
+      · Beto roba 1 carta por la invocación
+      · Volcán De Dragones: Turno Aliado no puede activarse (no se puede pagar su coste o no hay objetivos válidos)
+      · Final del turno de Beto
+      · Beto sube a la línea frontal: Dragón Delta
+      · Inicio del turno de Ana
+      > A decide SEQUENCE null (opción 2 de 22, espera -185.8, ahora -65.5)
+          ! RITUAL_SUMMON Franchute: -1744.2 = mesa -24.5 − deuda 1728.0 (6 gemas, 6 en su turno) + vidas 0.5 + hoja 7.8 + plan 0.0 − remoción 0.0; turnos pasados 2
+          ! ATTACK Luke El Filo Rojo: -2824.8 = mesa -81.3 − deuda 2744.0 (7 gemas, 5 en su turno) + vidas 0.5 + hoja 0.0 + plan 0.0 − remoción 0.0; turnos pasados 2
+          ! ATTACK Caballero Férreo: -4148.0 = mesa -40.1 − deuda 4096.0 (8 gemas, 7 en su turno) + vidas 0.3 + hoja 0.0 + plan 0.0 − remoción 12.2; turnos pasados 2
+          ! NORMAL_SUMMON Franchute: -1067.4 = mesa -45.6 − deuda 1000.0 (5 gemas, 3 en su turno) + vidas 0.4 + hoja 0.0 + plan 0.0 − remoción 22.3; turnos pasados 2
+          ! NORMAL_SUMMON Armadura De Plata: -574.7 = mesa -54.3 − deuda 512.0 (4 gemas, 3 en su turno) + vidas 0.4 + hoja 1.3 + plan 0.0 − remoción 10.1; turnos pasados 2
+          ! RITUAL_SUMMON Armadura De Plata: -1753.3 = mesa -31.0 − deuda 1728.0 (6 gemas, 6 en su turno) + vidas 0.5 + hoja 5.3 + plan 0.0 − remoción 0.0; turnos pasados 2
+      > A decide RESOLVE_PROMPT Encadenar efectos (opción 0 de 5, espera -799.4, ahora -77.0)
+          ! RESOLVE_PROMPT: -2787.1 = mesa -30.1 − deuda 2744.0 (7 gemas, 5 en su turno) + vidas 0.6 + hoja 0.0 + plan 0.0 − remoción 13.6; turnos pasados 2
+          ! RESOLVE_PROMPT: -589.3 = mesa -72.7 − deuda 512.0 (4 gemas, 2 en su turno) + vidas 4.5 + hoja 1.0 + plan 0.0 − remoción 10.1; turnos pasados 2
+          ! RESOLVE_PROMPT: -2767.2 = mesa -38.8 − deuda 2744.0 (7 gemas, 7 en su turno) + vidas 1.7 + hoja 13.9 + plan 0.0 − remoción 0.0; turnos pasados 2
+          ! RESOLVE_PROMPT: -2767.2 = mesa -38.8 − deuda 2744.0 (7 gemas, 7 en su turno) + vidas 1.7 + hoja 13.9 + plan 0.0 − remoción 0.0; turnos pasados 2
+      > A decide RESOLVE_PROMPT Efecto obligatorio (opción 1 de 2, espera -2316.8, ahora -77.4)
+          ! RESOLVE_PROMPT: -1808.5 = mesa -68.8 − deuda 1728.0 (6 gemas, 5 en su turno) + vidas 0.2 + hoja 1.9 + plan 0.0 − remoción 13.7; turnos pasados 2
+          ! RESOLVE_PROMPT: -1808.5 = mesa -68.8 − deuda 1728.0 (6 gemas, 5 en su turno) + vidas 0.2 + hoja 1.9 + plan 0.0 − remoción 13.7; turnos pasados 2
+          ! RESOLVE_PROMPT: -2836.3 = mesa -79.5 − deuda 2744.0 (7 gemas, 6 en su turno) + vidas 0.6 + hoja 0.3 + plan 0.0 − remoción 13.6; turnos pasados 2
+          ! PLAY_CARD Investidura: -301.7 = mesa -66.9 − deuda 216.0 (3 gemas, 0 en su turno) + vidas 0.0 + hoja 0.0 + plan 0.0 − remoción 18.9; turnos pasados 1
+          ! RESOLVE_PROMPT: -2825.2 = mesa -68.0 − deuda 2744.0 (7 gemas, 6 en su turno) + vidas 0.4 + hoja 0.0 + plan 0.0 − remoción 13.6; turnos pasados 2
+      > A decide RESOLVE_PROMPT Caballeros De La Primera Línea (opción 0 de 2, espera -1480.8, ahora -77.4)
+          ! PLAY_CARD Investidura: -305.2 = mesa -74.0 − deuda 216.0 (3 gemas, 0 en su turno) + vidas 0.0 + hoja 0.0 + plan 0.0 − remoción 15.1; turnos pasados 1
+          ! RESOLVE_PROMPT: -1099.6 = mesa -110.1 − deuda 1000.0 (5 gemas, 4 en su turno) + vidas -2.8 + hoja 13.2 + plan 0.0 − remoción 0.0; turnos pasados 2
+          ! RESOLVE_PROMPT: -2807.6 = mesa -49.9 − deuda 2744.0 (7 gemas, 4 en su turno) + vidas 0.0 + hoja 0.0 + plan 0.0 − remoción 13.7; turnos pasados 2
+          ! RESOLVE_PROMPT: -2822.1 = mesa -93.1 − deuda 2744.0 (7 gemas, 6 en su turno) + vidas 0.2 + hoja 14.9 + plan 0.0 − remoción 0.0; turnos pasados 2
+      > A decide RESOLVE_PROMPT Caballeros De La Primera Línea (opción 3 de 5, espera -547.9, ahora -77.4)
+          ! RESOLVE_PROMPT: -1754.7 = mesa -18.6 − deuda 1728.0 (6 gemas, 5 en su turno) + vidas 0.6 + hoja 1.4 + plan 0.0 − remoción 10.1; turnos pasados 2
+          ! RESOLVE_PROMPT: -1754.7 = mesa -18.6 − deuda 1728.0 (6 gemas, 5 en su turno) + vidas 0.6 + hoja 1.4 + plan 0.0 − remoción 10.1; turnos pasados 2
+          ! RESOLVE_PROMPT: -2801.6 = mesa -46.0 − deuda 2744.0 (7 gemas, 5 en su turno) + vidas 0.6 + hoja 0.0 + plan 0.0 − remoción 12.2; turnos pasados 2
+          ! RESOLVE_PROMPT: -1755.0 = mesa -38.0 − deuda 1728.0 (6 gemas, 4 en su turno) + vidas 0.6 + hoja 10.5 + plan 0.0 − remoción 0.0; turnos pasados 2
+          ! RESOLVE_PROMPT: -2804.0 = mesa -60.6 − deuda 2744.0 (7 gemas, 6 en su turno) + vidas 0.6 + hoja 0.0 + plan 0.0 − remoción 0.0; turnos pasados 2
+          ! RESOLVE_PROMPT: -1744.5 = mesa -25.6 − deuda 1728.0 (6 gemas, 6 en su turno) + vidas 0.6 + hoja 8.5 + plan 0.0 − remoción 0.0; turnos pasados 2
+      > A decide RESOLVE_PROMPT Efecto obligatorio (opción 0 de 2, espera -426.7, ahora -64.0)
+          ! RESOLVE_PROMPT: -529.1 = mesa -6.8 − deuda 512.0 (4 gemas, 4 en su turno) + vidas -3.4 + hoja 4.2 + plan 0.0 − remoción 11.1; turnos pasados 2
+          ! RESOLVE_PROMPT: -529.1 = mesa -6.8 − deuda 512.0 (4 gemas, 4 en su turno) + vidas -3.4 + hoja 4.2 + plan 0.0 − remoción 11.1; turnos pasados 2
+          ! RESOLVE_PROMPT: -324.4 = mesa -110.3 − deuda 216.0 (3 gemas, 3 en su turno) + vidas 0.4 + hoja 1.6 + plan 0.0 − remoción 0.0; turnos pasados 2
+          ! RESOLVE_PROMPT: -324.4 = mesa -110.3 − deuda 216.0 (3 gemas, 3 en su turno) + vidas 0.4 + hoja 1.6 + plan 0.0 − remoción 0.0; turnos pasados 2
+      > A decide RESOLVE_PROMPT Encadenar efectos (opción 0 de 3, espera -199.8, ahora -64.0)
+          ! RESOLVE_PROMPT: -1080.5 = mesa -75.6 − deuda 1000.0 (5 gemas, 5 en su turno) + vidas 0.6 + hoja 8.3 + plan 0.0 − remoción 13.7; turnos pasados 2
+          ! RESOLVE_PROMPT: -1072.4 = mesa -62.2 − deuda 1000.0 (5 gemas, 5 en su turno) + vidas 0.6 + hoja 1.4 + plan 0.0 − remoción 12.2; turnos pasados 2
+      > A decide RESOLVE_PROMPT Efecto obligatorio (opción 0 de 2, espera -4595.0, ahora -65.2)
+          ! RESOLVE_PROMPT: -8094.8 = mesa -95.4 − deuda 8000.0 (10 gemas, 9 en su turno) + vidas 0.6 + hoja 0.0 + plan 0.0 − remoción 0.0; turnos pasados 2
+          ! RESOLVE_PROMPT: -8094.8 = mesa -95.4 − deuda 8000.0 (10 gemas, 9 en su turno) + vidas 0.6 + hoja 0.0 + plan 0.0 − remoción 0.0; turnos pasados 2
+          ! RESOLVE_PROMPT: -1095.1 = mesa -96.8 − deuda 1000.0 (5 gemas, 5 en su turno) + vidas 0.4 + hoja 1.2 + plan 0.0 − remoción 0.0; turnos pasados 2
+          ! RESOLVE_PROMPT: -1095.1 = mesa -96.8 − deuda 1000.0 (5 gemas, 5 en su turno) + vidas 0.4 + hoja 1.2 + plan 0.0 − remoción 0.0; turnos pasados 2
+      > A decide RESOLVE_PROMPT Investidura (opción 0 de 4, espera -657.5, ahora -65.2)
+          ! RESOLVE_PROMPT: -1064.0 = mesa -64.4 − deuda 1000.0 (5 gemas, 5 en su turno) + vidas 0.6 + hoja 12.0 + plan 0.0 − remoción 12.2; turnos pasados 2
+          ! RESOLVE_PROMPT: -2836.7 = mesa -93.9 − deuda 2744.0 (7 gemas, 5 en su turno) + vidas 0.2 + hoja 1.0 + plan 0.0 − remoción 0.0; turnos pasados 2
+          ! RESOLVE_PROMPT: -2836.7 = mesa -93.9 − deuda 2744.0 (7 gemas, 5 en su turno) + vidas 0.2 + hoja 1.0 + plan 0.0 − remoción 0.0; turnos pasados 2
+          ! RESOLVE_PROMPT: -1072.3 = mesa -63.8 − deuda 1000.0 (5 gemas, 5 en su turno) + vidas 0.4 + hoja 3.3 + plan 0.0 − remoción 12.2; turnos pasados 2
+          ! RESOLVE_PROMPT: -1881.7 = mesa -154.0 − deuda 1728.0 (6 gemas, 4 en su turno) + vidas 0.3 + hoja 0.0 + plan 0.0 − remoción 0.0; turnos pasados 2
+          ! RESOLVE_PROMPT: -1881.7 = mesa -154.0 − deuda 1728.0 (6 gemas, 4 en su turno) + vidas 0.3 + hoja 0.0 + plan 0.0 − remoción 0.0; turnos pasados 2
+      > A decide RESOLVE_PROMPT Encadenar efectos (opción 1 de 3, espera -269.4, ahora -55.5)
+          ! RESOLVE_PROMPT: -1866.2 = mesa -143.8 − deuda 1728.0 (6 gemas, 5 en su turno) + vidas 0.5 + hoja 5.1 + plan 0.0 − remoción 0.0; turnos pasados 2
+          ! RESOLVE_PROMPT: -300.6 = mesa -77.8 − deuda 216.0 (3 gemas, 3 en su turno) + vidas 0.0 + hoja 3.3 + plan 0.0 − remoción 10.1; turnos pasados 2
+      > A decide SEQUENCE null (opción 4 de 26, espera -59.2, ahora -55.5)
+          ELEGIDA cadena: ATTACK Franchute → Dragón Delta → ATTACK Caballero Férreo → Dragón Delta media    -59.2  pruebas 11  
+                  cadena: ATTACK Franchute → Dragón Delta → ATTACK Caballero Férreo → Dragón Delta → END_TURN media    -59.2  pruebas 11  cayó en la ronda 5
+                  cadena: ATTACK Franchute → Dragón Delta → ATTACK Caballero Férreo media    -85.7  pruebas  7  cayó en la ronda 4
+                  ATTACK Franchute → Dragón Delta                              media    -87.3  pruebas  4  cayó en la ronda 3
+                  cadena: ATTACK Franchute → Dragón Delta → END_TURN           media    -87.3  pruebas  4  cayó en la ronda 3
+                  cadena: ATTACK Franchute → Dragón Delta → ATTACK Caballero Férreo → END_TURN media    -82.0  pruebas  4  cayó en la ronda 3
+                  cadena: ATTACK Franchute → Dragón Delta → PLAY_CARD Caballeros De La Primera Línea media   -272.9  pruebas  3  cayó en la ronda 2
+                  cadena: ATTACK Franchute → ATTACK Caballero Férreo           media   -295.0  pruebas  3  cayó en la ronda 2
+                  cadena: ATTACK Franchute → ATTACK Caballero Férreo           media   -295.0  pruebas  3  cayó en la ronda 2
+                  ATTACK Franchute                                             media   -285.4  pruebas  3  cayó en la ronda 2
+                  cadena: ATTACK Franchute → ATTACK Caballero Férreo → Dragón Delta media   -295.0  pruebas  3  cayó en la ronda 2
+                  cadena: ATTACK Franchute → END_TURN                          media   -285.4  pruebas  3  cayó en la ronda 2
+                  END_TURN                                                     media   -316.3  pruebas  2  cayó en la ronda 1
+                  PLAY_CARD Caballeros De La Primera Línea                     media   -295.5  pruebas  2  cayó en la ronda 1
+                  NORMAL_SUMMON Armadura De Plata                              media  -1828.6  pruebas  2  cayó en la ronda 1
+                  NORMAL_SUMMON Armadura De Plata                              media  -1828.6  pruebas  2  cayó en la ronda 1
+                  NORMAL_SUMMON Ballesta Montada                               media  -1828.4  pruebas  2  cayó en la ronda 1
+                  NORMAL_SUMMON Caballería Cruzada                             media  -1831.7  pruebas  2  cayó en la ronda 1
+                  NORMAL_SUMMON Filo Vengativo                                 media  -1092.8  pruebas  2  cayó en la ronda 1
+                  RITUAL_SUMMON Ballesta Montada                               media  -3491.5  pruebas  2  cayó en la ronda 1
+                  RITUAL_SUMMON Caballería Cruzada                             media  -3498.8  pruebas  2  cayó en la ronda 1
+                  cadena: ATTACK Franchute → PLAY_CARD Caballeros De La Primera Línea media   -331.6  pruebas  2  cayó en la ronda 1
+                  cadena: PLAY_CARD Caballeros De La Primera Línea → END_TURN  media   -295.5  pruebas  2  cayó en la ronda 1
+                  cadena: RITUAL_SUMMON Ballesta Montada → END_TURN            media  -3491.5  pruebas  2  cayó en la ronda 1
+          ! NORMAL_SUMMON Armadura De Plata: -1808.3 = mesa -70.2 − deuda 1728.0 (6 gemas, 3 en su turno) + vidas 0.0 + hoja 0.0 + plan 0.0 − remoción 10.1; turnos pasados 2
+          ! NORMAL_SUMMON Ballesta Montada: -1808.4 = mesa -77.0 − deuda 1728.0 (6 gemas, 3 en su turno) + vidas 0.0 + hoja 6.7 + plan 0.0 − remoción 10.1; turnos pasados 2
+          ! RITUAL_SUMMON Ballesta Montada: -1076.3 = mesa -70.4 − deuda 1000.0 (5 gemas, 3 en su turno) + vidas 0.2 + hoja 4.0 + plan 0.0 − remoción 10.1; turnos pasados 2
+          ! NORMAL_SUMMON Armadura De Plata: -1808.3 = mesa -70.2 − deuda 1728.0 (6 gemas, 3 en su turno) + vidas 0.0 + hoja 0.0 + plan 0.0 − remoción 10.1; turnos pasados 2
+          ! NORMAL_SUMMON Caballería Cruzada: -1807.7 = mesa -70.0 − deuda 1728.0 (6 gemas, 3 en su turno) + vidas 0.4 + hoja 0.0 + plan 0.0 − remoción 10.1; turnos pasados 2
+          ! RITUAL_SUMMON Caballería Cruzada: -1085.5 = mesa -86.5 − deuda 1000.0 (5 gemas, 3 en su turno) + vidas 0.2 + hoja 10.9 + plan 0.0 − remoción 10.1; turnos pasados 2
+      > A decide END_TURN null (opción 0 de 21, espera -259.7, ahora -57.1)
+          ELEGIDA END_TURN                                                     media   -259.7  pruebas 10  
+                  cadena: RITUAL_SUMMON Caballería Cruzada → PLAY_CARD Caballeros De La Primera Línea media   -275.4  pruebas 10  cayó en la ronda 5
+                  cadena: RITUAL_SUMMON Caballería Cruzada → PLAY_CARD Caballeros De La Primera Línea → END_TURN media   -271.6  pruebas  6  cayó en la ronda 4
+                  cadena: RITUAL_SUMMON Ballesta Montada → PLAY_CARD Caballeros De La Primera Línea media   -303.9  pruebas  4  cayó en la ronda 3
+                  cadena: PLAY_CARD Caballeros De La Primera Línea → END_TURN  media   -303.9  pruebas  4  cayó en la ronda 3
+                  cadena: RITUAL_SUMMON Ballesta Montada → PLAY_CARD Caballeros De La Primera Línea → END_TURN media   -303.9  pruebas  4  cayó en la ronda 3
+                  cadena: RITUAL_SUMMON Ballesta Montada → END_TURN            media  -1630.3  pruebas  3  cayó en la ronda 2
+                  cadena: RITUAL_SUMMON Caballería Cruzada → END_TURN          media  -1619.5  pruebas  3  cayó en la ronda 2
+                  RITUAL_SUMMON Ballesta Montada                               media  -1630.3  pruebas  3  cayó en la ronda 2
+                  PLAY_CARD Caballeros De La Primera Línea                     media   -305.0  pruebas  3  cayó en la ronda 2
+                  RITUAL_SUMMON Caballería Cruzada                             media  -1619.5  pruebas  3  cayó en la ronda 2
+                  cadena: RITUAL_SUMMON Caballería Cruzada → NORMAL_SUMMON c33 media -Infinity  pruebas  2  cayó en la ronda 1
+                  cadena: RITUAL_SUMMON Ballesta Montada → NORMAL_SUMMON c33   media -Infinity  pruebas  2  cayó en la ronda 1
+                  cadena: NORMAL_SUMMON Filo Vengativo → END_TURN              media  -1050.2  pruebas  2  cayó en la ronda 1
+                  cadena: RITUAL_SUMMON Caballería Cruzada → NORMAL_SUMMON c33 → END_TURN media -Infinity  pruebas  2  cayó en la ronda 1
+                  cadena: RITUAL_SUMMON Ballesta Montada → NORMAL_SUMMON c33 → END_TURN media -Infinity  pruebas  2  cayó en la ronda 1
+                  NORMAL_SUMMON Armadura De Plata                              media  -1773.3  pruebas  2  cayó en la ronda 1
+                  NORMAL_SUMMON Ballesta Montada                               media  -1779.4  pruebas  2  cayó en la ronda 1
+                  NORMAL_SUMMON Armadura De Plata                              media  -1773.3  pruebas  2  cayó en la ronda 1
+                  NORMAL_SUMMON Caballería Cruzada                             media  -1780.0  pruebas  2  cayó en la ronda 1
+                  NORMAL_SUMMON Filo Vengativo                                 media  -1050.2  pruebas  2  cayó en la ronda 1
+          ! NORMAL_SUMMON Armadura De Plata: -1768.9 = mesa -33.3 − deuda 1728.0 (6 gemas, 3 en su turno) + vidas 0.2 + hoja 5.8 + plan 0.0 − remoción 13.6; turnos pasados 2
+          ! NORMAL_SUMMON Ballesta Montada: -1775.4 = mesa -38.5 − deuda 1728.0 (6 gemas, 3 en su turno) + vidas 0.2 + hoja 4.4 + plan 0.0 − remoción 13.6; turnos pasados 2
+          ! RITUAL_SUMMON Ballesta Montada: -1040.8 = mesa -31.1 − deuda 1000.0 (5 gemas, 3 en su turno) + vidas 0.2 + hoja 3.7 + plan 0.0 − remoción 13.6; turnos pasados 2
+          ! NORMAL_SUMMON Armadura De Plata: -1768.9 = mesa -33.3 − deuda 1728.0 (6 gemas, 3 en su turno) + vidas 0.2 + hoja 5.8 + plan 0.0 − remoción 13.6; turnos pasados 2
+          ! NORMAL_SUMMON Caballería Cruzada: -1746.1 = mesa -14.4 − deuda 1728.0 (6 gemas, 3 en su turno) + vidas 0.6 + hoja 9.3 + plan 0.0 − remoción 13.6; turnos pasados 2
+          ! RITUAL_SUMMON Caballería Cruzada: -1040.8 = mesa -31.1 − deuda 1000.0 (5 gemas, 3 en su turno) + vidas 0.2 + hoja 3.7 + plan 0.0 − remoción 13.6; turnos pasados 2
+      > A decide RESOLVE_PROMPT Final de turno · Línea frontal (opción 1 de 2, espera -254.2, ahora -57.1)
+— turno (B(st2) empieza; A(st4) cerró con 0 gemas; timeline 112, evento 112) | A(st4): vidas 6, mano 6, gemas -4, mazo 30, mesa [Caballero Férreo 4^, Caballero Férreo 4, Franchute 11*^], mano {Armadura De Plata 2, Ballesta Montada 3, Armadura De Plata 2, Caballeros De La Primera Línea 1, Caballería Cruzada 3, Filo Vengativo 2}  B(st2): vidas 6, mano 7, gemas 4, mazo 24, mesa [Saildreik 11^], mano {Dragón Volcánico 8, Llamarada 6, Dragón Volcánico 8, Dragón Volcánico 8, Wyverno De Pantano 3, Ddraig 3, Fadrake 3}  
+  A(st4) ataca con Espada De Primera Línea
+  B(st2) bloquea con Dragón Delta
+  B(st2) destruye Espada De Primera Línea
+  A(st4) juega Caballeros De La Primera Línea
+  A(st4) invoca por efecto Caballero Férreo
+  A(st4) juega Investidura
+  A(st4) tributa Luke El Filo Rojo
+  A(st4) invoca especial Franchute
+  A(st4) ataca con Franchute a Dragón Delta
+  A(st4) destruye Dragón Delta
+  A(st4) quita una vida: Dragón Carmesí → hand (daño 11)
+      · Ana agota a Espada De Primera Línea y ataca a Beto
+      · Paso de bloqueo
+      · Dragón Delta bloquea el ataque
+      · Paso de enfrentamiento
+      · Enfrentamiento: Espada De Primera Línea (5) contra Dragón Delta (6)
+      · Beto destruye Espada De Primera Línea de Ana en el enfrentamiento
+      · Cadena 1: se activa el efecto En Mano de Caballeros De La Primera Línea
+      · Ana juega Caballeros De La Primera Línea sin pagar su coste (Caballeros De La Primera Línea)
+      · Se resuelve la Cadena 1: En Mano de Caballeros De La Primera Línea
+      · Cadena 1: se activa el efecto En Juego de Caballeros De La Primera Línea
+      · Ana invoca Caballero Férreo de su mano pagando 1 gema (Caballeros De La Primera Línea)
+      · Ana roba 1 carta por la invocación
+      · Se resuelve la Cadena 1: En Juego de Caballeros De La Primera Línea
+      · Caballeros De La Primera Línea va al descarte tras resolverse
+      · Cadena 1: se activa el efecto En Invocación de Caballero Férreo
+      · Cadena 2: se activa el efecto En Mano de Investidura
+      · Ana juega Investidura sin pagar su coste (Investidura)
+      · Se resuelve la Cadena 2: En Mano de Investidura
+      · Se resuelve la Cadena 1: En Invocación de Caballero Férreo
+      · Cadena 1: se activa el efecto En Juego de Investidura
+      · Ana invoca por Ascenso a Franchute usando Luke El Filo Rojo y pagando 2 gemas (Investidura)
+      · Ana roba 1 carta por la invocación
+      · Se resuelve la Cadena 1: En Juego de Investidura
+      · Investidura va al descarte tras resolverse
+      · Ana no activa el efecto En Invocación de Franchute
+      · El combate termina: el atacante dejó el campo
+      · Ana agota a Franchute y ataca a Dragón Delta
+      · Paso de bloqueo
+      · Paso de enfrentamiento
+      · Enfrentamiento: Franchute (11) contra Dragón Delta (6)
+      · Ana destruye Dragón Delta de Beto en el enfrentamiento
+      · Paso de daño directo
+      · Franchute inflige 11 de daño directo: Beto pierde la vida Dragón Carmesí, que va a su mano
+      · Beto refuerza con Dragón Carmesí: va bocarriba al fondo de su pila de vidas
+      · Termina el combate
+      · Final del turno de Ana
+      · Inicio del turno de Beto
+      > A decide RESOLVE_PROMPT Encadenar efectos (opción 0 de 3, espera -227.8, ahora -57.1)
+          ! RESOLVE_PROMPT: -302.0 = mesa -52.2 − deuda 229.5 (3 gemas, 3 en su turno) + vidas -1.1 + hoja 0.0 + plan 0.0 − remoción 19.2; turnos pasados 2
+          ! RESOLVE_PROMPT: -312.0 = mesa -62.2 − deuda 229.5 (3 gemas, 3 en su turno) + vidas -1.1 + hoja 0.0 + plan 0.0 − remoción 19.2; turnos pasados 2
+          ! RESOLVE_PROMPT: -302.0 = mesa -52.2 − deuda 229.5 (3 gemas, 3 en su turno) + vidas -1.1 + hoja 0.0 + plan 0.0 − remoción 19.2; turnos pasados 2
+          ! RESOLVE_PROMPT: -300.0 = mesa -54.1 − deuda 229.5 (3 gemas, 3 en su turno) + vidas -0.7 + hoja 0.0 + plan 0.0 − remoción 15.8; turnos pasados 2
+          ! RESOLVE_PROMPT: -309.0 = mesa -62.9 − deuda 229.5 (3 gemas, 3 en su turno) + vidas -0.8 + hoja 0.0 + plan 0.0 − remoción 15.8; turnos pasados 2
+          ! RESOLVE_PROMPT: -300.0 = mesa -54.1 − deuda 229.5 (3 gemas, 3 en su turno) + vidas -0.7 + hoja 0.0 + plan 0.0 − remoción 15.8; turnos pasados 2
+      > A decide RESOLVE_PROMPT Efecto obligatorio (opción 0 de 2, espera -93.3, ahora -82.8)
+      > A decide RESOLVE_PROMPT Caballeros De La Primera Línea (opción 1 de 2, espera -106.4, ahora -82.8)
+— turno (A(st4) empieza; B(st2) cerró con 0 gemas; timeline 194, evento 194) | A(st4): vidas 3, mano 6, gemas 4, mazo 29, mesa [Caballero Férreo 4], mano {Armadura De Plata 2, Ballesta Montada 3, Armadura De Plata 2, Caballería Cruzada 3, Filo Vengativo 2, Luke El Filo Rojo 3}  B(st2): vidas 6, mano 6, gemas -4, mazo 22, mesa [Dragón Carmesí 14*^, Dírumy 2^], mano {Dragón Volcánico 8, Dragón Volcánico 8, Ddraig 3, Dracoventus 5, Volcán De Dragones 1, Llamarada 6}  
+  B(st2) ataca con Saildreik
+  B(st2) invoca especial Dragón Carmesí
+  B(st2) tributa Dragón Volcánico
+  B(st2) tributa Wyphound
+  B(st2) destruye Caballero Férreo
+  B(st2) tributa Wyverno De Pantano
+  A(st4) juega Caballeros De La Primera Línea
+  B(st2) tributa Wyphound
+  B(st2) quita una vida: Espada De Primera Línea → tributeZone (daño 14)
+  B(st2) ataca con Dragón Carmesí a Franchute
+  B(st2) tributa Fadrake
+  B(st2) tributa Llamarada
+  B(st2) tributa Llamarada
+  B(st2) juega Llamarada
+  B(st2) destruye Franchute
+  B(st2) quita una vida: Ballesta Montada → tributeZone (daño 14)
+  B(st2) quita una vida: Comandante De Las Espadas Dragón → tributeZone (daño 14)
+  B(st2) invoca Dírumy
+      · Beto agota a Saildreik y ataca a Ana
+      · Cadena 1: se activa el efecto Al Atacar de Saildreik
+      · Cadena 2: se activa el efecto Al Atacar de Saildreik
+      · Beto elige como objetivo a Caballero Férreo (Saildreik)
+      · Cadena 3: se activa el efecto Al Atacar de Saildreik
+      · Cadena 4: se activa el efecto Al Atacar de Saildreik
+      · Beto invoca por Evolución a Dragón Carmesí usando Saildreik y pagando 3 gemas (Saildreik)
+      · Beto roba 1 carta por la invocación
+      · Se resuelve la Cadena 4: Al Atacar de Saildreik
+      · Beto coloca al tope de su mazo 1 carta (Saildreik)
+      · Beto tributa 2 cartas del tope de su mazo (Saildreik): Dragón Volcánico y Wyphound
+      · Se resuelve la Cadena 3: Al Atacar de Saildreik
+      · Beto destruye Caballero Férreo de Ana (Saildreik)
+      · Se resuelve la Cadena 2: Al Atacar de Saildreik
+      · Beto roba 1 carta (Saildreik)
+      · Beto tributa 1 carta (Saildreik): Wyverno De Pantano
+      · Se resuelve la Cadena 1: Al Atacar de Saildreik
+      · Cadena 1: se activa el efecto Todos Los Turnos de Dragón Carmesí
+      · Cadena 2: se activa el efecto Turno Aliado de Volcán De Dragones
+      · Cadena 3: se activa el efecto En Mano de Caballeros De La Primera Línea
+      · Ana juega Caballeros De La Primera Línea sin pagar su coste (Caballeros De La Primera Línea)
+      · Se resuelve la Cadena 3: En Mano de Caballeros De La Primera Línea
+      · Beto agota a Volcán De Dragones (Volcán De Dragones)
+      · Beto gana 1 gema (Volcán De Dragones)
+      · Beto roba 1 carta (Volcán De Dragones)
+      · Beto tributa 1 carta (Volcán De Dragones): Wyphound
+      · Se resuelve la Cadena 2: Turno Aliado de Volcán De Dragones
+      · Beto reactiva a Dragón Carmesí (Dragón Carmesí)
+      · Se resuelve la Cadena 1: Todos Los Turnos de Dragón Carmesí
+      · Cadena 1: se activa el efecto En Juego de Caballeros De La Primera Línea
+      · Se resuelve la Cadena 1: En Juego de Caballeros De La Primera Línea
+      · Caballeros De La Primera Línea va al descarte tras resolverse
+      · Paso de bloqueo
+      · Paso de daño directo
+      · Dragón Carmesí inflige 14 de daño directo: Ana pierde la vida Espada De Primera Línea, que va a sus tributos
+      · Termina el combate
+      · Dragón Carmesí: Al Final Del Ataque no puede activarse (no hay objetivos válidos)
+      · Beto agota a Dragón Carmesí y ataca a Franchute
+      · Dragón Carmesí: Al Atacar no puede activarse (no hay objetivos válidos)
+      · Cadena 1: se activa el efecto Al Atacar de Dragón Carmesí
+      · Cadena 2: se activa el efecto Al Atacar de Dragón Carmesí
+      · Cadena 3: se activa el efecto Al Atacar de Dragón Carmesí
+      · Beto envía al fondo de su mazo 5 cartas (Dragón Carmesí): Saildreik, Saildreik, Dragón Delta, Dracoventus y Dragón Delta
+      · Dragón Carmesí: Gana Letalidad 1 hasta el final del ataque
+      · Se resuelve la Cadena 3: Al Atacar de Dragón Carmesí
+      · Beto roba 1 carta (Dragón Carmesí)
+      · Beto tributa 1 carta (Dragón Carmesí): Fadrake
+      · Se resuelve la Cadena 2: Al Atacar de Dragón Carmesí
+      · Beto coloca al tope de su mazo 1 carta (Dragón Carmesí)
+      · Beto tributa 2 cartas del tope de su mazo (Dragón Carmesí): Llamarada y Llamarada
+      · Se resuelve la Cadena 1: Al Atacar de Dragón Carmesí
+      · Cadena 1: se activa el efecto En Tributos de Llamarada
+      · Beto juega Llamarada pagando 1 gema (Llamarada)
+      · Se resuelve la Cadena 1: En Tributos de Llamarada
+      · Cadena 1: se activa el efecto En Juego de Llamarada
+      · Beto elige como objetivo a Franchute (Llamarada)
+      · Beto destruye Franchute de Ana (Llamarada)
+      · Se resuelve la Cadena 1: En Juego de Llamarada
+      · Llamarada va al descarte tras resolverse
+      · Paso de bloqueo
+      · Paso de daño directo
+      · Dragón Carmesí inflige 14 de daño directo: Ana pierde la vida Ballesta Montada, que va a sus tributos
+      · Dragón Carmesí inflige 14 de daño directo: Ana pierde la vida Comandante De Las Espadas Dragón, que va a sus tributos
+      · Termina el combate
+      · Dragón Carmesí: Al Final Del Ataque no puede activarse (no hay objetivos válidos)
+      · Beto invocó Dírumy pagando 1 gema
+      · Cadena 1: se activa el efecto En Invocación de Dírumy
+      · Beto mira las primeras 4 cartas de su mazo (Dírumy)
+      · Beto añade a su mano 1 carta (Dírumy): Llamarada
+      · Beto envía al fondo de su mazo 3 cartas
+      · Se resuelve la Cadena 1: En Invocación de Dírumy
+      · Final del turno de Beto
+      · Beto sube a la línea frontal: Dírumy
+      · Inicio del turno de Ana
+      > A decide SEQUENCE null (opción 4 de 22, espera -120.0, ahora -99.2)
+          ELEGIDA cadena: NORMAL_SUMMON Luke El Filo Rojo → ATTACK Luke El Filo Rojo → Dragón Carmesí media   -120.0  pruebas 10  
+                  cadena: NORMAL_SUMMON Luke El Filo Rojo → ATTACK Luke El Filo Rojo → Dragón Carmesí → END_TURN media   -120.0  pruebas 10  cayó en la ronda 5
+                  cadena: ATTACK Caballero Férreo → NORMAL_SUMMON Armadura De Plata media   -142.5  pruebas  6  cayó en la ronda 4
+                  cadena: NORMAL_SUMMON Armadura De Plata → END_TURN           media   -157.5  pruebas  4  cayó en la ronda 3
+                  NORMAL_SUMMON Armadura De Plata                              media   -150.1  pruebas  4  cayó en la ronda 3
+                  NORMAL_SUMMON Armadura De Plata                              media   -150.1  pruebas  4  cayó en la ronda 3
+                  ATTACK Caballero Férreo                                      media   -166.1  pruebas  3  cayó en la ronda 2
+                  cadena: NORMAL_SUMMON Armadura De Plata → END_TURN           media   -156.0  pruebas  3  cayó en la ronda 2
+                  cadena: NORMAL_SUMMON Luke El Filo Rojo → END_TURN           media   -159.9  pruebas  3  cayó en la ronda 2
+                  NORMAL_SUMMON Filo Vengativo                                 media   -158.7  pruebas  3  cayó en la ronda 2
+                  NORMAL_SUMMON Luke El Filo Rojo                              media   -159.9  pruebas  3  cayó en la ronda 2
+                  cadena: NORMAL_SUMMON Armadura De Plata → RITUAL_SUMMON Caballería Cruzada media   -212.3  pruebas  2  cayó en la ronda 1
+                  cadena: NORMAL_SUMMON Armadura De Plata → RITUAL_SUMMON Caballería Cruzada media   -212.3  pruebas  2  cayó en la ronda 1
+                  cadena: NORMAL_SUMMON Ballesta Montada → RITUAL_SUMMON Caballería Cruzada media   -211.2  pruebas  2  cayó en la ronda 1
+                  cadena: ATTACK Caballero Férreo → END_TURN                   media   -188.6  pruebas  2  cayó en la ronda 1
+                  cadena: NORMAL_SUMMON Armadura De Plata → RITUAL_SUMMON Caballería Cruzada → END_TURN media   -212.3  pruebas  2  cayó en la ronda 1
+                  cadena: NORMAL_SUMMON Armadura De Plata → RITUAL_SUMMON Caballería Cruzada → END_TURN media   -212.3  pruebas  2  cayó en la ronda 1
+                  cadena: NORMAL_SUMMON Ballesta Montada → RITUAL_SUMMON Caballería Cruzada → END_TURN media   -211.2  pruebas  2  cayó en la ronda 1
+                  cadena: ATTACK Caballero Férreo → NORMAL_SUMMON Armadura De Plata → RITUAL_SUMMON Caballería Cruzada media -Infinity  pruebas  2  cayó en la ronda 1
+                  NORMAL_SUMMON Ballesta Montada                               media   -183.5  pruebas  2  cayó en la ronda 1
+                  NORMAL_SUMMON Caballería Cruzada                             media   -192.3  pruebas  2  cayó en la ronda 1
+                  END_TURN                                                     media   -187.8  pruebas  2  cayó en la ronda 1
+          ! cadena: NORMAL_SUMMON Armadura De Plata → NORMAL_SUMMON Armadura De Plata: -311.9 = mesa -98.4 − deuda 216.0 (3 gemas, 2 en su turno) + vidas -1.3 + hoja 3.9 + plan 0.0 − remoción 0.0; turnos pasados 2
+          ! cadena: NORMAL_SUMMON Armadura De Plata → NORMAL_SUMMON Filo Vengativo: -310.7 = mesa -100.9 − deuda 216.0 (3 gemas, 2 en su turno) + vidas -1.3 + hoja 7.4 + plan 0.0 − remoción 0.0; turnos pasados 2
+          ! cadena: NORMAL_SUMMON Armadura De Plata → NORMAL_SUMMON Luke El Filo Rojo: -628.5 = mesa -127.9 − deuda 512.0 (4 gemas, 2 en su turno) + vidas -1.1 + hoja 12.5 + plan 0.0 − remoción 0.0; turnos pasados 2
+          ! cadena: NORMAL_SUMMON Armadura De Plata → NORMAL_SUMMON Armadura De Plata: -311.9 = mesa -98.4 − deuda 216.0 (3 gemas, 2 en su turno) + vidas -1.3 + hoja 3.9 + plan 0.0 − remoción 0.0; turnos pasados 2
+          ! cadena: NORMAL_SUMMON Armadura De Plata → NORMAL_SUMMON Filo Vengativo: -310.7 = mesa -100.9 − deuda 216.0 (3 gemas, 2 en su turno) + vidas -1.3 + hoja 7.4 + plan 0.0 − remoción 0.0; turnos pasados 2
+          ! cadena: NORMAL_SUMMON Armadura De Plata → NORMAL_SUMMON Luke El Filo Rojo: -628.5 = mesa -127.9 − deuda 512.0 (4 gemas, 2 en su turno) + vidas -1.1 + hoja 12.5 + plan 0.0 − remoción 0.0; turnos pasados 2
+      > A decide RESOLVE_PROMPT Encadenar efectos (opción 0 de 3, espera -234.7, ahora -85.3)
+          ! RESOLVE_PROMPT: -354.0 = mesa -142.1 − deuda 216.0 (3 gemas, 3 en su turno) + vidas -0.4 + hoja 4.5 + plan 0.0 − remoción 0.0; turnos pasados 2
+          ! RESOLVE_PROMPT: -337.5 = mesa -142.1 − deuda 216.0 (3 gemas, 3 en su turno) + vidas -1.6 + hoja 22.1 + plan 0.0 − remoción 0.0; turnos pasados 2
+      > A decide SEQUENCE null (opción 3 de 23, espera -111.6, ahora -84.4)
+          ELEGIDA cadena: ATTACK Caballero Férreo → ATTACK Luke El Filo Rojo → Dragón Carmesí media   -111.6  pruebas 11  
+                  cadena: ATTACK Luke El Filo Rojo → RITUAL_SUMMON Ballesta Montada media   -143.7  pruebas 11  cayó en la ronda 5
+                  cadena: ATTACK Caballero Férreo → ATTACK Luke El Filo Rojo → Dragón Carmesí → END_TURN media   -110.5  pruebas  7  cayó en la ronda 4
+                  cadena: ATTACK Caballero Férreo → ATTACK Luke El Filo Rojo   media   -148.7  pruebas  4  cayó en la ronda 3
+                  cadena: ATTACK Luke El Filo Rojo → RITUAL_SUMMON Ballesta Montada → END_TURN media   -115.3  pruebas  4  cayó en la ronda 3
+                  cadena: ATTACK Caballero Férreo → ATTACK Luke El Filo Rojo → END_TURN media   -148.7  pruebas  4  cayó en la ronda 3
+                  END_TURN                                                     media   -154.0  pruebas  3  cayó en la ronda 2
+                  cadena: ATTACK Luke El Filo Rojo → ATTACK Caballero Férreo   media   -144.8  pruebas  3  cayó en la ronda 2
+                  cadena: ATTACK Luke El Filo Rojo → NORMAL_SUMMON Filo Vengativo media   -189.8  pruebas  3  cayó en la ronda 2
+                  cadena: ATTACK Luke El Filo Rojo → END_TURN                  media   -146.0  pruebas  3  cayó en la ronda 2
+                  cadena: ATTACK Luke El Filo Rojo → NORMAL_SUMMON Filo Vengativo → END_TURN media   -189.8  pruebas  3  cayó en la ronda 2
+                  ATTACK Luke El Filo Rojo                                     media   -144.8  pruebas  3  cayó en la ronda 2
+                  cadena: ATTACK Caballero Férreo → END_TURN                   media   -157.8  pruebas  2  cayó en la ronda 1
+                  cadena: RITUAL_SUMMON Ballesta Montada → END_TURN            media   -692.2  pruebas  2  cayó en la ronda 1
+                  cadena: NORMAL_SUMMON Filo Vengativo → END_TURN              media   -284.8  pruebas  2  cayó en la ronda 1
+                  ATTACK Caballero Férreo                                      media   -157.8  pruebas  2  cayó en la ronda 1
+                  NORMAL_SUMMON Armadura De Plata                              media   -611.1  pruebas  2  cayó en la ronda 1
+                  NORMAL_SUMMON Ballesta Montada                               media   -617.9  pruebas  2  cayó en la ronda 1
+                  RITUAL_SUMMON Ballesta Montada                               media   -692.2  pruebas  2  cayó en la ronda 1
+                  NORMAL_SUMMON Armadura De Plata                              media   -611.1  pruebas  2  cayó en la ronda 1
+                  NORMAL_SUMMON Caballería Cruzada                             media   -615.7  pruebas  2  cayó en la ronda 1
+                  RITUAL_SUMMON Caballería Cruzada                             media   -690.6  pruebas  2  cayó en la ronda 1
+                  NORMAL_SUMMON Filo Vengativo                                 media   -284.8  pruebas  2  cayó en la ronda 1
+          ! NORMAL_SUMMON Armadura De Plata: -636.2 = mesa -130.3 − deuda 512.0 (4 gemas, 2 en su turno) + vidas -1.1 + hoja 7.2 + plan 0.0 − remoción 0.0; turnos pasados 2
+          ! NORMAL_SUMMON Ballesta Montada: -636.2 = mesa -131.0 − deuda 512.0 (4 gemas, 2 en su turno) + vidas -1.1 + hoja 8.0 + plan 0.0 − remoción 0.0; turnos pasados 2
+          ! RITUAL_SUMMON Ballesta Montada: -325.7 = mesa -109.0 − deuda 216.0 (3 gemas, 2 en su turno) + vidas -1.1 + hoja 0.4 + plan 0.0 − remoción 0.0; turnos pasados 2
+          ! NORMAL_SUMMON Armadura De Plata: -636.2 = mesa -130.3 − deuda 512.0 (4 gemas, 2 en su turno) + vidas -1.1 + hoja 7.2 + plan 0.0 − remoción 0.0; turnos pasados 2
+          ! NORMAL_SUMMON Caballería Cruzada: -649.1 = mesa -135.2 − deuda 512.0 (4 gemas, 2 en su turno) + vidas -1.9 + hoja 0.0 + plan 0.0 − remoción 0.0; turnos pasados 2
+          ! RITUAL_SUMMON Caballería Cruzada: -350.7 = mesa -141.2 − deuda 216.0 (3 gemas, 2 en su turno) + vidas -1.9 + hoja 8.3 + plan 0.0 − remoción 0.0; turnos pasados 2
+      > A decide SEQUENCE null (opción 1 de 21, espera -130.3, ahora -79.5)
+          ELEGIDA cadena: ATTACK Luke El Filo Rojo → NORMAL_SUMMON Filo Vengativo media   -130.3  pruebas 10  
+                  cadena: ATTACK Luke El Filo Rojo → NORMAL_SUMMON Filo Vengativo → END_TURN media   -130.3  pruebas 10  cayó en la ronda 5
+                  cadena: ATTACK Luke El Filo Rojo → END_TURN                  media   -133.2  pruebas  6  cayó en la ronda 4
+                  cadena: ATTACK Luke El Filo Rojo → NORMAL_SUMMON Ballesta Montada media   -164.6  pruebas  4  cayó en la ronda 3
+                  cadena: ATTACK Luke El Filo Rojo → RITUAL_SUMMON Ballesta Montada → END_TURN media   -149.9  pruebas  4  cayó en la ronda 3
+                  ATTACK Luke El Filo Rojo                                     media   -131.5  pruebas  4  cayó en la ronda 3
+                  END_TURN                                                     media   -209.9  pruebas  3  cayó en la ronda 2
+                  cadena: RITUAL_SUMMON Caballería Cruzada → END_TURN          media   -217.2  pruebas  3  cayó en la ronda 2
+                  cadena: RITUAL_SUMMON Ballesta Montada → END_TURN            media   -183.3  pruebas  3  cayó en la ronda 2
+                  cadena: ATTACK Luke El Filo Rojo → NORMAL_SUMMON Ballesta Montada → END_TURN media   -160.7  pruebas  3  cayó en la ronda 2
+                  cadena: ATTACK Luke El Filo Rojo → RITUAL_SUMMON Caballería Cruzada → END_TURN media   -185.6  pruebas  3  cayó en la ronda 2
+                  cadena: ATTACK Luke El Filo Rojo → RITUAL_SUMMON Caballería Cruzada media   -424.0  pruebas  2  cayó en la ronda 1
+                  cadena: ATTACK Luke El Filo Rojo → RITUAL_SUMMON Ballesta Montada media   -299.2  pruebas  2  cayó en la ronda 1
+                  cadena: NORMAL_SUMMON Filo Vengativo → END_TURN              media   -414.5  pruebas  2  cayó en la ronda 1
+                  NORMAL_SUMMON Armadura De Plata                              media   -806.9  pruebas  2  cayó en la ronda 1
+                  NORMAL_SUMMON Ballesta Montada                               media   -865.4  pruebas  2  cayó en la ronda 1
+                  RITUAL_SUMMON Ballesta Montada                               media   -408.1  pruebas  2  cayó en la ronda 1
+                  NORMAL_SUMMON Armadura De Plata                              media   -806.9  pruebas  2  cayó en la ronda 1
+                  NORMAL_SUMMON Caballería Cruzada                             media   -843.0  pruebas  2  cayó en la ronda 1
+                  RITUAL_SUMMON Caballería Cruzada                             media   -448.6  pruebas  2  cayó en la ronda 1
+                  NORMAL_SUMMON Filo Vengativo                                 media   -414.5  pruebas  2  cayó en la ronda 1
+          ! NORMAL_SUMMON Armadura De Plata: -574.9 = mesa -81.8 − deuda 512.0 (4 gemas, 2 en su turno) + vidas 1.6 + hoja 17.3 + plan 0.0 − remoción 0.0; turnos pasados 2
+          ! NORMAL_SUMMON Ballesta Montada: -627.7 = mesa -123.6 − deuda 512.0 (4 gemas, 2 en su turno) + vidas -1.1 + hoja 9.1 + plan 0.0 − remoción 0.0; turnos pasados 2
+          ! NORMAL_SUMMON Armadura De Plata: -574.9 = mesa -81.8 − deuda 512.0 (4 gemas, 2 en su turno) + vidas 1.6 + hoja 17.3 + plan 0.0 − remoción 0.0; turnos pasados 2
+          ! NORMAL_SUMMON Caballería Cruzada: -586.4 = mesa -90.7 − deuda 512.0 (4 gemas, 2 en su turno) + vidas -1.9 + hoja 18.2 + plan 0.0 − remoción 0.0; turnos pasados 2
+          ! NORMAL_SUMMON Filo Vengativo: -302.1 = mesa -90.1 − deuda 216.0 (3 gemas, 2 en su turno) + vidas 1.8 + hoja 2.2 + plan 0.0 − remoción 0.0; turnos pasados 2
+          ! cadena: ATTACK Luke El Filo Rojo → NORMAL_SUMMON Armadura De Plata: -607.2 = mesa -101.5 − deuda 512.0 (4 gemas, 2 en su turno) + vidas -1.3 + hoja 7.6 + plan 0.0 − remoción 0.0; turnos pasados 2
+      > A decide SEQUENCE null (opción 9 de 21, espera -166.1, ahora -97.7)
+          ELEGIDA cadena: RITUAL_SUMMON Ballesta Montada → END_TURN            media   -166.1  pruebas 10  
+                  END_TURN                                                     media   -166.9  pruebas 10  cayó en la ronda 5
+                  cadena: NORMAL_SUMMON Ballesta Montada → END_TURN            media   -181.7  pruebas  6  cayó en la ronda 4
+                  cadena: RITUAL_SUMMON Caballería Cruzada → END_TURN          media   -192.1  pruebas  4  cayó en la ronda 3
+                  cadena: NORMAL_SUMMON Filo Vengativo → RITUAL_SUMMON Caballería Cruzada → END_TURN media   -271.6  pruebas  4  cayó en la ronda 3
+                  NORMAL_SUMMON Ballesta Montada                               media   -185.5  pruebas  4  cayó en la ronda 3
+                  cadena: NORMAL_SUMMON Filo Vengativo                         media   -322.3  pruebas  3  cayó en la ronda 2
+                  cadena: NORMAL_SUMMON Filo Vengativo → RITUAL_SUMMON Ballesta Montada media   -351.7  pruebas  3  cayó en la ronda 2
+                  cadena: NORMAL_SUMMON Filo Vengativo → END_TURN              media   -326.3  pruebas  3  cayó en la ronda 2
+                  RITUAL_SUMMON Ballesta Montada                               media   -318.8  pruebas  3  cayó en la ronda 2
+                  NORMAL_SUMMON Filo Vengativo                                 media   -326.3  pruebas  3  cayó en la ronda 2
+                  cadena: NORMAL_SUMMON Filo Vengativo → RITUAL_SUMMON Caballería Cruzada media   -694.9  pruebas  2  cayó en la ronda 1
+                  cadena: NORMAL_SUMMON Ballesta Montada → RITUAL_SUMMON Caballería Cruzada media   -660.8  pruebas  2  cayó en la ronda 1
+                  cadena: RITUAL_SUMMON Caballería Cruzada → NORMAL_SUMMON Ballesta Montada media   -660.8  pruebas  2  cayó en la ronda 1
+                  cadena: NORMAL_SUMMON Filo Vengativo → RITUAL_SUMMON Ballesta Montada → END_TURN media   -366.0  pruebas  2  cayó en la ronda 1
+                  cadena: NORMAL_SUMMON Ballesta Montada → RITUAL_SUMMON Caballería Cruzada → END_TURN media   -660.8  pruebas  2  cayó en la ronda 1
+                  cadena: RITUAL_SUMMON Caballería Cruzada → NORMAL_SUMMON Ballesta Montada → END_TURN media   -660.8  pruebas  2  cayó en la ronda 1
+                  NORMAL_SUMMON Armadura De Plata                              media   -653.6  pruebas  2  cayó en la ronda 1
+                  NORMAL_SUMMON Armadura De Plata                              media   -653.6  pruebas  2  cayó en la ronda 1
+                  NORMAL_SUMMON Caballería Cruzada                             media   -436.5  pruebas  2  cayó en la ronda 1
+                  RITUAL_SUMMON Caballería Cruzada                             media   -478.6  pruebas  2  cayó en la ronda 1
+          ! NORMAL_SUMMON Armadura De Plata: -615.5 = mesa -85.9 − deuda 544.0 (4 gemas, 2 en su turno) + vidas -1.9 + hoja 16.3 + plan 0.0 − remoción 0.0; turnos pasados 2
+          ! RITUAL_SUMMON Ballesta Montada: -304.5 = mesa -79.6 − deuda 229.5 (3 gemas, 2 en su turno) + vidas -1.9 + hoja 6.5 + plan 0.0 − remoción 0.0; turnos pasados 2
+          ! NORMAL_SUMMON Armadura De Plata: -615.5 = mesa -85.9 − deuda 544.0 (4 gemas, 2 en su turno) + vidas -1.9 + hoja 16.3 + plan 0.0 − remoción 0.0; turnos pasados 2
+          ! NORMAL_SUMMON Caballería Cruzada: -643.6 = mesa -101.4 − deuda 544.0 (4 gemas, 2 en su turno) + vidas -1.9 + hoja 3.6 + plan 0.0 − remoción 0.0; turnos pasados 2
+          ! cadena: NORMAL_SUMMON Ballesta Montada → NORMAL_SUMMON Armadura De Plata: -648.9 = mesa -118.9 − deuda 544.0 (4 gemas, 0 en su turno) + vidas 0.0 + hoja 14.0 + plan 0.0 − remoción 0.0; turnos pasados 2
+          ! cadena: NORMAL_SUMMON Ballesta Montada → NORMAL_SUMMON Armadura De Plata: -648.9 = mesa -118.9 − deuda 544.0 (4 gemas, 0 en su turno) + vidas 0.0 + hoja 14.0 + plan 0.0 − remoción 0.0; turnos pasados 2
+      > A decide SEQUENCE null (opción 2 de 10, espera -139.3, ahora -81.3)
+          ELEGIDA cadena: RITUAL_SUMMON Franchute → END_TURN                   media   -139.3  pruebas  6  
+                  END_TURN                                                     media   -536.8  pruebas  6  cayó en la ronda 4
+                  RITUAL_SUMMON Franchute                                      media   -674.2  pruebas  4  cayó en la ronda 3
+                  cadena: NORMAL_SUMMON Filo Vengativo → END_TURN              media  -1148.2  pruebas  3  cayó en la ronda 2
+                  NORMAL_SUMMON Filo Vengativo                                 media  -1148.2  pruebas  3  cayó en la ronda 2
+                  cadena: NORMAL_SUMMON Caballería Cruzada → END_TURN          media  -2540.0  pruebas  2  cayó en la ronda 1
+                  cadena: NORMAL_SUMMON Armadura De Plata → END_TURN           media  -1146.7  pruebas  2  cayó en la ronda 1
+                  NORMAL_SUMMON Armadura De Plata                              media  -1146.7  pruebas  2  cayó en la ronda 1
+                  NORMAL_SUMMON Armadura De Plata                              media  -1146.7  pruebas  2  cayó en la ronda 1
+                  NORMAL_SUMMON Caballería Cruzada                             media  -2540.0  pruebas  2  cayó en la ronda 1
+          ! NORMAL_SUMMON Armadura De Plata: -1164.3 = mesa -109.7 − deuda 1062.5 (5 gemas, 2 en su turno) + vidas -1.9 + hoja 9.7 + plan 0.0 − remoción 0.0; turnos pasados 2
+          ! NORMAL_SUMMON Armadura De Plata: -1164.3 = mesa -109.7 − deuda 1062.5 (5 gemas, 2 en su turno) + vidas -1.9 + hoja 9.7 + plan 0.0 − remoción 0.0; turnos pasados 2
+          ! NORMAL_SUMMON Filo Vengativo: -1160.4 = mesa -112.6 − deuda 1062.5 (5 gemas, 2 en su turno) + vidas 4.9 + hoja 9.7 + plan 0.0 − remoción 0.0; turnos pasados 2
+          ! RITUAL_SUMMON Franchute: -679.9 = mesa -140.4 − deuda 544.0 (4 gemas, 0 en su turno) + vidas -1.9 + hoja 6.4 + plan 0.0 − remoción 0.0; turnos pasados 2
+          ! END_TURN: -614.2 = mesa -71.3 − deuda 544.0 (4 gemas, 4 en su turno) + vidas -5.2 + hoja 6.4 + plan 0.0 − remoción 0.0; turnos pasados 2
+          ! cadena: NORMAL_SUMMON Caballería Cruzada → END_TURN: -4420.7 = mesa -73.5 − deuda 4352.0 (8 gemas, 4 en su turno) + vidas -1.3 + hoja 6.1 + plan 0.0 − remoción 0.0; turnos pasados 2
+      > A decide RESOLVE_PROMPT Franchute · Ascenso (opción 1 de 2, espera -1558.6, ahora -81.3)
+          ! RESOLVE_PROMPT: -660.3 = mesa -100.5 − deuda 544.0 (4 gemas, 0 en su turno) + vidas 0.0 + hoja 0.0 + plan 0.0 − remoción 15.8; turnos pasados 1
+          ! RESOLVE_PROMPT: -660.3 = mesa -100.5 − deuda 544.0 (4 gemas, 0 en su turno) + vidas 0.0 + hoja 0.0 + plan 0.0 − remoción 15.8; turnos pasados 1
+          ! RESOLVE_PROMPT: -660.3 = mesa -100.5 − deuda 544.0 (4 gemas, 0 en su turno) + vidas 0.0 + hoja 0.0 + plan 0.0 − remoción 15.8; turnos pasados 1
+          ! RESOLVE_PROMPT: -658.1 = mesa -97.7 − deuda 544.0 (4 gemas, 0 en su turno) + vidas 0.0 + hoja 0.0 + plan 0.0 − remoción 16.4; turnos pasados 1
+          ! RESOLVE_PROMPT: -659.2 = mesa -99.4 − deuda 544.0 (4 gemas, 0 en su turno) + vidas 0.0 + hoja 0.0 + plan 0.0 − remoción 15.8; turnos pasados 1
+          ! RESOLVE_PROMPT: -632.7 = mesa -72.3 − deuda 544.0 (4 gemas, 0 en su turno) + vidas 0.0 + hoja 0.0 + plan 0.0 − remoción 16.4; turnos pasados 1
+      > A decide RESOLVE_PROMPT Encadenar efectos (opción 0 de 3, espera -1184.0, ahora -83.3)
+          ! RESOLVE_PROMPT: -1209.3 = mesa -161.0 − deuda 1062.5 (5 gemas, 1 en su turno) + vidas 4.9 + hoja 9.2 + plan 0.0 − remoción 0.0; turnos pasados 2
+          ! RESOLVE_PROMPT: -1209.3 = mesa -161.0 − deuda 1062.5 (5 gemas, 1 en su turno) + vidas 4.9 + hoja 9.2 + plan 0.0 − remoción 0.0; turnos pasados 2
+          ! RESOLVE_PROMPT: -1209.3 = mesa -161.0 − deuda 1062.5 (5 gemas, 1 en su turno) + vidas 4.9 + hoja 9.2 + plan 0.0 − remoción 0.0; turnos pasados 2
+          ! RESOLVE_PROMPT: -1177.7 = mesa -125.9 − deuda 1062.5 (5 gemas, 1 en su turno) + vidas 4.9 + hoja 5.8 + plan 0.0 − remoción 0.0; turnos pasados 2
+          ! RESOLVE_PROMPT: -1177.7 = mesa -125.9 − deuda 1062.5 (5 gemas, 1 en su turno) + vidas 4.9 + hoja 5.8 + plan 0.0 − remoción 0.0; turnos pasados 2
+          ! RESOLVE_PROMPT: -1177.7 = mesa -125.9 − deuda 1062.5 (5 gemas, 1 en su turno) + vidas 4.9 + hoja 5.8 + plan 0.0 − remoción 0.0; turnos pasados 2
+      > A decide RESOLVE_PROMPT Franchute (opción 4 de 7, espera -1162.3, ahora -83.3)
+          ! RESOLVE_PROMPT: -1167.4 = mesa -115.7 − deuda 1062.5 (5 gemas, 1 en su turno) + vidas 4.9 + hoja 5.9 + plan 0.0 − remoción 0.0; turnos pasados 2
+          ! RESOLVE_PROMPT: -1161.2 = mesa -110.6 − deuda 1062.5 (5 gemas, 1 en su turno) + vidas 4.9 + hoja 7.1 + plan 0.0 − remoción 0.0; turnos pasados 2
+          ! RESOLVE_PROMPT: -1161.2 = mesa -110.6 − deuda 1062.5 (5 gemas, 1 en su turno) + vidas 4.9 + hoja 7.1 + plan 0.0 − remoción 0.0; turnos pasados 2
+          ! RESOLVE_PROMPT: -1146.0 = mesa -90.8 − deuda 1062.5 (5 gemas, 1 en su turno) + vidas 4.9 + hoja 14.2 + plan 0.0 − remoción 11.8; turnos pasados 2
+          ! RESOLVE_PROMPT: -1162.4 = mesa -112.0 − deuda 1062.5 (5 gemas, 1 en su turno) + vidas 4.9 + hoja 7.2 + plan 0.0 − remoción 0.0; turnos pasados 2
+          ! RESOLVE_PROMPT: -1171.1 = mesa -123.4 − deuda 1062.5 (5 gemas, 1 en su turno) + vidas 4.9 + hoja 9.9 + plan 0.0 − remoción 0.0; turnos pasados 2
+      > A decide RESOLVE_PROMPT Encadenar efectos (opción 0 de 3, espera -1415.0, ahora -53.7)
+          ! RESOLVE_PROMPT: -1176.3 = mesa -121.2 − deuda 1062.5 (5 gemas, 1 en su turno) + vidas 7.4 + hoja 0.0 + plan 0.0 − remoción 0.0; turnos pasados 2
+          ! RESOLVE_PROMPT: -1176.3 = mesa -121.2 − deuda 1062.5 (5 gemas, 1 en su turno) + vidas 7.4 + hoja 0.0 + plan 0.0 − remoción 0.0; turnos pasados 2
+          ! RESOLVE_PROMPT: -1176.3 = mesa -121.2 − deuda 1062.5 (5 gemas, 1 en su turno) + vidas 7.4 + hoja 0.0 + plan 0.0 − remoción 0.0; turnos pasados 2
+          ! RESOLVE_PROMPT: -1137.1 = mesa -88.5 − deuda 1062.5 (5 gemas, 1 en su turno) + vidas 5.1 + hoja 8.9 + plan 0.0 − remoción 0.0; turnos pasados 2
+          ! RESOLVE_PROMPT: -1137.1 = mesa -88.5 − deuda 1062.5 (5 gemas, 1 en su turno) + vidas 5.1 + hoja 8.9 + plan 0.0 − remoción 0.0; turnos pasados 2
+          ! RESOLVE_PROMPT: -1137.1 = mesa -88.5 − deuda 1062.5 (5 gemas, 1 en su turno) + vidas 5.1 + hoja 8.9 + plan 0.0 − remoción 0.0; turnos pasados 2
+— turno (B(st2) empieza; A(st4) cerró con -4 gemas; timeline 242, evento 242) | A(st4): vidas 3, mano 5, gemas -9, mazo 26, mesa [Luke El Filo Rojo 9*^, Franchute 11*^, Filo Vengativo 6^], mano {Armadura De Plata 2, Armadura De Plata 2, Caballería Cruzada 3, Espada De Plata 2, Caballero Real 6}  B(st2): vidas 4, mano 8, gemas 9, mazo 17, mesa [Dragón Carmesí 14^, Dírumy 2^], mano {Dragón Volcánico 8, Dragón Volcánico 8, Ddraig 3, Dracoventus 5, Llamarada 6, Flambreik 2, Dragón Volcánico 8, Wyfreik 2}  
+  A(st4) invoca Luke El Filo Rojo
+  A(st4) ataca con Caballero Férreo
+  A(st4) quita una vida: Flambreik → tributeZone (daño 4)
+  A(st4) ataca con Luke El Filo Rojo
+  A(st4) quita una vida: Huevo De Dragón → hand (daño 9)
+  B(st2) juega Huevo De Dragón
+  B(st2) tributa Wyfreik
+  B(st2) tributa Wyverno De Pantano
+  B(st2) tributa Dragón Carmesí
+  B(st2) tributa Flambreik
+  B(st2) tributa Volcán De Dragones
+  A(st4) tributa Caballero Férreo
+  A(st4) invoca especial Ballesta Montada
+  A(st4) tributa Ballesta Montada
+  A(st4) invoca especial Franchute
+  A(st4) invoca por efecto Filo Vengativo
+      · Ana sube a la línea frontal: Caballero Férreo
+      · Ana invocó Luke El Filo Rojo pagando 3 gemas
+      · Cadena 1: se activa el efecto Celeridad de Luke El Filo Rojo
+      · Ana coloca en su línea frontal 1 carta (Luke El Filo Rojo): Luke El Filo Rojo
+      · Se resuelve la Cadena 1: Celeridad de Luke El Filo Rojo
+      · Ana agota a Caballero Férreo y ataca a Beto
+      · Paso de bloqueo
+      · Paso de daño directo
+      · Caballero Férreo inflige 4 de daño directo: Beto pierde la vida Flambreik, que va a sus tributos
+      · Termina el combate
+      · Ana agota a Luke El Filo Rojo y ataca a Beto
+      · Paso de bloqueo
+      · Paso de daño directo
+      · Luke El Filo Rojo inflige 9 de daño directo: Beto pierde la vida Huevo De Dragón, que va a su mano
+      · Beto juega Huevo De Dragón sin pagar su coste
+      · Cadena 1: se activa el efecto En Juego de Huevo De Dragón
+      · Beto tributa 4 cartas del tope de su mazo (Huevo De Dragón): Wyfreik, Wyverno De Pantano, Dragón Carmesí y Flambreik
+      · Beto añade a su mano 1 carta (Huevo De Dragón): Flambreik
+      · Huevo De Dragón queda agotada en la retaguardia
+      · Se resuelve la Cadena 1: En Juego de Huevo De Dragón
+      · Cadena 1: se activa el efecto En Tributos de Wyverno De Pantano
+      · Beto tributa 1 carta (Wyverno De Pantano): Volcán De Dragones
+      · Beto añade a su mano 1 carta (Wyverno De Pantano): Dragón Volcánico
+      · Se resuelve la Cadena 1: En Tributos de Wyverno De Pantano
+      · Termina el combate
+      · Ana invoca por Ascenso a Ballesta Montada usando Caballero Férreo y pagando 2 gemas
+      · Ana roba 1 carta por la invocación
+      · Ana invoca por Ascenso a Franchute usando Ballesta Montada y pagando 3 gemas
+      · Ana roba 1 carta por la invocación
+      · Cadena 1: se activa el efecto En Invocación de Franchute
+      · Ana invoca Filo Vengativo de su mano pagando 0 gemas (Franchute)
+      · Ana roba 1 carta por la invocación
+      · Se resuelve la Cadena 1: En Invocación de Franchute
+      · Cadena 1: se activa el efecto Celeridad de Filo Vengativo
+      · Ana coloca en su línea frontal 1 carta (Filo Vengativo): Filo Vengativo
+      · Se resuelve la Cadena 1: Celeridad de Filo Vengativo
+      · Final del turno de Ana
+      · Inicio del turno de Beto
+      > A decide RESOLVE_PROMPT Dragón Carmesí ataca (opción 1 de 2, espera -141.6, ahora -29.8)
+          ! RESOLVE_PROMPT: -10000.0 = partida terminada (lives), turnos pasados 0, hecho
+          ! RESOLVE_PROMPT: -10000.0 = partida terminada (lives), turnos pasados 0, hecho
+          ! RESOLVE_PROMPT: -10000.0 = partida terminada (lives), turnos pasados 0, hecho
+          ! RESOLVE_PROMPT: -10000.0 = partida terminada (lives), turnos pasados 0, hecho
+          ! RESOLVE_PROMPT: -10000.0 = partida terminada (lives), turnos pasados 0, hecho
+          ! RESOLVE_PROMPT: -10000.0 = partida terminada (lives), turnos pasados 0, hecho
+      > A decide RESOLVE_PROMPT Vida revelada (opción 1 de 2, espera -132.5, ahora -66.4)
+          ! RESOLVE_PROMPT: -10000.0 = partida terminada (lives), turnos pasados 0, hecho
+          ! RESOLVE_PROMPT: -10000.0 = partida terminada (lives), turnos pasados 0, hecho
+          ! RESOLVE_PROMPT: -10000.0 = partida terminada (lives), turnos pasados 0, hecho
+          ! RESOLVE_PROMPT: -1127.2 = mesa -145.7 − deuda 1000.0 (5 gemas, 5 en su turno) + vidas 3.9 + hoja 14.5 + plan 0.0 − remoción 0.0; turnos pasados 1
+          ! RESOLVE_PROMPT: -10000.0 = partida terminada (lives), turnos pasados 0, hecho
+          ! RESOLVE_PROMPT: -1190.2 = mesa -125.1 − deuda 1062.5 (5 gemas, 5 en su turno) + vidas -3.3 + hoja 0.7 + plan 0.0 − remoción 0.0; turnos pasados 1
+      > A decide RESOLVE_PROMPT Reforzar (opción 1 de 2, espera -196.6, ahora -70.2)
+          ! RESOLVE_PROMPT: -10000.0 = partida terminada (lives), turnos pasados 0, hecho
+          ! RESOLVE_PROMPT: -10000.0 = partida terminada (lives), turnos pasados 0, hecho
+          ! RESOLVE_PROMPT: -10000.0 = partida terminada (lives), turnos pasados 0, hecho
+          ! RESOLVE_PROMPT: -10000.0 = partida terminada (lives), turnos pasados 0, hecho
+          ! RESOLVE_PROMPT: -10000.0 = partida terminada (lives), turnos pasados 0, hecho
+          ! RESOLVE_PROMPT: -10000.0 = partida terminada (lives), turnos pasados 0, hecho
+      > A decide RESOLVE_PROMPT Encadenar efectos (opción 0 de 3, espera -10000.0, ahora -118.5)
+          ! RESOLVE_PROMPT: -10000.0 = partida terminada (lives), turnos pasados 0, hecho
+          ! RESOLVE_PROMPT: -10000.0 = partida terminada (lives), turnos pasados 0, hecho
+          ! RESOLVE_PROMPT: -10000.0 = partida terminada (lives), turnos pasados 0, hecho
+          ! RESOLVE_PROMPT: -10000.0 = partida terminada (lives), turnos pasados 0, hecho
+          ! RESOLVE_PROMPT: -10000.0 = partida terminada (lives), turnos pasados 0, hecho
+          ! RESOLVE_PROMPT: -10000.0 = partida terminada (lives), turnos pasados 0, hecho
+      > A decide RESOLVE_PROMPT Efecto obligatorio (opción 0 de 2, espera -189.6, ahora -120.0)
+          ! RESOLVE_PROMPT: -10000.0 = partida terminada (lives), turnos pasados 0, hecho
+          ! RESOLVE_PROMPT: -10000.0 = partida terminada (lives), turnos pasados 0, hecho
+          ! RESOLVE_PROMPT: -10000.0 = partida terminada (lives), turnos pasados 0, hecho
+          ! RESOLVE_PROMPT: -10000.0 = partida terminada (lives), turnos pasados 0, hecho
+          ! RESOLVE_PROMPT: -10000.0 = partida terminada (lives), turnos pasados 0, hecho
+          ! RESOLVE_PROMPT: -10000.0 = partida terminada (lives), turnos pasados 0, hecho
+      > A decide RESOLVE_PROMPT Caballeros De La Primera Línea (opción 0 de 2, espera -172.3, ahora -120.0)
+          ! RESOLVE_PROMPT: -10000.0 = partida terminada (lives), turnos pasados 0, hecho
+          ! RESOLVE_PROMPT: -10000.0 = partida terminada (lives), turnos pasados 0, hecho
+          ! RESOLVE_PROMPT: -10000.0 = partida terminada (lives), turnos pasados 0, hecho
+          ! RESOLVE_PROMPT: -10000.0 = partida terminada (lives), turnos pasados 0, hecho
+          ! RESOLVE_PROMPT: -10000.0 = partida terminada (lives), turnos pasados 0, hecho
+          ! RESOLVE_PROMPT: -10000.0 = partida terminada (lives), turnos pasados 0, hecho
+      > A decide RESOLVE_PROMPT Caballeros De La Primera Línea (opción 3 de 6, espera -2135.8, ahora -120.0)
+          ! RESOLVE_PROMPT: -10000.0 = partida terminada (lives), turnos pasados 0, hecho
+          ! RESOLVE_PROMPT: -10000.0 = partida terminada (lives), turnos pasados 0, hecho
+          ! RESOLVE_PROMPT: -10000.0 = partida terminada (lives), turnos pasados 0, hecho
+          ! RESOLVE_PROMPT: -10000.0 = partida terminada (lives), turnos pasados 0, hecho
+          ! RESOLVE_PROMPT: -10000.0 = partida terminada (lives), turnos pasados 0, hecho
+          ! RESOLVE_PROMPT: -10000.0 = partida terminada (lives), turnos pasados 0, hecho
+      > A decide RESOLVE_PROMPT Efecto obligatorio (opción 0 de 2, espera -110.8, ahora -98.1)
+          ! RESOLVE_PROMPT: -10000.0 = partida terminada (lives), turnos pasados 0, hecho
+          ! RESOLVE_PROMPT: -10000.0 = partida terminada (lives), turnos pasados 0, hecho
+          ! RESOLVE_PROMPT: -10000.0 = partida terminada (lives), turnos pasados 0, hecho
+          ! RESOLVE_PROMPT: -10000.0 = partida terminada (lives), turnos pasados 0, hecho
+          ! RESOLVE_PROMPT: -10000.0 = partida terminada (lives), turnos pasados 0, hecho
+          ! RESOLVE_PROMPT: -10000.0 = partida terminada (lives), turnos pasados 0, hecho
+      > A decide RESOLVE_PROMPT Dracoventus ataca (opción 0 de 2, espera -144.6, ahora -78.9)
+          ! RESOLVE_PROMPT: -10000.0 = partida terminada (lives), turnos pasados 0, hecho
+          ! RESOLVE_PROMPT: -10000.0 = partida terminada (lives), turnos pasados 0, hecho
+          ! RESOLVE_PROMPT: -10000.0 = partida terminada (lives), turnos pasados 0, hecho

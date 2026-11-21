@@ -1,0 +1,57 @@
+{
+  "name": "reciclaje biológico",
+  "effects": [
+    {
+      "id": "reciclaje-biologico:en-juego",
+      "moment": "ON_PLAY",
+      "mandatory": true,
+      "label": "En Juego",
+      "text": "Puedes enviar 10 cartas Azules de tu descarte al fondo de tu mazo para ganar 2 gemas.",
+      "steps": [
+        {
+          "type": "MayDo",
+          "question": "¿Envías 10 cartas Azules de tu descarte al fondo de tu mazo para ganar 2 gemas?",
+          "covers": 2
+        },
+        {
+          "type": "Do",
+          "action": {
+            "type": "Move",
+            "cards": {
+              "zones": "discardPile",
+              "owner": "YOU",
+              "filter": {
+                "colors": [
+                  "B"
+                ]
+              },
+              "min": {
+                "type": "Fixed",
+                "value": 10
+              },
+              "max": {
+                "type": "Fixed",
+                "value": 10
+              },
+              "self": "ANY",
+              "mode": "CHOOSE"
+            },
+            "to": "deckBottom"
+          }
+        },
+        {
+          "type": "Do",
+          "action": {
+            "type": "Gems",
+            "count": {
+              "type": "Fixed",
+              "value": 2
+            }
+          }
+        }
+      ],
+      "sourceZone": "field",
+      "limit": "NONE"
+    }
+  ]
+}

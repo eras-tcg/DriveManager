@@ -1,0 +1,82 @@
+{
+  "name": "lumisdragon arcano",
+  "effects": [
+    {
+      "id": "lumisdragon-arcano:en-invocacion",
+      "moment": "ON_SUMMON",
+      "mandatory": true,
+      "label": "En Invocación",
+      "text": "Coloca todas tus vidas bocabajo y barájalas.",
+      "steps": [
+        {
+          "type": "LivesFaceDown",
+          "all": true,
+          "shuffle": true
+        }
+      ],
+      "sourceZone": "field",
+      "limit": "NONE"
+    }
+  ],
+  "continuous": [
+    {
+      "label": "Absoluto",
+      "text": "Esta carta no inflige daño directo ni destruye las criaturas que enfrenta.",
+      "keywords": [
+        "No inflige daño directo ni destruye al enfrentar"
+      ],
+      "zone": "field"
+    },
+    {
+      "label": "Todos Los Turnos",
+      "text": "Mientras esta carta esté en tu línea frontal: las criaturas en tus vidas ganan 20 de fuerza.",
+      "condition": {
+        "type": "ThisIs",
+        "state": "IN_FRONT_LINE"
+      },
+      "strength": 20,
+      "zone": "field",
+      "lives": true
+    }
+  ],
+  "reactions": [
+    {
+      "type": "CostModifier",
+      "label": "Absoluto",
+      "event": "SPECIAL_SUMMON",
+      "holder": "SELF",
+      "payment": {
+        "kind": "NONE"
+      },
+      "limit": "NONE",
+      "amount": {
+        "type": "FaceUpLives",
+        "whose": "ANY"
+      }
+    }
+  ],
+  "requirement": {
+    "summoner": {
+      "filter": {
+        "classes": [
+          "dragón",
+          "lanzador de conjuros"
+        ]
+      }
+    },
+    "condition": {
+      "type": "Compare",
+      "left": {
+        "type": "OnField",
+        "filter": {
+          "name": "Lumisdragon Arcano"
+        }
+      },
+      "op": "EQUAL",
+      "right": {
+        "type": "Fixed"
+      }
+    },
+    "conditionText": "no controlar copias de esta carta"
+  }
+}

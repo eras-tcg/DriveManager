@@ -1,6 +1,7 @@
 package com.drive.drive_manager.simulator.engine;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Tag;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -13,6 +14,7 @@ import static org.junit.jupiter.api.Assumptions.assumeTrue;
  * Writes every programmed card as JSON, plus the effects run as rules, for the refactor's inventory (vault: Plan de
  * refactorización del motor). Only when asked: {@code ./mvnw -o test -Dtest=DefinitionsExportTest -Dexport.definitions=<file.json>}.
  */
+@Tag("basic")
 class DefinitionsExportTest {
 
     @Test

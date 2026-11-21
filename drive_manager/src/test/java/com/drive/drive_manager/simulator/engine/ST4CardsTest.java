@@ -2,6 +2,7 @@ package com.drive.drive_manager.simulator.engine;
 
 import com.drive.drive_manager.simulator.room.CardSlot;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Tag;
 
 import java.util.List;
 
@@ -9,6 +10,8 @@ import static com.drive.drive_manager.simulator.engine.TestTable.*;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /** ST4 (Rojo, Ascenso; estructura nueva del 2026-11-15): one test (or more) per programmed effect, from the printed text. */
+@Tag("cards")
+@Tag("st4")
 class ST4CardsTest extends CardBatchSupport {
 
     private static CardSlot red(String id, String name, int cost, int level, int strength) {
@@ -132,6 +135,19 @@ class ST4CardsTest extends CardBatchSupport {
         drain();
         assertThat(guest.getField()).doesNotContain(target);
         assertThat(ally.isTapped()).isFalse();
+    }
+
+    @Test
+    void enfrentamientoDeGuerraGivesTheStrengthUntilTheEndOfTheTurn() {
+        room.setFirstTurn(false);
+        CardSlot ally = onField(host, red("al", "Aliado", 2, 2, 5), FRONT);
+        play(utility("eg", "Enfrentamiento De Guerra", 3, "R"));
+        answer("al");
+        assertThat(EffectEngine.strength(ally)).isEqualTo(8);
+        // "hasta el final del turno": back to its own strength once the turn changes
+        drain();
+        com.drive.drive_manager.simulator.actions.TurnActions.passTurn(room, "host");
+        assertThat(EffectEngine.strength(ally)).isEqualTo(5);
     }
 
     @Test

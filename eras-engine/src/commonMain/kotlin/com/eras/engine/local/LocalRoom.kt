@@ -162,6 +162,7 @@ internal class LocalRoom(
     override fun botSetting(type: ActionType, room: GameRoom, userId: String?, action: GameAction): GameStateUpdate =
         RoomBots.setting(type, room, userId, action, this)
     override fun setDeck(room: GameRoom, userId: String?, action: GameAction): GameStateUpdate = DeckChoice.setDeck(room, userId, action, this)
+    override fun nextRound(room: GameRoom, rematch: Boolean) = RoomBots.nextRound(room, this, rematch)
     override fun refreshCardMetadata(room: GameRoom, userId: String?, action: GameAction): GameStateUpdate =
         DeckChoice.refreshCardMetadata(room, userId, action, this)
 

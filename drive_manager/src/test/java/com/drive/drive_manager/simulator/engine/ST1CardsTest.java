@@ -2,6 +2,7 @@ package com.drive.drive_manager.simulator.engine;
 
 import com.drive.drive_manager.simulator.room.CardSlot;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Tag;
 
 import java.util.List;
 
@@ -9,6 +10,8 @@ import static com.drive.drive_manager.simulator.engine.TestTable.*;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /** ST1 (Azul, Materialización; estructura nueva del 2026-11-15): one test (or more) per programmed effect, from the printed text. */
+@Tag("cards")
+@Tag("st1")
 class ST1CardsTest extends CardBatchSupport {
 
     private static CardSlot blue(String id, String name, int cost, int level, int strength) {

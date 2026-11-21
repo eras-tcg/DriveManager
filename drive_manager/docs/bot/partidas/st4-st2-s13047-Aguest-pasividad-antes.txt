@@ -1,0 +1,637 @@
+A = turns=2,samples=2,maxCandidates=24,sameDeals=1,halving=1,hMullCost=1,hMullKeep=0,hEvenTrade=1.1445,sField=5,seqDepth=3,seqKeep=4,seqTriggers=0,gemDebt=5,vStrSq=0.109,uTribute=2,uDamp=0.5,hUseful=1,budgetMs=2000,seqRollout=1,seqShare=0.5,innerCands=3,innerMs=15,innerFinal=2,guard=0.1,exposed=0.1,firstTries=2,rankCands=1,hRank=1,lifeExp=1,lifeMine=0.85,cascade=1,seqPass=1,leafPlay=0.5,overExtendPow=3,overExtendUnc=0.1,attackFirst=1,overExtendRival=1,planKeep=4,hNoDebt=1,hAttackPick=1,hChumpLives=1,gems=1,frontRisk=1,advanceMore=1,lifeFoe=0.9,riskLives=2,riskAlive=1,lifeCurveExp=1,hPreyGuard=1,hCombat=1,riskSum=2,vResource=1.5,lethalLives=3,vLevelSq=0,hReduce=1,riskCuts=0.5,winFlat=1,attackFloor=1,vCost=0,vStr=1.09,vLevel=0,zHandPlay=0.5,vOpen=0.5,structure=0,defenceFloor=1,hFreeMaterial=1,vBody=4,winSeen=2
+B = turns=2,samples=2,maxCandidates=24,sameDeals=1,halving=1,hMullCost=1,hMullKeep=0,hEvenTrade=1.1445,sHand=1,sField=4,seqDepth=3,seqKeep=4,seqTriggers=0,gemDebt=2,vStrSq=0.03,vTop=3,uTribute=2,uDamp=0.5,hUseful=1,budgetMs=2000,seqRollout=1,seqShare=0.5,innerCands=3,innerMs=15,innerFinal=2,vLanes=4,guard=0.1,exposed=0.1,firstTries=2,rankCands=1,handDecay=0.85,hRank=1,lifeExp=1,lifeMine=0.85,cascade=1,seqPass=1,leafPlay=0.5,overExtendPow=3,overExtendUnc=0.1,handLow=3,attackFirst=1,overExtendRival=1,planKeep=4,hNoDebt=1,hAttackPick=1,hChumpLives=1,sUse=3,gems=1,frontRisk=1,advanceMore=1,lifeFoe=0.9,riskLives=2,riskAlive=1,lifeCurveExp=1,hPreyGuard=1,hCombat=1,deckClock=0.5,riskSum=2,vResource=1.5,lethalLives=3,vLevelSq=0.5,hReduce=1,riskCuts=0.5,winFlat=1
+Gana A (lives, 11 turnos)
+
+      > A decide SEQUENCE null (opción 1 de 5, espera 10.6, ahora 4.5)
+          ELEGIDA cadena: NORMAL_SUMMON Duregón → END_TURN                     media     10.6  pruebas  4  
+                  NORMAL_SUMMON Duregón                                        media     10.6  pruebas  4  cayó en la ronda 3
+                  NORMAL_SUMMON Flamagón                                       media      2.6  pruebas  3  cayó en la ronda 2
+                  cadena: NORMAL_SUMMON Flamagón → END_TURN                    media      1.6  pruebas  2  cayó en la ronda 1
+                  END_TURN                                                     media     -3.4  pruebas  2  cayó en la ronda 1
+      > A decide RESOLVE_PROMPT Efecto obligatorio (opción 0 de 2, espera 17.5, ahora 9.0)
+      > A decide RESOLVE_PROMPT Duregón (opción 0 de 3, espera 10.1, ahora 8.5)
+      > A decide RESOLVE_PROMPT Final de turno · Línea frontal (opción 0 de 2, espera -4.0, ahora 18.0)
+— turno (B(st4) empieza; A(st2) cerró con 0 gemas; timeline 10, evento 10) | B(st4): vidas 6, mano 7, gemas 1, mazo 39, mesa [], mano {Franchute 5, Reino Medieval 1, Armadura De Plata 2, Investidura 1, Ballesta Montada 3, Caballero Umbrío 1, Espada De Primera Línea 1}  A(st2): vidas 6, mano 6, gemas -1, mazo 35, mesa [Duregón 2^], mano {Galveta 2, Dragón Carmesí 8, Flamagón 1, Fadrake 3, Dragón Volcánico 8, Saildreik 5}  
+  A(st2) invoca Duregón
+  A(st2) tributa Saildreik
+  A(st2) tributa Llamarada
+  A(st2) tributa Saildreik
+      · Beto invocó Duregón pagando 1 gema
+      · Cadena 1: se activa el efecto En Invocación de Duregón
+      · Beto tributa 3 cartas del tope de su mazo (Duregón): Saildreik, Llamarada y Saildreik
+      · Beto añade a su mano 1 carta (Duregón): Saildreik
+      · Se resuelve la Cadena 1: En Invocación de Duregón
+      · Llamarada: En Tributos no puede activarse (no se puede pagar su coste o no hay objetivos válidos)
+      · Final del turno de Beto
+      · Beto sube a la línea frontal: Duregón
+      · Inicio del turno de Ana
+— turno (A(st2) empieza; B(st4) cerró con 0 gemas; timeline 25, evento 25) | B(st4): vidas 6, mano 7, gemas -2, mazo 35, mesa [Caballero Umbrío 3, Espada De Primera Línea 3], mano {Franchute 5, Reino Medieval 1, Investidura 1, Ballesta Montada 3, Investidura 1, Luke El Filo Rojo 3, Caballero Férreo 2}  A(st2): vidas 6, mano 7, gemas 2, mazo 34, mesa [Duregón 2^], mano {Galveta 2, Dragón Carmesí 8, Flamagón 1, Fadrake 3, Dragón Volcánico 8, Saildreik 5, Volcán De Dragones 1}  
+  B(st4) invoca Caballero Umbrío
+  B(st4) tributa Armadura De Plata
+  B(st4) invoca Espada De Primera Línea
+  B(st4) tributa Caballero Férreo
+      · Ana invocó Caballero Umbrío pagando 0 gemas (ventaja del iniciador)
+      · Cadena 1: se activa el efecto En Invocación de Caballero Umbrío
+      · Ana mira las primeras 4 cartas de su mazo (Caballero Umbrío)
+      · Ana añade a su mano 2 cartas (Caballero Umbrío): Investidura y Luke El Filo Rojo
+      · Ana envía al fondo de su mazo 2 cartas
+      · Ana tributa 1 carta (Caballero Umbrío): Armadura De Plata
+      · Se resuelve la Cadena 1: En Invocación de Caballero Umbrío
+      · Ana invocó Espada De Primera Línea pagando 1 gema
+      · Cadena 1: se activa el efecto En Invocación de Espada De Primera Línea
+      · Ana roba 2 cartas (Espada De Primera Línea)
+      · Ana tributa 1 carta (Espada De Primera Línea): Caballero Férreo
+      · Se resuelve la Cadena 1: En Invocación de Espada De Primera Línea
+      · Final del turno de Ana
+      · Inicio del turno de Beto
+      > A decide SEQUENCE null (opción 5 de 19, espera -8.6, ahora -3.4)
+          ELEGIDA cadena: NORMAL_SUMMON Fadrake → END_TURN                     media     -8.6  pruebas  9  
+                  NORMAL_SUMMON Fadrake                                        media     -8.6  pruebas  9  cayó en la ronda 5
+                  cadena: RITUAL_SUMMON Galveta → END_TURN                     media    -13.3  pruebas  6  cayó en la ronda 4
+                  cadena: PLAY_CARD Volcán De Dragones → NORMAL_SUMMON Flamagón media    -27.0  pruebas  4  cayó en la ronda 3
+                  cadena: PLAY_CARD Volcán De Dragones → RITUAL_SUMMON Galveta → END_TURN media    -18.1  pruebas  4  cayó en la ronda 3
+                  RITUAL_SUMMON Galveta                                        media    -28.1  pruebas  3  cayó en la ronda 2
+                  cadena: NORMAL_SUMMON Flamagón → PLAY_CARD Volcán De Dragones media    -26.8  pruebas  3  cayó en la ronda 2
+                  cadena: NORMAL_SUMMON Flamagón → END_TURN                    media    -29.8  pruebas  3  cayó en la ronda 2
+                  cadena: PLAY_CARD Volcán De Dragones → NORMAL_SUMMON Flamagón → END_TURN media    -26.8  pruebas  3  cayó en la ronda 2
+                  cadena: NORMAL_SUMMON Flamagón → PLAY_CARD Volcán De Dragones → END_TURN media    -26.8  pruebas  3  cayó en la ronda 2
+                  cadena: PLAY_CARD Volcán De Dragones → RITUAL_SUMMON Galveta media    -41.0  pruebas  2  cayó en la ronda 1
+                  cadena: PLAY_CARD Volcán De Dragones → RITUAL_SUMMON Galveta → ATTACK Galveta media    -32.6  pruebas  2  cayó en la ronda 1
+                  cadena: PLAY_CARD Volcán De Dragones → END_TURN              media    -26.5  pruebas  2  cayó en la ronda 1
+                  cadena: PLAY_CARD Volcán De Dragones → RITUAL_SUMMON Galveta → ATTACK Galveta → END_TURN media    -32.6  pruebas  2  cayó en la ronda 1
+                  ATTACK Duregón                                               media    -27.1  pruebas  2  cayó en la ronda 1
+                  NORMAL_SUMMON Galveta                                        media    -28.2  pruebas  2  cayó en la ronda 1
+                  NORMAL_SUMMON Flamagón                                       media    -29.2  pruebas  2  cayó en la ronda 1
+                  PLAY_CARD Volcán De Dragones                                 media    -41.0  pruebas  2  cayó en la ronda 1
+                  END_TURN                                                     media    -29.5  pruebas  2  cayó en la ronda 1
+      > A decide RESOLVE_PROMPT Final de turno · Línea frontal (opción 0 de 2, espera 3.8, ahora 12.9)
+— turno (B(st4) empieza; A(st2) cerró con -1 gemas; timeline 29, evento 29) | B(st4): vidas 6, mano 8, gemas 3, mazo 34, mesa [Caballero Umbrío 3, Espada De Primera Línea 3], mano {Franchute 5, Reino Medieval 1, Investidura 1, Ballesta Montada 3, Investidura 1, Luke El Filo Rojo 3, Caballero Férreo 2, Caballeros De La Primera Línea 1}  A(st2): vidas 6, mano 6, gemas -3, mazo 34, mesa [Duregón 2^, Fadrake 8^], mano {Galveta 2, Dragón Carmesí 8, Flamagón 1, Dragón Volcánico 8, Saildreik 5, Volcán De Dragones 1}  
+  A(st2) invoca Fadrake
+      · Beto invocó Fadrake pagando 3 gemas
+      · Final del turno de Beto
+      · Beto sube a la línea frontal: Fadrake
+      · Inicio del turno de Ana
+— turno (A(st2) empieza; B(st4) cerró con -1 gemas; timeline 37, evento 37) | B(st4): vidas 6, mano 6, gemas -4, mazo 34, mesa [Caballero Umbrío 3, Espada De Primera Línea 3, Luke El Filo Rojo 9], mano {Franchute 5, Reino Medieval 1, Investidura 1, Ballesta Montada 3, Investidura 1, Caballero Férreo 2}  A(st2): vidas 6, mano 7, gemas 4, mazo 33, mesa [Duregón 2^, Fadrake 8^], mano {Galveta 2, Dragón Carmesí 8, Flamagón 1, Dragón Volcánico 8, Saildreik 5, Volcán De Dragones 1, Dragón Volcánico 8}  
+  B(st4) invoca Luke El Filo Rojo
+  B(st4) juega Caballeros De La Primera Línea
+      · Ana invocó Luke El Filo Rojo pagando 3 gemas
+      · Ana no activa el efecto Celeridad de Luke El Filo Rojo
+      · Ana juega Caballeros De La Primera Línea pagando 1 gema
+      · Cadena 1: se activa el efecto En Juego de Caballeros De La Primera Línea
+      · Se resuelve la Cadena 1: En Juego de Caballeros De La Primera Línea
+      · Caballeros De La Primera Línea va al descarte tras resolverse
+      · Final del turno de Ana
+      · Inicio del turno de Beto
+      > A decide SEQUENCE null (opción 6 de 22, espera 26.2, ahora 17.5)
+          ELEGIDA cadena: NORMAL_SUMMON Saildreik → END_TURN                   media     26.2  pruebas 10  
+                  NORMAL_SUMMON Saildreik                                      media     26.2  pruebas 10  cayó en la ronda 5
+                  cadena: RITUAL_SUMMON Saildreik → END_TURN                   media     16.7  pruebas  6  cayó en la ronda 4
+                  cadena: PLAY_CARD Volcán De Dragones → RITUAL_SUMMON Galveta → RITUAL_SUMMON Saildreik → END_TURN media      9.0  pruebas  4  cayó en la ronda 3
+                  NORMAL_SUMMON Galveta                                        media      7.3  pruebas  4  cayó en la ronda 3
+                  END_TURN                                                     media     -1.7  pruebas  4  cayó en la ronda 3
+                  ATTACK Duregón                                               media    -10.6  pruebas  3  cayó en la ronda 2
+                  cadena: ATTACK Fadrake → ATTACK Duregón                      media    -11.0  pruebas  3  cayó en la ronda 2
+                  cadena: NORMAL_SUMMON Galveta → END_TURN                     media     -5.2  pruebas  3  cayó en la ronda 2
+                  NORMAL_SUMMON Flamagón                                       media     -4.6  pruebas  3  cayó en la ronda 2
+                  RITUAL_SUMMON Saildreik                                      media     -8.0  pruebas  3  cayó en la ronda 2
+                  cadena: RITUAL_SUMMON Saildreik → RITUAL_SUMMON Galveta → RITUAL_SUMMON c91 media -Infinity  pruebas  2  cayó en la ronda 1
+                  cadena: PLAY_CARD Volcán De Dragones → RITUAL_SUMMON Galveta media    -19.2  pruebas  2  cayó en la ronda 1
+                  cadena: PLAY_CARD Volcán De Dragones → RITUAL_SUMMON Galveta → RITUAL_SUMMON Saildreik media    -19.2  pruebas  2  cayó en la ronda 1
+                  cadena: PLAY_CARD Volcán De Dragones → RITUAL_SUMMON Galveta → RITUAL_SUMMON c87 media -Infinity  pruebas  2  cayó en la ronda 1
+                  cadena: RITUAL_SUMMON Galveta → END_TURN                     media    -33.7  pruebas  2  cayó en la ronda 1
+                  cadena: RITUAL_SUMMON Saildreik → RITUAL_SUMMON Galveta → RITUAL_SUMMON c91 → END_TURN media -Infinity  pruebas  2  cayó en la ronda 1
+                  cadena: PLAY_CARD Volcán De Dragones → RITUAL_SUMMON Galveta → END_TURN media    -30.4  pruebas  2  cayó en la ronda 1
+                  cadena: PLAY_CARD Volcán De Dragones → RITUAL_SUMMON Galveta → RITUAL_SUMMON c87 → END_TURN media -Infinity  pruebas  2  cayó en la ronda 1
+                  ATTACK Fadrake                                               media    -10.1  pruebas  2  cayó en la ronda 1
+                  RITUAL_SUMMON Galveta                                        media    -17.9  pruebas  2  cayó en la ronda 1
+                  PLAY_CARD Volcán De Dragones                                 media    -26.7  pruebas  2  cayó en la ronda 1
+      > A decide END_TURN null (opción 0 de 7, espera 34.0, ahora 48.3)
+          ELEGIDA END_TURN                                                     media     34.0  pruebas  5  
+                  cadena: NORMAL_SUMMON Flamagón → END_TURN                    media    -18.2  pruebas  5  cayó en la ronda 3
+                  cadena: PLAY_CARD Volcán De Dragones → END_TURN              media    -24.0  pruebas  3  cayó en la ronda 2
+                  NORMAL_SUMMON Flamagón                                       media    -21.8  pruebas  3  cayó en la ronda 2
+                  cadena: RITUAL_SUMMON Galveta → END_TURN                     media    -50.0  pruebas  2  cayó en la ronda 1
+                  PLAY_CARD Volcán De Dragones                                 media    -37.1  pruebas  2  cayó en la ronda 1
+                  RITUAL_SUMMON Galveta                                        media    -50.0  pruebas  2  cayó en la ronda 1
+      > A decide RESOLVE_PROMPT Final de turno · Línea frontal (opción 0 de 2, espera 40.3, ahora 48.3)
+— turno (B(st4) empieza; A(st2) cerró con -1 gemas; timeline 41, evento 41) | B(st4): vidas 6, mano 7, gemas 4, mazo 33, mesa [Caballero Umbrío 3, Espada De Primera Línea 5, Luke El Filo Rojo 9], mano {Franchute 5, Reino Medieval 1, Investidura 1, Ballesta Montada 3, Investidura 1, Caballero Férreo 2, Armadura De Plata 2}  A(st2): vidas 6, mano 6, gemas -4, mazo 33, mesa [Duregón 2^, Fadrake 8^, Saildreik 11^], mano {Galveta 2, Dragón Carmesí 8, Flamagón 1, Dragón Volcánico 8, Volcán De Dragones 1, Dragón Volcánico 8}  
+  A(st2) invoca Saildreik
+      · Beto invocó Saildreik pagando 5 gemas
+      · Final del turno de Beto
+      · Beto sube a la línea frontal: Saildreik
+      · Inicio del turno de Ana
+— turno (A(st2) empieza; B(st4) cerró con -2 gemas; timeline 59, evento 59) | B(st4): vidas 6, mano 5, gemas -6, mazo 31, mesa [Caballero Umbrío 3, Franchute 11^, Armadura De Plata 4^], mano {Investidura 1, Ballesta Montada 3, Investidura 1, Caballero Férreo 2, Caballería Cruzada 3}  A(st2): vidas 6, mano 7, gemas 6, mazo 32, mesa [Duregón 2^, Fadrake 8^, Saildreik 11^], mano {Galveta 2, Dragón Carmesí 8, Flamagón 1, Dragón Volcánico 8, Volcán De Dragones 1, Dragón Volcánico 8, Dragón Volcánico 8}  
+  B(st4) tributa Luke El Filo Rojo
+  B(st4) invoca especial Franchute
+  B(st4) juega Reino Medieval
+  B(st4) tributa Espada De Primera Línea
+  B(st4) invoca especial Armadura De Plata
+  B(st4) juega Caballeros De La Primera Línea
+      · Ana invoca por Ascenso a Franchute usando Luke El Filo Rojo y pagando 3 gemas
+      · Franchute sube a la línea frontal tras su invocación especial
+      · Ana roba 1 carta por la invocación
+      · Cadena 1: se activa el efecto En Invocación de Franchute
+      · Se resuelve la Cadena 1: En Invocación de Franchute
+      · Ana juega Reino Medieval pagando 1 gema
+      · Ana invoca por Ascenso a Armadura De Plata usando Espada De Primera Línea y pagando 1 gema
+      · Armadura De Plata sube a la línea frontal tras su invocación especial
+      · Ana roba 1 carta por la invocación
+      · Ana no activa el efecto En Invocación de Armadura De Plata
+      · Ana juega Caballeros De La Primera Línea pagando 1 gema
+      · Cadena 1: se activa el efecto En Juego de Caballeros De La Primera Línea
+      · Se resuelve la Cadena 1: En Juego de Caballeros De La Primera Línea
+      · Caballeros De La Primera Línea va al descarte tras resolverse
+      · Final del turno de Ana
+      · Inicio del turno de Beto
+      > A decide SEQUENCE null (opción 2 de 27, espera 97.5, ahora 63.2)
+          ELEGIDA cadena: NORMAL_SUMMON Flamagón → RITUAL_SUMMON Galveta       media     97.5  pruebas 11  
+                  cadena: RITUAL_SUMMON Galveta → NORMAL_SUMMON Flamagón       media     85.2  pruebas 11  cayó en la ronda 5
+                  cadena: RITUAL_SUMMON Galveta → ATTACK Saildreik             media     94.8  pruebas  7  cayó en la ronda 4
+                  cadena: RITUAL_SUMMON Galveta → ATTACK Saildreik → END_TURN  media     79.9  pruebas  4  cayó en la ronda 3
+                  RITUAL_SUMMON Galveta                                        media     92.8  pruebas  4  cayó en la ronda 3
+                  NORMAL_SUMMON Galveta                                        media     90.1  pruebas  4  cayó en la ronda 3
+                  ATTACK Saildreik                                             media     71.1  pruebas  3  cayó en la ronda 2
+                  NORMAL_SUMMON Flamagón                                       media     58.6  pruebas  3  cayó en la ronda 2
+                  PLAY_CARD Volcán De Dragones                                 media     60.0  pruebas  3  cayó en la ronda 2
+                  cadena: RITUAL_SUMMON Dragón Carmesí → END_TURN              media     65.5  pruebas  3  cayó en la ronda 2
+                  cadena: NORMAL_SUMMON Flamagón → END_TURN                    media     46.7  pruebas  3  cayó en la ronda 2
+                  END_TURN                                                     media     41.6  pruebas  3  cayó en la ronda 2
+                  NORMAL_SUMMON Dragón Volcánico                               media     21.0  pruebas  2  cayó en la ronda 1
+                  NORMAL_SUMMON Dragón Volcánico                               media     21.0  pruebas  2  cayó en la ronda 1
+                  NORMAL_SUMMON Dragón Volcánico                               media     21.0  pruebas  2  cayó en la ronda 1
+                  NORMAL_SUMMON Dragón Carmesí                                 media     20.8  pruebas  2  cayó en la ronda 1
+                  RITUAL_SUMMON Dragón Volcánico                               media    -21.9  pruebas  2  cayó en la ronda 1
+                  RITUAL_SUMMON Dragón Volcánico                               media    -21.9  pruebas  2  cayó en la ronda 1
+                  RITUAL_SUMMON Dragón Volcánico                               media    -21.9  pruebas  2  cayó en la ronda 1
+                  RITUAL_SUMMON Dragón Carmesí                                 media    -19.1  pruebas  2  cayó en la ronda 1
+                  cadena: ATTACK Saildreik → ATTACK Fadrake → ATTACK Duregón   media     30.3  pruebas  2  cayó en la ronda 1
+                  cadena: NORMAL_SUMMON Flamagón → RITUAL_SUMMON Galveta → END_TURN media     38.4  pruebas  2  cayó en la ronda 1
+                  cadena: RITUAL_SUMMON Galveta → NORMAL_SUMMON Flamagón → END_TURN media     38.4  pruebas  2  cayó en la ronda 1
+                  cadena: RITUAL_SUMMON Galveta → END_TURN                     media     33.7  pruebas  2  cayó en la ronda 1
+      > A decide SEQUENCE null (opción 0 de 27, espera 93.1, ahora 66.9)
+      > A decide RESOLVE_PROMPT Galveta · Evolución (opción 1 de 2, espera 110.0, ahora 66.9)
+      > A decide RESOLVE_PROMPT Galveta · Línea frontal (opción 0 de 2, espera 87.9, ahora 68.5)
+      > A decide RESOLVE_PROMPT Efecto obligatorio (opción 0 de 2, espera 111.4, ahora 75.1)
+      > A decide RESOLVE_PROMPT Galveta (opción 0 de 7, espera 92.0, ahora 75.1)
+      > A decide SEQUENCE null (opción 11 de 21, espera 120.7, ahora 55.9)
+          ELEGIDA cadena: ATTACK Saildreik → RITUAL_SUMMON Dragón Delta → END_TURN media    120.7  pruebas 10  
+                  cadena: RITUAL_SUMMON Dragón Delta → ATTACK Saildreik → END_TURN media    120.7  pruebas 10  cayó en la ronda 5
+                  ATTACK Saildreik                                             media    110.0  pruebas  6  cayó en la ronda 4
+                  cadena: ATTACK Saildreik → ATTACK Dragón Carmesí             media    104.5  pruebas  4  cayó en la ronda 3
+                  PLAY_CARD Volcán De Dragones                                 media    105.7  pruebas  4  cayó en la ronda 3
+                  NORMAL_SUMMON Dragón Delta                                   media    105.2  pruebas  4  cayó en la ronda 3
+                  cadena: ATTACK Saildreik → ATTACK Fadrake → ATTACK Galveta → ATTACK Duregón media    100.7  pruebas  3  cayó en la ronda 2
+                  cadena: ATTACK Saildreik → RITUAL_SUMMON Dragón Delta        media    102.9  pruebas  3  cayó en la ronda 2
+                  cadena: RITUAL_SUMMON Dragón Delta → ATTACK Saildreik        media    102.9  pruebas  3  cayó en la ronda 2
+                  cadena: RITUAL_SUMMON Dragón Volcánico → ATTACK Duregón      media     95.2  pruebas  3  cayó en la ronda 2
+                  RITUAL_SUMMON Dragón Delta                                   media    102.9  pruebas  3  cayó en la ronda 2
+                  cadena: ATTACK Saildreik → END_TURN                          media     68.6  pruebas  2  cayó en la ronda 1
+                  cadena: RITUAL_SUMMON Dragón Delta → END_TURN                media     28.9  pruebas  2  cayó en la ronda 1
+                  cadena: PLAY_CARD Volcán De Dragones → END_TURN              media      7.3  pruebas  2  cayó en la ronda 1
+                  cadena: NORMAL_SUMMON Dragón Delta → END_TURN                media     39.0  pruebas  2  cayó en la ronda 1
+                  cadena: ATTACK Saildreik → ATTACK Dragón Carmesí → END_TURN  media     74.6  pruebas  2  cayó en la ronda 1
+                  cadena: RITUAL_SUMMON Dragón Volcánico → ATTACK Duregón → END_TURN media     41.3  pruebas  2  cayó en la ronda 1
+                  RITUAL_SUMMON Dragón Volcánico                               media     72.6  pruebas  2  cayó en la ronda 1
+                  RITUAL_SUMMON Dragón Volcánico                               media     72.6  pruebas  2  cayó en la ronda 1
+                  RITUAL_SUMMON Dragón Volcánico                               media     72.6  pruebas  2  cayó en la ronda 1
+                  END_TURN                                                     media      5.5  pruebas  2  cayó en la ronda 1
+      > A decide RESOLVE_PROMPT Encadenar efectos (opción 0 de 3, espera 118.5, ahora 39.4)
+      > A decide RESOLVE_PROMPT Saildreik (opción 0 de 2, espera 120.5, ahora 39.4)
+      > A decide RESOLVE_PROMPT Encadenar efectos (opción 0 de 3, espera 120.2, ahora 120.1)
+      > A decide RESOLVE_PROMPT Efecto obligatorio (opción 0 de 2, espera 115.3, ahora 125.2)
+      > A decide RESOLVE_PROMPT Encadenar efectos (opción 0 de 3, espera 120.2, ahora 137.0)
+      > A decide RESOLVE_PROMPT Galveta (opción 0 de 3, espera 116.3, ahora 137.0)
+      > A decide SEQUENCE null (opción 4 de 25, espera 113.2, ahora 150.4)
+          ELEGIDA cadena: ATTACK Duregón → ATTACK Galveta                      media    113.2  pruebas 11  
+                  cadena: ATTACK Galveta → ATTACK Duregón                      media    113.1  pruebas 11  cayó en la ronda 5
+                  cadena: ATTACK Duregón → ATTACK Fadrake                      media    112.9  pruebas  7  cayó en la ronda 4
+                  cadena: RITUAL_SUMMON Dragón Delta                           media    109.9  pruebas  4  cayó en la ronda 3
+                  cadena: ATTACK Dragón Carmesí → ATTACK Duregón               media    113.5  pruebas  4  cayó en la ronda 3
+                  ATTACK Duregón                                               media    114.4  pruebas  4  cayó en la ronda 3
+                  RITUAL_SUMMON Dragón Delta                                   media    112.4  pruebas  3  cayó en la ronda 2
+                  RITUAL_SUMMON Dragón Delta                                   media    112.4  pruebas  3  cayó en la ronda 2
+                  ATTACK Fadrake                                               media    100.1  pruebas  3  cayó en la ronda 2
+                  ATTACK Dragón Carmesí                                        media    103.1  pruebas  3  cayó en la ronda 2
+                  ATTACK Galveta                                               media    100.4  pruebas  3  cayó en la ronda 2
+                  cadena: ATTACK Dragón Carmesí → ATTACK Fadrake → ATTACK Galveta → ATTACK Duregón media    109.3  pruebas  3  cayó en la ronda 2
+                  NORMAL_SUMMON Dragón Delta                                   media    103.2  pruebas  2  cayó en la ronda 1
+                  NORMAL_SUMMON Dragón Delta                                   media    103.2  pruebas  2  cayó en la ronda 1
+                  RITUAL_SUMMON Saildreik                                      media     45.6  pruebas  2  cayó en la ronda 1
+                  PLAY_CARD Volcán De Dragones                                 media    114.6  pruebas  2  cayó en la ronda 1
+                  cadena: NORMAL_SUMMON Dragón Delta → END_TURN                media    103.2  pruebas  2  cayó en la ronda 1
+                  cadena: NORMAL_SUMMON Dragón Delta → END_TURN                media    103.2  pruebas  2  cayó en la ronda 1
+                  cadena: PLAY_CARD Volcán De Dragones → END_TURN              media    109.1  pruebas  2  cayó en la ronda 1
+                  cadena: ATTACK Dragón Carmesí → ATTACK Duregón → END_TURN    media    118.2  pruebas  2  cayó en la ronda 1
+                  END_TURN                                                     media    106.1  pruebas  2  cayó en la ronda 1
+                  cadena: ATTACK Duregón → END_TURN                            media    116.3  pruebas  2  cayó en la ronda 1
+                  cadena: ATTACK Duregón → ATTACK Galveta → END_TURN           media    114.9  pruebas  2  cayó en la ronda 1
+                  cadena: ATTACK Galveta → ATTACK Duregón → END_TURN           media    114.9  pruebas  2  cayó en la ronda 1
+      > A decide SEQUENCE null (opción 0 de 24, espera 129.4, ahora 150.0)
+          ELEGIDA cadena: ATTACK Galveta                                       media    129.4  pruebas 11  
+                  ATTACK Fadrake                                               media    125.2  pruebas 11  cayó en la ronda 5
+                  ATTACK Galveta                                               media    131.8  pruebas  7  cayó en la ronda 4
+                  ATTACK Dragón Carmesí                                        media    115.6  pruebas  4  cayó en la ronda 3
+                  cadena: ATTACK Fadrake → END_TURN                            media    111.9  pruebas  4  cayó en la ronda 3
+                  cadena: RITUAL_SUMMON Dragón Delta → END_TURN                media    117.2  pruebas  4  cayó en la ronda 3
+                  cadena: ATTACK Dragón Carmesí → ATTACK Fadrake → ATTACK Galveta media    113.5  pruebas  3  cayó en la ronda 2
+                  cadena: ATTACK Fadrake → NORMAL_SUMMON Dragón Delta          media    112.9  pruebas  3  cayó en la ronda 2
+                  cadena: ATTACK Fadrake → NORMAL_SUMMON Dragón Delta          media    112.9  pruebas  3  cayó en la ronda 2
+                  cadena: ATTACK Fadrake → NORMAL_SUMMON Dragón Delta → END_TURN media    112.9  pruebas  3  cayó en la ronda 2
+                  RITUAL_SUMMON Dragón Delta                                   media    113.5  pruebas  3  cayó en la ronda 2
+                  RITUAL_SUMMON Dragón Delta                                   media    113.5  pruebas  3  cayó en la ronda 2
+                  cadena: ATTACK Dragón Carmesí → NORMAL_SUMMON Dragón Delta   media    107.9  pruebas  2  cayó en la ronda 1
+                  cadena: ATTACK Dragón Carmesí → NORMAL_SUMMON Dragón Delta   media    107.9  pruebas  2  cayó en la ronda 1
+                  cadena: ATTACK Dragón Carmesí → END_TURN                     media    108.0  pruebas  2  cayó en la ronda 1
+                  cadena: ATTACK Galveta → END_TURN                            media    109.9  pruebas  2  cayó en la ronda 1
+                  cadena: ATTACK Dragón Carmesí → NORMAL_SUMMON Dragón Delta → END_TURN media    107.9  pruebas  2  cayó en la ronda 1
+                  cadena: ATTACK Dragón Carmesí → NORMAL_SUMMON Dragón Delta → END_TURN media    107.9  pruebas  2  cayó en la ronda 1
+                  cadena: ATTACK Fadrake → NORMAL_SUMMON Dragón Delta → END_TURN media    110.1  pruebas  2  cayó en la ronda 1
+                  PLAY_CARD Volcán De Dragones                                 media     93.0  pruebas  2  cayó en la ronda 1
+                  NORMAL_SUMMON Dragón Delta                                   media    104.3  pruebas  2  cayó en la ronda 1
+                  NORMAL_SUMMON Dragón Delta                                   media    104.3  pruebas  2  cayó en la ronda 1
+                  RITUAL_SUMMON Saildreik                                      media     40.0  pruebas  2  cayó en la ronda 1
+                  END_TURN                                                     media    104.5  pruebas  2  cayó en la ronda 1
+      > A decide SEQUENCE null (opción 8 de 22, espera 129.0, ahora 146.4)
+          ELEGIDA cadena: RITUAL_SUMMON Dragón Delta → END_TURN                media    129.0  pruebas 10  
+                  cadena: RITUAL_SUMMON Dragón Delta → END_TURN                media    129.0  pruebas 10  cayó en la ronda 5
+                  cadena: ATTACK Dragón Carmesí → END_TURN                     media    128.9  pruebas  6  cayó en la ronda 4
+                  cadena: ATTACK Fadrake → END_TURN                            media    134.2  pruebas  4  cayó en la ronda 3
+                  NORMAL_SUMMON Dragón Delta                                   media    121.3  pruebas  4  cayó en la ronda 3
+                  END_TURN                                                     media    127.8  pruebas  4  cayó en la ronda 3
+                  ATTACK Dragón Carmesí                                        media    125.8  pruebas  3  cayó en la ronda 2
+                  cadena: ATTACK Dragón Carmesí → ATTACK Fadrake               media    125.8  pruebas  3  cayó en la ronda 2
+                  RITUAL_SUMMON Dragón Delta                                   media    125.8  pruebas  3  cayó en la ronda 2
+                  NORMAL_SUMMON Dragón Delta                                   media    127.6  pruebas  3  cayó en la ronda 2
+                  RITUAL_SUMMON Dragón Delta                                   media    125.8  pruebas  3  cayó en la ronda 2
+                  cadena: ATTACK Dragón Carmesí → ATTACK Fadrake → NORMAL_SUMMON Dragón Delta media    116.3  pruebas  2  cayó en la ronda 1
+                  cadena: ATTACK Dragón Carmesí → ATTACK Fadrake → NORMAL_SUMMON Dragón Delta media    116.3  pruebas  2  cayó en la ronda 1
+                  cadena: ATTACK Fadrake → ATTACK Dragón Carmesí → NORMAL_SUMMON Dragón Delta media    117.3  pruebas  2  cayó en la ronda 1
+                  cadena: ATTACK Fadrake → ATTACK Dragón Carmesí → NORMAL_SUMMON Dragón Delta media    117.3  pruebas  2  cayó en la ronda 1
+                  cadena: ATTACK Dragón Carmesí → ATTACK Fadrake → NORMAL_SUMMON Dragón Delta → END_TURN media    116.3  pruebas  2  cayó en la ronda 1
+                  cadena: ATTACK Dragón Carmesí → ATTACK Fadrake → NORMAL_SUMMON Dragón Delta → END_TURN media    116.3  pruebas  2  cayó en la ronda 1
+                  cadena: ATTACK Fadrake → ATTACK Dragón Carmesí → NORMAL_SUMMON Dragón Delta → END_TURN media    117.3  pruebas  2  cayó en la ronda 1
+                  cadena: ATTACK Fadrake → ATTACK Dragón Carmesí → NORMAL_SUMMON Dragón Delta → END_TURN media    117.3  pruebas  2  cayó en la ronda 1
+                  ATTACK Fadrake                                               media    123.2  pruebas  2  cayó en la ronda 1
+                  PLAY_CARD Volcán De Dragones                                 media    115.6  pruebas  2  cayó en la ronda 1
+                  RITUAL_SUMMON Saildreik                                      media     74.6  pruebas  2  cayó en la ronda 1
+      > A decide SEQUENCE null (opción 6 de 20, espera 138.8, ahora 165.9)
+          ELEGIDA cadena: ATTACK Dragón Carmesí → END_TURN                     media    138.8  pruebas 10  
+                  cadena: ATTACK Fadrake → END_TURN                            media    136.6  pruebas 10  cayó en la ronda 5
+                  END_TURN                                                     media    133.1  pruebas  6  cayó en la ronda 4
+                  cadena: ATTACK Dragón Carmesí → PLAY_CARD Volcán De Dragones media    137.6  pruebas  4  cayó en la ronda 3
+                  cadena: ATTACK Dragón Carmesí → PLAY_CARD Volcán De Dragones → END_TURN media    137.6  pruebas  4  cayó en la ronda 3
+                  ATTACK Dragón Carmesí                                        media    130.4  pruebas  3  cayó en la ronda 2
+                  cadena: ATTACK Dragón Carmesí → ATTACK Fadrake               media    130.4  pruebas  3  cayó en la ronda 2
+                  cadena: ATTACK Fadrake → PLAY_CARD Volcán De Dragones        media    135.1  pruebas  3  cayó en la ronda 2
+                  cadena: ATTACK Dragón Carmesí → ATTACK Fadrake               media    130.4  pruebas  3  cayó en la ronda 2
+                  cadena: ATTACK Fadrake → PLAY_CARD Volcán De Dragones → END_TURN media    135.1  pruebas  3  cayó en la ronda 2
+                  cadena: ATTACK Fadrake → ATTACK Dragón Carmesí               media    128.2  pruebas  2  cayó en la ronda 1
+                  cadena: PLAY_CARD Volcán De Dragones → END_TURN              media    120.7  pruebas  2  cayó en la ronda 1
+                  cadena: NORMAL_SUMMON Dragón Delta → END_TURN                media     68.1  pruebas  2  cayó en la ronda 1
+                  cadena: ATTACK Dragón Carmesí → ATTACK Fadrake → END_TURN    media    128.2  pruebas  2  cayó en la ronda 1
+                  cadena: ATTACK Fadrake → ATTACK Dragón Carmesí → END_TURN    media    128.2  pruebas  2  cayó en la ronda 1
+                  ATTACK Fadrake                                               media    128.2  pruebas  2  cayó en la ronda 1
+                  PLAY_CARD Volcán De Dragones                                 media    120.7  pruebas  2  cayó en la ronda 1
+                  NORMAL_SUMMON Dragón Delta                                   media     68.1  pruebas  2  cayó en la ronda 1
+                  RITUAL_SUMMON Saildreik                                      media    -79.6  pruebas  2  cayó en la ronda 1
+                  RITUAL_SUMMON Saildreik                                      media    -79.6  pruebas  2  cayó en la ronda 1
+      > A decide RESOLVE_PROMPT Efecto obligatorio (opción 0 de 2, espera 128.6, ahora 167.4)
+      > A decide END_TURN null (opción 17 de 18, espera 144.1, ahora 167.4)
+          ELEGIDA END_TURN                                                     media    144.1  pruebas  9  
+                  cadena: PLAY_CARD Volcán De Dragones → END_TURN              media    138.5  pruebas  9  cayó en la ronda 5
+                  PLAY_CARD Volcán De Dragones                                 media    139.9  pruebas  6  cayó en la ronda 4
+                  ATTACK Fadrake                                               media    132.1  pruebas  4  cayó en la ronda 3
+                  cadena: RITUAL_SUMMON Saildreik → END_TURN                   media    128.4  pruebas  4  cayó en la ronda 3
+                  cadena: ATTACK Fadrake → PLAY_CARD Volcán De Dragones        media    125.2  pruebas  3  cayó en la ronda 2
+                  cadena: ATTACK Fadrake → NORMAL_SUMMON Dragón Delta          media     97.5  pruebas  3  cayó en la ronda 2
+                  cadena: ATTACK Fadrake → END_TURN                            media    115.4  pruebas  3  cayó en la ronda 2
+                  cadena: ATTACK Fadrake → PLAY_CARD Volcán De Dragones → END_TURN media    114.0  pruebas  3  cayó en la ronda 2
+                  cadena: PLAY_CARD Volcán De Dragones → NORMAL_SUMMON Dragón Delta media    -77.0  pruebas  2  cayó en la ronda 1
+                  cadena: NORMAL_SUMMON Dragón Delta → PLAY_CARD Volcán De Dragones media    -77.0  pruebas  2  cayó en la ronda 1
+                  cadena: NORMAL_SUMMON Dragón Delta → END_TURN                media     73.5  pruebas  2  cayó en la ronda 1
+                  cadena: ATTACK Fadrake → NORMAL_SUMMON Dragón Delta → END_TURN media     83.2  pruebas  2  cayó en la ronda 1
+                  cadena: PLAY_CARD Volcán De Dragones → NORMAL_SUMMON Dragón Delta → END_TURN media    -77.0  pruebas  2  cayó en la ronda 1
+                  cadena: NORMAL_SUMMON Dragón Delta → PLAY_CARD Volcán De Dragones → END_TURN media    -77.0  pruebas  2  cayó en la ronda 1
+                  NORMAL_SUMMON Dragón Delta                                   media     73.5  pruebas  2  cayó en la ronda 1
+                  RITUAL_SUMMON Saildreik                                      media    -93.8  pruebas  2  cayó en la ronda 1
+                  RITUAL_SUMMON Saildreik                                      media    -93.8  pruebas  2  cayó en la ronda 1
+— turno (B(st4) empieza; A(st2) cerró con 0 gemas; timeline 121, evento 121) | B(st4): vidas 4, mano 7, gemas 4, mazo 30, mesa [Caballero Umbrío 3], mano {Investidura 1, Ballesta Montada 3, Investidura 1, Caballero Férreo 2, Caballería Cruzada 3, Ballesta Montada 3, Filo Vengativo 2}  A(st2): vidas 6, mano 7, gemas -4, mazo 28, mesa [Fadrake 8^, Galveta 5*^, Dragón Carmesí 14*^, Dragón Delta 6*^], mano {Dragón Volcánico 8, Volcán De Dragones 1, Dragón Volcánico 8, Dragón Volcánico 8, Dragón Delta 2, Saildreik 5, Saildreik 5}  
+  A(st2) invoca Flamagón
+  A(st2) invoca especial Galveta
+  A(st2) tributa Dragón Carmesí
+  A(st2) tributa Dracoventus
+  A(st2) ataca con Saildreik
+  A(st2) invoca especial Dragón Carmesí
+  B(st4) bloquea con Franchute
+  A(st2) destruye Franchute
+  A(st2) destruye Armadura De Plata
+  A(st2) ataca con Duregón
+  A(st2) quita una vida: Espada De Primera Línea → hand (daño 2)
+  A(st2) ataca con Galveta
+  A(st2) quita una vida: Ballesta Montada → hand (daño 5)
+  A(st2) invoca especial Dragón Delta
+  A(st2) ataca con Dragón Carmesí
+  A(st2) quita una vida: Comandante De Las Espadas Dragón → tributeZone (daño 14)
+      · Beto invocó Flamagón pagando 1 gema
+      · Beto invoca por Evolución a Galveta usando Flamagón y pagando 1 gema
+      · Galveta sube a la línea frontal tras su invocación especial
+      · Beto roba 1 carta por la invocación
+      · Cadena 1: se activa el efecto En Invocación de Galveta
+      · Beto coloca al tope de su mazo 1 carta (Galveta)
+      · Beto tributa 2 cartas del tope de su mazo (Galveta): Dragón Carmesí y Dracoventus
+      · Se resuelve la Cadena 1: En Invocación de Galveta
+      · Beto agota a Saildreik y ataca a Ana
+      · Cadena 1: se activa el efecto Al Atacar de Saildreik
+      · Beto invoca por Evolución a Dragón Carmesí usando Saildreik y pagando 3 gemas (Saildreik)
+      · Beto roba 1 carta por la invocación
+      · Se resuelve la Cadena 1: Al Atacar de Saildreik
+      · Paso de bloqueo
+      · Franchute bloquea el ataque
+      · Paso de enfrentamiento
+      · Enfrentamiento: Dragón Carmesí (14) contra Franchute (11)
+      · Beto destruye Franchute de Ana en el enfrentamiento
+      · Cadena 1: se activa el efecto Todos Los Turnos de Dragón Carmesí
+      · Beto reactiva a Dragón Carmesí (Dragón Carmesí)
+      · Se resuelve la Cadena 1: Todos Los Turnos de Dragón Carmesí
+      · Termina el combate
+      · Cadena 1: se activa el efecto Al Final Del Ataque de Dragón Carmesí
+      · Beto elige como objetivo a Armadura De Plata (Dragón Carmesí)
+      · Beto destruye Armadura De Plata de Ana (Dragón Carmesí)
+      · Se resuelve la Cadena 1: Al Final Del Ataque de Dragón Carmesí
+      · Cadena 1: se activa el efecto Todos Los Turnos de Galveta
+      · Beto añade a su mano 1 carta (Galveta): Saildreik
+      · Se resuelve la Cadena 1: Todos Los Turnos de Galveta
+      · Beto agota a Duregón y ataca a Ana
+      · Paso de bloqueo
+      · Paso de daño directo
+      · Duregón inflige 2 de daño directo: Ana pierde la vida Espada De Primera Línea, que va a su mano
+      · Ana refuerza con Espada De Primera Línea: va bocarriba al fondo de su pila de vidas
+      · Termina el combate
+      · Beto agota a Galveta y ataca a Ana
+      · Paso de bloqueo
+      · Paso de daño directo
+      · Galveta inflige 5 de daño directo: Ana pierde la vida Ballesta Montada, que va a su mano
+      · Termina el combate
+      · Beto invoca por Evolución a Dragón Delta usando Duregón y pagando 1 gema
+      · Beto roba 1 carta por la invocación
+      · Beto agota a Dragón Carmesí y ataca a Ana
+      · Dragón Carmesí: Al Atacar no puede activarse (no se puede pagar su coste o no hay objetivos válidos)
+      · Paso de bloqueo
+      · Paso de daño directo
+      · Dragón Carmesí inflige 14 de daño directo: Ana pierde la vida Comandante De Las Espadas Dragón, que va a sus tributos
+      · Termina el combate
+      · Dragón Carmesí: Al Final Del Ataque no puede activarse (no hay objetivos válidos)
+      · Final del turno de Beto
+      · Inicio del turno de Ana
+— turno (A(st2) empieza; B(st4) cerró con 0 gemas; timeline 126, evento 126) | B(st4): vidas 4, mano 6, gemas -5, mazo 30, mesa [Caballero Umbrío 3^, Filo Vengativo 6], mano {Investidura 1, Ballesta Montada 3, Investidura 1, Caballero Férreo 2, Caballería Cruzada 3, Ballesta Montada 3}  A(st2): vidas 6, mano 8, gemas 5, mazo 27, mesa [Fadrake 8^, Galveta 5^, Dragón Carmesí 14^, Dragón Delta 6^], mano {Dragón Volcánico 8, Volcán De Dragones 1, Dragón Volcánico 8, Dragón Volcánico 8, Dragón Delta 2, Saildreik 5, Saildreik 5, Dragón Delta 2}  
+  B(st4) invoca Filo Vengativo
+      · Ana sube a la línea frontal: Caballero Umbrío
+      · Ana invocó Filo Vengativo pagando 2 gemas
+      · Ana no activa el efecto Celeridad de Filo Vengativo
+      · Final del turno de Ana
+      · Inicio del turno de Beto
+      > A decide SEQUENCE null (opción 2 de 28, espera 6071.5, ahora 179.1)
+      > A decide RESOLVE_PROMPT Efecto obligatorio (opción 0 de 2, espera 10000.0, ahora 179.7)
+      > A decide RESOLVE_PROMPT Encadenar efectos (opción 0 de 5, espera 10000.0, ahora 188.2)
+      > A decide RESOLVE_PROMPT Encadenar efectos (opción 0 de 3, espera 6735.0, ahora 188.2)
+      > A decide RESOLVE_PROMPT Galveta (opción 0 de 2, espera 5116.9, ahora 189.3)
+      > A decide NORMAL_SUMMON Dragón Delta (opción 18 de 27, espera 7542.6, ahora 155.5)
+      > A decide NORMAL_SUMMON Saildreik (opción 18 de 26, espera 6439.5, ahora 160.6)
+          ELEGIDA NORMAL_SUMMON Saildreik                                      media   6439.5  pruebas 11  
+                  NORMAL_SUMMON Saildreik                                      media   6439.5  pruebas 11  cayó en la ronda 5
+                  NORMAL_SUMMON Dracoventus                                    media   5806.3  pruebas  7  cayó en la ronda 4
+                  ATTACK Dragón Carmesí                                        media   5092.1  pruebas  4  cayó en la ronda 3
+                  cadena: RITUAL_SUMMON Dracoventus → ATTACK Dragón Carmesí    media   5088.7  pruebas  4  cayó en la ronda 3
+                  cadena: RITUAL_SUMMON Dracoventus → NORMAL_SUMMON Dragón Delta media   5088.7  pruebas  4  cayó en la ronda 3
+                  cadena: ATTACK Dragón Carmesí → ATTACK Fadrake → ATTACK Dragón Delta → ATTACK Galveta media   3442.6  pruebas  3  cayó en la ronda 2
+                  cadena: RITUAL_SUMMON Dracoventus → ATTACK Dracoventus       media   3451.6  pruebas  3  cayó en la ronda 2
+                  cadena: RITUAL_SUMMON Dracoventus → PLAY_CARD Volcán De Dragones media   3449.7  pruebas  3  cayó en la ronda 2
+                  RITUAL_SUMMON Dracoventus                                    media   3451.6  pruebas  3  cayó en la ronda 2
+                  RITUAL_SUMMON Saildreik                                      media   3449.0  pruebas  3  cayó en la ronda 2
+                  RITUAL_SUMMON Saildreik                                      media   3449.0  pruebas  3  cayó en la ronda 2
+                  cadena: RITUAL_SUMMON Dracoventus → ATTACK Dragón Carmesí → END_TURN media    203.7  pruebas  2  cayó en la ronda 1
+                  NORMAL_SUMMON Dragón Volcánico                               media     -3.8  pruebas  2  cayó en la ronda 1
+                  NORMAL_SUMMON Dragón Volcánico                               media     -3.8  pruebas  2  cayó en la ronda 1
+                  NORMAL_SUMMON Dragón Volcánico                               media     -3.8  pruebas  2  cayó en la ronda 1
+                  cadena: RITUAL_SUMMON Dracoventus → NORMAL_SUMMON Dragón Delta → END_TURN media    194.8  pruebas  2  cayó en la ronda 1
+                  cadena: ATTACK Dragón Carmesí → END_TURN                     media    189.9  pruebas  2  cayó en la ronda 1
+                  cadena: RITUAL_SUMMON Dracoventus → ATTACK Dracoventus → END_TURN media    198.8  pruebas  2  cayó en la ronda 1
+                  cadena: RITUAL_SUMMON Dracoventus → PLAY_CARD Volcán De Dragones → END_TURN media    188.7  pruebas  2  cayó en la ronda 1
+                  PLAY_CARD Volcán De Dragones                                 media   5088.9  pruebas  2  cayó en la ronda 1
+                  cadena: RITUAL_SUMMON Saildreik → END_TURN                   media    185.9  pruebas  2  cayó en la ronda 1
+                  cadena: RITUAL_SUMMON Saildreik → END_TURN                   media    185.9  pruebas  2  cayó en la ronda 1
+                  cadena: RITUAL_SUMMON Dracoventus → END_TURN                 media    185.7  pruebas  2  cayó en la ronda 1
+      > A decide SEQUENCE null (opción 1 de 22, espera 5109.5, ahora 184.6)
+          ELEGIDA cadena: ATTACK Dragón Carmesí → ATTACK Fadrake → ATTACK Dragón Delta → ATTACK Galveta media   5109.5  pruebas 10  
+                  cadena: ATTACK Dragón Carmesí → ATTACK Fadrake → ATTACK Galveta media   4135.5  pruebas 10  cayó en la ronda 5
+                  ATTACK Dragón Carmesí                                        media   1845.5  pruebas  6  cayó en la ronda 4
+                  cadena: ATTACK Dragón Carmesí → ATTACK Fadrake               media   2657.4  pruebas  4  cayó en la ronda 3
+                  cadena: ATTACK Dragón Carmesí → ATTACK Fadrake → ATTACK Dragón Delta media   2657.4  pruebas  4  cayó en la ronda 3
+                  cadena: ATTACK Dragón Carmesí → ATTACK Fadrake → ATTACK Galveta → END_TURN media    212.1  pruebas  4  cayó en la ronda 3
+                  cadena: ATTACK Dragón Carmesí → ATTACK Fadrake → PLAY_CARD Volcán De Dragones media    202.3  pruebas  3  cayó en la ronda 2
+                  cadena: ATTACK Dragón Carmesí → END_TURN                     media    198.8  pruebas  3  cayó en la ronda 2
+                  cadena: ATTACK Dragón Carmesí → ATTACK Fadrake → END_TURN    media    199.7  pruebas  3  cayó en la ronda 2
+                  cadena: ATTACK Dragón Carmesí → ATTACK Fadrake → ATTACK Dragón Delta → END_TURN media    191.7  pruebas  3  cayó en la ronda 2
+                  cadena: ATTACK Dragón Carmesí → ATTACK Fadrake → PLAY_CARD Volcán De Dragones → END_TURN media    202.3  pruebas  3  cayó en la ronda 2
+                  cadena: PLAY_CARD Volcán De Dragones → END_TURN              media    170.0  pruebas  2  cayó en la ronda 1
+                  cadena: RITUAL_SUMMON Dracoventus → END_TURN                 media    112.2  pruebas  2  cayó en la ronda 1
+                  cadena: NORMAL_SUMMON Dragón Delta → END_TURN                media    115.0  pruebas  2  cayó en la ronda 1
+                  PLAY_CARD Volcán De Dragones                                 media    170.0  pruebas  2  cayó en la ronda 1
+                  NORMAL_SUMMON Dragón Delta                                   media    115.0  pruebas  2  cayó en la ronda 1
+                  RITUAL_SUMMON Dragón Volcánico                               media   -312.2  pruebas  2  cayó en la ronda 1
+                  RITUAL_SUMMON Dragón Volcánico                               media   -312.2  pruebas  2  cayó en la ronda 1
+                  RITUAL_SUMMON Dragón Volcánico                               media   -312.2  pruebas  2  cayó en la ronda 1
+                  RITUAL_SUMMON Saildreik                                      media    -43.8  pruebas  2  cayó en la ronda 1
+                  RITUAL_SUMMON Dracoventus                                    media    112.2  pruebas  2  cayó en la ronda 1
+                  END_TURN                                                     media    170.7  pruebas  2  cayó en la ronda 1
+      > A decide RESOLVE_PROMPT Efecto obligatorio (opción 0 de 2, espera 177.7, ahora 176.5)
+      > A decide END_TURN null (opción 0 de 20, espera 204.1, ahora 176.5)
+          ELEGIDA END_TURN                                                     media    204.1  pruebas 10  
+                  cadena: PLAY_CARD Volcán De Dragones → END_TURN              media    187.0  pruebas 10  cayó en la ronda 5
+                  PLAY_CARD Volcán De Dragones                                 media    177.0  pruebas  6  cayó en la ronda 4
+                  cadena: NORMAL_SUMMON Dragón Delta → END_TURN                media    135.4  pruebas  4  cayó en la ronda 3
+                  NORMAL_SUMMON Dragón Delta                                   media    135.4  pruebas  4  cayó en la ronda 3
+                  cadena: PLAY_CARD Volcán De Dragones → NORMAL_SUMMON Dragón Delta media    -15.2  pruebas  3  cayó en la ronda 2
+                  cadena: NORMAL_SUMMON Dragón Delta → PLAY_CARD Volcán De Dragones media    -15.2  pruebas  3  cayó en la ronda 2
+                  cadena: RITUAL_SUMMON Dracoventus → END_TURN                 media    130.2  pruebas  3  cayó en la ronda 2
+                  cadena: PLAY_CARD Volcán De Dragones → NORMAL_SUMMON Dragón Delta → END_TURN media    -15.2  pruebas  3  cayó en la ronda 2
+                  RITUAL_SUMMON Dracoventus                                    media    130.2  pruebas  3  cayó en la ronda 2
+                  cadena: RITUAL_SUMMON Dracoventus → NORMAL_SUMMON c90        media -Infinity  pruebas  2  cayó en la ronda 1
+                  cadena: RITUAL_SUMMON Dracoventus → PLAY_CARD Volcán De Dragones media    -31.2  pruebas  2  cayó en la ronda 1
+                  cadena: RITUAL_SUMMON Saildreik → END_TURN                   media    -33.9  pruebas  2  cayó en la ronda 1
+                  cadena: NORMAL_SUMMON Dragón Delta → PLAY_CARD Volcán De Dragones → END_TURN media    -21.5  pruebas  2  cayó en la ronda 1
+                  cadena: RITUAL_SUMMON Dracoventus → NORMAL_SUMMON c90 → END_TURN media -Infinity  pruebas  2  cayó en la ronda 1
+                  cadena: RITUAL_SUMMON Dracoventus → PLAY_CARD Volcán De Dragones → END_TURN media    -31.2  pruebas  2  cayó en la ronda 1
+                  RITUAL_SUMMON Dragón Volcánico                               media   -297.5  pruebas  2  cayó en la ronda 1
+                  RITUAL_SUMMON Dragón Volcánico                               media   -297.5  pruebas  2  cayó en la ronda 1
+                  RITUAL_SUMMON Dragón Volcánico                               media   -297.5  pruebas  2  cayó en la ronda 1
+                  RITUAL_SUMMON Saildreik                                      media    -33.9  pruebas  2  cayó en la ronda 1
+      > A decide RESOLVE_PROMPT Final de turno · Línea frontal (opción 0 de 5, espera 203.1, ahora 176.5)
+— turno (B(st4) empieza; A(st2) cerró con 0 gemas; timeline 183, evento 183) | B(st4): vidas 2, mano 6, gemas 5, mazo 27, mesa [Filo Vengativo 6, Comandante De Las Espadas Dragón 10^], mano {Caballero Férreo 2, Caballería Cruzada 3, Ballesta Montada 3, Luke El Filo Rojo 3, Franchute 5, Espada De Plata 2}  A(st2): vidas 6, mano 7, gemas -5, mazo 27, mesa [Fadrake 8^, Galveta 5^, Dragón Carmesí 14*^, Dragón Delta 6^, Dragón Delta 6^, Saildreik 11^], mano {Dragón Volcánico 8, Volcán De Dragones 1, Dragón Volcánico 8, Dragón Volcánico 8, Saildreik 5, Dragón Delta 2, Dracoventus 5}  
+  A(st2) ataca con Dragón Carmesí
+  A(st2) quita una vida: Caballeros De La Primera Línea → hand (daño 14)
+  A(st2) destruye Caballero Umbrío
+  B(st4) juega Caballeros De La Primera Línea
+  B(st4) invoca por efecto Ballesta Montada
+  B(st4) juega Investidura
+  B(st4) tributa Investidura
+  B(st4) tributa Ballesta Montada
+  B(st4) invoca especial Comandante De Las Espadas Dragón
+  A(st2) invoca Dragón Delta
+  A(st2) invoca Saildreik
+  A(st2) ataca con Dragón Carmesí
+  A(st2) quita una vida: Espada De Plata → tributeZone (daño 14)
+      · Beto agota a Dragón Carmesí y ataca a Ana
+      · Dragón Carmesí: Al Atacar no puede activarse (no se puede pagar su coste o no hay objetivos válidos)
+      · Paso de bloqueo
+      · Paso de daño directo
+      · Dragón Carmesí inflige 14 de daño directo: Ana pierde la vida Caballeros De La Primera Línea, que va a su mano
+      · Termina el combate
+      · Cadena 1: se activa el efecto Al Final Del Ataque de Dragón Carmesí
+      · Beto elige como objetivo a Caballero Umbrío (Dragón Carmesí)
+      · Beto destruye Caballero Umbrío de Ana (Dragón Carmesí)
+      · Se resuelve la Cadena 1: Al Final Del Ataque de Dragón Carmesí
+      · Cadena 1: se activa el efecto Todos Los Turnos de Dragón Carmesí
+      · Cadena 2: se activa el efecto Todos Los Turnos de Galveta
+      · Cadena 3: se activa el efecto En Mano de Caballeros De La Primera Línea
+      · Ana juega Caballeros De La Primera Línea sin pagar su coste (Caballeros De La Primera Línea)
+      · Se resuelve la Cadena 3: En Mano de Caballeros De La Primera Línea
+      · Beto añade a su mano 1 carta (Galveta): Dracoventus
+      · Se resuelve la Cadena 2: Todos Los Turnos de Galveta
+      · Beto reactiva a Dragón Carmesí (Dragón Carmesí)
+      · Se resuelve la Cadena 1: Todos Los Turnos de Dragón Carmesí
+      · Cadena 1: se activa el efecto En Juego de Caballeros De La Primera Línea
+      · Ana invoca Ballesta Montada de su mano pagando 2 gemas (Caballeros De La Primera Línea)
+      · Ana roba 1 carta por la invocación
+      · Se resuelve la Cadena 1: En Juego de Caballeros De La Primera Línea
+      · Caballeros De La Primera Línea va al descarte tras resolverse
+      · Cadena 1: se activa el efecto Todos Los Turnos de Reino Medieval
+      · Cadena 2: se activa el efecto En Mano de Investidura
+      · Ana no activa el efecto En Mano de Investidura
+      · Ana juega Investidura sin pagar su coste (Investidura)
+      · Se resuelve la Cadena 2: En Mano de Investidura
+      · Ana agota a Reino Medieval (Reino Medieval)
+      · Ana gana 1 gema (Reino Medieval)
+      · Ana añade a su mano 1 carta (Reino Medieval): Comandante De Las Espadas Dragón
+      · Ana tributa 1 carta (Reino Medieval): Investidura
+      · Se resuelve la Cadena 1: Todos Los Turnos de Reino Medieval
+      · Cadena 1: se activa el efecto En Juego de Investidura
+      · Ana invoca por Ascenso a Comandante De Las Espadas Dragón usando Ballesta Montada y pagando 1 gema (Investidura)
+      · Comandante De Las Espadas Dragón sube a la línea frontal tras su invocación especial
+      · Ana roba 1 carta por la invocación
+      · Se resuelve la Cadena 1: En Juego de Investidura
+      · Investidura va al descarte tras resolverse
+      · Beto invocó Dragón Delta pagando 2 gemas
+      · Beto invocó Saildreik pagando 5 gemas
+      · Beto agota a Dragón Carmesí y ataca a Ana
+      · Dragón Carmesí: Al Atacar no puede activarse (no se puede pagar su coste o no hay objetivos válidos)
+      · Paso de bloqueo
+      · Paso de daño directo
+      · Dragón Carmesí inflige 14 de daño directo: Ana pierde la vida Espada De Plata, que va a sus tributos
+      · Termina el combate
+      · Dragón Carmesí: Al Final Del Ataque no puede activarse (no hay objetivos válidos)
+      · Final del turno de Beto
+      · Beto sube a la línea frontal: Saildreik, Dragón Delta
+      · Inicio del turno de Ana
+      > A decide RESOLVE_PROMPT Franchute ataca (opción 0 de 6, espera 271.9, ahora 174.8)
+      > A decide RESOLVE_PROMPT Reforzar (opción 1 de 2, espera 274.2, ahora 189.3)
+— turno (A(st2) empieza; B(st4) cerró con 0 gemas; timeline 204, evento 204) | B(st4): vidas 2, mano 6, gemas -5, mazo 25, mesa [Comandante De Las Espadas Dragón 10^, Franchute 11*^], mano {Caballero Férreo 2, Ballesta Montada 3, Luke El Filo Rojo 3, Espada De Plata 2, Caballero Real 6, Espada De Primera Línea 1}  A(st2): vidas 5, mano 9, gemas 5, mazo 26, mesa [Fadrake 8^, Galveta 5^, Dragón Carmesí 14^, Dragón Delta 6^, Dragón Delta 6^, Saildreik 11^], mano {Dragón Volcánico 8, Volcán De Dragones 1, Dragón Volcánico 8, Dragón Volcánico 8, Saildreik 5, Dragón Delta 2, Dracoventus 5, Dragón Carmesí 8, Wyverno De Pantano 3}  
+  B(st4) tributa Filo Vengativo
+  B(st4) invoca especial Caballería Cruzada
+  B(st4) tributa Caballería Cruzada
+  B(st4) invoca especial Franchute
+  B(st4) ataca con Franchute
+  B(st4) quita una vida: Dragón Carmesí → hand (daño 11)
+      · Ana sube a la línea frontal: Filo Vengativo
+      · Ana invoca por Ascenso a Caballería Cruzada usando Filo Vengativo y pagando 2 gemas
+      · Ana roba 1 carta por la invocación
+      · Cadena 1: se activa el efecto En Invocación de Caballería Cruzada
+      · Se resuelve la Cadena 1: En Invocación de Caballería Cruzada
+      · Ana invoca por Ascenso a Franchute usando Caballería Cruzada y pagando 3 gemas
+      · Ana roba 1 carta por la invocación
+      · Cadena 1: se activa el efecto En Invocación de Franchute
+      · Se resuelve la Cadena 1: En Invocación de Franchute
+      · Ana agota a Franchute y ataca a Beto
+      · Paso de bloqueo
+      · Paso de daño directo
+      · Franchute inflige 11 de daño directo: Beto pierde la vida Dragón Carmesí, que va a su mano
+      · Termina el combate
+      · Final del turno de Ana
+      · Inicio del turno de Beto
+      > A decide ATTACK Dragón Carmesí (opción 0 de 34, espera 10000.0, ahora 206.3)
+          ELEGIDA ATTACK Dragón Carmesí                                        media  10000.0  pruebas 11  
+                  cadena: ATTACK Dragón Carmesí → ATTACK Saildreik → ATTACK Fadrake → ATTACK Dragón Delta → ATTACK Dragón Delta → ATTACK Galveta media  10000.0  pruebas 11  cayó en la ronda 5
+                  cadena: ATTACK Dragón Carmesí → ATTACK Galveta               media  10000.0  pruebas  7  cayó en la ronda 4
+                  cadena: ATTACK Dragón Carmesí → ATTACK Fadrake               media  10000.0  pruebas  4  cayó en la ronda 3
+                  cadena: ATTACK Dragón Carmesí → ATTACK Galveta → Franchute   media  10000.0  pruebas  4  cayó en la ronda 3
+                  ATTACK Dragón Carmesí → Franchute                            media  10000.0  pruebas  4  cayó en la ronda 3
+                  cadena: ATTACK Dragón Carmesí → ATTACK Fadrake → Franchute   media  10000.0  pruebas  3  cayó en la ronda 2
+                  NORMAL_SUMMON Saildreik                                      media  10000.0  pruebas  3  cayó en la ronda 2
+                  NORMAL_SUMMON Dracoventus                                    media  10000.0  pruebas  3  cayó en la ronda 2
+                  RITUAL_SUMMON Dracoventus                                    media  10000.0  pruebas  3  cayó en la ronda 2
+                  RITUAL_SUMMON Saildreik                                      media  10000.0  pruebas  3  cayó en la ronda 2
+                  NORMAL_SUMMON Wyverno De Pantano                             media  10000.0  pruebas  3  cayó en la ronda 2
+                  NORMAL_SUMMON Dragón Volcánico                               media     13.0  pruebas  2  cayó en la ronda 1
+                  NORMAL_SUMMON Dragón Volcánico                               media     13.0  pruebas  2  cayó en la ronda 1
+                  NORMAL_SUMMON Dragón Volcánico                               media     13.0  pruebas  2  cayó en la ronda 1
+                  NORMAL_SUMMON Dragón Carmesí                                 media     12.8  pruebas  2  cayó en la ronda 1
+                  cadena: ATTACK Dragón Carmesí → Franchute → END_TURN         media    210.3  pruebas  2  cayó en la ronda 1
+                  NORMAL_SUMMON Dragón Delta                                   media  10000.0  pruebas  2  cayó en la ronda 1
+                  ATTACK Saildreik                                             media  10000.0  pruebas  2  cayó en la ronda 1
+                  PLAY_CARD Volcán De Dragones                                 media  10000.0  pruebas  2  cayó en la ronda 1
+                  cadena: ATTACK Dragón Carmesí → END_TURN                     media    199.1  pruebas  2  cayó en la ronda 1
+                  cadena: ATTACK Dragón Carmesí → ATTACK Galveta → END_TURN    media    209.1  pruebas  2  cayó en la ronda 1
+                  RITUAL_SUMMON Wyverno De Pantano                             media  10000.0  pruebas  2  cayó en la ronda 1
+                  cadena: ATTACK Dragón Carmesí → ATTACK Fadrake → END_TURN    media    210.7  pruebas  2  cayó en la ronda 1
+      > A decide RESOLVE_PROMPT Encadenar efectos (opción 0 de 3, espera 10000.0, ahora 253.9)
+      > A decide RESOLVE_PROMPT Efecto obligatorio (opción 0 de 2, espera 10000.0, ahora 259.0)
+      > A decide ATTACK Saildreik (opción 0 de 39, espera 10000.0, ahora 259.0)
+          ELEGIDA ATTACK Saildreik                                             media  10000.0  pruebas 11  
+                  cadena: ATTACK Dragón Carmesí → ATTACK Saildreik → ATTACK Fadrake → ATTACK Dragón Delta → ATTACK Dragón Delta → ATTACK Galveta media  10000.0  pruebas 11  cayó en la ronda 5
+                  cadena: ATTACK Saildreik → ATTACK Fadrake                    media  10000.0  pruebas  7  cayó en la ronda 4
+                  cadena: ATTACK Saildreik → ATTACK Galveta                    media  10000.0  pruebas  4  cayó en la ronda 3
+                  NORMAL_SUMMON Saildreik                                      media  10000.0  pruebas  4  cayó en la ronda 3
+                  NORMAL_SUMMON Dracoventus                                    media  10000.0  pruebas  4  cayó en la ronda 3
+                  ATTACK Dragón Carmesí → Franchute                            media  10000.0  pruebas  3  cayó en la ronda 2
+                  NORMAL_SUMMON Wyverno De Pantano                             media  10000.0  pruebas  3  cayó en la ronda 2
+                  NORMAL_SUMMON Dragón Delta                                   media  10000.0  pruebas  3  cayó en la ronda 2
+                  RITUAL_SUMMON Dracoventus                                    media  10000.0  pruebas  3  cayó en la ronda 2
+                  RITUAL_SUMMON Saildreik                                      media  10000.0  pruebas  3  cayó en la ronda 2
+                  ATTACK Fadrake                                               media  10000.0  pruebas  3  cayó en la ronda 2
+                  NORMAL_SUMMON Dragón Volcánico                               media     15.7  pruebas  2  cayó en la ronda 1
+                  NORMAL_SUMMON Dragón Volcánico                               media     15.7  pruebas  2  cayó en la ronda 1
+                  NORMAL_SUMMON Dragón Volcánico                               media     15.7  pruebas  2  cayó en la ronda 1
+                  NORMAL_SUMMON Dragón Carmesí                                 media     15.5  pruebas  2  cayó en la ronda 1
+                  RITUAL_SUMMON Wyverno De Pantano                             media  10000.0  pruebas  2  cayó en la ronda 1
+                  ATTACK Dragón Carmesí                                        media  10000.0  pruebas  2  cayó en la ronda 1
+                  PLAY_CARD Volcán De Dragones                                 media  10000.0  pruebas  2  cayó en la ronda 1
+                  ATTACK Galveta                                               media  10000.0  pruebas  2  cayó en la ronda 1
+                  ATTACK Dragón Delta                                          media  10000.0  pruebas  2  cayó en la ronda 1
+                  RITUAL_SUMMON Dragón Volcánico                               media  10000.0  pruebas  2  cayó en la ronda 1
+                  RITUAL_SUMMON Dragón Volcánico                               media  10000.0  pruebas  2  cayó en la ronda 1
+                  RITUAL_SUMMON Dragón Volcánico                               media  10000.0  pruebas  2  cayó en la ronda 1
+      > A decide ATTACK Dragón Carmesí (opción 0 de 37, espera 10000.0, ahora 264.4)
+          ELEGIDA ATTACK Dragón Carmesí                                        media  10000.0  pruebas 11  
+                  cadena: ATTACK Fadrake                                       media  10000.0  pruebas 11  cayó en la ronda 5
+                  cadena: ATTACK Dragón Carmesí → ATTACK Fadrake → ATTACK Dragón Delta → ATTACK Dragón Delta → ATTACK Galveta media  10000.0  pruebas  7  cayó en la ronda 4
+                  cadena: ATTACK Dragón Carmesí → Franchute → ATTACK Fadrake   media  10000.0  pruebas  4  cayó en la ronda 3
+                  cadena: ATTACK Dragón Carmesí → Franchute → ATTACK Galveta   media  10000.0  pruebas  4  cayó en la ronda 3
+                  cadena: ATTACK Dragón Carmesí → Franchute → ATTACK Dragón Delta media  10000.0  pruebas  4  cayó en la ronda 3
+                  cadena: ATTACK Dragón Carmesí → Franchute → ATTACK Dragón Delta media  10000.0  pruebas  3  cayó en la ronda 2
+                  ATTACK Fadrake                                               media  10000.0  pruebas  3  cayó en la ronda 2
+                  ATTACK Galveta                                               media  10000.0  pruebas  3  cayó en la ronda 2
+                  ATTACK Dragón Delta                                          media  10000.0  pruebas  3  cayó en la ronda 2
+                  ATTACK Dragón Delta                                          media  10000.0  pruebas  3  cayó en la ronda 2
+                  NORMAL_SUMMON Saildreik                                      media  10000.0  pruebas  3  cayó en la ronda 2
+                  NORMAL_SUMMON Dracoventus                                    media  10000.0  pruebas  2  cayó en la ronda 1
+                  NORMAL_SUMMON Dragón Volcánico                               media     26.8  pruebas  2  cayó en la ronda 1
+                  NORMAL_SUMMON Dragón Volcánico                               media     26.8  pruebas  2  cayó en la ronda 1
+                  NORMAL_SUMMON Dragón Volcánico                               media     26.8  pruebas  2  cayó en la ronda 1
+                  ATTACK Dragón Carmesí → Franchute                            media  10000.0  pruebas  2  cayó en la ronda 1
+                  NORMAL_SUMMON Dragón Carmesí                                 media     26.4  pruebas  2  cayó en la ronda 1
+                  RITUAL_SUMMON Dracoventus                                    media  10000.0  pruebas  2  cayó en la ronda 1
+                  NORMAL_SUMMON Wyverno De Pantano                             media  10000.0  pruebas  2  cayó en la ronda 1
+                  RITUAL_SUMMON Saildreik                                      media  10000.0  pruebas  2  cayó en la ronda 1
+                  NORMAL_SUMMON Dragón Delta                                   media  10000.0  pruebas  2  cayó en la ronda 1
+                  RITUAL_SUMMON Wyverno De Pantano                             media  10000.0  pruebas  2  cayó en la ronda 1
+                  PLAY_CARD Volcán De Dragones                                 media  10000.0  pruebas  2  cayó en la ronda 1

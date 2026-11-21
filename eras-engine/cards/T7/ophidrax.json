@@ -1,0 +1,46 @@
+{
+  "name" : "ophidrax",
+  "effects" : [
+    {
+      "id" : "ophidrax:en-destruccion",
+      "moment" : "ON_DESTROY",
+      "label" : "En Destrucción",
+      "text" : "Puedes añadir esta carta como recurso a un aliado.",
+      "steps" : [
+        {
+          "type" : "AttachSelfAsResourceToAlly"
+        }
+      ],
+      "sourceZone" : "field",
+      "limit" : "NONE"
+    }
+  ],
+  "inheritedContinuous" : [
+    {
+      "label" : "Todos Los Turnos",
+      "text" : "Heredado de Ophidrax: esta carta [dinosaurio] nivel 5 o mayor tiene Reactivar.",
+      "condition" : {
+        "type" : "ThisMatches",
+        "filter" : {
+          "classes" : [
+            "dinosaurio"
+          ],
+          "minLevel" : 5
+        }
+      },
+      "keywords" : [
+        "Reactivar"
+      ],
+      "zone" : "field"
+    }
+  ],
+  "traits" : {
+    "sacrificeToSummon" : {
+      "classes" : [
+        "dinosaurio"
+      ],
+      "cardType" : "creature",
+      "activeOnly" : true
+    }
+  }
+}

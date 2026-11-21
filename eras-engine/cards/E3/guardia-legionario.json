@@ -1,0 +1,123 @@
+{
+  "name": "guardia legionario",
+  "effects": [
+    {
+      "id": "guardia-legionario:turno-aliado",
+      "moment": "ACTIVATED",
+      "label": "Turno Aliado",
+      "text": "Una vez por turno entre copias: puedes agotar este y otro aliado con el que comparta tipo; invoca 1 criatura Roja de tu mano reduciendo su coste en 2.",
+      "cost": [
+        {
+          "type": "Do",
+          "action": {
+            "type": "SetTapped",
+            "cards": {
+              "zones": "field",
+              "owner": "YOU",
+              "filter": {},
+              "min": {
+                "type": "Fixed",
+                "value": 1
+              },
+              "max": {
+                "type": "Fixed",
+                "value": 1
+              },
+              "self": "ANY",
+              "mode": "SELF"
+            },
+            "tapped": true,
+            "required": true
+          }
+        },
+        {
+          "type": "Do",
+          "action": {
+            "type": "Select",
+            "selector": {
+              "zones": "field",
+              "owner": "YOU",
+              "filter": {
+                "cardType": "creature",
+                "activeOnly": true
+              },
+              "min": {
+                "type": "Fixed",
+                "value": 1
+              },
+              "max": {
+                "type": "Fixed",
+                "value": 1
+              },
+              "self": "EXCLUDE",
+              "mode": "CHOOSE",
+              "relative": {
+                "to": "self",
+                "sharesClass": true
+              }
+            },
+            "saveAs": "partner",
+            "label": "Agotar"
+          }
+        },
+        {
+          "type": "Do",
+          "action": {
+            "type": "SetTapped",
+            "cards": {
+              "zones": "saved:partner",
+              "owner": "YOU",
+              "filter": {},
+              "min": {
+                "type": "Fixed"
+              },
+              "max": {
+                "type": "Fixed",
+                "value": 2147483647
+              },
+              "self": "ANY",
+              "mode": "ALL"
+            },
+            "tapped": true
+          }
+        }
+      ],
+      "steps": [
+        {
+          "type": "Do",
+          "action": {
+            "type": "Summon",
+            "cards": {
+              "zones": "hand",
+              "owner": "YOU",
+              "filter": {
+                "cardType": "creature",
+                "colors": [
+                  "R"
+                ]
+              },
+              "min": {
+                "type": "Fixed",
+                "value": 1
+              },
+              "max": {
+                "type": "Fixed",
+                "value": 1
+              },
+              "self": "ANY",
+              "mode": "CHOOSE"
+            },
+            "reduce": {
+              "type": "Fixed",
+              "value": 2
+            },
+            "required": true
+          }
+        }
+      ],
+      "sourceZone": "field",
+      "allyTurn": true,
+      "limit": "ONCE_PER_TURN_BETWEEN_COPIES"
+    }
+  ]
+}

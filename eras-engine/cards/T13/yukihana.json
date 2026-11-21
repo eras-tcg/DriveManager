@@ -1,0 +1,113 @@
+{
+  "name": "yukihana",
+  "effects": [
+    {
+      "id": "yukihana:en-mano",
+      "moment": "ON_EVENT",
+      "label": "En Mano",
+      "text": "Si invocas alguna criatura [shogún] o [cortesana]: puedes invocar esta carta sin pagar su coste.",
+      "steps": [
+        {
+          "type": "Do",
+          "action": {
+            "type": "Summon",
+            "cards": {
+              "zones": "hand",
+              "owner": "YOU",
+              "filter": {},
+              "min": {
+                "type": "Fixed",
+                "value": 1
+              },
+              "max": {
+                "type": "Fixed",
+                "value": 1
+              },
+              "self": "ANY",
+              "mode": "SELF"
+            },
+            "reduce": {
+              "type": "Fixed",
+              "value": 1000
+            },
+            "required": true
+          }
+        }
+      ],
+      "condition": {
+        "type": "Summoned",
+        "side": "YOU",
+        "filter": {
+          "cardType": "creature",
+          "classes": [
+            "shogún",
+            "cortesana"
+          ]
+        }
+      },
+      "sourceZone": "hand",
+      "limit": "NONE"
+    },
+    {
+      "id": "yukihana:turno-oponente",
+      "moment": "ON_EVENT",
+      "label": "Turno Oponente",
+      "text": "Si algún aliado es invocado: puedes tributar esta carta para ganar 1 gema.",
+      "steps": [
+        {
+          "type": "IfPossible"
+        },
+        {
+          "type": "Do",
+          "action": {
+            "type": "Move",
+            "cards": {
+              "zones": "field",
+              "owner": "YOU",
+              "filter": {},
+              "min": {
+                "type": "Fixed",
+                "value": 1
+              },
+              "max": {
+                "type": "Fixed",
+                "value": 1
+              },
+              "self": "ANY",
+              "mode": "SELF"
+            },
+            "to": "tributeZone"
+          }
+        },
+        {
+          "type": "Do",
+          "action": {
+            "type": "Gems",
+            "count": {
+              "type": "Fixed",
+              "value": 1
+            }
+          }
+        }
+      ],
+      "condition": {
+        "type": "All",
+        "all": [
+          {
+            "type": "Summoned",
+            "side": "YOU"
+          },
+          {
+            "type": "Not",
+            "condition": {
+              "type": "GameIs",
+              "state": "YOUR_TURN"
+            }
+          }
+        ]
+      },
+      "sourceZone": "field",
+      "limit": "NONE"
+    }
+  ]
+}

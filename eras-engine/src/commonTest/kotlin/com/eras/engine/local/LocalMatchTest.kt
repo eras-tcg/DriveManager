@@ -144,6 +144,10 @@ class LocalMatchTest {
 
     companion object {
         /**
+         * 2026-11-20, EXPECTED and EXPECTED_WITH_LINKS: the list of bots sent with the room's state before the game
+         * (botChoices) has the three levels and "guiado" only (the earlier models to try were taken out of models.txt).
+         * The games play as before: EXPECTED_RESULT, with the final state's digest, did not change.
+         *
          * 2026-11-11, the three maps below. The games against the easy bot play as before (their results here did not
          * change): only their messages did, the list of bots sent with the room's state before the game (botChoices) has
          * one more model, "guiado-previo". The game against the normal bot plays otherwise (15 turns, not 11): its check
@@ -152,10 +156,10 @@ class LocalMatchTest {
          */
         /** LocalMatch.result() at the end of each game: taken on the JVM; JavaScript must give the same. */
         val EXPECTED_RESULT = mapOf(
-            "st1-st1-1-easy" to "{\"status\":\"POST_GAME\",\"gamesEnded\":1,\"winnerId\":\"bot\",\"endReason\":\"lives\",\"turns\":15,\"digest\":\"c125b37a716f1e84\"}",
+            "st1-st1-1-easy" to "{\"status\":\"POST_GAME\",\"gamesEnded\":1,\"winnerId\":\"bot\",\"endReason\":\"lives\",\"turns\":15,\"digest\":\"f03e5e35369f52fe\"}",
             "st2-st3-2-easy" to "{\"status\":\"POST_GAME\",\"gamesEnded\":1,\"winnerId\":\"local-player\",\"endReason\":\"lives\",\"turns\":15,\"digest\":\"3c7d1ed9255bfc49\"}",
-            "st4-st1-3-easy" to "{\"status\":\"POST_GAME\",\"gamesEnded\":1,\"winnerId\":\"bot\",\"endReason\":\"lives\",\"turns\":7,\"digest\":\"7c655bbe9153736d\"}",
-            "st3-st4-5-normal" to "{\"status\":\"POST_GAME\",\"gamesEnded\":1,\"winnerId\":\"local-player\",\"endReason\":\"lives\",\"turns\":14,\"digest\":\"c4b177980304b799\"}",
+            "st4-st1-3-easy" to "{\"status\":\"POST_GAME\",\"gamesEnded\":1,\"winnerId\":\"bot\",\"endReason\":\"lives\",\"turns\":7,\"digest\":\"bbe5214d16e40ecf\"}",
+            "st3-st4-5-normal" to "{\"status\":\"POST_GAME\",\"gamesEnded\":1,\"winnerId\":\"local-player\",\"endReason\":\"lives\",\"turns\":14,\"digest\":\"1f6a0f668f053f54\"}",
         )
 
         /**
@@ -163,18 +167,18 @@ class LocalMatchTest {
          * must give the same). Without them the messages give [EXPECTED], as before those updates were sent.
          */
         val EXPECTED_WITH_LINKS = mapOf(
-            "st1-st1-1-easy" to "f90e6412f232b897",
-            "st2-st3-2-easy" to "9dbb2c33bbe5d5a0",
-            "st4-st1-3-easy" to "197f896d9a645467",
-            "st3-st4-5-normal" to "f6c5358e4a00ff69",
+            "st1-st1-1-easy" to "cee533c441b7ac83",
+            "st2-st3-2-easy" to "550598d5aeaee871",
+            "st4-st1-3-easy" to "d941965980730ca2",
+            "st3-st4-5-normal" to "0c514a71316dd790",
         )
 
         /** Taken on the JVM; JavaScript must give the same. */
         val EXPECTED = mapOf(
-            "st1-st1-1-easy" to "9c2d41ba1ded9fcb",
-            "st2-st3-2-easy" to "69077c9320f76a23",
-            "st4-st1-3-easy" to "91d31100e3b63e07",
-            "st3-st4-5-normal" to "6e3cd9aa163f55a9",
+            "st1-st1-1-easy" to "7fc7363d9f98806b",
+            "st2-st3-2-easy" to "cd2c80206efb646a",
+            "st4-st1-3-easy" to "3296c46d0ce2252c",
+            "st3-st4-5-normal" to "3cb512354292df0c",
         )
     }
 }

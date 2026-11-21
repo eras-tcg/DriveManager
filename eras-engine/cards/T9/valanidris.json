@@ -1,0 +1,123 @@
+{
+  "name" : "valanidris",
+  "effects" : [ {
+    "id" : "valanidris:en-invocacion",
+    "moment" : "ON_SUMMON",
+    "mandatory" : true,
+    "label" : "En Invocación",
+    "text" : "Coloca hasta 1 carta de tus tributos al tope de tu mazo. Luego: tributa 4 cartas del tope de tu mazo.",
+    "steps" : [ {
+      "type" : "Do",
+      "action" : {
+        "type" : "Move",
+        "cards" : {
+          "zones" : "tributeZone",
+          "owner" : "YOU",
+          "filter" : { },
+          "min" : {
+            "type" : "Fixed"
+          },
+          "max" : {
+            "type" : "Fixed",
+            "value" : 1
+          },
+          "self" : "ANY",
+          "mode" : "CHOOSE"
+        },
+        "to" : "deckTop"
+      }
+    }, {
+      "type" : "Do",
+      "action" : {
+        "type" : "Move",
+        "cards" : {
+          "zones" : "deck",
+          "owner" : "YOU",
+          "filter" : { },
+          "min" : {
+            "type" : "Fixed",
+            "value" : 4
+          },
+          "max" : {
+            "type" : "Fixed",
+            "value" : 4
+          },
+          "self" : "ANY",
+          "mode" : "TOP"
+        },
+        "to" : "tributeZone"
+      }
+    } ],
+    "sourceZone" : "field",
+    "limit" : "NONE"
+  } ],
+  "inherited" : [ {
+    "id" : "valanidris:hereda-al-atacar",
+    "moment" : "ON_ATTACK",
+    "mandatory" : true,
+    "label" : "Al Atacar",
+    "text" : "Heredado de Valanidris: tributa 3 cartas del tope de tu mazo. Luego: toma hasta 1 carta de tus tributos.",
+    "steps" : [ {
+      "type" : "Do",
+      "action" : {
+        "type" : "Move",
+        "cards" : {
+          "zones" : "deck",
+          "owner" : "YOU",
+          "filter" : { },
+          "min" : {
+            "type" : "Fixed",
+            "value" : 3
+          },
+          "max" : {
+            "type" : "Fixed",
+            "value" : 3
+          },
+          "self" : "ANY",
+          "mode" : "TOP"
+        },
+        "to" : "tributeZone"
+      }
+    }, {
+      "type" : "Do",
+      "action" : {
+        "type" : "Move",
+        "cards" : {
+          "zones" : "tributeZone",
+          "owner" : "YOU",
+          "filter" : { },
+          "min" : {
+            "type" : "Fixed"
+          },
+          "max" : {
+            "type" : "Fixed",
+            "value" : 1
+          },
+          "self" : "ANY",
+          "mode" : "CHOOSE"
+        },
+        "to" : "hand"
+      }
+    } ],
+    "sourceZone" : "field",
+    "limit" : "NONE"
+  } ],
+  "reactions" : [ {
+    "type" : "CostModifier",
+    "label" : "Todos Los Turnos",
+    "event" : "SPECIAL_SUMMON",
+    "holder" : "SUMMONER",
+    "payment" : {
+      "kind" : "TRIBUTES_TO_DECK_TOP",
+      "count" : 3,
+      "filter" : { }
+    },
+    "limit" : "NONE",
+    "gems" : 1
+  } ],
+  "requirement" : {
+    "summoner" : {
+      "level" : 3
+    }
+  }
+}

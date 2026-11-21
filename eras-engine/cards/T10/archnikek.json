@@ -1,0 +1,173 @@
+{
+  "name": "archnikek",
+  "effects": [
+    {
+      "id": "archnikek:turno-aliado",
+      "moment": "ACTIVATED",
+      "label": "Turno Aliado",
+      "text": "Puedes tributar 2 materiales de esta carta; tributa 4 cartas del tope de tu mazo. Luego: toma 1 carta de tus tributos.",
+      "cost": [
+        {
+          "type": "Do",
+          "action": {
+            "type": "Move",
+            "cards": {
+              "zones": "materials",
+              "owner": "YOU",
+              "filter": {},
+              "min": {
+                "type": "Fixed",
+                "value": 2
+              },
+              "max": {
+                "type": "Fixed",
+                "value": 2
+              },
+              "self": "ANY",
+              "mode": "CHOOSE"
+            },
+            "to": "tributeZone"
+          }
+        }
+      ],
+      "steps": [
+        {
+          "type": "Do",
+          "action": {
+            "type": "Move",
+            "cards": {
+              "zones": "deck",
+              "owner": "YOU",
+              "filter": {},
+              "min": {
+                "type": "Fixed",
+                "value": 4
+              },
+              "max": {
+                "type": "Fixed",
+                "value": 4
+              },
+              "self": "ANY",
+              "mode": "TOP"
+            },
+            "to": "tributeZone"
+          }
+        },
+        {
+          "type": "Do",
+          "action": {
+            "type": "Move",
+            "cards": {
+              "zones": "tributeZone",
+              "owner": "YOU",
+              "filter": {},
+              "min": {
+                "type": "Fixed",
+                "value": 1
+              },
+              "max": {
+                "type": "Fixed",
+                "value": 1
+              },
+              "self": "ANY",
+              "mode": "CHOOSE"
+            },
+            "to": "hand"
+          }
+        }
+      ],
+      "sourceZone": "field",
+      "allyTurn": true,
+      "limit": "NONE"
+    },
+    {
+      "id": "archnikek:en-tributos",
+      "moment": "ON_EVENT",
+      "label": "En Tributos",
+      "text": "Una vez por turno entre copias: si la fuerza de un enemigo es reducida a 0: puedes enviar esta carta y otros 4 [ente] o [neogeo] al fondo de tu mazo; gana 1 gema.",
+      "cost": [
+        {
+          "type": "Do",
+          "action": {
+            "type": "Move",
+            "cards": {
+              "zones": "tributeZone",
+              "owner": "YOU",
+              "filter": {},
+              "min": {
+                "type": "Fixed",
+                "value": 1
+              },
+              "max": {
+                "type": "Fixed",
+                "value": 1
+              },
+              "self": "ANY",
+              "mode": "SELF"
+            },
+            "to": "deckBottom"
+          }
+        },
+        {
+          "type": "Do",
+          "action": {
+            "type": "Move",
+            "cards": {
+              "zones": "tributeZone",
+              "owner": "YOU",
+              "filter": {
+                "classes": [
+                  "ente",
+                  "neogeo"
+                ]
+              },
+              "min": {
+                "type": "Fixed",
+                "value": 4
+              },
+              "max": {
+                "type": "Fixed",
+                "value": 4
+              },
+              "self": "EXCLUDE",
+              "mode": "CHOOSE"
+            },
+            "to": "deckBottom"
+          }
+        }
+      ],
+      "steps": [
+        {
+          "type": "Do",
+          "action": {
+            "type": "Gems",
+            "count": {
+              "type": "Fixed",
+              "value": 1
+            }
+          }
+        }
+      ],
+      "condition": {
+        "type": "YouReducedStrength",
+        "toAtMost": 0,
+        "byAnyone": true
+      },
+      "sourceZone": "tributeZone",
+      "limit": "ONCE_PER_TURN_BETWEEN_COPIES"
+    }
+  ],
+  "requirement": {
+    "summoner": {
+      "level": 1
+    },
+    "materials": {
+      "count": 1,
+      "level": 1,
+      "zones": [
+        "field",
+        "tributeZone"
+      ]
+    }
+  }
+}

@@ -1,0 +1,59 @@
+{
+  "name": "caballo blanco de cástelan",
+  "effects": [
+    {
+      "id": "caballo-blanco:turno-aliado",
+      "moment": "ACTIVATED",
+      "label": "Turno Aliado",
+      "text": "Una vez por turno: puedes elegir 1 aliado enlazado a esta carta; cambia de posición esta carta con otro aliado enlazado al aliado elegido.",
+      "cost": [
+        {
+          "type": "Do",
+          "action": {
+            "type": "Select",
+            "selector": {
+              "zones": "formation",
+              "owner": "YOU",
+              "filter": {
+                "cardType": "creature"
+              },
+              "min": {
+                "type": "Fixed",
+                "value": 1
+              },
+              "max": {
+                "type": "Fixed",
+                "value": 1
+              },
+              "self": "ANY",
+              "mode": "CHOOSE"
+            },
+            "target": true
+          }
+        }
+      ],
+      "steps": [
+        {
+          "type": "SwapInFormation",
+          "withSelf": true,
+          "exceptTargets": true
+        }
+      ],
+      "sourceZone": "field",
+      "allyTurn": true,
+      "limit": "ONCE_PER_TURN"
+    }
+  ],
+  "formation": {
+    "continuous": [
+      {
+        "label": "Perforante",
+        "text": "Perforante (al final del enfrentamiento, si el bloqueador fue destruido: entra al paso de daño directo.)",
+        "keywords": [
+          "Perforante"
+        ],
+        "zone": "field"
+      }
+    ]
+  }
+}

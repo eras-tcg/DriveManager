@@ -115,9 +115,22 @@ public class DeckListController {
 
         body.setId(id);
         body.setUserId(existing.get().getUserId());
+        // Only a simulator administrator sets it aside for the bot (PUT /{id}/bot-deck): editing the deck keeps it
+        body.setBotDeck(existing.get().isBotDeck());
         DeckList saved = repo.save(body);
         activity.record(callerId, ActivityLogService.DECK_UPDATE, deckDetail(saved));
         return ResponseEntity.ok(saved);
+    }
+
+    /** A simulator administrator sets a deck aside for the bot to play in ranked Modo solo ({"botDeck": true}), or not. */
+    @PreAuthorize("hasAuthority('simulator_admin')")
+    @PutMapping("/{id}/bot-deck")
+    public ResponseEntity<Object> botDeck(@PathVariable String id, @RequestBody Map<String, Object> body) {
+        Optional<DeckList> existing = repo.findById(id);
+        if (existing.isEmpty()) return ResponseEntity.notFound().build();
+        DeckList deck = existing.get();
+        deck.setBotDeck(Boolean.TRUE.equals(body.get("botDeck")));
+        return ResponseEntity.ok(repo.save(deck));
     }
 
     @PreAuthorize("hasAuthority('manage_decks')")

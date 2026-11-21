@@ -40,9 +40,11 @@ public final class SimulatorJson {
         @JsonIgnore Object version;
         @JsonIgnore Object manualPlayers;
         @JsonIgnore Object adminPlayers;
+        @JsonIgnore Object botPoolDeck;
         @JsonIgnore Object random;
         @JsonIgnore Object headless;
         @JsonIgnore Object searchHope;
+        @JsonIgnore Object strengthLeft;
         @JsonIgnore Object startSetup;
     }
 

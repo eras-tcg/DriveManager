@@ -3,6 +3,7 @@ package com.drive.drive_manager.simulator.engine.effects.model
 import kotlin.jvm.JvmSuppressWildcards
 import kotlin.jvm.JvmRecord
 import com.drive.drive_manager.simulator.engine.Amount
+import com.drive.drive_manager.simulator.engine.CardFilter
 
 /**
  * A basic action effects are composed of. Plain data: what each one does is in its handler (effects/actions), one class
@@ -27,9 +28,14 @@ sealed interface Action {
     @JvmRecord
     data class SummonSpecial(val rule: SpecialRule?) : Action
 
-    /** "invoca": `reduce` lowers its cost, [FREE] is "sin pagar su coste". */
+    /**
+     * "invoca": `reduce` lowers its cost, [FREE] is "sin pagar su coste".
+     *
+     * @param orPlay "juega o invoca 1 [treant]": a utility or structure picked is played (paying its cost, with the same reduction) and a
+     *               creature is summoned
+     */
     @JvmRecord
-    data class Summon(val cards: Selector?, val reduce: Amount?, val toFront: Boolean, val required: Boolean) : Action {
+    data class Summon(val cards: Selector?, val reduce: Amount?, val toFront: Boolean, val required: Boolean, val orPlay: Boolean = false) : Action {
         override fun needsCards(): Boolean {
             return required
         }
@@ -64,6 +70,15 @@ sealed interface Action {
     @JvmRecord
     data class AtEndOfTurn(val effect: String?) : Action
 
+    /**
+     * "el enemigo elegido": this card follows the cards `cards` picks (usually `saved:targets`), and `effect` (moment WATCHED) is the rest
+     * of its text, triggered when one of them leaves the field, for that card ("si es destruido este turno por tus cartas puedes invocar…",
+     * "si el enemigo elegido es removido: envía esta carta a tu descarte"). `untilTurnEnd`: it is followed until the end of the turn
+     * ("este turno"); otherwise while this card stays on the field.
+     */
+    @JvmRecord
+    data class Watch(val cards: Selector?, val effect: String?, val untilTurnEnd: Boolean) : Action
+
     /** "roba N cartas"; `bothPlayers`: "ambos jugadores roban". */
     @JvmRecord
     data class Draw(val count: Amount?, val bothPlayers: Boolean) : Action
@@ -76,13 +91,24 @@ sealed interface Action {
     @JvmRecord
     data class Damage(val amount: Amount?) : Action
 
-    /** "mira las primeras N cartas de tu mazo". */
+    /**
+     * "mira las primeras N cartas de tu mazo", or "excava cartas de tu mazo hasta que reveles N cartas o 1 [filtro]" (rule in development,
+     * vault `01 Reglas/03 Mecánicas/Excavar`): they stay with the effect until an action moves them.
+     *
+     * @param until    "hasta que reveles … o 1 [filtro]": it stops at the first card that matches (it is the last one taken); null: N cards
+     * @param excavate "excava": the cards are revealed to both players and the player excavated ("si excavas cartas" reads it)
+     * @param opponent "… del mazo de tu oponente": the top cards of the opponent's deck (they go back to that deck); not with `excavate`
+     */
     @JvmRecord
-    data class Look(val count: Amount?) : Action
+    data class Look(val count: Amount?, val until: CardFilter? = null, val excavate: Boolean = false, val opponent: Boolean = false) : Action
 
-    /** "agota" (`tapped`) or "reactiva". */
+    /**
+     * "agota" (`tapped`) or "reactiva".
+     *
+     * @param maxCostSum "que en coste sumen hasta N": the cards picked add up to N or less in cost; null: no limit
+     */
     @JvmRecord
-    data class SetTapped(val cards: Selector?, val tapped: Boolean, val required: Boolean) : Action {
+    data class SetTapped(val cards: Selector?, val tapped: Boolean, val required: Boolean, val maxCostSum: Int? = null) : Action {
         override fun needsCards(): Boolean {
             return required
         }
@@ -94,6 +120,13 @@ sealed interface Action {
         /** "en N más": as long as the reduction that triggered the effect. */
         AS_EVENT
     }
+
+    /**
+     * "revela 1 de tus vidas" (`faceUp` true), "coloca bocabajo …" (false), "voltea una de tus vidas" (`toggle`: each one turns over). A life revealed
+     * is an event ([com.drive.drive_manager.simulator.engine.GameEvent.LIFE_REVEALED]: "si alguna vida es revelada").
+     */
+    @JvmRecord
+    data class Flip(val cards: Selector?, val faceUp: Boolean = true, val toggle: Boolean = false) : Action
 
     /**
      * For a while, cards gain or lose strength, or gain an ability or a restriction.
@@ -126,11 +159,16 @@ sealed interface Action {
      * @param exhausted "agotada": entering the field that way
      * @param faceDown  "bocabajo"; cards going to the deck always are
      * @param rest      looked cards: where those not picked go, in the order the player gives, in the same choice; null: they stay
+     * @param sameName  "N copias de una criatura": the cards picked all have the same name (only cards with enough copies can be picked)
+     * @param distinctLevels "N cartas de distinto nivel": no two cards picked have the same level
+     * @param withResources "añade hasta 3 [treant] bajo tu control con todos sus recursos como recursos de esta carta": a card of the field
+     *                      that becomes a material or a Recurso takes its own Recursos along to the same card (they are not discarded)
      */
     @JvmRecord
     data class Move(
         val cards: Selector?, val to: String?, val random: Boolean, val label: String?, val required: Boolean, val exhausted: Boolean,
-        val faceDown: Boolean, val rest: String?,
+        val faceDown: Boolean, val rest: String?, val sameName: Boolean = false, val distinctLevels: Boolean = false,
+        val withResources: Boolean = false,
     ) : Action {
         constructor(cards: Selector?, to: String?, random: Boolean, label: String?, required: Boolean) :
                 this(cards, to, random, label, required, false, false, null)
@@ -143,6 +181,8 @@ sealed interface Action {
             const val FRONT = "frontLine"
             const val BACK = "backLine"
             const val LIFE_TOP = "lifeTop"
+            /** "al fondo de tus vidas", "al fondo de las vidas oponentes" (of the card's owner). */
+            const val LIFE_BOTTOM = "lifeBottom"
             const val TRIBUTES = "tributeZone"
             const val DISCARD = "discardPile"
             const val DECK_TOP = "deckTop"
@@ -164,9 +204,13 @@ sealed interface Action {
      * @param saveAs   the name the next actions read them by; null: [Memory.TARGETS] for targets, [Memory.LAST] otherwise
      * @param label    what is shown on a chosen card ("Al fondo"); null: "Objetivo" or "Elegida"
      * @param endsIfNone with nothing to pick, the rest of the effect does nothing ("elige 1 aliado; …")
+     * @param maxLevelSum "elige criaturas … que sumen hasta N en nivel": the levels of those picked add up to N or less; null: no limit
      */
     @JvmRecord
-    data class Select(val selector: Selector?, val target: Boolean, val saveAs: String?, val label: String?, val endsIfNone: Boolean) : Action {
+    data class Select(
+        val selector: Selector?, val target: Boolean, val saveAs: String?, val label: String?, val endsIfNone: Boolean,
+        val maxLevelSum: Int? = null,
+    ) : Action {
         constructor(selector: Selector?, target: Boolean, saveAs: String?, label: String?) : this(selector, target, saveAs, label, false)
 
         override fun needsCards(): Boolean {

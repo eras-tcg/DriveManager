@@ -5,7 +5,7 @@
     "moment" : "ON_SUMMON",
     "mandatory" : true,
     "label" : "En Invocación",
-    "text" : "Roba 2 cartas. Luego: descarta 2 cartas de tu mano. Si descartaste algún [necrómata] nivel 1: puedes colocar alguno de ellos agotado en tu línea frontal.",
+    "text" : "Roba 2 cartas. Luego: descarta 2 cartas de tu mano. Si descartaste alguna criatura Azul o [necrómata] nivel 1: puedes colocar alguno de ellos agotado en tu línea frontal.",
     "steps" : [ {
       "type" : "Do",
       "action" : {
@@ -39,6 +39,7 @@
     }, {
       "type" : "IfTributed",
       "filter" : {
+        "colors" : [ "B" ],
         "classes" : [ "necrómata" ],
         "cardType" : "creature",
         "level" : 1
@@ -52,6 +53,7 @@
           "zones" : "saved:last",
           "owner" : "YOU",
           "filter" : {
+            "colors" : [ "B" ],
             "classes" : [ "necrómata" ],
             "cardType" : "creature",
             "level" : 1

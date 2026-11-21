@@ -7,7 +7,6 @@ import kotlin.math.max
 import com.drive.drive_manager.simulator.engine.EffectEngine.allies
 import com.drive.drive_manager.simulator.engine.EffectEngine.canPay
 import com.drive.drive_manager.simulator.engine.EffectEngine.find
-import com.drive.drive_manager.simulator.engine.EffectEngine.findAnywhere
 import com.drive.drive_manager.simulator.engine.EffectEngine.hasLevel
 import com.drive.drive_manager.simulator.engine.EffectEngine.levels
 import com.drive.drive_manager.simulator.engine.EffectEngine.name
@@ -77,7 +76,12 @@ object SpecialRequirements {
          * add up to N by themselves (the summoner does not count). False: "aliados que sumen N en nivel", the summoner included.
          */
         val sumInZones: Boolean = false,
+        /** With [moreMaterials]: "1 o 2 aliados", at most this many materials; null: no limit. */
+        val maxMaterials: Int? = null,
     ) {
+        /** The most materials that may be chosen out of `available`. */
+        fun materialsAtMost(available: Int): Int = if (maxMaterials == null) available else kotlin.math.min(available, maxMaterials)
+
         /** `moreMaterials`: "N o más criaturas" as materials. */
         constructor(
             kind: String?, level: Int, alliesSum: Int, materialLevel: Int, levelSum: Int, atLeast: Boolean, maxLevel: Int,
@@ -105,6 +109,16 @@ object SpecialRequirements {
         /** The creature is what the summoner must be, besides its level (a programmed filter). */
         fun summonerMatches(c: CardSlot): Boolean {
             return summonerFilter == null || summonerFilter.matches(c)
+        }
+
+        /**
+         * The card can summon: a creature, or what the programmed filter's types allow ("criatura o estructura [treant] nivel 1": a structure
+         * of the field can be the summoner of an Evolución too).
+         */
+        fun summonerType(c: CardSlot): Boolean {
+            if ("creature" == c.cardType) return true
+            val f = summonerFilter ?: return false
+            return f.cardType == c.cardType || f.cardTypes().contains(c.cardType)
         }
 
         /** The card can be one of the materials: a creature (or what the programmed filter says) of the level asked for. */
@@ -172,7 +186,7 @@ object SpecialRequirements {
                 m?.count ?: 0, m?.zones?.takeIf { it.isNotEmpty() } ?: frozenListOf("tributeZone", "field"), noSummoner,
                 spec.alternative?.let { fromSpec(kind, it) }, spec.alone, spec.strongest, declared, m?.more ?: false, spec.alliesSumByCost,
                 spec.aloneAtLevel, spec.formationSize, spec.formationAtLeast, s?.filter, m?.filter, m?.orLess ?: false, spec.condition,
-                spec.conditionText, (m?.levelSum ?: 0) > 0 && !m?.zones.isNullOrEmpty())
+                spec.conditionText, (m?.levelSum ?: 0) > 0 && !m?.zones.isNullOrEmpty(), m?.maxCount)
     }
 
     /** What else a programmed Requerimiento checks on the board ([SpecialRequirement.condition]) holds. */
@@ -207,7 +221,7 @@ object SpecialRequirements {
         val creatures = allies(player)
         return player.field
                 .filter { c ->
-                    "creature" == c.cardType && c.getLevel() != null && shares(c, card) && optionFor(req, c) != null
+                    c.getLevel() != null && shares(c, card) && optionFor(req, c)?.summonerType(c) == true
                             // "mientras no controles otras criaturas"
                             && (!req!!.alone || creatures.all { o -> o === c })
                             // "mientras no controlas otros aliados nivel 1"
@@ -306,7 +320,8 @@ object SpecialRequirements {
             return if (addsUpTo(all as List<CardSlot>, option.levelSum)) null
             else "Los niveles deben sumar exactamente " + option.levelSum + " con el invocador (suman " + sum + ")"
         }
-        return if (materials.size == option.materialCount || (option.moreMaterials && materials.size > option.materialCount)) null
+        return if (materials.size == option.materialCount || (option.moreMaterials && materials.size > option.materialCount
+                    && (option.maxMaterials == null || materials.size <= option.maxMaterials))) null
         else "Elige " + option.materialCount + " " + plural(option.materialCount, "material", "materiales")
     }
 
@@ -427,7 +442,7 @@ object SpecialRequirements {
     @JvmStatic
     fun specialTargets(room: GameRoom, effect: PendingEffect, special: SpecialRule): List<CardSlot> {
         val player = room.getPlayer(effect.controllerId) ?: return frozenListOf()
-        val zones = specialZones(player, special)
+        val zones = specialZones(player, special, effect)
         // Java's method reference (special.filter()::matches) read the filter at once
         val filter = special.filter!!
         return zones
@@ -471,15 +486,30 @@ object SpecialRequirements {
     fun triggerSourceLevel(room: GameRoom, effect: PendingEffect): Int {
         val trigger = triggerEvent(room, effect)
         val by = if (trigger == null || trigger.data == null) null else trigger.data!!["byCard"]
-        val source = if (by == null) null else findAnywhere(room, trigger!!.playerId, by as String)
+        // "dicho aliado": the creature that tributed it as it is now (one that evolved since is the creature it became)
+        val source = if (by == null) null else EffectEngine.actingCard(room, by as String)
         return if (source == null || source.getLevel() == null) 0 else source.getLevel()!!
     }
 
     /** The zones a special summon by effect takes the creature from ("de tu mano o tributos"). */
     @JvmStatic
     fun specialZones(player: PlayerState?, special: SpecialRule): List<CardSlot> {
+        return specialZones(player, special, null)
+    }
+
+    /** `effect`: whose card's Recursos the zone "resources" is ("invocar especialmente el recurso de este efecto"). */
+    @JvmStatic
+    fun specialZones(player: PlayerState?, special: SpecialRule, effect: PendingEffect?): List<CardSlot> {
         val all: MutableList<CardSlot> = ArrayList()
-        for (z in JavaText.split(COMMA, special.zone!!)) all.addAll(zone(player, z.trim { it <= ' ' }))
+        for (z in JavaText.split(COMMA, special.zone!!)) {
+            val name = z.trim { it <= ' ' }
+            if (name == "resources") {
+                val host = if (effect == null) null else find(player!!.field, effect.sourceInstanceId)
+                if (host != null) all.addAll(host.resources!!)
+                continue
+            }
+            all.addAll(zone(player, name))
+        }
         return all
     }
 

@@ -1,0 +1,60 @@
+{
+  "name": "dracoverdis",
+  "inherited": [
+    {
+      "id": "dracoverdis:hereda-al-atacar",
+      "moment": "ON_ATTACK",
+      "mandatory": true,
+      "label": "Al Atacar",
+      "text": "Heredado de Dracoverdis: elige 1 enemigo de fuerza menor o igual a la cantidad de estructuras que controles; súbelo a la mano.",
+      "cost": [
+        {
+          "type": "Do",
+          "action": {
+            "type": "Select",
+            "selector": {
+              "zones": "frontLine",
+              "owner": "OPPONENT",
+              "filter": {
+                "cardType": "creature"
+              },
+              "min": {
+                "type": "Fixed",
+                "value": 1
+              },
+              "max": {
+                "type": "Fixed",
+                "value": 1
+              },
+              "self": "ANY",
+              "mode": "CHOOSE",
+              "relative": {
+                "maxStrength": {
+                  "type": "OnField",
+                  "filter": {
+                    "cardTypes": [
+                      "structure"
+                    ]
+                  }
+                }
+              }
+            },
+            "target": true
+          }
+        }
+      ],
+      "steps": [
+        {
+          "type": "BounceChosen"
+        }
+      ],
+      "sourceZone": "field",
+      "limit": "NONE"
+    }
+  ],
+  "requirement": {
+    "summoner": {
+      "level": 2
+    }
+  }
+}

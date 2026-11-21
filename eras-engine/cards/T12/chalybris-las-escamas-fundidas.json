@@ -1,0 +1,288 @@
+{
+  "name": "chalybris, las escamas fundidas",
+  "effects": [
+    {
+      "id": "chalybris:en-invocacion",
+      "moment": "ON_SUMMON",
+      "mandatory": true,
+      "label": "En Invocación",
+      "text": "Añade 1 [hydra] o [dragón] de tus tributos como recursos a esta carta.",
+      "steps": [
+        {
+          "type": "Do",
+          "action": {
+            "type": "Move",
+            "cards": {
+              "zones": "tributeZone",
+              "owner": "YOU",
+              "filter": {
+                "classes": [
+                  "hydra",
+                  "dragón"
+                ]
+              },
+              "min": {
+                "type": "Fixed",
+                "value": 1
+              },
+              "max": {
+                "type": "Fixed",
+                "value": 1
+              },
+              "self": "ANY",
+              "mode": "CHOOSE"
+            },
+            "to": "resources:self"
+          }
+        }
+      ],
+      "sourceZone": "field",
+      "limit": "NONE"
+    },
+    {
+      "id": "chalybris:al-atacar",
+      "moment": "ON_ATTACK",
+      "label": "Al Atacar",
+      "text": "Esta carta puede invocar por Evolución 1 [hydra] de tus tributos reduciendo en 3 su coste especial. Si lo haces: destruye el enemigo activo de menor fuerza.",
+      "steps": [
+        {
+          "type": "Do",
+          "action": {
+            "type": "Sequence",
+            "actions": [
+              {
+                "type": "Select",
+                "selector": {
+                  "zones": "tributeZone",
+                  "owner": "YOU",
+                  "filter": {},
+                  "min": {
+                    "type": "Fixed"
+                  },
+                  "max": {
+                    "type": "Fixed",
+                    "value": 1
+                  },
+                  "self": "ANY",
+                  "mode": "CHOOSE",
+                  "special": {
+                    "rule": {
+                      "kind": "evolution",
+                      "zone": "tributeZone",
+                      "summoner": "self",
+                      "filter": {
+                        "cardType": "creature",
+                        "classes": [
+                          "hydra"
+                        ]
+                      },
+                      "reduce": 3
+                    },
+                    "stage": "CARD"
+                  }
+                },
+                "saveAs": "specialCard",
+                "label": "Invocar"
+              },
+              {
+                "type": "Select",
+                "selector": {
+                  "zones": "tributeZone",
+                  "owner": "YOU",
+                  "filter": {},
+                  "min": {
+                    "type": "Fixed"
+                  },
+                  "max": {
+                    "type": "Fixed",
+                    "value": 1
+                  },
+                  "self": "ANY",
+                  "mode": "CHOOSE",
+                  "special": {
+                    "rule": {
+                      "kind": "evolution",
+                      "zone": "tributeZone",
+                      "summoner": "self",
+                      "filter": {
+                        "cardType": "creature",
+                        "classes": [
+                          "hydra"
+                        ]
+                      },
+                      "reduce": 3
+                    },
+                    "stage": "SUMMONER"
+                  }
+                },
+                "saveAs": "specialSummoner",
+                "label": "Invocador"
+              },
+              {
+                "type": "Select",
+                "selector": {
+                  "zones": "tributeZone",
+                  "owner": "YOU",
+                  "filter": {},
+                  "min": {
+                    "type": "Fixed"
+                  },
+                  "max": {
+                    "type": "Fixed",
+                    "value": 1
+                  },
+                  "self": "ANY",
+                  "mode": "CHOOSE",
+                  "special": {
+                    "rule": {
+                      "kind": "evolution",
+                      "zone": "tributeZone",
+                      "summoner": "self",
+                      "filter": {
+                        "cardType": "creature",
+                        "classes": [
+                          "hydra"
+                        ]
+                      },
+                      "reduce": 3
+                    },
+                    "stage": "MATERIAL"
+                  }
+                },
+                "saveAs": "specialMaterials",
+                "label": "Material"
+              },
+              {
+                "type": "SummonSpecial",
+                "rule": {
+                  "kind": "evolution",
+                  "zone": "tributeZone",
+                  "summoner": "self",
+                  "filter": {
+                    "cardType": "creature",
+                    "classes": [
+                      "hydra"
+                    ]
+                  },
+                  "reduce": 3
+                }
+              }
+            ]
+          }
+        },
+        {
+          "type": "IfDone",
+          "covers": 2
+        },
+        {
+          "type": "ChooseWeakestEnemy",
+          "filter": {
+            "cardType": "creature",
+            "activeOnly": true
+          }
+        },
+        {
+          "type": "Do",
+          "action": {
+            "type": "Destroy",
+            "cards": {
+              "zones": "saved:targets",
+              "owner": "YOU",
+              "filter": {},
+              "min": {
+                "type": "Fixed"
+              },
+              "max": {
+                "type": "Fixed",
+                "value": 2147483647
+              },
+              "self": "ANY",
+              "mode": "ALL"
+            }
+          }
+        }
+      ],
+      "sourceZone": "field",
+      "limit": "NONE"
+    }
+  ],
+  "inherited": [
+    {
+      "id": "chalybris:hereda-al-final-del-ataque",
+      "moment": "ON_ATTACK_END",
+      "label": "Al Final Del Ataque",
+      "text": "Heredado de Chalybris, las Escamas Fundidas: si esta carta es nivel 5 o mayor: puedes tributar 2 recursos [hydra] de esta carta incluyendo el de este efecto; destruye el tope de las vidas oponentes.",
+      "cost": [
+        {
+          "type": "Do",
+          "action": {
+            "type": "Move",
+            "cards": {
+              "zones": "resources",
+              "owner": "YOU",
+              "filter": {
+                "name": "Chalybris, las Escamas Fundidas"
+              },
+              "min": {
+                "type": "Fixed",
+                "value": 1
+              },
+              "max": {
+                "type": "Fixed",
+                "value": 1
+              },
+              "self": "ANY",
+              "mode": "TOP"
+            },
+            "to": "tributeZone"
+          }
+        },
+        {
+          "type": "Do",
+          "action": {
+            "type": "Move",
+            "cards": {
+              "zones": "resources",
+              "owner": "YOU",
+              "filter": {
+                "classes": [
+                  "hydra"
+                ]
+              },
+              "min": {
+                "type": "Fixed",
+                "value": 1
+              },
+              "max": {
+                "type": "Fixed",
+                "value": 1
+              },
+              "self": "ANY",
+              "mode": "CHOOSE"
+            },
+            "to": "tributeZone"
+          }
+        }
+      ],
+      "steps": [
+        {
+          "type": "DestroyTopLife"
+        }
+      ],
+      "condition": {
+        "type": "ThisMatches",
+        "filter": {
+          "minLevel": 5
+        }
+      },
+      "sourceZone": "field",
+      "limit": "NONE"
+    }
+  ],
+  "requirement": {
+    "summoner": {
+      "level": 4,
+      "maxLevel": 5
+    }
+  }
+}

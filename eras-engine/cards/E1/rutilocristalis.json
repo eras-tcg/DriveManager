@@ -1,0 +1,132 @@
+{
+  "name" : "rutilocristalis",
+  "effects" : [ {
+    "id" : "rutilocristalis:en-invocacion",
+    "moment" : "ON_SUMMON",
+    "label" : "En Invocación",
+    "text" : "Puedes enviar 5 de tus tributos Verdes o [fauna] al fondo de tu mazo para ganar 1 gema.",
+    "steps" : [ {
+      "type" : "IfPossible"
+    }, {
+      "type" : "Do",
+      "action" : {
+        "type" : "Move",
+        "cards" : {
+          "zones" : "tributeZone",
+          "owner" : "YOU",
+          "filter" : {
+            "colors" : [ "G" ],
+            "classes" : [ "fauna" ]
+          },
+          "min" : {
+            "type" : "Fixed",
+            "value" : 5
+          },
+          "max" : {
+            "type" : "Fixed",
+            "value" : 5
+          },
+          "self" : "ANY",
+          "mode" : "CHOOSE"
+        },
+        "to" : "deckBottom"
+      }
+    }, {
+      "type" : "Do",
+      "action" : {
+        "type" : "Gems",
+        "count" : {
+          "type" : "Fixed",
+          "value" : 1
+        }
+      }
+    } ],
+    "sourceZone" : "field",
+    "limit" : "NONE"
+  } ],
+  "inherited" : [ {
+    "id" : "rutilocristalis:hereda-todos-los-turnos",
+    "moment" : "ON_EVENT",
+    "label" : "Todos Los Turnos",
+    "text" : "Heredado de Rutilocristalis: una vez por turno: si esta carta es agotada, puedes elegir un enemigo de fuerza menor a esta carta; agótalo.",
+    "cost" : [ {
+      "type" : "Do",
+      "action" : {
+        "type" : "Select",
+        "selector" : {
+          "zones" : "frontLine",
+          "owner" : "OPPONENT",
+          "filter" : {
+            "cardType" : "creature"
+          },
+          "min" : {
+            "type" : "Fixed",
+            "value" : 1
+          },
+          "max" : {
+            "type" : "Fixed",
+            "value" : 1
+          },
+          "self" : "ANY",
+          "mode" : "CHOOSE",
+          "relative" : {
+            "to" : "self",
+            "compareStrength" : "LESS"
+          }
+        },
+        "target" : true
+      }
+    } ],
+    "steps" : [ {
+      "type" : "Do",
+      "action" : {
+        "type" : "SetTapped",
+        "cards" : {
+          "zones" : "saved:targets",
+          "owner" : "YOU",
+          "filter" : { },
+          "min" : {
+            "type" : "Fixed"
+          },
+          "max" : {
+            "type" : "Fixed",
+            "value" : 2147483647
+          },
+          "self" : "ANY",
+          "mode" : "ALL"
+        },
+        "tapped" : true
+      }
+    } ],
+    "condition" : {
+      "type" : "Any",
+      "any" : [ {
+        "type" : "Happened",
+        "eventType" : "TAP",
+        "actor" : "ANY",
+        "owner" : "ANY",
+        "thisCard" : true
+      }, {
+        "type" : "Happened",
+        "eventType" : "BLOCK",
+        "actor" : "ANY",
+        "owner" : "ANY",
+        "thisCard" : true
+      }, {
+        "type" : "Happened",
+        "eventType" : "ATTACK_DECLARED",
+        "actor" : "ANY",
+        "owner" : "ANY",
+        "thisCard" : true,
+        "data" : [ "exhausted=true" ]
+      } ]
+    },
+    "sourceZone" : "field",
+    "limit" : "ONCE_PER_TURN"
+  } ],
+  "requirement" : {
+    "summoner" : {
+      "level" : 2
+    }
+  }
+}

@@ -119,7 +119,7 @@ object SpecialSummons {
             rulesPrompt(room, userId, PromptPurpose.SPECIAL.id(), name(card) + " · " + kind, materialInstruction(req, card, summoner), "Material",
                     materialOptions, shown)
             room.prompt!!.min = req.materialCount
-            room.prompt!!.max = if (req.moreMaterials) materialOptions.size else req.materialCount
+            room.prompt!!.max = if (req.moreMaterials) req.materialsAtMost(materialOptions.size) else req.materialCount
             room.prompt!!.subjectId = card.instanceId
             room.prompt!!.summonerId = summoner.instanceId
             return null
@@ -158,7 +158,7 @@ object SpecialSummons {
             for (z in option.materialZones!!) shown.addAll(zone(player, z))
             rulesPrompt(room, userId, PromptPurpose.SPECIAL.id(), name(card) + " · " + kind, materialInstruction(req, card, summoner), "Material", materials, shown)
             room.prompt!!.min = max(1, option.materialCount)
-            room.prompt!!.max = if (option.levelSum > 0 || option.moreMaterials) materials.size else option.materialCount
+            room.prompt!!.max = if (option.levelSum > 0) materials.size else if (option.moreMaterials) option.materialsAtMost(materials.size) else option.materialCount
             room.prompt!!.subjectId = card.instanceId
             room.prompt!!.summonerId = summoner.instanceId
             return null
@@ -212,22 +212,26 @@ object SpecialSummons {
         // A cost modifier that asks for its payment (Flambreik's tributes) is asked before the summon (a Reacción applies
         // before its event); only when no materials are being chosen
         var use = CostModifiers.choice(room, player, CostModifiers.Event.SPECIAL_SUMMON, req.kind, card, summoner)
-        if (use != null && !materials.isEmpty() && use.modifier.payment!!.kind != CostModifiers.PaymentKind.SELF_DAMAGE) use = null
+        // (the materials chosen are kept for after the payment: Biok's damage, Safikoe's "esta carta y otros 4 tributos")
+        if (use != null && !materials.isEmpty() && use.modifier.payment!!.kind != CostModifiers.PaymentKind.SELF_DAMAGE && !use.modifier.payment.withHolder) use = null
         // "Opcionales en Auto": a reducer is not asked once the cost is already 0
         if (use != null && use.modifier.reduceNow(room, player.userId) > 0 && CostModifiers.autoStops(room, player, CostModifiers.Event.SPECIAL_SUMMON,
                 req.kind, card, summoner, max(0, card.specialCost!! - fieldPiecesDiscount(player, card, summoner, materials)))) use = null
         if (use != null) {
             room.usedThisTurn.removeAll { k -> k.startsWith(DISCOUNT_MATERIALS + card.instanceId + "|") }
             if (!materials.isEmpty()) room.usedThisTurn.add(DISCOUNT_MATERIALS + card.instanceId + "|" + ids(materials).joinToString(","))
+            val fromSummoner = use.modifier.payment!!.kind == CostModifiers.PaymentKind.SUMMONER_RESOURCES_TO_TRIBUTES
             rulesPrompt(room, player.userId, PromptPurpose.SUMMONER_DISCOUNT.id(), name(use.holder) + " · " + use.modifier.label,
-                    CostModifiers.describe(use), "Pagar", CostModifiers.paymentOptions(player, use, card), player.tributeZone)
+                    CostModifiers.describe(use), "Pagar", CostModifiers.paymentOptions(player, use, card, summoner),
+                    if (fromSummoner) summoner!!.resources else player.tributeZone)
             room.prompt!!.max = use.modifier.payment!!.count
-            if (use.modifier.payment!!.kind == CostModifiers.PaymentKind.SELF_DAMAGE) room.prompt!!.min = 0
+            // "hasta N" ones: any number of them, or none
+            if (use.modifier.payment!!.kind == CostModifiers.PaymentKind.SELF_DAMAGE || fromSummoner) room.prompt!!.min = 0
             // "puedes enviar 5…": exactly that many, or none to pay it all
             else room.prompt!!.exactOrNone = true
             // Without this reduction the summon cannot be paid: the payment is not optional any more
             val others = CostModifiers.available(room, player, CostModifiers.Event.SPECIAL_SUMMON, req.kind, card, summoner) - use.modifier.reduceNow(room, player.userId)
-            if (use.modifier.payment!!.kind != CostModifiers.PaymentKind.SELF_DAMAGE && !canPay(room, player.userId, card.specialCost!! - others)) {
+            if (use.modifier.payment!!.kind != CostModifiers.PaymentKind.SELF_DAMAGE && !fromSummoner && !canPay(room, player.userId, card.specialCost!! - others)) {
                 room.prompt!!.min = use.modifier.payment!!.count
             }
             room.prompt!!.subjectId = card.instanceId
@@ -254,7 +258,9 @@ object SpecialSummons {
         // Its cost modifiers that ask for no choice ("reduce en 1 el coste especial", "puedes agotar esta carta para reducir…")
         cost -= CostModifiers.applyAutomatic(room, player, CostModifiers.Event.SPECIAL_SUMMON, req.kind, card, summoner, cost)
         pay(room, userId, cost)
-        zone(player, fromZone).remove(card)
+        // "el recurso de este efecto": it leaves the Recursos of the card that had it
+        if ("resources" == fromZone) for (host in player.field) host.resources!!.remove(card)
+        else zone(player, fromZone).remove(card)
         var used: String
         if (summoner == null) {
             // No summoner ("2 criaturas nivel 1 en tu mano o tributos"): it enters the Retaguardia, active
@@ -271,6 +277,7 @@ object SpecialSummons {
                 floating(summoner, null, "Gana $gain hasta el final del turno", "turn", 0, gain)
             }
             inheritFromSummoner(room, card, summoner)
+            Removals.rememberStrength(room, summoner)
             player.field.remove(summoner)
             leaveField(summoner)
             used = name(summoner)
@@ -282,7 +289,7 @@ object SpecialSummons {
                 for (declared in materials) {
                     val from = if (player.hand.remove(declared)) "hand" else if (player.tributeZone.remove(declared)) "tributeZone"
                     else if (player.discardPile.remove(declared)) "discardPile" else "field"
-                    if (Zone.FIELD.`is`(from)) removeFromField(player, declared)
+                    if (Zone.FIELD.`is`(from)) removeFromField(room, player, declared)
                     declared.faceDown = false
                     player.tributeZone.add(declared)
                     record(room, GameEvent.TRIBUTE, userId, declared, from, "tributeZone", null, frozenMapOf<String, Any?>("cause", "promotion"), null)
@@ -304,7 +311,7 @@ object SpecialSummons {
                     val from = if (player.tributeZone.remove(material)) "tributeZone" else if (player.hand.remove(material)) "hand"
                     else if (player.discardPile.remove(material)) "discardPile" else "field"
                     // A creature of the field used as a material loses its state; its attachments go to the Descarte
-                    if (Zone.FIELD.`is`(from)) removeFromField(player, material)
+                    if (Zone.FIELD.`is`(from)) removeFromField(room, player, material)
                     material.faceDown = false
                     card.materials!!.add(material)
                     used += (if (used.isEmpty()) "" else " y ") + name(material)
@@ -354,7 +361,7 @@ object SpecialSummons {
             rulesPrompt(room, player.userId, PromptPurpose.REPLACE_SUMMON.id(), name(card) + " · en lugar de que " + name(ally) + " sea removida",
                     materialInstruction(req, card, ally), "Material", materials, shown)
             room.prompt!!.min = max(1, option.materialCount)
-            room.prompt!!.max = if (option.levelSum > 0 || option.moreMaterials) materials.size else option.materialCount
+            room.prompt!!.max = if (option.levelSum > 0) materials.size else if (option.moreMaterials) option.materialsAtMost(materials.size) else option.materialCount
             room.prompt!!.subjectId = card.instanceId
             room.prompt!!.summonerId = ally.instanceId
             return

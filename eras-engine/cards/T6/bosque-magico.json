@@ -1,0 +1,32 @@
+{
+  "name" : "bosque mágico",
+  "continuous" : [
+    {
+      "label" : "Turno Aliado",
+      "text" : "Tus aliados [hada] tienen Alcance.",
+      "allyTurn" : true,
+      "keywords" : [
+        "Alcance"
+      ],
+      "zone" : "field",
+      "targets" : {
+        "classes" : [
+          "hada"
+        ],
+        "cardType" : "creature"
+      }
+    }
+  ],
+  "reactions" : [
+    {
+      "type" : "CostModifier",
+      "label" : "Todos Los Turnos",
+      "event" : "EFFECT_SUMMON",
+      "holder" : "FIELD",
+      "payment" : {
+        "kind" : "TAP_SELF"
+      },
+      "reduce" : 1
+    }
+  ]
+}

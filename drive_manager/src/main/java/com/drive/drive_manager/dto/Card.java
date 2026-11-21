@@ -62,6 +62,11 @@ public class Card {
     private String artType;
     /** The finished card drawn by the editor from this document and its art (a cache, made again on every save). */
     private String renderKey;
+    /**
+     * Where the card shines, drawn by the editor with its render (a cache): a PNG twice the card's height, the glossy
+     * parts (white) on top and the gold border below, used as masks for the shine laid over the card's image.
+     */
+    private String shineKey;
     /** In a structure deck (ST…): how many copies of this card the deck brings; null where it does not apply. */
     private Integer deckCopies;
     /**

@@ -1,12 +1,14 @@
 package com.drive.drive_manager.simulator.engine;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Tag;
 
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 /** Every programmed card can be written as JSON and read back unchanged, so it can live in the database. */
+@Tag("basic")
 class EffectJsonTest {
 
     @Test

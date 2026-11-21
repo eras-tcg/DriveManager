@@ -80,7 +80,7 @@ sealed interface EffectStep {
 
     /** "coloca esta carta agotada en tu retaguardia": the utility stays on the field. */
     @JvmRecord
-    data class KeepOnField(val exhausted: Boolean) : EffectStep
+    data class KeepOnField(val exhausted: Boolean, val asCreature: Int? = null) : EffectStep
 
     /**
      * "elige 1 aliado; mira las primeras N cartas: de ellas toma hasta `max` carta que comparta tipo con el
@@ -97,6 +97,13 @@ sealed interface EffectStep {
 
     /** "el oponente elige 1 criatura en su retaguardia para moverla a su línea frontal". */
     data object OpponentMovesOneToFront : EffectStep
+
+    /**
+     * "el oponente puede agotar 1 de sus aliados en su línea frontal [filtro]. Si no lo hace: …": the opponent chooses one of their active
+     * creatures of the Línea frontal that match, or none; `lastDone` when one was exhausted (IfNotDone reads it).
+     */
+    @JvmRecord
+    data class OpponentMayTap(val filter: CardFilter?) : EffectStep
 
     /**
      * "ambos jugadores envían las cartas de su mano al fondo de su mazo en orden aleatorio. Luego: ambos roban cartas
@@ -131,6 +138,21 @@ sealed interface EffectStep {
 
     /** "para que [dicho aliado] active 1 efecto En Invocación del material tributado": a new link with that effect, for the ally. */
     data object ActivateTributedSummonEffect : EffectStep
+
+    /**
+     * "activa 1 efecto En Invocación de 2 materiales [autómata] con distinto nivel, de esta carta": the player picks up to `count` materials of this
+     * card that match and have an "En Invocación" (of different levels when `distinctLevels`); this card activates the first "En Invocación"
+     * of each as its own (new links, after this one resolves).
+     */
+    @JvmRecord
+    data class ActivateMaterialSummonEffects(val count: Int, val filter: CardFilter?, val distinctLevels: Boolean) : EffectStep
+
+    /**
+     * "tu oponente puede invocar 1 criatura [filtro] de sus [zona] [en su línea frontal] reduciendo su coste en N": the opponent picks one
+     * (or none) and pays it; a summon by this effect, on the opponent's side.
+     */
+    @JvmRecord
+    data class OpponentMaySummon(val zone: String?, val filter: CardFilter?, val reduce: Int, val toFront: Boolean) : EffectStep
 
     /** "invoca criaturas … que en nivel sumen hasta N de tu mano sin pagar sus costes" (up to that level sum, all at once). */
     @JvmRecord
@@ -180,7 +202,7 @@ sealed interface EffectStep {
      * ("Luego, si enviaste 10": `LastCount`).
      */
     @JvmRecord
-    data class IfCondition(val condition: Condition?, val covers: Int) : EffectStep
+    data class IfCondition(val condition: Condition?, val covers: Int, val ofTrigger: Boolean = false) : EffectStep
 
     /**
      * "todos [tus otros] aliados [filtro] ganan [habilidad] hasta el final del turno [oponente]" (`until`: "turn" or
@@ -364,7 +386,14 @@ sealed interface EffectStep {
      * "intercambia de posición esta carta con otro aliado en la misma formación" (`withSelf`) and "cambia de posición dos aliados en la
      * misma formación": the two swap their places in the Línea frontal, their formations as they were (Formations.swap). The two are saved
      * as "swapped" ("ambos aliados ganan …"); `lastDone` when they were swapped.
+     *
+     * @param other        with `withSelf`: what the other card must be ("con un [cástelan] con "rey" en el nombre"); null: any creature
+     * @param anyFormation with `withSelf`: the other may stand anywhere in the Línea frontal ("cambia de posición esta carta con …"), not
+     *                     only in this card's formation
+     * @param exceptTargets with `withSelf`: "con otro aliado enlazado al aliado elegido": never the ally chosen before (the targets)
      */
     @JvmRecord
-    data class SwapInFormation(val withSelf: Boolean) : NeedsTarget
+    data class SwapInFormation(
+        val withSelf: Boolean, val other: CardFilter? = null, val anyFormation: Boolean = false, val exceptTargets: Boolean = false,
+    ) : NeedsTarget
 }

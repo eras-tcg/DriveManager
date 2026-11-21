@@ -173,7 +173,7 @@ object CombatSteps : StepFamily {
                         continue
                     }
                     if (deferRemoval(room, target, opponent, false, CAUSE_EFFECT, userId, effect.sourceInstanceId, effect)) continue
-                    removeFromField(opponent, target)
+                    removeFromField(room, opponent, target)
                     opponent!!.hand.add(target)
                     record(room, GameEvent.SEND, userId, target, "field", "hand", effect, frozenMapOf<String, Any?>("ownerId", opponent.userId),
                         player.username + " sube a " + name(target) + " a la mano de " + opponent.username + " (" + effect.sourceName + ")")

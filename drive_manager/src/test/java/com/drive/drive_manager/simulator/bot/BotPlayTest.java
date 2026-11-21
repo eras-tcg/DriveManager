@@ -10,6 +10,7 @@ import com.drive.drive_manager.simulator.room.RoomOptions;
 import com.drive.drive_manager.simulator.room.RoomService;
 import com.drive.drive_manager.simulator.room.StateMask;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Tag;
 
 import java.util.List;
 import java.util.Map;
@@ -22,6 +23,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * without the bot getting stuck on a choice; the stronger bots beat the weaker ones. Also the room against the
  * bot: its owner plays, the bot answers by itself. Long runs that keep their results are the arena's ({@link BotArenaRun}).
  */
+@Tag("deep")
 class BotPlayTest {
 
     /** Games of each pair of decks (-Dbot.games to play more). */
@@ -265,10 +267,13 @@ class BotPlayTest {
         assertThat(((LookaheadBot) BotCatalog.botAt(BotCatalog.HARD)).settings().get("hCombat")).isEqualTo(1);
 
         // The models to try (bot/models.txt) come after the levels, marked apart, and are chosen the same way
-        assertThat(hard.getBotChoices()).extracting(c -> c.get("id")).startsWith(BotCatalog.EASY, BotCatalog.NORMAL, BotCatalog.HARD).contains("previo");
+        // (since 2026-11-20 only guiado: the earlier models to try are in docs/bot/modelos-retirados.txt)
+        assertThat(hard.getBotChoices()).extracting(c -> c.get("id")).containsExactly(BotCatalog.EASY, BotCatalog.NORMAL, BotCatalog.HARD, "guiado");
         assertThat(hard.getBotChoices()).filteredOn(c -> "level".equals(c.get("kind"))).hasSize(3);
-        assertThat(service.applyAction(id, "owner", BotPlayer.action("SET_BOT_LEVEL", Map.of("level", "previo")), false).getError()).isNull();
-        assertThat(((LookaheadBot) BotCatalog.botAt("previo")).settings().get("rankCands")).isEqualTo(0);
+        // (only a simulator administrator seats a model under test)
+        room.getAdminPlayers().add("owner");
+        assertThat(service.applyAction(id, "owner", BotPlayer.action("SET_BOT_LEVEL", Map.of("level", "guiado")), false).getError()).isNull();
+        assertThat(((LookaheadBot) BotCatalog.botAt("guiado")).settings().get("attackFloor")).isEqualTo(1);
     }
 
     @Test

@@ -1,0 +1,96 @@
+{
+  "name": "golth el ejecutor de novatos",
+  "effects": [
+    {
+      "id": "golth:al-final-del-ataque",
+      "moment": "ON_ATTACK_END",
+      "label": "Al Final Del Ataque",
+      "text": "Si esta carta ganó el enfrentamiento: puedes tributar 2 cartas de tu mano; reactiva esta carta.",
+      "cost": [
+        {
+          "type": "Do",
+          "action": {
+            "type": "Move",
+            "cards": {
+              "zones": "hand",
+              "owner": "YOU",
+              "filter": {},
+              "min": {
+                "type": "Fixed",
+                "value": 2
+              },
+              "max": {
+                "type": "Fixed",
+                "value": 2
+              },
+              "self": "ANY",
+              "mode": "CHOOSE"
+            },
+            "to": "tributeZone"
+          }
+        }
+      ],
+      "steps": [
+        {
+          "type": "Do",
+          "action": {
+            "type": "SetTapped",
+            "cards": {
+              "zones": "field",
+              "owner": "YOU",
+              "filter": {},
+              "min": {
+                "type": "Fixed",
+                "value": 1
+              },
+              "max": {
+                "type": "Fixed",
+                "value": 1
+              },
+              "self": "ANY",
+              "mode": "SELF"
+            }
+          }
+        }
+      ],
+      "condition": {
+        "type": "Happened",
+        "actor": "ANY",
+        "owner": "ANY",
+        "eventType": "ATTACK_ENDED",
+        "thisCard": true,
+        "data": [
+          "enemyDestroyed=true"
+        ]
+      },
+      "sourceZone": "field",
+      "limit": "NONE"
+    }
+  ],
+  "requirement": {
+    "summoner": {
+      "filter": {
+        "minCost": 2,
+        "maxCost": 2
+      }
+    },
+    "condition": {
+      "type": "Compare",
+      "left": {
+        "type": "OnField",
+        "filter": {
+          "cardType": "creature"
+        }
+      },
+      "op": "LESS",
+      "right": {
+        "type": "OnField",
+        "filter": {
+          "cardType": "creature"
+        },
+        "opponent": true
+      }
+    },
+    "conditionText": "que tu oponente controle más criaturas que tú"
+  }
+}

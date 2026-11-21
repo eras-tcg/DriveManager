@@ -5,6 +5,7 @@ import com.drive.drive_manager.simulator.room.GameRoom;
 import com.drive.drive_manager.simulator.room.PlayerState;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Tag;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -15,6 +16,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * Ritual from the hand, moving up after a special summon, Furia, Reforzar, the "ventaja del iniciador", slow
  * effects (Arañador), the order of simultaneous triggers and responding to a chain.
  */
+@Tag("engine")
 class RulesWindowsTest {
 
     private static final double FRONT = 20.0;
@@ -410,6 +412,19 @@ class RulesWindowsTest {
     }
 
     @Test
+    void golpeRapidoKeepsARevealedCreatureFromReforzar() {
+        CardSlot life = guest.getLifeStack().get(0);
+        life.setStrength(9);
+        CardSlot a = field(host, creature("a", "A", 1, 5), FRONT);
+        a.getKeywords().add("Golpe rápido");
+        CombatRules.attackByPlayer(room, "host", "a", null);
+
+        assertThat(room.getPrompt()).isNull();
+        assertThat(guest.getHand()).contains(life);
+        assertThat(guest.getLifeStack()).hasSize(2);
+    }
+
+    @Test
     void aFaceUpLifeCannotReforzarAgain() {
         CardSlot life = guest.getLifeStack().get(0);
         life.setStrength(9);
@@ -421,7 +436,7 @@ class RulesWindowsTest {
     }
 
     @Test
-    void aUtilityLostAsALifeMayBePlayedForFree() {
+    void aUtilityLostAsALifeMayBePlayedForFreeFromTheLives() {
         CardSlot life = guest.getLifeStack().get(0);
         life.setCardType("utility");
         life.setCost(4);
@@ -429,11 +444,31 @@ class RulesWindowsTest {
         CombatRules.attackByPlayer(room, "host", "a", null);
         Prompt play = room.getPrompt();
         assertThat(play.getPurpose()).isEqualTo("LIFE_PLAY");
+        // While asked it stays revealed on top of the lives, not in the hand
+        assertThat(guest.getLifeStack().get(0)).isSameAs(life);
+        assertThat(life.isFaceDown()).isFalse();
+        assertThat(guest.getHand()).doesNotContain(life);
         int gems = EffectEngine.gemsOf(room, "guest");
         Answers.answer(room, "guest", play.getId(), List.of(life.getInstanceId()), List.of());
         assertThat(guest.getField()).contains(life);
+        assertThat(guest.getLifeStack()).doesNotContain(life);
         assertThat(EffectEngine.gemsOf(room, "guest")).isEqualTo(gems);
-        assertThat(room.getTimeline()).extracting(GameEvent::getType).contains(GameEvent.PLAY);
+        GameEvent played = room.getTimeline().stream().filter(e -> GameEvent.PLAY.equals(e.getType())).reduce((x, y) -> y).orElseThrow();
+        assertThat(played.getFromZone()).isEqualTo("lifeStack");
+    }
+
+    @Test
+    void aUtilityLostAsALifeNotPlayedGoesToTheHand() {
+        CardSlot life = guest.getLifeStack().get(0);
+        life.setCardType("utility");
+        life.setCost(4);
+        field(host, creature("a", "A", 1, 5), FRONT);
+        CombatRules.attackByPlayer(room, "host", "a", null);
+        Prompt play = room.getPrompt();
+        Answers.answer(room, "guest", play.getId(), List.of(), List.of());
+        assertThat(guest.getHand()).contains(life);
+        assertThat(guest.getLifeStack()).doesNotContain(life);
+        assertThat(guest.getField()).doesNotContain(life);
     }
 
     // ------------------------------------------------------------------ Arañador

@@ -49,10 +49,26 @@ class BotDuelRun {
                     String[] host = {aHosts ? "A" : "B"}, guest = {aHosts ? "B" : "A"};
                     LookaheadBot hostBot = new LookaheadBot(aHosts ? a : b), guestBot = new LookaheadBot(aHosts ? b : a);
                     // bot.duel.log: every decision A looked ahead for (what it chose, among how many, the score it expected and the table's now)
-                    if (Boolean.getBoolean("bot.duel.log")) (aHosts ? hostBot : guestBot).watch(x -> sb.append("      > A decide ").append(x.type())
+                    // bot.duel.audit (with bot.duel.log): under each main decision of A, every candidate with its mean score, its tries and
+                    // the round it was dropped in (MoveTrials.AUDIT); B's decisions only clear the list (both bots play on this thread)
+                    List<String> audit = new ArrayList<>(), trace = new ArrayList<>();
+                    boolean audited = Boolean.getBoolean("bot.duel.audit");
+                    if (audited) { MoveTrials.AUDIT.set(audit); MoveTrials.TRACE.set(trace); }
+                    if (Boolean.getBoolean("bot.duel.log")) (aHosts ? hostBot : guestBot).watch(x -> {
+                        sb.append("      > A decide ").append(x.type())
                             .append(' ').append(x.card()).append(x.target() == null ? "" : " → " + x.target()).append(" (opción ").append(x.index()).append(" de ")
-                            .append(x.candidates()).append(", espera ").append(Math.round(x.expected() * 10) / 10.0).append(", ahora ").append(Math.round(x.now() * 10) / 10.0).append(")\n"));
-                    BotMatch.Result r = BotMatch.playSeededWatching(d[0], d[1], hostBot, guestBot, seed, room -> {
+                            .append(x.candidates()).append(", espera ").append(Math.round(x.expected() * 10) / 10.0).append(", ahora ").append(Math.round(x.now() * 10) / 10.0).append(")\n");
+                        if (audited && !"RESOLVE_PROMPT".equals(x.type())) for (String l : audit) sb.append("          ").append(l).append('\n');
+                        // the tries scored far below (MoveTrials.TRACE), the first few
+                        if (audited) for (String l : trace.subList(0, Math.min(6, trace.size()))) sb.append("          ! ").append(l).append('\n');
+                        audit.clear();
+                        trace.clear();
+                    });
+                    if (audited) (aHosts ? guestBot : hostBot).watch(x -> { audit.clear(); trace.clear(); });
+                    GameRoom[] seen = {null};
+                    boolean[] ended = {false};
+                    java.util.function.Consumer<GameRoom> onTurn = room -> {
+                        seen[0] = room;
                         List<GameEvent> tl = room.getTimeline();
                         List<GameEvent> turn = after(tl, lastEvent);
                         if (turn.isEmpty()) return;
@@ -67,8 +83,9 @@ class BotDuelRun {
                         // gems are their Marcador minus that)
                         String now = room.getCurrentTurnUserId(), before = room.getOpponentId(now);
                         int closed = -(EffectEngine.gemsOf(room, now) - room.getPlayer(now).getResourceCount());
-                        sb.append("— turno (").append(who.getOrDefault(String.valueOf(now), "?")).append(" empieza; ")
-                                .append(who.getOrDefault(String.valueOf(before), "?")).append(" cerró con ").append(closed).append(" gemas; timeline ")
+                        sb.append(ended[0] ? "— fin de la partida (turno de " : "— turno (").append(who.getOrDefault(String.valueOf(now), "?"))
+                                .append(ended[0] ? "; " : " empieza; ")
+                                .append(ended[0] ? "" : who.getOrDefault(String.valueOf(before), "?") + " cerró con " + closed + " gemas; ").append("timeline ")
                                 .append(tl.size()).append(", evento ").append(room.getEventSeq()).append(") | ");
                         for (String seat : List.of("host", "guest")) {
                             PlayerState p = room.getPlayer(seat);
@@ -85,11 +102,18 @@ class BotDuelRun {
                         if (Boolean.getBoolean("bot.duel.log")) {
                             for (var l : after(room.getEventLog(), lastLine)) sb.append("      · ").append(l.getText()).append('\n');
                         }
-                    });
+                    };
+                    BotMatch.Result r = BotMatch.playSeededWatching(d[0], d[1], hostBot, guestBot, seed, onTurn);
+                    // the turn the game ended in is never followed by a change of turn: write it too
+                    if (seen[0] != null) { ended[0] = true; onTurn.accept(seen[0]); }
                     String winner = "host".equals(r.winner()) ? host[0] : "guest".equals(r.winner()) ? guest[0] : "nadie";
                     String name = pair + "-s" + seed + "-A" + (aHosts ? "host" : "guest") + ".txt";
+                    // What A's tries cost (the sequences' screening before them is not counted): decisions, mean and longest time, out of time
+                    LookaheadBot.Stats st = (aHosts ? hostBot : guestBot).stats();
+                    String cost = "Pruebas de A: " + st.decisions() + " decisiones, media " + (st.decisions() == 0 ? 0 : st.totalNanos() / st.decisions() / 1_000_000)
+                            + " ms, máxima " + st.maxNanos() / 1_000_000 + " ms, sin tiempo " + st.outOfTime();
                     Files.writeString(out.resolve(name), "A = " + System.getProperty("bot.duel.a") + "\nB = " + System.getProperty("bot.duel.b")
-                            + "\nGana " + winner + " (" + r.reason() + ", " + r.turns() + " turnos)\n\n" + sb, StandardCharsets.UTF_8);
+                            + "\nGana " + winner + " (" + r.reason() + ", " + r.turns() + " turnos)\n" + cost + "\n\n" + sb, StandardCharsets.UTF_8);
                     return name + " → gana " + winner + " en " + r.turns() + " turnos (" + r.reason() + ")";
                 }));
             }

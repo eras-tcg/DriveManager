@@ -3,6 +3,7 @@ package com.drive.drive_manager.simulator.rank;
 import com.drive.drive_manager.service.AvatarService;
 import org.bson.Document;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Tag;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 
@@ -14,6 +15,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 /** The Retador board as the web reads it: each row's place and icon, and never anyone's hidden strength. */
+@Tag("server")
 class RankControllerTest {
 
     @Test

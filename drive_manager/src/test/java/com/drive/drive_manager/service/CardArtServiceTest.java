@@ -116,6 +116,22 @@ class CardArtServiceTest {
     }
 
     @Test
+    void whereTheCardShinesIsAPngKeptApartAndReplaced() {
+        byte[] png = {(byte) 0x89, 'P', 'N', 'G', 0, 0, 0, 0, 0, 0, 0, 0};
+        service.setShine("m1", png);
+        String first = card.getShineKey();
+        assertThat(first).matches("card-shine/m1/[0-9]+[.]png");
+        assertThat(card.getRenderKey()).isNull();
+        service.setShine("m1", png);
+        verify(store).delete(first);
+        when(store.get(card.getShineKey())).thenReturn(png);
+        assertThat(service.getShine("m1")).get().extracting(CardArtService.Art::type).isEqualTo("image/png");
+        // Only a PNG: its gloss and gold are masks
+        byte[] jpg = {(byte) 0xFF, (byte) 0xD8, (byte) 0xFF, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+        assertThatThrownBy(() -> service.setShine("m1", jpg)).isInstanceOf(IllegalArgumentException.class);
+    }
+
+    @Test
     void aMissingFileIsNoImage() {
         card.setRenderKey("card-render/m1/1.jpeg");
         when(store.get("card-render/m1/1.jpeg")).thenThrow(new RuntimeException("no such file"));

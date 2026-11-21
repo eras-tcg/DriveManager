@@ -4,6 +4,7 @@ import com.drive.drive_manager.simulator.room.CardSlot;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Tag;
 
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
@@ -20,6 +21,7 @@ import static org.junit.jupiter.api.Assumptions.assumeTrue;
  * Every card with a special summon method has its Requerimiento programmed (the card file's `requirement` section): the engine never reads
  * the printed text, so a card without it cannot be special summoned. Only the name and the method are looked at, never the text.
  */
+@Tag("basic")
 class SpecialRequirementCoverageTest {
 
     /** Waiting for the designer (vault, "Requerimientos de invocación especial"): no section until answered. */

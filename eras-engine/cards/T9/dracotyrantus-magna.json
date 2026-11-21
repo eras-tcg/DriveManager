@@ -1,0 +1,137 @@
+{
+  "name" : "dracotyrantus magna",
+  "effects" : [ {
+    "id" : "dracotyrantus-magna:en-invocacion",
+    "moment" : "ON_SUMMON",
+    "label" : "En Invocación",
+    "text" : "Puedes enviar hasta 10 de tus tributos [dragón] al fondo de tu mazo en orden aleatorio; por cada 5 destruye 1 enemigo de fuerza 9 o menos. Si ningún enemigo fue destruido y enviaste 10 tributos: destruye 1 enemigo de fuerza 12 o menos.",
+    "cost" : [ {
+      "type" : "Do",
+      "action" : {
+        "type" : "Move",
+        "cards" : {
+          "zones" : "tributeZone",
+          "owner" : "YOU",
+          "filter" : {
+            "classes" : [ "dragón" ]
+          },
+          "min" : {
+            "type" : "Fixed",
+            "value" : 1
+          },
+          "max" : {
+            "type" : "Fixed",
+            "value" : 10
+          },
+          "self" : "ANY",
+          "mode" : "CHOOSE"
+        },
+        "to" : "deckBottom",
+        "random" : true
+      }
+    } ],
+    "steps" : [ {
+      "type" : "Do",
+      "action" : {
+        "type" : "Destroy",
+        "cards" : {
+          "zones" : "frontLine",
+          "owner" : "OPPONENT",
+          "filter" : {
+            "cardType" : "creature",
+            "maxStrength" : 9
+          },
+          "min" : {
+            "type" : "Scaled",
+            "base" : {
+              "type" : "LastCount"
+            },
+            "divisor" : 5
+          },
+          "max" : {
+            "type" : "Scaled",
+            "base" : {
+              "type" : "LastCount"
+            },
+            "divisor" : 5
+          },
+          "self" : "ANY",
+          "mode" : "CHOOSE"
+        }
+      }
+    }, {
+      "type" : "IfNotDone",
+      "covers" : 2
+    }, {
+      "type" : "IfCondition",
+      "condition" : {
+        "type" : "Compare",
+        "left" : {
+          "type" : "LastCount"
+        },
+        "op" : "AT_LEAST",
+        "right" : {
+          "type" : "Fixed",
+          "value" : 10
+        }
+      },
+      "covers" : 1
+    }, {
+      "type" : "Do",
+      "action" : {
+        "type" : "Destroy",
+        "cards" : {
+          "zones" : "frontLine",
+          "owner" : "OPPONENT",
+          "filter" : {
+            "cardType" : "creature",
+            "maxStrength" : 12
+          },
+          "min" : {
+            "type" : "Fixed",
+            "value" : 1
+          },
+          "max" : {
+            "type" : "Fixed",
+            "value" : 1
+          },
+          "self" : "ANY",
+          "mode" : "CHOOSE"
+        }
+      }
+    } ],
+    "sourceZone" : "field",
+    "limit" : "NONE"
+  } ],
+  "reactions" : [ {
+    "type" : "CostModifier",
+    "label" : "Requerimiento",
+    "event" : "SPECIAL_SUMMON",
+    "kinds" : [ "evolution" ],
+    "holder" : "SELF",
+    "payment" : {
+      "kind" : "NONE"
+    },
+    "reduce" : 2,
+    "limit" : "NONE",
+    "summoner" : {
+      "level" : 5
+    }
+  } ],
+  "requirement" : {
+    "summoner" : {
+      "level" : 4,
+      "maxLevel" : 5
+    }
+  },
+  "inheritedContinuous" : [ {
+    "label" : "Todos Los Turnos",
+    "text" : "Heredado de Dracotyrantus Magna: los aliados [dragón] ganan Celeridad.",
+    "keywords" : [ "Celeridad" ],
+    "zone" : "field",
+    "targets" : {
+      "classes" : [ "dragón" ],
+      "cardType" : "creature"
+    }
+  } ]
+}

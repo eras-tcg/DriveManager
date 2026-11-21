@@ -60,10 +60,12 @@ data class SummonerSpec(
  * @param levelSum "aliados que sumen N en nivel" (with the summoner); 0 without it
  * @param zones    where they come from ("field", "hand", "tributeZone", "discardPile"); null: the Tributos or the field
  * @param filter   anything else they must be ("[artefacto]", a utility with `cardType`); null: creatures
+ * @param maxCount with [more]: "N o M aliados", at most M; null: no limit
  */
 @JvmRecord
 data class MaterialSpec(
     val count: Int, val more: Boolean, val level: Int, val orLess: Boolean, val levelSum: Int, val zones: List<String>?, val filter: CardFilter?,
+    val maxCount: Int? = null,
 )
 
 /**
@@ -78,9 +80,22 @@ data class MaterialSpec(
  * @param eachMaxLevel "criaturas nivel N o menor que sumen …": the highest level of each creature used; null: any
  * @param parts       each creature used, the summoner among them ("criatura nivel 2 + 1 criatura [ángel] nivel 2 o menor"): one
  *                    [RitualParts.Part] each (level, "o menor", class); null or empty: the fields above
+ * @param orCost      "coste o nivel N", "que sumen N en coste o nivel": each creature used counts as its level or as its cost
+ * @param filter      what each creature used must be besides ("que no sea una copia de esta carta": `notName`); null: any
+ * @param summonerLevel "criaturas que en nivel sumen N incluido el invocador nivel M": the level the summoner must be (it counts as M in
+ *                    the sum); null: any
  */
 @JvmRecord
 data class RitualSpec(
     val sum: Boolean, val level: Int, val maxLevel: Int?, val atLeast: Boolean, val maxStrength: Int?, val extra: Int, val eachMaxLevel: Int? = null,
-    val parts: List<RitualParts.Part>? = null,
-)
+    val parts: List<RitualParts.Part>? = null, val orCost: Boolean = false, val filter: CardFilter? = null, val summonerLevel: Int? = null,
+) {
+    constructor(
+        sum: Boolean, level: Int, maxLevel: Int?, atLeast: Boolean, maxStrength: Int?, extra: Int, eachMaxLevel: Int?, parts: List<RitualParts.Part>?,
+    ) : this(sum, level, maxLevel, atLeast, maxStrength, extra, eachMaxLevel, parts, false, null, null)
+
+    constructor(
+        sum: Boolean, level: Int, maxLevel: Int?, atLeast: Boolean, maxStrength: Int?, extra: Int, eachMaxLevel: Int?, parts: List<RitualParts.Part>?,
+        orCost: Boolean, filter: CardFilter?,
+    ) : this(sum, level, maxLevel, atLeast, maxStrength, extra, eachMaxLevel, parts, orCost, filter, null)
+}

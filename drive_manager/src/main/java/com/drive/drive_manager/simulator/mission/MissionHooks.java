@@ -64,9 +64,11 @@ public class MissionHooks {
         GameActivity.log(activityLog, room, before.status(), before.players(), extra);
         if (missions == null && progression == null) return;
         try {
+            // Modo solo moves the missions only in ranked games (the progression, always)
+            boolean forMissions = missions != null && (!room.isBot() || room.isRanked());
             for (MissionEvents.Progress p : MissionEvents.of(room, before.status(), before.seq())) {
                 // A game against the bot is a mission's game like any other: its own counter is the progression's
-                if (missions != null && !ProgressionRules.BOT_GAME_PLAYED.equals(p.counts())) missions.record(p.userId(), p.counts(), p.amount());
+                if (forMissions && !ProgressionRules.BOT_GAME_PLAYED.equals(p.counts())) missions.record(p.userId(), p.counts(), p.amount());
                 if (progression != null) progression.record(p.userId(), p.counts(), p.amount());
             }
         } catch (RuntimeException e) {

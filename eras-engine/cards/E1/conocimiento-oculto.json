@@ -1,0 +1,47 @@
+{
+  "name": "conocimiento oculto",
+  "effects": [
+    {
+      "id": "conocimiento-oculto:en-juego",
+      "moment": "ON_PLAY",
+      "mandatory": true,
+      "label": "En Juego",
+      "text": "Efecto Definitivo. Envía tu mano al fondo de tu mazo. Luego: roba hasta tener 5 cartas en tu mano.",
+      "steps": [
+        {
+          "type": "Do",
+          "action": {
+            "type": "Move",
+            "cards": {
+              "zones": "hand",
+              "owner": "YOU",
+              "filter": {},
+              "min": {
+                "type": "Fixed"
+              },
+              "max": {
+                "type": "Fixed",
+                "value": 2147483647
+              },
+              "self": "ANY",
+              "mode": "ALL"
+            },
+            "to": "deckBottom"
+          }
+        },
+        {
+          "type": "Do",
+          "action": {
+            "type": "Draw",
+            "count": {
+              "type": "HandUnder",
+              "upTo": 5
+            }
+          }
+        }
+      ],
+      "sourceZone": "field",
+      "limit": "DEFINITIVE"
+    }
+  ]
+}

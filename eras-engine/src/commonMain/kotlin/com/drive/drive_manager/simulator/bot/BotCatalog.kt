@@ -75,6 +75,10 @@ object BotCatalog {
         return if (text == null) BotSettings.DEFAULT else BotSettings.DEFAULT.with(text.trim { it <= ' ' })
     }
 
+    /** A model under test (not one of the levels): only a simulator administrator seats one. */
+    @JvmStatic
+    fun isModel(id: String?): Boolean = id != null && !LEVEL_IDS.contains(id) && MODELS.containsKey(id)
+
     /** The bot's name at the table: its level (or the model it tries), so it reads as a rival of its own. */
     @JvmStatic
     fun nameOf(level: String?): String {

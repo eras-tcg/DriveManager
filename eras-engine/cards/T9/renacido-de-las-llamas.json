@@ -1,0 +1,144 @@
+{
+  "name": "renacido de las llamas",
+  "effects": [
+    {
+      "id": "renacido-de-las-llamas:tributada",
+      "moment": "ON_EVENT",
+      "label": "En Tributos",
+      "text": "Si esta carta es tributada desde el tope de tu mazo: puedes enviar 15 de tus tributos [dragón] al fondo de tu mazo; juega esta carta sin pagar su coste.",
+      "cost": [
+        {
+          "type": "Do",
+          "action": {
+            "type": "Move",
+            "cards": {
+              "zones": "tributeZone",
+              "owner": "YOU",
+              "filter": {
+                "classes": [
+                  "dragón"
+                ]
+              },
+              "min": {
+                "type": "Fixed",
+                "value": 15
+              },
+              "max": {
+                "type": "Fixed",
+                "value": 15
+              },
+              "self": "EXCLUDE",
+              "mode": "CHOOSE"
+            },
+            "to": "deckBottom"
+          }
+        }
+      ],
+      "steps": [
+        {
+          "type": "Do",
+          "action": {
+            "type": "Play",
+            "cards": {
+              "zones": "tributeZone",
+              "owner": "YOU",
+              "filter": {},
+              "min": {
+                "type": "Fixed",
+                "value": 1
+              },
+              "max": {
+                "type": "Fixed",
+                "value": 1
+              },
+              "self": "ANY",
+              "mode": "SELF"
+            },
+            "reduce": {
+              "type": "Fixed",
+              "value": 1000
+            }
+          }
+        }
+      ],
+      "condition": {
+        "type": "ThisTributed",
+        "fromZone": "deck"
+      },
+      "sourceZone": "tributeZone",
+      "limit": "NONE"
+    },
+    {
+      "id": "renacido-de-las-llamas:en-juego",
+      "moment": "ON_PLAY",
+      "mandatory": true,
+      "label": "En Juego",
+      "text": "Invoca 1 [dragón] de tus tributos reduciendo en 3 su coste. Luego: añádele como recurso desde tus tributos 1 [dragón] de cada nivel menor que el aliado invocado.",
+      "steps": [
+        {
+          "type": "Do",
+          "action": {
+            "type": "Summon",
+            "cards": {
+              "zones": "tributeZone",
+              "owner": "YOU",
+              "filter": {
+                "cardType": "creature",
+                "classes": [
+                  "dragón"
+                ]
+              },
+              "min": {
+                "type": "Fixed",
+                "value": 1
+              },
+              "max": {
+                "type": "Fixed",
+                "value": 1
+              },
+              "self": "ANY",
+              "mode": "CHOOSE"
+            },
+            "reduce": {
+              "type": "Fixed",
+              "value": 3
+            },
+            "required": true
+          }
+        },
+        {
+          "type": "Do",
+          "action": {
+            "type": "Move",
+            "cards": {
+              "zones": "tributeZone",
+              "owner": "YOU",
+              "filter": {
+                "classes": [
+                  "dragón"
+                ]
+              },
+              "min": {
+                "type": "Fixed"
+              },
+              "max": {
+                "type": "Fixed",
+                "value": 2147483647
+              },
+              "self": "ANY",
+              "mode": "CHOOSE",
+              "relative": {
+                "to": "summoned",
+                "compareLevel": "LESS"
+              }
+            },
+            "to": "resources:summoned",
+            "distinctLevels": true
+          }
+        }
+      ],
+      "sourceZone": "field",
+      "limit": "NONE"
+    }
+  ]
+}

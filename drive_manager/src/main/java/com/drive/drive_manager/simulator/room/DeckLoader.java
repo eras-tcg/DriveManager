@@ -95,6 +95,11 @@ public class DeckLoader {
         }).toList());
     }
 
+    /** The decks set aside for the bot to play in ranked Modo solo. */
+    public List<DeckList> botPool() {
+        return decks == null ? List.of() : decks.findByBotDeckTrue();
+    }
+
     /** Whether the deck has cards in testing (a testing edition, {@link TestCards}). */
     public boolean hasTestCards(DeckList deck) {
         if (deck.getCards() == null || deck.getCards().isEmpty()) return false;

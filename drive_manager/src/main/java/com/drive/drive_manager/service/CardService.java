@@ -34,6 +34,7 @@ public class CardService {
         card.setArtKey(null);
         card.setArtType(null);
         card.setRenderKey(null);
+        card.setShineKey(null);
         checkCode(card, null);
         Card saved = cardRepository.save(card);
         // Its image takes the printed name (the file name has no real hyphens)

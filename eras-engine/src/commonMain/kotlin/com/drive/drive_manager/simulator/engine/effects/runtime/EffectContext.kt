@@ -3,6 +3,7 @@ package com.drive.drive_manager.simulator.engine.effects.runtime
 import kotlin.jvm.JvmSuppressWildcards
 import com.drive.drive_manager.simulator.engine.GameRandom
 import com.drive.drive_manager.simulator.engine.Amount
+import com.drive.drive_manager.simulator.engine.CardFilter
 import com.drive.drive_manager.simulator.engine.effects.model.Action
 import com.drive.drive_manager.simulator.engine.effects.model.Selector
 import com.drive.drive_manager.simulator.engine.effects.model.SpecialRule
@@ -37,8 +38,11 @@ interface EffectContext {
     /** The card is already where a move would leave it. */
     fun alreadyIn(card: CardSlot?, to: String?): Boolean
 
-    /** Moves the cards, one by one in that order, recording each one's event by where it arrives. Returns those that moved. */
-    fun move(cards: List<CardSlot>?, to: String?, exhausted: Boolean, faceDown: Boolean): List<CardSlot>
+    /**
+     * Moves the cards, one by one in that order, recording each one's event by where it arrives. Returns those that moved.
+     * `withResources`: a card of the field that becomes a material or a Recurso takes its Recursos along ("con todos sus recursos").
+     */
+    fun move(cards: List<CardSlot>?, to: String?, exhausted: Boolean, faceDown: Boolean, withResources: Boolean = false): List<CardSlot>
 
     /** The cards an effect is looking at. */
     fun looked(): List<CardSlot>
@@ -67,7 +71,26 @@ interface EffectContext {
 
     fun damage(amount: Int)
 
-    fun look(count: Int)
+    /** Looks at the top `count` cards of its controller's deck, or of the opponent's (`opponent`). */
+    fun look(count: Int, opponent: Boolean)
+
+    /** The cards looked at come from the opponent's deck (and go back there). */
+    fun lookedAreOpponents(): Boolean
+
+    /**
+     * "excava cartas de tu mazo hasta que reveles N cartas o 1 [filtro]": the top cards one by one, revealed to both players, until N or the first
+     * that matches `until` (null: N); they stay with the effect as the cards looked at do. The player excavated (an event, when any card was).
+     */
+    fun excavate(count: Int, until: CardFilter?)
+
+    /** Turns a card over ("revela", "coloca bocabajo"): `faceUp` null turns it the other way. */
+    fun flip(card: CardSlot?, faceUp: Boolean?)
+
+    /** The choice just asked takes cards of different levels ("de distinto nivel"). */
+    fun asksDistinctLevels()
+
+    /** "sacrifica 1 carta de tu mano": it goes to the Tributos as a sacrifice ([destroy] of a card of the hand). */
+    fun inHand(card: CardSlot?): Boolean
 
     fun onField(card: CardSlot?): Boolean
 
@@ -110,6 +133,12 @@ interface EffectContext {
     /** A utility or structure whose "En Juego" can be activated now. */
     fun canBePlayed(card: CardSlot?): Boolean
 
+    /** What summoning a creature by effect costs before the effect's reduction: its cost less the modifiers of a summon by effect. */
+    fun summonCost(card: CardSlot): Int
+
+    /** What playing a utility or structure costs before the effect's reduction: its cost after its own modifiers ("reduce en 1 el coste de esta carta por cada enemigo agotado"). */
+    fun playCost(card: CardSlot): Int
+
     /** The effect comes back later ("al final del turno"), so it may act on its own card. */
     fun delayed(): Boolean
 
@@ -150,6 +179,12 @@ interface EffectContext {
     /** The rest of the effect does nothing. */
     fun endEffect()
 
+    /** "un aliado enlazado a esta carta": the other members of the formation this card is in (Enlace); none outside one. */
+    fun formationMates(): List<CardSlot>
+
+    /** "dicho aliado" of a direct damage: the creature whose attack dealt the damage that triggered the effect, if it is still on the field. */
+    fun eventAttacker(): CardSlot?
+
     /** The looked cards' choice also says top or bottom of the deck: a card picked is the top. */
     fun asksTopOrBottom()
 
@@ -161,6 +196,9 @@ interface EffectContext {
 
     /** The rest of the effect runs at the end of this turn: `effect` of this card. */
     fun atEndOfTurn(effect: String?)
+
+    /** This card follows those cards: `effect` of this card comes when one of them leaves the field (until the end of the turn, or while it stays). */
+    fun watch(cards: List<CardSlot>, effect: String?, untilTurnEnd: Boolean)
 
     /** How many cards the last action acted on. */
     fun counted(count: Int)

@@ -1,0 +1,141 @@
+{
+  "name": "tierra de noth",
+  "effects": [
+    {
+      "id": "tierra-de-noth:en-mano",
+      "moment": "ACTIVATED",
+      "label": "Turno Aliado / En Mano",
+      "text": "Una vez por turno entre copias: puedes jugar esta carta sin pagar su coste. Si lo haces: revela 1 de tus vidas.",
+      "steps": [
+        {
+          "type": "Do",
+          "action": {
+            "type": "Play",
+            "cards": {
+              "zones": "hand",
+              "owner": "YOU",
+              "filter": {},
+              "min": {
+                "type": "Fixed",
+                "value": 1
+              },
+              "max": {
+                "type": "Fixed",
+                "value": 1
+              },
+              "self": "ANY",
+              "mode": "SELF"
+            },
+            "reduce": {
+              "type": "Fixed",
+              "value": 1000
+            },
+            "required": true
+          }
+        },
+        {
+          "type": "IfDone",
+          "covers": 1
+        },
+        {
+          "type": "Do",
+          "action": {
+            "type": "Flip",
+            "cards": {
+              "zones": "lifeStack",
+              "owner": "YOU",
+              "filter": {},
+              "min": {
+                "type": "Fixed",
+                "value": 1
+              },
+              "max": {
+                "type": "Fixed",
+                "value": 1
+              },
+              "self": "ANY",
+              "mode": "CHOOSE"
+            },
+            "faceUp": true
+          }
+        }
+      ],
+      "sourceZone": "hand",
+      "allyTurn": true,
+      "limit": "ONCE_PER_TURN_BETWEEN_COPIES"
+    },
+    {
+      "id": "tierra-de-noth:todos-los-turnos",
+      "moment": "ON_EVENT",
+      "label": "Todos Los Turnos",
+      "text": "Si un aliado [lanzador de conjuros] declara ataque: puedes agotar esta carta para que gane Alcance hasta el final del ataque.",
+      "steps": [
+        {
+          "type": "IfPossible"
+        },
+        {
+          "type": "Do",
+          "action": {
+            "type": "SetTapped",
+            "cards": {
+              "zones": "field",
+              "owner": "YOU",
+              "filter": {},
+              "min": {
+                "type": "Fixed",
+                "value": 1
+              },
+              "max": {
+                "type": "Fixed",
+                "value": 1
+              },
+              "self": "ANY",
+              "mode": "SELF"
+            },
+            "tapped": true,
+            "required": true
+          }
+        },
+        {
+          "type": "SubjectFromTrigger"
+        },
+        {
+          "type": "Do",
+          "action": {
+            "type": "Modify",
+            "cards": {
+              "zones": "subjectOrSelf",
+              "owner": "YOU",
+              "filter": {},
+              "min": {
+                "type": "Fixed"
+              },
+              "max": {
+                "type": "Fixed",
+                "value": 2147483647
+              },
+              "self": "ANY",
+              "mode": "ALL"
+            },
+            "keyword": "Alcance",
+            "until": "ATTACK"
+          }
+        }
+      ],
+      "condition": {
+        "type": "Happened",
+        "eventType": "ATTACK_DECLARED",
+        "actor": "YOU",
+        "owner": "ANY",
+        "filter": {
+          "classes": [
+            "lanzador de conjuros"
+          ],
+          "cardType": "creature"
+        }
+      },
+      "sourceZone": "field",
+      "limit": "NONE"
+    }
+  ]
+}

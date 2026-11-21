@@ -5,6 +5,7 @@ import com.drive.drive_manager.simulator.room.GameRoom;
 import com.drive.drive_manager.simulator.room.PlayerState;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Tag;
 
 import java.util.List;
 
@@ -12,6 +13,7 @@ import static com.drive.drive_manager.simulator.engine.TestTable.*;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /** Designer corrections of 2026-10-30 (second batch): timing, removal from the field, rules destruction, blocker swap, "hasta 2". */
+@Tag("engine")
 class DesignerRulingsBatch2Test {
 
     private GameRoom room;

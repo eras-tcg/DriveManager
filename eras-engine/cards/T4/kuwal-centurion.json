@@ -1,0 +1,276 @@
+{
+  "name": "kuwal centurión",
+  "effects": [
+    {
+      "id": "kuwal-centurion:en-tributos",
+      "moment": "ON_EVENT",
+      "label": "En Tributos",
+      "text": "Una vez por turno entre copias, si excavas cartas: puedes tributar 1 carta de tu mano; invoca por Ritual esta carta. Si es tu turno: reduce su coste especial en 1.",
+      "cost": [
+        {
+          "type": "Do",
+          "action": {
+            "type": "Move",
+            "cards": {
+              "zones": "hand",
+              "owner": "YOU",
+              "filter": {},
+              "min": {
+                "type": "Fixed",
+                "value": 1
+              },
+              "max": {
+                "type": "Fixed",
+                "value": 1
+              },
+              "self": "EXCLUDE",
+              "mode": "CHOOSE"
+            },
+            "to": "tributeZone"
+          }
+        }
+      ],
+      "steps": [
+        {
+          "type": "Do",
+          "action": {
+            "type": "Sequence",
+            "actions": [
+              {
+                "type": "Select",
+                "selector": {
+                  "zones": "tributeZone",
+                  "owner": "YOU",
+                  "filter": {},
+                  "min": {
+                    "type": "Fixed"
+                  },
+                  "max": {
+                    "type": "Fixed",
+                    "value": 1
+                  },
+                  "self": "ANY",
+                  "mode": "CHOOSE",
+                  "special": {
+                    "rule": {
+                      "kind": "ofThisCard",
+                      "zone": "tributeZone",
+                      "summoner": "any",
+                      "filter": {},
+                      "reduceBy": {
+                        "type": "IfThen",
+                        "condition": {
+                          "type": "GameIs",
+                          "state": "YOUR_TURN"
+                        },
+                        "then": {
+                          "type": "Fixed",
+                          "value": 1
+                        },
+                        "otherwise": {
+                          "type": "Fixed"
+                        }
+                      }
+                    },
+                    "stage": "CARD"
+                  }
+                },
+                "saveAs": "specialCard",
+                "label": "Invocar"
+              },
+              {
+                "type": "Select",
+                "selector": {
+                  "zones": "tributeZone",
+                  "owner": "YOU",
+                  "filter": {},
+                  "min": {
+                    "type": "Fixed"
+                  },
+                  "max": {
+                    "type": "Fixed",
+                    "value": 1
+                  },
+                  "self": "ANY",
+                  "mode": "CHOOSE",
+                  "special": {
+                    "rule": {
+                      "kind": "ofThisCard",
+                      "zone": "tributeZone",
+                      "summoner": "any",
+                      "filter": {},
+                      "reduceBy": {
+                        "type": "IfThen",
+                        "condition": {
+                          "type": "GameIs",
+                          "state": "YOUR_TURN"
+                        },
+                        "then": {
+                          "type": "Fixed",
+                          "value": 1
+                        },
+                        "otherwise": {
+                          "type": "Fixed"
+                        }
+                      }
+                    },
+                    "stage": "SUMMONER"
+                  }
+                },
+                "saveAs": "specialSummoner",
+                "label": "Invocador"
+              },
+              {
+                "type": "Select",
+                "selector": {
+                  "zones": "tributeZone",
+                  "owner": "YOU",
+                  "filter": {},
+                  "min": {
+                    "type": "Fixed"
+                  },
+                  "max": {
+                    "type": "Fixed",
+                    "value": 1
+                  },
+                  "self": "ANY",
+                  "mode": "CHOOSE",
+                  "special": {
+                    "rule": {
+                      "kind": "ofThisCard",
+                      "zone": "tributeZone",
+                      "summoner": "any",
+                      "filter": {},
+                      "reduceBy": {
+                        "type": "IfThen",
+                        "condition": {
+                          "type": "GameIs",
+                          "state": "YOUR_TURN"
+                        },
+                        "then": {
+                          "type": "Fixed",
+                          "value": 1
+                        },
+                        "otherwise": {
+                          "type": "Fixed"
+                        }
+                      }
+                    },
+                    "stage": "MATERIAL"
+                  }
+                },
+                "saveAs": "specialMaterials",
+                "label": "Sacrificar"
+              },
+              {
+                "type": "SummonSpecial",
+                "rule": {
+                  "kind": "ofThisCard",
+                  "zone": "tributeZone",
+                  "summoner": "any",
+                  "filter": {},
+                  "reduceBy": {
+                    "type": "IfThen",
+                    "condition": {
+                      "type": "GameIs",
+                      "state": "YOUR_TURN"
+                    },
+                    "then": {
+                      "type": "Fixed",
+                      "value": 1
+                    },
+                    "otherwise": {
+                      "type": "Fixed"
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "condition": {
+        "type": "Happened",
+        "eventType": "EXCAVATE",
+        "actor": "YOU",
+        "owner": "ANY"
+      },
+      "sourceZone": "tributeZone",
+      "limit": "ONCE_PER_TURN_BETWEEN_COPIES"
+    },
+    {
+      "id": "kuwal-centurion:en-invocacion",
+      "moment": "ON_SUMMON",
+      "label": "En Invocación",
+      "text": "Puedes sacrificar 1 [kuwal] en tu campo o mano. Si lo haces: reactiva 1 aliado [kuwal].",
+      "steps": [
+        {
+          "type": "Do",
+          "action": {
+            "type": "Destroy",
+            "cards": {
+              "zones": "field,hand",
+              "owner": "YOU",
+              "filter": {
+                "classes": [
+                  "kuwal"
+                ]
+              },
+              "min": {
+                "type": "Fixed",
+                "value": 1
+              },
+              "max": {
+                "type": "Fixed",
+                "value": 1
+              },
+              "self": "ANY",
+              "mode": "CHOOSE"
+            },
+            "sacrifice": true,
+            "required": true
+          }
+        },
+        {
+          "type": "IfDone",
+          "covers": 1
+        },
+        {
+          "type": "Do",
+          "action": {
+            "type": "SetTapped",
+            "cards": {
+              "zones": "field",
+              "owner": "YOU",
+              "filter": {
+                "classes": [
+                  "kuwal"
+                ],
+                "cardType": "creature",
+                "exhaustedOnly": true
+              },
+              "min": {
+                "type": "Fixed",
+                "value": 1
+              },
+              "max": {
+                "type": "Fixed",
+                "value": 1
+              },
+              "self": "ANY",
+              "mode": "CHOOSE"
+            }
+          }
+        }
+      ],
+      "sourceZone": "field",
+      "limit": "NONE"
+    }
+  ],
+  "requirement": {
+    "ritual": {
+      "level": 2,
+      "orCost": true
+    }
+  }
+}

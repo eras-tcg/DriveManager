@@ -1,0 +1,180 @@
+{
+  "name": "reina blanca de cástelan",
+  "effects": [
+    {
+      "id": "reina-blanca:en-mano",
+      "moment": "ON_EVENT",
+      "label": "En Mano",
+      "text": "Una vez por turno entre copias: si algún aliado inflige daño directo: puedes subir dicho aliado a tu mano; invoca esta carta en tu línea frontal sin pagar su coste.",
+      "cost": [
+        {
+          "type": "Do",
+          "action": {
+            "type": "Move",
+            "cards": {
+              "zones": "eventAttacker",
+              "owner": "YOU",
+              "filter": {},
+              "min": {
+                "type": "Fixed",
+                "value": 1
+              },
+              "max": {
+                "type": "Fixed",
+                "value": 1
+              },
+              "self": "ANY",
+              "mode": "ALL"
+            },
+            "to": "hand"
+          }
+        }
+      ],
+      "steps": [
+        {
+          "type": "Do",
+          "action": {
+            "type": "Summon",
+            "cards": {
+              "zones": "hand",
+              "owner": "YOU",
+              "filter": {},
+              "min": {
+                "type": "Fixed",
+                "value": 1
+              },
+              "max": {
+                "type": "Fixed",
+                "value": 1
+              },
+              "self": "ANY",
+              "mode": "SELF"
+            },
+            "reduce": {
+              "type": "Fixed",
+              "value": 1000
+            },
+            "toFront": true,
+            "required": true
+          }
+        }
+      ],
+      "condition": {
+        "type": "AllyDealtDirectDamage",
+        "filter": {}
+      },
+      "sourceZone": "hand",
+      "limit": "ONCE_PER_TURN_BETWEEN_COPIES"
+    },
+    {
+      "id": "reina-blanca:en-invocacion",
+      "moment": "ON_SUMMON",
+      "label": "En Invocación",
+      "text": "Puedes colocar 2 [cástelan] nivel 2 o menor en tu línea frontal.",
+      "steps": [
+        {
+          "type": "Do",
+          "action": {
+            "type": "Move",
+            "cards": {
+              "zones": "hand",
+              "owner": "YOU",
+              "filter": {
+                "cardType": "creature",
+                "classes": [
+                  "cástelan"
+                ],
+                "maxLevel": 2
+              },
+              "min": {
+                "type": "Fixed",
+                "value": 2
+              },
+              "max": {
+                "type": "Fixed",
+                "value": 2
+              },
+              "self": "ANY",
+              "mode": "CHOOSE"
+            },
+            "to": "frontLine",
+            "required": true
+          }
+        }
+      ],
+      "sourceZone": "field",
+      "limit": "NONE"
+    }
+  ],
+  "formation": {
+    "effects": [
+      {
+        "id": "reina-blanca:enlace",
+        "moment": "ON_EVENT",
+        "label": "Todos Los Turnos",
+        "text": "Si esta carta inflige daño directo: puedes subir un aliado enlazado a esta carta a tu mano para reactivar esta carta.",
+        "steps": [
+          {
+            "type": "IfPossible"
+          },
+          {
+            "type": "Do",
+            "action": {
+              "type": "Move",
+              "cards": {
+                "zones": "formation",
+                "owner": "YOU",
+                "filter": {
+                  "cardType": "creature"
+                },
+                "min": {
+                  "type": "Fixed",
+                  "value": 1
+                },
+                "max": {
+                  "type": "Fixed",
+                  "value": 1
+                },
+                "self": "ANY",
+                "mode": "CHOOSE"
+              },
+              "to": "hand"
+            }
+          },
+          {
+            "type": "Do",
+            "action": {
+              "type": "SetTapped",
+              "cards": {
+                "zones": "field",
+                "owner": "YOU",
+                "filter": {},
+                "min": {
+                  "type": "Fixed",
+                  "value": 1
+                },
+                "max": {
+                  "type": "Fixed",
+                  "value": 1
+                },
+                "self": "ANY",
+                "mode": "SELF"
+              }
+            }
+          }
+        ],
+        "condition": {
+          "type": "Happened",
+          "actor": "YOU",
+          "owner": "ANY",
+          "eventType": "LIFE_DAMAGE",
+          "data": [
+            "attackerId=$this"
+          ]
+        },
+        "sourceZone": "field",
+        "limit": "NONE"
+      }
+    ]
+  }
+}

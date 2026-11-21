@@ -1,0 +1,162 @@
+{
+  "name": "eiris",
+  "effects": [
+    {
+      "id": "eiris:en-invocacion",
+      "moment": "ON_SUMMON",
+      "mandatory": true,
+      "label": "En Invocación",
+      "text": "Tributa todos los materiales de esta carta; por cada material [lanzador de conjuros] tributado: voltea una de tus vidas.",
+      "cost": [
+        {
+          "type": "Do",
+          "action": {
+            "type": "Move",
+            "cards": {
+              "zones": "materials",
+              "owner": "YOU",
+              "filter": {},
+              "min": {
+                "type": "Fixed"
+              },
+              "max": {
+                "type": "Fixed",
+                "value": 2147483647
+              },
+              "self": "ANY",
+              "mode": "ALL"
+            },
+            "to": "tributeZone"
+          }
+        }
+      ],
+      "steps": [
+        {
+          "type": "Do",
+          "action": {
+            "type": "Flip",
+            "cards": {
+              "zones": "lifeStack",
+              "owner": "YOU",
+              "filter": {},
+              "min": {
+                "type": "LastMoved",
+                "filter": {
+                  "classes": [
+                    "lanzador de conjuros"
+                  ]
+                }
+              },
+              "max": {
+                "type": "LastMoved",
+                "filter": {
+                  "classes": [
+                    "lanzador de conjuros"
+                  ]
+                }
+              },
+              "self": "ANY",
+              "mode": "CHOOSE"
+            },
+            "toggle": true
+          }
+        }
+      ],
+      "sourceZone": "field",
+      "limit": "NONE"
+    },
+    {
+      "id": "eiris:al-atacar",
+      "moment": "ON_ATTACK",
+      "mandatory": true,
+      "label": "Al Atacar",
+      "text": "Revela 1 vida de ambos jugadores. Luego tributa 1 vida oponente bocarriba.",
+      "steps": [
+        {
+          "type": "Do",
+          "action": {
+            "type": "Flip",
+            "cards": {
+              "zones": "lifeStack",
+              "owner": "YOU",
+              "filter": {},
+              "min": {
+                "type": "Fixed",
+                "value": 1
+              },
+              "max": {
+                "type": "Fixed",
+                "value": 1
+              },
+              "self": "ANY",
+              "mode": "CHOOSE"
+            },
+            "faceUp": true
+          }
+        },
+        {
+          "type": "Do",
+          "action": {
+            "type": "Flip",
+            "cards": {
+              "zones": "lifeStack",
+              "owner": "OPPONENT",
+              "filter": {},
+              "min": {
+                "type": "Fixed",
+                "value": 1
+              },
+              "max": {
+                "type": "Fixed",
+                "value": 1
+              },
+              "self": "ANY",
+              "mode": "CHOOSE"
+            },
+            "faceUp": true
+          }
+        },
+        {
+          "type": "Do",
+          "action": {
+            "type": "Move",
+            "cards": {
+              "zones": "lifeStack",
+              "owner": "OPPONENT",
+              "filter": {
+                "faceUpOnly": true
+              },
+              "min": {
+                "type": "Fixed",
+                "value": 1
+              },
+              "max": {
+                "type": "Fixed",
+                "value": 1
+              },
+              "self": "ANY",
+              "mode": "CHOOSE"
+            },
+            "to": "tributeZone"
+          }
+        }
+      ],
+      "sourceZone": "field",
+      "limit": "NONE"
+    }
+  ],
+  "requirement": {
+    "summoner": {
+      "level": 2,
+      "maxLevel": 3
+    },
+    "materials": {
+      "count": 1,
+      "more": true,
+      "maxCount": 2,
+      "zones": [
+        "field"
+      ]
+    }
+  }
+}

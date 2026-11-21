@@ -28,19 +28,16 @@ class TestCardsTest {
     }
 
     @Test
-    void onlyThePermissionShowsThem() {
+    void everyPlayerSeesThem() {
         var player = new UsernamePasswordAuthenticationToken("bob", null, AuthorityUtils.createAuthorityList("manage_decks"));
-        var tester = new UsernamePasswordAuthenticationToken("ana", null, AuthorityUtils.createAuthorityList("manage_decks", TestCards.PERMISSION));
         var anonymous = new AnonymousAuthenticationToken("key", "anonymousUser", AuthorityUtils.createAuthorityList("ROLE_ANONYMOUS"));
-        assertThat(TestCards.hidden("T1", player)).isTrue();
-        assertThat(TestCards.hidden("T1", anonymous)).isTrue();
-        assertThat(TestCards.hidden("T1", null)).isTrue();
-        assertThat(TestCards.hidden("T1", tester)).isFalse();
-        assertThat(TestCards.hidden("E2", player)).isFalse();
+        assertThat(TestCards.hidden("T1", player)).isFalse();
+        assertThat(TestCards.hidden("T1", anonymous)).isFalse();
+        assertThat(TestCards.hidden("T1", null)).isFalse();
     }
 
     @Test
-    void aDeckIsHiddenWhenItHasACardInTesting() {
+    void aDeckWithACardInTestingIsKnownButNotHidden() {
         DriveCardRepository repo = mock(DriveCardRepository.class);
         DriveCard image = new DriveCard();
         image.setId("img-t1");
@@ -48,7 +45,8 @@ class TestCardsTest {
         when(repo.findByEditionRegex(anyString())).thenReturn(List.of(image));
         TestCards cards = new TestCards(repo);
         var player = new UsernamePasswordAuthenticationToken("bob", null, AuthorityUtils.NO_AUTHORITIES);
-        assertThat(cards.hiddenDeck(List.of("img-e1", "img-t1"), player)).isTrue();
-        assertThat(cards.hiddenDeck(List.of("img-e1"), player)).isFalse();
+        assertThat(cards.anyIn(List.of("img-e1", "img-t1"))).isTrue();
+        assertThat(cards.anyIn(List.of("img-e1"))).isFalse();
+        assertThat(cards.hiddenDeck(List.of("img-e1", "img-t1"), player)).isFalse();
     }
 }
