@@ -211,6 +211,23 @@ object EffectEngine {
      * (its strength as a life, [CardEffects.lifeStrength]), else to their hand; recorded as LIFE_DAMAGE by `actorId`, its history
      * line `message` followed by "pierde la vida X, que va a …". Losing the game for an empty life stack is the caller's.
      */
+    /**
+     * Direct damage on a life its owner may play from the lives (a utility or structure, CombatRules.lifePlayable): the
+     * top life is revealed and stays on top of the lives, face up, until its owner answers (played from there, else to
+     * the hand: Answers). Recorded as LIFE_DAMAGE as [loseTopLife] does, at the same moment, its card staying in "lifeStack".
+     */
+    @JvmStatic
+    fun revealTopLife(
+        room: GameRoom, defender: PlayerState, damage: Int, actorId: String?, effect: PendingEffect?, attackerId: String?, message: String,
+    ): LifeLost {
+        val life = defender.lifeStack[0]
+        life.faceDown = false
+        record(room, GameEvent.LIFE_DAMAGE, actorId, life, "lifeStack", "lifeStack", effect,
+            frozenMapOf<String, Any?>("damage", damage, "attackerId", attackerId, "defenderId", defender.userId),
+            message + "pierde la vida " + name(life) + ", que queda revelada en sus vidas")
+        return LifeLost(life, false)
+    }
+
     @JvmStatic
     fun loseTopLife(
         room: GameRoom, defender: PlayerState, damage: Int, actorId: String?, effect: PendingEffect?, attackerId: String?, message: String,

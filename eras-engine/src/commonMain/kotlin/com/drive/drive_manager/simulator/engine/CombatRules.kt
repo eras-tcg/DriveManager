@@ -305,6 +305,17 @@ object CombatRules {
     }
 
     /**
+     * A life lost to direct damage that its owner may play from the lives (rule 10.1.4): a utility or structure, its cost
+     * as a life payable and nothing stopping it from being played.
+     */
+    @JvmStatic
+    fun lifePlayable(room: GameRoom, defender: PlayerState, life: CardSlot): Boolean {
+        return ("utility" == life.cardType || "structure" == life.cardType) &&
+            Chain.cannotActivateOnPlay(room, defender.userId, life) == null &&
+            canPay(room, defender.userId, CardEffects.lifePlayCost(life))
+    }
+
+    /**
      * Rule 10.1.4: the attacker deals damage equal to its strength to the top life card, which is revealed. A
      * creature with that strength or less is tributed; a stronger one goes to the hand, and if it was just
      * revealed it may Reforzar instead (face up at the bottom of the life stack). A utility or structure may be
@@ -335,19 +346,23 @@ object CombatRules {
             }
             c.hitsLeft = c.hitsLeft!! - 1
             val revealedNow = defender.lifeStack[0].faceDown
-            val (life, tribute) = EffectEngine.loseTopLife(room, defender, damage, owner.userId, null, attacker.instanceId,
-                name(attacker) + " inflige " + damage + " de daño directo: " + defender.username + " ")
+            // A utility or structure its owner can play stays revealed on top of the lives: played from there, else to the hand
+            val playable = lifePlayable(room, defender, defender.lifeStack[0])
+            val text = name(attacker) + " inflige " + damage + " de daño directo: " + defender.username + " "
+            val (life, tribute) =
+                if (playable) EffectEngine.revealTopLife(room, defender, damage, owner.userId, null, attacker.instanceId, text)
+                else EffectEngine.loseTopLife(room, defender, damage, owner.userId, null, attacker.instanceId, text)
             val creature = "creature" == life.cardType
             if (creature && !tribute && revealedNow) {
                 lifePrompt(room, defender, life, PromptPurpose.REINFORCE.id(), "Reforzar", name(life) +
                         " tiene más fuerza que el daño y va a tu mano. ¿Refuerzas con ella? Se coloca bocarriba al fondo de tu pila de vidas.", "Reforzar")
                 return false
             }
-            val lifeCost = CardEffects.lifePlayCost(life)
-            if (("utility" == life.cardType || "structure" == life.cardType)
-                && Chain.cannotActivateOnPlay(room, defender.userId, life) == null && canPay(room, defender.userId, lifeCost)) {
+            if (playable) {
+                val lifeCost = CardEffects.lifePlayCost(life)
                 lifePrompt(room, defender, life, PromptPurpose.LIFE_PLAY.id(), "Vida revelada",
-                    "¿Juegas " + name(life) + (if (lifeCost > 0) " pagando " + gemsText(lifeCost) else " sin pagar su coste") + "? Si no, queda en tu mano.", "Jugar")
+                    "¿Juegas " + name(life) + " desde tus vidas" + (if (lifeCost > 0) " pagando " + gemsText(lifeCost) else " sin pagar su coste") +
+                        "? Si no, va a tu mano.", "Jugar")
                 return false
             }
             // The revealed life is fully resolved (its triggers too) before the next hit (Letalidad)

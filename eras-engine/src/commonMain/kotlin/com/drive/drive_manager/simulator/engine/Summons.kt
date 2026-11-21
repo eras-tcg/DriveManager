@@ -188,14 +188,25 @@ object Summons {
 
     @JvmStatic
     fun play(room: GameRoom, player: PlayerState?, card: CardSlot, cost: Int, x: Double?, y: Double?, effect: PendingEffect?) {
-        player!!.hand.remove(card)
+        playFrom(room, player, card, cost, x, y, effect, "hand")
+    }
+
+    /** A utility or structure lost as a life, revealed on top of the lives, played from there (rule 10.1.4). */
+    @JvmStatic
+    fun playFromLives(room: GameRoom, player: PlayerState?, card: CardSlot, cost: Int) {
+        playFrom(room, player, card, cost, null, null, null, "lifeStack")
+    }
+
+    private fun playFrom(room: GameRoom, player: PlayerState?, card: CardSlot, cost: Int, x: Double?, y: Double?, effect: PendingEffect?, from: String) {
+        if ("lifeStack" == from) player!!.lifeStack.remove(card) else player!!.hand.remove(card)
         card.faceDown = false
         card.tapped = false
         card.x = x ?: 50.0
         card.y = if (y != null && y >= 55) y else 75.0
         player.field.add(card)
-        record(room, GameEvent.PLAY, player.userId, card, "hand", "field", effect, frozenMapOf<String, Any?>("cost", cost),
-                player.username + " juega " + name(card) + (if (cost == 0) " sin pagar su coste" else " pagando " + gemsText(cost))
+        record(room, GameEvent.PLAY, player.userId, card, from, "field", effect, frozenMapOf<String, Any?>("cost", cost),
+                player.username + " juega " + name(card) + (if ("lifeStack" == from) " desde sus vidas" else "") +
+                        (if (cost == 0) " sin pagar su coste" else " pagando " + gemsText(cost))
                         + (if (effect != null) " (" + effect.sourceName + ")" else ""))
     }
 
