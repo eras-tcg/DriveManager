@@ -57,7 +57,10 @@ public class RoomRestController {
         body.put("ranked",      room.isRanked());
         body.put("playerCount", room.getPlayers().size());
         body.put("playerIds",   new java.util.ArrayList<>(room.getPlayers().keySet()));
-        body.put("players",     room.getPlayers().values().stream().map(PlayerState::getUsername).toList());
+        // Ranked against the bot, before the game: the rival's name is not told yet
+        boolean hidden = GameStateUpdate.rivalHidden(room);
+        body.put("players",     room.getPlayers().values().stream()
+                .map(p -> hidden && com.drive.drive_manager.simulator.bot.BotSeat.BOT.equals(p.getUserId()) ? StateMask.UNKNOWN_RIVAL : p.getUsername()).toList());
         body.put("createdAt",   room.getCreatedAt().toString());
         return body;
     }

@@ -119,6 +119,8 @@ internal object SequenceSearch {
             level = grown
             d++
         }
+        val attacking = if (s.get("seqAttack") < 0.5) frozenListOf() else attacksFirst(sandbox, room, me, firsts, singles, found, seed, s, triggers)
+                .sortedWith(comparingDouble { x: Screened -> -x.score }).take(ATTACK_KEEP)
         found.sortWith(comparingDouble { x: Screened -> -x.score })
         val out: MutableList<GameAction> = ArrayList(found.take(keep).map { x -> of(x.moves) })
         if (s.get("seqPass") >= 0.5) {
@@ -134,10 +136,49 @@ internal object SequenceSearch {
                 out.add(of(seq))
             }
         }
+        // seqAttack: the best of them go to the tries whatever their screening (one try on one deal ranked them below
+        // sequences the tries then scored 20 to 30 lower: the tries, not the screening, weigh the attack)
+        for (x in attacking) if (out.none { a -> moves(a) == x.moves }) out.add(of(x.moves))
         if (cascade != null) out.add(0, cascade)
         if (lethal != null) out.add(0, lethal)
         return out
     }
+
+    /**
+     * seqAttack (duel st4-st2 s13047, 2026-11-20: Duregón 2 against a rival with no creature in its Línea frontal; it
+     * summoned Fadrake and did not attack): an attack needs 0 or more gems, so it goes before what spends them, and once
+     * the turn's plan is played it is no longer possible. Tried alone, an attack is judged with the heuristic finishing
+     * the turn (it did not summon Fadrake after it: −27, as much as passing), and the sequences grow from the best
+     * single moves first, so the time ran out before "attack → the plan" was screened: the attack was never weighed
+     * together with the turn's development. Here each attack is put before the best plans found without one (the best
+     * sequence and the two best single moves) and screened; the best [ATTACK_KEEP] go to the tries, which choose: no
+     * order is imposed. At most [ATTACK_FIRST] screens, past the sequences' deadline.
+     */
+    private fun attacksFirst(sandbox: Sandbox, room: GameRoom, me: String?, firsts: List<GameAction>, singles: List<Screened>, found: List<Screened>,
+                             seed: Long, s: BotSettings, triggers: Double): List<Screened> {
+        val attacks = firsts.filter { m -> ActionType.ATTACK.`is`(m) }
+        if (attacks.isEmpty()) return frozenListOf()
+        val plain = { x: Screened -> x.moves.none { m -> ActionType.ATTACK.`is`(m) || ActionType.END_TURN.`is`(m) } }
+        val plans: MutableList<List<GameAction>> = ArrayList()
+        found.filter(plain).maxByOrNull { x -> x.score }?.let { x -> plans.add(x.moves) }
+        singles.filter(plain).sortedWith(comparingDouble { x: Screened -> -x.score }).take(2)
+                .forEach { x -> if (plans.none { p -> p == x.moves }) plans.add(x.moves) }
+        val out: MutableList<Screened> = ArrayList()
+        var n = 0
+        for (plan in plans) for (a in attacks) {
+            if (n++ >= ATTACK_FIRST) return out
+            val seq: MutableList<GameAction> = ArrayList()
+            seq.add(a)
+            seq.addAll(plan)
+            val y = screen(sandbox, room, me, seq, seed, s, triggers)
+            if (y != null) out.add(y)
+        }
+        return out
+    }
+
+    /** Screens at most of an attack put before the best plans (seqAttack), and how many of them go to the tries. */
+    private const val ATTACK_FIRST = 12
+    private const val ATTACK_KEEP = 2
 
     /** The sequence on a copy, scored right away, with the moves legal after it (null: a move was refused). */
     private fun screen(sandbox: Sandbox, room: GameRoom, me: String?, moves: List<GameAction>, seed: Long, s: BotSettings, triggers: Double): Screened? {

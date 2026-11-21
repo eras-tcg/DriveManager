@@ -123,6 +123,27 @@ public class CardArtService {
         });
     }
 
+    /** Where the card shines (see Card.shineKey): a PNG, replacing the one before. */
+    public Optional<Card> setShine(String cardId, byte[] bytes) {
+        if (!"image/png".equals(mediaType(bytes))) throw new IllegalArgumentException("El brillo de la carta debe ser un PNG");
+        if (bytes.length > MAX_BYTES) throw new IllegalArgumentException("La imagen pesa más de 25 MB");
+        return cards.findById(cardId).map(card -> {
+            String old = card.getShineKey();
+            String key = "card-shine/" + cardId + "/" + Instant.now().toEpochMilli() + ".png";
+            store.put(key, bytes, "image/png");
+            card.setShineKey(key);
+            Card saved = cards.save(card);
+            if (old != null) store.delete(old);
+            return saved;
+        });
+    }
+
+    public Optional<Art> getShine(String cardId) {
+        return cards.findById(cardId)
+                .filter(c -> c.getShineKey() != null)
+                .flatMap(c -> read(c.getShineKey()).map(bytes -> new Art(bytes, "image/png")));
+    }
+
     public Optional<Art> getRender(String cardId) {
         return cards.findById(cardId)
                 .filter(c -> c.getRenderKey() != null)

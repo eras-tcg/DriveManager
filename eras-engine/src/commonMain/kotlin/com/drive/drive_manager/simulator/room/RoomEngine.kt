@@ -34,7 +34,7 @@ class RoomEngine(host: RoomHost) {
         }
         if (BotSeat.forBot(room, action)) {
             if (userId!! != room.hostId) return refused(room, "Solo el dueño de la sala elige el mazo del bot", userId)
-            if (room.ranked) return refused(room, "En una partida ranked el bot juega con tu mismo mazo", userId)
+            if (room.ranked) return refused(room, "En una partida ranked el rival elige su propio mazo", userId)
             userId = BotSeat.BOT
         }
         return Applied(null, userId)

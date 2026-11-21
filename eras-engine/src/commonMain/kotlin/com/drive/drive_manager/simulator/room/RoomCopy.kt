@@ -108,6 +108,7 @@ class RoomCopy private constructor(
         c.botDelayMs = o.botDelayMs
         c.botEdge = o.botEdge
         c.botLevel = o.botLevel
+        c.botPoolDeck = o.botPoolDeck
         c.confirmMandatory = o.confirmMandatory
         c.status = o.status
         val players = mapLike<String, PlayerState?>(o.players)

@@ -163,12 +163,11 @@ class OfflineGamesTest {
         assertThat(progress).contains(new MissionEvents.Progress(ALICE, MissionRules.GAME_PLAYED, 1));
         assertThat(progress.contains(new MissionEvents.Progress(ALICE, MissionRules.GAME_WON, 1))).isEqualTo(ALICE.equals(game.result().winnerId()));
         assertThat(progress).anyMatch(p -> MissionRules.SUMMON.equals(p.counts()));
-        // Each step of progress is recorded for the missions and the progression, as the server's own bot game records it
+        // Each step of progress is recorded for the progression, as the server's own friendly bot game records it; a
+        // friendly game against the bot moves no missions (only ranked ones do)
         Map<MissionEvents.Progress, Long> times = progress.stream().collect(java.util.stream.Collectors.groupingBy(p -> p, java.util.stream.Collectors.counting()));
-        times.forEach((p, n) -> {
-            verify(missions, times(n.intValue())).record(ALICE, p.counts(), p.amount());
-            verify(progression, times(n.intValue())).record(ALICE, p.counts(), p.amount());
-        });
+        times.forEach((p, n) -> verify(progression, times(n.intValue())).record(ALICE, p.counts(), p.amount()));
+        verify(missions, never()).record(anyString(), anyString(), anyInt());
         // A game against the bot: the welcome step that asks for a game against a player leaves it out
         verify(progression).record(ALICE, ProgressionRules.BOT_GAME_PLAYED, 1);
         verify(missions, never()).record(anyString(), eq(ProgressionRules.BOT_GAME_PLAYED), anyInt());
@@ -193,7 +192,7 @@ class OfflineGamesTest {
         // One end of the game for each seat, the bot's too, as the server logs its own games against the bot
         verify(activity, times(1)).record(eq(ALICE), eq(ActivityLogService.ONLINE_GAME_END), any());
         verify(activity, times(1)).record(eq(BotRooms.BOT), eq(ActivityLogService.ONLINE_GAME_END), any());
-        verify(missions, times(1)).record(ALICE, MissionRules.GAME_PLAYED, 1);
+        verify(progression, times(1)).record(ALICE, MissionRules.GAME_PLAYED, 1);
     }
 
     /**
@@ -316,7 +315,7 @@ class OfflineGamesTest {
     void thePlayersDeckCountsWhenLegalAndOwnedEvenIfEditedOrDeletedSince() {
         // Alice's own deck: ST1's cards under their drive ids, saved on the server
         List<String> fileIds = starterIds("deck-st1").stream().map(id -> "d-" + id).toList();
-        DeckList mine = new DeckList("deck-alice", "Mi ST1", fileIds, null, null, ALICE, "Alice", true);
+        DeckList mine = new DeckList("deck-alice", "Mi ST1", fileIds, null, null, ALICE, "Alice", true, false);
         when(deckLists.findById("deck-alice")).thenReturn(Optional.of(mine));
         catalogHas(starterCards());
         when(collections.missing(eq(ALICE), anyList())).thenReturn(0);

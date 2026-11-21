@@ -263,6 +263,11 @@ public class RoomService implements RoomHost {
         return RoomDecks.refreshCardMetadata(this, room, userId, action);
     }
 
+    @Override
+    public void nextRound(GameRoom room, boolean rematch) {
+        botRooms.nextRound(room, rematch);
+    }
+
     // ------------------------------------------------------------------ Sessions
 
     public void registerSession(String sessionId, String roomId, String userId) {

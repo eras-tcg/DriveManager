@@ -51,6 +51,12 @@ internal object TableScore {
         // little and attacking (leaving no blocker home) pays; the rival's lives keep their full worth
         val c = w.get("lifeMine")
         if (mine != null && c > 0 && c < 1) s += w.life * (curve(c, mine.lifeStack.size) - mine.lifeStack.size)
+        // lifeEdge e (duel st2-st4 s13081, 2026-11-20: at 3 lives it let Dragón Delta 6 through rather than block it with
+        // Franchute 11, the tries pricing 3 to 1 lives at some 16, below a Dracoventus the rival traded away; the try ends
+        // as the rival's next turn begins, so the hit that kills at 1 life is never seen): its own last lives are worth
+        // more, the last e lives more, the one before e/2, then e/4… (in lives); going from 3 to 1 costs 0.75e more
+        val edge = w.get("lifeEdge")
+        if (mine != null && edge > 0) s += w.life * edge * curve(0.5, mine.lifeStack.size)
         // lifeFoe c (the user's call, 2026-11-05): the rival's lives the same way, the last one worth life and the k-th from
         // it life * c^k, so a hit far from the win is worth little and clearing their table beats it; near the win it is
         // worth much again (the last hit is the win itself)
