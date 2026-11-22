@@ -5,7 +5,7 @@
       "id": "fal:en-tributos",
       "moment": "ACTIVATED",
       "label": "En Tributos",
-      "text": "Una vez por turno entre copias: puedes enviar otros 5 de tus tributos Azules al fondo de tu mazo; invoca esta carta sin pagar su coste.",
+      "text": "Una vez por turno entre copias: puedes enviar otros 5 de tus tributos Azules al fondo de tu mazo; invoca esta carta en tu línea frontal sin pagar su coste.",
       "cost": [
         {
           "type": "Do",
@@ -58,7 +58,8 @@
               "type": "Fixed",
               "value": 1000
             },
-            "required": true
+            "required": true,
+            "toFront": true
           }
         }
       ],

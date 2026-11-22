@@ -112,7 +112,8 @@
     "ritual" : {
       "parts" : [
         {
-          "level" : 3
+          "level" : 3,
+          "summoner" : true
         },
         {},
         {}
