@@ -164,6 +164,22 @@ class ST1CardsTest extends CardBatchSupport {
     }
 
     @Test
+    void frehleTakesItsMaterialFromTheFieldOrTheTributos() {
+        // Designer 2026-11-22: "criatura nivel 2 + material nivel 2 en campo o tributos"
+        onField(host, blue("s", "Invocador", 2, 2, 4), FRONT);
+        onField(host, blue("f", "En el campo", 2, 2, 4), BACK);
+        host.getTributeZone().add(blue("t", "En tributos", 2, 2, 4));
+        host.getHand().add(blue("h", "En la mano", 2, 2, 4));
+        CardSlot frehle = materialization(blue("fr", "Frehle", 3, 3, 8), 1);
+        host.getHand().add(frehle);
+        assertThat(SpecialSummons.specialByPlayer(room, "host", "fr", "s")).isNull();
+        Prompt material = room.getPrompt();
+        assertThat(material.getValidIds()).contains("f", "t").doesNotContain("h");
+        answer(material, "t");
+        assertThat(host.getField()).contains(frehle);
+    }
+
+    @Test
     void limpiadorErranteTakesItsMaterialFromTheHandOrTheDiscardPile() {
         // Designer 2026-11-22: "criatura nivel 2 + material nivel 2 de tu mano o descarte"
         onField(host, blue("s", "Invocador", 2, 2, 4), FRONT);
