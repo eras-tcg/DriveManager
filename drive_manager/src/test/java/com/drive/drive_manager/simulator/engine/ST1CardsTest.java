@@ -180,6 +180,23 @@ class ST1CardsTest extends CardBatchSupport {
     }
 
     @Test
+    void guardianDeLaLunaSepulcralHasALevelThreeSummonerPlusOneCreature() {
+        // Designer 2026-11-22: "criatura invocador nivel 3 + 1 criatura": the level 3 is the summoner, the other is added
+        CardSlot three = onField(host, card("p3", "Nivel Tres", 3, 3, "P"), FRONT);
+        CardSlot one = onField(host, card("p1", "Nivel Uno", 1, 1, "P"), BACK);
+        CardSlot guardian = card("gu", "Guardián de la Luna Sepulcral", 5, 4, "P");
+        guardian.setSpecialSummonKind("ritual");
+        guardian.setSpecialCost(1);
+        host.getHand().add(guardian);
+        assertThat(SpecialSummons.specialByPlayer(room, "host", "gu", "p1")).isNotNull();
+        assertThat(SpecialSummons.specialByPlayer(room, "host", "gu", "p3")).isNull();
+        Prompt other = room.getPrompt();
+        assertThat(other.getValidIds()).contains("p1");
+        answer(other, "p1");
+        assertThat(host.getField()).contains(guardian).doesNotContain(three, one);
+    }
+
+    @Test
     void limpiadorErranteTakesItsMaterialFromTheHandOrTheDiscardPile() {
         // Designer 2026-11-22: "criatura nivel 2 + material nivel 2 de tu mano o descarte"
         onField(host, blue("s", "Invocador", 2, 2, 4), FRONT);
@@ -244,7 +261,7 @@ class ST1CardsTest extends CardBatchSupport {
 
     @Test
     void falSendsFiveOtherBlueTributesToTheBottomToSummonItselfInYourTurn() {
-        // Designer 2026-11-22: no condition; activated from the Tributos in your turn only; the summon by effect goes to the Retaguardia
+        // Designer 2026-11-22: no condition; activated from the Tributos in your turn only; summoned in the Línea frontal for free
         CardSlot fal = blue("fa", "Fal", 1, 1, 4);
         host.getTributeZone().add(fal);
         for (int i = 0; i < 5; i++) host.getTributeZone().add(card("v" + i, "Azul " + i, 1, 1, "B"));
@@ -258,7 +275,8 @@ class ST1CardsTest extends CardBatchSupport {
         answer("v0", "v1", "v2", "v3", "v4");
         drain();
         assertThat(host.getField()).contains(fal);
-        assertThat(EffectEngine.inFrontLine(fal)).isFalse();
+        // Designer 2026-11-22 (later): in your Línea frontal
+        assertThat(EffectEngine.inFrontLine(fal)).isTrue();
         // "sin pagar su coste"
         assertThat(gems()).isEqualTo(before);
         assertThat(host.getDeck().subList(host.getDeck().size() - 5, host.getDeck().size()))
