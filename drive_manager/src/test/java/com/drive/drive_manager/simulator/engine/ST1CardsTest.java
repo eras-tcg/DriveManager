@@ -192,22 +192,21 @@ class ST1CardsTest extends CardBatchSupport {
     }
 
     @Test
-    void falSendsFiveBlueTributesToTheBottomToSummonItselfInTheFrontLine() {
+    void falSendsFiveOtherBlueTributesToTheBottomToSummonItselfInYourTurn() {
+        // Designer 2026-11-22: no condition; activated from the Tributos in your turn only; the summon by effect goes to the Retaguardia
         CardSlot fal = blue("fa", "Fal", 1, 1, 4);
         host.getTributeZone().add(fal);
         for (int i = 0; i < 5; i++) host.getTributeZone().add(card("v" + i, "Azul " + i, 1, 1, "B"));
         host.getTributeZone().add(card("p", "Violeta", 1, 1, "P"));
-        onField(host, withMaterials(blue("ho", "Portador", 3, 3, 8), 1), BACK);
-        onField(guest, enemy("w", 5), FRONT);
-        play(utility("ba", "Batalla por la Frontera Interdimensional", 4, "B"));
-        answer("hom0");
-        answer("w");
-        accept(fal);
+        room.setCurrentTurnUserId("guest");
+        assertThat(Chain.activateByPlayer(room, "host", "fa", "fal:en-tributos")).isNotNull();
+        room.setCurrentTurnUserId("host");
+        assertThat(Chain.activateByPlayer(room, "host", "fa", "fal:en-tributos")).isNull();
         assertThat(room.getPrompt().getValidIds()).doesNotContain("p", "fa");
         answer("v0", "v1", "v2", "v3", "v4");
         drain();
         assertThat(host.getField()).contains(fal);
-        assertThat(EffectEngine.inFrontLine(fal)).isTrue();
+        assertThat(EffectEngine.inFrontLine(fal)).isFalse();
         assertThat(host.getDeck().subList(host.getDeck().size() - 5, host.getDeck().size()))
                 .extracting(CardSlot::getInstanceId).containsExactlyInAnyOrder("v0", "v1", "v2", "v3", "v4");
     }
