@@ -695,6 +695,8 @@ internal class EngineContext(private val room: GameRoom, private val effect: Pen
         if (amount is Amount.Scaled) return this.amount(amount.base) / amount.divisor + amount.plus
         if (amount is Amount.TriggerSourceLevel) return SpecialRequirements.triggerSourceLevel(room, effect)
         if (amount is Amount.CardsIn) return com.drive.drive_manager.simulator.engine.effects.selection.Selection.candidates(this, amount.cards!!, false).size
+        if (amount is Amount.Targetable) return com.drive.drive_manager.simulator.engine.effects.selection.Selection.candidates(this, amount.cards!!, true).size
+        if (amount is Amount.Least) return amount.of!!.minOf { this.amount(it) }
         if (amount is Amount.SumOf) {
             val cards = com.drive.drive_manager.simulator.engine.effects.selection.Selection.candidates(this, amount.cards!!, false)
             return cards.sumOf { c ->
