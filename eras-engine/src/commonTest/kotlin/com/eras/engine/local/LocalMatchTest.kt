@@ -153,13 +153,16 @@ class LocalMatchTest {
          * one more model, "guiado-previo". The game against the normal bot plays otherwise (15 turns, not 11): its check
          * of utilities (hUseful, Usefulness) no longer takes the order of the events (fieldSeq) for a change of the
          * table, asks that the bot loses no material by the play, and judges slow effects and answers in a chain too.
+         *
+         * 2026-11-22, the three maps below for three games: a look-ahead bot's budgetMs now covers its whole decision (the
+         * searches before the trials spend from it too), so with the clock in readings it tries fewer moves and plays otherwise.
          */
         /** LocalMatch.result() at the end of each game: taken on the JVM; JavaScript must give the same. */
         val EXPECTED_RESULT = mapOf(
-            "st1-st1-1-easy" to "{\"status\":\"POST_GAME\",\"gamesEnded\":1,\"winnerId\":\"bot\",\"endReason\":\"lives\",\"turns\":15,\"digest\":\"f03e5e35369f52fe\"}",
+            "st1-st1-1-easy" to "{\"status\":\"POST_GAME\",\"gamesEnded\":1,\"winnerId\":\"bot\",\"endReason\":\"deck\",\"turns\":19,\"digest\":\"440a112df3d3c8c6\"}",
             "st2-st3-2-easy" to "{\"status\":\"POST_GAME\",\"gamesEnded\":1,\"winnerId\":\"local-player\",\"endReason\":\"lives\",\"turns\":15,\"digest\":\"3c7d1ed9255bfc49\"}",
-            "st4-st1-3-easy" to "{\"status\":\"POST_GAME\",\"gamesEnded\":1,\"winnerId\":\"bot\",\"endReason\":\"lives\",\"turns\":7,\"digest\":\"bbe5214d16e40ecf\"}",
-            "st3-st4-5-normal" to "{\"status\":\"POST_GAME\",\"gamesEnded\":1,\"winnerId\":\"local-player\",\"endReason\":\"lives\",\"turns\":14,\"digest\":\"1f6a0f668f053f54\"}",
+            "st4-st1-3-easy" to "{\"status\":\"POST_GAME\",\"gamesEnded\":1,\"winnerId\":\"bot\",\"endReason\":\"lives\",\"turns\":10,\"digest\":\"cfda69d1c131c2a0\"}",
+            "st3-st4-5-normal" to "{\"status\":\"POST_GAME\",\"gamesEnded\":1,\"winnerId\":\"local-player\",\"endReason\":\"lives\",\"turns\":14,\"digest\":\"93978495158377d0\"}",
         )
 
         /**
@@ -167,18 +170,18 @@ class LocalMatchTest {
          * must give the same). Without them the messages give [EXPECTED], as before those updates were sent.
          */
         val EXPECTED_WITH_LINKS = mapOf(
-            "st1-st1-1-easy" to "cee533c441b7ac83",
+            "st1-st1-1-easy" to "6ccc0ad728bc4060",
             "st2-st3-2-easy" to "550598d5aeaee871",
-            "st4-st1-3-easy" to "d941965980730ca2",
-            "st3-st4-5-normal" to "0c514a71316dd790",
+            "st4-st1-3-easy" to "02d127d89a9dd137",
+            "st3-st4-5-normal" to "47de795c8da267ff",
         )
 
         /** Taken on the JVM; JavaScript must give the same. */
         val EXPECTED = mapOf(
-            "st1-st1-1-easy" to "7fc7363d9f98806b",
+            "st1-st1-1-easy" to "cb0cf8e93cde641e",
             "st2-st3-2-easy" to "cd2c80206efb646a",
-            "st4-st1-3-easy" to "3296c46d0ce2252c",
-            "st3-st4-5-normal" to "3cb512354292df0c",
+            "st4-st1-3-easy" to "bf50d05f8735bf1f",
+            "st3-st4-5-normal" to "b151f6b45d64bc63",
         )
     }
 }
