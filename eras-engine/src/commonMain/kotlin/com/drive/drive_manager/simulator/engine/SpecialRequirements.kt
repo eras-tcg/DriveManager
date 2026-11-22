@@ -352,9 +352,9 @@ object SpecialRequirements {
     /** "tu mano o tus tributos". */
     @JvmStatic
     fun zonesText(zones: List<String>?): String {
-        // Any other zone is read as the Tributos
+        // The field, the hand and the discard pile by their names; any other zone is read as the Tributos
         return (zones!!.map { z ->
-            (Zone.parse(z)?.takeIf { x -> x == Zone.FIELD || x == Zone.HAND } ?: Zone.TRIBUTE_ZONE).ownLabel()
+            (Zone.parse(z)?.takeIf { x -> x == Zone.FIELD || x == Zone.HAND || x == Zone.DISCARD_PILE } ?: Zone.TRIBUTE_ZONE).ownLabel()
         }).joinToString(" o ")
     }
 

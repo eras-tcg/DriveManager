@@ -250,4 +250,33 @@ class ST1CardsTest extends CardBatchSupport {
         // The utility costs 1; Fósfilis's special cost 2, minus 2
         assertThat(gems()).isEqualTo(before - 1);
     }
+
+    @Test
+    void ofrendaMaterializesMoSWithALevel3MaterialFromTheHand() {
+        // Reported 2026-11-22: Frehle got two materials, Ofrenda tributes them, MO-S from the hand; its Requerimiento takes
+        // the material "en mano o descarte" and the choice showed only the Tributos and the field (the hand card was never offered)
+        CardSlot frehle = withMaterials(blue("fr", "Frehle", 3, 3, 6), 2);
+        onField(host, frehle, FRONT);
+        CardSlot mos = materialization(blue("mo", "MO-S", 4, 4, 8), 3);
+        CardSlot limpiador = blue("li", "Limpiador Errante", 3, 3, 6);
+        host.getHand().add(mos);
+        host.getHand().add(limpiador);
+        play(utility("of", "Ofrenda al Paso Interdimensional", 1, "B"));
+        answer("frm0", "frm1");
+        Prompt material = null;
+        for (int i = 0; i < 6 && !host.getField().contains(mos) && room.getPrompt() != null; i++) {
+            Prompt p = room.getPrompt();
+            if (p.getValidIds().contains("mo")) answer(p, "mo");
+            else if (p.getValidIds().contains("fr")) answer(p, "fr");
+            else if (p.getValidIds().contains("li")) {
+                material = p;
+                assertThat(p.getCards()).extracting(CardSlot::getInstanceId).contains("li");
+                assertThat(p.getInstruction()).contains("mano o tu descarte");
+                answer(p, "li");
+            } else answer(p);
+        }
+        assertThat(material).isNotNull();
+        assertThat(host.getField()).contains(mos);
+        assertThat(mos.getMaterials()).extracting(CardSlot::getInstanceId).contains("li");
+    }
 }

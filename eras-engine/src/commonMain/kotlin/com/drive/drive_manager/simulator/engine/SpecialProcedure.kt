@@ -128,6 +128,8 @@ object SpecialProcedure {
             Selector.Stage.MATERIAL -> {
                 val all: MutableList<CardSlot> = ArrayList(player!!.tributeZone)
                 all.addAll(player.field)
+                // A Requerimiento may take its material from elsewhere ("en mano o descarte"): those cards are shown too
+                for (c in options(room, effect, special)) if (all.none { it === c }) all.add(c)
                 all
             }
         }
