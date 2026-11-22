@@ -1,6 +1,7 @@
 package com.drive.drive_manager.simulator.engine
 
 import kotlin.jvm.JvmRecord
+import kotlin.jvm.JvmOverloads
 import kotlin.jvm.JvmStatic
 import com.drive.drive_manager.simulator.room.CardSlot
 import com.drive.drive_manager.simulator.room.GameRoom
@@ -17,9 +18,13 @@ import com.drive.drive_manager.simulator.room.PlayerState
  */
 object RitualParts {
 
-    /** One creature of the Requerimiento: its level ("o menor": at most), and its type if it says one. */
+    /**
+     * One creature of the Requerimiento: its level ("o menor": at most), and its type if it says one. `summoner`: this part is the
+     * summoner ("criatura nivel 3 + 1 criatura": the first is the summoner, what comes after the "+" is added; designer
+     * 2026-11-22); without it any part may be ("2 criaturas nivel 2 o menor").
+     */
     @JvmRecord
-    data class Part(val level: Int, val orLess: Boolean, val type: String?) {
+    data class Part @JvmOverloads constructor(val level: Int, val orLess: Boolean, val type: String?, val summoner: Boolean = false) {
         fun fits(card: CardSlot, asType: String?): Boolean {
             // Level 0: any level ("+ 1 aliado")
             if (level > 0 && EffectEngine.levels(card).none { l -> if (orLess) l <= level else l == level }) return false
@@ -89,6 +94,11 @@ object RitualParts {
         val own = Rituals.ritualMaterials(player, target)
         val enemies = enemies(room, player, target)
         val asType = enemyType(target)
+        val lead = parts.indexOfFirst { it.summoner }
+        if (lead >= 0) {
+            val rest = parts.filterIndexed { i, _ -> i != lead }
+            return own.filter { s -> parts[lead].fits(s, null) && completes(rest, frozenListOf(), (own + enemies).filter { it !== s }, enemies, asType) }
+        }
         return own.filter { s -> completes(parts, frozenListOf(s), own + enemies, enemies, asType) }
     }
 
@@ -98,6 +108,12 @@ object RitualParts {
         val pool = Rituals.ritualMaterials(player, target) + enemies(room, player, target)
         val enemies = enemies(room, player, target)
         val asType = enemyType(target)
+        val lead = parts.indexOfFirst { it.summoner }
+        if (lead >= 0) {
+            val rest = parts.filterIndexed { i, _ -> i != lead }
+            val others = pool.filter { it !== summoner }
+            return others.filter { c -> completes(rest, frozenListOf(c), others, enemies, asType) }
+        }
         return pool.filter { c -> c !== summoner && completes(parts, frozenListOf(summoner, c), pool, enemies, asType) }
     }
 
@@ -106,6 +122,12 @@ object RitualParts {
     fun check(room: GameRoom, player: PlayerState, target: CardSlot, parts: List<Part>, summoner: CardSlot, others: List<CardSlot>): String? {
         val pool = Rituals.ritualMaterials(player, target) + enemies(room, player, target)
         if (others.any { o -> pool.none { it === o } } || pool.none { it === summoner }) return "Esa criatura no puede usarse para este Ritual"
+        val lead = parts.indexOfFirst { it.summoner }
+        if (lead >= 0) {
+            val rest = parts.filterIndexed { i, _ -> i != lead }
+            return if (parts[lead].fits(summoner, null) && fills(rest, others, enemies(room, player, target), enemyType(target))) null
+            else "El invocador debe ser " + parts[lead].describe() + "; además: " + rest.joinToString(", ") { it.describe() }
+        }
         val all = ArrayList(frozenListOf(summoner))
         all.addAll(others)
         return if (fills(parts, all, enemies(room, player, target), enemyType(target))) null
@@ -122,6 +144,9 @@ object RitualParts {
     /** "Elige el invocador: 1 criatura nivel 2 …". */
     @JvmStatic
     fun summonerInstruction(parts: List<Part>, target: CardSlot): String {
+        parts.firstOrNull { it.summoner }?.let { lead ->
+            return "Elige el invocador: 1 " + lead.describe() + ". Se sacrifica y " + EffectEngine.name(target) + " ocupa su lugar y hereda su estado."
+        }
         return "Elige el invocador: 1 de " + parts.joinToString(", ") { it.describe() } + ". Se sacrifica y " + EffectEngine.name(target) +
                 " ocupa su lugar y hereda su estado."
     }

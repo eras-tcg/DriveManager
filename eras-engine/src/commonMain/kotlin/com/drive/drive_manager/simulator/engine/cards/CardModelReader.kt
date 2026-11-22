@@ -1534,11 +1534,12 @@ internal object CardModelReader {
     }
 
     private fun readRitualPartsPart(o: JsonObject, at: String): com.drive.drive_manager.simulator.engine.RitualParts.Part {
-        J.fields(o, at, "RitualParts.Part", setOf("level", "orLess", "type"), false)
+        J.fields(o, at, "RitualParts.Part", setOf("level", "orLess", "type", "summoner"), false)
         return com.drive.drive_manager.simulator.engine.RitualParts.Part(
             level = J.int(o, "level", at),
             orLess = J.bool(o, "orLess", at),
             type = J.str(o, "type", at),
+            summoner = J.bool(o, "summoner", at),
         )
     }
 
