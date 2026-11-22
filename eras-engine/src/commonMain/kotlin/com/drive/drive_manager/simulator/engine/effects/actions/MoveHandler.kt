@@ -5,6 +5,7 @@ import kotlin.math.min
 import com.drive.drive_manager.simulator.engine.frozenListOf
 import com.drive.drive_manager.simulator.engine.JavaText
 import com.drive.drive_manager.simulator.engine.GameRandom
+import com.drive.drive_manager.simulator.engine.Amount
 import com.drive.drive_manager.simulator.engine.effects.model.Action.Move
 import com.drive.drive_manager.simulator.engine.effects.model.Memory
 import com.drive.drive_manager.simulator.engine.effects.model.Selector
@@ -27,6 +28,10 @@ class MoveHandler : ActionHandler<Move> {
         if (selector.zones!! == "looked" || selector.fromMemory()) return true
         // "tributa todos los materiales de esta carta" with none: an empty action, still done (designer, Samael): a cost paid
         if (selector.mode() == Selector.Mode.ALL && ctx.amount(selector.min) <= 0 && selector.self() != Selector.Self.REQUIRE) return true
+        // "hasta N" whose N is under what it needs (no enemy to choose for the materials tributed): it cannot be paid
+        // (only those bounded by what there is to choose: an amount read from the effect, LastCount, is not known yet)
+        val bounded = selector.max is Amount.Least || selector.max is Amount.Targetable
+        if (bounded && ctx.amount(selector.max) < max(1, ctx.amount(selector.min))) return false
         val found = candidates(ctx, action)
         if (selector.self() == Selector.Self.REQUIRE && found.none { ctx.isSelf(it) }) return false
         // "N cartas de distinto nivel": as many different levels

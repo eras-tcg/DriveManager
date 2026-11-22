@@ -6,7 +6,7 @@
       "moment": "ON_PLAY",
       "mandatory": true,
       "label": "En Juego",
-      "text": "Tributa hasta 3 materiales de tus aliados y elige la misma cantidad de enemigos; reduce en 5 sus fuerzas.",
+      "text": "Tributa hasta 3 materiales de tus aliados y elige 1 enemigo; reduce la fuerza de dicho enemigo en 4 por cada material tributado hasta el final del turno.",
       "cost": [
         {
           "type": "Do",
@@ -41,10 +41,12 @@
                 "cardType": "creature"
               },
               "min": {
-                "type": "LastCount"
+                "type": "Fixed",
+                "value": 1
               },
               "max": {
-                "type": "LastCount"
+                "type": "Fixed",
+                "value": 1
               },
               "self": "ANY",
               "mode": "CHOOSE"
@@ -73,8 +75,12 @@
               "mode": "ALL"
             },
             "strength": {
-              "type": "Fixed",
-              "value": -5
+              "type": "Times",
+              "base": {
+                "type": "LastMoved",
+                "filter": {}
+              },
+              "factor": -4
             },
             "until": "TURN"
           }

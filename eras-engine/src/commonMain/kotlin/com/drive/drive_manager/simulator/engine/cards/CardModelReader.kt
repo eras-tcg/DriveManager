@@ -13,7 +13,7 @@ internal object CardModelReader {
     /** The registered type ids (the records' and objects' simple names) of each family. */
     private val TYPES: Map<String, List<String>> = mapOf(
         "Action" to listOf("AtEndOfTurn", "Attack", "Damage", "Destroy", "Draw", "Flip", "Gems", "Look", "Modify", "Move", "Play", "Select", "Sequence", "SetTapped", "Summon", "SummonSpecial", "Watch"),
-        "Amount" to listOf("CardsIn", "EnemiesInFrontLine", "FaceUpLives", "Fixed", "Gems", "HandOver", "HandUnder", "IfThen", "InZone", "InZones", "LastCount", "LastMoved", "LevelsOnField", "Lives", "LivesBehind", "OnBothFields", "OnField", "OpponentLevels", "Scaled", "SignedGems", "SourceStrength", "SubjectLevel", "SumOf", "Times", "TriggerSourceLevel", "TriggerStrengthBeforeRemoval", "UsedToSummon"),
+        "Amount" to listOf("CardsIn", "EnemiesInFrontLine", "FaceUpLives", "Fixed", "Gems", "HandOver", "HandUnder", "IfThen", "InZone", "InZones", "LastCount", "LastMoved", "Least", "LevelsOnField", "Lives", "LivesBehind", "OnBothFields", "OnField", "OpponentLevels", "Scaled", "SignedGems", "SourceStrength", "SubjectLevel", "SumOf", "Targetable", "Times", "TriggerSourceLevel", "TriggerStrengthBeforeRemoval", "UsedToSummon"),
         "CardEffects.Replacement" to listOf("Replacement"),
         "Condition" to listOf("AddedAsResource", "All", "AllyClashes", "AllyDealtDirectDamage", "Always", "Any", "ByEffect", "Compare", "Destroyed", "EntersFrontLine", "GameIs", "Happened", "Immediately", "Not", "NothingElsePlayedThisTurn", "Summoned", "SummonedWithoutMaterial", "Targeted", "ThisClashes", "ThisIs", "ThisMatches", "ThisTributed", "YouReducedStrength"),
         "EffectStep" to listOf("ActivateMaterialSummonEffects", "ActivateSubjectSummonEffect", "ActivateTributedSummonEffect", "AddResourceToHigherAlly", "AlliesGain", "AllySpecialSummonsSameLevel", "AttachLowerFromTributes", "AttachSelfAsResourceToAlly", "AttachSubjectToHigherAlly", "AttachSubjectToSummoned", "BounceChosen", "ChangeClass", "ChooseEnemiesLevelSum", "ChooseOpponentTribute", "ChooseWeakestEnemy", "DeclareBlockSelf", "DestroyFaceUpLife", "DestroyTopLife", "Do", "EachPlayerDiscards", "EachPlayerKeepsOneInFrontLine", "EachPlayerLowersMarker", "EndYourTurn", "ExtraCombatHitThenEndTurn", "ExtraHit", "GainGemsPerOwnSacrificed", "GrantEffect", "GroupUp", "HandsToBottomDrawOpponentLives", "IfChosenGone", "IfCondition", "IfDone", "IfNotDone", "IfPossible", "IfSaved", "IfTributed", "KeepOnField", "LivesFaceDown", "MaterialOfExhaustedAllyToBack", "MaterializeSelfOnTriggerAlly", "MayDo", "NoUntapChosen", "OpponentGainsGemsAsCounter", "OpponentMaySummon", "OpponentMayTap", "OpponentMovesOneToFront", "PickAllyUpToSacrificedLevel", "PickAllyWithHigherAlly", "PickAllyWithMaterials", "PlaceChosenTributeAndSelf", "PlaceFromHandUntilTurnEnd", "ReduceOpponentLivesBy", "ReduceRepeatedly", "ReturnAllyOfSummonedLevel", "ReturnSubjectAtAttackEnd", "RevealFromHand", "RevealOpponentHandSendOneToBottom", "SacrificeAlly", "SkipBlockStep", "SpecialSelfDeclaredSummoner", "SubjectFromTrigger", "SubjectIsThisCard", "SummonFreeLevelSum", "SummonLikeSubject", "SwapInFormation", "TakeFromLookedDistinctLevels", "TakeFromLookedEachRestToBottom", "TakeFromLookedLikeSubject", "TributeAlliesLevelSum", "TributeAllyMaterial", "TributeAllyMaterialWhere", "TributeAllyResources", "TributesToDeckBottomForKeyword"),
@@ -59,6 +59,7 @@ internal object CardModelReader {
             "InZones" -> readAmountInZones(o, at)
             "LastCount" -> readAmountLastCount(o, at)
             "LastMoved" -> readAmountLastMoved(o, at)
+            "Least" -> readAmountLeast(o, at)
             "LevelsOnField" -> readAmountLevelsOnField(o, at)
             "Lives" -> readAmountLives(o, at)
             "LivesBehind" -> readAmountLivesBehind(o, at)
@@ -70,6 +71,7 @@ internal object CardModelReader {
             "SourceStrength" -> readAmountSourceStrength(o, at)
             "SubjectLevel" -> readAmountSubjectLevel(o, at)
             "SumOf" -> readAmountSumOf(o, at)
+            "Targetable" -> readAmountTargetable(o, at)
             "Times" -> readAmountTimes(o, at)
             "TriggerSourceLevel" -> readAmountTriggerSourceLevel(o, at)
             "TriggerStrengthBeforeRemoval" -> readAmountTriggerStrengthBeforeRemoval(o, at)
@@ -476,6 +478,13 @@ internal object CardModelReader {
         )
     }
 
+    private fun readAmountLeast(o: JsonObject, at: String): com.drive.drive_manager.simulator.engine.Amount.Least {
+        J.fields(o, at, "Amount.Least", setOf("of"), true)
+        return com.drive.drive_manager.simulator.engine.Amount.Least(
+            of = J.list(o, "of", at) { e, p -> amount(e, p) },
+        )
+    }
+
     private fun readAmountLevelsOnField(o: JsonObject, at: String): com.drive.drive_manager.simulator.engine.Amount.LevelsOnField {
         J.fields(o, at, "Amount.LevelsOnField", setOf("filter"), true)
         return com.drive.drive_manager.simulator.engine.Amount.LevelsOnField(
@@ -547,6 +556,13 @@ internal object CardModelReader {
         return com.drive.drive_manager.simulator.engine.Amount.SumOf(
             cards = J.value(o, "cards", at, ::selector),
             value = J.str(o, "value", at),
+        )
+    }
+
+    private fun readAmountTargetable(o: JsonObject, at: String): com.drive.drive_manager.simulator.engine.Amount.Targetable {
+        J.fields(o, at, "Amount.Targetable", setOf("cards"), true)
+        return com.drive.drive_manager.simulator.engine.Amount.Targetable(
+            cards = J.value(o, "cards", at, ::selector),
         )
     }
 

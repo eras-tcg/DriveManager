@@ -67,11 +67,47 @@ class ST1CardsTest extends CardBatchSupport {
     }
 
     @Test
+    void fosfilisTributesNoMoreMaterialsThanThereAreEnemiesToChoose() {
+        // Choosing the enemies is part of the cost (before the ";"): two materials, one enemy of strength 3 or less, one tribute at most
+        onField(host, blue("s", "Invocador", 2, 2, 4), FRONT);
+        host.getTributeZone().add(blue("t", "Material", 2, 2, 4));
+        CardSlot fosfilis = materialization(blue("fo", "Fósfilis", 3, 3, 6), 1);
+        host.getHand().add(fosfilis);
+        onField(guest, enemy("w", 3), FRONT);
+        onField(guest, enemy("st", 4), FRONT);
+        assertThat(SpecialSummons.specialByPlayer(room, "host", "fo", "s")).isNull();
+        answer("t");
+        untilOffered(fosfilis);
+        accept(fosfilis);
+        Prompt tribute = room.getPrompt();
+        assertThat(tribute.getValidIds()).containsExactlyInAnyOrder("s", "t");
+        assertThat(tribute.getMax()).isEqualTo(1);
+    }
+
+    @Test
+    void fosfilisIsNotOfferedWithoutAnEnemyToChoose() {
+        onField(host, blue("s", "Invocador", 2, 2, 4), FRONT);
+        host.getTributeZone().add(blue("t", "Material", 2, 2, 4));
+        CardSlot fosfilis = materialization(blue("fo", "Fósfilis", 3, 3, 6), 1);
+        host.getHand().add(fosfilis);
+        onField(guest, enemy("st", 4), FRONT);
+        assertThat(SpecialSummons.specialByPlayer(room, "host", "fo", "s")).isNull();
+        answer("t");
+        for (int i = 0; i < 10 && room.getPrompt() != null; i++) {
+            Prompt p = room.getPrompt();
+            assertThat(p.getValidIds()).doesNotContain("fo");
+            answer(p);
+        }
+        assertThat(host.getField()).contains(fosfilis);
+        assertThat(fosfilis.getMaterials()).hasSize(2);
+    }
+
+    @Test
     void batallaReducesAnEnemyToZeroAndTurgisDealsDirectDamage() {
         CardSlot turgis = onField(host, withMaterials(blue("tu", "Turgis", 5, 5, 12), 2), FRONT);
-        CardSlot weak = onField(guest, enemy("w", 5), FRONT);
+        CardSlot weak = onField(guest, enemy("w", 4), FRONT);
         int lives = guest.getLifeStack().size();
-        play(utility("ba", "Batalla por la Frontera Interdimensional", 4, "B"));
+        play(utility("ba", "Batalla por la Frontera Interdimensional", 5, "B"));
         answer("tum0");
         answer("w");
         assertThat(guest.getField()).doesNotContain(weak);
@@ -83,12 +119,30 @@ class ST1CardsTest extends CardBatchSupport {
     }
 
     @Test
+    void batallaReducesOneEnemyByFourForEachMaterialTributed() {
+        // 2026-11-22: "tributa hasta 3 materiales de tus aliados y elige 1 enemigo; reduce la fuerza de dicho enemigo en 4 por
+        // cada material tributado" (until the end of the turn)
+        onField(host, withMaterials(blue("ho", "Portador", 3, 3, 8), 3), BACK);
+        CardSlot big = onField(guest, enemy("b", 13), FRONT);
+        CardSlot other = onField(guest, enemy("o", 6), FRONT);
+        play(utility("ba", "Batalla por la Frontera Interdimensional", 5, "B"));
+        answer("hom0", "hom1", "hom2");
+        Prompt targets = room.getPrompt();
+        assertThat(targets.getMin()).isEqualTo(1);
+        assertThat(targets.getMax()).isEqualTo(1);
+        answer(targets, "b");
+        drain();
+        assertThat(EffectEngine.strength(big)).isEqualTo(1);
+        assertThat(EffectEngine.strength(other)).isEqualTo(6);
+    }
+
+    @Test
     void firusDealsNineOnlyFromTheFrontLine() {
         CardSlot firus = onField(host, withMaterials(blue("fi", "Firus", 2, 2, 4), 2), FRONT);
         onField(host, withMaterials(blue("ho", "Portador", 3, 3, 8), 1), BACK);
-        CardSlot weak = onField(guest, enemy("w", 5), FRONT);
+        CardSlot weak = onField(guest, enemy("w", 4), FRONT);
         int lives = guest.getLifeStack().size();
-        play(utility("ba", "Batalla por la Frontera Interdimensional", 4, "B"));
+        play(utility("ba", "Batalla por la Frontera Interdimensional", 5, "B"));
         answer("hom0");
         answer("w");
         assertThat(guest.getField()).doesNotContain(weak);
@@ -101,8 +155,8 @@ class ST1CardsTest extends CardBatchSupport {
     @Test
     void firusInTheRetaguardiaIsNotOffered() {
         CardSlot firus = onField(host, withMaterials(blue("fi", "Firus", 2, 2, 4), 2), BACK);
-        onField(guest, enemy("w", 5), FRONT);
-        play(utility("ba", "Batalla por la Frontera Interdimensional", 4, "B"));
+        onField(guest, enemy("w", 4), FRONT);
+        play(utility("ba", "Batalla por la Frontera Interdimensional", 5, "B"));
         answer("fim0");
         answer("w");
         Prompt p = room.getPrompt();
@@ -156,22 +210,21 @@ class ST1CardsTest extends CardBatchSupport {
     }
 
     @Test
-    void falSendsFiveBlueTributesToTheBottomToSummonItselfInTheFrontLine() {
+    void falSendsFiveOtherBlueTributesToTheBottomToSummonItselfInYourTurn() {
+        // Designer 2026-11-22: no condition; activated from the Tributos in your turn only; the summon by effect goes to the Retaguardia
         CardSlot fal = blue("fa", "Fal", 1, 1, 4);
         host.getTributeZone().add(fal);
         for (int i = 0; i < 5; i++) host.getTributeZone().add(card("v" + i, "Azul " + i, 1, 1, "B"));
         host.getTributeZone().add(card("p", "Violeta", 1, 1, "P"));
-        onField(host, withMaterials(blue("ho", "Portador", 3, 3, 8), 1), BACK);
-        onField(guest, enemy("w", 5), FRONT);
-        play(utility("ba", "Batalla por la Frontera Interdimensional", 4, "B"));
-        answer("hom0");
-        answer("w");
-        accept(fal);
+        room.setCurrentTurnUserId("guest");
+        assertThat(Chain.activateByPlayer(room, "host", "fa", "fal:en-tributos")).isNotNull();
+        room.setCurrentTurnUserId("host");
+        assertThat(Chain.activateByPlayer(room, "host", "fa", "fal:en-tributos")).isNull();
         assertThat(room.getPrompt().getValidIds()).doesNotContain("p", "fa");
         answer("v0", "v1", "v2", "v3", "v4");
         drain();
         assertThat(host.getField()).contains(fal);
-        assertThat(EffectEngine.inFrontLine(fal)).isTrue();
+        assertThat(EffectEngine.inFrontLine(fal)).isFalse();
         assertThat(host.getDeck().subList(host.getDeck().size() - 5, host.getDeck().size()))
                 .extracting(CardSlot::getInstanceId).containsExactlyInAnyOrder("v0", "v1", "v2", "v3", "v4");
     }

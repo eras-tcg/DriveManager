@@ -3,9 +3,9 @@
   "effects": [
     {
       "id": "fal:en-tributos",
-      "moment": "ON_EVENT",
+      "moment": "ACTIVATED",
       "label": "En Tributos",
-      "text": "Una vez por turno entre copias: si la fuerza de algún enemigo es reducida a 0, puedes enviar otros 5 de tus tributos Azules al fondo de tu mazo; invoca esta carta en tu línea frontal.",
+      "text": "Una vez por turno entre copias: puedes enviar otros 5 de tus tributos Azules al fondo de tu mazo; invoca esta carta.",
       "cost": [
         {
           "type": "Do",
@@ -57,21 +57,12 @@
             "reduce": {
               "type": "Fixed"
             },
-            "toFront": true,
             "required": true
           }
         }
       ],
-      "condition": {
-        "type": "Happened",
-        "eventType": "STRENGTH_REDUCED",
-        "actor": "ANY",
-        "owner": "ENEMY",
-        "data": [
-          "to=0"
-        ]
-      },
       "sourceZone": "tributeZone",
+      "allyTurn": true,
       "limit": "ONCE_PER_TURN_BETWEEN_COPIES"
     }
   ]
