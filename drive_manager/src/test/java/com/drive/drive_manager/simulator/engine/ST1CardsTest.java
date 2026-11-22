@@ -164,6 +164,23 @@ class ST1CardsTest extends CardBatchSupport {
     }
 
     @Test
+    void limpiadorErranteTakesItsMaterialFromTheHandOrTheDiscardPile() {
+        // Designer 2026-11-22: "criatura nivel 2 + material nivel 2 de tu mano o descarte"
+        onField(host, blue("s", "Invocador", 2, 2, 4), FRONT);
+        host.getHand().add(blue("h", "En la mano", 2, 2, 4));
+        host.getDiscardPile().add(blue("d", "En el descarte", 2, 2, 4));
+        host.getTributeZone().add(blue("t", "En tributos", 2, 2, 4));
+        CardSlot limpiador = materialization(blue("li", "Limpiador Errante", 3, 3, 10), 1);
+        host.getHand().add(limpiador);
+        assertThat(SpecialSummons.specialByPlayer(room, "host", "li", "s")).isNull();
+        Prompt material = room.getPrompt();
+        assertThat(material.getValidIds()).contains("h", "d").doesNotContain("t");
+        answer(material, "h");
+        assertThat(host.getField()).contains(limpiador);
+        assertThat(limpiador.getMaterials()).extracting(CardSlot::getInstanceId).contains("h", "s");
+    }
+
+    @Test
     void fosfilisMaterializedReducesUpToTwoWeakEnemiesToZero() {
         onField(host, blue("s", "Invocador", 2, 2, 4), FRONT);
         host.getTributeZone().add(blue("t", "Material", 2, 2, 4));
@@ -219,12 +236,15 @@ class ST1CardsTest extends CardBatchSupport {
         room.setCurrentTurnUserId("guest");
         assertThat(Chain.activateByPlayer(room, "host", "fa", "fal:en-tributos")).isNotNull();
         room.setCurrentTurnUserId("host");
+        int before = gems();
         assertThat(Chain.activateByPlayer(room, "host", "fa", "fal:en-tributos")).isNull();
         assertThat(room.getPrompt().getValidIds()).doesNotContain("p", "fa");
         answer("v0", "v1", "v2", "v3", "v4");
         drain();
         assertThat(host.getField()).contains(fal);
         assertThat(EffectEngine.inFrontLine(fal)).isFalse();
+        // "sin pagar su coste"
+        assertThat(gems()).isEqualTo(before);
         assertThat(host.getDeck().subList(host.getDeck().size() - 5, host.getDeck().size()))
                 .extracting(CardSlot::getInstanceId).containsExactlyInAnyOrder("v0", "v1", "v2", "v3", "v4");
     }
