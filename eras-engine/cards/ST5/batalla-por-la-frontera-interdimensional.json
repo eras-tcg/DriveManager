@@ -6,7 +6,7 @@
       "moment": "ON_PLAY",
       "mandatory": true,
       "label": "En Juego",
-      "text": "Tributa hasta 3 materiales de tus aliados y elige la misma cantidad de enemigos; reduce en 5 sus fuerzas.",
+      "text": "Tributa hasta 3 materiales de tus aliados y elige la misma cantidad de enemigos; reduce en 5 sus fuerzas hasta el final del turno.",
       "cost": [
         {
           "type": "Do",
