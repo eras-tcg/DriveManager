@@ -105,9 +105,9 @@ class ST1CardsTest extends CardBatchSupport {
     @Test
     void batallaReducesAnEnemyToZeroAndTurgisDealsDirectDamage() {
         CardSlot turgis = onField(host, withMaterials(blue("tu", "Turgis", 5, 5, 12), 2), FRONT);
-        CardSlot weak = onField(guest, enemy("w", 5), FRONT);
+        CardSlot weak = onField(guest, enemy("w", 4), FRONT);
         int lives = guest.getLifeStack().size();
-        play(utility("ba", "Batalla por la Frontera Interdimensional", 4, "B"));
+        play(utility("ba", "Batalla por la Frontera Interdimensional", 5, "B"));
         answer("tum0");
         answer("w");
         assertThat(guest.getField()).doesNotContain(weak);
@@ -119,12 +119,30 @@ class ST1CardsTest extends CardBatchSupport {
     }
 
     @Test
+    void batallaReducesOneEnemyByFourForEachMaterialTributed() {
+        // 2026-11-22: "tributa hasta 3 materiales de tus aliados y elige 1 enemigo; reduce la fuerza de dicho enemigo en 4 por
+        // cada material tributado" (until the end of the turn)
+        onField(host, withMaterials(blue("ho", "Portador", 3, 3, 8), 3), BACK);
+        CardSlot big = onField(guest, enemy("b", 13), FRONT);
+        CardSlot other = onField(guest, enemy("o", 6), FRONT);
+        play(utility("ba", "Batalla por la Frontera Interdimensional", 5, "B"));
+        answer("hom0", "hom1", "hom2");
+        Prompt targets = room.getPrompt();
+        assertThat(targets.getMin()).isEqualTo(1);
+        assertThat(targets.getMax()).isEqualTo(1);
+        answer(targets, "b");
+        drain();
+        assertThat(EffectEngine.strength(big)).isEqualTo(1);
+        assertThat(EffectEngine.strength(other)).isEqualTo(6);
+    }
+
+    @Test
     void firusDealsNineOnlyFromTheFrontLine() {
         CardSlot firus = onField(host, withMaterials(blue("fi", "Firus", 2, 2, 4), 2), FRONT);
         onField(host, withMaterials(blue("ho", "Portador", 3, 3, 8), 1), BACK);
-        CardSlot weak = onField(guest, enemy("w", 5), FRONT);
+        CardSlot weak = onField(guest, enemy("w", 4), FRONT);
         int lives = guest.getLifeStack().size();
-        play(utility("ba", "Batalla por la Frontera Interdimensional", 4, "B"));
+        play(utility("ba", "Batalla por la Frontera Interdimensional", 5, "B"));
         answer("hom0");
         answer("w");
         assertThat(guest.getField()).doesNotContain(weak);
@@ -137,8 +155,8 @@ class ST1CardsTest extends CardBatchSupport {
     @Test
     void firusInTheRetaguardiaIsNotOffered() {
         CardSlot firus = onField(host, withMaterials(blue("fi", "Firus", 2, 2, 4), 2), BACK);
-        onField(guest, enemy("w", 5), FRONT);
-        play(utility("ba", "Batalla por la Frontera Interdimensional", 4, "B"));
+        onField(guest, enemy("w", 4), FRONT);
+        play(utility("ba", "Batalla por la Frontera Interdimensional", 5, "B"));
         answer("fim0");
         answer("w");
         Prompt p = room.getPrompt();
