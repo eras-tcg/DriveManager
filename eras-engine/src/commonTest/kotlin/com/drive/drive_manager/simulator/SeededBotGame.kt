@@ -77,7 +77,7 @@ object SeededBotGame {
         }
     }
 
-    private fun play(hostDeck: String, guestDeck: String, seed: Long, bots: Map<String, BotPlayer>): Result {
+    internal fun play(hostDeck: String, guestDeck: String, seed: Long, bots: Map<String, BotPlayer>): Result {
         TestCards.install()
         val room = GameRoom()
         room.roomId = "seeded"

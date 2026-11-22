@@ -51,6 +51,8 @@ open class LookaheadBot(settings: BotSettings, model: ValueModel?) : HeuristicBo
     /** The last decision, so asking again at the same moment (the room service asks before and when moving) costs nothing. */
     private var decidedAt: String? = null
     private var decided: Any? = null
+    /** When the decision being made must be over (budgetMs from its start): every search before the trials spends from it too. */
+    private var decisionEnd = Long.MAX_VALUE
 
     /** Told of every decision the bot looks ahead for (a `Consumer<Decision>` as before). */
     fun interface Watcher {
@@ -113,6 +115,7 @@ open class LookaheadBot(settings: BotSettings, model: ValueModel?) : HeuristicBo
     override fun mainMove(room: GameRoom, me: String?): GameAction? {
         val at = moment(room, "main")
         if (at == decidedAt) return decided as GameAction?
+        decisionEnd = Clocks.nanos() + settings.budgetMs() * 1_000_000L
         // attackFloor: an attack that is a gift to some block of the rival is no candidate (AttackFloor), the heuristic's included
         val floor = AttackFloor.of(sandbox, room, me, settings)
         // defenceFloor: nor one that leaves it dead on the table (DefenceFloor); a win found by the engine is held to neither
@@ -146,6 +149,7 @@ open class LookaheadBot(settings: BotSettings, model: ValueModel?) : HeuristicBo
         @Suppress("UNCHECKED_CAST")
         val cached = if (at == decidedAt) decided as List<String>? else null
         if (cached != null) return cached
+        decisionEnd = Clocks.nanos() + settings.budgetMs() * 1_000_000L
         val heuristic: List<String>? = super.answer(room, me, prompt)
         // hUseful: the heuristic said no to an optional effect of its own because it would do nothing
         if (on("hUseful") && optionalEffect(prompt) && heuristic != null && heuristic.isEmpty()) return heuristic
@@ -215,7 +219,8 @@ open class LookaheadBot(settings: BotSettings, model: ValueModel?) : HeuristicBo
         if (candidates.isEmpty()) return null
         if (candidates.size == 1) return candidates[0]
         val start = Clocks.nanos()
-        val trials = MoveTrials(settings, sandbox, TableScoring { r: GameRoom, p: String? -> score(r, p) }, start + settings.budgetMs() * 1_000_000L)
+        // What is left of the decision's time (the searches before took their part); past it, the first candidate alone
+        val trials = MoveTrials(settings, sandbox, TableScoring { r: GameRoom, p: String? -> score(r, p) }, min(decisionEnd, start + settings.budgetMs() * 1_000_000L))
         val best = trials.best(room, me, MoveTrials.top(sandbox, room, me, candidates, settings))
         val spent = Clocks.nanos() - start
         decisions++
