@@ -20,8 +20,33 @@
                 "value": 1
               },
               "max": {
-                "type": "Fixed",
-                "value": 2
+                "type": "Least",
+                "of": [
+                  {
+                    "type": "Fixed",
+                    "value": 2
+                  },
+                  {
+                    "type": "Targetable",
+                    "cards": {
+                      "zones": "frontLine",
+                      "owner": "OPPONENT",
+                      "filter": {
+                        "cardType": "creature",
+                        "maxStrength": 3
+                      },
+                      "min": {
+                        "type": "Fixed"
+                      },
+                      "max": {
+                        "type": "Fixed",
+                        "value": 2147483647
+                      },
+                      "self": "ANY",
+                      "mode": "CHOOSE"
+                    }
+                  }
+                ]
               },
               "self": "ANY",
               "mode": "CHOOSE"

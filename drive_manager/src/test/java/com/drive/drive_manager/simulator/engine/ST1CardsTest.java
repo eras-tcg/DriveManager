@@ -67,6 +67,42 @@ class ST1CardsTest extends CardBatchSupport {
     }
 
     @Test
+    void fosfilisTributesNoMoreMaterialsThanThereAreEnemiesToChoose() {
+        // Choosing the enemies is part of the cost (before the ";"): two materials, one enemy of strength 3 or less, one tribute at most
+        onField(host, blue("s", "Invocador", 2, 2, 4), FRONT);
+        host.getTributeZone().add(blue("t", "Material", 2, 2, 4));
+        CardSlot fosfilis = materialization(blue("fo", "Fósfilis", 3, 3, 6), 1);
+        host.getHand().add(fosfilis);
+        onField(guest, enemy("w", 3), FRONT);
+        onField(guest, enemy("st", 4), FRONT);
+        assertThat(SpecialSummons.specialByPlayer(room, "host", "fo", "s")).isNull();
+        answer("t");
+        untilOffered(fosfilis);
+        accept(fosfilis);
+        Prompt tribute = room.getPrompt();
+        assertThat(tribute.getValidIds()).containsExactlyInAnyOrder("s", "t");
+        assertThat(tribute.getMax()).isEqualTo(1);
+    }
+
+    @Test
+    void fosfilisIsNotOfferedWithoutAnEnemyToChoose() {
+        onField(host, blue("s", "Invocador", 2, 2, 4), FRONT);
+        host.getTributeZone().add(blue("t", "Material", 2, 2, 4));
+        CardSlot fosfilis = materialization(blue("fo", "Fósfilis", 3, 3, 6), 1);
+        host.getHand().add(fosfilis);
+        onField(guest, enemy("st", 4), FRONT);
+        assertThat(SpecialSummons.specialByPlayer(room, "host", "fo", "s")).isNull();
+        answer("t");
+        for (int i = 0; i < 10 && room.getPrompt() != null; i++) {
+            Prompt p = room.getPrompt();
+            assertThat(p.getValidIds()).doesNotContain("fo");
+            answer(p);
+        }
+        assertThat(host.getField()).contains(fosfilis);
+        assertThat(fosfilis.getMaterials()).hasSize(2);
+    }
+
+    @Test
     void batallaReducesAnEnemyToZeroAndTurgisDealsDirectDamage() {
         CardSlot turgis = onField(host, withMaterials(blue("tu", "Turgis", 5, 5, 12), 2), FRONT);
         CardSlot weak = onField(guest, enemy("w", 5), FRONT);

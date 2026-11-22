@@ -99,6 +99,25 @@ sealed interface Amount {
         }
     }
 
+    /**
+     * How many cards that selector may choose as targets ("elige": only those that can be targeted), read by EngineContext;
+     * 0 outside an effect. "Tributa hasta 2 materiales y elige la misma cantidad de enemigos": the tributes go no further.
+     */
+    @JvmRecord
+    data class Targetable(val cards: com.drive.drive_manager.simulator.engine.effects.model.Selector?) : Amount {
+        override fun of(room: GameRoom, controller: String?): Int {
+            return 0
+        }
+    }
+
+    /** The smallest of these amounts ("hasta 2", but no more than there are enemies to choose), read by EngineContext. */
+    @JvmRecord
+    data class Least(val of: List<Amount>?) : Amount {
+        override fun of(room: GameRoom, controller: String?): Int {
+            return of!!.minOf { it.of(room, controller) }
+        }
+    }
+
     /** "en el nivel de dicho aliado": the card of the triggering event, read by EngineContext. */
     data object TriggerSourceLevel : Amount {
         override fun of(room: GameRoom, controller: String?): Int {
