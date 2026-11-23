@@ -116,7 +116,7 @@ public final class BotRooms {
         SystemDecks.Pool pool = SystemDecks.variedFrom(deck.getId());
         if (pool == null) return cards;
         try {
-            List<CardSlot> catalog = service.decks.catalog(pool.editions(), pool.color());
+            List<CardSlot> catalog = service.decks.catalog(pool.edition(), pool.maxSub(), pool.color());
             DeckVariation.Result result = DeckVariation.vary(deck.getDeckName(), cards, catalog, chance);
             if (!result.changes().isEmpty()) LOG.info("Bot deck {} varied: {}", deck.getDeckName(), String.join("; ", result.changes()));
             result.cards().forEach(c -> c.setFinish(null));

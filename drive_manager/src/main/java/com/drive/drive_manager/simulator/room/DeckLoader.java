@@ -95,14 +95,25 @@ public class DeckLoader {
         }).toList());
     }
 
-    /** Every card of some editions (all their sub-editions) in one color, one slot each, filled as a deck's ({@link #slots}). */
-    public List<CardSlot> catalog(List<String> editions, String color) {
-        List<String> ids = editions.stream().flatMap(edition -> driveCards.findByEdition(edition).stream())
-                .filter(dc -> color.equals(dc.getColorIdentity())).map(DriveCard::getId).toList();
+    /**
+     * Every card of an edition in one color up to a sub-edition (0: the edition's own cards alone), one slot each, filled as
+     * a deck's ({@link #slots}).
+     */
+    public List<CardSlot> catalog(String edition, int maxSub, String color) {
+        List<String> ids = driveCards.findByEdition(edition).stream().filter(dc -> color.equals(dc.getColorIdentity()))
+                .filter(dc -> subOf(dc) <= maxSub).map(DriveCard::getId).toList();
         if (ids.isEmpty()) return List.of();
         DeckList all = new DeckList();
         all.setCards(ids);
         return slots(all);
+    }
+
+    private static int subOf(DriveCard dc) {
+        try {
+            return dc.getSubEdition() == null || dc.getSubEdition().isBlank() ? 0 : Integer.parseInt(dc.getSubEdition().strip());
+        } catch (NumberFormatException e) {
+            return Integer.MAX_VALUE;
+        }
     }
 
     /** The decks set aside for the bot to play in ranked Modo solo: the system's only (a player's deck flagged earlier is not). */

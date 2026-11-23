@@ -48,11 +48,11 @@ public class DeckList {
     @Field("system_deck")
     private boolean systemDeck;
 
-    /** A system deck's row in "Mazos públicos": "st" (Structure), "e1" (Bloque E1) or "arquetipo"; null for players' decks. */
-    @Field("system_group")
-    private String systemGroup;
+    /** A system deck's folder in "Mazos públicos": its edition ("E1", "E1.2"…) or "ST"; null for players' decks. */
+    @Field("system_edition")
+    private String systemEdition;
 
-    /** A system deck's place in its row (the order of {@code decks/system-decks.json}); null for players' decks. */
+    /** A system deck's place in its folder (the order of {@code decks/system-decks.json}); null for players' decks. */
     @Field("system_order")
     private Integer systemOrder;
 }

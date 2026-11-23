@@ -91,7 +91,7 @@ public class DeckListController {
         body.setId(null);
         // Only the system makes system decks (SystemDecks) or gives decks to the bot
         body.setSystemDeck(false);
-        body.setSystemGroup(null);
+        body.setSystemEdition(null);
         body.setSystemOrder(null);
         body.setBotDeck(false);
         if (body.getCreatedAt() == null) body.setCreatedAt(Instant.now());
@@ -123,7 +123,7 @@ public class DeckListController {
         // Only a simulator administrator sets it aside for the bot (PUT /{id}/bot-deck): editing the deck keeps it
         body.setBotDeck(existing.get().isBotDeck());
         body.setSystemDeck(existing.get().isSystemDeck());
-        body.setSystemGroup(existing.get().getSystemGroup());
+        body.setSystemEdition(existing.get().getSystemEdition());
         body.setSystemOrder(existing.get().getSystemOrder());
         DeckList saved = repo.save(body);
         activity.record(callerId, ActivityLogService.DECK_UPDATE, deckDetail(saved));

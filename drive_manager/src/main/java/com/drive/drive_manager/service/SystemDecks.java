@@ -69,20 +69,29 @@ public class SystemDecks implements ApplicationRunner {
             }
         }
         LOG.info("Mazos del sistema al día: {} de {}", saved, listed.size());
+        removeUnlisted(listed);
     }
 
     /**
      * One deck of the file: its id, name, cover card and cards (one code per copy, in the file's order), and where the
      * bot takes cards to vary it ({@code vary}: null when it is played as it is, the ST decks).
      */
-    public record Listed(String id, String name, String cover, boolean botDeck, List<String> codes, Pool vary, String group, int order) {
+    public record Listed(String id, String name, String cover, boolean botDeck, List<String> codes, Pool vary, String edition, int order) {
         Listed(String id, String name, String cover, boolean botDeck, List<String> codes) {
             this(id, name, cover, botDeck, codes, null, null, 0);
         }
     }
 
-    /** The cards a varied deck may take: those of some editions (every sub-edition) in a color. */
-    public record Pool(List<String> editions, String color) {}
+    /**
+     * The cards a varied deck may take: those of the deck's block in its color up to its edition ({@code upTo} "E1.2":
+     * edition E1, sub-editions up to 2; "E1": E1 alone).
+     */
+    public record Pool(String edition, int maxSub, String color) {
+        static Pool upTo(String upTo, String color) {
+            int dot = upTo.indexOf('.');
+            return dot < 0 ? new Pool(upTo, 0, color) : new Pool(upTo.substring(0, dot), Integer.parseInt(upTo.substring(dot + 1)), color);
+        }
+    }
 
     private static volatile Map<String, Pool> pools;
 
@@ -108,8 +117,8 @@ public class SystemDecks implements ApplicationRunner {
                 JsonNode vary = d.path("vary");
                 out.add(new Listed(d.path("id").asString(), d.path("name").asString(), d.path("cover").asString(),
                         d.path("botDeck").asBoolean(false), codes,
-                        vary.isObject() ? new Pool(editions(vary), vary.path("color").asString()) : null,
-                        d.path("group").isTextual() ? d.path("group").asString() : null, out.size()));
+                        vary.isObject() ? Pool.upTo(vary.path("upTo").asString(), vary.path("color").asString()) : null,
+                        d.path("edition").isTextual() ? d.path("edition").asString() : null, out.size()));
             }
             return out;
         } catch (IOException e) {
@@ -117,12 +126,14 @@ public class SystemDecks implements ApplicationRunner {
         }
     }
 
-    /** The editions of a deck's «vary» ({"editions": [...]}, or one "edition"). */
-    private static List<String> editions(JsonNode vary) {
-        List<String> out = new ArrayList<>();
-        for (JsonNode e : vary.path("editions")) out.add(e.asString());
-        if (out.isEmpty() && vary.path("edition").isTextual()) out.add(vary.path("edition").asString());
-        return List.copyOf(out);
+    /** The system decks the file no longer lists are deleted (a player's copy of one is the player's own deck and stays). */
+    void removeUnlisted(List<Listed> listed) {
+        java.util.Set<String> ids = new java.util.HashSet<>();
+        listed.forEach(d -> ids.add(d.id()));
+        List<DeckList> gone = decks.findBySystemDeckTrue().stream().filter(d -> !ids.contains(d.getId())).toList();
+        if (gone.isEmpty()) return;
+        decks.deleteAll(gone);
+        LOG.info("Mazos del sistema quitados: {}", gone.stream().map(DeckList::getDeckName).toList());
     }
 
     /** Makes or updates one deck; false when one of its codes is not on the site (the deck stays as it was). */
@@ -152,7 +163,7 @@ public class SystemDecks implements ApplicationRunner {
         deck.setUsername(AUTHOR);
         deck.setPrivateDeck(false);
         deck.setSystemDeck(true);
-        deck.setSystemGroup(listed.group());
+        deck.setSystemEdition(listed.edition());
         deck.setSystemOrder(listed.order());
         decks.save(deck);
         return true;

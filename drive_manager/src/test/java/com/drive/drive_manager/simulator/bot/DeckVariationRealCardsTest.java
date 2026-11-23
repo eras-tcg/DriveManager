@@ -55,7 +55,8 @@ class DeckVariationRealCardsTest {
             List<CardSlot> catalog = new ArrayList<>();
             byCode.forEach((code, c) -> {
                 Matcher m = CODE.matcher(code);
-                if (m.matches() && pool.editions().contains(m.group(1)) && m.group(3).equals(pool.color())) catalog.add(slot(code, c, id));
+                if (m.matches() && pool.edition().equals(m.group(1)) && (m.group(2) == null ? 0 : Integer.parseInt(m.group(2))) <= pool.maxSub()
+                        && m.group(3).equals(pool.color())) catalog.add(slot(code, c, id));
             });
             for (int seed = 0; seed < 100; seed++) {
                 DeckVariation.Result r = DeckVariation.vary(d.name(), deck, catalog, new Random(seed));

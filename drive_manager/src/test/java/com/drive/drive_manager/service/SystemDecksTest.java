@@ -32,12 +32,12 @@ class SystemDecksTest {
     @Test
     void everyListedDeckHasFiftyCardsAndItsCover() {
         List<SystemDecks.Listed> decks = SystemDecks.read();
-        assertThat(decks).hasSize(18);
+        assertThat(decks).hasSize(22);
         assertThat(decks).extracting(SystemDecks.Listed::id).doesNotHaveDuplicates();
         for (SystemDecks.Listed d : decks) {
             assertThat(d.codes()).as(d.id()).hasSize(50);
             assertThat(d.codes()).as(d.id()).contains(d.cover());
-            assertThat(d.group()).as(d.id()).isIn("st", "e1", "arquetipo");
+            assertThat(d.edition()).as(d.id()).isIn("ST", "E1", "E1.1", "E1.2", "E1.3");
             Map<String, Integer> copies = new HashMap<>();
             d.codes().forEach(c -> copies.merge(c, 1, Integer::sum));
             assertThat(copies.values()).as(d.id()).allMatch(n -> n <= 4);
@@ -97,6 +97,28 @@ class SystemDecksTest {
 
         assertThat(existing.isBotDeck()).isFalse();
         assertThat(existing.getCards()).containsExactly("st4-1");
+    }
+
+    @Test
+    void systemDecksTheFileNoLongerListsAreDeleted() {
+        DeckListRepository decks = mock(DeckListRepository.class);
+        DeckList kept = new DeckList();
+        kept.setId("system-x");
+        DeckList old = new DeckList();
+        old.setId("system-old");
+        when(decks.findBySystemDeckTrue()).thenReturn(List.of(kept, old));
+
+        new SystemDecks(decks, mock(DriveCardRepository.class), "")
+                .removeUnlisted(List.of(new SystemDecks.Listed("system-x", "X", "ST4-R01", true, List.of("ST4-R01"))));
+
+        verify(decks).deleteAll(List.of(old));
+    }
+
+    @Test
+    void aVariedDeckTakesCardsUpToItsEdition() {
+        assertThat(SystemDecks.variedFrom("system-e1-2-legion")).isEqualTo(new SystemDecks.Pool("E1", 2, "R"));
+        assertThat(SystemDecks.variedFrom("system-e1-rojo")).isEqualTo(new SystemDecks.Pool("E1", 0, "R"));
+        assertThat(SystemDecks.variedFrom("system-st4")).isNull();
     }
 
     /**
