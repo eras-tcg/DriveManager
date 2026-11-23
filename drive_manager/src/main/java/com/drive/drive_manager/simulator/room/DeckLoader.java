@@ -95,9 +95,9 @@ public class DeckLoader {
         }).toList());
     }
 
-    /** The decks set aside for the bot to play in ranked Modo solo. */
+    /** The decks set aside for the bot to play in ranked Modo solo: the system's only (a player's deck flagged earlier is not). */
     public List<DeckList> botPool() {
-        return decks == null ? List.of() : decks.findByBotDeckTrue();
+        return decks == null ? List.of() : decks.findByBotDeckTrue().stream().filter(DeckList::isSystemDeck).toList();
     }
 
     /** Whether the deck has cards in testing (a testing edition, {@link TestCards}). */

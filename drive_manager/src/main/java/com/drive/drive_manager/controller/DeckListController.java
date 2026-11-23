@@ -89,6 +89,9 @@ public class DeckListController {
         }
 
         body.setId(null);
+        // Only the system makes system decks (SystemDecks) or gives decks to the bot
+        body.setSystemDeck(false);
+        body.setBotDeck(false);
         if (body.getCreatedAt() == null) body.setCreatedAt(Instant.now());
         DeckList saved = repo.save(body);
         // A new deck (not an edit) counts for the "Arma tu mazo" step
@@ -117,6 +120,7 @@ public class DeckListController {
         body.setUserId(existing.get().getUserId());
         // Only a simulator administrator sets it aside for the bot (PUT /{id}/bot-deck): editing the deck keeps it
         body.setBotDeck(existing.get().isBotDeck());
+        body.setSystemDeck(existing.get().isSystemDeck());
         DeckList saved = repo.save(body);
         activity.record(callerId, ActivityLogService.DECK_UPDATE, deckDetail(saved));
         return ResponseEntity.ok(saved);
@@ -129,6 +133,7 @@ public class DeckListController {
         Optional<DeckList> existing = repo.findById(id);
         if (existing.isEmpty()) return ResponseEntity.notFound().build();
         DeckList deck = existing.get();
+        if (!deck.isSystemDeck()) return ResponseEntity.badRequest().body(Map.of("error", "El bot solo juega mazos del sistema"));
         deck.setBotDeck(Boolean.TRUE.equals(body.get("botDeck")));
         return ResponseEntity.ok(repo.save(deck));
     }

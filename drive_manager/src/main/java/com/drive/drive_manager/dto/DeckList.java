@@ -43,4 +43,8 @@ public class DeckList {
     /** One of the decks the bot may play in ranked Modo solo (its pool); set by a simulator administrator. */
     @Field("bot_deck")
     private boolean botDeck;
+
+    /** Proposed by the system (author ERAS, owner {@code SystemDecks.OWNER}): made from {@code decks/system-decks.json}, no player edits it. */
+    @Field("system_deck")
+    private boolean systemDeck;
 }

@@ -315,7 +315,7 @@ class OfflineGamesTest {
     void thePlayersDeckCountsWhenLegalAndOwnedEvenIfEditedOrDeletedSince() {
         // Alice's own deck: ST1's cards under their drive ids, saved on the server
         List<String> fileIds = starterIds("deck-st1").stream().map(id -> "d-" + id).toList();
-        DeckList mine = new DeckList("deck-alice", "Mi ST1", fileIds, null, null, ALICE, "Alice", true, false);
+        DeckList mine = new DeckList("deck-alice", "Mi ST1", fileIds, null, null, ALICE, "Alice", true, false, false);
         when(deckLists.findById("deck-alice")).thenReturn(Optional.of(mine));
         catalogHas(starterCards());
         when(collections.missing(eq(ALICE), anyList())).thenReturn(0);
