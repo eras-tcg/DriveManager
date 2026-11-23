@@ -33,6 +33,7 @@ class CoreBoundaryTest {
     /** ...but for the server's own (the bot's scheduler, the card files offered to the core) and the JVM's readers. */
     private static final Set<String> OUTSIDE = Set.of(
             "bot/BotRooms.java",          // the server running the bots (scheduler, locks, messages)
+            "bot/DeckVariation.java",     // the server's bots varying the system decks (DeckLoader, used by BotRooms)
             "bot/ValueModelFiles.java",   // the bot's model read and saved with Jackson
             "bot/ServerBotResourceSource.java", // the bot's resources from the class path, offered to the core
             "engine/CardFiles.java",      // the card bundle read from the engine's jar (the common CardReader reads it)
