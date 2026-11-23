@@ -109,7 +109,7 @@
       "id": "system-e1-rojo",
       "name": "E1 Rojo",
       "edition": "E1",
-      "cover": "E1-R01",
+      "cover": "E1-R18",
       "botDeck": true,
       "vary": { "upTo": "E1", "color": "R" },
       "cards": [
@@ -135,7 +135,7 @@
       "id": "system-e1-azul",
       "name": "E1 Azul",
       "edition": "E1",
-      "cover": "E1-B01",
+      "cover": "E1-B19",
       "botDeck": true,
       "vary": { "upTo": "E1", "color": "B" },
       "cards": [
@@ -161,7 +161,7 @@
       "id": "system-e1-verde",
       "name": "E1 Verde",
       "edition": "E1",
-      "cover": "E1-G01",
+      "cover": "E1-G18",
       "botDeck": true,
       "vary": { "upTo": "E1", "color": "G" },
       "cards": [
@@ -187,7 +187,7 @@
       "id": "system-e1-violeta",
       "name": "E1 Violeta",
       "edition": "E1",
-      "cover": "E1-P01",
+      "cover": "E1-P19",
       "botDeck": true,
       "vary": { "upTo": "E1", "color": "P" },
       "cards": [
@@ -213,7 +213,7 @@
       "id": "system-e1-1-mercenarios",
       "name": "E1.1 Mercenarios",
       "edition": "E1.1",
-      "cover": "E1.1-R01",
+      "cover": "E1.1-R12",
       "botDeck": true,
       "vary": { "upTo": "E1.1", "color": "R" },
       "cards": [
@@ -240,7 +240,7 @@
       "id": "system-e1-1-entes",
       "name": "E1.1 Entes",
       "edition": "E1.1",
-      "cover": "E1.1-B01",
+      "cover": "E1-B18",
       "botDeck": true,
       "vary": { "upTo": "E1.1", "color": "B" },
       "cards": [
@@ -267,7 +267,7 @@
       "id": "system-e1-1-dragones",
       "name": "E1.1 Dragones",
       "edition": "E1.1",
-      "cover": "E1.1-G01",
+      "cover": "E1.1-G11",
       "botDeck": true,
       "vary": { "upTo": "E1.1", "color": "G" },
       "cards": [
@@ -294,7 +294,7 @@
       "id": "system-e1-1-violeta",
       "name": "E1.1 Violeta",
       "edition": "E1.1",
-      "cover": "E1.1-P01",
+      "cover": "E1.1-P12",
       "botDeck": true,
       "vary": { "upTo": "E1.1", "color": "P" },
       "cards": [
@@ -321,7 +321,7 @@
       "id": "system-e1-2-legion",
       "name": "E1.2 Legión",
       "edition": "E1.2",
-      "cover": "E1.1-R01",
+      "cover": "E1.2-R11",
       "botDeck": true,
       "vary": { "upTo": "E1.2", "color": "R" },
       "cards": [
@@ -348,7 +348,7 @@
       "id": "system-e1-2-necromatas",
       "name": "E1.2 Necrómatas",
       "edition": "E1.2",
-      "cover": "E1.1-B01",
+      "cover": "E1.2-B11",
       "botDeck": true,
       "vary": { "upTo": "E1.2", "color": "B" },
       "cards": [
@@ -375,7 +375,7 @@
       "id": "system-e1-2-fauna",
       "name": "E1.2 Fauna",
       "edition": "E1.2",
-      "cover": "E1.1-G01",
+      "cover": "E1.2-G11",
       "botDeck": true,
       "vary": { "upTo": "E1.2", "color": "G" },
       "cards": [
@@ -402,7 +402,7 @@
       "id": "system-e1-2-interdimensionales",
       "name": "E1.2 Interdimensionales",
       "edition": "E1.2",
-      "cover": "E1.1-P01",
+      "cover": "E1.2-P11",
       "botDeck": true,
       "vary": { "upTo": "E1.2", "color": "P" },
       "cards": [
@@ -429,7 +429,7 @@
       "id": "system-e1-3-caballeros",
       "name": "E1.3 Caballeros",
       "edition": "E1.3",
-      "cover": "E1.3-R01",
+      "cover": "E1.3-R09",
       "botDeck": true,
       "vary": { "upTo": "E1.3", "color": "R" },
       "cards": [
@@ -456,7 +456,7 @@
       "id": "system-e1-3-retadores",
       "name": "E1.3 Retadores",
       "edition": "E1.3",
-      "cover": "E1.3-R01",
+      "cover": "E1.3-R08",
       "botDeck": true,
       "vary": { "upTo": "E1.3", "color": "R" },
       "cards": [
@@ -483,7 +483,7 @@
       "id": "system-e1-3-automatas",
       "name": "E1.3 Autómatas",
       "edition": "E1.3",
-      "cover": "E1.1-B01",
+      "cover": "E1.3-B11",
       "botDeck": true,
       "vary": { "upTo": "E1.3", "color": "B" },
       "cards": [
@@ -510,7 +510,7 @@
       "id": "system-e1-3-hadas",
       "name": "E1.3 Hadas",
       "edition": "E1.3",
-      "cover": "E1.3-G01",
+      "cover": "E1.3-G11",
       "botDeck": true,
       "vary": { "upTo": "E1.3", "color": "G" },
       "cards": [
@@ -537,7 +537,7 @@
       "id": "system-e1-3-bestias",
       "name": "E1.3 Bestias",
       "edition": "E1.3",
-      "cover": "E1.3-P01",
+      "cover": "E1.3-P09",
       "botDeck": true,
       "vary": { "upTo": "E1.3", "color": "P" },
       "cards": [
@@ -564,7 +564,7 @@
       "id": "system-e1-3-espectros",
       "name": "E1.3 Espectros",
       "edition": "E1.3",
-      "cover": "E1-P01",
+      "cover": "E1.3-P10",
       "botDeck": true,
       "vary": { "upTo": "E1.3", "color": "P" },
       "cards": [
