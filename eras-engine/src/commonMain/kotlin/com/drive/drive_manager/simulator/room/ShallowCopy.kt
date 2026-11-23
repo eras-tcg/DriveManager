@@ -78,6 +78,7 @@ object ShallowCopy {
         c.username = o.username
         c.avatar = o.avatar
         c.playmat = o.playmat
+        c.cardBack = o.cardBack
         c.connected = o.connected
         c.disconnectedAt = o.disconnectedAt
         c.deckId = o.deckId

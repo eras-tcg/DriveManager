@@ -43,6 +43,7 @@ internal class LocalRoom(
     val userId: String,
     private val avatar: String?,
     private val playmat: String?,
+    private val cardBack: String?,
     roomId: String,
     seed: Long,
     private val decks: LocalDecks,
@@ -172,10 +173,11 @@ internal class LocalRoom(
 
     // ------------------------------------------------------------------ What the room session asks of this shell
 
-    /** The player's icon and playmat: the ones given to the match (the server looks them up in their profile). */
+    /** The player's icon, playmat and card back: the ones given to the match (the server looks them up in their profile). */
     override fun dress(player: PlayerState) {
         player.avatar = if (player.userId == userId) avatar else null
         player.playmat = if (player.userId == userId) playmat else null
+        player.cardBack = if (player.userId == userId) cardBack else null
     }
 
     override fun closed(room: GameRoom) {

@@ -50,8 +50,8 @@ public final class SimulatorJson {
 
     /**
      * A player: when they lost the connection (the server's to know), and the Enlace bookkeeping of what entered the Línea frontal.
-     * Their formations only when they have some (a game without Enlace sends what it always sent), and "Opcionales en Auto"
-     * only when it is on.
+     * Their formations only when they have some (a game without Enlace sends what it always sent), "Opcionales en Auto"
+     * only when it is on, and their card back only when they chose one.
      */
     @JacksonMixin(PlayerState.class)
     abstract static class PlayerStateJson {
@@ -60,6 +60,7 @@ public final class SimulatorJson {
         @JsonIgnore Object frontSeen;
         @JsonIgnore Object formationEntries;
         @JsonInclude(JsonInclude.Include.NON_DEFAULT) Object formations;
+        @JsonInclude(JsonInclude.Include.NON_NULL) Object cardBack;
     }
 
     /** A card: the addresses of its alternative arts (only the one it shows travels); its Enlace properties only when it has them. */

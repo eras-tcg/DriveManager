@@ -26,6 +26,9 @@ public class PreferencesService {
     /** A text value's longest length. */
     public static final int MAX_TEXT = 64;
     private static final Pattern KEY = Pattern.compile("[a-z0-9][a-z0-9-]{0,63}");
+    /** The card back the player chose (the page's preference "eras-card-back"): an id of the page's catalog. */
+    static final String CARD_BACK = "eras-card-back";
+    private static final Pattern CARD_BACK_ID = Pattern.compile("[a-z0-9-]{1,32}");
 
     private final MongoTemplate mongo;
 
@@ -40,6 +43,16 @@ public class PreferencesService {
         Map<String, Object> out = new LinkedHashMap<>();
         if (prefs instanceof Map<?, ?> map) map.forEach((k, v) -> out.put(String.valueOf(k), v));
         return out;
+    }
+
+    /** The card back the player chose, shown to both players on their half of the table; null: the default. */
+    public String cardBackOf(String userId) {
+        return cardBackIn(of(userId));
+    }
+
+    /** The card back in these preferences when it is a plausible id (the page knows which ones exist); else null. */
+    static String cardBackIn(Map<String, Object> prefs) {
+        return prefs.get(CARD_BACK) instanceof String id && CARD_BACK_ID.matcher(id).matches() ? id : null;
     }
 
     /**

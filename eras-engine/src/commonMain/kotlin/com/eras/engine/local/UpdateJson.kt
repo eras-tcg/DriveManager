@@ -98,6 +98,8 @@ object UpdateJson {
         "userId" to str(p.userId),
         "username" to str(p.username),
         "avatar" to str(p.avatar),
+        // Only when they chose one (the server's NON_NULL): a player without it gets what they always got
+        p.cardBack?.let { "cardBack" to str(it) },
         // Only when it is on (the server's NON_DEFAULT): the messages of a player without it are what they always were
         if (p.autoOptional) "autoOptional" to bool(true) else null,
         "connected" to bool(p.connected),
