@@ -1,0 +1,58 @@
+{
+  "name" : "escorpión de roble torcido",
+  "effects" : [
+    {
+      "id" : "escorpion-de-roble-torcido:al-atacar",
+      "moment" : "ON_ATTACK",
+      "mandatory" : true,
+      "label" : "Al Atacar",
+      "text" : "Una vez por turno: reactiva esta carta.",
+      "steps" : [
+        {
+          "type" : "Do",
+          "action" : {
+            "type" : "SetTapped",
+            "cards" : {
+              "zones" : "field",
+              "owner" : "YOU",
+              "filter" : {},
+              "min" : {
+                "type" : "Fixed",
+                "value" : 1
+              },
+              "max" : {
+                "type" : "Fixed",
+                "value" : 1
+              },
+              "self" : "ANY",
+              "mode" : "SELF"
+            }
+          }
+        }
+      ],
+      "sourceZone" : "field",
+      "limit" : "ONCE_PER_TURN"
+    }
+  ],
+  "reactions" : [
+    {
+      "type" : "Replacement",
+      "id" : "escorpion-de-roble-torcido:todos-los-turnos",
+      "label" : "Todos Los Turnos",
+      "text" : "Cuando esta carta fuera a ser removida: en su lugar, puedes agotar 2 cartas Verdes bajo tu control.",
+      "limit" : "NONE",
+      "cost" : "TAP_CARDS",
+      "resourceFilter" : {
+        "colors" : [
+          "G"
+        ]
+      },
+      "count" : 2
+    }
+  ],
+  "requirement" : {
+    "summoner" : {
+      "level" : 4
+    }
+  }
+}

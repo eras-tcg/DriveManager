@@ -223,10 +223,9 @@ data class CardFilter(
         if (activeOnly && card.tapped) return false
         if (exhaustedOnly && !card.tapped) return false
         if (name != null && !CardEffects.isNamed(card, name)) return false
-        if (notName != null && notName.equals(card.cardName, ignoreCase = true)) return false
+        if (notName != null && notName.equals(NameChanges.name(card), ignoreCase = true)) return false
         if (!notColorList.isEmpty() && notColorList.any { cardColors.contains(it) }) return false
-        if (nameContains != null && (card.cardName == null ||
-                    !card.cardName!!.lowercase().contains(nameContains.lowercase()))) return false
+        if (nameContains != null && !nameHas(card, nameContains)) return false
         if (minCost != null && (card.cost == null || card.cost!! < minCost)) return false
         if (!cardTypeList.isEmpty() && !cardTypeList.contains(card.cardType) && !(cardTypeList.contains("creature") && asCreature != null)) return false
         if (!anyOfList.isEmpty() && anyOfList.none { f -> f.matches(card) }) return false
@@ -246,6 +245,18 @@ data class CardFilter(
         if (faceDownOnly && !card.faceDown) return false
         if (minSpecialCost != null && (card.specialCost == null || card.specialCost!! < minSpecialCost)) return false
         return !starterOnly || card.starter
+    }
+
+    /**
+     * "con "X" en su nombre": its name now ([NameChanges]) has it, or the card can be treated as if it had it
+     * ([CardTraits.nameAlsoHas]: "puede ser tratada como si tuviera "Primera Línea" en su nombre").
+     */
+    private fun nameHas(card: CardSlot, text: String): Boolean {
+        val wanted = text.lowercase()
+        val now = NameChanges.name(card)
+        if (now != null && now.lowercase().contains(wanted)) return true
+        val also = CardEffects.traits(card).nameAlsoHas
+        return also != null && also.lowercase().contains(wanted)
     }
 
     /** Spanish description for prompts ("Violeta o Blanca", "[bestia] nivel 1"). */
