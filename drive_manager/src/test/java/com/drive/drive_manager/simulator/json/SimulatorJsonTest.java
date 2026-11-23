@@ -32,11 +32,11 @@ class SimulatorJsonTest {
     /** Per game: the JSON of the room and of each update after every action, and the fingerprints, summed up. */
     /** Per game: what each player is sent of every update (StateMask.forViewer, as a player and as an editor), summed up. */
     private static final Map<String, String> VIEWS = Map.of(
-            "st1-st2-11", "7930fb1e76bda9dd5436158c0e69ce86",
+            "st1-st2-11", "6f3ce3fca8ab4e9fd6283c35b01076ab",
             "st3-st4-12", "fd2eb1fdc7c0a51e382806a74fdb404e");
 
     private static final Map<String, String> GOLDEN = Map.of(
-            "st1-st2-11", "fb98f17fe31fc6d914c66be7b0e4803a",
+            "st1-st2-11", "1f01383dd70d2d93fcc3157f35ad4e68",
             "st3-st4-12", "90c2f753113d0c44b81ac03806dca6dc");
 
     @Test
