@@ -75,9 +75,9 @@ public class SystemDecks implements ApplicationRunner {
      * One deck of the file: its id, name, cover card and cards (one code per copy, in the file's order), and where the
      * bot takes cards to vary it ({@code vary}: null when it is played as it is, the ST decks).
      */
-    public record Listed(String id, String name, String cover, boolean botDeck, List<String> codes, Pool vary) {
+    public record Listed(String id, String name, String cover, boolean botDeck, List<String> codes, Pool vary, String group, int order) {
         Listed(String id, String name, String cover, boolean botDeck, List<String> codes) {
-            this(id, name, cover, botDeck, codes, null);
+            this(id, name, cover, botDeck, codes, null, null, 0);
         }
     }
 
@@ -108,7 +108,8 @@ public class SystemDecks implements ApplicationRunner {
                 JsonNode vary = d.path("vary");
                 out.add(new Listed(d.path("id").asString(), d.path("name").asString(), d.path("cover").asString(),
                         d.path("botDeck").asBoolean(false), codes,
-                        vary.isObject() ? new Pool(editions(vary), vary.path("color").asString()) : null));
+                        vary.isObject() ? new Pool(editions(vary), vary.path("color").asString()) : null,
+                        d.path("group").isTextual() ? d.path("group").asString() : null, out.size()));
             }
             return out;
         } catch (IOException e) {
@@ -151,6 +152,8 @@ public class SystemDecks implements ApplicationRunner {
         deck.setUsername(AUTHOR);
         deck.setPrivateDeck(false);
         deck.setSystemDeck(true);
+        deck.setSystemGroup(listed.group());
+        deck.setSystemOrder(listed.order());
         decks.save(deck);
         return true;
     }

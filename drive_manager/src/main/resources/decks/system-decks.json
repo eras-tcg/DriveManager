@@ -1,9 +1,10 @@
 {
-  "_comment": "Mazos propuestos por el sistema (autor ERAS). Cada carta va por su código impreso; SystemDecks los resuelve a las cartas del sitio al iniciar. El pool del bot sale de aquí; «vary» (todos menos los ST, que se juegan tal cual) son las ediciones y el color de donde toma el bot cartas para variar el mazo (DeckVariation).",
+  "_comment": "Mazos propuestos por el sistema (autor ERAS). Cada carta va por su código impreso; SystemDecks los resuelve a las cartas del sitio al iniciar. El pool del bot sale de aquí; «vary» (todos menos los ST, que se juegan tal cual) son las ediciones y el color de donde toma el bot cartas para variar el mazo (DeckVariation). «group» es la fila de la página Mazos públicos: st (Structure), e1 (Bloque E1) o arquetipo; dentro de cada fila van en el orden del archivo.",
   "decks": [
     {
       "id": "system-st1",
       "name": "ST1 Saltadores del multiverso",
+      "group": "st",
       "cover": "ST1-B01",
       "botDeck": true,
       "cards": [
@@ -29,6 +30,7 @@
     {
       "id": "system-st2",
       "name": "ST2 Habitantes de la tierra mágica",
+      "group": "st",
       "cover": "ST2-G01",
       "botDeck": true,
       "cards": [
@@ -54,6 +56,7 @@
     {
       "id": "system-st3",
       "name": "ST3 Terrores del inframundo",
+      "group": "st",
       "cover": "ST3-P01",
       "botDeck": true,
       "cards": [
@@ -79,6 +82,7 @@
     {
       "id": "system-st4",
       "name": "ST4 Guerreros de la tierra antigua",
+      "group": "st",
       "cover": "ST4-R01",
       "botDeck": true,
       "cards": [
@@ -104,6 +108,7 @@
     {
       "id": "system-e1-rojo",
       "name": "E1 Rojo Primera Línea",
+      "group": "e1",
       "cover": "E1.3-R01",
       "botDeck": true,
       "vary": { "editions": ["E1", "ST4"], "color": "R" },
@@ -130,6 +135,7 @@
     {
       "id": "system-e1-azul",
       "name": "E1 Azul Entes",
+      "group": "e1",
       "cover": "E1.3-B01",
       "botDeck": true,
       "vary": { "editions": ["E1", "ST1"], "color": "B" },
@@ -157,6 +163,7 @@
     {
       "id": "system-e1-verde",
       "name": "E1 Verde Dragones",
+      "group": "e1",
       "cover": "E1.1-G01",
       "botDeck": true,
       "vary": { "editions": ["E1", "ST2"], "color": "G" },
@@ -184,6 +191,7 @@
     {
       "id": "system-e1-violeta",
       "name": "E1 Violeta Bestias",
+      "group": "e1",
       "cover": "E1.3-P01",
       "botDeck": true,
       "vary": { "editions": ["E1", "ST3"], "color": "P" },
@@ -211,6 +219,7 @@
     {
       "id": "system-arq-retadores",
       "name": "Rojo Retadores",
+      "group": "arquetipo",
       "cover": "E1-R01",
       "botDeck": true,
       "vary": { "editions": ["E1", "ST4"], "color": "R" },
@@ -238,6 +247,7 @@
     {
       "id": "system-arq-mercenarios",
       "name": "Rojo Mercenarios",
+      "group": "arquetipo",
       "cover": "E1.1-R01",
       "botDeck": true,
       "vary": { "editions": ["E1", "ST4"], "color": "R" },
@@ -263,6 +273,7 @@
     {
       "id": "system-arq-legion",
       "name": "Rojo Legión",
+      "group": "arquetipo",
       "cover": "E1.3-R01",
       "botDeck": true,
       "vary": { "editions": ["E1", "ST4"], "color": "R" },
@@ -290,6 +301,7 @@
     {
       "id": "system-arq-necromatas",
       "name": "Azul Necrómatas",
+      "group": "arquetipo",
       "cover": "E1-B01",
       "botDeck": true,
       "vary": { "editions": ["E1", "ST1"], "color": "B" },
@@ -316,6 +328,7 @@
     {
       "id": "system-arq-automatas",
       "name": "Azul Autómatas",
+      "group": "arquetipo",
       "cover": "E1.1-B01",
       "botDeck": true,
       "vary": { "editions": ["E1", "ST1"], "color": "B" },
@@ -343,6 +356,7 @@
     {
       "id": "system-arq-hadas",
       "name": "Verde Hadas",
+      "group": "arquetipo",
       "cover": "E1-G01",
       "botDeck": true,
       "vary": { "editions": ["E1", "ST2"], "color": "G" },
@@ -370,6 +384,7 @@
     {
       "id": "system-arq-fauna",
       "name": "Verde Fauna",
+      "group": "arquetipo",
       "cover": "E1.3-G01",
       "botDeck": true,
       "vary": { "editions": ["E1", "ST2"], "color": "G" },
@@ -396,6 +411,7 @@
     {
       "id": "system-arq-muertos",
       "name": "Violeta Muertos Vivientes",
+      "group": "arquetipo",
       "cover": "E1-P01",
       "botDeck": true,
       "vary": { "editions": ["E1", "ST3"], "color": "P" },
@@ -422,6 +438,7 @@
     {
       "id": "system-arq-mutantes",
       "name": "Violeta Mutantes",
+      "group": "arquetipo",
       "cover": "E1.1-P01",
       "botDeck": true,
       "vary": { "editions": ["E1", "ST3"], "color": "P" },
@@ -447,6 +464,7 @@
     {
       "id": "system-arq-espectros",
       "name": "Violeta Espectros",
+      "group": "arquetipo",
       "cover": "E1-P01",
       "botDeck": true,
       "vary": { "editions": ["E1", "ST3"], "color": "P" },

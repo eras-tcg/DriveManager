@@ -47,4 +47,12 @@ public class DeckList {
     /** Proposed by the system (author ERAS, owner {@code SystemDecks.OWNER}): made from {@code decks/system-decks.json}, no player edits it. */
     @Field("system_deck")
     private boolean systemDeck;
+
+    /** A system deck's row in "Mazos públicos": "st" (Structure), "e1" (Bloque E1) or "arquetipo"; null for players' decks. */
+    @Field("system_group")
+    private String systemGroup;
+
+    /** A system deck's place in its row (the order of {@code decks/system-decks.json}); null for players' decks. */
+    @Field("system_order")
+    private Integer systemOrder;
 }

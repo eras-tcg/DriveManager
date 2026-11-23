@@ -37,6 +37,7 @@ class SystemDecksTest {
         for (SystemDecks.Listed d : decks) {
             assertThat(d.codes()).as(d.id()).hasSize(50);
             assertThat(d.codes()).as(d.id()).contains(d.cover());
+            assertThat(d.group()).as(d.id()).isIn("st", "e1", "arquetipo");
             Map<String, Integer> copies = new HashMap<>();
             d.codes().forEach(c -> copies.merge(c, 1, Integer::sum));
             assertThat(copies.values()).as(d.id()).allMatch(n -> n <= 4);
