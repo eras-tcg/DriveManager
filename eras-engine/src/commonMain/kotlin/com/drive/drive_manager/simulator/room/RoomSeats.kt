@@ -17,7 +17,7 @@ object RoomSeats {
 
     /** What the seats ask of whoever keeps the rooms (the server's registry and profiles, or a LocalMatch). */
     interface Keeper {
-        /** The player's icon and playmat (the server looks them up in their profile). */
+        /** The player's icon, playmat and card back (the server looks them up in their profile). */
         fun dress(player: PlayerState)
 
         /** The room is closed: no action reaches it any more (the server forgets it). */

@@ -154,7 +154,8 @@ public class MatchHistory {
         for (MatchSetup.Seat s : setup.seats()) {
             players.add(new Document("userId", s.userId()).append("username", s.username()).append("deckId", s.deckId())
                     .append("deckName", s.deckName()).append("starterCardId", s.starterCardId())
-                    .append("bot", BotRooms.BOT.equals(s.userId())));
+                    .append("bot", BotRooms.BOT.equals(s.userId()))
+                    .append("cards", deckList(s.deck())));
         }
         Document doc = new Document("_id", id)
                 .append("roomId", match.roomId())
@@ -175,6 +176,21 @@ public class MatchHistory {
                 .append("hasLog", true)
                 .append("botLevel", match.botLevel());
         return doc;
+    }
+
+    /**
+     * The deck a seat started with, as its list: each card once ({@code cardId}, {@code cardName}, {@code count}), in the
+     * deck's order of first copies. Kept for good (the log goes after a while): each player sees the rival's list in
+     * their history, the bot's varied deck too.
+     */
+    static List<Document> deckList(List<com.drive.drive_manager.simulator.room.CardSlot> deck) {
+        java.util.Map<String, Document> byCard = new java.util.LinkedHashMap<>();
+        if (deck != null) for (com.drive.drive_manager.simulator.room.CardSlot c : deck) {
+            String key = c.getCardId() != null ? c.getCardId() : String.valueOf(c.getCardName());
+            Document d = byCard.computeIfAbsent(key, k -> new Document("cardId", c.getCardId()).append("cardName", c.getCardName()).append("count", 0));
+            d.put("count", d.getInteger("count") + 1);
+        }
+        return new ArrayList<>(byCard.values());
     }
 
     /**

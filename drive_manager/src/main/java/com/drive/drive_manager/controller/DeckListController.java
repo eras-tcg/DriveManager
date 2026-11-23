@@ -23,7 +23,7 @@ import java.util.Optional;
  * GET    /api/drive/decklists          — public decks; with ?userId=, that user's decks (private ones only for the owner)
  * GET    /api/drive/decklists/{id}     — get one (private decks only for the owner)
  * POST   /api/drive/decklists          — create (requires manage_decks)
- * PUT    /api/drive/decklists/{id}     — update (requires manage_decks + ownership)
+ * PUT    /api/drive/decklists/{id}     — update (requires manage_decks + ownership; a system deck: simulator_admin)
  * DELETE /api/drive/decklists/{id}     — delete (requires manage_decks + ownership)
  */
 @RestController
@@ -89,6 +89,11 @@ public class DeckListController {
         }
 
         body.setId(null);
+        // Only the system makes system decks (SystemDecks) or gives decks to the bot
+        body.setSystemDeck(false);
+        body.setSystemEdition(null);
+        body.setSystemOrder(null);
+        body.setBotDeck(false);
         if (body.getCreatedAt() == null) body.setCreatedAt(Instant.now());
         DeckList saved = repo.save(body);
         // A new deck (not an edit) counts for the "Arma tu mazo" step
@@ -106,8 +111,9 @@ public class DeckListController {
         if (existing.isEmpty()) return ResponseEntity.notFound().build();
 
         String callerId = auth.getName();
-        if (!callerId.equals(existing.get().getUserId())) {
-            return ResponseEntity.status(403).body(Map.of("error", "Cannot edit another user's deck"));
+        boolean system = existing.get().isSystemDeck();
+        if (system ? !hasAuthority(auth, "simulator_admin") : !callerId.equals(existing.get().getUserId())) {
+            return ResponseEntity.status(403).body(Map.of("error", system ? "Solo un administrador del simulador edita los mazos del sistema" : "Cannot edit another user's deck"));
         }
 
         String err = validate(body, existing.get().getDeckName(), auth);
@@ -115,8 +121,17 @@ public class DeckListController {
 
         body.setId(id);
         body.setUserId(existing.get().getUserId());
+        if (system) {
+            // Edited by an administrator, still the system's: public, author ERAS
+            body.setUsername(existing.get().getUsername());
+            body.setPrivateDeck(false);
+            body.setCreatedAt(existing.get().getCreatedAt());
+        }
         // Only a simulator administrator sets it aside for the bot (PUT /{id}/bot-deck): editing the deck keeps it
         body.setBotDeck(existing.get().isBotDeck());
+        body.setSystemDeck(existing.get().isSystemDeck());
+        body.setSystemEdition(existing.get().getSystemEdition());
+        body.setSystemOrder(existing.get().getSystemOrder());
         DeckList saved = repo.save(body);
         activity.record(callerId, ActivityLogService.DECK_UPDATE, deckDetail(saved));
         return ResponseEntity.ok(saved);
@@ -129,6 +144,7 @@ public class DeckListController {
         Optional<DeckList> existing = repo.findById(id);
         if (existing.isEmpty()) return ResponseEntity.notFound().build();
         DeckList deck = existing.get();
+        if (!deck.isSystemDeck()) return ResponseEntity.badRequest().body(Map.of("error", "El bot solo juega mazos del sistema"));
         deck.setBotDeck(Boolean.TRUE.equals(body.get("botDeck")));
         return ResponseEntity.ok(repo.save(deck));
     }
@@ -159,6 +175,10 @@ public class DeckListController {
         detail.put("deckId", deck.getId());
         if (deck.getDeckName() != null) detail.put("deckName", deck.getDeckName());
         return detail;
+    }
+
+    private static boolean hasAuthority(Authentication auth, String authority) {
+        return auth != null && auth.getAuthorities().stream().anyMatch(a -> authority.equals(a.getAuthority()));
     }
 
     /** User id from the JWT, or null for anonymous requests. */

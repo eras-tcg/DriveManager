@@ -11,6 +11,7 @@ import com.drive.drive_manager.simulator.room.RoomCopy;
 import com.drive.drive_manager.simulator.room.RoomEngine;
 import com.drive.drive_manager.simulator.room.RoomService;
 import com.drive.drive_manager.dto.DeckList;
+import com.drive.drive_manager.service.SystemDecks;
 import com.drive.drive_manager.simulator.room.CardSlot;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -89,7 +90,7 @@ public final class BotRooms {
                     continue;
                 }
                 cards.forEach(c -> c.setFinish(null));
-                return new RoomBots.PoolDeck(deck.getId(), deck.getDeckName(), cards);
+                return new RoomBots.PoolDeck(deck.getId(), deck.getDeckName(), varied(deck, cards));
             }
             return null;
         }
@@ -109,6 +110,23 @@ public final class BotRooms {
             selfBots.remove(room.getRoomId());
         }
     };
+
+    /** A system deck the bot varies (DeckVariation: its color up to its edition), or the deck as it is (the ST decks). */
+    private List<CardSlot> varied(DeckList deck, List<CardSlot> cards) {
+        SystemDecks.Pool pool = SystemDecks.poolOf(deck.getSystemEdition(),
+                cards.stream().map(c -> c.getColors() == null || c.getColors().isEmpty() ? null : c.getColors().get(0)).toList());
+        if (pool == null) return cards;
+        try {
+            List<CardSlot> catalog = service.decks.catalog(pool.edition(), pool.maxSub(), pool.color());
+            DeckVariation.Result result = DeckVariation.vary(deck.getDeckName(), cards, catalog, chance);
+            if (!result.changes().isEmpty()) LOG.info("Bot deck {} varied: {}", deck.getDeckName(), String.join("; ", result.changes()));
+            result.cards().forEach(c -> c.setFinish(null));
+            return result.cards();
+        } catch (RuntimeException e) {
+            LOG.warn("Bot deck {} played as it is: {}", deck.getDeckName(), e.getMessage());
+            return cards;
+        }
+    }
 
     /** Seats the bot in a new room against it. */
     public void seat(GameRoom room) {

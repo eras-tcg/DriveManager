@@ -8,6 +8,8 @@ class PlayerState(userId: String?, username: String?) {
     var avatar: String? = null
     /** The player's playmat (an image URL from their profile), under their half of the table; null for none. */
     var playmat: String? = null
+    /** The card back they chose in their profile (an id of the page's catalog, e.g. "vortice"); null for the default. */
+    var cardBack: String? = null
     @get:JvmName("isConnected")
     var connected: Boolean = false
     /** When they lost their connection (0 while connected): the owner passes on after a while (a reload is not leaving). */

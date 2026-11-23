@@ -7,7 +7,7 @@ import java.util.ArrayList;
 /**
  * Who is in a room, on the server: the rules of joining, leaving, kicking, closing and taking a player out are the room
  * session's ({@link RoomSeats}, common with the game in the browser); here are the server's parts: the players' profiles
- * (icon, playmat), the registry (a closed room is forgotten, a player's sessions too), sessions dropping, and the sweeps
+ * (icon, playmat, card back), the registry (a closed room is forgotten, a player's sessions too), sessions dropping, and the sweeps
  * (the ownership passed on when the owner is gone, the online games abandoned, with missions and recording). Called with
  * the room's lock held.
  */
@@ -23,11 +23,12 @@ public final class RoomMembership {
 
     /** What the room session's seats ask of the server: profiles and the registry. */
     private final RoomSeats.Keeper keeper = new RoomSeats.Keeper() {
-        /** The player's icon and playmat, as their profile has them now. */
+        /** The player's icon, playmat and card back, as their profile has them now. */
         @Override
         public void dress(PlayerState player) {
             player.setAvatar(service.avatarService == null ? null : service.avatarService.urlOf(player.getUserId()));
             player.setPlaymat(service.playmatService == null ? null : service.playmatService.urlOf(player.getUserId()));
+            player.setCardBack(service.preferencesService == null ? null : service.preferencesService.cardBackOf(player.getUserId()));
         }
 
         @Override
