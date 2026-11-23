@@ -1,5 +1,5 @@
 {
-  "_comment": "Mazos propuestos por el sistema (autor ERAS). Cada carta va por su código impreso; SystemDecks los resuelve a las cartas del sitio al iniciar. El pool del bot sale de aquí.",
+  "_comment": "Mazos propuestos por el sistema (autor ERAS). Cada carta va por su código impreso; SystemDecks los resuelve a las cartas del sitio al iniciar. El pool del bot sale de aquí; «vary» (solo los E1, los ST se juegan tal cual) es de dónde toma el bot cartas para variar el mazo (DeckVariation).",
   "decks": [
     {
       "id": "system-st1",
@@ -106,6 +106,7 @@
       "name": "E1 Rojo Primera Línea",
       "cover": "E1.3-R01",
       "botDeck": true,
+      "vary": { "edition": "E1", "color": "R" },
       "cards": [
         { "code": "E1.3-R01", "copies": 4, "name": "Peón Experimentado" },
         { "code": "E1.3-R02", "copies": 4, "name": "Espada De Primera Línea" },
@@ -131,6 +132,7 @@
       "name": "E1 Azul Entes",
       "cover": "E1.3-B01",
       "botDeck": true,
+      "vary": { "edition": "E1", "color": "B" },
       "cards": [
         { "code": "E1.3-B01", "copies": 4, "name": "Flureteus" },
         { "code": "E1.1-B02", "copies": 4, "name": "Forol" },
@@ -157,6 +159,7 @@
       "name": "E1 Verde Dragones",
       "cover": "E1.1-G01",
       "botDeck": true,
+      "vary": { "edition": "E1", "color": "G" },
       "cards": [
         { "code": "E1.1-G01", "copies": 4, "name": "Duregón" },
         { "code": "E1-G03", "copies": 4, "name": "Dragón Goloso" },
@@ -183,6 +186,7 @@
       "name": "E1 Violeta Bestias",
       "cover": "E1.3-P01",
       "botDeck": true,
+      "vary": { "edition": "E1", "color": "P" },
       "cards": [
         { "code": "E1.3-P01", "copies": 4, "name": "Jábalix" },
         { "code": "E1.3-P02", "copies": 4, "name": "Parásito Cerebral" },

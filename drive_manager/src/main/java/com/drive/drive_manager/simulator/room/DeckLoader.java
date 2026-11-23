@@ -95,6 +95,16 @@ public class DeckLoader {
         }).toList());
     }
 
+    /** Every card of an edition (all its sub-editions) in one color, one slot each, filled as a deck's ({@link #slots}). */
+    public List<CardSlot> catalog(String edition, String color) {
+        List<String> ids = driveCards.findByEdition(edition).stream().filter(dc -> color.equals(dc.getColorIdentity()))
+                .map(DriveCard::getId).toList();
+        if (ids.isEmpty()) return List.of();
+        DeckList all = new DeckList();
+        all.setCards(ids);
+        return slots(all);
+    }
+
     /** The decks set aside for the bot to play in ranked Modo solo: the system's only (a player's deck flagged earlier is not). */
     public List<DeckList> botPool() {
         return decks == null ? List.of() : decks.findByBotDeckTrue().stream().filter(DeckList::isSystemDeck).toList();

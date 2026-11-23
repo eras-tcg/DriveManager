@@ -19,6 +19,7 @@ import java.io.UncheckedIOException;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -70,10 +71,33 @@ public class SystemDecks implements ApplicationRunner {
         LOG.info("Mazos del sistema al día: {} de {}", saved, listed.size());
     }
 
-    /** One deck of the file: its id, name, cover card and cards (one code per copy, in the file's order). */
-    record Listed(String id, String name, String cover, boolean botDeck, List<String> codes) {}
+    /**
+     * One deck of the file: its id, name, cover card and cards (one code per copy, in the file's order), and where the
+     * bot takes cards to vary it ({@code vary}: null when it is played as it is, the ST decks).
+     */
+    public record Listed(String id, String name, String cover, boolean botDeck, List<String> codes, Pool vary) {
+        Listed(String id, String name, String cover, boolean botDeck, List<String> codes) {
+            this(id, name, cover, botDeck, codes, null);
+        }
+    }
 
-    static List<Listed> read() {
+    /** The cards a varied deck may take: those of an edition (every sub-edition) in a color. */
+    public record Pool(String edition, String color) {}
+
+    private static volatile Map<String, Pool> pools;
+
+    /** Where the bot takes cards to vary this system deck, or null when the deck is played as it is. */
+    public static Pool variedFrom(String deckId) {
+        Map<String, Pool> p = pools;
+        if (p == null) {
+            Map<String, Pool> made = new java.util.HashMap<>();
+            for (Listed d : read()) if (d.vary() != null) made.put(d.id(), d.vary());
+            pools = p = made;
+        }
+        return deckId == null ? null : p.get(deckId);
+    }
+
+    public static List<Listed> read() {
         try (InputStream in = SystemDecks.class.getResourceAsStream(FILE)) {
             if (in == null) return List.of();
             List<Listed> out = new ArrayList<>();
@@ -81,8 +105,10 @@ public class SystemDecks implements ApplicationRunner {
                 List<String> codes = new ArrayList<>();
                 for (JsonNode c : d.path("cards"))
                     for (int i = 0; i < c.path("copies").asInt(); i++) codes.add(c.path("code").asString());
+                JsonNode vary = d.path("vary");
                 out.add(new Listed(d.path("id").asString(), d.path("name").asString(), d.path("cover").asString(),
-                        d.path("botDeck").asBoolean(false), codes));
+                        d.path("botDeck").asBoolean(false), codes,
+                        vary.isObject() ? new Pool(vary.path("edition").asString(), vary.path("color").asString()) : null));
             }
             return out;
         } catch (IOException e) {
