@@ -100,18 +100,22 @@ class SystemDecksTest {
     }
 
     @Test
-    void systemDecksTheFileNoLongerListsAreDeleted() {
+    void theBotVariesADeckFromItsEditionAndItsColor() {
+        assertThat(SystemDecks.poolOf("E1.2", List.of("R", "R", "W"))).isEqualTo(new SystemDecks.Pool("E1", 2, "R"));
+        assertThat(SystemDecks.poolOf("E1", List.of("G"))).isEqualTo(new SystemDecks.Pool("E1", 0, "G"));
+        assertThat(SystemDecks.poolOf("ST", List.of("R"))).isNull();
+        assertThat(SystemDecks.poolOf(null, List.of("R"))).isNull();
+    }
+
+    @Test
+    void theFileOnlyMakesTheDecksTheDatabaseLacks() {
         DeckListRepository decks = mock(DeckListRepository.class);
-        DeckList kept = new DeckList();
-        kept.setId("system-x");
-        DeckList old = new DeckList();
-        old.setId("system-old");
-        when(decks.findBySystemDeckTrue()).thenReturn(List.of(kept, old));
+        DriveCardRepository driveCards = mock(DriveCardRepository.class);
+        when(decks.existsById(anyString())).thenReturn(true);
 
-        new SystemDecks(decks, mock(DriveCardRepository.class), "")
-                .removeUnlisted(List.of(new SystemDecks.Listed("system-x", "X", "ST4-R01", true, List.of("ST4-R01"))));
+        new SystemDecks(decks, driveCards, "").run(null);
 
-        verify(decks).deleteAll(List.of(old));
+        verify(decks, never()).save(any());
     }
 
     @Test

@@ -26,11 +26,10 @@ import java.util.regex.Pattern;
 
 /**
  * The decks the system proposes (public, author ERAS): {@code decks/system-decks.json} lists each one by the printed
- * codes of its cards ("ST4-R05", "E1.3-R01") and how many copies; at start they are made, or made again, in
- * {@code deck_lists} with this site's card ids, since each environment has its own. The file is the deck: a change to
- * it reaches every environment with the next deploy. A deck with a code the site does not have is left as it was
- * (logged), never saved half made. Whether the bot plays it is set on creation from the file and then kept, so a
- * simulator administrator's "Quitar del bot" lasts.
+ * codes of its cards ("ST4-R05", "E1.3-R01") and how many copies; at start, a deck the database does not have yet is
+ * made in {@code deck_lists} with this site's card ids (each environment has its own). The file only seeds: once made,
+ * a deck is the simulator administrators' to edit on the site (cards, name, cover; DeckListController), and the file
+ * never overwrites nor deletes it. A deck with a code the site does not have is not made (logged), never half made.
  */
 @Component
 public class SystemDecks implements ApplicationRunner {
@@ -59,17 +58,17 @@ public class SystemDecks implements ApplicationRunner {
 
     @Override
     public void run(ApplicationArguments args) {
-        int saved = 0;
+        int created = 0;
         List<Listed> listed = read();
         for (Listed deck : listed) {
+            if (decks.existsById(deck.id())) continue;
             try {
-                if (save(deck)) saved++;
+                if (save(deck)) created++;
             } catch (RuntimeException e) {
-                LOG.warn("Mazo del sistema {} no se pudo guardar: {}", deck.id(), e.getMessage());
+                LOG.warn("Mazo del sistema {} no se pudo crear: {}", deck.id(), e.getMessage());
             }
         }
-        LOG.info("Mazos del sistema al día: {} de {}", saved, listed.size());
-        removeUnlisted(listed);
+        LOG.info("Mazos del sistema: {} nuevos ({} en el archivo)", created, listed.size());
     }
 
     /**
@@ -95,7 +94,19 @@ public class SystemDecks implements ApplicationRunner {
 
     private static volatile Map<String, Pool> pools;
 
-    /** Where the bot takes cards to vary this system deck, or null when the deck is played as it is. */
+    /**
+     * Where the bot takes cards to vary a system deck as it is now: its color (most of its cards') in its block up to
+     * its edition folder ("E1.2": E1, E1.1, E1.2); null for the Structures' decks (played as they are) or no folder.
+     */
+    public static Pool poolOf(String systemEdition, java.util.Collection<String> cardColors) {
+        if (systemEdition == null || systemEdition.isBlank() || systemEdition.startsWith("ST") || cardColors.isEmpty()) return null;
+        java.util.Map<String, Long> count = new java.util.HashMap<>();
+        cardColors.forEach(c -> { if (c != null) count.merge(c, 1L, Long::sum); });
+        String color = count.entrySet().stream().max(Map.Entry.comparingByValue()).map(Map.Entry::getKey).orElse(null);
+        return color == null ? null : Pool.upTo(systemEdition, color);
+    }
+
+    /** Where the bot takes cards to vary this system deck as the file lists it, or null when it is played as it is. */
     public static Pool variedFrom(String deckId) {
         Map<String, Pool> p = pools;
         if (p == null) {
@@ -124,16 +135,6 @@ public class SystemDecks implements ApplicationRunner {
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
-    }
-
-    /** The system decks the file no longer lists are deleted (a player's copy of one is the player's own deck and stays). */
-    void removeUnlisted(List<Listed> listed) {
-        java.util.Set<String> ids = new java.util.HashSet<>();
-        listed.forEach(d -> ids.add(d.id()));
-        List<DeckList> gone = decks.findBySystemDeckTrue().stream().filter(d -> !ids.contains(d.getId())).toList();
-        if (gone.isEmpty()) return;
-        decks.deleteAll(gone);
-        LOG.info("Mazos del sistema quitados: {}", gone.stream().map(DeckList::getDeckName).toList());
     }
 
     /** Makes or updates one deck; false when one of its codes is not on the site (the deck stays as it was). */

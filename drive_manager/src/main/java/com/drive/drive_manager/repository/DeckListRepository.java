@@ -11,9 +11,6 @@ public interface DeckListRepository extends MongoRepository<DeckList, String> {
     /** The decks the bot may play in ranked Modo solo. */
     List<DeckList> findByBotDeckTrue();
 
-    /** The decks proposed by the system (SystemDecks). */
-    List<DeckList> findBySystemDeckTrue();
-
     default List<DeckList> findPublicDecks() {
         return findAll().stream()
                 .filter(deck -> !deck.isPrivateDeck())

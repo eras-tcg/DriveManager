@@ -157,6 +157,42 @@ class DeckListControllerTest {
         verify(deckBoxes).saveAll(List.of(box));
     }
 
+    @Test
+    void aSimulatorAdministratorEditsASystemDeckAndItStaysTheSystems() {
+        DeckList system = deck("system-e1-rojo", "system", false);
+        system.setUsername("ERAS");
+        system.setSystemDeck(true);
+        system.setSystemEdition("E1");
+        system.setBotDeck(true);
+        when(repo.findById("system-e1-rojo")).thenReturn(Optional.of(system));
+        DeckList body = deck("system-e1-rojo", "admin", true);
+        body.setUsername("admin");
+        body.setDeckName("E1 Rojo Agresivo");
+
+        var response = controller().update("system-e1-rojo", body,
+                new UsernamePasswordAuthenticationToken("admin", null, AuthorityUtils.createAuthorityList("manage_decks", "simulator_admin")));
+
+        assertThat(response.getStatusCode().value()).isEqualTo(200);
+        DeckList saved = (DeckList) response.getBody();
+        assertThat(saved.getDeckName()).isEqualTo("E1 Rojo Agresivo");
+        assertThat(saved.getUserId()).isEqualTo("system");
+        assertThat(saved.getUsername()).isEqualTo("ERAS");
+        assertThat(saved.isPrivateDeck()).isFalse();
+        assertThat(saved.isSystemDeck()).isTrue();
+        assertThat(saved.getSystemEdition()).isEqualTo("E1");
+        assertThat(saved.isBotDeck()).isTrue();
+    }
+
+    @Test
+    void onlyASimulatorAdministratorEditsASystemDeck() {
+        DeckList system = deck("system-e1-rojo", "system", false);
+        system.setSystemDeck(true);
+        when(repo.findById("system-e1-rojo")).thenReturn(Optional.of(system));
+
+        assertThat(controller().update("system-e1-rojo", deck("system-e1-rojo", "alice", false), user("alice")).getStatusCode().value()).isEqualTo(403);
+        verify(repo, never()).save(any());
+    }
+
     private DeckListController controller() {
         if (controller == null) controller = new DeckListController(repo, progression, mock(ActivityLogService.class), deckBoxes, testCards);
         return controller;

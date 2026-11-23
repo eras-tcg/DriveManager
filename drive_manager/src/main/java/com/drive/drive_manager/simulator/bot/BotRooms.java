@@ -111,9 +111,10 @@ public final class BotRooms {
         }
     };
 
-    /** A system deck the bot varies (DeckVariation, from its pool of the file), or the deck as it is (the ST decks). */
+    /** A system deck the bot varies (DeckVariation: its color up to its edition), or the deck as it is (the ST decks). */
     private List<CardSlot> varied(DeckList deck, List<CardSlot> cards) {
-        SystemDecks.Pool pool = SystemDecks.variedFrom(deck.getId());
+        SystemDecks.Pool pool = SystemDecks.poolOf(deck.getSystemEdition(),
+                cards.stream().map(c -> c.getColors() == null || c.getColors().isEmpty() ? null : c.getColors().get(0)).toList());
         if (pool == null) return cards;
         try {
             List<CardSlot> catalog = service.decks.catalog(pool.edition(), pool.maxSub(), pool.color());
