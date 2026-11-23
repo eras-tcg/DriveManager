@@ -1,0 +1,90 @@
+{
+  "name" : "hacha templaria",
+  "effects" : [
+    {
+      "id" : "hacha-templaria:al-final-del-ataque",
+      "moment" : "ON_ATTACK_END",
+      "label" : "Al Final Del Ataque",
+      "text" : "Puedes subir esta carta a tu mano para invocar 1 criatura con \"Templario(a)\" o \"Primera Línea\" en su nombre que no sea una copia de esta carta reduciendo su coste en 2.",
+      "steps" : [
+        {
+          "type" : "IfPossible"
+        },
+        {
+          "type" : "Do",
+          "action" : {
+            "type" : "Move",
+            "cards" : {
+              "zones" : "field",
+              "owner" : "YOU",
+              "filter" : {},
+              "min" : {
+                "type" : "Fixed",
+                "value" : 1
+              },
+              "max" : {
+                "type" : "Fixed",
+                "value" : 1
+              },
+              "self" : "ANY",
+              "mode" : "SELF"
+            },
+            "to" : "hand"
+          }
+        },
+        {
+          "type" : "Do",
+          "action" : {
+            "type" : "Summon",
+            "cards" : {
+              "zones" : "hand",
+              "owner" : "YOU",
+              "filter" : {
+                "cardType" : "creature",
+                "notName" : "hacha templaria",
+                "anyOf" : [
+                  {
+                    "nameContains" : "templario"
+                  },
+                  {
+                    "nameContains" : "templaria"
+                  },
+                  {
+                    "nameContains" : "primera línea"
+                  }
+                ]
+              },
+              "min" : {
+                "type" : "Fixed",
+                "value" : 1
+              },
+              "max" : {
+                "type" : "Fixed",
+                "value" : 1
+              },
+              "self" : "ANY",
+              "mode" : "CHOOSE"
+            },
+            "reduce" : {
+              "type" : "Fixed",
+              "value" : 2
+            },
+            "required" : true
+          }
+        }
+      ],
+      "sourceZone" : "field",
+      "limit" : "NONE"
+    }
+  ],
+  "traits" : {
+    "nameAlsoHas" : "Primera Línea"
+  },
+  "requirement" : {
+    "summoner" : {
+      "level" : 2
+    },
+    "alliesSum" : 4,
+    "alliesSumByCost" : true
+  }
+}

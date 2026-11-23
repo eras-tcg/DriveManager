@@ -190,6 +190,7 @@ object CardEffects {
             if (t.specialFromTributes) rules.add("En Tributos: cuenta como en la mano para invocaciones especiales")
             if (t.oneEffectPerTurn) rules.add("solo 1 de sus efectos por turno")
             if (t.alias != null) rules.add("puede ser tratada como \"" + t.alias + "\"")
+            if (t.nameAlsoHas != null) rules.add("puede ser tratada como si tuviera \"" + t.nameAlsoHas + "\" en su nombre")
             if (t.lifePlayCost != null) rules.add("desde las vidas se juega pagando " + t.lifePlayCost + " gemas")
             if (t.alternativeLevel != null) rules.add("puede ser considerada nivel " + t.alternativeLevel.level)
             if (t.creatureForEffects != null) rules.add("cuenta como criatura de fuerza " + t.creatureForEffects + " para efectos aliados")
@@ -425,6 +426,11 @@ object CardEffects {
         DISCARD_ONE_MATERIAL,
         /** "en su lugar, puedes sacrificar otro aliado" (another creature of its owner, who picks it). */
         SACRIFICE_OTHER_ALLY,
+        /**
+         * "en su lugar, puedes agotar N cartas [filtro] bajo tu control" (resourceFilter: which ones; [Replacement.count]: N): active cards of
+         * its owner's field, this one included if it matches; its owner picks them.
+         */
+        TAP_CARDS,
     }
 
     /**
@@ -442,6 +448,8 @@ object CardEffects {
         val holder: CardFilter? = null,
         /** "Turno Aliado: cuando esta carta fuera a ser destruida": only on its owner's turn. */
         val allyTurn: Boolean = false,
+        /** How many cards the payment takes ([ReplacementCost.TAP_CARDS]: "agotar 2 cartas Verdes"); 0: one. */
+        val count: Int = 0,
     ) : Reaction {
         constructor(id: String?, label: String?, text: String?, destroyOnly: Boolean, byOpponentOnly: Boolean, limit: Limit?, cost: ReplacementCost?) :
                 this(id, label, text, destroyOnly, byOpponentOnly, limit, cost, CardFilter.any())
@@ -494,7 +502,8 @@ object CardEffects {
             .firstOrNull { it is T } as T?
     }
 
-    private fun traits(card: CardSlot): CardTraits {
+    @JvmStatic
+    fun traits(card: CardSlot): CardTraits {
         return if (card.cardName == null) CardTraits.NONE
         else TRAITS.valueOr(nameOf(card.cardName), CardTraits.NONE)
     }
@@ -646,13 +655,14 @@ object CardEffects {
     }
 
     /** "Esta carta puede ser tratada como «X»": the name it also answers to. */
-    /** The card is called `name`, or can be treated as such. */
+    /** The card is called `name` (its name now: [NameChanges]), or can be treated as such. */
     @JvmStatic
     fun isNamed(card: CardSlot, name: String?): Boolean {
-        if (card.cardName == null || name == null) return false
+        val now = NameChanges.name(card)
+        if (now == null || name == null) return false
         val wanted = key(name)
         val alias = traits(card).alias
-        return key(card.cardName) == wanted || (alias != null && key(alias) == wanted)
+        return key(now) == wanted || (alias != null && key(alias) == wanted)
     }
 
     /** What the files say of a card, to the registries. */

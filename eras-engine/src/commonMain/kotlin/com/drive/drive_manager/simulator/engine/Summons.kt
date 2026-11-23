@@ -361,8 +361,8 @@ object Summons {
         target.noUntap = summoner.noUntap
         target.noStartUntap = summoner.noStartUntap
         target.floating!!.clear()
-        // but not a change of its types (a printed property: it stays with the card that left the field)
-        target.floating!!.addAll(summoner.floating!!.filter { !ClassChanges.isChange(it) })
+        // but not a change of its types or its name (printed properties: they stay with the card that left the field)
+        target.floating!!.addAll(summoner.floating!!.filter { !ClassChanges.isChange(it) && !NameChanges.isChange(it) })
         target.materials!!.addAll(0, summoner.materials!!)
         target.resources!!.addAll(0, summoner.resources!!)
         summoner.materials = ArrayList()

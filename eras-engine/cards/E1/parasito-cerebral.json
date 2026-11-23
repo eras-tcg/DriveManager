@@ -1,0 +1,71 @@
+{
+  "name" : "parásito cerebral",
+  "effects" : [
+    {
+      "id" : "parasito-cerebral:en-mano",
+      "moment" : "ACTIVATED",
+      "label" : "Turno Aliado / En Mano",
+      "text" : "Una vez por turno entre copias: puedes sacrificar 1 aliado para invocar esta carta en tu línea frontal sin pagar su coste.",
+      "steps" : [
+        {
+          "type" : "IfPossible"
+        },
+        {
+          "type" : "Do",
+          "action" : {
+            "type" : "Destroy",
+            "cards" : {
+              "zones" : "allies",
+              "owner" : "YOU",
+              "filter" : {
+                "cardType" : "creature"
+              },
+              "min" : {
+                "type" : "Fixed",
+                "value" : 1
+              },
+              "max" : {
+                "type" : "Fixed",
+                "value" : 1
+              },
+              "self" : "ANY",
+              "mode" : "CHOOSE"
+            },
+            "sacrifice" : true,
+            "required" : true
+          }
+        },
+        {
+          "type" : "Do",
+          "action" : {
+            "type" : "Summon",
+            "cards" : {
+              "zones" : "hand",
+              "owner" : "YOU",
+              "filter" : {},
+              "min" : {
+                "type" : "Fixed",
+                "value" : 1
+              },
+              "max" : {
+                "type" : "Fixed",
+                "value" : 1
+              },
+              "self" : "ANY",
+              "mode" : "SELF"
+            },
+            "reduce" : {
+              "type" : "Fixed",
+              "value" : 1000
+            },
+            "toFront" : true,
+            "required" : true
+          }
+        }
+      ],
+      "sourceZone" : "hand",
+      "allyTurn" : true,
+      "limit" : "ONCE_PER_TURN_BETWEEN_COPIES"
+    }
+  ]
+}

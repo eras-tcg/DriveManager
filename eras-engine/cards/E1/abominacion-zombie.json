@@ -1,0 +1,143 @@
+{
+  "name" : "abominación zombie",
+  "effects" : [
+    {
+      "id" : "abominacion-zombie:en-invocacion",
+      "moment" : "ON_SUMMON",
+      "label" : "En Invocación",
+      "text" : "Puedes cambiar el nombre original de esta carta por el de una de las criaturas utilizadas para invocarla especialmente.",
+      "steps" : [
+        {
+          "type" : "Do",
+          "action" : {
+            "type" : "Select",
+            "selector" : {
+              "zones" : "usedToSummon",
+              "owner" : "YOU",
+              "filter" : {
+                "cardType" : "creature"
+              },
+              "min" : {
+                "type" : "Fixed",
+                "value" : 1
+              },
+              "max" : {
+                "type" : "Fixed",
+                "value" : 1
+              },
+              "self" : "ANY",
+              "mode" : "CHOOSE"
+            },
+            "saveAs" : "name",
+            "label" : "Su nombre",
+            "endsIfNone" : true
+          }
+        },
+        {
+          "type" : "TakeName",
+          "from" : "name"
+        }
+      ],
+      "sourceZone" : "field",
+      "limit" : "NONE"
+    },
+    {
+      "id" : "abominacion-zombie:al-atacar",
+      "moment" : "ON_ATTACK",
+      "mandatory" : true,
+      "label" : "Al Atacar",
+      "text" : "Elige 1 enemigo de nivel menor a la cantidad de cartas con el nombre de esta carta en tus tributos; destrúyelo.",
+      "cost" : [
+        {
+          "type" : "Do",
+          "action" : {
+            "type" : "Select",
+            "selector" : {
+              "zones" : "frontLine",
+              "owner" : "OPPONENT",
+              "filter" : {
+                "cardType" : "creature"
+              },
+              "min" : {
+                "type" : "Fixed",
+                "value" : 1
+              },
+              "max" : {
+                "type" : "Fixed",
+                "value" : 1
+              },
+              "self" : "ANY",
+              "mode" : "CHOOSE",
+              "relative" : {
+                "maxLevel" : {
+                  "type" : "Scaled",
+                  "base" : {
+                    "type" : "CardsIn",
+                    "cards" : {
+                      "zones" : "tributeZone",
+                      "owner" : "YOU",
+                      "filter" : {},
+                      "min" : {
+                        "type" : "Fixed"
+                      },
+                      "max" : {
+                        "type" : "Fixed",
+                        "value" : 2147483647
+                      },
+                      "self" : "ANY",
+                      "mode" : "ALL",
+                      "relative" : {
+                        "to" : "self",
+                        "sameName" : true
+                      }
+                    }
+                  },
+                  "divisor" : 1,
+                  "plus" : -1
+                }
+              }
+            },
+            "target" : true
+          }
+        }
+      ],
+      "steps" : [
+        {
+          "type" : "Do",
+          "action" : {
+            "type" : "Destroy",
+            "cards" : {
+              "zones" : "saved:targets",
+              "owner" : "YOU",
+              "filter" : {},
+              "min" : {
+                "type" : "Fixed"
+              },
+              "max" : {
+                "type" : "Fixed",
+                "value" : 2147483647
+              },
+              "self" : "ANY",
+              "mode" : "ALL"
+            }
+          }
+        }
+      ],
+      "sourceZone" : "field",
+      "limit" : "NONE"
+    }
+  ],
+  "requirement" : {
+    "ritual" : {
+      "parts" : [
+        {
+          "level" : 2,
+          "summoner" : true,
+          "maxLevel" : 3
+        },
+        {},
+        {}
+      ]
+    }
+  }
+}

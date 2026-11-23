@@ -273,6 +273,15 @@ object AllySteps : StepFamily {
                 effect.lastDone = ClassChanges.change(room, effect, ally, step.from!!, step.to!!)
                 return false
             }
+            is TakeName -> {
+                val self = find(player.field, effect.sourceInstanceId)
+                val id = effect.saved[step.from ?: com.drive.drive_manager.simulator.engine.effects.model.Memory.LAST]?.firstOrNull()
+                val named = if (id == null) null else EffectEngine.findInRoom(room, id)
+                val name = named?.cardName
+                effect.lastDone = self != null && name != null
+                if (self != null && name != null) NameChanges.change(room, effect, self, name)
+                return false
+            }
             is GrantEffect -> {
                 val ally = subject(room, effect) ?: return false
                 GrantedEffects.grant(room, effect, ally, step.effect!!)

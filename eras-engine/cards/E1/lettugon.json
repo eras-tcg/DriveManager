@@ -1,0 +1,88 @@
+{
+  "name" : "lettugón",
+  "inherited" : [
+    {
+      "id" : "lettugon:hereda-al-atacar",
+      "moment" : "ON_ATTACK",
+      "mandatory" : true,
+      "label" : "Al Atacar",
+      "text" : "Heredado de Lettugón: elige 1 enemigo agotado de fuerza 8 o menos; destrúyelo.",
+      "cost" : [
+        {
+          "type" : "Do",
+          "action" : {
+            "type" : "Select",
+            "selector" : {
+              "zones" : "frontLine",
+              "owner" : "OPPONENT",
+              "filter" : {
+                "cardType" : "creature",
+                "maxStrength" : 8,
+                "exhaustedOnly" : true
+              },
+              "min" : {
+                "type" : "Fixed",
+                "value" : 1
+              },
+              "max" : {
+                "type" : "Fixed",
+                "value" : 1
+              },
+              "self" : "ANY",
+              "mode" : "CHOOSE"
+            },
+            "target" : true
+          }
+        }
+      ],
+      "steps" : [
+        {
+          "type" : "Do",
+          "action" : {
+            "type" : "Destroy",
+            "cards" : {
+              "zones" : "saved:targets",
+              "owner" : "YOU",
+              "filter" : {},
+              "min" : {
+                "type" : "Fixed"
+              },
+              "max" : {
+                "type" : "Fixed",
+                "value" : 2147483647
+              },
+              "self" : "ANY",
+              "mode" : "ALL"
+            }
+          }
+        }
+      ],
+      "sourceZone" : "field",
+      "limit" : "NONE"
+    }
+  ],
+  "reactions" : [
+    {
+      "type" : "CostModifier",
+      "label" : "Absoluto",
+      "event" : "SPECIAL_SUMMON",
+      "holder" : "SELF",
+      "payment" : {
+        "kind" : "NONE"
+      },
+      "limit" : "NONE",
+      "amount" : {
+        "type" : "OnBothFields",
+        "filter" : {
+          "exhaustedOnly" : true,
+          "frontOnly" : true
+        }
+      }
+    }
+  ],
+  "requirement" : {
+    "summoner" : {
+      "level" : 2
+    }
+  }
+}

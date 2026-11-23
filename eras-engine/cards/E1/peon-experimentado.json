@@ -5,7 +5,7 @@
     "moment" : "ON_SUMMON",
     "mandatory" : true,
     "label" : "En Invocación",
-    "text" : "Tributa 2 cartas del tope de tu mazo. Luego: toma 1 carta de tus tributos.",
+    "text" : "Tributa 2 cartas del tope de tu mazo. Luego: toma 1 carta Roja o Blanca de tus tributos.",
     "steps" : [ {
       "type" : "Do",
       "action" : {
@@ -34,7 +34,9 @@
         "cards" : {
           "zones" : "tributeZone",
           "owner" : "YOU",
-          "filter" : { },
+          "filter" : {
+            "colors" : [ "R", "W" ]
+          },
           "min" : {
             "type" : "Fixed",
             "value" : 1

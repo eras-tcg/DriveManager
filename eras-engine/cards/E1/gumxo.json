@@ -1,0 +1,51 @@
+{
+  "name" : "gumxo",
+  "effects" : [
+    {
+      "id" : "gumxo:en-invocacion-especial",
+      "moment" : "ON_SUMMON",
+      "mandatory" : true,
+      "label" : "En Invocación especial",
+      "text" : "Esta carta gana fuerza 3 hasta el final del turno.",
+      "steps" : [
+        {
+          "type" : "Do",
+          "action" : {
+            "type" : "Modify",
+            "cards" : {
+              "zones" : "subjectOrSelf",
+              "owner" : "YOU",
+              "filter" : {},
+              "min" : {
+                "type" : "Fixed"
+              },
+              "max" : {
+                "type" : "Fixed",
+                "value" : 2147483647
+              },
+              "self" : "ANY",
+              "mode" : "ALL"
+            },
+            "strength" : {
+              "type" : "Fixed",
+              "value" : 3
+            },
+            "until" : "TURN"
+          }
+        }
+      ],
+      "condition" : {
+        "type" : "Summoned",
+        "side" : "ANY",
+        "how" : "special"
+      },
+      "sourceZone" : "field",
+      "limit" : "NONE"
+    }
+  ],
+  "requirement" : {
+    "ritual" : {
+      "level" : 2
+    }
+  }
+}

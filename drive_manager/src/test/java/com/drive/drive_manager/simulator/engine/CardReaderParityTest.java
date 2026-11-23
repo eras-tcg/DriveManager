@@ -33,8 +33,8 @@ class CardReaderParityTest {
     void theBundleHoldsTheCardFilesOfTheClassPath() {
         List<CardBundle.File> bundle = CardBundle.files(CardFiles.bundle());
         List<Map.Entry<String, String>> files = JacksonCardFiles.files();
-        assertThat(bundle).hasSize(666);
-        assertThat(files).hasSize(666);
+        assertThat(bundle).hasSize(680);
+        assertThat(files).hasSize(680);
         for (int i = 0; i < files.size(); i++) {
             assertThat(files.get(i).getKey()).endsWith("/cards/" + bundle.get(i).getPath());
             assertThat(bundle.get(i).getText()).as(bundle.get(i).getPath()).isEqualTo(files.get(i).getValue());
@@ -58,14 +58,14 @@ class CardReaderParityTest {
             sameGraph(jackson, common, where);
             compared++;
         }
-        assertThat(compared).isEqualTo(666);
+        assertThat(compared).isEqualTo(680);
     }
 
     @Test
     void theServerLoadsWhatJacksonLoaded() {
         List<CardDefinition> common = CardFiles.load();
         List<CardDefinition> jackson = JacksonCardFiles.load();
-        assertThat(common).hasSize(666).isEqualTo(jackson);
+        assertThat(common).hasSize(680).isEqualTo(jackson);
         assertThat(new ServerCardSource().cards()).isEqualTo(jackson);
     }
 
