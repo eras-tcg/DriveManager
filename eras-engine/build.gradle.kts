@@ -1,3 +1,4 @@
+import java.time.Duration
 plugins {
     kotlin("multiplatform") version "2.4.21"
     kotlin("plugin.serialization") version "2.4.21"
@@ -208,6 +209,8 @@ tasks.withType<Test>().matching { it.name in setOf("jvmTest", "jvmTestBasic", "j
         classpath = jvmTest.classpath
         useJUnit()
     }
+    // A time limit for the whole run: a hung test fails the task instead of holding the pipeline
+    timeout.set(Duration.ofMinutes(15))
     dependsOn(cardBundle, botResources, starterDecks)
     environment("ERAS_CARD_BUNDLE", bundlePath)
     environment("ERAS_BOT_RESOURCES", botResourcesPath)
