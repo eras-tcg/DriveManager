@@ -7,6 +7,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 
 import com.drive.drive_manager.dto.DeckList;
 import com.drive.drive_manager.dto.HomeContent;
+import com.drive.drive_manager.dto.HomeNews;
 import com.drive.drive_manager.dto.HomeUpdateRequest;
 import com.drive.drive_manager.dto.HomeUpdateRequest.DeckWithPosition;
 
@@ -44,6 +45,36 @@ public class FrontContentController {
     /** The featured decks never go past this slot: a huge position would fill the list with millions of gaps. */
     private static final int MAX_DECK_POSITION = 50;
 
+    /** Why the news cannot be saved, or null: each needs a title, a date and its text, within their lengths and card count. */
+    static String newsProblem(List<HomeNews> news) {
+        for (HomeNews n : news) {
+            if (n == null || n.getTitle() == null || n.getTitle().isBlank()) return "Cada noticia necesita un título";
+            if (n.getTitle().strip().length() > HomeNews.MAX_TITLE) return "El título admite hasta " + HomeNews.MAX_TITLE + " caracteres";
+            if (n.getDate() == null || n.getDate().isBlank()) return "Cada noticia necesita una fecha";
+            if (n.getExcerpt() != null && n.getExcerpt().strip().length() > HomeNews.MAX_EXCERPT)
+                return "El texto admite hasta " + HomeNews.MAX_EXCERPT + " caracteres";
+            if (n.getCardIds() != null && n.getCardIds().size() > HomeNews.MAX_CARDS) return "Cada noticia lleva hasta " + HomeNews.MAX_CARDS + " cartas";
+            if (n.getLinkRoute() != null && !n.getLinkRoute().isBlank() && !n.getLinkRoute().startsWith("/"))
+                return "El botón lleva a una página del sitio (empieza con /)";
+        }
+        return null;
+    }
+
+    /** The news trimmed, each with an id (a new one gets one) and without empty button parts. */
+    static List<HomeNews> cleanNews(List<HomeNews> news) {
+        List<HomeNews> out = new ArrayList<>();
+        for (HomeNews n : news) {
+            String route = n.getLinkRoute() == null || n.getLinkRoute().isBlank() ? null : n.getLinkRoute().strip();
+            String label = route == null || n.getLinkLabel() == null || n.getLinkLabel().isBlank() ? null : n.getLinkLabel().strip();
+            out.add(new HomeNews(
+                    n.getId() == null || n.getId().isBlank() ? java.util.UUID.randomUUID().toString() : n.getId(),
+                    n.getTitle().strip(), n.getDate().strip(), n.getExcerpt() == null ? "" : n.getExcerpt().strip(),
+                    n.getCardIds() == null ? List.of() : n.getCardIds().stream().filter(id -> id != null && !id.isBlank()).toList(),
+                    route, label));
+        }
+        return out;
+    }
+
     @PreAuthorize("hasAuthority('manage_home')")
     @PostMapping("/home")
     public ResponseEntity<?> updateHome(@RequestBody HomeUpdateRequest req) {
@@ -56,6 +87,12 @@ public class FrontContentController {
 
         if (req.getEdition() != null) {
             home.setEdition(req.getEdition());
+        }
+
+        if (req.getNews() != null) {
+            String problem = newsProblem(req.getNews());
+            if (problem != null) return ResponseEntity.badRequest().body(java.util.Map.of("error", problem));
+            home.setNews(cleanNews(req.getNews()));
         }
 
         List<DeckWithPosition> currentDecks = req.getDecks() == null ? List.of() : req.getDecks();

@@ -8,6 +8,8 @@ public class HomeUpdateRequest {
 
     private EditionMetadata edition;
     private List<DeckWithPosition> decks;
+    /** The carousel's news as they must be (all of them, in order); null leaves them as they are. */
+    private List<HomeNews> news;
 
     public static class DeckWithPosition {
 
