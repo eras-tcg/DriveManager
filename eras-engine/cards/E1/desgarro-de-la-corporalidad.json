@@ -1,0 +1,127 @@
+{
+  "name" : "desgarro de la corporalidad",
+  "effects" : [
+    {
+      "id" : "desgarro-de-la-corporalidad:en-juego",
+      "moment" : "ON_PLAY",
+      "mandatory" : true,
+      "label" : "En Juego",
+      "text" : "Efecto Definitivo. Elige 1 enemigo; descarta hasta 2 cartas que tenga añadidas. Luego, si no tiene cartas añadidas, puedes pagar 4 gemas para destruirlo.",
+      "cost" : [
+        {
+          "type" : "Do",
+          "action" : {
+            "type" : "Select",
+            "selector" : {
+              "zones" : "frontLine",
+              "owner" : "OPPONENT",
+              "filter" : {
+                "cardType" : "creature"
+              },
+              "min" : {
+                "type" : "Fixed",
+                "value" : 1
+              },
+              "max" : {
+                "type" : "Fixed",
+                "value" : 1
+              },
+              "self" : "ANY",
+              "mode" : "CHOOSE"
+            },
+            "target" : true
+          }
+        }
+      ],
+      "steps" : [
+        {
+          "type" : "Do",
+          "action" : {
+            "type" : "Move",
+            "cards" : {
+              "zones" : "materials:targets,resources:targets",
+              "owner" : "YOU",
+              "filter" : {},
+              "min" : {
+                "type" : "Fixed"
+              },
+              "max" : {
+                "type" : "Fixed",
+                "value" : 2
+              },
+              "self" : "ANY",
+              "mode" : "CHOOSE"
+            },
+            "to" : "discardPile"
+          }
+        },
+        {
+          "type" : "IfCondition",
+          "condition" : {
+            "type" : "Compare",
+            "left" : {
+              "type" : "CardsIn",
+              "cards" : {
+                "zones" : "materials:targets,resources:targets",
+                "owner" : "YOU",
+                "filter" : {},
+                "min" : {
+                  "type" : "Fixed"
+                },
+                "max" : {
+                  "type" : "Fixed",
+                  "value" : 2147483647
+                },
+                "self" : "ANY",
+                "mode" : "ALL"
+              }
+            },
+            "op" : "AT_MOST",
+            "right" : {
+              "type" : "Fixed"
+            }
+          },
+          "covers" : 3
+        },
+        {
+          "type" : "MayDo",
+          "question" : "¿Pagas 4 gemas para destruirlo?",
+          "covers" : 2
+        },
+        {
+          "type" : "Do",
+          "action" : {
+            "type" : "Gems",
+            "count" : {
+              "type" : "Fixed",
+              "value" : -4
+            }
+          }
+        },
+        {
+          "type" : "Do",
+          "action" : {
+            "type" : "Destroy",
+            "cards" : {
+              "zones" : "saved:targets",
+              "owner" : "YOU",
+              "filter" : {},
+              "min" : {
+                "type" : "Fixed"
+              },
+              "max" : {
+                "type" : "Fixed",
+                "value" : 2147483647
+              },
+              "self" : "ANY",
+              "mode" : "ALL"
+            },
+            "required" : true
+          }
+        }
+      ],
+      "sourceZone" : "field",
+      "limit" : "DEFINITIVE"
+    }
+  ]
+}

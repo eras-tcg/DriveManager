@@ -292,6 +292,12 @@ object Removals {
     private fun tappableStructures(owner: PlayerState): List<CardSlot> =
         owner.field.filter { c -> "structure" == c.cardType && !c.tapped && !EffectEngine.keywords(c).contains(EffectEngine.CANNOT_TAP) }
 
+    /** "agotar N cartas [filtro] bajo tu control": the owner's active cards on the field that match (face up), and how many it takes. */
+    private fun tappableCards(owner: PlayerState, r: CardEffects.Replacement): List<CardSlot> =
+        owner.field.filter { c -> !c.faceDown && !c.tapped && !EffectEngine.keywords(c).contains(EffectEngine.CANNOT_TAP) && r.resourceFilter!!.matches(c) }
+
+    private fun tapCount(r: CardEffects.Replacement): Int = if (r.count > 0) r.count else 1
+
     @JvmStatic
     fun replacementOptions(room: GameRoom, card: CardSlot, owner: PlayerState, destroy: Boolean, byId: String?, byEffect: Boolean): List<ReplacementOption> {
         val options: MutableList<ReplacementOption> = ArrayList()
@@ -373,6 +379,7 @@ object Removals {
         CardEffects.ReplacementCost.RESOURCE_TRIBUTED_ANOTHER_TO_HAND -> card.resources!!.size >= 2
         CardEffects.ReplacementCost.ALLY_TO_LIFE_FACE_DOWN -> owner.field.any { c -> c !== card && "creature" == c.cardType }
         CardEffects.ReplacementCost.TAP_STRUCTURE -> tappableStructures(owner).isNotEmpty()
+        CardEffects.ReplacementCost.TAP_CARDS -> tappableCards(owner, r).size >= tapCount(r)
         CardEffects.ReplacementCost.DISCARD_ONE_MATERIAL -> card.materials!!.isNotEmpty()
         CardEffects.ReplacementCost.SACRIFICE_OTHER_ALLY -> otherAllies(owner, card).isNotEmpty()
         CardEffects.ReplacementCost.SACRIFICE_OTHER_ALLY_OR_HAND -> owner.hand.isNotEmpty() || otherAllies(owner, card).isNotEmpty()
@@ -541,14 +548,19 @@ object Removals {
             return null
         }
         if (PromptPurpose.REPLACE_TAP.`is`(prompt.purpose)) {
-            // "en su lugar, puedes agotar 1 de tus estructuras": that structure is exhausted, the card stays
-            val structure = (if (picks.isEmpty()) null else find(tappableStructures(player), picks[0])) ?: return "Elige 1 de tus estructuras activas"
+            // "en su lugar, puedes agotar 1 de tus estructuras" / "N cartas [filtro] bajo tu control": those are exhausted, the card stays
+            val offered = prompt.validIds
+            val chosen = picks.distinct().mapNotNull { id -> if (offered.contains(id)) find(player.field, id) else null }
+                .filter { c -> !c.tapped }
+            if (chosen.isEmpty() || chosen.size < prompt.min) return if (prompt.min > 1) "Elige " + prompt.min + " cartas activas" else "Elige 1 de tus estructuras activas"
             room.prompt = null
             room.pendingRemovals.removeAt(0)
-            structure.tapped = true
-            record(room, GameEvent.TAP, player.userId, structure, null, null, null, frozenMapOf<String, Any?>("ownerId", player.userId),
-                player.username + " agota " + name(structure) + ": " + (if (card == null) "la carta" else name(card))
-                        + " no es " + (if (pending.destroy) "destruida" else "removida"))
+            for (tapped in chosen) {
+                tapped.tapped = true
+                record(room, GameEvent.TAP, player.userId, tapped, null, null, null, frozenMapOf<String, Any?>("ownerId", player.userId),
+                    player.username + " agota " + name(tapped) + ": " + (if (card == null) "la carta" else name(card))
+                            + " no es " + (if (pending.destroy) "destruida" else "removida"))
+            }
             if (card != null) destroyIfStillNoStrength(room, pending, player, card)
             return null
         }
@@ -745,6 +757,17 @@ object Removals {
                     "Agota 1 de tus estructuras: " + name(card) + " no es " + (if (pending.destroy) "destruida." else "removida."),
                     "Agotar", structures, structures)
                 room.prompt!!.min = 1
+                return null
+            }
+            CardEffects.ReplacementCost.TAP_CARDS -> {
+                // The cards are chosen next; the removal stays pending until then
+                val cards = tappableCards(player, r)
+                val count = tapCount(r)
+                rulesPrompt(room, player.userId, PromptPurpose.REPLACE_TAP.id(), name(card) + " · " + r.label,
+                    "Agota " + count + " " + (if (count == 1) "carta " else "cartas ") + r.resourceFilter!!.describe().trim() + " bajo tu control: " + name(card)
+                            + " no es " + (if (pending.destroy) "destruida." else "removida."), "Agotar", cards, cards)
+                room.prompt!!.min = count
+                room.prompt!!.max = count
                 return null
             }
             CardEffects.ReplacementCost.SACRIFICE_OTHER_ALLY, CardEffects.ReplacementCost.SACRIFICE_OTHER_ALLY_OR_HAND -> {

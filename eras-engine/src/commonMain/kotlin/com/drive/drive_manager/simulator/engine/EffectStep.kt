@@ -364,6 +364,14 @@ sealed interface EffectStep {
     data class ChangeClass(val from: String?, val to: String?) : EffectStep
 
     /**
+     * "puedes cambiar el nombre original de esta carta por el de una de las criaturas utilizadas para invocarla especialmente": this card
+     * (on the field) is called as the card saved under `from` (chosen before; null: [com.drive.drive_manager.simulator.engine.effects.model.Memory.LAST])
+     * while it stays on the field ([NameChanges]). Its own effects stay its own.
+     */
+    @JvmRecord
+    data class TakeName(val from: String? = null) : EffectStep
+
+    /**
      * "[dicho aliado] gana hasta el final del turno: «[habilidad]»" (Shilpher): the subject gains the quoted ability, written as an effect
      * of its own (`effect`: moment, condition, steps). It is lost at the end of the turn or when the card leaves the field; an "En
      * Destrucción" one still triggers from that destruction, as an inherited one does.

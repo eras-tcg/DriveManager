@@ -182,6 +182,12 @@ interface EffectContext {
     /** "un aliado enlazado a esta carta": the other members of the formation this card is in (Enlace); none outside one. */
     fun formationMates(): List<CardSlot>
 
+    /**
+     * "las criaturas utilizadas para invocarla especialmente": the creatures this card's last special summon used (sacrificed for a Ritual,
+     * tributed for an Ascenso, and its materials and Recursos), wherever they are now; none if it was not special summoned.
+     */
+    fun usedToSummon(): List<CardSlot>
+
     /** "dicho aliado" of a direct damage: the creature whose attack dealt the damage that triggered the effect, if it is still on the field. */
     fun eventAttacker(): CardSlot?
 

@@ -1,0 +1,103 @@
+{
+  "name" : "peleador de la primera línea",
+  "effects" : [
+    {
+      "id" : "peleador-de-la-primera-linea:en-invocacion",
+      "moment" : "ON_SUMMON",
+      "label" : "En Invocación por efecto",
+      "text" : "Puedes invocar 1 criatura Roja nivel 1 de tu mano reduciendo su coste en 1. Si lo haces: mueve esta carta a tu línea frontal y gana fuerza 3.",
+      "steps" : [
+        {
+          "type" : "Do",
+          "action" : {
+            "type" : "Summon",
+            "cards" : {
+              "zones" : "hand",
+              "owner" : "YOU",
+              "filter" : {
+                "colors" : [
+                  "R"
+                ],
+                "cardType" : "creature",
+                "level" : 1
+              },
+              "min" : {
+                "type" : "Fixed",
+                "value" : 1
+              },
+              "max" : {
+                "type" : "Fixed",
+                "value" : 1
+              },
+              "self" : "ANY",
+              "mode" : "CHOOSE"
+            },
+            "reduce" : {
+              "type" : "Fixed",
+              "value" : 1
+            },
+            "required" : true
+          }
+        },
+        {
+          "type" : "IfDone",
+          "covers" : 2
+        },
+        {
+          "type" : "Do",
+          "action" : {
+            "type" : "Move",
+            "cards" : {
+              "zones" : "field",
+              "owner" : "YOU",
+              "filter" : {},
+              "min" : {
+                "type" : "Fixed",
+                "value" : 1
+              },
+              "max" : {
+                "type" : "Fixed",
+                "value" : 1
+              },
+              "self" : "ANY",
+              "mode" : "SELF"
+            },
+            "to" : "frontLine"
+          }
+        },
+        {
+          "type" : "Do",
+          "action" : {
+            "type" : "Modify",
+            "cards" : {
+              "zones" : "thisCard",
+              "owner" : "YOU",
+              "filter" : {},
+              "min" : {
+                "type" : "Fixed"
+              },
+              "max" : {
+                "type" : "Fixed",
+                "value" : 2147483647
+              },
+              "self" : "ANY",
+              "mode" : "ALL"
+            },
+            "strength" : {
+              "type" : "Fixed",
+              "value" : 3
+            },
+            "until" : "TURN"
+          }
+        }
+      ],
+      "condition" : {
+        "type" : "Summoned",
+        "side" : "ANY",
+        "how" : "effect"
+      },
+      "sourceZone" : "field",
+      "limit" : "NONE"
+    }
+  ]
+}

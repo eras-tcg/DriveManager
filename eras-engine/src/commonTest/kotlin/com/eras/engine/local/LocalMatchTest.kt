@@ -159,9 +159,9 @@ class LocalMatchTest {
          */
         /** LocalMatch.result() at the end of each game: taken on the JVM; JavaScript must give the same. */
         val EXPECTED_RESULT = mapOf(
-            "st1-st1-1-easy" to "{\"status\":\"POST_GAME\",\"gamesEnded\":1,\"winnerId\":\"bot\",\"endReason\":\"deck\",\"turns\":19,\"digest\":\"440a112df3d3c8c6\"}",
+            "st1-st1-1-easy" to "{\"status\":\"POST_GAME\",\"gamesEnded\":1,\"winnerId\":\"bot\",\"endReason\":\"lives\",\"turns\":13,\"digest\":\"5b0933b455313aaf\"}",
             "st2-st3-2-easy" to "{\"status\":\"POST_GAME\",\"gamesEnded\":1,\"winnerId\":\"local-player\",\"endReason\":\"lives\",\"turns\":15,\"digest\":\"3c7d1ed9255bfc49\"}",
-            "st4-st1-3-easy" to "{\"status\":\"POST_GAME\",\"gamesEnded\":1,\"winnerId\":\"bot\",\"endReason\":\"lives\",\"turns\":10,\"digest\":\"cfda69d1c131c2a0\"}",
+            "st4-st1-3-easy" to "{\"status\":\"POST_GAME\",\"gamesEnded\":1,\"winnerId\":\"bot\",\"endReason\":\"lives\",\"turns\":15,\"digest\":\"59c9ee8de97da82a\"}",
             "st3-st4-5-normal" to "{\"status\":\"POST_GAME\",\"gamesEnded\":1,\"winnerId\":\"local-player\",\"endReason\":\"lives\",\"turns\":14,\"digest\":\"93978495158377d0\"}",
         )
 
@@ -170,17 +170,17 @@ class LocalMatchTest {
          * must give the same). Without them the messages give [EXPECTED], as before those updates were sent.
          */
         val EXPECTED_WITH_LINKS = mapOf(
-            "st1-st1-1-easy" to "6ccc0ad728bc4060",
+            "st1-st1-1-easy" to "3c2fc659f87baf3c",
             "st2-st3-2-easy" to "550598d5aeaee871",
-            "st4-st1-3-easy" to "02d127d89a9dd137",
+            "st4-st1-3-easy" to "6359ca878086b86d",
             "st3-st4-5-normal" to "47de795c8da267ff",
         )
 
         /** Taken on the JVM; JavaScript must give the same. */
         val EXPECTED = mapOf(
-            "st1-st1-1-easy" to "cb0cf8e93cde641e",
+            "st1-st1-1-easy" to "08556a4ef3a011bd",
             "st2-st3-2-easy" to "cd2c80206efb646a",
-            "st4-st1-3-easy" to "bf50d05f8735bf1f",
+            "st4-st1-3-easy" to "da1980ae24554fcb",
             "st3-st4-5-normal" to "b151f6b45d64bc63",
         )
     }

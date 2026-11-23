@@ -5,14 +5,14 @@
     "moment" : "ON_SUMMON",
     "mandatory" : true,
     "label" : "En Invocación",
-    "text" : "Mira las primeras 5 cartas de tu mazo: de ellas toma hasta 2 cartas Azules o Blancas. Envía el resto al fondo de tu mazo. Luego: tributa 2 cartas de tu mano.",
+    "text" : "Mira las primeras 4 cartas de tu mazo: de ellas toma hasta 2 cartas Azules o Blancas. Envía el resto al fondo de tu mazo. Luego: tributa 2 cartas de tu mano.",
     "steps" : [ {
       "type" : "Do",
       "action" : {
         "type" : "Look",
         "count" : {
           "type" : "Fixed",
-          "value" : 5
+          "value" : 4
         }
       }
     }, {

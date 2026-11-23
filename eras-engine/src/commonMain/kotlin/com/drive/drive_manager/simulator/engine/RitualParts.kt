@@ -24,15 +24,19 @@ object RitualParts {
      * 2026-11-22); without it any part may be ("2 criaturas nivel 2 o menor").
      */
     @JvmRecord
-    data class Part @JvmOverloads constructor(val level: Int, val orLess: Boolean, val type: String?, val summoner: Boolean = false) {
+    data class Part @JvmOverloads constructor(
+        val level: Int, val orLess: Boolean, val type: String?, val summoner: Boolean = false,
+        /** "nivel 2 o 3": the highest level, from [level] to it; null: [level] only (or less, with [orLess]). */
+        val maxLevel: Int? = null,
+    ) {
         fun fits(card: CardSlot, asType: String?): Boolean {
             // Level 0: any level ("+ 1 aliado")
-            if (level > 0 && EffectEngine.levels(card).none { l -> if (orLess) l <= level else l == level }) return false
+            if (level > 0 && EffectEngine.levels(card).none { l -> if (orLess) l <= level else if (maxLevel != null) l in level..maxLevel else l == level }) return false
             if (type == null) return true
             return ClassChanges.classes(card).any { it.equals(type, ignoreCase = true) } || type.equals(asType, ignoreCase = true)
         }
 
-        fun describe(): String = "criatura" + (if (type == null) "" else " [$type]") + (if (level == 0) "" else " nivel " + level + (if (orLess) " o menor" else ""))
+        fun describe(): String = "criatura" + (if (type == null) "" else " [$type]") + (if (level == 0) "" else " nivel " + level + (if (orLess) " o menor" else if (maxLevel != null) " a $maxLevel" else ""))
     }
 
     /** The enemies that can fill a part for this Ritual now (Lilith), and the type they count as; empty without such a reaction. */

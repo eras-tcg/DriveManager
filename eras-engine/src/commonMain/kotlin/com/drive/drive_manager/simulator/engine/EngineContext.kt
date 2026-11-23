@@ -198,7 +198,13 @@ internal class EngineContext(private val room: GameRoom, private val effect: Pen
     override fun attached(zone: String?): List<CardSlot> {
         // "materiales de tus aliados": every material of your creatures on the field
         if (zone == "materials:allies") return player()!!.field.filter { "creature" == it.cardType }.flatMap { it.materials!! }
-        val host = if (zone!!.endsWith(":subject")) StepHelpers.subject(room, effect) else EffectEngine.find(player()!!.field, effect.sourceInstanceId)
+        val whose = if (zone!!.contains(":")) zone.substring(zone.indexOf(':') + 1) else "self"
+        val host = when (whose) {
+            "subject" -> StepHelpers.subject(room, effect)
+            "self" -> EffectEngine.find(player()!!.field, effect.sourceInstanceId)
+            // "descarta hasta 2 cartas que tenga añadidas" (the enemy chosen): the first card saved under that name still on a field
+            else -> saved(whose).firstNotNullOfOrNull { id -> find(id)?.takeIf { onField(it) } }
+        }
         if (host == null) return frozenListOf()
         return if (zone.startsWith("materials")) host.materials!! else host.resources!!
     }
@@ -554,6 +560,31 @@ internal class EngineContext(private val room: GameRoom, private val effect: Pen
 
     override fun subjectOrSelf(): CardSlot? {
         return StepHelpers.subject(room, effect)
+    }
+
+    override fun usedToSummon(): List<CardSlot> {
+        val player = player() ?: return frozenListOf()
+        val self = EffectEngine.find(player.field, effect.sourceInstanceId) ?: return frozenListOf()
+        val used: MutableList<CardSlot> = ArrayList()
+        val timeline = room.timeline
+        var i = timeline.size - 1
+        while (i >= 0 && !(GameEvent.SPECIAL_SUMMON == timeline[i].type && self.instanceId == timeline[i].cardInstanceId)) i--
+        if (i < 0) return frozenListOf()
+        // What the summon sacrificed or tributed was recorded just before it, after any earlier special summon
+        var j = i - 1
+        while (j >= 0 && GameEvent.SPECIAL_SUMMON != timeline[j].type) {
+            val e = timeline[j]
+            val cause = e.data?.get("cause")
+            val usedForIt = (GameEvent.SACRIFICE == e.type && EffectEngine.CAUSE_RITUAL == cause) ||
+                    (GameEvent.TRIBUTE == e.type && cause == "promotion")
+            if (usedForIt) {
+                val card = EffectEngine.findInRoom(room, e.cardInstanceId)
+                if (card != null && card !== self && !used.contains(card)) used.add(0, card)
+            }
+            j--
+        }
+        for (c in EffectEngine.concat(self.materials, self.resources)) if (!used.contains(c)) used.add(c)
+        return used.filter { "creature" == it.cardType }
     }
 
     override fun formationMates(): List<CardSlot> {

@@ -54,14 +54,14 @@ class SeededBotGameTest {
     companion object {
         /** Taken on the JVM; JavaScript must give the same. */
         val EXPECTED = mapOf(
-            "st1-st2-11" to "88b0de8df414a174",
+            "st1-st2-11" to "35227be482f2a9e8",
             "st2-st3-3" to "22fe09f6faafa114",
-            "st1-st3-2" to "e29a8471bc05c39a",
-            "st4-st1-1" to "8a0b5311fea31615",
+            "st1-st3-2" to "cffe70ada381a09d",
+            "st4-st1-1" to "096328cfdd7cddde",
             "st3-st4-2" to "370504a7679b0075",
             "st3-st4-3" to "012ef2842d224700",
             "st3-st4-5" to "2be551a9bb7c32b3",
-            "lookahead-st1-st2-4" to "bdfc9dc780b4914a",
+            "lookahead-st1-st2-4" to "0c6f5a4dda634cc0",
             "lookahead-st4-st3-6" to "bbeffab038abf819",
         )
     }

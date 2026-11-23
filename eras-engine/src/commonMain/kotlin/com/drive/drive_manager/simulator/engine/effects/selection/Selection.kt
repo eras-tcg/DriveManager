@@ -2,6 +2,7 @@ package com.drive.drive_manager.simulator.engine.effects.selection
 
 import kotlin.jvm.JvmStatic
 import com.drive.drive_manager.simulator.engine.ClassChanges
+import com.drive.drive_manager.simulator.engine.NameChanges
 import com.drive.drive_manager.simulator.engine.frozenListOf
 import com.drive.drive_manager.simulator.engine.effects.model.Selector
 import com.drive.drive_manager.simulator.engine.effects.runtime.EffectContext
@@ -79,9 +80,11 @@ object Selection {
             }
             if (!holds) return false
         }
-        val name = card.cardName
-        if (r.differentName && name != null && name.equals(other.cardName, ignoreCase = true)) return false
-        if (r.sameName && (name == null || !name.equals(other.cardName, ignoreCase = true))) return false
+        // Their names now ("cambia el nombre original de esta carta": NameChanges)
+        val name = NameChanges.name(card)
+        val otherName = NameChanges.name(other)
+        if (r.differentName && name != null && name.equals(otherName, ignoreCase = true)) return false
+        if (r.sameName && (name == null || !name.equals(otherName, ignoreCase = true))) return false
         if (r.sharesClass) {
             val theirs: List<String> = ClassChanges.classes(other)
             val classes = ClassChanges.classes(card)
@@ -129,6 +132,11 @@ object Selection {
             if (zone == "thisCard") {
                 val card = if (enemy) null else ctx.find(ctx.selfId())
                 if (card != null && ctx.onField(card)) into.add(card)
+                continue
+            }
+            // "una de las criaturas utilizadas para invocarla especialmente"
+            if (zone == "usedToSummon") {
+                if (!enemy) into.addAll(ctx.usedToSummon())
                 continue
             }
             // "un aliado enlazado a esta carta": the other members of its formation
