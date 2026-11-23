@@ -32,7 +32,7 @@ class SystemDecksTest {
     @Test
     void everyListedDeckHasFiftyCardsAndItsCover() {
         List<SystemDecks.Listed> decks = SystemDecks.read();
-        assertThat(decks).hasSize(8);
+        assertThat(decks).hasSize(18);
         assertThat(decks).extracting(SystemDecks.Listed::id).doesNotHaveDuplicates();
         for (SystemDecks.Listed d : decks) {
             assertThat(d.codes()).as(d.id()).hasSize(50);

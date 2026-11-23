@@ -81,8 +81,8 @@ public class SystemDecks implements ApplicationRunner {
         }
     }
 
-    /** The cards a varied deck may take: those of an edition (every sub-edition) in a color. */
-    public record Pool(String edition, String color) {}
+    /** The cards a varied deck may take: those of some editions (every sub-edition) in a color. */
+    public record Pool(List<String> editions, String color) {}
 
     private static volatile Map<String, Pool> pools;
 
@@ -108,12 +108,20 @@ public class SystemDecks implements ApplicationRunner {
                 JsonNode vary = d.path("vary");
                 out.add(new Listed(d.path("id").asString(), d.path("name").asString(), d.path("cover").asString(),
                         d.path("botDeck").asBoolean(false), codes,
-                        vary.isObject() ? new Pool(vary.path("edition").asString(), vary.path("color").asString()) : null));
+                        vary.isObject() ? new Pool(editions(vary), vary.path("color").asString()) : null));
             }
             return out;
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
+    }
+
+    /** The editions of a deck's «vary» ({"editions": [...]}, or one "edition"). */
+    private static List<String> editions(JsonNode vary) {
+        List<String> out = new ArrayList<>();
+        for (JsonNode e : vary.path("editions")) out.add(e.asString());
+        if (out.isEmpty() && vary.path("edition").isTextual()) out.add(vary.path("edition").asString());
+        return List.copyOf(out);
     }
 
     /** Makes or updates one deck; false when one of its codes is not on the site (the deck stays as it was). */

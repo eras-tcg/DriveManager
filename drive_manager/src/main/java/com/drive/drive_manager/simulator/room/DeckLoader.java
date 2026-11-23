@@ -95,10 +95,10 @@ public class DeckLoader {
         }).toList());
     }
 
-    /** Every card of an edition (all its sub-editions) in one color, one slot each, filled as a deck's ({@link #slots}). */
-    public List<CardSlot> catalog(String edition, String color) {
-        List<String> ids = driveCards.findByEdition(edition).stream().filter(dc -> color.equals(dc.getColorIdentity()))
-                .map(DriveCard::getId).toList();
+    /** Every card of some editions (all their sub-editions) in one color, one slot each, filled as a deck's ({@link #slots}). */
+    public List<CardSlot> catalog(List<String> editions, String color) {
+        List<String> ids = editions.stream().flatMap(edition -> driveCards.findByEdition(edition).stream())
+                .filter(dc -> color.equals(dc.getColorIdentity())).map(DriveCard::getId).toList();
         if (ids.isEmpty()) return List.of();
         DeckList all = new DeckList();
         all.setCards(ids);
