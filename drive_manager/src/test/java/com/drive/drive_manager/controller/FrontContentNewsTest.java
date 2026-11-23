@@ -20,7 +20,7 @@ import static org.mockito.Mockito.when;
 class FrontContentNewsTest {
 
     private static HomeNews news(String id, String title, List<String> cards, String route) {
-        return new HomeNews(id, title, "2026-11-23T20:00", " Texto ", cards, route, route == null ? null : "Ver cartas");
+        return new HomeNews(id, title, "2026-11-23T20:00", " Texto ", cards, route, route == null ? null : "Ver cartas", " La noticia completa. ");
     }
 
     @Test
@@ -37,6 +37,7 @@ class FrontContentNewsTest {
         List<HomeNews> out = saved.getValue().getNews();
         assertThat(out).extracting(HomeNews::getTitle).containsExactly("Llega E1.3", "Otra");
         assertThat(out.get(0).getExcerpt()).isEqualTo("Texto");
+        assertThat(out.get(0).getBody()).isEqualTo("La noticia completa.");
         assertThat(out.get(0).getCardIds()).containsExactly("c1", "c2");
         assertThat(out.get(1).getId()).isNotBlank();
         assertThat(out.get(1).getLinkRoute()).isNull();

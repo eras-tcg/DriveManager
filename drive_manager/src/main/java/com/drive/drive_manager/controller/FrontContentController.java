@@ -53,6 +53,8 @@ public class FrontContentController {
             if (n.getDate() == null || n.getDate().isBlank()) return "Cada noticia necesita una fecha";
             if (n.getExcerpt() != null && n.getExcerpt().strip().length() > HomeNews.MAX_EXCERPT)
                 return "El texto admite hasta " + HomeNews.MAX_EXCERPT + " caracteres";
+            if (n.getBody() != null && n.getBody().strip().length() > HomeNews.MAX_BODY)
+                return "La noticia completa admite hasta " + HomeNews.MAX_BODY + " caracteres";
             if (n.getCardIds() != null && n.getCardIds().size() > HomeNews.MAX_CARDS) return "Cada noticia lleva hasta " + HomeNews.MAX_CARDS + " cartas";
             if (n.getLinkRoute() != null && !n.getLinkRoute().isBlank() && !n.getLinkRoute().startsWith("/"))
                 return "El botón lleva a una página del sitio (empieza con /)";
@@ -70,7 +72,7 @@ public class FrontContentController {
                     n.getId() == null || n.getId().isBlank() ? java.util.UUID.randomUUID().toString() : n.getId(),
                     n.getTitle().strip(), n.getDate().strip(), n.getExcerpt() == null ? "" : n.getExcerpt().strip(),
                     n.getCardIds() == null ? List.of() : n.getCardIds().stream().filter(id -> id != null && !id.isBlank()).toList(),
-                    route, label));
+                    route, label, n.getBody() == null || n.getBody().isBlank() ? null : n.getBody().strip()));
         }
         return out;
     }
