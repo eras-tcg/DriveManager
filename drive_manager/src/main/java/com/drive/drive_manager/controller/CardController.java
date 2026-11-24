@@ -40,6 +40,10 @@ public class CardController {
     @Autowired
     private com.drive.drive_manager.service.CardReprints cardReprints;
 
+    /** Editions an admin hid: their cards only for admins and testers. */
+    @Autowired(required = false)
+    private com.drive.drive_manager.service.HiddenEditions hiddenEditions = com.drive.drive_manager.service.HiddenEditions.none();
+
     private static final String REF_ID = "default";
 
     /**
@@ -62,7 +66,9 @@ public class CardController {
      */
     @GetMapping("/{id}")
     public ResponseEntity<Card> getCardById(@PathVariable String id, Authentication auth) {
-        Optional<Card> card = cardService.getCardById(id).filter(c -> !TestCards.hidden(c.getEdition(), auth));
+        Optional<Card> card = cardService.getCardById(id)
+                .filter(c -> !TestCards.hidden(c.getEdition(), auth))
+                .filter(c -> !hiddenEditions.hidden(c.getEdition(), c.getSubEdition(), auth));
         return card.map(ResponseEntity::ok)
                 .orElseGet(() -> ResponseEntity.notFound().build());
     }
@@ -343,7 +349,10 @@ public class CardController {
                                                               @RequestParam String value,
                                                               Authentication auth) {
         List<Map<String, Object>> cards = cardService.findCardsUsingRefValue(field, value).stream()
-                .filter(c -> !TestCards.hidden(c.get("edition") == null ? null : c.get("edition").toString(), auth)).toList();
+                .filter(c -> !TestCards.hidden(c.get("edition") == null ? null : c.get("edition").toString(), auth))
+                .filter(c -> !hiddenEditions.hidden(c.get("edition") == null ? null : c.get("edition").toString(),
+                        c.get("subEdition") == null ? null : c.get("subEdition").toString(), auth))
+                .toList();
         return ResponseEntity.ok(Map.of("count", cards.size(), "cards", cards));
     }
 
@@ -404,9 +413,10 @@ public class CardController {
         return ResponseEntity.ok(ref);
     }
 
-    /** The cards the player may see (cards in testing only with {@link TestCards#PERMISSION}). */
-    private static List<Card> visible(List<Card> cards, Authentication auth) {
-        return TestCards.canSee(auth) ? cards : cards.stream().filter(c -> !TestCards.isTestEdition(c.getEdition())).toList();
+    /** The cards the player may see (cards in testing only with {@link TestCards#PERMISSION}; hidden editions only for admins and testers). */
+    private List<Card> visible(List<Card> cards, Authentication auth) {
+        List<Card> seen = TestCards.canSee(auth) ? cards : cards.stream().filter(c -> !TestCards.isTestEdition(c.getEdition())).toList();
+        return hiddenEditions.visible(seen, Card::getEdition, Card::getSubEdition, auth);
     }
 
     private CardRefData getOrCreateRef() {

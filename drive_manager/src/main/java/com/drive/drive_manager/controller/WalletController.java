@@ -55,9 +55,15 @@ public class WalletController {
      * Buys a "pack", a "box" or a "structure" deck, drawn here and added to the player's collection: {gems, price,
      * packs}, or 400 with a message (not for sale, not enough gems).
      */
+    /** Editions an admin hid: not for sale but to admins and testers. */
+    @org.springframework.beans.factory.annotation.Autowired(required = false)
+    private com.drive.drive_manager.service.HiddenEditions hiddenEditions = com.drive.drive_manager.service.HiddenEditions.none();
+
     @PostMapping("/me/purchase")
     public ResponseEntity<Map<String, Object>> buy(Authentication auth, @RequestBody PurchaseRequest request) {
         if (auth == null || !auth.isAuthenticated()) return ResponseEntity.status(401).build();
+        if (hiddenEditions.hidden(request.editionId(), auth))
+            return ResponseEntity.badRequest().body(Map.of("message", "Ese producto no está a la venta"));
         try {
             ShopService.Opening opening = shop.buy(auth.getName(), request.editionId(), request.product());
             // The packs opened (a box's every pack; a structure deck is no pack) count for the progression missions
