@@ -1,7 +1,6 @@
 package com.drive.drive_manager.controller;
 
 import com.drive.drive_manager.service.ProgressionService;
-import com.drive.drive_manager.service.ShopService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -16,7 +15,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-/** Progression is the signed-in account's; a claim answers the board (and the structure deck given), or why not. */
+/** Progression is the signed-in account's; a claim answers the board, or why not. */
 class ProgressionControllerTest {
 
     private ProgressionService progression;
@@ -38,20 +37,19 @@ class ProgressionControllerTest {
     }
 
     @Test
-    void aWelcomeClaimAnswersTheStructureDeckGiven() {
-        ShopService.Opening opening = new ShopService.Opening(2400, 0, List.of());
-        when(progression.claimWelcome("alice", "structure", "ST1")).thenReturn(new ProgressionService.Claimed(board, opening));
+    void aWelcomeClaimAnswersTheBoard() {
+        when(progression.claimWelcome("alice", "structure")).thenReturn(board);
 
-        var response = controller.claim(player("alice"), new ProgressionController.ClaimRequest("welcome", "structure", "ST1"));
+        var response = controller.claim(player("alice"), new ProgressionController.ClaimRequest("welcome", "structure"));
 
-        assertThat(response.getBody()).isEqualTo(Map.of("board", board, "opening", opening));
+        assertThat(response.getBody()).isEqualTo(Map.of("board", board));
     }
 
     @Test
     void aRefusedMilestoneClaimSaysWhy() {
         when(progression.claimMilestone("alice", "wins")).thenThrow(new ProgressionService.ProgressionException("Ese nivel todavía no está cumplido"));
 
-        var response = controller.claim(player("alice"), new ProgressionController.ClaimRequest("milestone", "wins", null));
+        var response = controller.claim(player("alice"), new ProgressionController.ClaimRequest("milestone", "wins"));
 
         assertThat(response.getStatusCode().value()).isEqualTo(400);
         assertThat(response.getBody()).isEqualTo(Map.of("message", "Ese nivel todavía no está cumplido"));

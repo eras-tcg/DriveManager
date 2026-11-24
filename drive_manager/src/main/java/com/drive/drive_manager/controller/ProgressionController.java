@@ -9,7 +9,6 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.util.HashMap;
 import java.util.Map;
 
 /**
@@ -32,24 +31,19 @@ public class ProgressionController {
         return ResponseEntity.ok(progression.open(auth.getName()));
     }
 
-    /** `kind`: "welcome" or "milestone"; `editionId`: the structure deck chosen, for the structure step. */
-    public record ClaimRequest(String kind, String id, String editionId) {
+    /** `kind`: "welcome" or "milestone". */
+    public record ClaimRequest(String kind, String id) {
     }
 
-    /** {board, opening}: opening is the structure deck given, when the claim gave one. */
+    /** {board}: the progression after the claim. */
     @PostMapping("/me/claim")
     public ResponseEntity<?> claim(Authentication auth, @RequestBody ClaimRequest request) {
         if (auth == null || !auth.isAuthenticated()) return ResponseEntity.status(401).build();
         try {
-            Map<String, Object> body = new HashMap<>();
-            if ("milestone".equals(request.kind())) {
-                body.put("board", progression.claimMilestone(auth.getName(), request.id()));
-            } else {
-                ProgressionService.Claimed claimed = progression.claimWelcome(auth.getName(), request.id(), request.editionId());
-                body.put("board", claimed.board());
-                if (claimed.opening() != null) body.put("opening", claimed.opening());
-            }
-            return ResponseEntity.ok(body);
+            ProgressionService.Board board = "milestone".equals(request.kind())
+                    ? progression.claimMilestone(auth.getName(), request.id())
+                    : progression.claimWelcome(auth.getName(), request.id());
+            return ResponseEntity.ok(Map.of("board", board));
         } catch (ProgressionService.ProgressionException e) {
             return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
         }

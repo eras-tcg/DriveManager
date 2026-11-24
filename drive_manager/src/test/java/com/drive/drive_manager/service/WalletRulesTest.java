@@ -27,28 +27,41 @@ class WalletRulesTest {
 
     @Test
     void packsCostTheSameAndBoxesDependOnTheEdition() {
-        assertThat(WalletRules.priceOf(edition("E1", true), "pack")).isEqualTo(WalletRules.PACK_PRICE);
-        assertThat(WalletRules.priceOf(edition("E1", true), "box")).isEqualTo(WalletRules.BOX_PRICE);
-        assertThat(WalletRules.priceOf(edition("E1.2", true), "box")).isEqualTo(WalletRules.SUB_EDITION_BOX_PRICE);
+        assertThat(WalletRules.priceOf(edition("E1", true), "pack", List.of())).isEqualTo(WalletRules.PACK_PRICE);
+        assertThat(WalletRules.priceOf(edition("E1", true), "box", List.of())).isEqualTo(WalletRules.BOX_PRICE);
+        assertThat(WalletRules.priceOf(edition("E1.2", true), "box", List.of())).isEqualTo(WalletRules.SUB_EDITION_BOX_PRICE);
     }
 
     @Test
     void aStructureDeckSellsItselfWhole() {
         EditionMetadata structure = edition("ST1", false);
         structure.setPackTypes(null);
-        assertThat(WalletRules.priceOf(structure, "structure")).isEqualTo(WalletRules.STRUCTURE_PRICE);
-        assertThat(WalletRules.priceOf(structure, "pack")).isNull();
-        assertThat(WalletRules.priceOf(edition("E1", true), "structure")).isNull();
+        assertThat(WalletRules.priceOf(structure, "structure", List.of())).isZero();
+        assertThat(WalletRules.priceOf(structure, "pack", List.of())).isNull();
+        assertThat(WalletRules.priceOf(edition("E1", true), "structure", List.of())).isNull();
+    }
+
+    @Test
+    void theFirstOfST1ToST4IsFreeTheOthersCostTheStarterPriceAndTheRestTheUsualPrice() {
+        EditionMetadata st1 = edition("ST1", false);
+        EditionMetadata st5 = edition("ST5", false);
+        assertThat(WalletRules.priceOf(st1, "structure", List.of())).isZero();
+        assertThat(WalletRules.priceOf(st1, "structure", List.of("ST5"))).isZero();
+        assertThat(WalletRules.priceOf(st1, "structure", List.of("ST3"))).isEqualTo(WalletRules.STARTER_PRICE);
+        assertThat(WalletRules.priceOf(st5, "structure", List.of())).isEqualTo(WalletRules.STRUCTURE_PRICE);
+        assertThat(WalletRules.priceOf(st5, "structure", List.of("ST1"))).isEqualTo(WalletRules.STRUCTURE_PRICE);
+        assertThat(WalletRules.ownsStarter(List.of("st2"))).isTrue();
+        assertThat(WalletRules.ownsStarter(List.of("ST5", "ST8"))).isFalse();
     }
 
     @Test
     void whatTheEditionDoesNotSellHasNoPrice() {
-        assertThat(WalletRules.priceOf(edition("E1", false), "box")).isNull();
-        assertThat(WalletRules.priceOf(edition("E1", true), "deluxe")).isNull();
+        assertThat(WalletRules.priceOf(edition("E1", false), "box", List.of())).isNull();
+        assertThat(WalletRules.priceOf(edition("E1", true), "deluxe", List.of())).isNull();
         EditionMetadata noPacks = edition("ST1", false);
         noPacks.setPackTypes(List.of());
-        assertThat(WalletRules.priceOf(noPacks, "pack")).isNull();
-        assertThat(WalletRules.priceOf(null, "pack")).isNull();
+        assertThat(WalletRules.priceOf(noPacks, "pack", List.of())).isNull();
+        assertThat(WalletRules.priceOf(null, "pack", List.of())).isNull();
     }
 
     private static EditionMetadata edition(String id, boolean withBox) {

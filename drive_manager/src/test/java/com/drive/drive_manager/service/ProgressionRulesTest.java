@@ -18,38 +18,36 @@ class ProgressionRulesTest {
     void aNewPlayerCanClaimOnlyTheFirstStep() {
         List<ProgressionRules.StepView> welcome = ProgressionRules.welcome(NEW_PLAYER, Set.of());
 
-        assertThat(welcome.get(0)).isEqualTo(new ProgressionRules.StepView("welcome", 1, 1, 100, false, false));
+        assertThat(welcome.get(0)).isEqualTo(new ProgressionRules.StepView("structure", 0, 1, 100, false, false));
         assertThat(welcome.subList(1, welcome.size())).allMatch(ProgressionRules.StepView::locked);
-        assertThat(ProgressionRules.refusal(ProgressionRules.step("welcome"), NEW_PLAYER, Set.of())).isNull();
         assertThat(ProgressionRules.refusal(ProgressionRules.step("how-to-play"), NEW_PLAYER, Set.of())).isEqualTo("Primero completa las misiones anteriores");
     }
 
     @Test
-    void theStructureStepIsClaimableWithoutAStructureDeckAndPaysItsPriceToWhoeverHasOne() {
-        Set<String> claimed = Set.of("welcome");
-        assertThat(ProgressionRules.refusal(ProgressionRules.step("structure"), NEW_PLAYER, claimed)).isNull();
-        assertThat(ProgressionRules.welcome(NEW_PLAYER, claimed).get(1).gems()).isZero();
+    void theChainStartsByTakingOneOfST1ToST4() {
+        assertThat(ProgressionRules.refusal(ProgressionRules.step("structure"), NEW_PLAYER, Set.of())).isEqualTo("Esa misión todavía no está cumplida");
 
-        var veteran = new ProgressionRules.Facts(Map.of(), Set.of(), true, 0);
-        assertThat(ProgressionRules.welcome(veteran, claimed).get(1).gems()).isEqualTo(WalletRules.STRUCTURE_PRICE);
+        var withStarter = new ProgressionRules.Facts(Map.of(), Set.of(), true, 0);
+        assertThat(ProgressionRules.welcome(withStarter, Set.of()).get(0)).isEqualTo(new ProgressionRules.StepView("structure", 1, 1, 100, false, false));
+        assertThat(ProgressionRules.refusal(ProgressionRules.step("structure"), withStarter, Set.of())).isNull();
     }
 
     @Test
     void aStepNotDoneYetIsRefusedAndOnlyADeckSavedCounts() {
-        Set<String> claimed = Set.of("welcome", "structure", "how-to-play", "cards");
+        Set<String> claimed = Set.of("structure", "how-to-play", "cards");
         assertThat(ProgressionRules.refusal(ProgressionRules.step("deck"), NEW_PLAYER, claimed)).isEqualTo("Esa misión todavía no está cumplida");
 
         var withDeck = new ProgressionRules.Facts(Map.of(ProgressionRules.DECK_SAVED, 1), Set.of("como-jugar", "cartas"), true, 40);
         assertThat(ProgressionRules.refusal(ProgressionRules.step("deck"), withDeck, claimed)).isNull();
-        assertThat(ProgressionRules.refusal(ProgressionRules.step("welcome"), withDeck, claimed)).isEqualTo("Ya reclamaste esa misión");
+        assertThat(ProgressionRules.refusal(ProgressionRules.step("structure"), withDeck, claimed)).isEqualTo("Ya reclamaste esa misión");
     }
 
     @Test
     void theLastStepCountsTheOthersClaimed() {
         Set<String> claimed = new HashSet<>();
-        ProgressionRules.WELCOME.stream().map(ProgressionRules.Step::id).filter(id -> !id.equals("graduate")).limit(8).forEach(claimed::add);
+        ProgressionRules.WELCOME.stream().map(ProgressionRules.Step::id).filter(id -> !id.equals("graduate")).limit(7).forEach(claimed::add);
         var graduate = ProgressionRules.step("graduate");
-        assertThat(ProgressionRules.progress(graduate, NEW_PLAYER, claimed)).isEqualTo(8);
+        assertThat(ProgressionRules.progress(graduate, NEW_PLAYER, claimed)).isEqualTo(7);
         assertThat(ProgressionRules.refusal(graduate, NEW_PLAYER, claimed)).isEqualTo("Primero completa las misiones anteriores");
 
         claimed.add("first-win");
@@ -58,7 +56,7 @@ class ProgressionRulesTest {
 
     @Test
     void gamesAgainstTheBotCountForTheMilestonesButNotForTheFirstGameAgainstAPlayer() {
-        Set<String> claimed = Set.of("welcome", "structure", "how-to-play", "cards", "deck", "pack", "avatar");
+        Set<String> claimed = Set.of("structure", "how-to-play", "cards", "deck", "pack", "avatar");
         var firstGame = ProgressionRules.step("first-game");
         var onlyBot = new ProgressionRules.Facts(Map.of(MissionRules.GAME_PLAYED, 3, ProgressionRules.BOT_GAME_PLAYED, 3, MissionRules.GAME_WON, 2), Set.of(), false, 0);
         assertThat(ProgressionRules.progress(firstGame, onlyBot, claimed)).isZero();

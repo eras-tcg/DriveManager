@@ -72,7 +72,7 @@ public class ShopService {
 
     public Opening buy(String userId, String editionId, String product) {
         EditionMetadata edition = editionId == null ? null : editions.findById(editionId).orElse(null);
-        if (edition == null || WalletRules.priceOf(edition, product) == null) throw new WalletService.PurchaseException("Ese producto no está a la venta");
+        if (edition == null || WalletRules.priceOf(edition, product, List.of()) == null) throw new WalletService.PurchaseException("Ese producto no está a la venta");
         // Nothing is charged for something that would come out empty
         boolean structure = "structure".equals(product);
         // The edition's cards are read once: the pool and its alternative arts together
@@ -91,16 +91,6 @@ public class ShopService {
         }
         collections.add(userId, pulls);
         return new Opening(purchase.gems(), purchase.price(), packs);
-    }
-
-    /** A structure deck given as a reward: nothing charged, added to the collection like a purchase. */
-    public Opening giftStructure(String userId, String editionId) {
-        List<String> structureCards = editionId == null ? List.of() : pool.structureCards(editionId);
-        if (structureCards.isEmpty()) throw new WalletService.PurchaseException("Ese structure deck todavía no tiene cartas");
-        WalletService.Purchase gift = wallets.gift(userId, editionId);
-        List<OpenedCard> cards = structureCards.stream().map(id -> new OpenedCard(id, "plain")).toList();
-        collections.add(userId, cards.stream().map(c -> new CollectionService.Pull(c.id(), c.finish())).toList());
-        return new Opening(gift.gems(), 0, List.of(new OpenedPack("Structure", null, cards)));
     }
 
     /** The packs of a purchase; a copy of a card in `withAlt` may come out with one of its alternative arts. */

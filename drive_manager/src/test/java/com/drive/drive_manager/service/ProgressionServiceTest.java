@@ -23,23 +23,20 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-/** Claims give their reward once; the structure step gives a structure deck, or its price to whoever has one. */
+/** Claims give their reward once; the structure step asks for one of ST1–ST4 taken in the shop. */
 class ProgressionServiceTest {
 
     private MongoTemplate mongo;
     private WalletService wallets;
-    private ShopService shop;
     private ProgressionService progression;
 
     @BeforeEach
     void setUp() {
         mongo = mock(MongoTemplate.class);
         wallets = mock(WalletService.class);
-        shop = mock(ShopService.class);
         CollectionService collections = mock(CollectionService.class);
         when(collections.of(any())).thenReturn(new CollectionService.View(Map.of(), Map.of()));
-        progression = new ProgressionService(mongo, wallets, shop, collections,
-                () -> LocalDate.of(2026, 11, 2));
+        progression = new ProgressionService(mongo, wallets, collections, () -> LocalDate.of(2026, 11, 2));
     }
 
     private void saved(Document doc) {
@@ -49,36 +46,15 @@ class ProgressionServiceTest {
     }
 
     @Test
-    void theStructureStepGivesTheChosenStructureDeck() {
-        saved(new Document("welcome", List.of("welcome")));
-        ShopService.Opening opening = new ShopService.Opening(2400, 0, List.of());
-        when(shop.giftStructure("alice", "ST2")).thenReturn(opening);
-
-        ProgressionService.Claimed claimed = progression.claimWelcome("alice", "structure", "ST2");
-
-        assertThat(claimed.opening()).isEqualTo(opening);
+    void theStructureStepWaitsForOneOfST1ToST4AndThenPaysItsGems() {
+        saved(new Document());
+        when(wallets.structures("alice")).thenReturn(List.of("ST5"));
+        assertThatThrownBy(() -> progression.claimWelcome("alice", "structure")).hasMessage("Esa misión todavía no está cumplida");
         verify(wallets, never()).grant(any(), anyInt());
-    }
 
-    @Test
-    void theStructureStepAsksForAStructureDeckAndIsReleasedWhenTheGiftFails() {
-        saved(new Document("welcome", List.of("welcome")));
-        assertThatThrownBy(() -> progression.claimWelcome("alice", "structure", null)).hasMessage("Elige un structure deck");
-
-        when(shop.giftStructure("alice", "ST1")).thenThrow(new WalletService.PurchaseException("Ya tienes este structure deck"));
-        assertThatThrownBy(() -> progression.claimWelcome("alice", "structure", "ST1")).hasMessage("Ya tienes este structure deck");
-        verify(mongo).updateFirst(any(Query.class), argThat(u -> u.getUpdateObject().containsKey("$pull")), eq(ProgressionService.COLLECTION));
-    }
-
-    @Test
-    void whoeverAlreadyHasAStructureDeckGetsItsPriceInGems() {
-        saved(new Document("welcome", List.of("welcome")));
-        when(wallets.structures("alice")).thenReturn(List.of("ST1"));
-
-        progression.claimWelcome("alice", "structure", null);
-
-        verify(wallets).grant("alice", WalletRules.STRUCTURE_PRICE);
-        verify(shop, never()).giftStructure(any(), any());
+        when(wallets.structures("alice")).thenReturn(List.of("ST5", "ST3"));
+        progression.claimWelcome("alice", "structure");
+        verify(wallets).grant("alice", 100);
     }
 
     @Test
@@ -104,15 +80,15 @@ class ProgressionServiceTest {
 
     @Test
     void aVisitStepPaysOnceEvenWhenClaimedTwiceAtTheSameTime() {
-        Document doc = new Document("welcome", List.of("welcome", "structure")).append("visited", List.of(ProgressionRules.PAGE_HOW_TO_PLAY));
+        Document doc = new Document("welcome", List.of("structure")).append("visited", List.of(ProgressionRules.PAGE_HOW_TO_PLAY));
         saved(doc);
-        progression.claimWelcome("alice", "how-to-play", null);
+        progression.claimWelcome("alice", "how-to-play");
         verify(wallets).grant("alice", 100);
 
         // A second claim read the same document, but the atomic update finds the step already marked
         when(mongo.findAndModify(any(Query.class), any(Update.class), any(FindAndModifyOptions.class), eq(Document.class), eq(ProgressionService.COLLECTION)))
                 .thenReturn(null);
-        assertThatThrownBy(() -> progression.claimWelcome("alice", "how-to-play", null)).hasMessage("Ya reclamaste esa misión");
+        assertThatThrownBy(() -> progression.claimWelcome("alice", "how-to-play")).hasMessage("Ya reclamaste esa misión");
         verify(wallets).grant("alice", 100);
     }
 }
