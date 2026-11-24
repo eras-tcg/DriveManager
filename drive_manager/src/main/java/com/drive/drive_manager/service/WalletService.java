@@ -72,40 +72,33 @@ public class WalletService {
     }
 
     /**
-     * Buys a "pack", a "box" or a "structure" deck at the server's price. A structure deck is bought once per account:
-     * charging and noting it is one atomic step, so it can never be bought twice.
+     * Buys a "pack", a "box" or a "structure" deck at the server's price for this account (WalletRules.priceOf). A
+     * structure deck is bought once per account: charging and noting it is one atomic step, so it can never be bought
+     * twice; the free one of ST1–ST4 is given only while the account still has none of them, in the same step, so two
+     * at the same moment never both come free.
      */
     public Purchase buy(String userId, String editionId, String product) {
         EditionMetadata edition = editionId == null ? null : editions.findById(editionId).orElse(null);
-        Integer price = WalletRules.priceOf(edition, product);
+        boolean structure = "structure".equals(product);
+        Integer price = WalletRules.priceOf(edition, product, structure ? structures(userId) : List.of());
         if (price == null) throw new PurchaseException("Ese producto no está a la venta");
         open(userId);
-        boolean structure = "structure".equals(product);
         Criteria enough = Criteria.where("_id").is(userId).and("gems").gte(price);
         Update charge = new Update().inc("gems", -price);
         if (structure) {
             enough.and("structures").ne(editionId);
+            if (WalletRules.isStarter(editionId) && price == 0) {
+                enough = new Criteria().andOperator(enough, Criteria.where("structures").nin(WalletRules.STARTERS));
+            }
             charge.addToSet("structures", editionId);
         }
         Document after = mongo.findAndModify(Query.query(enough), charge, FindAndModifyOptions.options().returnNew(true), Document.class, COLLECTION);
         if (after == null) {
-            throw new PurchaseException(structure && structures(userId).contains(editionId) ? "Ya compraste este structure deck" : "No te alcanzan las gemas");
+            if (structure && structures(userId).contains(editionId)) throw new PurchaseException("Ya compraste este structure deck");
+            if (price == 0) throw new PurchaseException("Ya elegiste tu structure deck gratis");
+            throw new PurchaseException("No te alcanzan las gemas");
         }
         return new Purchase(after.getInteger("gems", 0), price);
-    }
-
-    /**
-     * Notes a structure deck as the account's without charging it (a reward): the gems after it, or a refusal when it
-     * is not a structure deck or the account already has it. One atomic step, like a purchase.
-     */
-    public Purchase gift(String userId, String editionId) {
-        EditionMetadata edition = editionId == null ? null : editions.findById(editionId).orElse(null);
-        if (WalletRules.priceOf(edition, "structure") == null) throw new PurchaseException("Ese structure deck no existe");
-        open(userId);
-        Document after = mongo.findAndModify(Query.query(Criteria.where("_id").is(userId).and("structures").ne(editionId)),
-                new Update().addToSet("structures", editionId), FindAndModifyOptions.options().returnNew(true), Document.class, COLLECTION);
-        if (after == null) throw new PurchaseException("Ya tienes este structure deck");
-        return new Purchase(after.getInteger("gems", 0), 0);
     }
 
     /** The structure decks an account already bought (each can be bought only once). */

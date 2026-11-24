@@ -71,14 +71,25 @@ public class CardPoolService {
         return out;
     }
 
-    /** A structure deck's cards: its public deck (named like the edition, "ST1"), or else one of each of its cards. */
+    /**
+     * A structure deck's cards: its public deck (named after the edition, its code alone or before its name: "ST1",
+     * "ST1 Saltadores del multiverso"), or else one of each of its cards.
+     */
     public List<String> structureCards(String editionId) {
         List<String> fromDeck = decks.findPublicDecks().stream()
-                .filter(d -> d.getDeckName() != null && d.getDeckName().trim().equalsIgnoreCase(editionId))
+                .filter(d -> namedAfter(d.getDeckName(), editionId))
                 .map(DeckList::getCards).filter(Objects::nonNull).findFirst().orElse(List.of());
         Map<String, String> known = rarities(editionId);
         List<String> cards = fromDeck.stream().filter(known::containsKey).toList();
         return cards.isEmpty() ? new ArrayList<>(known.keySet()) : cards;
+    }
+
+    /** A deck's name is an edition's code alone or the code and then its name ("ST1", "ST1 Saltadores…"). */
+    static boolean namedAfter(String deckName, String editionId) {
+        if (deckName == null || editionId == null) return false;
+        String name = deckName.trim().toUpperCase();
+        String code = editionId.toUpperCase();
+        return name.equals(code) || name.startsWith(code + " ");
     }
 
     /** What a pack of an edition draws from: its card ids by rarity, and the ones with alternative arts (id → arts). */

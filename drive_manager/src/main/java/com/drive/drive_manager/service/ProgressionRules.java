@@ -10,7 +10,7 @@ import java.util.function.ToIntFunction;
  * Progression missions, done once per account: the "Bienvenida" chain (steps claimed in order, the last one for
  * finishing them all) and the milestones (lifetime counts in tiers, each tier claimed once, then the next one). What
  * they count comes from Facts: lifetime counters (games, wins, summons, damage, login days, packs, decks saved, icons
- * set), the pages visited and what the account already has (a structure deck, cards). Pure.
+ * set), the pages visited and what the account already has (one of the first four structure decks, cards). Pure.
  */
 public final class ProgressionRules {
 
@@ -32,15 +32,14 @@ public final class ProgressionRules {
     public static final String PAGE_CARDS = "cartas";
     public static final Set<String> PAGES = Set.of(PAGE_HOW_TO_PLAY, PAGE_CARDS);
 
-    /** The welcome step that gives a structure deck, and the gems it gives instead to whoever already has one. */
+    /** The first welcome step: taking one of ST1–ST4 in the shop (the first of them is free, WalletRules). */
     public static final String STRUCTURE_STEP = "structure";
-    public static final int STRUCTURE_STEP_GEMS = WalletRules.STRUCTURE_PRICE;
     /** The last welcome step (every other one claimed) and the badge it gives. */
     public static final String GRADUATE_STEP = "graduate";
     public static final String GRADUATE_BADGE = "recluta";
 
-    /** What an account has done and has, as progression reads it. */
-    public record Facts(Map<String, Integer> counts, Set<String> visited, boolean hasStructure, int distinctCards) {
+    /** What an account has done and has (hasStarter: one of ST1–ST4), as progression reads it. */
+    public record Facts(Map<String, Integer> counts, Set<String> visited, boolean hasStarter, int distinctCards) {
         public int count(String counts) {
             Integer n = this.counts.get(counts);
             return n == null ? 0 : n;
@@ -56,8 +55,7 @@ public final class ProgressionRules {
     }
 
     public static final List<Step> WELCOME = List.of(
-            new Step("welcome", 1, 100, f -> 1),
-            new Step(STRUCTURE_STEP, 1, 0, f -> f.hasStructure() ? 1 : 0),
+            new Step(STRUCTURE_STEP, 1, 100, f -> f.hasStarter() ? 1 : 0),
             new Step("how-to-play", 1, 100, f -> f.visited().contains(PAGE_HOW_TO_PLAY) ? 1 : 0),
             new Step("cards", 1, 50, f -> f.visited().contains(PAGE_CARDS) ? 1 : 0),
             new Step("deck", 1, 150, f -> f.count(DECK_SAVED)),
@@ -65,7 +63,7 @@ public final class ProgressionRules {
             new Step("avatar", 1, 100, f -> f.count(AVATAR_SET)),
             new Step("first-game", 1, 200, ProgressionRules::gamesAgainstPlayers),
             new Step("first-win", 1, 300, f -> f.count(MissionRules.GAME_WON)),
-            new Step(GRADUATE_STEP, 9, 500, f -> 0));
+            new Step(GRADUATE_STEP, 8, 500, f -> 0));
 
     public static final List<Milestone> MILESTONES = List.of(
             new Milestone("games", new int[]{1, 10, 25, 50, 100}, new int[]{100, 250, 500, 1000, 2000}, f -> f.count(MissionRules.GAME_PLAYED)),
@@ -107,15 +105,12 @@ public final class ProgressionRules {
         return false;
     }
 
-    /**
-     * Why a welcome step cannot be claimed now, or null when it can. The structure step can always be claimed once open:
-     * whoever has no structure deck yet picks one as its reward.
-     */
+    /** Why a welcome step cannot be claimed now, or null when it can. */
     public static String refusal(Step step, Facts facts, Set<String> claimed) {
         if (step == null) return "Esa misión no existe";
         if (claimed.contains(step.id())) return "Ya reclamaste esa misión";
         if (!unlocked(step, claimed)) return "Primero completa las misiones anteriores";
-        if (!step.id().equals(STRUCTURE_STEP) && progress(step, facts, claimed) < step.target()) return "Esa misión todavía no está cumplida";
+        if (progress(step, facts, claimed) < step.target()) return "Esa misión todavía no está cumplida";
         return null;
     }
 
@@ -138,8 +133,7 @@ public final class ProgressionRules {
     public static List<StepView> welcome(Facts facts, Set<String> claimed) {
         List<StepView> out = new ArrayList<>();
         for (Step s : WELCOME) {
-            int gems = s.id().equals(STRUCTURE_STEP) && facts.hasStructure() ? STRUCTURE_STEP_GEMS : s.gems();
-            out.add(new StepView(s.id(), Math.min(progress(s, facts, claimed), s.target()), s.target(), gems,
+            out.add(new StepView(s.id(), Math.min(progress(s, facts, claimed), s.target()), s.target(), s.gems(),
                     claimed.contains(s.id()), !unlocked(s, claimed)));
         }
         return out;

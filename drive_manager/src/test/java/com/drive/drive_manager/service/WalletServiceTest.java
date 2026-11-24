@@ -53,11 +53,29 @@ class WalletServiceTest {
 
     @Test
     void withoutTheGemsItSaysThat() {
-        Document saved = new Document("gems", 10).append("lastReward", java.time.LocalDate.now(java.time.ZoneId.of("America/Santiago")).toString());
+        Document saved = new Document("gems", 10).append("lastReward", java.time.LocalDate.now(java.time.ZoneId.of("America/Santiago")).toString())
+                .append("structures", List.of("ST2"));
         when(mongo.findById("alice", Document.class, WalletService.COLLECTION)).thenReturn(saved);
         when(mongo.findAndModify(any(Query.class), any(Update.class), any(FindAndModifyOptions.class), eq(Document.class), eq(WalletService.COLLECTION))).thenReturn(null);
 
         assertThatThrownBy(() -> wallets.buy("alice", "ST1", "structure")).hasMessage("No te alcanzan las gemas");
+    }
+
+    @Test
+    void theFirstOfST1ToST4IsFreeOnlyWhileTheAccountHasNoneOfThem() {
+        String today = java.time.LocalDate.now(java.time.ZoneId.of("America/Santiago")).toString();
+        Document saved = new Document("gems", 0).append("lastReward", today);
+        when(mongo.findById("alice", Document.class, WalletService.COLLECTION)).thenReturn(saved);
+        when(mongo.findAndModify(any(Query.class), any(Update.class), any(FindAndModifyOptions.class), eq(Document.class), eq(WalletService.COLLECTION)))
+                .thenReturn(new Document("gems", 0).append("structures", List.of("ST1")));
+
+        assertThat(wallets.buy("alice", "ST1", "structure").price()).isZero();
+        verify(mongo).findAndModify(argThat(q -> q.getQueryObject().toJson().contains("$nin")), any(Update.class), any(FindAndModifyOptions.class),
+                eq(Document.class), eq(WalletService.COLLECTION));
+
+        // Another one taken at the same moment: the atomic step finds a starter already there
+        when(mongo.findAndModify(any(Query.class), any(Update.class), any(FindAndModifyOptions.class), eq(Document.class), eq(WalletService.COLLECTION))).thenReturn(null);
+        assertThatThrownBy(() -> wallets.buy("alice", "ST1", "structure")).hasMessage("Ya elegiste tu structure deck gratis");
     }
 
     @Test

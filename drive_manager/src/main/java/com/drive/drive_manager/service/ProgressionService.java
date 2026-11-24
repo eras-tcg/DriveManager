@@ -24,7 +24,7 @@ import java.util.function.Supplier;
  * Each player's progression missions (ProgressionRules), in the "progression" collection: one document per user id
  * with lifetime counters (counts.{what}), the pages visited (visited), the welcome steps claimed (welcome), the tiers
  * claimed of each milestone (milestones.{id}), the badges won (badges) and the last day they came in (lastLogin).
- * What an account already has (a structure deck, cards) is read where it lives, so players who were there before
+ * What an account already has (one of ST1–ST4, cards) is read where it lives, so players who were there before
  * these missions find those done; a deck saved and an icon set count from now on (DeckListController,
  * AvatarController). Claiming is one atomic step, so nothing is given twice.
  */
@@ -35,31 +35,24 @@ public class ProgressionService {
 
     private final MongoTemplate mongo;
     private final WalletService wallets;
-    private final ShopService shop;
     private final CollectionService collections;
     private final Supplier<LocalDate> today;
 
     @Autowired
-    public ProgressionService(MongoTemplate mongo, WalletService wallets, ShopService shop, CollectionService collections,
+    public ProgressionService(MongoTemplate mongo, WalletService wallets, CollectionService collections,
                               @Value("${wallet.zone:America/Santiago}") String zone) {
-        this(mongo, wallets, shop, collections, () -> LocalDate.now(ZoneId.of(zone)));
+        this(mongo, wallets, collections, () -> LocalDate.now(ZoneId.of(zone)));
     }
 
-    ProgressionService(MongoTemplate mongo, WalletService wallets, ShopService shop, CollectionService collections,
-                       Supplier<LocalDate> today) {
+    ProgressionService(MongoTemplate mongo, WalletService wallets, CollectionService collections, Supplier<LocalDate> today) {
         this.mongo = mongo;
         this.wallets = wallets;
-        this.shop = shop;
         this.collections = collections;
         this.today = today;
     }
 
     /** A player's welcome chain, milestones and badges. */
     public record Board(List<ProgressionRules.StepView> welcome, List<ProgressionRules.MilestoneView> milestones, List<String> badges) {
-    }
-
-    /** The board after a claim, and the structure deck it gave (null when it gave gems). */
-    public record Claimed(Board board, ShopService.Opening opening) {
     }
 
     /** Why a claim was refused. */
@@ -90,11 +83,8 @@ public class ProgressionService {
         mongo.upsert(byId(userId), new Update().addToSet("visited", page), COLLECTION);
     }
 
-    /**
-     * Claims a welcome step: its gems (the last one also its badge). The structure step gives the structure deck
-     * `editionId`, or its price in gems to whoever already has one.
-     */
-    public Claimed claimWelcome(String userId, String stepId, String editionId) {
+    /** Claims a welcome step: its gems (the last one also its badge). */
+    public Board claimWelcome(String userId, String stepId) {
         ensure(userId);
         Document doc = load(userId);
         ProgressionRules.Facts facts = facts(userId, doc);
@@ -102,8 +92,6 @@ public class ProgressionService {
         ProgressionRules.Step step = ProgressionRules.step(stepId);
         String refusal = ProgressionRules.refusal(step, facts, claimed);
         if (refusal != null) throw new ProgressionException(refusal);
-        boolean gift = step.id().equals(ProgressionRules.STRUCTURE_STEP) && !facts.hasStructure();
-        if (gift && (editionId == null || editionId.isBlank())) throw new ProgressionException("Elige un structure deck");
 
         List<String> before = ProgressionRules.WELCOME.stream().map(ProgressionRules.Step::id).takeWhile(id -> !id.equals(step.id())).toList();
         Criteria open = Criteria.where("_id").is(userId).and("welcome").ne(step.id());
@@ -113,20 +101,8 @@ public class ProgressionService {
         Document after = mongo.findAndModify(Query.query(open), mark, FindAndModifyOptions.options().returnNew(true), Document.class, COLLECTION);
         if (after == null) throw new ProgressionException("Ya reclamaste esa misión");
 
-        ShopService.Opening opening = null;
-        if (gift) {
-            try {
-                opening = shop.giftStructure(userId, editionId);
-            } catch (WalletService.PurchaseException e) {
-                // The step stays to be claimed with another structure deck
-                mongo.updateFirst(byId(userId), new Update().pull("welcome", step.id()), COLLECTION);
-                throw new ProgressionException(e.getMessage());
-            }
-        } else {
-            int gems = step.id().equals(ProgressionRules.STRUCTURE_STEP) ? ProgressionRules.STRUCTURE_STEP_GEMS : step.gems();
-            wallets.grant(userId, gems);
-        }
-        return new Claimed(board(userId, load(userId)), opening);
+        wallets.grant(userId, step.gems());
+        return board(userId, after);
     }
 
     /** Claims a milestone's next tier: its gems. */
@@ -159,7 +135,7 @@ public class ProgressionService {
             if (v instanceof Number n) counts.put(k, n.intValue());
         });
         return new ProgressionRules.Facts(counts, new HashSet<>(doc.getList("visited", String.class, List.of())),
-                !wallets.structures(userId).isEmpty(), collections.of(userId).cards().size());
+                WalletRules.ownsStarter(wallets.structures(userId)), collections.of(userId).cards().size());
     }
 
     private static Set<String> claimed(Document doc) {
