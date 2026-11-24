@@ -26,7 +26,7 @@ import java.util.Map;
  * GET    /api/drive/editions/image/{file}            — a cover kept in the local folder (local development)
  * PUT    /api/drive/editions/{editionId}/hidden      — hides it (in development) or shows it: {hidden: true|false}
  *
- * A hidden edition is listed only to admins and testers ({@link HiddenEditions}).
+ * A hidden edition, and the sub-editions of a hidden one, are listed only to admins and testers ({@link HiddenEditions}).
  */
 @RestController
 @RequestMapping("/api/drive/editions")
@@ -91,10 +91,10 @@ public class EditionMetadataController {
     @GetMapping
     public ResponseEntity<List<EditionMetadata>> listAll(Authentication auth) {
         boolean testCards = TestCards.canSee(auth);
-        boolean hidden = HiddenEditions.canSee(auth);
         return ResponseEntity.ok(repo.findAll().stream()
                 .filter(e -> testCards || !TestCards.isTestEdition(e.getEditionId()))
-                .filter(e -> hidden || !e.isHiddenEdition())
+                // Hidden by itself or by its base edition (E3 hides E3.1)
+                .filter(e -> !hiddenEditions.hidden(e.getEditionId(), auth))
                 .toList());
     }
 
@@ -102,7 +102,7 @@ public class EditionMetadataController {
     public ResponseEntity<EditionMetadata> getOne(@PathVariable String editionId, Authentication auth) {
         return repo.findById(editionId)
                 .filter(e -> !TestCards.hidden(e.getEditionId(), auth))
-                .filter(e -> !e.isHiddenEdition() || HiddenEditions.canSee(auth))
+                .filter(e -> !hiddenEditions.hidden(e.getEditionId(), auth))
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }

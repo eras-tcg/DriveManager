@@ -42,7 +42,7 @@ class HiddenEditionsControllerTest {
     @BeforeEach
     void setUp() {
         EditionMetadataRepository repo = mock(EditionMetadataRepository.class);
-        stored = new ArrayList<>(List.of(edition("E1", null), edition("E2", true)));
+        stored = new ArrayList<>(List.of(edition("E1", null), edition("E2", true), edition("E2.1", null)));
         when(repo.findAll()).thenAnswer(i -> List.copyOf(stored));
         when(repo.findById(anyString())).thenAnswer(i -> stored.stream().filter(e -> e.getEditionId().equals(i.getArgument(0))).findFirst());
         when(repo.save(any(EditionMetadata.class))).thenAnswer(i -> i.getArgument(0));
@@ -52,11 +52,12 @@ class HiddenEditionsControllerTest {
 
     @Test
     void aHiddenEditionIsListedOnlyToAdminsAndTesters() {
-        assertThat(ids(editions.listAll(player).getBody())).containsExactly("E1");
+        assertThat(ids(editions.listAll(player).getBody())).as("its sub-editions go with it").containsExactly("E1");
         assertThat(ids(editions.listAll(null).getBody())).containsExactly("E1");
-        assertThat(ids(editions.listAll(tester).getBody())).containsExactly("E1", "E2");
-        assertThat(ids(editions.listAll(admin).getBody())).containsExactly("E1", "E2");
+        assertThat(ids(editions.listAll(tester).getBody())).containsExactly("E1", "E2", "E2.1");
+        assertThat(ids(editions.listAll(admin).getBody())).containsExactly("E1", "E2", "E2.1");
         assertThat(editions.getOne("E2", player).getStatusCode().value()).isEqualTo(404);
+        assertThat(editions.getOne("E2.1", player).getStatusCode().value()).isEqualTo(404);
         assertThat(editions.getOne("E2", admin).getStatusCode().value()).isEqualTo(200);
     }
 
@@ -65,7 +66,7 @@ class HiddenEditionsControllerTest {
         assertThat(editions.setHidden("E1", new EditionMetadataController.HiddenRequest(true)).getBody().getHidden()).isTrue();
         assertThat(hidden.hidden("E1", player)).isTrue();
         editions.setHidden("E2", new EditionMetadataController.HiddenRequest(false));
-        assertThat(ids(editions.listAll(player).getBody())).containsExactly("E2");
+        assertThat(ids(editions.listAll(player).getBody())).containsExactly("E2", "E2.1");
         assertThat(editions.setHidden("X9", new EditionMetadataController.HiddenRequest(true)).getStatusCode().value()).isEqualTo(404);
         assertThat(editions.setHidden("E1", new EditionMetadataController.HiddenRequest(null)).getStatusCode().value()).isEqualTo(400);
     }
