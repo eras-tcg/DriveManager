@@ -19,7 +19,7 @@ public final class WalletRules {
     public static final int BOX_PRICE = 2400;
     public static final int SUB_EDITION_BOX_PRICE = 1200;
     /** A structure deck (ST1, ST2…), whole. */
-    public static final int STRUCTURE_PRICE = 500;
+    public static final int STRUCTURE_PRICE = 1000;
     /**
      * The first four structure decks: the first of them an account takes is free (the "Bienvenida" starts by taking
      * it), each of the others costs STARTER_PRICE.
