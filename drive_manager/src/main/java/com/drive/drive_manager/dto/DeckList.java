@@ -43,4 +43,16 @@ public class DeckList {
     /** One of the decks the bot may play in ranked Modo solo (its pool); set by a simulator administrator. */
     @Field("bot_deck")
     private boolean botDeck;
+
+    /** Proposed by the system (author ERAS, owner {@code SystemDecks.OWNER}): made from {@code decks/system-decks.json}, no player edits it. */
+    @Field("system_deck")
+    private boolean systemDeck;
+
+    /** A system deck's folder in "Mazos públicos": its edition ("E1", "E1.2"…) or "ST"; null for players' decks. */
+    @Field("system_edition")
+    private String systemEdition;
+
+    /** A system deck's place in its folder (the order of {@code decks/system-decks.json}); null for players' decks. */
+    @Field("system_order")
+    private Integer systemOrder;
 }

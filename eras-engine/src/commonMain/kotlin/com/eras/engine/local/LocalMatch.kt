@@ -19,7 +19,7 @@ import kotlin.js.JsExport
  * {"seed": "42",                 // the game's chance and the bot's (a decimal string: 64 bits); default "0"
  *  "decks": {"<deckId>": <deck>}, // what SET_DECK {"deckId"} finds (LocalDecks); the bot plays the player's by default
  *  "botLevel": "normal",         // easy | normal | hard or a named model (BotCatalog); also SET_BOT_LEVEL in the pre-room
- *  "userId": "local-player", "avatar": null, "playmat": null, "roomId": "local", // the player's name: JOIN_ROOM's
+ *  "userId": "local-player", "avatar": null, "playmat": null, "cardBack": null, "roomId": "local", // the player's name: JOIN_ROOM's
  *  "time": null,                  // epoch millis written on every history line and event ("ts"); null: the clock's
  *  "botClock": "ticks",           // "ticks": the bot's time budgets counted in clock readings (the same game on any
  *  "tickNanos": 1000000,          //   machine); "system": real time, as the server's bot (a slower machine thinks less)
@@ -68,7 +68,7 @@ class LocalMatch(config: String) {
         }
         clocks = MatchClocks(string(c, "time")?.toLong(), botClock)
         room = clocks.run {
-            LocalRoom(userId, string(c, "avatar"), string(c, "playmat"), roomId, seed,
+            LocalRoom(userId, string(c, "avatar"), string(c, "playmat"), string(c, "cardBack"), roomId, seed,
                 LocalDecks(c["decks"] as? JsonObject), string(c, "botLevel"), botSeed(seed), string(c, "editor") == "true")
         }
     }

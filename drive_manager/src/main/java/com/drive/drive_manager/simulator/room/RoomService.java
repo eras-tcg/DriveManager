@@ -3,6 +3,7 @@ package com.drive.drive_manager.simulator.room;
 import com.drive.drive_manager.service.ActivityTracker;
 import com.drive.drive_manager.service.AvatarService;
 import com.drive.drive_manager.service.PlaymatService;
+import com.drive.drive_manager.service.PreferencesService;
 import com.drive.drive_manager.simulator.bot.BotRooms;
 import com.drive.drive_manager.simulator.bot.RoomBots;
 import com.drive.drive_manager.simulator.engine.EffectEngine;
@@ -53,6 +54,8 @@ public class RoomService implements RoomHost {
     /** The players' icons and playmats, looked up when they join. */
     @Autowired(required = false) AvatarService avatarService;
     @Autowired(required = false) PlaymatService playmatService;
+    /** The players' card backs (a preference kept with their account), looked up when they join. */
+    @Autowired(required = false) PreferencesService preferencesService;
     /** Simulator actions count as someone using the site (a server that sleeps waits for nobody to be left). */
     @Autowired(required = false)
     private ActivityTracker activityTracker;

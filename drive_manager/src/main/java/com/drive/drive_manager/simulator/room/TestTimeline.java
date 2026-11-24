@@ -93,6 +93,7 @@ public final class TestTimeline {
             p.setDisconnectedAt(was.getDisconnectedAt());
             p.setAvatar(was.getAvatar());
             p.setPlaymat(was.getPlaymat());
+            p.setCardBack(was.getCardBack());
         });
     }
 

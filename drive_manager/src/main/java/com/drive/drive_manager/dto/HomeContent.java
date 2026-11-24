@@ -12,6 +12,8 @@ public class HomeContent {
 
     private EditionMetadata edition;
     private List<DeckList> decks;
+    /** The carousel's news, in order; null until an administrator first saves them (the site shows its own until then). */
+    private List<HomeNews> news;
 
     public HomeContent() {}
 
