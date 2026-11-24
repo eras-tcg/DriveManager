@@ -36,6 +36,10 @@ public class DeckListController {
     private final DeckBoxRepository deckBoxes;
     private final TestCards testCards;
 
+    /** Editions an admin hid: decks with their cards only for admins and testers (and their owner). */
+    @org.springframework.beans.factory.annotation.Autowired(required = false)
+    private com.drive.drive_manager.service.HiddenEditions hiddenEditions = com.drive.drive_manager.service.HiddenEditions.none();
+
     /** Longest deck name accepted on create, or on an edit that changes the name (older, longer names are kept). */
     public static final int MAX_NAME_LENGTH = 30;
 
@@ -59,10 +63,10 @@ public class DeckListController {
             if (userId.equals(callerId(auth))) {
                 return ResponseEntity.ok(decks);
             }
-            return ResponseEntity.ok(decks.stream().filter(deck -> !deck.isPrivateDeck() && !testCards.hiddenDeck(deck.getCards(), auth)).toList());
+            return ResponseEntity.ok(decks.stream().filter(deck -> !deck.isPrivateDeck() && !hidden(deck.getCards(), auth)).toList());
         }
         // A deck with cards in testing is shown only to who may see them
-        return ResponseEntity.ok(repo.findPublicDecks().stream().filter(deck -> !testCards.hiddenDeck(deck.getCards(), auth)).toList());
+        return ResponseEntity.ok(repo.findPublicDecks().stream().filter(deck -> !hidden(deck.getCards(), auth)).toList());
     }
 
     @GetMapping("/{id}")
@@ -70,7 +74,7 @@ public class DeckListController {
         // A private deck is invisible (404) to anyone but its owner
         return repo.findById(id)
                 .filter(deck -> !deck.isPrivateDeck() || deck.getUserId() != null && deck.getUserId().equals(callerId(auth)))
-                .filter(deck -> deck.getUserId() != null && deck.getUserId().equals(callerId(auth)) || !testCards.hiddenDeck(deck.getCards(), auth))
+                .filter(deck -> deck.getUserId() != null && deck.getUserId().equals(callerId(auth)) || !hidden(deck.getCards(), auth))
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }
@@ -161,6 +165,11 @@ public class DeckListController {
         return detail;
     }
 
+    /** Whether a deck with these cards is hidden from the player (cards in testing or of a hidden edition). */
+    private boolean hidden(java.util.List<String> cards, Authentication auth) {
+        return testCards.hiddenDeck(cards, auth) || hiddenEditions.hiddenDeck(cards, auth);
+    }
+
     /** User id from the JWT, or null for anonymous requests. */
     private static String callerId(Authentication auth) {
         if (auth == null || !auth.isAuthenticated() || auth instanceof AnonymousAuthenticationToken) return null;
@@ -173,6 +182,9 @@ public class DeckListController {
         }
         if (testCards.hiddenDeck(body.getCards(), auth)) {
             return "El mazo tiene cartas en prueba que no puedes usar";
+        }
+        if (hiddenEditions.hiddenDeck(body.getCards(), auth)) {
+            return "El mazo tiene cartas de una edición en desarrollo que no puedes usar";
         }
         String name = body.getDeckName();
         if (name != null && name.length() > MAX_NAME_LENGTH && !name.equals(previousName)) {

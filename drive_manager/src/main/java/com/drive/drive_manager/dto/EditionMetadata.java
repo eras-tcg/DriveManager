@@ -50,6 +50,16 @@ public class EditionMetadata {
     @Field("regulation")
     private String regulation;
 
+    /** Hidden by an admin (still in development): only admins and testers see it; null or false: visible. */
+    @Field("hidden")
+    private Boolean hidden;
+
+    /** Whether an admin hid it. */
+    @com.fasterxml.jackson.annotation.JsonIgnore
+    public boolean isHiddenEdition() {
+        return Boolean.TRUE.equals(hidden);
+    }
+
     /** How its cover sits in the card-shaped tiles (the image itself is not cut); null: centered, not zoomed. */
     @Field("cover_frame")
     private CoverFrame coverFrame;

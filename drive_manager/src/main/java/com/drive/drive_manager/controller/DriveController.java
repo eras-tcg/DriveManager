@@ -43,6 +43,10 @@ public class DriveController {
     @Autowired
     private R2Service r2Service;
 
+    /** Editions an admin hid: their images only for admins and testers. */
+    @Autowired(required = false)
+    private com.drive.drive_manager.service.HiddenEditions hiddenEditions = com.drive.drive_manager.service.HiddenEditions.none();
+
     @Value("${r2.public-url}")
     private String r2PublicUrl;
 
@@ -82,7 +86,8 @@ public class DriveController {
         String baseUrl = r2PublicUrl.stripTrailing();
         boolean testCards = TestCards.canSee(auth);
 
-        List<Map<String, Object>> result = driveCardRepository.findAll().stream()
+        List<Map<String, Object>> result = hiddenEditions.visible(driveCardRepository.findAll(),
+                        com.drive.drive_manager.dto.DriveCard::getEdition, com.drive.drive_manager.dto.DriveCard::getSubEdition, auth).stream()
                 .filter(c -> testCards || !TestCards.isTestEdition(c.getEdition()))
                 .filter(c -> edition == null || edition.equalsIgnoreCase(c.getEdition()))
                 .filter(c -> color == null || color.equalsIgnoreCase(c.getColorIdentity()))
@@ -177,7 +182,7 @@ public class DriveController {
     @GetMapping("/cards/db/{id}/image")
     public ResponseEntity<byte[]> proxyImage(@PathVariable String id, Authentication auth) {
         DriveCard card = driveCardRepository.findById(id).orElse(null);
-        if (card == null || TestCards.hidden(card.getEdition(), auth))
+        if (card == null || TestCards.hidden(card.getEdition(), auth) || hiddenEditions.hidden(card.getEdition(), card.getSubEdition(), auth))
             return ResponseEntity.notFound().build();
         try {
             byte[] data = r2Service.getImage(id);
