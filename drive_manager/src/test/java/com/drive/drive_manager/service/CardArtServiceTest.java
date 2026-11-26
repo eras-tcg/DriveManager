@@ -16,6 +16,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -129,6 +130,51 @@ class CardArtServiceTest {
         // Only a PNG: its gloss and gold are masks
         byte[] jpg = {(byte) 0xFF, (byte) 0xD8, (byte) 0xFF, 0, 0, 0, 0, 0, 0, 0, 0, 0};
         assertThatThrownBy(() -> service.setShine("m1", jpg)).isInstanceOf(IllegalArgumentException.class);
+    }
+
+    @Test
+    void theCreatureCutOutIsAPngKeptApartReplacedAndRemoved() {
+        byte[] png = {(byte) 0x89, 'P', 'N', 'G', 0, 0, 0, 0, 0, 0, 0, 0};
+        service.setCreature("m1", png);
+        String first = card.getCreatureKey();
+        assertThat(first).matches("card-creature/m1/[0-9]+[.]png");
+        service.setCreature("m1", png);
+        verify(store).delete(first);
+        when(store.get(card.getCreatureKey())).thenReturn(png);
+        assertThat(service.getCreature("m1")).get().extracting(CardArtService.Art::type).isEqualTo("image/png");
+        // Only a PNG: it needs its transparency
+        byte[] jpg = {(byte) 0xFF, (byte) 0xD8, (byte) 0xFF, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+        assertThatThrownBy(() -> service.setCreature("m1", jpg)).isInstanceOf(IllegalArgumentException.class);
+        String last = card.getCreatureKey();
+        service.removeCreature("m1");
+        assertThat(card.getCreatureKey()).isNull();
+        // (the two saves above may fall in the same millisecond: the same key, deleted once already)
+        verify(store, atLeastOnce()).delete(last);
+    }
+
+    @Test
+    void aNewArtDropsTheCreatureCutFromTheOldOneButTheSameArtKeepsIt() {
+        byte[] png = {(byte) 0x89, 'P', 'N', 'G', 0, 0, 0, 0, 0, 0, 0, 0};
+        byte[] jpg = {(byte) 0xFF, (byte) 0xD8, (byte) 0xFF, 0, 0, 0, 0, 0, 0, 0, 0, 1};
+        byte[] other = {(byte) 0xFF, (byte) 0xD8, (byte) 0xFF, 0, 0, 0, 0, 0, 0, 0, 0, 2};
+        service.set("m1", jpg);
+        when(store.get(card.getArtKey())).thenReturn(jpg);
+        service.setCreature("m1", png);
+        String creature = card.getCreatureKey();
+        // The same picture uploaded again (the editor saved it): the cut-out stays
+        service.set("m1", jpg);
+        assertThat(card.getCreatureKey()).isEqualTo(creature);
+        when(store.get(card.getArtKey())).thenReturn(jpg);
+        // Another picture: the cut-out was of the old one
+        service.set("m1", other);
+        assertThat(card.getCreatureKey()).isNull();
+        verify(store).delete(creature);
+        // The art removed takes the cut-out with it
+        service.setCreature("m1", png);
+        String again = card.getCreatureKey();
+        service.remove("m1");
+        assertThat(card.getCreatureKey()).isNull();
+        verify(store).delete(again);
     }
 
     @Test

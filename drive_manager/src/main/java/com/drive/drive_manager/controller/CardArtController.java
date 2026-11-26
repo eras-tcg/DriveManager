@@ -96,6 +96,30 @@ public class CardArtController {
     }
 
     @PreAuthorize("hasAuthority('manage_cards')")
+    @PutMapping(value = "/{id}/creature", consumes = {"image/png", "application/octet-stream"})
+    public ResponseEntity<Object> setCreature(@PathVariable String id, @RequestBody byte[] image) {
+        if (image == null || image.length == 0) return ResponseEntity.badRequest().body(Map.of("message", "Falta la imagen"));
+        return apply(() -> art.setCreature(id, image));
+    }
+
+    @GetMapping("/{id}/creature")
+    public ResponseEntity<byte[]> creature(@PathVariable String id) {
+        // As the shine: the key changes with every cut-out and the address asks for it (?v=key)
+        return art.getCreature(id)
+                .map(a -> ResponseEntity.ok()
+                        .contentType(MediaType.IMAGE_PNG)
+                        .cacheControl(CacheControl.maxAge(java.time.Duration.ofDays(365)).cachePrivate())
+                        .body(a.bytes()))
+                .orElse(ResponseEntity.notFound().build());
+    }
+
+    @PreAuthorize("hasAuthority('manage_cards')")
+    @DeleteMapping("/{id}/creature")
+    public ResponseEntity<Object> removeCreature(@PathVariable String id) {
+        return apply(() -> art.removeCreature(id));
+    }
+
+    @PreAuthorize("hasAuthority('manage_cards')")
     @DeleteMapping("/{id}/art")
     public ResponseEntity<Object> remove(@PathVariable String id) {
         return apply(() -> art.remove(id));

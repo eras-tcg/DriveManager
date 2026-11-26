@@ -67,6 +67,11 @@ public class Card {
      * parts (white) on top and the gold border below, used as masks for the shine laid over the card's image.
      */
     private String shineKey;
+    /**
+     * Its creature cut out of the illustration (a PNG with transparency, CardArtService): drawn big over its own stage
+     * when it is summoned (a full-art card). Null without one.
+     */
+    private String creatureKey;
     /** In a structure deck (ST…): how many copies of this card the deck brings; null where it does not apply. */
     private Integer deckCopies;
     /**
