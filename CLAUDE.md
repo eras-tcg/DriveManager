@@ -42,7 +42,7 @@ Si uno falla, córrelo solo antes de concluir algo.
 
 ## Despliegue
 
-- Rama de trabajo → PR a **`develop`** (despliega staging) → PR `develop` → **`main`** (despliega producción). Producción **espera la aprobación del dueño** en GitHub; un agente no puede aprobar.
+- Rama de trabajo → PR directo a **`main`** (despliega producción). No hay staging desde el 2026-11-26. Producción **espera la aprobación del dueño** en GitHub; un agente no puede aprobar.
 - El CI (`.github/workflows/ci-cd.yml`) tiene estos jobs:
   - `engine`: motor, paquete npm y partida en Node;
   - `test`: compila el motor y corre los tests del servidor con un MongoDB desechable;
