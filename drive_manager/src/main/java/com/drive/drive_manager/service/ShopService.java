@@ -4,6 +4,8 @@ import com.drive.drive_manager.dto.AltArt;
 import com.drive.drive_manager.dto.EditionMetadata;
 import com.drive.drive_manager.dto.ShopOdds;
 import com.drive.drive_manager.repository.EditionMetadataRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -18,11 +20,13 @@ import java.util.function.Supplier;
  * Buying in the Editions shop: the gems are charged (WalletService), what was bought is drawn here and added to the
  * player's collection, and the web only shows it. A pack's type comes at random by a box's odds; a box goes up a
  * rarity on one pack (by the shop's odds, ShopOdds: always for an edition and half the times for a sub-edition until
- * changed); a structure deck comes whole and plain. Each card of a pack or box comes out foil, and with an alternative
+ * changed); a structure deck comes whole and plain, and goes into the player's decks too (StructureDeckService). Each card of a pack or box comes out foil, and with an alternative
  * art, by the shop's odds too.
  */
 @Service
 public class ShopService {
+
+    private static final Logger logger = LoggerFactory.getLogger(ShopService.class);
 
     private final WalletService wallets;
     private final EditionMetadataRepository editions;
@@ -30,10 +34,13 @@ public class ShopService {
     private final CollectionService collections;
     private final Supplier<ShopOdds> odds;
     private final DoubleSupplier random;
+    /** Where a structure deck bought becomes the player's deck (null in tests that do not look at it). */
+    private final StructureDeckService structureDecks;
 
     @Autowired
-    public ShopService(WalletService wallets, EditionMetadataRepository editions, CardPoolService pool, CollectionService collections, ShopOddsService odds) {
-        this(wallets, editions, pool, collections, odds::current, new SecureRandom()::nextDouble);
+    public ShopService(WalletService wallets, EditionMetadataRepository editions, CardPoolService pool, CollectionService collections, ShopOddsService odds,
+                       StructureDeckService structureDecks) {
+        this(wallets, editions, pool, collections, odds::current, new SecureRandom()::nextDouble, structureDecks);
     }
 
     ShopService(WalletService wallets, EditionMetadataRepository editions, CardPoolService pool, CollectionService collections, DoubleSupplier random) {
@@ -42,12 +49,18 @@ public class ShopService {
 
     ShopService(WalletService wallets, EditionMetadataRepository editions, CardPoolService pool, CollectionService collections,
                 Supplier<ShopOdds> odds, DoubleSupplier random) {
+        this(wallets, editions, pool, collections, odds, random, null);
+    }
+
+    ShopService(WalletService wallets, EditionMetadataRepository editions, CardPoolService pool, CollectionService collections,
+                Supplier<ShopOdds> odds, DoubleSupplier random, StructureDeckService structureDecks) {
         this.wallets = wallets;
         this.editions = editions;
         this.pool = pool;
         this.collections = collections;
         this.odds = odds;
         this.random = random;
+        this.structureDecks = structureDecks;
     }
 
     /** A card as it came out: its id, its finish and the alternative art it came out with (null for none). */
@@ -90,7 +103,18 @@ public class ShopService {
             for (OpenedCard c : p.cards()) pulls.add(new CollectionService.Pull(c.id(), CollectionRules.copyKey(c.finish(), c.art())));
         }
         collections.add(userId, pulls);
+        if (structure) giveDeck(userId, edition, structureCards);
         return new Opening(purchase.gems(), purchase.price(), packs);
+    }
+
+    /** A structure deck bought, as the player's deck; paid already, so a failure here is logged and the purchase stands. */
+    private void giveDeck(String userId, EditionMetadata edition, List<String> cards) {
+        if (structureDecks == null) return;
+        try {
+            structureDecks.giveTo(userId, edition, cards);
+        } catch (RuntimeException e) {
+            logger.warn("Structure deck {} bought by {} not saved as their deck", edition.getEditionId(), userId, e);
+        }
     }
 
     /** The packs of a purchase; a copy of a card in `withAlt` may come out with one of its alternative arts. */
