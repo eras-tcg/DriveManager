@@ -5,7 +5,7 @@
 #   push to main        -> the PR's image is promoted (or built if there is none) and deployed to production at once
 #                          (approval); tests and engine run alongside the deploy and only report
 #   push to develop     -> image, tests and engine (develop is optional: PRs go straight to main)
-#   Run workflow        -> deploy an existing image: staging on demand, or a rollback
+#   Run workflow        -> deploy an existing image to production (a rollback). No staging since 2026-11-26
 # Every job has a time limit, so nothing can hold the pipeline.
 name: CI/CD
 
@@ -19,7 +19,7 @@ on:
       environment:
         description: Target environment
         type: choice
-        options: [staging, production]
+        options: [production]
         required: true
       image_tag:
         description: Commit sha of an image already published (see a previous run)
