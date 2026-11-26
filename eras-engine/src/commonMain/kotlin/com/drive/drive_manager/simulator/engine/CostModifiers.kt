@@ -198,7 +198,7 @@ object CostModifiers {
             // A card face down on the field has no effects (the one being played is not on the field yet)
             if (holder !== card && holder.faceDown) continue
             for (m in of(holder)) {
-                if (m.event != event || (!m.kinds!!.isEmpty() && !m.kinds.contains(kind))) continue
+                if (!appliesTo(m, event) || (!m.kinds!!.isEmpty() && !m.kinds.contains(kind))) continue
                 if (m.card != null && (card == null || !m.card.matches(card))) continue
                 val onField = player.field.contains(holder)
                 val placed = when (m.holder!!) {
@@ -223,6 +223,17 @@ object CostModifiers {
             }
         }
         return uses
+    }
+
+    /**
+     * The modifier changes the cost of this event. An absolute change of the card's own summon cost ("si no controlas cartas,
+     * esta carta cuesta 1 gema": holder SELF, nothing to pay) is part of its cost, so it also counts when an effect summons it
+     * paying its cost, after that effect's own reduction (cost 2, "cuesta 1" with nothing on the field, summoned "reduciendo su
+     * coste en 1": it costs 0).
+     */
+    private fun appliesTo(m: CostModifier, event: Event?): Boolean {
+        if (m.event == event) return true
+        return event == Event.EFFECT_SUMMON && m.event == Event.SUMMON && m.holder == Holder.SELF && m.payment?.kind == PaymentKind.NONE
     }
 
     /** `card`: the card whose cost it lowers, never part of the payment ("envía otras 5…": it may be in the Tributos). */

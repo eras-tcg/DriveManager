@@ -252,6 +252,20 @@ object Chain {
     }
 
     /**
+     * Rule 6.2.3.1: a utility goes to the Descarte once its "En Juego" is done. When the effect cannot be activated after
+     * all (its limit was used by another copy meanwhile, "una vez por turno entre copias", or its cost cannot be paid), it
+     * goes there too, unless another "En Juego" of the same card is still waiting or resolving.
+     */
+    @JvmStatic
+    fun onPlayLost(room: GameRoom, e: PendingEffect) {
+        if (script(e).moment != EffectScript.Moment.ON_PLAY) return
+        val waiting = (room.chain + room.triggerQueue).any { o ->
+            o !== e && o.sourceInstanceId == e.sourceInstanceId && script(o).moment == EffectScript.Moment.ON_PLAY
+        }
+        if (!waiting) utilityToDiscard(room, e)
+    }
+
+    /**
      * The effect's activation limit stops it now (rule 11.8): already used this turn, or a Definitive effect — of any
      * card and moment — on the first turn of the game (designer ruling 2026-10-30).
      */
@@ -361,6 +375,7 @@ object Chain {
         if (limitReached(room, effect, script)) {
             // Another copy used it meanwhile
             room.triggerQueue.removeAt(0)
+            onPlayLost(room, effect)
             return
         }
         // Rule 11.7.0.5: the active player's mandatory effects, the opponent's mandatory effects, then the
@@ -410,6 +425,7 @@ object Chain {
                 val used = limitReached(room, e, s)
                 if (used || !canActivate(room, e, s)) {
                     room.triggerQueue.remove(e)
+                    onPlayLost(room, e)
                     // Said in the history: otherwise the player only sees that nothing happened
                     log(room, e.sourceName + ": " + e.label + (if (used) ": " + limitText(room, e, s) else " no puede activarse (no se puede pagar su coste o no hay objetivos válidos)"), null)
                     dropped = true
@@ -435,7 +451,7 @@ object Chain {
                 if (!possible(room, effect, step)) {
                     // A cost that cannot be paid (no valid target): it cannot be activated (rule 11.2.0.2)
                     log(room, effect.sourceName + ": " + effect.label + " no puede activarse (no hay objetivos válidos)", null)
-                    if (script.moment == EffectScript.Moment.ON_PLAY) utilityToDiscard(room, effect)
+                    onPlayLost(room, effect)
                     return
                 }
             }
@@ -445,6 +461,7 @@ object Chain {
         if (!canActivate(room, effect, script)) {
             // Its cost cannot be paid or it would do nothing: it loses its moment
             room.triggerQueue.removeAt(0)
+            onPlayLost(room, effect)
             return
         }
         val link = room.chain.size + 1

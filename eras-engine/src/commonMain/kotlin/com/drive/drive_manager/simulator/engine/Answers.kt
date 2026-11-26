@@ -545,6 +545,8 @@ object Answers {
                 record(room, GameEvent.SEND, userId, card, "hand", "lifeStack", null, frozenMapOf<String, Any?>("reinforce", true),
                     player.username + " refuerza con " + name(card) + ": va bocarriba al fondo de su pila de vidas")
             }
+            // The last life not reinforced: the player loses at once, before anything its loss triggers (rule 2.1)
+            if (player.lifeStack.isEmpty()) loseByLives(room, player)
             advance(room)
             return ""
         }
@@ -564,6 +566,7 @@ object Answers {
                         name(card) + " va a la mano de " + player.username)
                 }
             }
+            if (player.lifeStack.isEmpty()) loseByLives(room, player)
             advance(room)
             return ""
         }

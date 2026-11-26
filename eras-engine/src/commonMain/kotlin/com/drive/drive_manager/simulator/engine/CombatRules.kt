@@ -355,8 +355,9 @@ object CombatRules {
             }
             c.hitsLeft = c.hitsLeft!! - 1
             val revealedNow = defender.lifeStack[0].faceDown
-            // A utility or structure its owner can play stays revealed on top of the lives: played from there, else to the hand
-            val playable = lifePlayable(room, defender, defender.lifeStack[0])
+            // A utility or structure its owner can play stays revealed on top of the lives: played from there, else to the hand.
+            // Not the last life: losing it ends the game at once, before it could be played
+            val playable = defender.lifeStack.size > 1 && lifePlayable(room, defender, defender.lifeStack[0])
             val text = name(attacker) + " inflige " + damage + " de daño directo: " + defender.username + " "
             val (life, tribute) =
                 if (playable) EffectEngine.revealTopLife(room, defender, damage, owner.userId, null, attacker.instanceId, text)
