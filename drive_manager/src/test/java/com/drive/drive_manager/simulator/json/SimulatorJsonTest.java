@@ -24,7 +24,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 /**
  * What the simulator sends and sums up as JSON stays the same now that the Jackson annotations left the engine's
  * classes for the mix-ins ({@link SimulatorJson}): the rooms and updates the players receive, and the fingerprints
- * that confirm a kept game replays the same. The sums were taken with the annotations still on the classes.
+ * that confirm a kept game replays the same. The sums were taken with the annotations still on the classes; st1-st2
+ * was taken again after the rules fixes of PR #105 (that game plays differently since).
  */
 @Tag("deep")
 class SimulatorJsonTest {
@@ -32,11 +33,11 @@ class SimulatorJsonTest {
     /** Per game: the JSON of the room and of each update after every action, and the fingerprints, summed up. */
     /** Per game: what each player is sent of every update (StateMask.forViewer, as a player and as an editor), summed up. */
     private static final Map<String, String> VIEWS = Map.of(
-            "st1-st2-11", "6f3ce3fca8ab4e9fd6283c35b01076ab",
+            "st1-st2-11", "25dd338f25378185242b25dd8fdba287",
             "st3-st4-12", "fd2eb1fdc7c0a51e382806a74fdb404e");
 
     private static final Map<String, String> GOLDEN = Map.of(
-            "st1-st2-11", "1f01383dd70d2d93fcc3157f35ad4e68",
+            "st1-st2-11", "05ff04953f613ffda84c02ebef1b38e9",
             "st3-st4-12", "90c2f753113d0c44b81ac03806dca6dc");
 
     @Test
