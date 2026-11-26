@@ -153,6 +153,31 @@ class CardArtServiceTest {
     }
 
     @Test
+    void aNewArtDropsTheCreatureCutFromTheOldOneButTheSameArtKeepsIt() {
+        byte[] png = {(byte) 0x89, 'P', 'N', 'G', 0, 0, 0, 0, 0, 0, 0, 0};
+        byte[] jpg = {(byte) 0xFF, (byte) 0xD8, (byte) 0xFF, 0, 0, 0, 0, 0, 0, 0, 0, 1};
+        byte[] other = {(byte) 0xFF, (byte) 0xD8, (byte) 0xFF, 0, 0, 0, 0, 0, 0, 0, 0, 2};
+        service.set("m1", jpg);
+        when(store.get(card.getArtKey())).thenReturn(jpg);
+        service.setCreature("m1", png);
+        String creature = card.getCreatureKey();
+        // The same picture uploaded again (the editor saved it): the cut-out stays
+        service.set("m1", jpg);
+        assertThat(card.getCreatureKey()).isEqualTo(creature);
+        when(store.get(card.getArtKey())).thenReturn(jpg);
+        // Another picture: the cut-out was of the old one
+        service.set("m1", other);
+        assertThat(card.getCreatureKey()).isNull();
+        verify(store).delete(creature);
+        // The art removed takes the cut-out with it
+        service.setCreature("m1", png);
+        String again = card.getCreatureKey();
+        service.remove("m1");
+        assertThat(card.getCreatureKey()).isNull();
+        verify(store).delete(again);
+    }
+
+    @Test
     void aMissingFileIsNoImage() {
         card.setRenderKey("card-render/m1/1.jpeg");
         when(store.get("card-render/m1/1.jpeg")).thenThrow(new RuntimeException("no such file"));

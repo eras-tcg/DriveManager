@@ -7,6 +7,7 @@ import com.drive.drive_manager.repository.DriveCardRepository;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 
@@ -89,19 +90,26 @@ public class CardArtService {
         return s == null || s.isBlank() ? null : s;
     }
 
-    /** Stores a new art for the card and drops the one it had: the card after it, empty if none. */
+    /**
+     * Stores a new art for the card and drops the one it had: the card after it, empty if none. A different picture
+     * leaves its creature's cut-out behind (it was cut from the old one); the same picture again keeps it.
+     */
     public Optional<Card> set(String cardId, byte[] bytes) {
         String type = mediaType(bytes);
         if (type == null) throw new IllegalArgumentException("El archivo no es una imagen JPG, PNG o WebP");
         if (bytes.length > MAX_BYTES) throw new IllegalArgumentException("La imagen pesa más de 25 MB");
         return cards.findById(cardId).map(card -> {
             String old = card.getArtKey();
+            boolean same = old != null && read(old).map(b -> Arrays.equals(b, bytes)).orElse(false);
             String key = "card-art/" + cardId + "/" + Instant.now().toEpochMilli() + "." + type.substring(6);
             store.put(key, bytes, type);
             card.setArtKey(key);
             card.setArtType(type);
+            String creature = same ? null : card.getCreatureKey();
+            if (creature != null) card.setCreatureKey(null);
             Card saved = cards.save(card);
             dropUnlessShared(old, cardId);
+            if (creature != null) store.delete(creature);
             return saved;
         });
     }
@@ -183,12 +191,17 @@ public class CardArtService {
                         .map(bytes -> new Art(bytes, "image/" + c.getRenderKey().substring(c.getRenderKey().lastIndexOf('.') + 1))));
     }
 
+    /** The card loses its art, and its creature's cut-out with it (cut from that art). */
     public Optional<Card> remove(String cardId) {
         return cards.findById(cardId).map(card -> {
             dropUnlessShared(card.getArtKey(), cardId);
+            String creature = card.getCreatureKey();
             card.setArtKey(null);
             card.setArtType(null);
-            return cards.save(card);
+            card.setCreatureKey(null);
+            Card saved = cards.save(card);
+            if (creature != null) store.delete(creature);
+            return saved;
         });
     }
 
