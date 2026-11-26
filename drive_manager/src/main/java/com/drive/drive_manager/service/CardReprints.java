@@ -39,7 +39,7 @@ public class CardReprints {
             throw new InvalidReprint("Falta la edición o el número");
         Card original = cards.findById(id).orElseThrow(() -> new InvalidReprint("No existe la carta " + id));
         Card copy = new Card();
-        BeanUtils.copyProperties(original, copy, "id", "artKey", "artType", "renderKey", "shineKey", "deckCopies", "altArts", "altImage");
+        BeanUtils.copyProperties(original, copy, "id", "artKey", "artType", "renderKey", "shineKey", "creatureKey", "deckCopies", "altArts", "altImage");
         copy.setEdition(edition.trim());
         copy.setSubEdition(subEdition == null || subEdition.isBlank() ? null : subEdition.trim());
         copy.setCardNumber(cardNumber);

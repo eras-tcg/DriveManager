@@ -54,6 +54,7 @@ public class SecurityConfig {
                         // The finished card drawn by the editor: a card image, as public as the ones in R2
                         .requestMatchers(HttpMethod.GET, "/api/cards/*/render").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/cards/*/shine").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/cards/*/creature").permitAll()
                         // An edition's cover kept in the local folder (local development): as public as one in R2
                         .requestMatchers(HttpMethod.GET, "/api/drive/editions/image/*").permitAll()
                         // A server that sleeps asks it to know whether anybody is still using the site

@@ -138,6 +138,38 @@ public class CardArtService {
         });
     }
 
+    /** The card's creature cut out of its illustration (see Card.creatureKey): a PNG, replacing the one before. */
+    public Optional<Card> setCreature(String cardId, byte[] bytes) {
+        if (!"image/png".equals(mediaType(bytes))) throw new IllegalArgumentException("El recorte de la criatura debe ser un PNG");
+        if (bytes.length > MAX_BYTES) throw new IllegalArgumentException("La imagen pesa más de 25 MB");
+        return cards.findById(cardId).map(card -> {
+            String old = card.getCreatureKey();
+            String key = "card-creature/" + cardId + "/" + Instant.now().toEpochMilli() + ".png";
+            store.put(key, bytes, "image/png");
+            card.setCreatureKey(key);
+            Card saved = cards.save(card);
+            if (old != null) store.delete(old);
+            return saved;
+        });
+    }
+
+    public Optional<Art> getCreature(String cardId) {
+        return cards.findById(cardId)
+                .filter(c -> c.getCreatureKey() != null)
+                .flatMap(c -> read(c.getCreatureKey()).map(bytes -> new Art(bytes, "image/png")));
+    }
+
+    /** The card no longer has its creature cut out. */
+    public Optional<Card> removeCreature(String cardId) {
+        return cards.findById(cardId).map(card -> {
+            String old = card.getCreatureKey();
+            card.setCreatureKey(null);
+            Card saved = cards.save(card);
+            if (old != null) store.delete(old);
+            return saved;
+        });
+    }
+
     public Optional<Art> getShine(String cardId) {
         return cards.findById(cardId)
                 .filter(c -> c.getShineKey() != null)

@@ -132,6 +132,25 @@ class CardArtServiceTest {
     }
 
     @Test
+    void theCreatureCutOutIsAPngKeptApartReplacedAndRemoved() {
+        byte[] png = {(byte) 0x89, 'P', 'N', 'G', 0, 0, 0, 0, 0, 0, 0, 0};
+        service.setCreature("m1", png);
+        String first = card.getCreatureKey();
+        assertThat(first).matches("card-creature/m1/[0-9]+[.]png");
+        service.setCreature("m1", png);
+        verify(store).delete(first);
+        when(store.get(card.getCreatureKey())).thenReturn(png);
+        assertThat(service.getCreature("m1")).get().extracting(CardArtService.Art::type).isEqualTo("image/png");
+        // Only a PNG: it needs its transparency
+        byte[] jpg = {(byte) 0xFF, (byte) 0xD8, (byte) 0xFF, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+        assertThatThrownBy(() -> service.setCreature("m1", jpg)).isInstanceOf(IllegalArgumentException.class);
+        String last = card.getCreatureKey();
+        service.removeCreature("m1");
+        assertThat(card.getCreatureKey()).isNull();
+        verify(store).delete(last);
+    }
+
+    @Test
     void aMissingFileIsNoImage() {
         card.setRenderKey("card-render/m1/1.jpeg");
         when(store.get("card-render/m1/1.jpeg")).thenThrow(new RuntimeException("no such file"));
