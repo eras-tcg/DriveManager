@@ -126,6 +126,40 @@ class ShopServiceTest {
     }
 
     @Test
+    void aStructureDeckBoughtGoesIntoThePlayersDecksAndAFailureThereKeepsThePurchase() {
+        EditionMetadata st1 = new EditionMetadata();
+        st1.setEditionId("ST1");
+        when(editions.findById("ST1")).thenReturn(Optional.of(st1));
+        when(pool.structureCards("ST1")).thenReturn(List.of("a", "b"));
+        when(wallets.buy("alice", "ST1", "structure")).thenReturn(new WalletService.Purchase(1900, 500));
+        StructureDeckService structureDecks = mock(StructureDeckService.class);
+        ShopService withDecks = new ShopService(wallets, editions, pool, collections, ShopOdds::defaults, () -> 0.9, structureDecks);
+
+        withDecks.buy("alice", "ST1", "structure");
+        verify(structureDecks).giveTo("alice", st1, List.of("a", "b"));
+
+        // Paid already: the deck not saved does not undo the purchase
+        when(structureDecks.giveTo(anyString(), org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.anyList()))
+                .thenThrow(new IllegalStateException("down"));
+        assertThat(withDecks.buy("alice", "ST1", "structure").gems()).isEqualTo(1900);
+    }
+
+    @Test
+    void aPackGivesNoDeck() {
+        EditionMetadata e1 = new EditionMetadata();
+        e1.setEditionId("E1");
+        e1.setPackTypes(List.of(new EditionMetadata.PackTypeConfig("R PACK", Map.of("C", 1))));
+        when(editions.findById("E1")).thenReturn(Optional.of(e1));
+        pools.put("E1", Map.of("C", List.of("c1")));
+        when(wallets.buy("alice", "E1", "pack")).thenReturn(new WalletService.Purchase(2300, 100));
+        StructureDeckService structureDecks = mock(StructureDeckService.class);
+
+        new ShopService(wallets, editions, pool, collections, ShopOdds::defaults, () -> 0.9, structureDecks).buy("alice", "E1", "pack");
+
+        verify(structureDecks, never()).giveTo(anyString(), org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.anyList());
+    }
+
+    @Test
     void nothingIsChargedForAnEditionWithoutCards() {
         EditionMetadata e9 = new EditionMetadata();
         e9.setEditionId("E9");
