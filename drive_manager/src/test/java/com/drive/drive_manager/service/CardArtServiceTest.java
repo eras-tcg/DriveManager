@@ -16,6 +16,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -147,7 +148,8 @@ class CardArtServiceTest {
         String last = card.getCreatureKey();
         service.removeCreature("m1");
         assertThat(card.getCreatureKey()).isNull();
-        verify(store).delete(last);
+        // (the two saves above may fall in the same millisecond: the same key, deleted once already)
+        verify(store, atLeastOnce()).delete(last);
     }
 
     @Test
